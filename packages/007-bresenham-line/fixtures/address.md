@@ -1,0 +1,9 @@
+# A cell index is not a byte offset
+
+For (x,y) = (1,1), y×8+x = 9 cells. Nine cells × four bytes = 36 bytes = 0x24.
+Adding the base gives 0x10010024. At the last canvas cell (7,7), the index is 63,
+its offset is 252 bytes, and a four-byte store ends at byte 255 of the frame.
+
+The next address, 0x10010100, is the guard, not a sixty-fifth pixel. Row stride is
+32 bytes. Replacing it with an eight-byte stride overlaps rows even if some pixels
+happen to land inside the allocation.

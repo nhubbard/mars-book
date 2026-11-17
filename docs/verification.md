@@ -156,3 +156,30 @@ The screen-axis diagram preview was rendered and visually inspected. Native TikZ
 four planned IDE figures await the publication toolchain and separate capture plugin.
 The fourth recipe backsteps the east-leg stop: model restoration is tested, while
 visible IDE restoration still requires actual execution and capture verification.
+
+## Bresenham line chapter
+
+The incremental-error reference and rounded-rational alternative produce the same
+canonical line image. Endpoint order is normalized before halfway choices. An independent
+rational oracle checks every one of the 4,096 ordered endpoint pairs on the 8 by 8
+canvas, covering both orders, all slope classes, all axis-aligned lines, exact ties,
+and all coincident endpoints. Three additional color boundaries bring each private
+suite to 4,099 cases. Colors and initial images are sampled rather than exhausted.
+
+Every final cell word is checked against the selected color or its original poisoned
+value. Inputs and guards also have execution-store traces, so restoration cannot hide
+a forbidden write. This is a final-image contract; it does not claim to check every
+intermediate framebuffer store. Reference-only checkpoints verify the illustrated
+coordinate/error boundaries separately from equivalent free-writing submissions.
+
+Thirteen cumulative source programs are reconstructed from the chapter and checked
+for register meanings, exact frame prefixes, and protected data. Twelve faulty programs
+exercise ordering, pair swaps, row stride, store width, endpoint timing, x-only termination,
+changed error dependencies, mutually exclusive coordinate decisions, a wrong tie rule,
+falling-line direction, an extra cell, and a restored input write. Both implementations
+must assemble without warnings. Their default completed-instruction totals are checked
+as 145 and 138; no latency or universal performance claim is inferred.
+
+The native grid and decision equations await LaTeX compilation and template accessibility
+verification. The SVG grid preview was rendered and inspected. Four real light-theme
+IDE figures remain planned; CLI image checks do not establish visible panel rendering.

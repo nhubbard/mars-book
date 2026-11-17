@@ -1,0 +1,1068 @@
+{
+  "formatVersion": 1,
+  "id": "007-bresenham-line",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Draw lines with an integer error accumulator",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "b982901a306b75a727e3d89491d1e87c2f31a508",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "expectWord(label, value, offset)",
+      "expectDataAddress",
+      "traceMemoryStores(label, byteLength)",
+      "MemoryStoreTrace.expectNone()"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Word framebuffer addressing",
+    "Signed comparisons and retained delayed branches",
+    "Register state and loops"
+  ],
+  "learningObjectives": [
+    "Derive row-major pixel addresses",
+    "Normalize endpoint order and specify ties",
+    "Implement independent coordinate decisions using a frozen doubled error",
+    "Handle steep, negative, axis-aligned, and point cases",
+    "Preserve a preexisting image and compare equivalent rasterizers"
+  ],
+  "inputDomain": {
+    "type": "line-endpoints",
+    "coordinateMinimum": 0,
+    "coordinateMaximum": 7,
+    "endpointWords": [
+      "x0",
+      "y0",
+      "x1",
+      "y1"
+    ],
+    "colorMinimum": 0,
+    "colorMaximum": 16777215,
+    "canvasWords": 64,
+    "oldFrameWordBits": 32
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Choose cells rather than continuous positions",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Why does the default line have six cells?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its major-axis difference is five and both endpoints are included."
+          },
+          {
+            "id": "b",
+            "text": "Every line always has six cells."
+          },
+          {
+            "id": "c",
+            "text": "Its RGB word contains six hexadecimal digits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Count inclusive x positions from one through six."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The default six cells are (1,1), (2,2), (3,2), (4,3), (5,3), (6,4)."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Read the frame and input contract",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What should happen to a cell outside the selected line?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It must always become black."
+          },
+          {
+            "id": "b",
+            "text": "It must keep its complete original word."
+          },
+          {
+            "id": "c",
+            "text": "Only its red byte must survive."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "This operation overlays a line rather than clearing an image."
+        },
+        {
+          "id": "s02-h2",
+          "text": "An 8 by 8 frame uses 64 words, or 256 bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Load the four endpoint coordinates",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What is the offset of x1 in this four-word block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One byte."
+          },
+          {
+            "id": "b",
+            "text": "Four bytes."
+          },
+          {
+            "id": "c",
+            "text": "Eight bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The third field starts after two four-byte words."
+        },
+        {
+          "id": "s03-h2",
+          "text": "`$s0`,`$s1` hold the first point; `$s2`,`$s3` hold the second. The default is 1,1,6,4."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Specify canonical order before rounding",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why normalize endpoints?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It fixes a common direction for deterministic halfway decisions."
+          },
+          {
+            "id": "b",
+            "text": "It changes the RGB color."
+          },
+          {
+            "id": "c",
+            "text": "It makes every line horizontal."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "A halfway cell choice can depend on the direction in which a naïve loop walks."
+        },
+        {
+          "id": "s04-h2",
+          "text": "(6,4) to (1,1) is reordered to (1,1) to (6,4). Equal-x inputs are ordered upward in numeric y."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Order the working endpoints",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why must the swap exchange both coordinates?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only x ever affects a pixel address."
+          },
+          {
+            "id": "b",
+            "text": "Each x must remain paired with its original y."
+          },
+          {
+            "id": "c",
+            "text": "Swapping y clears the canvas."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Treat an endpoint as a pair, not as two unrelated values."
+        },
+        {
+          "id": "s05-h2",
+          "text": "At `ordered`, x0 is no greater than x1. When x is equal, y0 is no greater than y1. Source memory is unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Name the decision registers",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which quantity is preserved as the endpoint target?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address scratch register."
+          },
+          {
+            "id": "b",
+            "text": "The changing error value."
+          },
+          {
+            "id": "c",
+            "text": "The ordered second coordinate pair."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Separate the cursor from the destination."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Coordinates and error change; endpoint targets, differences, direction, frame base, and color stay fixed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Compute horizontal and signed vertical differences",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Can the ordered horizontal difference be negative?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No, because endpoint ordering made x0 no greater than x1."
+          },
+          {
+            "id": "b",
+            "text": "Yes, for every steep line."
+          },
+          {
+            "id": "c",
+            "text": "Only for a white color."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Use the ordering invariant established before subtraction."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The default horizontal difference is five and signed vertical difference is three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Separate vertical magnitude from direction",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why retain a separate y direction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The magnitude must keep a negative sign."
+          },
+          {
+            "id": "b",
+            "text": "The distance magnitude alone cannot say whether y increases or decreases."
+          },
+          {
+            "id": "c",
+            "text": "All negative slopes are out of bounds."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Compare (1,1) to (6,4) with (1,6) to (6,3)."
+        },
+        {
+          "id": "s08-h2",
+          "text": "`$s5` is the vertical magnitude D; `$s6` is +1 or −1. For the default they are three and one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Initialize the signed decision state",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What is the default initial error?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "Negative eight."
+          },
+          {
+            "id": "c",
+            "text": "Two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Substitute the differences into dx − D."
+        },
+        {
+          "id": "s09-h2",
+          "text": "For dx=5 and D=3, dy is −3 and err is two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Load the fixed frame base and color",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Which address stays fixed across every pixel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The frame base."
+          },
+          {
+            "id": "b",
+            "text": "The address of the currently selected cell."
+          },
+          {
+            "id": "c",
+            "text": "The running error interpreted as a pointer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Only the offset changes as the selected coordinates change."
+        },
+        {
+          "id": "s10-h2",
+          "text": "`$t8` is 0x10010000 and `$t9` is the default white word 0x00ffffff."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Compute the row-major cell address",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why shift the cell index left by two?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To double the error for a branch."
+          },
+          {
+            "id": "b",
+            "text": "Each framebuffer cell occupies four bytes."
+          },
+          {
+            "id": "c",
+            "text": "The board has two rows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Distinguish a cell count from a byte address."
+        },
+        {
+          "id": "s11-h2",
+          "text": "For (1,1), the cell index is nine and the address is 0x10010024."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Paint the current point",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which point has been painted at the first `pixel_written` hit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The final endpoint only."
+          },
+          {
+            "id": "b",
+            "text": "The next point after an update."
+          },
+          {
+            "id": "c",
+            "text": "The current ordered starting point."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "The coordinate updates appear later in the program."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The first default cell is white; the other 63 words keep their previous values."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Test the endpoint after painting",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why test after the store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To include the final endpoint and the one-point case."
+          },
+          {
+            "id": "b",
+            "text": "To force an extra pixel beyond every line."
+          },
+          {
+            "id": "c",
+            "text": "To clear the input first."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Consider what a pre-store exit would do when the endpoints are identical."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Coincident endpoints paint one cell and exit without a coordinate update."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Save twice the old error",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Why save this value separately?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The color instruction needs it as an address."
+          },
+          {
+            "id": "b",
+            "text": "The first update can change err before the second decision."
+          },
+          {
+            "id": "c",
+            "text": "MIPS forbids comparing the same register twice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "The two conditions belong to one decision state, not two successive ones."
+        },
+        {
+          "id": "s14-h2",
+          "text": "`$t2` is four on the first default update and remains four through both coordinate decisions."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Apply the independent x decision",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which value does the next decision still use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The new error doubled again."
+          },
+          {
+            "id": "b",
+            "text": "The pixel color."
+          },
+          {
+            "id": "c",
+            "text": "The saved doubled error from before this x update."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "A temporary protects the original decision input."
+        },
+        {
+          "id": "s15-h2",
+          "text": "For the first default update, x becomes two and err becomes −1; the saved e2 is still four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Apply the independent y decision",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Can both x and y step in one update?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; diagonal progress requires both independent conditions."
+          },
+          {
+            "id": "b",
+            "text": "No; one condition must always exclude the other."
+          },
+          {
+            "id": "c",
+            "text": "Only when the color is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Evaluate both default inequalities with e2 four, dy −3, and dx five."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The first update finishes at (2,2), err four, with the original e2 still four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Return to address calculation",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What keeps a delay slot from painting an extra cell here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Delay slots never execute."
+          },
+          {
+            "id": "b",
+            "text": "The slot is explicitly `nop`."
+          },
+          {
+            "id": "c",
+            "text": "The display ignores the final instruction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Inspect the instruction immediately following the branch."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The default final image contains six white cells, with every off-line word preserved."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Trace the whole default line",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q18",
+        "prompt": "What does an error value of zero mean here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire program must stop."
+          },
+          {
+            "id": "b",
+            "text": "The pixel is black."
+          },
+          {
+            "id": "c",
+            "text": "It is a decision-state value, and both tests must still be evaluated."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Termination is a coordinate comparison, not an error comparison."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The errors at successive painted points are 2,4,1,3,0,2."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Inspect an exact halfway choice",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Is (1,0) geometrically unreasonable at that halfway position?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it is equally near, but it is a different tie convention from this task."
+          },
+          {
+            "id": "b",
+            "text": "Yes; it is outside the board."
+          },
+          {
+            "id": "c",
+            "text": "Yes; it is not an integer coordinate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Distinguish geometric distance from a reproducibility rule."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Both orders paint (0,0), (1,1), and (2,1)."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Cover steep, falling, and axis-aligned lines",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What makes a steep line possible in this loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "x must advance on every update."
+          },
+          {
+            "id": "b",
+            "text": "The x and y decisions can independently skip or take a step."
+          },
+          {
+            "id": "c",
+            "text": "The framebuffer rotates automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Look for an update in which only the y condition is true."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Every selected coordinate remains in the endpoints' bounding box. Reversal preserves the final image."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Preserve an existing canvas and source data",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Why does a black-background-only test miss errors?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Black is not a legal color."
+          },
+          {
+            "id": "b",
+            "text": "All cells share one memory address."
+          },
+          {
+            "id": "c",
+            "text": "A program that clears unrelated cells could accidentally pass."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Choose preexisting values that make unwanted writes visible."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Selected cells become the exact color word; every other word and all inputs remain unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Compare incremental and rational implementations",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What can those totals establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "How many simulated instructions those exact runs completed."
+          },
+          {
+            "id": "b",
+            "text": "That division costs one real hardware cycle."
+          },
+          {
+            "id": "c",
+            "text": "That the alternative is faster on every input and host."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Keep an instruction count separate from a latency or wall-time model."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The reference uses 145 completed instructions for the default fixture; the rational alternative uses 138. These are simulated instruction counts, not host timings or cycle estimates."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Explain the integer error relation",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Why is err not simply the perpendicular distance in pixels?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is stored in a register."
+          },
+          {
+            "id": "b",
+            "text": "It is a scaled decision expression with an initial offset and signed contributions."
+          },
+          {
+            "id": "c",
+            "text": "It can only hold addresses."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Track the coefficients of i and j rather than assigning physical units by appearance."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Both coordinate decisions use one frozen e2, then update a state consistent with the new coordinates."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Verify the declared domain and limits",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which claim is justified by checking all 4096 endpoint pairs?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every possible framebuffer and color has been tested."
+          },
+          {
+            "id": "b",
+            "text": "The program works for arbitrary unbounded coordinates."
+          },
+          {
+            "id": "c",
+            "text": "The declared endpoint-coordinate domain has been exhausted for the tested fixtures."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "State which dimensions were exhaustive and which were sampled."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The executable checks establish the final image and protected-data contract; actual IDE display captures are still separate."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify raster and protected data; automated native lesson progression and captures remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}
