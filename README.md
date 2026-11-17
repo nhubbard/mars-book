@@ -23,7 +23,11 @@ steps, twelve prose sections, nine teaching fixtures, and four planned IDE figur
 The fifth composition, [Count through hexadecimal glyphs on Digital Lab](packages/005-seven-segment-counter/assignment.md),
 develops lookup tables, bounded windows, byte-port transactions, and execution-history
 checks. It has seventeen steps, twelve prose sections, nine fixtures, and four planned
-IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+IDE figures.
+The sixth composition, [Draw a square with coordinate feedback](packages/006-marsbot-square/assignment.md),
+explains device commands, feedback polling, screen axes, instruction clocks, stopping
+bounds, and pen-trail evidence. It has twenty steps, twelve prose sections, eight fixtures,
+and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -61,7 +65,7 @@ composition source once MacTeX and the author template are available for testing
 
 ## Current delivery status
 
-The first five text packages, starters, public checks, deterministic student archive builder,
+The first six text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

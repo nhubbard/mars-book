@@ -118,3 +118,17 @@ Use a broad MMIO range when extra writes to other ports are forbidden. A final-m
 check alone cannot express an ordered protocol. Label-based protected ranges follow
 actual allocations rather than hard-coded data addresses. These checks do not constrain
 student scratch registers or require labels used only by illustrated Debug checkpoints.
+
+## Device-model contracts
+
+The MarsBot package pins a CLI with connectMarsBot(instructionsPerTick), which attaches
+the same model used by the IDE before execution starts. A case owns at most one bot and
+cleans up its memory observer, clock listener, and backstep checkpoint on completion.
+The headless clock is chosen by the grading script; source-header settings configure
+the IDE. Do not assume the CLI parses tool headers.
+
+MarsBotCheck.expectState checks position, heading, moving and penDown controls.
+expectTrail checks the complete continuous chronological pen trail using turn vertices;
+straight forward strokes are coalesced by the model. Empty arguments require no trail.
+Both accept a finite nonnegative tolerance (default 1e-9). Neither asserts UI rendering.
+Use separate execution-store traces to protect input objects and feedback registers.

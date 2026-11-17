@@ -1,0 +1,11 @@
+# The east-leg polling invariant
+
+Before each `east_wait` load, the heading is 90, the pen is down, and y is zero.
+The published x is between zero and L inclusive for the demonstrated polling schedule.
+The pen trail is empty at x = 0 or the horizontal stroke (0, 0) to (x, 0).
+
+If the sampled x differs from L, the loop returns to obtain another sample. If it
+equals L, the short fall-through path stops movement before another tick. At the
+stopped boundary, the first side is complete. L is positive and no greater than
+63, so this outward path is inside the 512-pixel board and cannot stall at a wall
+before reaching its target.

@@ -127,3 +127,32 @@ The native segment-map source has a rendered, visually inspected SVG draft previ
 Its TikZ version awaits the actual LaTeX toolchain and template. Four light-theme IDE
 captures remain planned. CLI histories do not establish panel refresh or screenshot
 completion, and no wall-clock timing requirement is imposed on the counter.
+
+## MarsBot square chapter
+
+The core now owns the existing robot device and world model; the IDE imports the same
+classes that the CLI grader uses. connectMarsBot advances that model at the same onStep
+boundary as the IDE. No second movement approximation is used for grading. The model
+retains its memory-access observer, instruction-clock phase, immutable pen trail, and
+backstep checkpoints. Its existing tests now run in the core. Additional CLI tests
+exercise real feedback code at multiple rates and cleanup across pauses and fresh cases.
+
+Public checks cover side sixteen at rate 64, side one at rate 64, and side sixty-three
+at rate 17. Private checks cover all 63 lengths at four rates (8, 17, 64, 97), for 252
+cases per implementation. They check the complete four-stroke trail, final position,
+heading, movement and pen state, silence, unchanged inputs/guards, and no CPU writes
+to either feedback word. These samples do not exhaust the permitted rate interval;
+the chapter separately derives the demonstrated loop's six-instruction stopping bound.
+
+Twelve cumulative programs are reconstructed from the published assembly segments
+and checked for their intermediate device controls, position, ink history, and input
+preservation. Negative programs exercise missing ink, a wrong heading, the wrong axis,
+a stale register, an omitted leg, enabled final movement, a lowered final pen, a fixed
+input length, temporarily modified inputs/guards, coordinate writes, and extra ink.
+Reference-only checks establish the named corner boundaries separately from free-writing
+grading. Both implementations must assemble without warnings.
+
+The screen-axis diagram preview was rendered and visually inspected. Native TikZ and
+four planned IDE figures await the publication toolchain and separate capture plugin.
+The fourth recipe backsteps the east-leg stop: model restoration is tested, while
+visible IDE restoration still requires actual execution and capture verification.

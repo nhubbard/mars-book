@@ -1,0 +1,896 @@
+{
+  "formatVersion": 1,
+  "id": "006-marsbot-square",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Draw a square with coordinate feedback",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "a441ff15cb83e4df48d76bd1ec3b1d2cbe8f66ed",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "connectMarsBot(instructionsPerTick)",
+      "MarsBotCheck.expectState",
+      "MarsBotCheck.expectTrail",
+      "traceMemoryStores(labelOrAddress, byteLength)"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Seven-segment counter",
+    "Pointer loads and stores",
+    "Retained delayed branches"
+  ],
+  "learningObjectives": [
+    "Distinguish device commands from coordinate feedback",
+    "Control movement with bounded polling loops",
+    "Relate screen coordinates, headings, and an ordered pen trail",
+    "Explain instruction-clock timing, pauses, and stopping",
+    "Compare explicit and table-driven implementations"
+  ],
+  "inputDomain": {
+    "type": "square-side",
+    "minimum": 1,
+    "maximum": 63,
+    "instructionsPerTickMinimum": 8,
+    "instructionsPerTickMaximum": 128
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the robot clock and starting state",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What advances the connected robot?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Elapsed wall-clock seconds alone."
+          },
+          {
+            "id": "b",
+            "text": "Completed simulated instructions while moving."
+          },
+          {
+            "id": "c",
+            "text": "Opening its tool tab."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Separate an execution tick from the IDE repaint timer."
+        },
+        {
+          "id": "s01-h2",
+          "text": "A new session starts at (0, 0), heading zero, stopped, with pen up. The header requests 64 instructions per tick."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Map controls and feedback",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which action moves the robot toward a target?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Set a heading and movement control, then observe feedback."
+          },
+          {
+            "id": "b",
+            "text": "Store the target directly into x and y."
+          },
+          {
+            "id": "c",
+            "text": "Change only a label in the data section."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Compare what the program requests with what the device measures."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Heading, pen, and movement are controls; x and y are feedback."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Load the register base and side length",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What is in `$s1` after the load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address of side."
+          },
+          {
+            "id": "b",
+            "text": "The right-display byte port."
+          },
+          {
+            "id": "c",
+            "text": "The requested distance in pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Distinguish the result of `la` from the result of the following `lw`."
+        },
+        {
+          "id": "s03-h2",
+          "text": "`$s0` is 0x00000000ffff8000 and `$s1` is sixteen for the default input. No control has changed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Lower the pen before moving",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Does lowering the pen immediately draw a line?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, it fills the whole board."
+          },
+          {
+            "id": "b",
+            "text": "No; a line requires movement while the pen is down."
+          },
+          {
+            "id": "c",
+            "text": "Yes, it moves to the input side length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Ask whether position has changed yet."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The pen is down, but position remains (0, 0) and movement is still disabled."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Choose east while stopped",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why use east for the first leg?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It points into the board from the top-left starting point."
+          },
+          {
+            "id": "b",
+            "text": "Ninety is the movement-enable value."
+          },
+          {
+            "id": "c",
+            "text": "All headings move right."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Use the screen-coordinate diagram rather than a Cartesian y-up assumption."
+        },
+        {
+          "id": "s05-h2",
+          "text": "The robot is still at (0, 0), now facing east."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Enable movement",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What determines the end of this leg?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A fixed number of source lines."
+          },
+          {
+            "id": "b",
+            "text": "The width of the IDE window."
+          },
+          {
+            "id": "c",
+            "text": "The x feedback reaching the requested side."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "The desired distance is input; the clock determines how long the program must poll."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The robot begins accumulating completed instructions toward its next pixel step."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Poll x and stop the east leg",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why must `lw` remain inside the polling loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The assembler refuses loads outside loops."
+          },
+          {
+            "id": "b",
+            "text": "The register must be refreshed as the device coordinate changes."
+          },
+          {
+            "id": "c",
+            "text": "The target length changes after every instruction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "A CPU register holding an old coordinate does not update itself."
+        },
+        {
+          "id": "s07-h2",
+          "text": "At `east_stopped`, position is (side, 0), movement is disabled, heading is 90, and the pen remains down."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Observe the first completed side",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What must be visible at the corner checkpoint?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every prior animation frame."
+          },
+          {
+            "id": "b",
+            "text": "A completed square already."
+          },
+          {
+            "id": "c",
+            "text": "A stopped robot and the completed eastward stroke."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Name the source boundary before comparing two snapshots."
+        },
+        {
+          "id": "s08-h2",
+          "text": "For side sixteen, the trail is (0, 0) to (16, 0). No downward stroke exists yet."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Turn south and start the second leg",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which coordinate changes on a southward leg?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "y increases."
+          },
+          {
+            "id": "b",
+            "text": "x decreases."
+          },
+          {
+            "id": "c",
+            "text": "Both must change equally."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Screen y points downward."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The next target is y = side, starting from (side, 0)."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Poll y and stop the south leg",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What would happen if this loop polled x against side?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It would measure y indirectly."
+          },
+          {
+            "id": "b",
+            "text": "x is already equal, so it could stop before drawing the south side."
+          },
+          {
+            "id": "c",
+            "text": "The port would rotate its meaning automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "At the start of the second leg, x already has its final value."
+        },
+        {
+          "id": "s10-h2",
+          "text": "At `south_stopped`, position is (side, side), with two completed strokes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Turn west and start the third leg",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What is the west leg's x target?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twice the side length."
+          },
+          {
+            "id": "b",
+            "text": "The original side length."
+          },
+          {
+            "id": "c",
+            "text": "Zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Use an absolute coordinate target for each corner."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Movement begins from (side, side) toward (0, side)."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Poll x against zero and stop west",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why does the third side not close the square?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The robot is still below its starting row."
+          },
+          {
+            "id": "b",
+            "text": "The side length must always be odd."
+          },
+          {
+            "id": "c",
+            "text": "A square needs five sides."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Compare both coordinates with the initial position."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The position is (0, side), and three strokes form an open path."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Turn north and start the last leg",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why can north work now but not as the first outward leg?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The meaning of north changed."
+          },
+          {
+            "id": "b",
+            "text": "The robot is now below the top boundary."
+          },
+          {
+            "id": "c",
+            "text": "The pen changes the coordinate axes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "A direction and a starting position jointly determine the possible movement."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The last target is y = 0 while x remains zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Stop at the origin",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Why explicitly stop at the boundary?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A boundary automatically clears every control."
+          },
+          {
+            "id": "b",
+            "text": "The board wraps around if the pen is down."
+          },
+          {
+            "id": "c",
+            "text": "Clamping position does not disable movement."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Separate coordinate clamping from the moving control state."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The trail is closed at (0, 0), heading zero, movement disabled, pen still down."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Raise the pen and finish",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Does raising the pen erase the path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it changes whether future movement adds ink."
+          },
+          {
+            "id": "b",
+            "text": "Yes; it clears all memory."
+          },
+          {
+            "id": "c",
+            "text": "Only on the fourth side."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Distinguish a control for future motion from stored drawing history."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The final state is (0, 0), heading zero, stopped, pen up, with four strokes retained."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Explain the square from its vertices",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What evidence distinguishes a drawn square from no movement at all?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the final origin coordinate."
+          },
+          {
+            "id": "b",
+            "text": "The complete pen trail."
+          },
+          {
+            "id": "c",
+            "text": "Only the exit service number."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Both programs could finish at the origin; compare their histories."
+        },
+        {
+          "id": "s16-h2",
+          "text": "For side sixteen: (0, 0), (16, 0), (16, 16), (0, 16), (0, 0)."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Vary the length and device rate",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Why is a fixed busy-wait count a weaker control method?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is independent of the device clock."
+          },
+          {
+            "id": "b",
+            "text": "It always draws a diagonal."
+          },
+          {
+            "id": "c",
+            "text": "Its distance depends on how many ticks the waiting instructions permit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Hold the instruction count fixed and change instructions per tick."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The square scales with the input, and the same requested path survives the changed rate."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Pause and rewind at a named boundary",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Does waiting at a Debug pause move this robot?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; its execution clock is paused."
+          },
+          {
+            "id": "b",
+            "text": "Yes, at one pixel per host second."
+          },
+          {
+            "id": "c",
+            "text": "Only when the editor has focus."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "The clock counts simulated instructions, not screen repaints."
+        },
+        {
+          "id": "s18-h2",
+          "text": "A pause itself adds no travel. Record the instruction boundary as well as the displayed position."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Compare a table-driven implementation",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What must an equivalent solution preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every reference scratch register."
+          },
+          {
+            "id": "b",
+            "text": "The complete pen path and required final state."
+          },
+          {
+            "id": "c",
+            "text": "The exact source line count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "State equivalence in terms of observations named by the assignment."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Different source structure is acceptable when the actual four-stroke history and final controls agree."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Verify the feedback argument",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What would falsify the stopping argument?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A different unused register name."
+          },
+          {
+            "id": "b",
+            "text": "An additional source comment."
+          },
+          {
+            "id": "c",
+            "text": "A long operation between the feedback read and movement stop."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Account for the delay slot and the maximum gap between coordinate samples."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The checks cover actual device history, protected input and feedback words, final controls, and silent normal exit."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify device behavior; native trainer and capture automation remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}
