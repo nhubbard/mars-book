@@ -1,0 +1,731 @@
+{
+  "formatVersion": 1,
+  "id": "004-bit-inspector",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Inspect one word at two widths",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "15f8bb7beb3d4defee63f2057f488fdec7b4085b",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "setWord(label, value, offset)",
+      "expectBytes(label, *unsignedBytes)",
+      "expectWord(label, expected)",
+      "expectOutput(expected)",
+      "runToExit()"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Console reporting",
+    "Memory stores and loads",
+    "Sprite bit-pattern chapter"
+  ],
+  "learningObjectives": [
+    "Interpret the same word as signed and unsigned",
+    "Relate binary and hexadecimal place values",
+    "Distinguish sign extension from zero extension",
+    "Explain word and doubleword arithmetic at a boundary",
+    "Verify full-width results independently of low-word formatting"
+  ],
+  "inputDomain": {
+    "type": "32-bit-word-pattern",
+    "sourceLabel": "sample",
+    "allPatterns": true
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Identify the input pattern",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Does switching from signed to unsigned interpretation change the stored word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every bit is complemented."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the word grows automatically to eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "No; it changes the numerical interpretation of the same bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The same ffffffff pattern is signed -1 and unsigned 4294967295. Hex and binary describe the pattern directly."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Load the sample address",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What does this instruction put in `$t0`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The unsigned value 4294967295."
+          },
+          {
+            "id": "b",
+            "text": "The address of sample."
+          },
+          {
+            "id": "c",
+            "text": "The signed value -1."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s02-h2",
+          "text": "`$t0` identifies sample. The sample bytes and all output fields are unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Load and sign-extend the word",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which bit is repeated during sign extension from a word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bit 31 of the source word."
+          },
+          {
+            "id": "b",
+            "text": "Bit 0 of the address."
+          },
+          {
+            "id": "c",
+            "text": "Bit 63 of an unrelated register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s03-h2",
+          "text": "`$s0` is 0xffffffffffffffff for the default sample. The next instruction has not yet loaded the unsigned version."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Load and zero-extend the same word",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "When do these load results differ?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "For every possible source word."
+          },
+          {
+            "id": "b",
+            "text": "Only when the source address is odd."
+          },
+          {
+            "id": "c",
+            "text": "When source bit 31 is one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s04-h2",
+          "text": "`$s0` is -1 and `$s1` is 4294967295, yet both have low word ffffffff. No input bytes changed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Add one at word width",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What does the u mean for this addition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The result is always a positive signed integer."
+          },
+          {
+            "id": "b",
+            "text": "Signed overflow does not cause a trap."
+          },
+          {
+            "id": "c",
+            "text": "The result is always zero-extended."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s05-h2",
+          "text": "For -1, `$s2` is zero. For 2147483647, it becomes 0xffffffff80000000, whose signed value is -2147483648."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Add one at doubleword width",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "For input 2147483647, which result is positive 2147483648?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The daddiu result."
+          },
+          {
+            "id": "b",
+            "text": "The sign-extended addiu result."
+          },
+          {
+            "id": "c",
+            "text": "Both results must be negative because the source is a word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s06-h2",
+          "text": "For the maximum signed word, `$s3` is 0x0000000080000000, or 2147483648. That differs from the word-width result."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Store a complete signed result",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "How many bytes does this sd write?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four because the original input was a word."
+          },
+          {
+            "id": "b",
+            "text": "One because the input initializer was -1."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s07-h2",
+          "text": "signed_value now contains all eight bytes of the sign-extended result. For -1, every one of those bytes is ff."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Store the other three full-width results",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why is a low-word-only check insufficient?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A debugger automatically repairs the high half."
+          },
+          {
+            "id": "b",
+            "text": "It cannot distinguish results whose upper 32 bits differ."
+          },
+          {
+            "id": "c",
+            "text": "The low word never contains useful information."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s08-h2",
+          "text": "For -1, unsigned_value has low bytes ff ff ff ff and high bytes 00 00 00 00. Both plus-one fields are zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Print signed decimal",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which width does this signed integer service format?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The low 32 bits."
+          },
+          {
+            "id": "b",
+            "text": "All 64 register bits."
+          },
+          {
+            "id": "c",
+            "text": "Only the lowest byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The partial report is signed: -1 followed by one newline for the default sample."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Print unsigned decimal",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why can the same `$s0` argument serve both decimal reports?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Service 36 first changes the sample in memory."
+          },
+          {
+            "id": "b",
+            "text": "An unsigned interpretation always flips the sign bit."
+          },
+          {
+            "id": "c",
+            "text": "The services interpret its low word differently."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The second line is unsigned: 4294967295 for the same default bits that printed as signed -1."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Print hexadecimal",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "How many word bits does one hexadecimal digit represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixteen."
+          },
+          {
+            "id": "b",
+            "text": "Four."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The third line is hex: 0xffffffff. With a zero sample it would be hex: 0x00000000."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Print binary",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Is this printed left-to-right order the same as increasing byte addresses in little-endian memory?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; numeral order and memory byte order are different conventions."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the first printed digit is always at the lowest memory address."
+          },
+          {
+            "id": "c",
+            "text": "Binary output changes the selected memory byte order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The default binary line contains 32 ones. A sample of one would contain 31 leading zeroes and one final one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Compare the full register values",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Does matching hexadecimal console output prove two 64-bit registers are equal?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; eight digits always describe a 64-bit register."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the service automatically prints hidden upper digits."
+          },
+          {
+            "id": "c",
+            "text": "No; the service only reports their low words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s13-h2",
+          "text": "`$s0` and `$s1` have different high halves, while both have low word ffffffff. Passing either as the word-format argument gives the same report."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Inspect the signed-word boundary",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Which value is printed by the report for this input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the doubleword-plus-one result."
+          },
+          {
+            "id": "b",
+            "text": "The original word, 2147483647."
+          },
+          {
+            "id": "c",
+            "text": "Only the word-plus-one result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The loads both yield 2147483647. word_plus_one is -2147483648 and wide_plus_one is 2147483648. The report still describes the original 2147483647."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Compare an equivalent implementation",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What is the actual shift distance in dsrl32 with immediate zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "32 bits."
+          },
+          {
+            "id": "b",
+            "text": "Zero bits."
+          },
+          {
+            "id": "c",
+            "text": "64 bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The first operation moves the low word into the high half and discards the former high half. The logical right shift returns that word with zeroes above it."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Explain the interpretation and width rules",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What determines whether the high register half must be checked?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether the default input happens to be positive."
+          },
+          {
+            "id": "b",
+            "text": "Whether the source uses short register names."
+          },
+          {
+            "id": "c",
+            "text": "The full-width result contract, even when printed output uses only a word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "State the width, bit pattern, interpretation, and observation boundary separately."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The final grader accepts different registers and instruction sequences, but every output byte and all report text must match for substituted input words."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The author checks verify the illustrated program; native trainer automation is pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

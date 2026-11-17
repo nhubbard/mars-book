@@ -15,7 +15,11 @@ The third composition, [Draw an eight-byte sprite and its mirror](packages/003-e
 adds fixed-width bit reversal, loop invariants, delayed branches, and two-dimensional
 addressing. It has twenty steps, twelve prose sections, nine teaching fixtures, and
 four capture recipes. The default-workload instruction comparison is verified against
-the same output contract for an explicit loop and a native bitswap alternative. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+the same output contract for an explicit loop and a native bitswap alternative.
+The fourth composition, [Inspect one word at two widths](packages/004-bit-inspector/assignment.md),
+explains signed and unsigned interpretations, hexadecimal and binary notation, sign
+and zero extension, word arithmetic, and full-width evidence. It contains sixteen
+steps, twelve prose sections, nine teaching fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -53,7 +57,7 @@ composition source once MacTeX and the author template are available for testing
 
 ## Current delivery status
 
-The first three text packages, starters, public checks, deterministic student archive builder,
+The first four text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

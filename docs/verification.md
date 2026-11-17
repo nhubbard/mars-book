@@ -1,4 +1,4 @@
-# First package verification
+# Chapter verification
 
 The initial package was checked with JDK 25.0.1 and the locally built MARS CLI
 from the upstream checkout pinned in package.json. The private build records the
@@ -79,3 +79,25 @@ The verifier requires warning-free assembly and exact counts for these fixtures.
 The concept diagram's SVG preview was rendered and visually inspected. Its native
 TikZ source awaits MacTeX and the template. All four IDE figures remain planned;
 no screenshot or repaint assertion has yet been verified in an IDE capture.
+
+## Bit-inspector chapter
+
+The reference and wide-shift alternative use the same word-report and full-width-memory
+contract. Public inputs include -1, zero, and the maximum signed word. Private inputs
+add signed boundaries, walking-one and walking-zero patterns, and deterministic mixed
+words. These are representative tests, not all 2^32 possible input words.
+
+Each of the four result fields is checked across eight bytes. Poisoned high halves
+expose narrow stores that a console-only or low-word-only test would miss. The source
+and both varied guards must be preserved. Illustration checks observe both load
+extensions and both addition widths for -1 and the positive signed-word boundary.
+
+Eleven cumulative programs are reconstructed from the published code segments and
+checked for intermediate registers, stored bytes, and their exact partial reports.
+Deliberately wrong extension, arithmetic width, source interpretation, store width,
+formatting, input writes,
+and result overruns must be rejected. Both implementations must assemble without warnings.
+
+The extension diagram preview was rendered and visually inspected. Its native TikZ
+source and the other fixtures await the LaTeX template and compilation. All four
+IDE figures remain planned; a console report alone is not evidence of the high halves.
