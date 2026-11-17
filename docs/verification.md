@@ -101,3 +101,29 @@ and result overruns must be rejected. Both implementations must assemble without
 The extension diagram preview was rendered and visually inspected. Its native TikZ
 source and the other fixtures await the LaTeX template and compilation. All four
 IDE figures remain planned; a console report alone is not evidence of the high halves.
+
+## Seven-segment counter chapter
+
+The count-loop reference and exclusive-end-pointer alternative are checked against the
+same complete MMIO store history. Public windows cover the full table, the last two
+entries, and the empty interval at its exclusive end. Private cases cover all 153
+valid start/count pairs with varied byte tables, plus sixteen identical masks. This
+covers the window domain, not all possible 128-bit fonts. High-bit masks are included.
+
+The pinned CLI adds `traceMemoryStores` and `MemoryStoreTrace.expectByteStores` for
+exact byte-port protocols. `expectNone` on label-based traces forbids execution stores
+to protected objects, including temporary modifications restored before exit. Ordinary
+application fixture edits and reads are excluded. Final table, inputs, guards, and
+empty console output are also checked. A full-MMIO subscription rejects extra ports.
+The trace is bounded at 65,536 writes and fails assertions if that limit is exceeded.
+
+Ten cumulative programs are reconstructed from the chapter's assembly segments. Private
+illustration checks observe the first two transactions and loop updates; free-writing
+checks require no scratch registers or private labels. Mutants test missing transactions,
+wrong strides and ports, wider stores, missing empty pre-tests, restored input/table
+writes, an extra blanking write, and ignored starting indices.
+
+The native segment-map source has a rendered, visually inspected SVG draft preview.
+Its TikZ version awaits the actual LaTeX toolchain and template. Four light-theme IDE
+captures remain planned. CLI histories do not establish panel refresh or screenshot
+completion, and no wall-clock timing requirement is imposed on the counter.

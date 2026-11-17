@@ -1,0 +1,775 @@
+{
+  "formatVersion": 1,
+  "id": "005-seven-segment-counter",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Count through hexadecimal glyphs on Digital Lab",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f2e383a4ba1130b9b071589cc1977e821634caf2",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "traceMemoryStores(addressLong, byteLength)",
+      "traceMemoryStores(label, byteLength, offset)",
+      "MemoryStoreTrace.expectByteStores(addressLong, *unsignedBytes)",
+      "MemoryStoreTrace.expectNone()"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Bit-inspector chapter",
+    "Sprite loops and delayed branches",
+    "Byte-addressed memory"
+  ],
+  "learningObjectives": [
+    "Distinguish an index, character code, and segment mask",
+    "Use a fixed memory-mapped byte port",
+    "Derive a bounded lookup-table window",
+    "Verify an ordered I/O protocol and protected-data history",
+    "Observe a stable device state in Debug without assuming a repaint per instruction"
+  ],
+  "inputDomain": {
+    "type": "glyph-window",
+    "glyphCount": 16,
+    "glyphMin": 0,
+    "glyphMax": 255,
+    "firstDigitMin": 0,
+    "firstDigitMax": 16,
+    "countConstraint": "0 <= digit_count <= 16 - first_digit"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the segment mask",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What must the program send to show zero with this wiring?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The mask 0x3f."
+          },
+          {
+            "id": "b",
+            "text": "The integer 0 because the device decodes decimal numbers."
+          },
+          {
+            "id": "c",
+            "text": "The ASCII byte for the character 0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Decode each set bit using the segment-position table before deciding which numeral it resembles."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Blank is 00, zero is 3f, and one is 06. These are hexadecimal bit patterns, not character codes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Connect the model and locate its port",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Does .eqv `RIGHT_DISPLAY` allocate a byte for the display?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it creates the peripheral in ordinary data memory."
+          },
+          {
+            "id": "b",
+            "text": "Yes; it also writes the first glyph."
+          },
+          {
+            "id": "c",
+            "text": "No; it names a constant used during assembly."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Distinguish the source-header comment, an assembler constant, and a data allocation; only the last reserves data bytes."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Digital Lab Sim should be connected for this execution. Its right port is 0xffff0010; its neighboring control ports are not part of this counter."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Load the complete device address",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which part of the program changes the device?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The label `RIGHT_DISPLAY` executes as a store."
+          },
+          {
+            "id": "b",
+            "text": "The later store to its port, not this constant load."
+          },
+          {
+            "id": "c",
+            "text": "Every load into `$s0` changes the device automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Loading an address changes a CPU register. Look for a later instruction whose destination is memory."
+        },
+        {
+          "id": "s03-h2",
+          "text": "`$s0` is 0x00000000ffff0010. The device has received no program store."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Locate the table and input words",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which address should remain constant while counting?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The right-display port address."
+          },
+          {
+            "id": "b",
+            "text": "The pointer to the current table byte."
+          },
+          {
+            "id": "c",
+            "text": "The conceptual current digit index."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Trace what each address identifies: the device register, the first table byte, or the first input word."
+        },
+        {
+          "id": "s04-h2",
+          "text": "`$s1` identifies table byte zero and `$t0` identifies the first input word. The device pointer remains fixed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Read the requested window",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What does `digit_count` = 16 mean here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Emit only the entry whose index is sixteen."
+          },
+          {
+            "id": "b",
+            "text": "Wait sixteen seconds between stores."
+          },
+          {
+            "id": "c",
+            "text": "Emit sixteen table entries."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Each input occupies four bytes. Compute the offset of the count from the address of the starting index."
+        },
+        {
+          "id": "s05-h2",
+          "text": "For the default fixture, the index is zero and the remaining count is sixteen. All valid inputs are small nonnegative values."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Apply the starting byte index",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why is no scale-by-four operation needed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The display uses four-byte glyph codes."
+          },
+          {
+            "id": "b",
+            "text": "Each table element occupies one byte."
+          },
+          {
+            "id": "c",
+            "text": "All addresses ignore object sizes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Determine the size of one table element before deciding whether the index needs scaling."
+        },
+        {
+          "id": "s06-h2",
+          "text": "For a window starting at fourteen, the cursor is fourteen bytes beyond glyphs. For the empty end window it can equal the one-past-table address without being dereferenced."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Handle an empty window before the loop",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why test the count before the first store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An empty window must produce no I/O writes."
+          },
+          {
+            "id": "b",
+            "text": "Every branch must always be taken."
+          },
+          {
+            "id": "c",
+            "text": "A zero count names the first display port."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Follow the path for a zero count, including the instruction in the branch delay slot."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The empty window exits before the table load and port store. A nonempty window continues to the loop body."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Load one glyph byte",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What is loaded into `$t1`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address of the right display."
+          },
+          {
+            "id": "b",
+            "text": "An automatically generated ASCII digit."
+          },
+          {
+            "id": "c",
+            "text": "The selected mask byte, not the index itself."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Compare the pointer before the load with the value placed in the destination register afterward."
+        },
+        {
+          "id": "s08-h2",
+          "text": "For default index zero, `$t1` contains 0x3f. The table cursor is an address; the loaded value is the segment mask."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Write one byte to the port",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why does transaction width matter?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The display reads only an instruction mnemonic, not memory."
+          },
+          {
+            "id": "b",
+            "text": "Adjacent addresses control other parts of the peripheral."
+          },
+          {
+            "id": "c",
+            "text": "A byte store is merely a faster spelling of every word store."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Count the byte addresses covered by a word store starting at the right-display port."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The first program transaction is a byte write of 3f at 0xffff0010. At `displayed`, index and remaining count have not yet been updated."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Advance the table cursor only",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What would advancing the device pointer by one do?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Select a different byte port on the next store."
+          },
+          {
+            "id": "b",
+            "text": "Select the next digit on the same right display automatically."
+          },
+          {
+            "id": "c",
+            "text": "Advance the table pointer as well."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Ask which object changes its element on the next iteration and which device register receives every output."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The cursor moves to the next table entry. `$s0` still identifies the right port; it must not move to the left or control ports."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Update the logical index and remaining count",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which observation boundary has remaining count fifteen after the first output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "`displayed`, before the updates."
+          },
+          {
+            "id": "b",
+            "text": "The initial state before any table load."
+          },
+          {
+            "id": "c",
+            "text": "`iteration_done`, after the updates."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Separate the boundary immediately after the store from the boundary after all three loop-state updates."
+        },
+        {
+          "id": "s11-h2",
+          "text": "After the first default transaction, the next index is one and the remaining count is fifteen. Immediately after the store but before these updates, they were zero and sixteen."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Repeat while entries remain",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What should be written after the final requested glyph?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first byte beyond the table."
+          },
+          {
+            "id": "b",
+            "text": "Nothing; the program should exit normally."
+          },
+          {
+            "id": "c",
+            "text": "A blank mask in every case."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Evaluate the branch after the remaining count reaches zero; include its delay-slot instruction."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The default sequence has sixteen byte transactions and ends with mask 71. It does not include a seventeenth write or an automatic blanking write."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Observe a single transaction in Debug",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Does a completed Run showing F prove that the intermediate glyphs were written?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the store sequence needs separate evidence."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the final glyph encodes the entire history."
+          },
+          {
+            "id": "c",
+            "text": "Yes; the UI always repaints after every instruction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "A visible final mask has no record of earlier masks. Decide which observation can establish their order."
+        },
+        {
+          "id": "s13-h2",
+          "text": "After the first store the right mask is 3f. At the eleventh `displayed` hit it is 77 for A. At done it is 71 for F, and the left unit remains blank."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Test a short and an empty range",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What is the expected output sequence for the empty end window?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The guard byte after the table."
+          },
+          {
+            "id": "b",
+            "text": "A blanking write followed by F."
+          },
+          {
+            "id": "c",
+            "text": "An empty sequence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Write the selected indices as a half-open interval and list its members before simulating the loop."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The short range emits 79, then 71. The empty range emits no port writes. Neither case changes its inputs or table."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Design a custom glyph",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What does setting bit 7 change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of loop iterations."
+          },
+          {
+            "id": "b",
+            "text": "The decimal point on that display."
+          },
+          {
+            "id": "c",
+            "text": "The address of the left display."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "OR the A mask with the decimal-point bit; then express the resulting eight bits as a signed byte initializer."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The A bars remain and the decimal point is added. The bus value is the unsigned byte 247, regardless of the signed initializer used to store its bits."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Compare an exclusive-end-pointer loop",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which property can differ in an equivalent solution?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its register allocation and loop implementation."
+          },
+          {
+            "id": "b",
+            "text": "The number or order of required device writes."
+          },
+          {
+            "id": "c",
+            "text": "Which adjacent ports it changes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Derive the exclusive end address from the starting cursor and the requested number of bytes."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Different registers and branch arrangements are accepted when they produce the same byte transactions and preserve the data objects."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Verify the protocol and explain the bounds",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Why is a RAM log written by the student program insufficient by itself?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "RAM cannot hold byte values."
+          },
+          {
+            "id": "b",
+            "text": "Every data store automatically drives the right display."
+          },
+          {
+            "id": "c",
+            "text": "It can describe intended output without proving which device transactions occurred."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Consider a program that writes only the last glyph, or changes and restores an input; what evidence would expose each?"
+        },
+        {
+          "id": "s17-h2",
+          "text": "The required sequence, port, width, and protected-data behavior must all agree. UI rendering and repaint readiness remain separate integration and capture checks."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify the program protocol; native trainer automation is pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

@@ -19,7 +19,11 @@ the same output contract for an explicit loop and a native bitswap alternative.
 The fourth composition, [Inspect one word at two widths](packages/004-bit-inspector/assignment.md),
 explains signed and unsigned interpretations, hexadecimal and binary notation, sign
 and zero extension, word arithmetic, and full-width evidence. It contains sixteen
-steps, twelve prose sections, nine teaching fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+steps, twelve prose sections, nine teaching fixtures, and four planned IDE figures.
+The fifth composition, [Count through hexadecimal glyphs on Digital Lab](packages/005-seven-segment-counter/assignment.md),
+develops lookup tables, bounded windows, byte-port transactions, and execution-history
+checks. It has seventeen steps, twelve prose sections, nine fixtures, and four planned
+IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -57,7 +61,7 @@ composition source once MacTeX and the author template are available for testing
 
 ## Current delivery status
 
-The first four text packages, starters, public checks, deterministic student archive builder,
+The first five text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
@@ -65,7 +69,7 @@ and teaching notes. This public repository has no dependency on private content 
 IDE screenshot capture will be driven by a separate authoring plugin depending on MARS.
 That plugin is not implemented yet, and
 no lesson screenshots are included yet. The book uses labelled placeholders for the
-five planned figures. Remote download, an in-plugin lesson runner, and instructor policy
+planned figures in each chapter. Remote download, an in-plugin lesson runner, and instructor policy
 controls are documented future capabilities. MacTeX template, frontmatter, and final PDF
 production will be added by the author. Licensing must be selected before broader reuse;
 this repository does not grant an additional license by implication.

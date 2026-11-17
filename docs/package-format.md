@@ -103,3 +103,18 @@ addresses and addresses above 4 GiB. It does not verify an IDE frame or a source
 This package representation is temporary book-authoring infrastructure. On migration,
 straight LaTeX includes will control the publication; task metadata may remain for the
 trainer without defining the book's composition.
+
+## Execution-history contracts
+
+The seven-segment task pins a CLI revision with `traceMemoryStores(address, byteLength)`
+and its label/offset overload. Subscribe before running, then assert the complete byte
+sequence with `expectByteStores(address, *values)`. Every observed store must have that
+address and width one; repeats count separately. `expectNone()` rejects any overlapping
+execution store of any width, even if its original data is restored. Reads and grader
+setup edits are excluded. Close a trace to retain a prefix and stop observing; case
+cleanup also unregisters it. The 65,536-record bound fails assertions on overflow.
+
+Use a broad MMIO range when extra writes to other ports are forbidden. A final-memory
+check alone cannot express an ordered protocol. Label-based protected ranges follow
+actual allocations rather than hard-coded data addresses. These checks do not constrain
+student scratch registers or require labels used only by illustrated Debug checkpoints.
