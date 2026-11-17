@@ -21,7 +21,8 @@ establishes which fields truly repeat.
    the minimum revision that provides it. Do not simulate the machine in book tooling.
 9. Define figures as reproducible state recipes with light theme, captions, alt text,
    assertions, and semantic annotations. Generate figures from actual IDE captures.
-10. Add a chapter entry and reserved human interludes; record authorship and review.
+10. Write connective explanations between edits. Add semantic fixtures and a reading
+    sequence; permit author passages at any segment boundary. Record authorship and review.
 11. Validate, run checks, generate the book and both distributions, and inspect archives.
 12. Trial the exercise with a reader from the intended audience before finalizing it.
 

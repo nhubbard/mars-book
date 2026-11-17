@@ -9,9 +9,14 @@ and instruction semantics precisely, without explaining ordinary computer use re
 Use the current MARS MIPS64 Release 6 environment and educational syscall ABI.
 Check architecture claims against the pinned MARS source and architecture documentation.
 
-Keep AI-authored lesson prose in packages/*/steps. Human interludes live separately
-under book/interludes; edit those only when asked and record substantial AI edits in
-book/editorial-log.json. Never regenerate human prose as a build side effect.
+Keep lesson prose, microsteps, and semantic teaching fixtures in packages. Compose them
+through reading.json; permit author passages before or after any segment. Separate human
+files may live under book/interludes. Edit human passages only when asked and record
+substantial AI edits in book/editorial-log.json. Never overwrite prose as a build side effect.
+Follow docs/writing-style.md, including the linked Wikipedia editorial guidance.
+Final publication must be native LaTeX, including diagrams and screenshot callouts.
+Keep screenshot PNGs as assets and retain semantic descriptions and coordinate receipts.
+SVGs are draft previews. Verify tagged-PDF accessibility after template integration.
 Use stable package, step, quiz, and figure IDs. Update consumers when changing contracts.
 
 Validate packages, build the student distribution, and run executable checks after changes.
@@ -19,6 +24,10 @@ Use state and output contracts rather than reference-source matching. If an esse
 check is missing in MARS, implement and test it upstream rather than weakening the check.
 Read the upstream AGENTS.md before editing MARS; new plugin code must be Kotlin, use public
 IntelliJ APIs, and use Jupiter tests. Commit each tested implementation step.
+
+The teaching and capture implementation belongs in a separate authoring plugin that
+depends on MARS. Do not package the trainer into MARS as a book dependency. Prefer the
+public Features Trainer extension points; verify packaged APIs before implementation.
 
 Use a dedicated IDE test instance and a light theme for captures. Before every upstream
 sandbox launch, run the actual clean cleanSandbox runIde tasks. Never invent screenshots

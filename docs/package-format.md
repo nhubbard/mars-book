@@ -70,3 +70,24 @@ reference/alternative.asm, checks/private.kts, checks/guided-reference.kts, quiz
 and teaching-notes.md. An instructor build records the public student archive digest,
 private Git revision, MARS CLI digest, Java version, and check outcomes. Private quiz keys
 must cover every public quiz exactly once and refer to an existing choice ID.
+
+## Reading sequence and teaching fixtures
+
+The reading field points to reading.json, which has formatVersion 1 and an ordered
+segments array. Each segment has a stable id and a kind. A prose or fixture segment
+names its Markdown content. A step names one existing step ID. A figure names one
+capture-plan figure. The reading sequence contains every step once in prerequisite
+order and every IDE figure once. Standalone step files remain the microstep guide;
+the reading sequence adds the explanatory connective material around them.
+
+A fixture also has a semantic role, such as worked-example, state-table, reference-table,
+concept-box, diagnostic-example, diagnostic-table, exercise, or figure. Its typesetting
+metadata gives a stable label, inline placement, and numbering intent. The Markdown
+body contains the complete explanation and any table, code, or diagram. It can be read
+without a LaTeX template. The native LaTeX typesetter will map roles to environments and labels. SVGs are
+Markdown previews; nativeLatex identifies existing TikZ sources where provided.
+These fields describe content; they do not execute LaTeX or HTML.
+
+The chapter's insertions list in book/book.json adds author passages before or after
+any segment by anchor ID. This replaces the fixed before/after slots. Invalid anchors
+fail the book build. Local image links are rebased when composing the output Markdown.

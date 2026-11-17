@@ -15,8 +15,9 @@ actual CLI SHA-256 and Java version, rather than assuming a JAR matches a branch
 - A deliberate +2 error fails all three public cases.
 - The original starter exits normally and fails all three assignment cases.
 - All 22 quiz keys cover existing questions and valid choices.
-- Eight Python tooling tests check package validity, quiz consistency, path confinement,
-  ordering, deterministic exports, human interlude preservation, and annotation validation.
+- Twelve Python tooling tests check package validity, quiz consistency, path confinement,
+  ordering, deterministic exports, insertion of author prose within a chapter, link
+  rebasing, native diagram export, source preservation, and annotation validation.
 - The Markdown book and student archive build successfully.
 
 These cases establish the observed behavior for the supplied fixtures; the full bounded
@@ -32,3 +33,12 @@ is implemented and tested, but that is only the rendering stage of the capture p
 Interactive progression, downloaded lessons, and instructor policy enforcement are
 design descriptions. The text needs author review and a student walkthrough. MacTeX
 composition awaits the author-supplied template and frontmatter.
+
+## Expanded chapter review
+
+The 0.2.0 reading sequence places 22 connective prose sections and ten semantic
+teaching fixtures around the original microsteps. Two diagrams have SVG draft
+previews and native TikZ sources. The SVG previews were rendered and visually
+inspected; their labels and arrows are readable without clipping. Native TikZ
+compilation and PDF accessibility checks await MacTeX and the author's template.
+The two diagrams explain concepts and are not IDE screenshots.

@@ -63,6 +63,48 @@ class PackageTests(unittest.TestCase):
             self.assertIn('Figure f01-project planned', result)
         self.assertEqual(before, {path: path.read_bytes() for path in paths})
 
+    def test_reading_rejects_missing_or_repeated_steps(self):
+        root, data = course.validate(PACKAGE)
+        reading = course.read_json(root / data['reading'])
+        for changed in (reading['segments'][:-2], reading['segments'] + [reading['segments'][1]]):
+            with patch.object(course, 'read_json', return_value={'formatVersion': 1, 'segments': changed}):
+                with self.assertRaises(ValueError):
+                    course.reading_segments(root, data, {'f01-project', 'f02-console', 'f03-before-add', 'f04-after-add', 'f05-after-one'})
+
+    def test_author_passage_can_be_inserted_inside_chapter(self):
+        original = course.read_json
+        config = original(course.ROOT / 'book/book.json')
+        content = 'book/interludes/001-before.md'
+        config['chapters'][0]['insertions'] = [{'anchor': 's10', 'position': 'after', 'content': content}]
+        def read(path):
+            return config if path == course.ROOT / 'book/book.json' else original(path)
+        with tempfile.TemporaryDirectory() as folder, patch.object(course, 'read_json', side_effect=read):
+            output = course.book(Path(folder) / 'book.md').read_text()
+        passage = (course.ROOT / content).read_text().strip()
+        self.assertLess(output.index('Step 10'), output.index(passage))
+        self.assertLess(output.index(passage), output.index('An immediate is part of the instruction'))
+
+    def test_unknown_author_anchor_fails_build(self):
+        original = course.read_json
+        config = original(course.ROOT / 'book/book.json')
+        config['chapters'][0]['insertions'] = [{'anchor': 'nonexistent', 'position': 'after', 'content': 'book/interludes/001-before.md'}]
+        def read(path):
+            return config if path == course.ROOT / 'book/book.json' else original(path)
+        with tempfile.TemporaryDirectory() as folder, patch.object(course, 'read_json', side_effect=read):
+            with self.assertRaises(ValueError):
+                course.book(Path(folder) / 'book.md')
+
+    def test_book_retains_diagrams_and_native_sources_in_student_archive(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'book.md'
+            text = course.book(output).read_text()
+            self.assertIn('fixtures/assets/string-address.svg', text)
+            self.assertIn('The service determines how an argument is used', text)
+            archive = course.bundle(PACKAGE, Path(folder) / 'student.zip')
+            with zipfile.ZipFile(archive) as zipped:
+                self.assertIn(f'{PACKAGE}/fixtures/latex/string-address.tex', zipped.namelist())
+                self.assertIn(f'{PACKAGE}/reading.json', zipped.namelist())
+
 
 class AnnotationTests(unittest.TestCase):
     def setUp(self):

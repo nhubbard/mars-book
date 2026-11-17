@@ -5,7 +5,8 @@ assumes basic programming knowledge and teaches assembly details explicitly.
 
 The first package, [Calculate twice an integer plus one](packages/001-console-calculation/assignment.md),
 contains a barebones starter, 22 instructional microsteps, a multiple-choice question
-and two hints at every step, public executable checks, and five screenshot recipes.
+and two hints at every step, 22 connective prose sections, ten teaching fixtures, two
+vector diagrams, public executable checks, and five screenshot recipes.
 Read [the first step](packages/001-console-calculation/steps/01.md) or build the combined
 book draft. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
@@ -30,8 +31,10 @@ See [verification](docs/verification.md) for the tested package behavior.
 
 ## Author the book
 
+- [Writing style](docs/writing-style.md) applies the requested Wikipedia editorial guidance.
 - [Editorial workflow](docs/editorial-workflow.md) keeps human interludes separate from generated assembly of the book.
 - [Package format](docs/package-format.md) defines the structured lesson source.
+- [Native LaTeX publication](docs/latex-publication.md) defines final typesetting and accessibility requirements.
 - [Capture workflow](docs/capture-workflow.md) defines light-mode IDE captures and annotation generation.
 - [Interactive design](docs/interactive-design.md) describes future guided and free-writing modes.
 - [Publishing](docs/publishing.md) explains the public/student and private/instructor split.
@@ -44,7 +47,8 @@ Markdown book assembler, and annotation renderer are implemented. The private co
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
 
-IDE screenshot capture is specified but the native IDE driver is not implemented and
+IDE screenshot capture will be driven by a separate authoring plugin depending on MARS.
+That plugin is not implemented yet, and
 no lesson screenshots are included yet. The book uses labelled placeholders for the
 five planned figures. Remote download, an in-plugin lesson runner, and instructor policy
 controls are documented future capabilities. MacTeX template, frontmatter, and final PDF

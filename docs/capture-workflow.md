@@ -16,7 +16,9 @@ unset until a real capture resolves the native UI bounds.
 
 ## Capture driver contract
 
-The native IDE driver is future work. Its repeatable job is to:
+The driver will be a separate authoring plugin depending on MARS and, where used, the
+IDE Features Trainer. It is not part of the published MARS plugin. The native driver
+is future work. Its repeatable job is to:
 
 1. Build and launch the dedicated upstream IDE instance with the actual Gradle tasks
    clean cleanSandbox runIde before every launch. Read upstream AGENTS.md first.
@@ -30,11 +32,13 @@ The native IDE driver is future work. Its repeatable job is to:
    state, and visible light theme. Wait for the UI's ready state rather than relying
    on a fixed delay. Failure prevents figure publication.
 6. Capture a native PNG, resolve callout rectangles from UI element bounds, and save
-   a receipt. Retain the original PNG without annotations for later typesetting.
+   a receipt. Retain the original PNG without annotations and the resolved coordinate receipt.
+   The publication build must typeset annotations natively in LaTeX.
 7. Invoke the annotation renderer, compare the result with the previous reviewed
    image, and request editorial review when a visible state or layout changes.
 
-Automation must use native supported test/UI facilities or an external UI driver.
+The authoring plugin should use native supported lesson and test/UI facilities.
+The outer launch script can select the capture batch and output location.
 Do not add a simulator-specific screenshot framework to the plugin without inspecting
 current IntelliJ facilities and establishing a gap. No automatic IDE launch or capture
 has occurred for this initial book package.
@@ -61,5 +65,5 @@ exercise this renderer; that test image is never a lesson screenshot.
 Mark a capture verified only after checking its state and reviewing the rendered result.
 Add the receipt path and generated artifact to the figure plan. The package validator
 requires both for a verified figure. Uncaptured figures remain planned and appear as
-explicit placeholders in the book. A later print build can convert SVG to PDF when the
-MacTeX template is available.
+explicit placeholders in the book. The SVG is a Markdown preview. The print build must use the original PNG with native
+LaTeX/TikZ callouts, captions, and alternatives; see latex-publication.md.

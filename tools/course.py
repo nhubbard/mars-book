@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -83,6 +84,7 @@ def validate(package_id):
                 raise ValueError(f'Hidden or symlink export: {rel}')
             if any(part.lower() in {'instructor', 'reference', 'solutions', 'private'} for part in rel.parts):
                 raise ValueError(f'Instructor path in student export: {rel}')
+    reading_segments(root, data, figure_ids)
     return root, data
 
 
@@ -109,31 +111,96 @@ def bundle(package_id, output=None):
     return output
 
 
+def reading_segments(root, data, figure_ids=None):
+    reading = read_json(within(root, data['reading']))
+    if reading['formatVersion'] != 1:
+        raise ValueError('Unsupported reading sequence format')
+    figure_ids = figure_ids if figure_ids is not None else {
+        figure['id'] for figure in read_json(root / data['figures'])['figures']}
+    ids = set()
+    steps = []
+    figures = []
+    for segment in reading['segments']:
+        if not segment['id'] or segment['id'] in ids:
+            raise ValueError('Duplicate or empty reading segment ID')
+        ids.add(segment['id'])
+        kind = segment['kind']
+        if kind in ('prose', 'fixture'):
+            within(root, segment['content'])
+            if kind == 'fixture' and not segment.get('role'):
+                raise ValueError('Teaching fixture needs a semantic role')
+            native = segment.get('typesetting', {}).get('nativeLatex')
+            if native:
+                within(root, native)
+        elif kind == 'step':
+            steps.append(segment['step'])
+        elif kind == 'figure':
+            figures.append(segment['figure'])
+        else:
+            raise ValueError('Unknown reading segment kind')
+    if steps != [step['id'] for step in data['steps']]:
+        raise ValueError('Reading sequence must cover steps once in prerequisite order')
+    if len(set(figures)) != len(figures) or set(figures) != figure_ids:
+        raise ValueError('Reading sequence must cover each figure once')
+    return reading['segments']
+
+
+def render_markdown(path, output, heading_prefix='##'):
+    text = path.read_text()
+    text = re.sub(r'^(#{1,4}) ', lambda match: heading_prefix + match[1] + ' ', text, flags=re.M)
+    def link(match):
+        target = match[1]
+        if target.startswith('#') or re.match(r'[a-zA-Z]+:', target):
+            return match[0]
+        location, separator, anchor = target.partition('#')
+        resolved = (path.parent / location).resolve()
+        if not resolved.is_relative_to(ROOT.resolve()) or not resolved.exists():
+            raise ValueError(f'Missing or escaping Markdown link: {path}: {target}')
+        relative = Path(os.path.relpath(resolved, output.parent)).as_posix()
+        return '](' + relative + (separator + anchor if separator else '') + ')'
+    return re.sub(r'\]\(([^)]+)\)', link, text)
+
+
 def book(output=None):
     config = read_json(ROOT / 'book/book.json')
+    output = output or ROOT / 'build/book.md'
     sections = [f"# {config['title']}\n"]
     for chapter in config['chapters']:
         root, data = validate(chapter['package'])
-        sections.append(within(ROOT, chapter['before']).read_text())
+        if chapter['reading'] != data['reading']:
+            raise ValueError('Chapter and package reading sequence must agree')
+        segments = reading_segments(root, data)
+        anchors = {segment['id'] for segment in segments}
+        insertions = chapter.get('insertions', [])
+        for insertion in insertions:
+            if insertion['anchor'] not in anchors or insertion['position'] not in ('before', 'after'):
+                raise ValueError('Unknown human insertion anchor or position')
+            within(ROOT, insertion['content'])
         sections.append(f"## {data['title']}\n")
-        assignment = (root / data['assignment']).read_text().split('\n', 1)[1]
-        assignment = re.sub(r'^(#{1,4}) ', r'#\1 ', assignment, flags=re.M)
-        sections.append(assignment)
-        plan = read_json(root / data['figures'])
-        for step in data['steps']:
-            text = (root / step['content']).read_text()
-            # Demote standalone headings while retaining each step's hierarchy.
-            text = re.sub(r'^(#{1,4}) ', r'##\1 ', text, flags=re.M)
-            sections.append(text)
-            for figure in plan['figures']:
-                if figure['step'] == step['id']:
-                    if figure['captureStatus'] == 'verified':
-                        artifact = (root / figure['artifact']).relative_to(ROOT)
-                        sections.append(f"![{figure['alt']}](../{artifact})\n\n{figure['caption']}\n")
-                    else:
-                        sections.append(f"> Figure {figure['id']} planned: {figure['caption']}\n")
-        sections.append(within(ROOT, chapter['after']).read_text())
-    output = output or ROOT / 'build/book.md'
+        assignment = render_markdown(root / data['assignment'], output, heading_prefix='#')
+        sections.append(assignment.split('\n', 1)[1])
+        steps = {step['id']: step for step in data['steps']}
+        figures = {figure['id']: figure for figure in read_json(root / data['figures'])['figures']}
+        for segment in segments:
+            for insertion in insertions:
+                if insertion['position'] == 'before' and insertion['anchor'] == segment['id']:
+                    sections.append(render_markdown(within(ROOT, insertion['content']), output))
+            if segment['kind'] in ('prose', 'fixture'):
+                if segment['kind'] == 'fixture':
+                    sections.append(f"<!-- fixture {segment['id']}; role {segment['role']} -->")
+                sections.append(render_markdown(within(root, segment['content']), output))
+            elif segment['kind'] == 'step':
+                sections.append(render_markdown(root / steps[segment['step']]['content'], output))
+            else:
+                figure = figures[segment['figure']]
+                if figure['captureStatus'] == 'verified':
+                    artifact = Path(os.path.relpath(root / figure['artifact'], output.parent)).as_posix()
+                    sections.append(f"![{figure['alt']}]({artifact})\n\n{figure['caption']}\n")
+                else:
+                    sections.append(f"> Figure {figure['id']} planned: {figure['caption']}\n")
+            for insertion in insertions:
+                if insertion['position'] == 'after' and insertion['anchor'] == segment['id']:
+                    sections.append(render_markdown(within(ROOT, insertion['content']), output))
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text('\n\n'.join(sections))
     return output

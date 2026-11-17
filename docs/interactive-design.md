@@ -29,14 +29,32 @@ does not establish semantic correctness. Source text equality is inappropriate f
 behavioral equivalence. State checks need defined pause boundaries and independent
 sessions so they do not corrupt the student's active debugger.
 
-## Platform integration investigation
+## Separate authoring plugin
 
-Before designing the UI or project integration, inspect the read-only IntelliJ 2026.3
-checkout and current public API contracts. Prefer native editor, PSI, execution,
-debugger, coroutine, and lifecycle mechanisms. New plugin implementation belongs in
-the MARS repository, in Kotlin, with Jupiter coverage and public packaged APIs. There
-is no plugin mechanism implemented by this book repository. A custom protocol or
-adapter needs a concrete platform gap documented during that investigation.
+The trainer and capture tooling belong in a separate IntelliJ plugin that depends on
+MARS. The published MARS simulator does not need a dependency on the book or trainer.
+The authoring plugin can depend on the bundled IDE Features Trainer for lessons and
+native highlighting. Its first purpose is reproducible IDE figure production; student
+remote delivery and instructor policy remain later work.
+
+The pinned source and public SDK investigation is recorded in
+[intellij-tutor-investigation.md](intellij-tutor-investigation.md). It identifies public
+course and language extension points, task action triggers, state checks, and UI
+highlighting. Prefer that integration before inventing a separate lesson UI framework.
+The New UI onboarding step API is internal and is excluded from the packaged design.
+
+MARS-specific fixture selection, expected register and console states, figure receipts,
+and capture output remain authoring concerns. Use native Run and Debug APIs and check
+what is actually visible in the IDE. A core-only run cannot establish that a debugger
+view has updated. Keep private solutions in the private repository and supply them to
+the capture run through local configuration, rather than embedding them in the authoring
+plugin JAR. The local source remains editable; the capture run uses a dedicated fixture.
+
+Implementation must be Kotlin with imports and Jupiter tests. Inspect API contracts
+before choosing entry points and avoid internal APIs in the packaged plugin. A public
+MARS API may need a small extension if the authoring plugin lacks a necessary supported
+operation; document that gap and test the upstream change. Do not reach into internal
+run-service implementations by reflection.
 
 ## Remote delivery concept
 
