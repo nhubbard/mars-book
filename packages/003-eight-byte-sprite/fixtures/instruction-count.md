@@ -1,0 +1,13 @@
+# Compare completed instruction counts
+
+On the default eight-row fixture, the explicit-loop program completes 1,674
+instructions and the bitswap alternative completes 1,210. Both counts include
+the exit syscall. The reduction is 464 completed instructions.
+
+Per source row, the explicit reversal has three setup instructions and eight
+iterations of seven instructions, including the nop delay slot. That is 59
+instructions, replaced by one bitswap. The difference is 58 per row, or 464
+across eight rows. Other program work is unchanged.
+
+These are simulator instruction counts for the provided fixture, not timings
+or a claim about a particular hardware implementation.

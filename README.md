@@ -10,7 +10,12 @@ vector diagrams, public executable checks, and five screenshot recipes.
 Read [the first step](packages/001-console-calculation/steps/01.md) or build the combined
 book draft. The second composition, [Paint one cell and change a byte](packages/002-single-pixel/assignment.md),
 adds addresses, word and byte stores, RGB packing, byte order, and memory preservation.
-It contains eleven steps, nine prose sections, six teaching fixtures, and three capture recipes. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+It contains eleven steps, nine prose sections, six teaching fixtures, and three capture recipes.
+The third composition, [Draw an eight-byte sprite and its mirror](packages/003-eight-byte-sprite/assignment.md),
+adds fixed-width bit reversal, loop invariants, delayed branches, and two-dimensional
+addressing. It has twenty steps, twelve prose sections, nine teaching fixtures, and
+four capture recipes. The default-workload instruction comparison is verified against
+the same output contract for an explicit loop and a native bitswap alternative. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -48,7 +53,7 @@ composition source once MacTeX and the author template are available for testing
 
 ## Current delivery status
 
-The first two text packages, starters, public checks, deterministic student archive builder,
+The first three text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

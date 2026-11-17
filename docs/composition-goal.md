@@ -46,6 +46,7 @@ any needed prerequisite lessons before changing its progression. Prefer completi
 substantive, verified composition to producing many skeletal chapter packages. Review
 instruction semantics and the explanatory text together before committing each increment.
 
-The first console chapter is a composed text draft. The single-pixel chapter is the next
-composition. Both still require author review and actual IDE figures; later projects
-remain planned until their text and companions are written and checked.
+The console, single-pixel, and eight-byte-sprite chapters are composed text drafts with
+verified companion programs. They still need author review and actual IDE figures.
+The remaining projects are planned until their text and companions are written and
+checked. The next composition develops integer representation through a bit inspector.

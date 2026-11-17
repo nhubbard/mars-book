@@ -56,3 +56,26 @@ as well as moved, missing, and incorrectly typed symbols.
 The CLI checks memory state, not the visible Bitmap Display. The three pixel figures
 remain planned. The chapter explains RGB numerically so its meaning does not depend on
 recognizing a color in a screenshot.
+
+## Eight-byte sprite chapter
+
+The sprite reference and bitswap alternative pass the same coordinate-based oracle.
+Public cases use the default image and walking bits. Private cases include all 256
+possible byte patterns across 32 frames, plus empty, full, and mixed rows; this is not
+an exhaustive test of every possible eight-byte image. The frame is poisoned before
+each execution. Both canaries and the original source bytes must be preserved.
+
+The illustrated checks observe the loaded row, completed reversal, first pixel pair,
+and first completed row. Fifteen cumulative source segments are reconstructed from
+the published steps and checked at their intermediate register or memory boundaries.
+Deliberate early reversal termination, wrong stride, omitted black stores, a color
+write in a delay slot, an overrun, and source modification must all be rejected.
+
+The default workload completes 1,674 instructions in the explicit-loop reference and
+1,210 in the bitswap alternative, including exit. The 464-instruction difference is
+also explained by eight replacements of 59 reversal instructions with one bitswap.
+The verifier requires warning-free assembly and exact counts for these fixtures.
+
+The concept diagram's SVG preview was rendered and visually inspected. Its native
+TikZ source awaits MacTeX and the template. All four IDE figures remain planned;
+no screenshot or repaint assertion has yet been verified in an IDE capture.

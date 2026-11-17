@@ -1,0 +1,895 @@
+{
+  "formatVersion": 1,
+  "id": "003-eight-byte-sprite",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Draw an eight-byte sprite and its mirror",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "15f8bb7beb3d4defee63f2057f488fdec7b4085b",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "expectDataAddress(label, expectedLong)"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Single-pixel chapter",
+    "Basic programming loops and conditional execution"
+  ],
+  "learningObjectives": [
+    "Interpret each row byte as eight pixel decisions",
+    "Reverse a fixed-width bit pattern with a loop invariant",
+    "Use retained delayed branches with explicit slots",
+    "Derive row-major framebuffer addresses and bounds",
+    "Compare equivalent implementations under the same input/output contract"
+  ],
+  "inputDomain": {
+    "type": "eight-row-bytes",
+    "rowCount": 8,
+    "rowMin": 0,
+    "rowMax": 255,
+    "frameColumns": 16,
+    "frameRows": 8,
+    "foreground": "0x00ffffff",
+    "background": 0
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Interpret the eight row bytes",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which bit supplies the leftmost pixel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The sign bit of a 64-bit address."
+          },
+          {
+            "id": "b",
+            "text": "Bit 7."
+          },
+          {
+            "id": "c",
+            "text": "Bit 0 because it is named first numerically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The first byte is 0x16, whose bits are 00010110. The set pixels are at columns 3, 5, and 6 when columns are numbered from zero at the left."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Lay out two images in one frame",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What is the byte displacement from one row start to the next?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "64."
+          },
+          {
+            "id": "b",
+            "text": "16 because there are 16 columns."
+          },
+          {
+            "id": "c",
+            "text": "8 because the source has eight rows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The row stride is 64 bytes. The last cell begins at offset 508 and occupies bytes 508 through 511. frame_guard starts at offset 512."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Initialize four pointers",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why retain a separate framebuffer row pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All pointers automatically advance together."
+          },
+          {
+            "id": "b",
+            "text": "A framebuffer address is a syscall selector."
+          },
+          {
+            "id": "c",
+            "text": "Its stride differs from the one-byte source-row stride."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The two source pointers differ by eight. The frame pointer names the first display row. The output pointer names the first reversed byte."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Load one unsigned row",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What does lbu return for a stored byte ff?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address of the byte."
+          },
+          {
+            "id": "b",
+            "text": "255."
+          },
+          {
+            "id": "c",
+            "text": "-1 because every byte load sign-extends."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The first row loads as decimal 22, or 0x16. A stored byte ff would load as 255 even when its declaration used -1."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Initialize the reversal state",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why consume a copy of the row?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original mask is still needed to draw the original image."
+          },
+          {
+            "id": "b",
+            "text": "Reading a byte removes it from memory."
+          },
+          {
+            "id": "c",
+            "text": "The reversed value must use the same register as its input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s05-h2",
+          "text": "$t9 is 22, $t8 is zero, and $t4 is eight for the first row. The source byte in memory is unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Extract the low bit",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What values can this masked result have?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every value from zero through 255."
+          },
+          {
+            "id": "b",
+            "text": "Only zero or 128."
+          },
+          {
+            "id": "c",
+            "text": "Only zero or one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s06-h2",
+          "text": "For the first input 0x16, the first extracted bit is zero. The second extraction, after consuming one source bit, will produce one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Append the extracted bit",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why shift before OR?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Shifting makes the source address smaller."
+          },
+          {
+            "id": "b",
+            "text": "The shift makes room for the next bit at position zero."
+          },
+          {
+            "id": "c",
+            "text": "OR always reverses a byte by itself."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s07-h2",
+          "text": "After processing the first two low bits of 0x16 in order, the accumulator is binary 01. The complete eight-iteration trace ends at 01101000."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Consume one bit and reduce the count",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What does the count measure after an iteration?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "How many source bits remain to be processed."
+          },
+          {
+            "id": "b",
+            "text": "The number of framebuffer rows already drawn."
+          },
+          {
+            "id": "c",
+            "text": "The current RGB color."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s08-h2",
+          "text": "After the first iteration, $t9 is 0x0b and $t4 is seven. The original row register remains 0x16."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Repeat exactly eight times",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why continue until eight bits have been processed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All loops must always have eight iterations."
+          },
+          {
+            "id": "b",
+            "text": "The branch automatically inserts missing zero bits."
+          },
+          {
+            "id": "c",
+            "text": "Stopping when the source becomes zero can omit leading-zero positions in the reversal."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s09-h2",
+          "text": "For input 0x16, the loop finishes with $t8 = 0x68, $t9 = 0, and $t4 = 0. It performs eight iterations, including leading zero bits."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Store the reversed row byte",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "How much output does one reversed source row require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixty-four bytes because the framebuffer stride is 64."
+          },
+          {
+            "id": "b",
+            "text": "One byte."
+          },
+          {
+            "id": "c",
+            "text": "One 64-bit register per pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The first reversed output byte is 0x68. The original source byte remains 0x16."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Prepare the two destination positions",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why is the mirror displacement 32 bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It begins eight four-byte words after column zero."
+          },
+          {
+            "id": "b",
+            "text": "An RGB color has 32 channels."
+          },
+          {
+            "id": "c",
+            "text": "Eight source bytes always occupy 32 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The destinations are separated by eight words. The mask is binary 10000000. daddiu updates an address at the full 64-bit register width."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Select and store the original pixel",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why store black as well as white?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A clear source bit means the source row must be deleted."
+          },
+          {
+            "id": "b",
+            "text": "Skipping a store always clears memory automatically."
+          },
+          {
+            "id": "c",
+            "text": "The destination may contain old or deliberately poisoned values."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The first pixel of the first row is black because bit 7 of 0x16 is zero. An explicit black store replaces any old framebuffer value."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Select and store the mirrored pixel",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "What pairs the two images at one column-loop iteration?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The framebuffer changes byte order halfway through each row."
+          },
+          {
+            "id": "b",
+            "text": "The same bit position is tested in the original and reversed row masks."
+          },
+          {
+            "id": "c",
+            "text": "The same destination address is written twice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Both first pixels are black for the first row. Other columns will differ because 0x16 and 0x68 have different bit positions set."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Advance one column",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What is the mask after processing all eight columns?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "One, because bit zero can never be shifted away."
+          },
+          {
+            "id": "c",
+            "text": "255."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s14-h2",
+          "text": "After one pair, the pointers advance to the next cells and the mask becomes 64. The framebuffer row base in $s0 remains unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Complete the two eight-pixel rows",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "How many pixel stores does one completed column loop perform?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight total because both images share the same words."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-four because the stride is 64 bytes."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen: two per iteration for eight iterations."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The first display row now has sixteen written words: eight original pixels and eight mirrored pixels. The next display row has not yet been processed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Advance the three row positions",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which pointer advances by 64 bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source row pointer because one byte has eight bits."
+          },
+          {
+            "id": "b",
+            "text": "The framebuffer row-base pointer."
+          },
+          {
+            "id": "c",
+            "text": "Every pointer because all data uses words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s16-h2",
+          "text": "After the first row, the source points to its second byte, reversed output points to its second byte, and the frame base points to display row one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Repeat until the source end",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Should the byte at sprite_end be processed as another source row?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the end is an exclusive bound."
+          },
+          {
+            "id": "b",
+            "text": "Yes; every end pointer names the final valid element."
+          },
+          {
+            "id": "c",
+            "text": "Only when the first row contains zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s17-h2",
+          "text": "All eight source rows and eight reversed rows have been processed. Both images occupy exactly 512 framebuffer bytes and both canaries remain unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Verify the whole result",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why include an asymmetric source row in a mirror test?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Symmetric rows are invalid input."
+          },
+          {
+            "id": "b",
+            "text": "The simulator cannot reverse a zero byte."
+          },
+          {
+            "id": "c",
+            "text": "Its expected mirror differs visibly and numerically from the original."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The expected final state includes all 128 pixel words, eight reversed bytes, unchanged source bytes, preserved canaries, silence, and normal exit."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Compare a native reversal operation",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Does bitswap reverse the positions of the bytes in a word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it reverses the order of all framebuffer rows."
+          },
+          {
+            "id": "b",
+            "text": "No; it reverses the bits within each byte."
+          },
+          {
+            "id": "c",
+            "text": "Yes; it only swaps the first and last bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s19-h2",
+          "text": "For 0x16, the low byte is 0x68. This is an optional replacement, not another segment to append to the baseline program."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Explain and vary the representation",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Which evidence supports correctness for a changed input image?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A representation argument together with checks using substituted source rows."
+          },
+          {
+            "id": "b",
+            "text": "A screenshot of the original default image alone."
+          },
+          {
+            "id": "c",
+            "text": "An instruction count lower than the reference regardless of output."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Track the source bit, accumulated result, loop bound, and destination address separately."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The grader accepts equivalent implementations of the published contract. Source spelling, private labels, and register choices are not part of free-writing grading."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable author checks verify the reference; the native trainer is pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}
