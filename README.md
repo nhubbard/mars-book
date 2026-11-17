@@ -1,0 +1,52 @@
+# Programming and computer architecture with MARS
+
+Book source and student project packages for the IntelliJ MARS plugin. The text
+assumes basic programming knowledge and teaches assembly details explicitly.
+
+The first package, [Calculate twice an integer plus one](packages/001-console-calculation/assignment.md),
+contains a barebones starter, 22 instructional microsteps, a multiple-choice question
+and two hints at every step, public executable checks, and five screenshot recipes.
+Read [the first step](packages/001-console-calculation/steps/01.md) or build the combined
+book draft. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+from console programs to algorithms, bounded assignments, vector kernels, and codecs.
+
+## Use the materials
+
+The source is Markdown and JSON. Python 3.10 or newer is sufficient for validation,
+book assembly, packaging, and annotation rendering. Running assembly checks additionally
+requires JDK 25 and a built MARS CLI JAR.
+
+```sh
+python3 tools/course.py validate
+python3 -m unittest discover -s tools -p 'test_*.py'
+python3 tools/course.py book
+python3 tools/course.py build
+python3 tools/course.py check --cli /path/to/mars-cli.jar --source /path/to/main.asm
+```
+
+The generated Markdown and student ZIP are under build/. The ZIP has a SHA-256 sidecar.
+The unmodified starter exits cleanly but intentionally does not pass the assignment.
+See [verification](docs/verification.md) for the tested package behavior.
+
+## Author the book
+
+- [Editorial workflow](docs/editorial-workflow.md) keeps human interludes separate from generated assembly of the book.
+- [Package format](docs/package-format.md) defines the structured lesson source.
+- [Capture workflow](docs/capture-workflow.md) defines light-mode IDE captures and annotation generation.
+- [Interactive design](docs/interactive-design.md) describes future guided and free-writing modes.
+- [Publishing](docs/publishing.md) explains the public/student and private/instructor split.
+- [Author a package](templates/package/README.md) provides the repeatable authoring checklist.
+
+## Current delivery status
+
+The first text package, starter, public checks, deterministic student archive builder,
+Markdown book assembler, and annotation renderer are implemented. The private companion
+repository contains reference and alternative implementations, quiz keys, private checks,
+and teaching notes. This public repository has no dependency on private content to build.
+
+IDE screenshot capture is specified but the native IDE driver is not implemented and
+no lesson screenshots are included yet. The book uses labelled placeholders for the
+five planned figures. Remote download, an in-plugin lesson runner, and instructor policy
+controls are documented future capabilities. MacTeX template, frontmatter, and final PDF
+production will be added by the author. Licensing must be selected before broader reuse;
+this repository does not grant an additional license by implication.

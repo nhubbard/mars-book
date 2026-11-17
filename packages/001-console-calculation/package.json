@@ -1,0 +1,963 @@
+{
+  "formatVersion": 1,
+  "id": "001-console-calculation",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Calculate twice an integer plus one",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "prerequisites": [
+    "Variables and integer expressions",
+    "Sequential execution",
+    "Basic debugging concepts"
+  ],
+  "learningObjectives": [
+    "Distinguish an address from a value",
+    "Use the MARS syscall service contracts",
+    "Trace register changes across word arithmetic",
+    "Verify behavior against a bounded input/output contract"
+  ],
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "a75859aa3fa5951afcfb3ed5a2c9b3c8fb869a0b"
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "inputDomain": {
+    "type": "signed-decimal-integer",
+    "min": -1000,
+    "max": 1000
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Open the starter",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What happens before the simulator can execute your source?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The assembler translates source into machine instructions."
+          },
+          {
+            "id": "b",
+            "text": "The processor executes the comments as instructions."
+          },
+          {
+            "id": "c",
+            "text": "The console converts every source line to an input value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The template should terminate without printing anything. If Run is unavailable, check that the MARS plugin is enabled and the file has the .asm extension."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Declare the messages",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What does the label prompt name?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of times the prompt will print."
+          },
+          {
+            "id": "b",
+            "text": "A register dedicated to console input."
+          },
+          {
+            "id": "c",
+            "text": "The address of the first byte of the prompt string."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The file should still assemble and exit silently. Declaring data does not print it."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Read the entry and exit scaffold",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which line requests the exit service?",
+        "choices": [
+          {
+            "id": "a",
+            "text": ".globl main by itself."
+          },
+          {
+            "id": "b",
+            "text": "syscall, after $v0 has been set to 10."
+          },
+          {
+            "id": "c",
+            "text": "done: by itself."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The supplied exit makes the first partial versions safe to run. A label names a location and does not execute an operation."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Put the prompt address in an argument register",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What should $a0 contain before printing a string?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address of its zero-terminated bytes."
+          },
+          {
+            "id": "b",
+            "text": "The first character only."
+          },
+          {
+            "id": "c",
+            "text": "The length of the source filename."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s04-h2",
+          "text": "$a0 now identifies the prompt bytes. Nothing has been printed yet."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Select string output",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Does loading 4 into $v0 print the string?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every write to $v0 prints a string."
+          },
+          {
+            "id": "b",
+            "text": "Yes; la already printed it."
+          },
+          {
+            "id": "c",
+            "text": "No; syscall must request the selected service."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s05-h2",
+          "text": "$v0 contains the service selector 4. The string has not been printed yet."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Request prompt output",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why does this syscall print a string?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The assembler recognizes the English word prompt."
+          },
+          {
+            "id": "b",
+            "text": "$v0 is 4 and $a0 identifies the string."
+          },
+          {
+            "id": "c",
+            "text": "Every syscall always prints a string."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The prompt appears and the program exits using the scaffold. It does not yet read input."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Select integer input",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Where will service 5 return the integer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "$v0."
+          },
+          {
+            "id": "b",
+            "text": "$a0 always holds every syscall result."
+          },
+          {
+            "id": "c",
+            "text": "The label prompt."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s07-h2",
+          "text": "$v0 contains 5 before the next syscall. Merely selecting service 5 does not wait for input."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Read the input",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "After reading 20, what does $v0 contain?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "5, because service selectors can never change."
+          },
+          {
+            "id": "b",
+            "text": "40, because input automatically doubles the number."
+          },
+          {
+            "id": "c",
+            "text": "20, the returned input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The partial program prompts, accepts input, and exits. In Debug, $v0 is 20 after reading 20, or -3 after reading -3."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Double the value",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "For input -3, what is $t0 after this addition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "6, because the u forces a positive result."
+          },
+          {
+            "id": "b",
+            "text": "-6."
+          },
+          {
+            "id": "c",
+            "text": "-3, because a source cannot appear twice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Immediately after this instruction, input 20 gives $t0 = 40. Input -3 gives $t0 = -6."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Add the final one",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "For input 20, which value is replaced by this instruction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The 40 in $t0 is replaced by 41."
+          },
+          {
+            "id": "b",
+            "text": "The prompt bytes are replaced by 41."
+          },
+          {
+            "id": "c",
+            "text": "The service number is permanently changed to 41."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The final result is 1 for 0, 41 for 20, and -5 for -3. Keep it in $t0 while preparing output."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Prepare the answer message",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why keep the arithmetic result in $t0 here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "$t0 is the only register that can hold integers."
+          },
+          {
+            "id": "b",
+            "text": "String output reads every register automatically."
+          },
+          {
+            "id": "c",
+            "text": "Subsequent syscall setup will overwrite $v0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s11-h2",
+          "text": "$a0 now identifies the answer prefix. $t0 still contains the arithmetic result."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Select string output again",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why explicitly load 4 again?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All registers are cleared after each instruction."
+          },
+          {
+            "id": "b",
+            "text": "The read service returned its result in $v0."
+          },
+          {
+            "id": "c",
+            "text": "The string text has changed itself."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s12-h2",
+          "text": "$v0 contains 4 and $a0 still identifies the answer prefix."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Print the answer prefix",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why is 41 missing from the partial output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The program has not requested integer output yet."
+          },
+          {
+            "id": "b",
+            "text": "The processor cannot represent 41."
+          },
+          {
+            "id": "c",
+            "text": "String output erases the arithmetic result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The prompt and answer prefix appear. The number is still missing at this checkpoint."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Pass the numeric result",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does $a0 represent for integer output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always a string address, regardless of service."
+          },
+          {
+            "id": "b",
+            "text": "An instruction count."
+          },
+          {
+            "id": "c",
+            "text": "The integer value to print."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s14-h2",
+          "text": "For input 20, $a0 and $t0 both contain 41. This instruction alone produces no output."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Select integer output",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which register selects the service?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "$t0 automatically selects it."
+          },
+          {
+            "id": "b",
+            "text": "$v0."
+          },
+          {
+            "id": "c",
+            "text": "$a0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s15-h2",
+          "text": "$v0 is 1 and $a0 contains the answer. These registers now have different roles in one request."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Print the number",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What does service 1 add after the decimal number?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No automatic newline."
+          },
+          {
+            "id": "b",
+            "text": "A mandatory blank line."
+          },
+          {
+            "id": "c",
+            "text": "The entire source listing."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The result -5 appears immediately after the answer prefix. The final newline is not present yet."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Prepare the newline string",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Does la change the contents of the newline string?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it replaces the newline with its address."
+          },
+          {
+            "id": "b",
+            "text": "Yes; it immediately appends the string to the console."
+          },
+          {
+            "id": "c",
+            "text": "No; it loads its address into a register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s17-h2",
+          "text": "$a0 now contains a string address rather than the numeric answer. $t0 still retains that answer."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Select the final string output",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "What would service 1 do with this $a0 instead?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Load the original input again."
+          },
+          {
+            "id": "b",
+            "text": "Treat its bits as an integer argument rather than a string address."
+          },
+          {
+            "id": "c",
+            "text": "Automatically infer the desired string service."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The request is prepared to print the newline string."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Finish the line and exit",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "How does execution reach the exit scaffold?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It continues to the following instructions in order."
+          },
+          {
+            "id": "b",
+            "text": "The label done calls itself."
+          },
+          {
+            "id": "c",
+            "text": "A newline is a branch instruction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s19-h2",
+          "text": "For 20, the answer is 41 followed by one newline, and the program exits normally."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Check the output contract",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Why test zero as well as 20?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero makes every possible program correct."
+          },
+          {
+            "id": "b",
+            "text": "Only zero can be used with syscall 5."
+          },
+          {
+            "id": "c",
+            "text": "It helps expose a missing final addition of one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Expected results are 41, 1, and -5 with exact prompts and one trailing newline. A wrong answer and a formatting mismatch are different failures to investigate."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Trace before trusting the result",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "When stopped at the breakpoint on addu, has that instruction executed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It executes twice whenever a breakpoint is present."
+          },
+          {
+            "id": "b",
+            "text": "No; it is the next instruction to execute."
+          },
+          {
+            "id": "c",
+            "text": "Yes; the breakpoint always stops after it."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Before addu: $v0 = 20. After addu: $t0 = 40. After addiu: $t0 = 41. In hexadecimal these are 0x14, 0x28, and 0x29."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Write an equivalent solution",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Which property must a free-writing solution preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The specified input/output and termination behavior."
+          },
+          {
+            "id": "b",
+            "text": "The exact private labels of a reference solution."
+          },
+          {
+            "id": "c",
+            "text": "The exact scratch register used in the book."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Identify which register or address is being read, which is being written, and which service contract applies."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The public checks should accept the alternative. Instruction count and source spelling may differ; output and termination must agree."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Book-first package; interactive semantic step checks are a future plugin capability."
+      }
+    }
+  ],
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "figures": "captures/plan.json",
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures"
+  ]
+}
