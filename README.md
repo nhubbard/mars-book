@@ -35,7 +35,11 @@ steps, thirteen prose sections, ten fixtures, and four planned IDE figures.
 The eighth composition, [Evolve Life with a stable source generation](packages/008-life-generations/assignment.md),
 explains synchronous updates, dead halos, alternating buffers, representation strides,
 and public generation checkpoints. It has twenty-eight steps, thirteen prose sections,
-ten fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+ten fixtures, and four planned IDE figures.
+The ninth composition, [Visualize insertion and selection sort](packages/009-sorting-visualizer/assignment.md),
+explains sorted-prefix invariants, permutations, duplicate identities, a tested leaf
+renderer, and native instruction/branch measurements. It has twenty-seven steps, thirteen
+prose sections, ten fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -73,7 +77,7 @@ composition source once MacTeX and the author template are available for testing
 
 ## Current delivery status
 
-The first eight text packages, starters, public checks, deterministic student archive builder,
+The first nine text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

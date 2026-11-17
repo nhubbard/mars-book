@@ -146,3 +146,21 @@ before waiting for the next one. Life creates a label-based execution-store trac
 current allocation for that interval, asserts no writes at the next boundary, closes it,
 and then follows the new current allocation. This expresses phase-dependent source
 protection without requiring one physical array to remain permanently read-only.
+
+## Multiple code regions and measured functions
+
+A task step may use editTarget to name a BEGIN/END source region. Sorting fragments
+append within setup, renderer, and algorithm regions rather than one flat student block.
+Its instructor verifier reconstructs every cumulative program from those regions. This
+is task metadata; it does not constrain the eventual editable LaTeX composition.
+
+traceExecution counts completed native events; its label-range overload filters actual
+PCs inclusively at the first label and exclusively at the second. Snapshot fields are
+instructions, takenBranches, notTakenBranches, and derived branches. Closing freezes the
+counter; case cleanup unregisters it. Forward replay adds events and backstep does not
+subtract them. Native jumps are distinct from branch decisions. Never use reference
+instruction totals as a universal correctness requirement.
+
+setRegisterToDataAddress and setRegisterToTextAddress resolve actual full-width labels
+for function arguments and continuations. Independent function checks can start at the
+public entry label and vary caller state without fixed data addresses or main setup.

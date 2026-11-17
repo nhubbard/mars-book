@@ -1,0 +1,1207 @@
+{
+  "formatVersion": 1,
+  "id": "009-sorting-visualizer",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Visualize insertion and selection sort",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "0c8b5cb9042bb32e2685c3c0d1d67916453e0914",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "traceExecution()",
+      "traceExecution(fromLabel, untilLabel)",
+      "ExecutionTrace.snapshot/expectCounts",
+      "setRegisterToDataAddress",
+      "setRegisterToTextAddress",
+      "runUntil",
+      "traceMemoryStores"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Word arrays and signed comparisons",
+    "Nested loops and observation checkpoints",
+    "Register and memory preservation"
+  ],
+  "learningObjectives": [
+    "Implement two sorted-prefix algorithms",
+    "Preserve permutations and duplicate multiplicities",
+    "Call and test a leaf renderer through an explicit register contract",
+    "Render offset-encoded signed bars with active-prefix bounds",
+    "Compare native instruction and branch counts with stated measurement scope"
+  ],
+  "inputDomain": {
+    "type": "sorting-prefix",
+    "capacityWords": 8,
+    "countMinimum": 0,
+    "countMaximum": 8,
+    "activeValueMinimum": -4,
+    "activeValueMaximum": 3,
+    "inactiveWords": "arbitrary 32-bit; no execution stores",
+    "algorithm": {
+      "0": "adjacent-exchange insertion",
+      "1": "first-minimum selection"
+    }
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Define order and preservation",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Is an array of zeroes a correct result for every input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it can lose the original values."
+          },
+          {
+            "id": "b",
+            "text": "Yes, because all entries are equal."
+          },
+          {
+            "id": "c",
+            "text": "Only if the frame is white."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Check multiplicities as well as adjacent order."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The inactive suffix is outside the sorting domain and remains unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Decode the bar representation",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "How tall is the bar for value zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero cells."
+          },
+          {
+            "id": "b",
+            "text": "Five cells."
+          },
+          {
+            "id": "c",
+            "text": "Eight cells."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Apply the encoding rather than interpreting height as signed magnitude."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Value −4 lights only row seven; value three lights all eight rows."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Read the regions and public labels",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What prevents main from falling into the renderer after completion?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Comments stop execution."
+          },
+          {
+            "id": "b",
+            "text": "The renderer is not executable."
+          },
+          {
+            "id": "c",
+            "text": "The supplied normal exit executes first."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Follow control flow rather than the visual order of source paragraphs."
+        },
+        {
+          "id": "s03-h2",
+          "text": "render, `sort_ready`, and done are public interfaces; most loop labels are guide scaffolding."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Initialize inputs and publish the initial call",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why keep sorting state in saved registers across the call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The renderer contract preserves them while temporary registers are scratch."
+          },
+          {
+            "id": "b",
+            "text": "All registers automatically restore after `jal`."
+          },
+          {
+            "id": "c",
+            "text": "The simulator forbids temporary registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "A function call transfers control; its register effects come from a contract."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The renderer stub returns to main, but no correct image exists until its body is filled."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "setup"
+    },
+    {
+      "id": "s05",
+      "title": "Prepare the leaf renderer",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Where does `jr` `ra` obtain the return destination?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "From the color word."
+          },
+          {
+            "id": "b",
+            "text": "From the link address established by the caller."
+          },
+          {
+            "id": "c",
+            "text": "From the last array value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Separate the argument registers from the return-address register."
+        },
+        {
+          "id": "s05-h2",
+          "text": "No frame word has been written at this partial stage."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s06",
+      "title": "Draw one column cell with a bounds check",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why test x<count before loading?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To make every value positive."
+          },
+          {
+            "id": "b",
+            "text": "To stop the whole program on column zero."
+          },
+          {
+            "id": "c",
+            "text": "The inactive tail is not an input to this render call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "A callable function may receive a shorter prefix or an offset pointer."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Only the first frame cell has been rendered; inactive columns never need an array load."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s07",
+      "title": "Close the renderer loops",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why store black on every render?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A bar may shrink or a column may become inactive."
+          },
+          {
+            "id": "b",
+            "text": "Black writes change the array values."
+          },
+          {
+            "id": "c",
+            "text": "Only black counts as a word store."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "An old frame is persistent memory."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The initial array now has a complete 8 by 8 frame, including black cells."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s08",
+      "title": "Test the function independently",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What would expose a hidden dependency on `s0` as the input pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only testing the default main call."
+          },
+          {
+            "id": "b",
+            "text": "Calling render directly with `a0` set and `s0` holding an unrelated value."
+          },
+          {
+            "id": "c",
+            "text": "Changing a comment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "A public argument should determine behavior without undocumented globals."
+        },
+        {
+          "id": "s08-h2",
+          "text": "All saved registers and `sp` retain their caller values; only the frame changes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Dispatch to the selected algorithm",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why use separate algorithms under one visualization contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They must have equal instruction counts."
+          },
+          {
+            "id": "b",
+            "text": "They require the same private registers."
+          },
+          {
+            "id": "c",
+            "text": "Their observed states can be compared under the same frame and preservation rules."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Keep the observable interface stable while changing the algorithm."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Each valid selector enters its own loop setup."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "dispatch"
+    },
+    {
+      "id": "s10",
+      "title": "Start an insertion sorted prefix",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What is the sorted-prefix invariant before an insertion?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The items before the new outer index are already ordered."
+          },
+          {
+            "id": "b",
+            "text": "Every unvisited item is zero."
+          },
+          {
+            "id": "c",
+            "text": "The whole array is always reversed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The outer loop adds one item to a known prefix."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Empty and singleton inputs exit without loading a pair."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "insertion_init"
+    },
+    {
+      "id": "s11",
+      "title": "Compare an adjacent pair safely",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why is the comparison strict?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Equal items must always exchange."
+          },
+          {
+            "id": "b",
+            "text": "Equal keys need not cross each other in this insertion variant."
+          },
+          {
+            "id": "c",
+            "text": "Strict comparison ignores negative values."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Consider two equal keys carrying different identity tags."
+        },
+        {
+          "id": "s11-h2",
+          "text": "For the default first pair, −2 is smaller than 2, so an exchange is required."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "insertion_inner"
+    },
+    {
+      "id": "s12",
+      "title": "Exchange both words before publication",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why are both values loaded before either is overwritten?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To preserve the frame base."
+          },
+          {
+            "id": "b",
+            "text": "To avoid every branch."
+          },
+          {
+            "id": "c",
+            "text": "The second old value would otherwise be lost."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "An exchange is a permutation, not two copies of one value."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The first snapshot after an exchange is [−2,2,3,−4,0,1,−3,−1], with `swap_count` one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "insertion_inner"
+    },
+    {
+      "id": "s13",
+      "title": "Advance the insertion boundary",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "What guarantees progress after an insertion finishes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The outer index increases toward count."
+          },
+          {
+            "id": "b",
+            "text": "The renderer increments every array value."
+          },
+          {
+            "id": "c",
+            "text": "The algorithm selector changes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Separate the two loop variants."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Insertion sort now handles the active prefix completely."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "insertion_next"
+    },
+    {
+      "id": "s14",
+      "title": "Relate adjacent exchanges to inversions",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q14",
+        "prompt": "How many adjacent exchanges does this insertion policy need on already sorted input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twenty-eight."
+          },
+          {
+            "id": "b",
+            "text": "Zero."
+          },
+          {
+            "id": "c",
+            "text": "One for every equal pair."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "There is no inverted adjacent pair to exchange."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The default has seventeen inversions; eight distinct reversed values have twenty-eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Initialize a selection suffix scan",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Why can selection sort stop before scanning a final single item?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is always zero."
+          },
+          {
+            "id": "b",
+            "text": "Its address is invalid."
+          },
+          {
+            "id": "c",
+            "text": "Only one remaining item is already in its final suffix position."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Use the established sorted prefix and remaining multiset."
+        },
+        {
+          "id": "s15-h2",
+          "text": "For the default input, the initial candidate minimum is value two at index zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "selection_init"
+    },
+    {
+      "id": "s16",
+      "title": "Retain the first suffix minimum",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What happens when a later candidate equals the current minimum?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Keep the earlier minimum index."
+          },
+          {
+            "id": "b",
+            "text": "Choose the last equal candidate."
+          },
+          {
+            "id": "c",
+            "text": "Exchange immediately during the scan."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "The published policy specifies the first minimum."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The first default scan chooses index three, containing −4."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "selection_scan"
+    },
+    {
+      "id": "s17",
+      "title": "Exchange a selected minimum once",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Why not publish a self-exchange?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It changes the multiset."
+          },
+          {
+            "id": "b",
+            "text": "The contract publishes only actual index-changing exchanges."
+          },
+          {
+            "id": "c",
+            "text": "The frame cannot show equal values."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "A pass can establish progress without a data exchange."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The first selection exchange gives [−4,−2,3,2,0,1,−3,−1]."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "selection_exchange"
+    },
+    {
+      "id": "s18",
+      "title": "Grow the selection sorted prefix",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "What describes the prefix after each selection pass?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It contains the most recently visited values in arbitrary order."
+          },
+          {
+            "id": "b",
+            "text": "It contains only zeroes."
+          },
+          {
+            "id": "c",
+            "text": "It contains the smallest completed set in final ascending positions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Separate finding a minimum from extending the fixed prefix."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The selection algorithm now completes its prefix growth."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "selection_next"
+    },
+    {
+      "id": "s19",
+      "title": "Publish completion separately",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Does phase two imply one more exchange?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it reports completion of the current array."
+          },
+          {
+            "id": "b",
+            "text": "Yes, even for an empty input."
+          },
+          {
+            "id": "c",
+            "text": "Only for selection sort."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "A status transition and a data exchange are different events."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Both algorithms now meet the full initial/exchange/final publication protocol."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      },
+      "editTarget": "final"
+    },
+    {
+      "id": "s20",
+      "title": "Verify order and multiplicities at every snapshot",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Why check intermediate permutations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every temporary register must equal the reference."
+          },
+          {
+            "id": "b",
+            "text": "A half-exchange or lost value can precede an apparently sorted final result."
+          },
+          {
+            "id": "c",
+            "text": "It makes signed comparison unnecessary."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Correct status metadata alone does not prove the corresponding array state."
+        },
+        {
+          "id": "s20-h2",
+          "text": "A sorted array with lost duplicates or an altered inactive word is rejected."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Distinguish stability from value-only order",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Do the current value-only checks prove stability of arbitrary record sorting?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because the numbers are ordered."
+          },
+          {
+            "id": "b",
+            "text": "Yes, because tags are irrelevant."
+          },
+          {
+            "id": "c",
+            "text": "No; record identities need their own representation and checks."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Equal numeric values can hide a changed relative identity order."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Selection can turn [2a,2b,1] into [1,2b,2a]. The value array still reads [1,2,2]."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Interpret a callback boundary",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Is `sort_ready` an atomic hardware swap instruction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it is a logical observation boundary after several instructions."
+          },
+          {
+            "id": "b",
+            "text": "Yes, it updates both words simultaneously."
+          },
+          {
+            "id": "c",
+            "text": "It exists only as a source comment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "The boundary names when state is coherent; it does not combine earlier writes."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The selected frame is stable while paused; a full-speed Run may repaint fewer intermediate states."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Measure whole-run and selected code work",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What is excluded by the selected code range?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every branch in the sorting loops."
+          },
+          {
+            "id": "b",
+            "text": "Instructions in the renderer body outside the address interval."
+          },
+          {
+            "id": "c",
+            "text": "The caller's in-range `jal` and `nop`."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Filtering is by executed instruction address, not by a guessed algorithm category."
+        },
+        {
+          "id": "s23-h2",
+          "text": "A large whole-run difference can be dominated by how many frames were rendered."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Read branch totals with their definition",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "What does a taken-branch count measure?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Prediction misses on a physical processor."
+          },
+          {
+            "id": "b",
+            "text": "Host-time stalls."
+          },
+          {
+            "id": "c",
+            "text": "Executed core branch decisions whose outcome was taken."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "A simulator decision stream is not a branch-predictor model."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The reference selection range executes 115 branch decisions on each measured eight-item ordering, with different directions."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Compare input sensitivity",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why must a performance comparison name the input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The work performed depends on its ordering and duplicate structure."
+          },
+          {
+            "id": "b",
+            "text": "The ISA changes between arrays."
+          },
+          {
+            "id": "c",
+            "text": "The frame size is random."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "State algorithm, input, metric, and included work together."
+        },
+        {
+          "id": "s25-h2",
+          "text": "On sorted input insertion has lower measured sorting work; on reversed input the visualizer pays for many more insertion frames."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Compare an equivalent implementation within its domain",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Why is subtract-and-test not universally interchangeable with `slt`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It always treats zero as negative."
+          },
+          {
+            "id": "b",
+            "text": "The subtraction can overflow for unrestricted signed values."
+          },
+          {
+            "id": "c",
+            "text": "`slt` writes to memory."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Test the idea with the minimum and maximum signed word outside this task's domain."
+        },
+        {
+          "id": "s26-h2",
+          "text": "General signed-word sorting should use a true signed comparison unless subtraction overflow is ruled out."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    },
+    {
+      "id": "s27",
+      "title": "State invariants and extension contracts",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q27",
+        "prompt": "What should remain true at every published snapshot?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the phase word matters."
+          },
+          {
+            "id": "b",
+            "text": "Only the rightmost column matters."
+          },
+          {
+            "id": "c",
+            "text": "The array is the required permutation and the frame encodes that array."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Use observable state to connect algorithm correctness with visualization."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Changed data width, record identity, publication policy, or rendering scale needs corresponding new checks."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Executable checks verify the public function and swap protocol; native trainer/capture automation remains pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts",
+    "checks/render.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

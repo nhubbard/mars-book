@@ -212,3 +212,30 @@ The two explanatory grid previews were rendered and visually inspected; native T
 sources await LaTeX compilation and accessibility verification. Four real light-theme
 IDE captures remain planned. A generation boundary provides stable model/frame contents,
 but actual panel rendering still needs the separate capture plugin and IDE verification.
+
+## Sorting visualizer chapter
+
+The indexed reference and insertion-cursor/difference-sign alternative run both
+algorithms against actual published arrays and frames. The public protocol requires
+initial, complete-exchange, and final observations, with strict adjacent insertion and
+first-minimum selection. Final sorted values are independently compared with a sorted
+input. Immutable metadata, guards, and inactive-tail stores are watched throughout.
+
+There are 1,306 private sorting cases per implementation (653 arrays, two selectors),
+plus twelve public program cases and seventeen independent renderer calls. Ternary
+prefixes through length five and full-domain pairs are exhaustive; arbitrary length-eight
+arrays are not. The renderer is entered without main setup, with changed pointers/lengths,
+a label-resolved return continuation, and preserved 64-bit saved-register canaries.
+
+The CLI now provides opt-in native instruction/branch counters, a half-open instruction-PC
+range filter, and label-address register setters. Jupiter and standalone-JAR tests cover
+branch outcomes, jumps, delays, range endpoints, replay, cleanup, wide addresses, argument
+kinds, and return continuations. Six fresh reference workloads record whole/range instruction
+counts and taken/not-taken branches. The range excludes callee bodies, with in-range call
+and metadata work retained. No cycles, prediction misses, or host timings are inferred.
+
+Fourteen cumulative multi-region source edits, twenty-seven quiz keys, and twelve faulty
+programs are verified. Reference default whole counts are 26,197 and 26,206; the detailed
+six-row measurements are also asserted. Student correctness does not require those totals.
+Both implementations assemble without warnings. Native bar and call figures have inspected
+SVG previews. Four actual light-mode IDE captures and PDF accessibility checks are pending.
