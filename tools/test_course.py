@@ -21,12 +21,13 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(22, len(data['steps']))
 
     def test_markdown_quizzes_match_structured_choices(self):
-        root, data = course.validate(PACKAGE)
-        for step in data['steps']:
-            text = (root / step['content']).read_text()
-            self.assertIn(step['quiz']['prompt'], text)
-            for choice in step['quiz']['choices']:
-                self.assertIn(f"**{choice['id'].upper()}** {choice['text']}", text)
+        for package in course.read_json(course.ROOT / 'course.json')['packages']:
+            root, data = course.validate(package)
+            for step in data['steps']:
+                text = (root / step['content']).read_text()
+                self.assertIn(step['quiz']['prompt'], text)
+                for choice in step['quiz']['choices']:
+                    self.assertIn(f"**{choice['id'].upper()}** {choice['text']}", text)
 
     def test_rejects_escape_and_symlink(self):
         with tempfile.TemporaryDirectory() as folder:

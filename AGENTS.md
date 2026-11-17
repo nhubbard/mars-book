@@ -10,7 +10,11 @@ Use the current MARS MIPS64 Release 6 environment and educational syscall ABI.
 Check architecture claims against the pinned MARS source and architecture documentation.
 
 Keep lesson prose, microsteps, and semantic teaching fixtures in packages. Compose them
-through reading.json; permit author passages before or after any segment. Separate human
+through reading.json for the temporary drafting phase; permit author passages before
+or after any segment. Once MacTeX and the template are available for testing, migrate
+to straight LaTeX with input/include and retire JSON/Markdown from book composition.
+LaTeX will become the editable publication authority. Do not build a permanent JSON
+layout framework. Follow docs/composition-goal.md and prioritize full chapter prose. Separate human
 files may live under book/interludes. Edit human passages only when asked and record
 substantial AI edits in book/editorial-log.json. Never overwrite prose as a build side effect.
 Follow docs/writing-style.md, including the linked Wikipedia editorial guidance.

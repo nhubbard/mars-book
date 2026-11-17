@@ -60,7 +60,7 @@ of the published contract.
 When the current grader cannot express an essential property, add a supported checking
 function to MARS with tests. Document its semantics and required MARS version here. Do
 not implement a second simulator or weaken the assignment to avoid a missing check.
-The first package needs no new grader API: input fixtures, runToExit, expectOutput,
+The console package needs no new grader API: input fixtures, runToExit, expectOutput,
 runUntil, step, and expectRegister cover its actual contracts.
 
 ## Instructor companion
@@ -91,3 +91,15 @@ These fields describe content; they do not execute LaTeX or HTML.
 The chapter's insertions list in book/book.json adds author passages before or after
 any segment by anchor ID. This replaces the fixed before/after slots. Invalid anchors
 fail the book build. Local image links are rebased when composing the output Markdown.
+
+## Pixel address checks
+
+The single-pixel chapter requires expectDataAddress(label, expectedLong), added in the
+MARS revision pinned by that package. It verifies the destination agrees with the
+configured display base, without prescribing a scratch register. An exact word by label
+is insufficient if the label has moved away from that base. The check supports byte
+addresses and addresses above 4 GiB. It does not verify an IDE frame or a source header.
+
+This package representation is temporary book-authoring infrastructure. On migration,
+straight LaTeX includes will control the publication; task metadata may remain for the
+trainer without defining the book's composition.

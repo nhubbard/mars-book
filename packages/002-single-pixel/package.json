@@ -1,0 +1,522 @@
+{
+  "formatVersion": 1,
+  "id": "002-single-pixel",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Paint one cell and change a byte",
+  "audience": "Students with basic programming knowledge who are new to assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "15f8bb7beb3d4defee63f2057f488fdec7b4085b",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "expectDataAddress(label, expectedLong)"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Console calculation lesson",
+    "Register operands and straight-line execution"
+  ],
+  "learningObjectives": [
+    "Distinguish an address from the value stored there",
+    "Pack RGB components into a word",
+    "Explain word and byte stores",
+    "Relate byte order to increasing memory addresses",
+    "Check neighboring memory preservation"
+  ],
+  "inputDomain": {
+    "type": "fixed-fixture",
+    "pixelAddress": "0x10010000",
+    "initialColor": "0x00336699",
+    "finalColor": "0x003366ff"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Markdown and final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Configure the display",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "How many logical cells does this header describe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "4096: every screen position is a separate memory word."
+          },
+          {
+            "id": "b",
+            "text": "One: the assignment name changes the grid dimensions."
+          },
+          {
+            "id": "c",
+            "text": "Four: two columns times two rows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The configuration describes two columns and two rows. Each logical cell occupies a 32 by 32 screen block. A future verified screenshot will show the exact editor and display arrangement."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Locate the data words",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "How far apart are these word addresses?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Thirty-two bytes because a word has 32 bits."
+          },
+          {
+            "id": "b",
+            "text": "Four bytes."
+          },
+          {
+            "id": "c",
+            "text": "One byte because each is one word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s02-h2",
+          "text": "pixel starts at 0x10010000 and neighbor starts at 0x10010004. Their values are initially 0 and 0x13579bdf. A declaration alone is not the runtime drawing operation taught here."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Load the pixel address",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What is the purpose of $t0 here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To identify the destination memory location."
+          },
+          {
+            "id": "b",
+            "text": "To hold the red component only."
+          },
+          {
+            "id": "c",
+            "text": "To choose a syscall service."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The address register identifies the first data word. No store has changed that word yet."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Prepare the packed color",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which byte specifies blue in the packed word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "0x33 because it is the first nonzero pair written."
+          },
+          {
+            "id": "b",
+            "text": "0x00 because the highest byte always specifies blue."
+          },
+          {
+            "id": "c",
+            "text": "0x99, the least significant byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The components are red 51, green 102, and blue 153. The color is in a register; the pixel word is still unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Store the complete word",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "When is the register color transferred into memory?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "When the assembler reads the label base_ready."
+          },
+          {
+            "id": "b",
+            "text": "When sw executes."
+          },
+          {
+            "id": "c",
+            "text": "When li loads the constant."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s05-h2",
+          "text": "The word at pixel is 0x00336699. In the configured grid, the upper-left cell should show that color. The neighboring word is unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Inspect the first color",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which byte is at the lowest address in this lesson?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "0x99."
+          },
+          {
+            "id": "b",
+            "text": "0x00 because it is written first in the hexadecimal word."
+          },
+          {
+            "id": "c",
+            "text": "0x33 because red is the first color channel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s06-h2",
+          "text": "In little-endian memory the bytes at offsets 0, 1, 2, and 3 are 99, 66, 33, and 00 in hexadecimal. The packed word remains 0x00336699."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Prepare a byte value",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "How many bits will sb take from the source register?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All 64 bits."
+          },
+          {
+            "id": "b",
+            "text": "Exactly 24 bits because the display uses RGB."
+          },
+          {
+            "id": "c",
+            "text": "Eight low bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The low byte of $t2 is ff. The pixel has not changed merely because this register was loaded."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Replace the lowest-addressed byte",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What is the final packed word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "0x000000ff because sb clears the rest of the word."
+          },
+          {
+            "id": "b",
+            "text": "0x003366ff."
+          },
+          {
+            "id": "c",
+            "text": "0xff336699 because offset zero always means the highest byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The final bytes are ff, 66, 33, and 00. The word is 0x003366ff, so red and green remain 51 and 102 while blue becomes 255."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Reload and compare",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What should $t3 contain after this load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The full word 0x003366ff, sign-extended into the register."
+          },
+          {
+            "id": "b",
+            "text": "Only 0xff because the previous store was a byte store."
+          },
+          {
+            "id": "c",
+            "text": "The address of pixel rather than its contents."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s09-h2",
+          "text": "$t3 contains 0x00000000003366ff. Reading the word does not itself draw a new color. The following supplied exit completes the program."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Verify the neighboring word",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What property should hold for neighbor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It must always be overwritten with the original constant."
+          },
+          {
+            "id": "b",
+            "text": "It must match the final pixel color."
+          },
+          {
+            "id": "c",
+            "text": "Its initial value must be preserved."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The original neighbor is 0x13579bdf. The grader also tests preservation of other initial values. There should be no console output and the program should terminate normally."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Generalize the byte-order argument",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Does the same byte offset always identify the same RGB channel in both byte orders?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; RGB automatically reverses the address arithmetic."
+          },
+          {
+            "id": "b",
+            "text": "No; the address-to-byte mapping depends on byte order."
+          },
+          {
+            "id": "c",
+            "text": "Yes; offset zero always identifies blue."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Separate the address, the register value, and the memory bytes in your trace."
+        },
+        {
+          "id": "s11-h2",
+          "text": "A big-endian offset-zero update would produce 0xff336699 while leaving the low-24-bit RGB color unchanged. This is a prediction outside the graded little-endian environment; later byte-order exercises will execute both configurations."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "The book supplies instruction checkpoints; native trainer automation is pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

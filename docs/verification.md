@@ -42,3 +42,17 @@ previews and native TikZ sources. The SVG previews were rendered and visually
 inspected; their labels and arrows are readable without clipping. Native TikZ
 compilation and PDF accessibility checks await MacTeX and the author's template.
 The two diagrams explain concepts and are not IDE screenshots.
+
+## Single-pixel chapter
+
+The illustrated first word is 0x00336699; its little-endian bytes are 99 66 33 00.
+After the byte store they are ff 66 33 00, and the final word is 0x003366ff.
+The chapter's verifier checks the reference, an equivalent register allocation,
+reference checkpoints, intermediate snippet programs, and deliberately incorrect
+implementations. It also checks varied neighboring canaries. The new data-address
+assertion is covered by packaged CLI tests for aligned, unaligned, and wide addresses,
+as well as moved, missing, and incorrectly typed symbols.
+
+The CLI checks memory state, not the visible Bitmap Display. The three pixel figures
+remain planned. The chapter explains RGB numerically so its meaning does not depend on
+recognizing a color in a screenshot.

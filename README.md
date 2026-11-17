@@ -8,7 +8,9 @@ contains a barebones starter, 22 instructional microsteps, a multiple-choice que
 and two hints at every step, 22 connective prose sections, ten teaching fixtures, two
 vector diagrams, public executable checks, and five screenshot recipes.
 Read [the first step](packages/001-console-calculation/steps/01.md) or build the combined
-book draft. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+book draft. The second composition, [Paint one cell and change a byte](packages/002-single-pixel/assignment.md),
+adds addresses, word and byte stores, RGB packing, byte order, and memory preservation.
+It contains eleven steps, nine prose sections, six teaching fixtures, and three capture recipes. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -31,6 +33,10 @@ See [verification](docs/verification.md) for the tested package behavior.
 
 ## Author the book
 
+The active [composition goal](docs/composition-goal.md) is full instructional chapters.
+JSON and Markdown are temporary; straight LaTeX with input/include will become the
+composition source once MacTeX and the author template are available for testing.
+
 - [Writing style](docs/writing-style.md) applies the requested Wikipedia editorial guidance.
 - [Editorial workflow](docs/editorial-workflow.md) keeps human interludes separate from generated assembly of the book.
 - [Package format](docs/package-format.md) defines the structured lesson source.
@@ -42,7 +48,7 @@ See [verification](docs/verification.md) for the tested package behavior.
 
 ## Current delivery status
 
-The first text package, starter, public checks, deterministic student archive builder,
+The first two text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

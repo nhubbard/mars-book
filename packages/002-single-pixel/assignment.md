@@ -1,0 +1,39 @@
+# Paint one cell and change its blue component
+
+Use a word of static data as one RGB display cell. Store `0x00336699` into the word
+at `pixel`, then replace its lowest-addressed byte with `0xff`. Use MARS's default
+memory layout and little-endian byte order. The final word must be `0x003366ff`.
+The word at `neighbor` must retain its initial value. Produce no console output and
+exit normally.
+
+Keep `pixel` as the first static data word, at `0x10010000` in this layout. The
+source-header comment connects Bitmap Display to that base. It requests a 64 by 64
+display with units 32 by 32, giving two columns and two rows. The task paints the
+upper-left cell. Other cells are outside the drawing task.
+
+## Guided version
+
+Use the supplied starter and the illustrated register choices. Predict the RGB
+components and memory bytes before stepping through the store instructions. Inspect
+the first stored color before allowing the byte update to execute. Reload the final
+word to compare memory with the value shown in a register.
+
+The guide teaches an initial word store followed by a byte store. Reference-state
+checks verify that demonstration. The public final-state grader checks the memory
+location, final bytes, preservation of the neighboring word, silence, and normal exit.
+It does not prove the history of writes or the visible IDE frame.
+
+## Free-writing version
+
+Preserve the data and display interface, but choose your own registers and instruction
+sequence. The final-state checks accept any equivalent implementation of that contract.
+Explain separately how a byte store affects the packed color and what changes in
+big-endian memory. Avoid claiming that one tested final state establishes an identical
+execution history.
+
+## Evidence
+
+Submit main.asm and a short trace of the word and its four bytes before and after the
+byte store. Identify which color component changes and why. Explain why the next word
+must remain unchanged. Your instructor may set a different initial neighboring value
+before running the program.

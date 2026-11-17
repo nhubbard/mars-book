@@ -3,15 +3,18 @@
 ## Publication source
 
 Markdown remains the initial authoring format. Once MacTeX and the author's template
-are available, the publication source is native LaTeX. Text, headings, equations,
+are available for testing, the publication source is straight LaTeX composed with
+input/include. LaTeX files become the editable authority; JSON and Markdown will no
+longer control book composition. Text, headings, equations,
 code listings, tables, captions, callout labels, and diagram text must remain typeset
 content. Keep the semantic reading order and stable labels in the source.
 
 The two first-lesson diagrams already have native TikZ source under fixtures/latex.
 The SVG versions are draft previews for Markdown and are not the publication masters.
 Their TikZ sources have not been compiled because the final TeX toolchain and template
-are not available. The future composition adapter must map the other fixture roles
-to native LaTeX environments and retain table-header information.
+are not available. The migration will turn the other fixture roles into ordinary LaTeX includes and
+environments, retaining table-header information. It will retire the JSON composition
+model from the book publication path.
 
 An IDE screenshot remains an original PNG image. Its annotation rectangles and labels
 will be drawn in LaTeX/TikZ, with the legend, caption, and explanatory text outside the
