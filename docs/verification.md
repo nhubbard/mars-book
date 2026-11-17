@@ -183,3 +183,32 @@ as 145 and 138; no latency or universal performance claim is inferred.
 The native grid and decision equations await LaTeX compilation and template accessibility
 verification. The SVG grid preview was rendered and inspected. Four real light-theme
 IDE figures remain planned; CLI image checks do not establish visible panel rendering.
+
+## Life generations chapter
+
+Both the unrolled/Boolean reference and offset-loop/branching alternative are checked
+at a required public generation_ready boundary. The checker observes the actual current
+and previous padded boards, generation number, and all frame words at every generation
+from zero through the requested count. It switches an execution-store trace between
+physical arrays to forbid current-source writes during each phase, even when restored.
+Seed, requested count, six guards, and both permanently dead halos are protected throughout.
+After exit the final boards and frame are checked again. No new grader API is required.
+
+Private coverage is 922 cases per implementation: all 512 interior center/neighborhood
+patterns, 64 corner patterns, 256 edge-midpoint patterns, and eighteen whole-board
+fixtures at each count zero through four (90 cases). This exhausts those local domains,
+not all 2^64 complete boards. An independent unpadded scatter oracle contrasts with the
+assembly's padded gather. Poisoned interiors and frames expose stale dead-cell values.
+
+Fifteen cumulative source programs are reconstructed and checked for exact intermediate
+board/frame contents, publication numbers, and illustrated register lifetimes. The ready
+placeholder is removed at its documented relocation step. Fourteen negative programs
+test rule, neighbor, stride, source aliasing, dead stores, publication, role exchange,
+counting, halo writes, and restored source/input writes. Both completed implementations
+must assemble without warnings. Measured default instruction totals are 7,007 and 14,197;
+no wall-time or cycle-cost inference is made.
+
+The two explanatory grid previews were rendered and visually inspected; native TikZ
+sources await LaTeX compilation and accessibility verification. Four real light-theme
+IDE captures remain planned. A generation boundary provides stable model/frame contents,
+but actual panel rendering still needs the separate capture plugin and IDE verification.

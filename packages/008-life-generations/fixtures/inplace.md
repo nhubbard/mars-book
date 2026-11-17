@@ -1,0 +1,9 @@
+# An in-place sweep changes the question
+
+Start with live cells (2,3), (3,3), (4,3), and scan rows from top to bottom.
+The rule births (3,2). If that result is written into the source immediately, the
+later live cell (2,3) sees newly born (3,2) and old (3,3), giving two neighbors and
+survival. The synchronous source has only old (3,3) there, giving one and death.
+
+The error is the generation of an input byte, not the birth/survival rule. Keeping
+all source bytes unchanged until the complete destination exists removes this dependency.

@@ -31,7 +31,11 @@ and four planned IDE figures.
 The seventh composition, [Draw lines with an integer error accumulator](packages/007-bresenham-line/assignment.md),
 develops canonical tie rules, paired coordinate decisions, error invariants, exact
 framebuffer overlays, and scoped instruction-count comparisons. It has twenty-four
-steps, thirteen prose sections, ten fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+steps, thirteen prose sections, ten fixtures, and four planned IDE figures.
+The eighth composition, [Evolve Life with a stable source generation](packages/008-life-generations/assignment.md),
+explains synchronous updates, dead halos, alternating buffers, representation strides,
+and public generation checkpoints. It has twenty-eight steps, thirteen prose sections,
+ten fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -69,7 +73,7 @@ composition source once MacTeX and the author template are available for testing
 
 ## Current delivery status
 
-The first seven text packages, starters, public checks, deterministic student archive builder,
+The first eight text packages, starters, public checks, deterministic student archive builder,
 Markdown book assembler, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

@@ -132,3 +132,17 @@ expectTrail checks the complete continuous chronological pen trail using turn ve
 straight forward strokes are coalesced by the model. Empty arguments require no trail.
 Both accept a finite nonnegative tolerance (default 1e-9). Neither asserts UI rendering.
 Use separate execution-store traces to protect input objects and feedback registers.
+
+## Public observation boundaries
+
+A lesson may require a named text checkpoint as part of its published interface when
+an objective needs intermediate actual state. Life requires generation_ready after each
+complete generation from zero through the requested count. This is a public contract
+like a function entry point; it does not permit private register or label requirements
+in free-writing checks. Use only the named state that the assignment promises there.
+
+The existing runUntil pauses before that instruction. Step past the current occurrence
+before waiting for the next one. Life creates a label-based execution-store trace on the
+current allocation for that interval, asserts no writes at the next boundary, closes it,
+and then follows the new current allocation. This expresses phase-dependent source
+protection without requiring one physical array to remain permanently read-only.
