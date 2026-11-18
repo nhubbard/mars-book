@@ -1,0 +1,55 @@
+\section{Use the supplied compression frame}
+Compression calls the schedule builder and uses all eight preserved working registers.
+Its 96-byte frame saves those eight full registers, the full return address, the state
+pointer and the schedule pointer. The remaining eight bytes are padding. Read these
+slots before writing the body: a nested call may replace temporary registers, but the
+saved pointers remain available in the frame.
+
+Both the normal and development paths restore the caller's registers. At an internal
+checkpoint, \texttt{s0} through \texttt{s7} can hold the working vector; at the public
+return they must hold their original caller values. Inspect the state array for the
+returned compression result. Development status three says only that the currently
+written prefix ran; it does not promise a completed block result.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{Supplied entry and frame}
+\begin{minted}[samepage=true]{mars-idea}
+sha256_compress:
+    daddiu $sp, $sp, -96
+    sd $s0, 0($sp)
+    sd $s1, 8($sp)
+    sd $s2, 16($sp)
+    sd $s3, 24($sp)
+    sd $s4, 32($sp)
+    sd $s5, 40($sp)
+    sd $s6, 48($sp)
+    sd $s7, 56($sp)
+    sd $ra, 64($sp)
+    sd $a0, 72($sp)
+    sd $a2, 80($sp)
+\end{minted}
+
+\Needspace{24\baselineskip}
+\MARSCodeLabel{Supplied normal and development exits}
+\begin{minted}[samepage=true]{mars-idea}
+compress_done:
+    move $v0, $zero
+    b compress_restore
+    nop
+compress_development:
+    li $v0, 3
+compress_restore:
+    ld $s0, 0($sp)
+    ld $s1, 8($sp)
+    ld $s2, 16($sp)
+    ld $s3, 24($sp)
+    ld $s4, 32($sp)
+    ld $s5, 40($sp)
+    ld $s6, 48($sp)
+    ld $s7, 56($sp)
+    ld $ra, 64($sp)
+    daddiu $sp, $sp, 96
+    jr $ra
+    nop
+
+\end{minted}

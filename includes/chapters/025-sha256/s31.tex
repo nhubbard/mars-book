@@ -1,0 +1,34 @@
+\section{Step 31 Finish a block that has no room for the length}\label{sha-s31}
+
+Fill the remainder of the current buffer with zero bytes until the working used count reaches sixty-four. Branch before writing when the buffer is already full. This path is selected only when the marker left too little room for the length, so the length field will go in a separate block.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_zero\_first} and \texttt{\# END fin\_zero\_first}. Keep the supplied labels outside that region.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $s2, 64
+    beq $t0, $zero, final_first_compress
+    nop
+    daddu $t0, $s0, $s2
+    sb $zero, 48($t0)
+    addiu $s2, $s2, 1
+    b final_zero_first
+    nop
+\end{minted}
+
+Use recipe \texttt{s31-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The first padding block contains the original tail, one 80 byte and zeros through its final byte.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Where will the length be written on this path?
+
+\begin{itemize}
+\item \textbf{A} In another block.
+\item \textbf{B} Over the last message bytes.
+\item \textbf{C} Into the constant table.
+\end{itemize}

@@ -1,0 +1,71 @@
+\section{Give unfinished file code a complete cleanup path}
+The supplied 432-byte file frame places a 368-byte private context below six saved
+working registers and the return address, with eight bytes of padding. The context
+and saved-register slots do not overlap. The scratch pointer, capacity and output
+pointer are retained in \texttt{s1}, \texttt{s2} and \texttt{s3}. Register
+\texttt{s0} points to the private context at the frame base.
+
+The supplied setup gives \texttt{s4} a descriptor marker of minus one and
+\texttt{s5} development status three. After open succeeds, the authored code replaces
+that marker with the actual descriptor. A development exit closes an acquired
+descriptor, or returns directly when none was acquired. The provided real error paths
+select status one for open failure and two for read failure. The final authored region
+selects status zero only after finalizing at EOF.
+
+Read the cleanup listing as part of the program. Its job is independent of the hash
+arithmetic: every successful acquisition needs a matching release, including while
+later regions are still unfinished. An output array left intact on a development or
+error return is not a published digest for this call.
+
+\Needspace{19\baselineskip}
+\MARSCodeLabel{Supplied entry and frame}
+\begin{minted}[samepage=true]{mars-idea}
+sha256_file:
+    daddiu $sp, $sp, -432
+    sd $s0, 368($sp)
+    sd $s1, 376($sp)
+    sd $s2, 384($sp)
+    sd $s3, 392($sp)
+    sd $s4, 400($sp)
+    sd $s5, 408($sp)
+    sd $ra, 416($sp)
+    move $s0, $sp
+    move $s1, $a1
+    move $s2, $a2
+    move $s3, $a3
+    li $s4, -1
+    li $s5, 3
+\end{minted}
+
+\Needspace{32\baselineskip}
+\MARSCodeLabel{Supplied normal and development exits}
+\begin{minted}[samepage=true]{mars-idea}
+file_read_error:
+    li $s5, 2
+file_close:
+    move $a0, $s4
+    li $v0, 16
+    syscall
+    b file_return
+    nop
+file_open_error:
+    li $s5, 1
+file_return:
+    move $v0, $s5
+    ld $s0, 368($sp)
+    ld $s1, 376($sp)
+    ld $s2, 384($sp)
+    ld $s3, 392($sp)
+    ld $s4, 400($sp)
+    ld $s5, 408($sp)
+    ld $ra, 416($sp)
+    daddiu $sp, $sp, 432
+    jr $ra
+    nop
+
+file_development:
+    bltz $s4, file_return
+    nop
+    b file_close
+    nop
+\end{minted}

@@ -1,0 +1,33 @@
+\section{Step 44 Publish only after successful EOF and close}\label{sha-s44}
+
+Finalize the private context into the caller's output, select success status zero and branch to the common close path. Error branches already select their own status and preserve output. The close path then restores the caller's full saved values and returns. The complete wrapper now has a single publication event at successful EOF.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN file\_final} and \texttt{\# END file\_final}. Keep the supplied labels outside that region.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s0
+    move $a1, $s3
+    jal sha256_final
+    nop
+    move $s5, $zero
+    b file_close
+    nop
+\end{minted}
+
+Use recipe \texttt{s44-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+Status is zero and all thirty-two digest bytes match the complete file; missing and failed reads leave output unchanged.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+When is the output a digest of this complete file?
+
+\begin{itemize}
+\item \textbf{A} After any positive read.
+\item \textbf{B} When scratch is full.
+\item \textbf{C} After EOF and successful finalization, with status zero.
+\end{itemize}

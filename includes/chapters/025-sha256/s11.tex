@@ -1,0 +1,34 @@
+\section{Step 11 Call the schedule builder without losing the caller}\label{sha-s11}
+
+The supplied frame has saved the state and workspace pointers as well as \texttt{ra}. Pass the block and workspace to the completed schedule routine. After that call, reload the state and workspace pointers, select the fixed constant table and set the round count to sixty-four. Reloading is necessary because the schedule builder may change temporary registers and argument registers.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN comp\_prepare} and \texttt{\# END comp\_prepare}. Keep the supplied labels outside that region.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $a1
+    move $a1, $a2
+    jal sha256_schedule
+    nop
+    ld $t9, 72($sp)
+    ld $t6, 80($sp)
+    dla $t7, sha_k
+    li $t8, 64
+\end{minted}
+
+Use recipe \texttt{s11-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The workspace contains the full schedule; \texttt{t9} points to state, \texttt{t6} to W0, \texttt{t7} to K0 and \texttt{t8} is sixty-four.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why reload the state pointer after the nested call?
+
+\begin{itemize}
+\item \textbf{A} Argument and temporary registers are not preserved by that call.
+\item \textbf{B} A schedule is stored in the text segment.
+\item \textbf{C} The state pointer must become a word value.
+\end{itemize}

@@ -1,0 +1,50 @@
+\section{Step 19 Add the working vector back to the incoming state}\label{sha-s19}
+
+For each word, load its original state value, add the matching final working register and store the low word. The final stores are independent: once a state word has been added, that original word is no longer needed. The supplied epilogue then restores the caller's registers and reports status zero.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN comp\_feed} and \texttt{\# END comp\_feed}. Keep the supplied labels outside that region.
+
+\Needspace{28\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lw $t0, 0($t9)
+    addu $t0, $t0, $s0
+    sw $t0, 0($t9)
+    lw $t0, 4($t9)
+    addu $t0, $t0, $s1
+    sw $t0, 4($t9)
+    lw $t0, 8($t9)
+    addu $t0, $t0, $s2
+    sw $t0, 8($t9)
+    lw $t0, 12($t9)
+    addu $t0, $t0, $s3
+    sw $t0, 12($t9)
+    lw $t0, 16($t9)
+    addu $t0, $t0, $s4
+    sw $t0, 16($t9)
+    lw $t0, 20($t9)
+    addu $t0, $t0, $s5
+    sw $t0, 20($t9)
+    lw $t0, 24($t9)
+    addu $t0, $t0, $s6
+    sw $t0, 24($t9)
+    lw $t0, 28($t9)
+    addu $t0, $t0, $s7
+    sw $t0, 28($t9)
+\end{minted}
+
+Use recipe \texttt{s19-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+All eight state words match compression of this block from the supplied initial state.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which pair is added for the first output state word?
+
+\begin{itemize}
+\item \textbf{A} Old state word zero and final working a.
+\item \textbf{B} Initial a and initial b.
+\item \textbf{C} The first two schedule words.
+\end{itemize}

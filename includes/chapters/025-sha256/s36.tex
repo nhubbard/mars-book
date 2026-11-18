@@ -1,0 +1,43 @@
+\section{Step 36 Publish thirty-two big-endian digest bytes}\label{sha-s36}
+
+For each state word, extract its high byte first, then the next two bytes and its low byte. Byte stores support an unaligned output pointer. Advance by one word and four output bytes until all eight words are written. Clear the consumed context's used field, then let the supplied epilogue return status zero.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_output} and \texttt{\# END fin\_output}. Keep the supplied labels outside that region.
+
+\Needspace{21\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $t0, $s0
+    li $t1, 8
+final_output_word:
+    lwu $t2, 0($t0)
+    dsrl $t3, $t2, 24
+    sb $t3, 0($s1)
+    dsrl $t3, $t2, 16
+    sb $t3, 1($s1)
+    dsrl $t3, $t2, 8
+    sb $t3, 2($s1)
+    sb $t2, 3($s1)
+    daddiu $t0, $t0, 4
+    daddiu $s1, $s1, 4
+    addiu $t1, $t1, -1
+    bne $t1, $zero, final_output_word
+    nop
+    sw $zero, 40($s0)
+\end{minted}
+
+Use recipe \texttt{s36-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The output contains exactly thirty-two digest bytes, matching the host result for the selected message.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why not use \texttt{sw} directly on the output?
+
+\begin{itemize}
+\item \textbf{A} The output has to hold decimal text.
+\item \textbf{B} The required byte order differs from a little-endian word store.
+\item \textbf{C} A digest word is sixty-four bytes long.
+\end{itemize}

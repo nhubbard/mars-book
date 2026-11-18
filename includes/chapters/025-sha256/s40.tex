@@ -1,0 +1,31 @@
+\section{Step 40 Request a bounded scratch prefix}\label{sha-s40}
+
+Pass the retained descriptor, scratch address and positive capacity to the read syscall. Inspect its returned count before deciding how to use the scratch bytes. At this construction stage the temporary exit still closes the descriptor after this one read, so a provisional return is not a successful hash of the file.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN file\_read} and \texttt{\# END file\_read}. Keep the supplied labels outside that region.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s4
+    move $a1, $s1
+    move $a2, $s2
+    li $v0, 14
+    syscall
+\end{minted}
+
+Use recipe \texttt{s40-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The first read writes only its returned prefix; an injected short read can return fewer bytes than the capacity.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which bytes in scratch are new input?
+
+\begin{itemize}
+\item \textbf{A} Every byte up to the capacity.
+\item \textbf{B} Only the number reported by the positive result.
+\item \textbf{C} Every byte that happens to be nonzero.
+\end{itemize}

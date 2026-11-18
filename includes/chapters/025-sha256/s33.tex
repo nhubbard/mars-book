@@ -1,0 +1,34 @@
+\section{Step 33 Leave exactly eight bytes for the length}\label{sha-s33}
+
+Fill buffer positions from the working used count through fifty-five with zeros. The used count may begin after a short message and its marker, or at zero after the extra-block path. Both cases reach final\_write\_length with the same destination layout: eight remaining bytes at positions fifty-six through sixty-three.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_zero\_last} and \texttt{\# END fin\_zero\_last}. Keep the supplied labels outside that region.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $s2, 56
+    beq $t0, $zero, final_write_length
+    nop
+    daddu $t0, $s0, $s2
+    sb $zero, 48($t0)
+    addiu $s2, $s2, 1
+    b final_zero_to_length
+    nop
+\end{minted}
+
+Use recipe \texttt{s33-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The final eight buffer positions are reserved for the bit length; all padding positions before them are zero.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why stop the fill at index fifty-six?
+
+\begin{itemize}
+\item \textbf{A} The remaining eight positions hold the length.
+\item \textbf{B} Only fifty-six input bytes are allowed.
+\item \textbf{C} The schedule has fifty-six words.
+\end{itemize}

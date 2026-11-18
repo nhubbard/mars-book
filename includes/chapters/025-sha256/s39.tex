@@ -1,0 +1,29 @@
+\section{Step 39 Start one fresh hash for this file}\label{sha-s39}
+
+Initialize the private context at the bottom of the file frame. Do this once after opening, before the first read. The private context keeps file hashing independent of any caller context and of previous file calls. Reinitializing it inside the read loop would instead hash each scratch block as a separate message.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN file\_init} and \texttt{\# END file\_init}. Keep the supplied labels outside that region.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s0
+    jal sha256_init
+    nop
+\end{minted}
+
+Use recipe \texttt{s39-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The private context has an empty-message state; the file has not been read yet.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+How often is initialization performed for a file?
+
+\begin{itemize}
+\item \textbf{A} Before every read.
+\item \textbf{B} Only after EOF.
+\item \textbf{C} Once before its first read.
+\end{itemize}

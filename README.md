@@ -131,11 +131,12 @@ excerpts, 34 quizzes, 68 hints and 52 exact recipes. It is included in the
 main manuscript as chapter 24, with public guided/final checks and separate archives.
 Actual IDE figures remain pending.
 
-The next independent native foundation is [SHA-256](drafts/sha256.tex). It explains
-word widths, byte order, a worked compression round, streaming state, padding and file
-publication. Verified instruction-work tables accompany the exposition. Cumulative
-student steps and the twenty-fifth distribution are still in development; this draft
-has not been added to the main manuscript.
+The next independent native chapter is [SHA-256](drafts/sha256.tex). Its connected
+exposition now includes 47 cumulative steps, 38 code edits, six supplied entry/exit pairs,
+47 quizzes, 94 hints and 58 exact recipes. Both caller and offset-function observations
+are executable, including private-stack and wide-length checks. Cumulative sources and
+recipes are in drafts/sha-construction; separate distributions and integration as the
+twenty-fifth package remain pending. Four IDE figure slots are still plans.
 
 ## Author the book
 

@@ -649,3 +649,27 @@ at function entry and stops at the supplied return, excluding preparation, sessi
 assembly and IO. Counts are simulated instructions, not host latency or grading limits.
 The cumulative exercise distribution is unfinished. PDF tagging and embedded-font
 checks do not certify PDF/UA or establish student usability.
+
+
+## SHA-256 cumulative construction
+
+The native draft now includes 47 steps with 38 authored regions and 58 exact recipes.
+Private verification checks each prepared source image and both direct-offset and caller
+execution, then checks the exact full reconstruction and equivalently framed alternative.
+The 64 grading runs contain 1978 positive executions. A separate control run adds 10 grading
+runs and 70 positive executions for six unedited exits, wide code/data and the first-round
+illustration, plus six ordinary host-file runs through the public preparation helper.
+These are 2048 positive grading executions in 74 runs. Earlier prototype fault controls
+remain provenance; package-specific equivalence and fault controls are still pending.
+
+The grader's readBytes(address,length) overload, added in MARS revision 0e1d26dd, inspects
+full-address mapped bytes including private stack frames without simulated accesses or
+backstep changes. All 100 CLI tests pass, including both byte orders, unaligned and wide
+snapshots, detached copies, range failures and retained history. A large snapshot encoded
+as a compact hex string keeps generated Kotlin checks below JVM method-size limits.
+
+The work table now reports the current cumulative frame/return paths for both algorithms.
+The source, recipes, CLI/JDK, normal returns and memory ownership are pinned in local receipts.
+The independent draft still awaits public/instructor packages and main integration.
+Four planned light-theme figures have verified numerical observations and no IDE pixels.
+The substantial author rewrite and independent PDF accessibility work remain pending.

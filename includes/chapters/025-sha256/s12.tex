@@ -1,0 +1,34 @@
+\section{Step 12 Copy the incoming state into working registers}\label{sha-s12}
+
+Load the eight state words into \texttt{s0} through \texttt{s7}, representing a through h. Keep the incoming state in memory for feed-forward at the end of the block. The supplied frame will restore these preserved registers on every return; while the function runs, they are its working storage. A signed word load preserves the low-word pattern required by word operations.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN comp\_load} and \texttt{\# END comp\_load}. Keep the supplied labels outside that region.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lw $s0, 0($t9)
+    lw $s1, 4($t9)
+    lw $s2, 8($t9)
+    lw $s3, 12($t9)
+    lw $s4, 16($t9)
+    lw $s5, 20($t9)
+    lw $s6, 24($t9)
+    lw $s7, 28($t9)
+\end{minted}
+
+Use recipe \texttt{s12-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+At the first-round boundary, \texttt{s0} through \texttt{s7} contain the initial working words and caller state is unchanged.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why retain the incoming state words in memory?
+
+\begin{itemize}
+\item \textbf{A} They are used again in the final feed-forward sums.
+\item \textbf{B} They contain the file path.
+\item \textbf{C} They are the schedule destination.
+\end{itemize}

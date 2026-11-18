@@ -207,8 +207,11 @@ first compression round, streaming state and file result publication. It include
 native padding diagram, headed tables and measured instruction-work comparisons for
 two equivalent implementations. Private tests cover arbitrary-state compression,
 split messages, independent contexts, full length fields, real files and deliberate
-faults. Cumulative steps, public/instructor packages and main-manuscript integration
-remain pending; the integrated package count is still twenty-four.
+faults. The cumulative expansion has 47 steps,38 authored edits,six supplied entry/exit pairs,
+47 quizzes,94 hints,58 exact recipes and four planned IDE figure slots. Every prepared
+image is checked along with caller and offset-function execution. Public/instructor
+packages and main-manuscript integration remain pending; the integrated package count
+is still twenty-four.
 
 ## Author feedback and deferred revision
 

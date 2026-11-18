@@ -1,0 +1,32 @@
+\section{Step 32 Compress the first padding block and restart its count}\label{sha-s32}
+
+Call compression on the now-complete buffer, then clear the working used count. Keep the saved original bit length in \texttt{s3} across the call. The same physical buffer will hold the final block next; it is its logical occupancy that has become zero. Its old bytes still need to be overwritten where the final block requires zeros.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_first} and \texttt{\# END fin\_first}. Keep the supplied labels outside that region.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s0
+    daddiu $a1, $s0, 48
+    daddiu $a2, $s0, 112
+    jal sha256_compress
+    nop
+    move $s2, $zero
+\end{minted}
+
+Use recipe \texttt{s32-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The state includes the first padding block and \texttt{s2} is zero before the final-block fill loop.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+May the final block reuse the same 64-byte storage?
+
+\begin{itemize}
+\item \textbf{A} No, each block needs a separate allocation.
+\item \textbf{B} Yes, after the previous block has been consumed.
+\item \textbf{C} Only for ASCII input.
+\end{itemize}

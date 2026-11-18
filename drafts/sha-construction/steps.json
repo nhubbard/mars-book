@@ -1,0 +1,1726 @@
+{
+  "status": "Native cumulative draft; distributions and runner pending",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Identify the message being hashed",
+      "kind": "observe",
+      "prose": "Begin with the exact three bytes 61, 62 and 63. The displayed word abc does not tell us whether a file also contains a newline. Record the input length and identify where the original message ends before reasoning about padding or digest output.",
+      "expectedObservation": "The message length is three bytes; the marker and length field will be added by finalization.",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Is a trailing newline included automatically in this message?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; only the declared input bytes belong to it."
+          },
+          {
+            "id": "b",
+            "text": "Yes, every text message ends with one."
+          },
+          {
+            "id": "c",
+            "text": "Only when the digest begins with a high bit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "List the selected bytes rather than their visual appearance."
+        },
+        {
+          "id": "s01-h2",
+          "text": "A fourth byte changes the message and therefore the expected digest."
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Inspect the caller and unfinished exits",
+      "kind": "observe",
+      "prose": "Open the cumulative starter and locate its marked regions. The supplied caller can invoke individual entries or run a complete memory or file path. Every missing region branches to a routine-specific development exit. The value three means unfinished work; completed kernel entries return zero, while the completed file entry uses statuses zero through two.",
+      "expectedObservation": "The default starter returns development status three without claiming a decoded schedule.",
+      "quiz": {
+        "id": "q02",
+        "prompt": "May a development return be treated as a correct digest?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if output happens to contain zeros."
+          },
+          {
+            "id": "b",
+            "text": "No; it explicitly marks incomplete work."
+          },
+          {
+            "id": "c",
+            "text": "Only for an empty file."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Trace the branch in the first empty region."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Inspect status before interpreting any output array."
+        }
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "Keep a schedule destination and decode count",
+      "kind": "author",
+      "prose": "Copy the destination address to t0 and set t1 to sixteen. The source pointer remains in a0. These registers describe the two arrays we are walking: each source group contains four bytes, and each destination element occupies four bytes. Keeping separate walkers lets the routine accept a block at an unaligned address while retaining aligned schedule stores.",
+      "expectedObservation": "t0 points to the first schedule word and t1 is sixteen; no schedule word has been written.",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which pointer must be word-aligned?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source byte pointer."
+          },
+          {
+            "id": "b",
+            "text": "The schedule destination."
+          },
+          {
+            "id": "c",
+            "text": "Both pointers must be identical."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Separate a byte sequence from a numeric word array."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The later sw instruction addresses the schedule, not the source."
+        }
+      ],
+      "region": "sch_setup",
+      "code": "    move $t0, $a1\n    li $t1, 16\n"
+    },
+    {
+      "id": "s04",
+      "title": "Place the first two bytes in their word fields",
+      "kind": "author",
+      "prose": "Load the first two bytes without sign extension. Shift the first into bits 31 through 24 and the second into bits 23 through 16, then combine them. The source has not moved, so offsets zero and one refer to the same four-byte group. The remaining low fields will be filled by the next edit.",
+      "expectedObservation": "For the padded abc block, the low word of t2 is 61620000.",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What does shifting the first byte by 24 accomplish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It selects the next input byte."
+          },
+          {
+            "id": "b",
+            "text": "It changes the source memory order."
+          },
+          {
+            "id": "c",
+            "text": "It places that byte in the most significant field of the numeric word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Trace one byte before considering the full block."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The byte 61 becomes the word pattern 61000000."
+        }
+      ],
+      "region": "sch_high",
+      "code": "    lbu $t2, 0($a0)\n    lbu $t3, 1($a0)\n    sll $t2, $t2, 24\n    sll $t3, $t3, 16\n    or $t2, $t2, $t3\n"
+    },
+    {
+      "id": "s05",
+      "title": "Complete and store one decoded word",
+      "kind": "author",
+      "prose": "Load source bytes two and three, place byte two in bits 15 through 8, and combine both with the high fields. Store the completed low word through t0. This is the first observable schedule write. Its bytes in little-endian memory have a different display order from the original block, but loading the numeric schedule word recovers the intended value.",
+      "expectedObservation": "The first schedule word is 61626380; later schedule words retain their old contents.",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why is lbu used for the final source byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A signed final byte could set higher fields during OR."
+          },
+          {
+            "id": "b",
+            "text": "It swaps every pair of bytes."
+          },
+          {
+            "id": "c",
+            "text": "It writes the schedule automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Consider a final byte with value 80."
+        },
+        {
+          "id": "s05-h2",
+          "text": "A signed byte load would create ones above bit seven."
+        }
+      ],
+      "region": "sch_low",
+      "code": "    lbu $t3, 2($a0)\n    sll $t3, $t3, 8\n    or $t2, $t2, $t3\n    lbu $t3, 3($a0)\n    or $t2, $t2, $t3\n    sw $t2, 0($t0)\n"
+    },
+    {
+      "id": "s06",
+      "title": "Decode the remaining fifteen words",
+      "kind": "author",
+      "prose": "Advance both pointers by four bytes and decrement the remaining-word count. The branch returns to schedule_decode while another source group remains. After the sixteenth store, t0 points immediately beyond those sixteen words; load forty-eight as the number of expanded entries still to compute. The next region begins with exactly the predecessor words expansion needs.",
+      "expectedObservation": "The first sixteen schedule words match the block; t0 is 64 bytes beyond the supplied schedule address.",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why does the source advance by four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each schedule word consumes four source bytes."
+          },
+          {
+            "id": "b",
+            "text": "There are four compression rounds."
+          },
+          {
+            "id": "c",
+            "text": "The byte count is stored in words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Relate one loop iteration to one destination word."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Sixteen groups of four bytes consume the entire 64-byte block."
+        }
+      ],
+      "region": "sch_walk",
+      "code": "    daddiu $a0, $a0, 4\n    daddiu $t0, $t0, 4\n    addiu $t1, $t1, -1\n    bne $t1, $zero, schedule_decode\n    nop\n    li $t1, 48\n"
+    },
+    {
+      "id": "s07",
+      "title": "Compute small sigma zero from its predecessor",
+      "kind": "author",
+      "prose": "The current destination is W16. Load W1 from byte offset minus sixty, then form its two rotations and logical shift. XOR combines their bit patterns; it is not an arithmetic sum. The result remains in t3 for the next region. A pointer-relative predecessor uses a byte displacement, even though the equation names word indices.",
+      "expectedObservation": "t3 contains small sigma zero of W1; no expanded word has been stored yet.",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Which word is sixty bytes before W16?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "W0."
+          },
+          {
+            "id": "b",
+            "text": "W1."
+          },
+          {
+            "id": "c",
+            "text": "W15."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Count fifteen word-sized steps backward."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Each step is four bytes."
+        }
+      ],
+      "region": "sch_sigma0",
+      "code": "    lw $t2, -60($t0)\n    rotr $t3, $t2, 7\n    rotr $t4, $t2, 18\n    xor $t3, $t3, $t4\n    srl $t4, $t2, 3\n    xor $t3, $t3, $t4\n"
+    },
+    {
+      "id": "s08",
+      "title": "Compute small sigma one independently",
+      "kind": "author",
+      "prose": "Load the word two positions before the destination. Form the rotations by seventeen and nineteen and the logical shift by ten, placing their XOR in t4. Keep the small-sigma-zero result in t3 intact. Computing both terms before adding them makes the equation correspond to separate inspectable register values.",
+      "expectedObservation": "For padded abc at W16, t3 and t4 are both zero because W1 and W14 are zero.",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which operation fills shifted-in bits with zeros?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "sra."
+          },
+          {
+            "id": "b",
+            "text": "drotr."
+          },
+          {
+            "id": "c",
+            "text": "srl."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "A rotate puts removed bits back into the word."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The non-rotating term in this equation requires a logical word shift."
+        }
+      ],
+      "region": "sch_sigma1",
+      "code": "    lw $t2, -8($t0)\n    rotr $t4, $t2, 17\n    rotr $t5, $t2, 19\n    xor $t4, $t4, $t5\n    srl $t5, $t2, 10\n    xor $t4, $t4, $t5\n"
+    },
+    {
+      "id": "s09",
+      "title": "Write each expanded schedule word",
+      "kind": "author",
+      "prose": "Add the two small-sigma terms and the predecessors at minus sixty-four and minus twenty-eight bytes. Store the low word, advance the destination and repeat forty-eight times. All predecessor reads now refer to entries already written by decoding or an earlier expansion iteration. Completing this region replaces the provisional result with the schedule routine's normal zero status.",
+      "expectedObservation": "All sixty-four words are available; W16 through W19 are 61626380, 000f0000, 7da86405 and 600003c6 for padded abc.",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What may influence an expanded schedule word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The old contents of unused workspace."
+          },
+          {
+            "id": "b",
+            "text": "The earlier words named by the recurrence."
+          },
+          {
+            "id": "c",
+            "text": "The file descriptor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Follow the write order from W0 onward."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Every predecessor must have been produced during this call."
+        }
+      ],
+      "region": "sch_sum",
+      "code": "    addu $t3, $t3, $t4\n    lw $t4, -64($t0)\n    addu $t3, $t3, $t4\n    lw $t4, -28($t0)\n    addu $t3, $t3, $t4\n    sw $t3, 0($t0)\n    daddiu $t0, $t0, 4\n    addiu $t1, $t1, -1\n    bne $t1, $zero, schedule_expand\n    nop\n"
+    },
+    {
+      "id": "s10",
+      "title": "Check the entire schedule before calling compression",
+      "kind": "observe",
+      "prose": "Use both padded abc and a binary block containing high-bit bytes. Compare all sixty-four schedule words, not only the first and last. This separates decoding and recurrence errors from the compression loop that will consume the schedule. A correct complete schedule is also a useful debugger observation for later blocks.",
+      "expectedObservation": "All sixty-four words agree with the independent model on aligned and offset inputs.",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What does checking only W0 establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That all sixty-four rounds are correct."
+          },
+          {
+            "id": "b",
+            "text": "That every predecessor offset is correct."
+          },
+          {
+            "id": "c",
+            "text": "Only that one decoded word is correct."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Expansion has not contributed to W0."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Test a recurrence result as well as directly decoded values."
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "Call the schedule builder without losing the caller",
+      "kind": "author",
+      "prose": "The supplied frame has saved the state and workspace pointers as well as ra. Pass the block and workspace to the completed schedule routine. After that call, reload the state and workspace pointers, select the fixed constant table and set the round count to sixty-four. Reloading is necessary because the schedule builder may change temporary registers and argument registers.",
+      "expectedObservation": "The workspace contains the full schedule; t9 points to state, t6 to W0, t7 to K0 and t8 is sixty-four.",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why reload the state pointer after the nested call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Argument and temporary registers are not preserved by that call."
+          },
+          {
+            "id": "b",
+            "text": "A schedule is stored in the text segment."
+          },
+          {
+            "id": "c",
+            "text": "The state pointer must become a word value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Read which registers the schedule loop uses."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The frame retains full addresses in eight-byte slots."
+        }
+      ],
+      "region": "comp_prepare",
+      "code": "    move $a0, $a1\n    move $a1, $a2\n    jal sha256_schedule\n    nop\n    ld $t9, 72($sp)\n    ld $t6, 80($sp)\n    dla $t7, sha_k\n    li $t8, 64\n"
+    },
+    {
+      "id": "s12",
+      "title": "Copy the incoming state into working registers",
+      "kind": "author",
+      "prose": "Load the eight state words into s0 through s7, representing a through h. Keep the incoming state in memory for feed-forward at the end of the block. The supplied frame will restore these preserved registers on every return; while the function runs, they are its working storage. A signed word load preserves the low-word pattern required by word operations.",
+      "expectedObservation": "At the first-round boundary, s0 through s7 contain the initial working words and caller state is unchanged.",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why retain the incoming state words in memory?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They are used again in the final feed-forward sums."
+          },
+          {
+            "id": "b",
+            "text": "They contain the file path."
+          },
+          {
+            "id": "c",
+            "text": "They are the schedule destination."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Distinguish the working vector from the running hash state."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The next state adds the final working vector to the old state."
+        }
+      ],
+      "region": "comp_load",
+      "code": "    lw $s0, 0($t9)\n    lw $s1, 4($t9)\n    lw $s2, 8($t9)\n    lw $s3, 12($t9)\n    lw $s4, 16($t9)\n    lw $s5, 20($t9)\n    lw $s6, 24($t9)\n    lw $s7, 28($t9)\n"
+    },
+    {
+      "id": "s13",
+      "title": "Form capital sigma one of old e",
+      "kind": "author",
+      "prose": "Apply the three word rotations to s4, which still holds the old e value. XOR the results into t0. The working vector must remain unchanged until both round temporaries are ready. This capital-sigma function has no logical-shift term; it differs from the schedule's small-sigma-one function.",
+      "expectedObservation": "For round zero of padded abc, t0 has low word 3587272b.",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which value supplies all three rotations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The new e after its replacement."
+          },
+          {
+            "id": "b",
+            "text": "The old e in s4."
+          },
+          {
+            "id": "c",
+            "text": "The byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "The right-hand side of a round uses only its old vector."
+        },
+        {
+          "id": "s13-h2",
+          "text": "No working register has been reassigned yet."
+        }
+      ],
+      "region": "comp_sigma1",
+      "code": "    rotr $t0, $s4, 6\n    rotr $t2, $s4, 11\n    xor $t0, $t0, $t2\n    rotr $t2, $s4, 25\n    xor $t0, $t0, $t2\n"
+    },
+    {
+      "id": "s14",
+      "title": "Add choice, old h, the constant and the schedule word",
+      "kind": "author",
+      "prose": "The factored choice expression selects between old f and old g using old e. Add it to the capital-sigma-one result, then include old h, the current constant and the current schedule word. Use nontrapping word additions throughout. t0 is now the complete T1; the state and working registers are still unchanged.",
+      "expectedObservation": "For the first abc round, t0 is 54da50e8.",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does a one bit of e select in choice?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The corresponding bit of f."
+          },
+          {
+            "id": "b",
+            "text": "The corresponding bit of g."
+          },
+          {
+            "id": "c",
+            "text": "The next constant."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Think about one bit position at a time."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Use the factored expression g XOR (e AND (f XOR g))."
+        }
+      ],
+      "region": "comp_t1",
+      "code": "    xor $t2, $s5, $s6\n    and $t2, $t2, $s4\n    xor $t2, $t2, $s6\n    addu $t0, $t0, $t2\n    addu $t0, $t0, $s7\n    lw $t2, 0($t7)\n    addu $t0, $t0, $t2\n    lw $t2, 0($t6)\n    addu $t0, $t0, $t2\n"
+    },
+    {
+      "id": "s15",
+      "title": "Form capital sigma zero of old a",
+      "kind": "author",
+      "prose": "Rotate old a by two, thirteen and twenty-two bits and XOR those words into t1. Retain T1 in t0. Two distinct destination temporaries prevent the second calculation from destroying the first. The next region will add the majority term to t1.",
+      "expectedObservation": "For the first abc round, t1 has low word ce20b47e while t0 still holds T1.",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which temporary must survive this calculation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The already computed T1."
+          },
+          {
+            "id": "b",
+            "text": "The original source byte in a0."
+          },
+          {
+            "id": "c",
+            "text": "The current syscall number."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Identify the values needed by both new a and new e."
+        },
+        {
+          "id": "s15-h2",
+          "text": "T1 is used twice in the working-vector replacement."
+        }
+      ],
+      "region": "comp_sigma0",
+      "code": "    rotr $t1, $s0, 2\n    rotr $t2, $s0, 13\n    xor $t1, $t1, $t2\n    rotr $t2, $s0, 22\n    xor $t1, $t1, $t2\n"
+    },
+    {
+      "id": "s16",
+      "title": "Add the majority term to finish T2",
+      "kind": "author",
+      "prose": "Compute majority using old a, b and c. The factored form in this construction uses the XOR of a and b to select where c contributes, then combines that with a AND b. Add the result to capital sigma zero in t1. This completes both right-hand sides before any working value changes.",
+      "expectedObservation": "At the first abc round, T1 is 54da50e8 and T2 is 08909ae5.",
+      "quiz": {
+        "id": "q16",
+        "prompt": "When is one bit of majority equal to one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only when all three input bits are one."
+          },
+          {
+            "id": "b",
+            "text": "When exactly one input bit is one."
+          },
+          {
+            "id": "c",
+            "text": "When at least two input bits are one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Check the three possible pairs of inputs."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Any pair of ones establishes the majority at that position."
+        }
+      ],
+      "region": "comp_t2",
+      "code": "    xor $t2, $s0, $s1\n    and $t2, $t2, $s2\n    and $t3, $s0, $s1\n    xor $t2, $t2, $t3\n    addu $t1, $t1, $t2\n"
+    },
+    {
+      "id": "s17",
+      "title": "Replace the working vector in dependency order",
+      "kind": "author",
+      "prose": "Move old g to h, old f to g and old e to f before replacing e with old d plus T1. Continue toward a, then set new a to T1 plus T2. This order preserves each old value until its last use. Pause at compress_round_done before the loop advances to inspect all eight new working words.",
+      "expectedObservation": "For padded abc, new a is 5d6aebcd and new e is fa2a4622; the remaining words follow the worked table.",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What goes wrong if g is overwritten before h receives old g?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The old g value can be lost."
+          },
+          {
+            "id": "b",
+            "text": "The source address becomes aligned."
+          },
+          {
+            "id": "c",
+            "text": "The round counter increases."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Trace two adjacent assignments with distinct bit patterns."
+        },
+        {
+          "id": "s17-h2",
+          "text": "A move copies the register's current value, not its value at the start of the round."
+        }
+      ],
+      "region": "comp_rotate",
+      "code": "    move $s7, $s6\n    move $s6, $s5\n    move $s5, $s4\n    addu $s4, $s3, $t0\n    move $s3, $s2\n    move $s2, $s1\n    move $s1, $s0\n    addu $s0, $t0, $t1\n"
+    },
+    {
+      "id": "s18",
+      "title": "Advance constants and schedule entries together",
+      "kind": "author",
+      "prose": "Increment each word pointer by four and decrement the round count. Repeat at compress_round while the count is nonzero. Both pointers must advance once per round, since Kt and Wt refer to the same round index. After sixty-four rounds the working vector is ready for feed-forward; it has not yet replaced the running state.",
+      "expectedObservation": "The two pointers have advanced by 256 bytes and t8 is zero; caller state remains unchanged before feed-forward.",
+      "quiz": {
+        "id": "q18",
+        "prompt": "How many constants does one block consume?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixteen."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-four."
+          },
+          {
+            "id": "c",
+            "text": "One per input byte including padding twice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "There is one Kt in each round equation."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The schedule and constant arrays each contain one word per round."
+        }
+      ],
+      "region": "comp_walk",
+      "code": "    daddiu $t6, $t6, 4\n    daddiu $t7, $t7, 4\n    addiu $t8, $t8, -1\n    bne $t8, $zero, compress_round\n    nop\n"
+    },
+    {
+      "id": "s19",
+      "title": "Add the working vector back to the incoming state",
+      "kind": "author",
+      "prose": "For each word, load its original state value, add the matching final working register and store the low word. The final stores are independent: once a state word has been added, that original word is no longer needed. The supplied epilogue then restores the caller's registers and reports status zero.",
+      "expectedObservation": "All eight state words match compression of this block from the supplied initial state.",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Which pair is added for the first output state word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Old state word zero and final working a."
+          },
+          {
+            "id": "b",
+            "text": "Initial a and initial b."
+          },
+          {
+            "id": "c",
+            "text": "The first two schedule words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Locate the feed-forward step after the round loop."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The final working vector is only one term of the next state."
+        }
+      ],
+      "region": "comp_feed",
+      "code": "    lw $t0, 0($t9)\n    addu $t0, $t0, $s0\n    sw $t0, 0($t9)\n    lw $t0, 4($t9)\n    addu $t0, $t0, $s1\n    sw $t0, 4($t9)\n    lw $t0, 8($t9)\n    addu $t0, $t0, $s2\n    sw $t0, 8($t9)\n    lw $t0, 12($t9)\n    addu $t0, $t0, $s3\n    sw $t0, 12($t9)\n    lw $t0, 16($t9)\n    addu $t0, $t0, $s4\n    sw $t0, 16($t9)\n    lw $t0, 20($t9)\n    addu $t0, $t0, $s5\n    sw $t0, 20($t9)\n    lw $t0, 24($t9)\n    addu $t0, $t0, $s6\n    sw $t0, 24($t9)\n    lw $t0, 28($t9)\n    addu $t0, $t0, $s7\n    sw $t0, 28($t9)\n"
+    },
+    {
+      "id": "s20",
+      "title": "Compare a round boundary and the complete block result",
+      "kind": "observe",
+      "prose": "First pause after the working-vector replacement and compare the eight words in the worked example. Then let the completed function return and compare the feed-forward state and preserved registers. The two observations answer different questions: how a round changes working storage and what the public function returns to its caller.",
+      "expectedObservation": "The first round matches the table; the returned state matches compression and preserved registers have their original full values.",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Should s0 still hold working a after the function returns?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, saved registers are the digest output."
+          },
+          {
+            "id": "b",
+            "text": "No; the public function restores the caller's s0."
+          },
+          {
+            "id": "c",
+            "text": "Only when a is negative."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The state output is in caller memory."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The internal register allocation is distinct from the function's preserved-register obligation."
+        }
+      ]
+    },
+    {
+      "id": "s21",
+      "title": "Install the initial eight-word state",
+      "kind": "author",
+      "prose": "Walk the fixed initial-state constants and the supplied context together, copying eight numeric words. This code initializes meaningful state without clearing every workspace byte. The context pointer supplied in a0 remains available after the temporary walker has advanced. No source message is consumed by initialization.",
+      "expectedObservation": "Context words zero through seven equal the standard initial state; the count fields have not yet been reset by this edit.",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Must initialization clear the entire schedule workspace?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, every word must initially be zero."
+          },
+          {
+            "id": "b",
+            "text": "No; later schedule construction writes every word it uses."
+          },
+          {
+            "id": "c",
+            "text": "Only when a file is opened."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Separate meaningful context fields from scratch storage."
+        },
+        {
+          "id": "s21-h2",
+          "text": "An old workspace value must never be needed to build a new schedule."
+        }
+      ],
+      "region": "init_copy",
+      "code": "    dla $t0, sha_iv\n    move $t1, $a0\n    li $t2, 8\ninit_word:\n    lw $t3, 0($t0)\n    sw $t3, 0($t1)\n    daddiu $t0, $t0, 4\n    daddiu $t1, $t1, 4\n    addiu $t2, $t2, -1\n    bne $t2, $zero, init_word\n    nop\n"
+    },
+    {
+      "id": "s22",
+      "title": "Reset the original length and incomplete-buffer count",
+      "kind": "author",
+      "prose": "Clear the eight-byte original byte count and the four-byte used count. Use sd for the former so an earlier long message cannot leave stale high bits. With an empty buffer prefix, old buffer contents have no meaning. Initialization now returns zero and can start a fresh message in a previously used context.",
+      "expectedObservation": "The initialized context has the initial state, total zero and used zero.",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Why clear eight bytes at context offset thirty-two?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is the full 64-bit byte counter."
+          },
+          {
+            "id": "b",
+            "text": "The next source byte is eight bytes long."
+          },
+          {
+            "id": "c",
+            "text": "The schedule contains eight words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "A reused context may contain a nonzero upper count word."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A four-byte store would leave half of the counter untouched."
+        }
+      ],
+      "region": "init_counts",
+      "code": "    sd $zero, 32($a0)\n    sw $zero, 40($a0)\n"
+    },
+    {
+      "id": "s23",
+      "title": "Count the supplied message bytes once",
+      "kind": "author",
+      "prose": "Load the original byte count, add the incoming update length using doubleword arithmetic and store the full count. This addition belongs before the copy loop. Adding the complete length during every loop iteration would overcount, and adding padding later would change the encoded message length. The provided frame already retains the source, length and current used count.",
+      "expectedObservation": "For a fresh context and three input bytes, the total becomes three before any buffer byte is written.",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What does this count include?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only bytes returned by the final read."
+          },
+          {
+            "id": "b",
+            "text": "All original message bytes supplied across updates."
+          },
+          {
+            "id": "c",
+            "text": "Padding and schedule bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The counter survives more than one update call."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Finalization converts this original-byte count to bits without incrementing it for padding."
+        }
+      ],
+      "region": "upd_count",
+      "code": "    ld $t0, 32($s0)\n    daddu $t0, $t0, $s2\n    sd $t0, 32($s0)\n"
+    },
+    {
+      "id": "s24",
+      "title": "Guard the source before copying a byte",
+      "kind": "author",
+      "prose": "Check remaining input before loading through the source pointer. For a nonempty interval, load one unsigned byte, add the current used count to the context base and store at buffer offset forty-eight. This edit copies one byte but does not yet advance either count. For zero length, the branch reaches the supplied normal update exit without touching source memory.",
+      "expectedObservation": "The first selected input byte is copied at the old used position; an empty call performs no source read.",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which check must precede the source load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether any input bytes remain."
+          },
+          {
+            "id": "b",
+            "text": "Whether the output digest is zero."
+          },
+          {
+            "id": "c",
+            "text": "Whether the source address is word-aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "A zero-length interval permits no byte load."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The source need not point to readable data for an empty update."
+        }
+      ],
+      "region": "upd_copy",
+      "code": "    beq $s2, $zero, update_done\n    nop\n    lbu $t0, 0($s1)\n    daddu $t1, $s0, $s3\n    sb $t0, 48($t1)\n"
+    },
+    {
+      "id": "s25",
+      "title": "Recognize when the buffer becomes full",
+      "kind": "author",
+      "prose": "Advance the full source pointer, reduce remaining input, and increase the used count. If the buffer has fewer than sixty-four bytes, continue at update_byte. Reaching sixty-four must leave the copy loop and enter compression before another store occurs. Otherwise the next byte would overwrite the schedule area following the buffer.",
+      "expectedObservation": "For a 64-byte update to an empty context, the buffer is full, remaining input is zero and used is sixty-four at the compression boundary.",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why not immediately copy byte sixty-five into the same buffer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It would exceed the 64-byte buffer."
+          },
+          {
+            "id": "b",
+            "text": "It would make the message odd-length."
+          },
+          {
+            "id": "c",
+            "text": "It would alter the constant table automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The buffer occupies context bytes forty-eight through one hundred eleven."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The next context field begins at byte one hundred twelve."
+        }
+      ],
+      "region": "upd_walk",
+      "code": "    daddiu $s1, $s1, 1\n    daddiu $s2, $s2, -1\n    addiu $s3, $s3, 1\n    li $t0, 64\n    bne $s3, $t0, update_byte\n    nop\n"
+    },
+    {
+      "id": "s26",
+      "title": "Compress the complete buffer",
+      "kind": "author",
+      "prose": "Pass the context state, its block buffer and its schedule workspace to the completed compression entry. The outer update frame retains all values needed after the nested call. Compression changes the state to include this full message block; the original byte total is already correct and must not be incremented again here.",
+      "expectedObservation": "The context state includes the first full block; used is still sixty-four until the next edit resets the working count.",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which pointer supplies the compression state?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The context base."
+          },
+          {
+            "id": "b",
+            "text": "The source pointer after its increment."
+          },
+          {
+            "id": "c",
+            "text": "The digest destination."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "The eight state words are the first field of the context."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The block buffer and schedule are at separate offsets from that same base."
+        }
+      ],
+      "region": "upd_compress",
+      "code": "    move $a0, $s0\n    daddiu $a1, $s0, 48\n    daddiu $a2, $s0, 112\n    jal sha256_compress\n    nop\n"
+    },
+    {
+      "id": "s27",
+      "title": "Begin a fresh buffer after compression",
+      "kind": "author",
+      "prose": "Set the working used count to zero and return to the source guard. Any remaining bytes now start at buffer position zero. When input is exhausted, the common exit stores the final used count before restoring the frame. This completes update for both partial and complete source blocks, including a final incomplete tail.",
+      "expectedObservation": "A 65-byte input leaves total sixty-five, used one and the last input byte in buffer position zero.",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Which value must be cleared after a full block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original total."
+          },
+          {
+            "id": "b",
+            "text": "The used count."
+          },
+          {
+            "id": "c",
+            "text": "The running eight-word state."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "A new buffer begins, but the message continues."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Resetting the state would discard all previously compressed blocks."
+        }
+      ],
+      "region": "upd_resume",
+      "code": "    move $s3, $zero\n    b update_byte\n    nop\n"
+    },
+    {
+      "id": "s28",
+      "title": "Compare one update with several updates",
+      "kind": "observe",
+      "prose": "Supply the same 65 bytes in one call and in parts of fifty-five and ten. Compare the state, total, used count and used buffer prefix before finalization. These are the meaningful fields. A correct implementation may leave different unused buffer or schedule bytes after the two paths.",
+      "expectedObservation": "Both paths represent sixty-five bytes, with one buffered byte and the same state after the first full block.",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which context bytes must represent the same tail?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire unused schedule."
+          },
+          {
+            "id": "b",
+            "text": "Only the used buffer prefix."
+          },
+          {
+            "id": "c",
+            "text": "Every byte ever used by any earlier call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "The used count establishes which buffer bytes have meaning."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Scratch storage beyond the prefix is not part of the logical tail."
+        }
+      ]
+    },
+    {
+      "id": "s29",
+      "title": "Record the bit length and append the marker",
+      "kind": "author",
+      "prose": "Read the original byte total and shift it left by three with dsll. Keep that full bit count in s3 while writing the marker at the next free buffer position. Advance the working used count after the store. The context's original-byte total remains unchanged: the marker belongs to padding rather than the message.",
+      "expectedObservation": "For abc, s3 is twenty-four, the marker occupies buffer index three and the working used count is four.",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Does appending 80 increase the original message length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, by one byte."
+          },
+          {
+            "id": "b",
+            "text": "Yes, by eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "No; the recorded length excludes padding."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Distinguish the bytes sent by the caller from bytes added by finalization."
+        },
+        {
+          "id": "s29-h2",
+          "text": "The length field describes only the original input."
+        }
+      ],
+      "region": "fin_marker",
+      "code": "    ld $s3, 32($s0)\n    dsll $s3, $s3, 3\n    daddu $t0, $s0, $s2\n    li $t1, 128\n    sb $t1, 48($t0)\n    addiu $s2, $s2, 1\n"
+    },
+    {
+      "id": "s30",
+      "title": "Choose whether padding needs an extra block",
+      "kind": "author",
+      "prose": "Compare the working used count after writing the marker with fifty-seven. A value below fifty-seven leaves enough room for the eight length bytes and branches to final_zero_to_length. Otherwise continue with the first-block fill path. The comparison is deliberately after the marker increment; its boundary corresponds to original used counts fifty-five and fifty-six.",
+      "expectedObservation": "An original 56-byte tail takes the first-block path; an original 55-byte tail can place the length in this block.",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What is the working used count after marking a 56-byte tail?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Fifty-six."
+          },
+          {
+            "id": "b",
+            "text": "Fifty-seven."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "The marker consumes one buffer byte."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Add one before applying the room-for-length test."
+        }
+      ],
+      "region": "fin_decide",
+      "code": "    sltiu $t0, $s2, 57\n    bne $t0, $zero, final_zero_to_length\n    nop\n"
+    },
+    {
+      "id": "s31",
+      "title": "Finish a block that has no room for the length",
+      "kind": "author",
+      "prose": "Fill the remainder of the current buffer with zero bytes until the working used count reaches sixty-four. Branch before writing when the buffer is already full. This path is selected only when the marker left too little room for the length, so the length field will go in a separate block.",
+      "expectedObservation": "The first padding block contains the original tail, one 80 byte and zeros through its final byte.",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Where will the length be written on this path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In another block."
+          },
+          {
+            "id": "b",
+            "text": "Over the last message bytes."
+          },
+          {
+            "id": "c",
+            "text": "Into the constant table."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "There were fewer than eight free bytes after the marker."
+        },
+        {
+          "id": "s31-h2",
+          "text": "This block must be compressed before a fresh zero-filled block is completed."
+        }
+      ],
+      "region": "fin_zero_first",
+      "code": "    sltiu $t0, $s2, 64\n    beq $t0, $zero, final_first_compress\n    nop\n    daddu $t0, $s0, $s2\n    sb $zero, 48($t0)\n    addiu $s2, $s2, 1\n    b final_zero_first\n    nop\n"
+    },
+    {
+      "id": "s32",
+      "title": "Compress the first padding block and restart its count",
+      "kind": "author",
+      "prose": "Call compression on the now-complete buffer, then clear the working used count. Keep the saved original bit length in s3 across the call. The same physical buffer will hold the final block next; it is its logical occupancy that has become zero. Its old bytes still need to be overwritten where the final block requires zeros.",
+      "expectedObservation": "The state includes the first padding block and s2 is zero before the final-block fill loop.",
+      "quiz": {
+        "id": "q32",
+        "prompt": "May the final block reuse the same 64-byte storage?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No, each block needs a separate allocation."
+          },
+          {
+            "id": "b",
+            "text": "Yes, after the previous block has been consumed."
+          },
+          {
+            "id": "c",
+            "text": "Only for ASCII input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Compression has already incorporated the previous block into state."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Reuse storage while preserving the logical sequence of blocks."
+        }
+      ],
+      "region": "fin_first",
+      "code": "    move $a0, $s0\n    daddiu $a1, $s0, 48\n    daddiu $a2, $s0, 112\n    jal sha256_compress\n    nop\n    move $s2, $zero\n"
+    },
+    {
+      "id": "s33",
+      "title": "Leave exactly eight bytes for the length",
+      "kind": "author",
+      "prose": "Fill buffer positions from the working used count through fifty-five with zeros. The used count may begin after a short message and its marker, or at zero after the extra-block path. Both cases reach final_write_length with the same destination layout: eight remaining bytes at positions fifty-six through sixty-three.",
+      "expectedObservation": "The final eight buffer positions are reserved for the bit length; all padding positions before them are zero.",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Why stop the fill at index fifty-six?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining eight positions hold the length."
+          },
+          {
+            "id": "b",
+            "text": "Only fifty-six input bytes are allowed."
+          },
+          {
+            "id": "c",
+            "text": "The schedule has fifty-six words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "The block is sixty-four bytes long."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Subtract the eight-byte length field from that capacity."
+        }
+      ],
+      "region": "fin_zero_last",
+      "code": "    sltiu $t0, $s2, 56\n    beq $t0, $zero, final_write_length\n    nop\n    daddu $t0, $s0, $s2\n    sb $zero, 48($t0)\n    addiu $s2, $s2, 1\n    b final_zero_to_length\n    nop\n"
+    },
+    {
+      "id": "s34",
+      "title": "Serialize every bit of the saved length",
+      "kind": "author",
+      "prose": "Write the most significant length byte first, using doubleword logical variable shifts with counts fifty-six down to zero. Store the low byte of each shifted result. Word-sized variable shifts would wrap the shift count modulo thirty-two and lose the intended high half. After this loop the final block is complete, but has not yet been compressed.",
+      "expectedObservation": "For abc, buffer bytes fifty-six through sixty-three are 00 00 00 00 00 00 00 18.",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Which width is required for these variable shifts?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight bits."
+          },
+          {
+            "id": "b",
+            "text": "Thirty-two bits."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "The length field itself occupies sixty-four bits."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Its first extraction shifts by fifty-six, which a word shift cannot express as intended."
+        }
+      ],
+      "region": "fin_length",
+      "code": "    li $t0, 56\n    daddiu $t1, $s0, 104\nfinal_length_byte:\n    dsrlv $t2, $s3, $t0\n    sb $t2, 0($t1)\n    daddiu $t1, $t1, 1\n    addiu $t0, $t0, -8\n    bgez $t0, final_length_byte\n    nop\n"
+    },
+    {
+      "id": "s35",
+      "title": "Consume the complete final block",
+      "kind": "author",
+      "prose": "Pass the state, final buffer and schedule workspace to compression one last time. This call happens on both padding paths: either it is the only padding block or it follows the extra block. The resulting state is ready for byte serialization. Do not restart the initial state here, because earlier message and padding blocks must remain incorporated.",
+      "expectedObservation": "The context state equals the complete SHA-256 result as eight numeric words; output bytes are still untouched.",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What must happen before writing the digest bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The final block must be compressed."
+          },
+          {
+            "id": "b",
+            "text": "The original total must be reset."
+          },
+          {
+            "id": "c",
+            "text": "The file must be reopened."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "The length field contributes to the hash through this block."
+        },
+        {
+          "id": "s35-h2",
+          "text": "A correct padding buffer is not itself the final digest."
+        }
+      ],
+      "region": "fin_compress",
+      "code": "    move $a0, $s0\n    daddiu $a1, $s0, 48\n    daddiu $a2, $s0, 112\n    jal sha256_compress\n    nop\n"
+    },
+    {
+      "id": "s36",
+      "title": "Publish thirty-two big-endian digest bytes",
+      "kind": "author",
+      "prose": "For each state word, extract its high byte first, then the next two bytes and its low byte. Byte stores support an unaligned output pointer. Advance by one word and four output bytes until all eight words are written. Clear the consumed context's used field, then let the supplied epilogue return status zero.",
+      "expectedObservation": "The output contains exactly thirty-two digest bytes, matching the host result for the selected message.",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Why not use sw directly on the output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output has to hold decimal text."
+          },
+          {
+            "id": "b",
+            "text": "The required byte order differs from a little-endian word store."
+          },
+          {
+            "id": "c",
+            "text": "A digest word is sixty-four bytes long."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Compare numeric ba7816bf with its required bytes ba 78 16 bf."
+        },
+        {
+          "id": "s36-h2",
+          "text": "A little-endian word store would put bf first."
+        }
+      ],
+      "region": "fin_output",
+      "code": "    move $t0, $s0\n    li $t1, 8\nfinal_output_word:\n    lwu $t2, 0($t0)\n    dsrl $t3, $t2, 24\n    sb $t3, 0($s1)\n    dsrl $t3, $t2, 16\n    sb $t3, 1($s1)\n    dsrl $t3, $t2, 8\n    sb $t3, 2($s1)\n    sb $t2, 3($s1)\n    daddiu $t0, $t0, 4\n    daddiu $s1, $s1, 4\n    addiu $t1, $t1, -1\n    bne $t1, $zero, final_output_word\n    nop\n    sw $zero, 40($s0)\n"
+    },
+    {
+      "id": "s37",
+      "title": "Test both sides of the padding boundary",
+      "kind": "observe",
+      "prose": "Prepare original lengths fifty-five and fifty-six, then sixty-three, sixty-four and sixty-five. Observe the buffer and length field before final compression as well as the returned digest. These cases distinguish marker placement, the extra-block decision and the update/finalization division of work.",
+      "expectedObservation": "Every digest matches the reference, including one final block at fifty-five bytes and two at fifty-six.",
+      "quiz": {
+        "id": "q37",
+        "prompt": "How many padding blocks follow an exact 64-byte message?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "One."
+          },
+          {
+            "id": "c",
+            "text": "Two because the input was full."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Update has consumed the message block already."
+        },
+        {
+          "id": "s37-h2",
+          "text": "A fresh block still records the marker and original length."
+        }
+      ]
+    },
+    {
+      "id": "s38",
+      "title": "Acquire the supplied file descriptor",
+      "kind": "author",
+      "prose": "Save the caller's scratch, capacity and output pointers in the provided frame, then open the supplied path read-only. Branch to the open-error return for a negative result. Otherwise retain the actual descriptor in s4. An unfinished later region returns development status three and closes that descriptor through the supplied cleanup path.",
+      "expectedObservation": "One successful open is followed by a close on temporary return; no digest is published yet.",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Which descriptor should later reads use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A fixed value of three."
+          },
+          {
+            "id": "b",
+            "text": "The nonnegative value returned by open."
+          },
+          {
+            "id": "c",
+            "text": "The scratch address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "The operating environment chooses the descriptor."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Preserve that result across all nested hash calls."
+        }
+      ],
+      "region": "file_open",
+      "code": "    move $a1, $zero\n    move $a2, $zero\n    li $v0, 13\n    syscall\n    bltz $v0, file_open_error\n    nop\n    move $s4, $v0\n"
+    },
+    {
+      "id": "s39",
+      "title": "Start one fresh hash for this file",
+      "kind": "author",
+      "prose": "Initialize the private context at the bottom of the file frame. Do this once after opening, before the first read. The private context keeps file hashing independent of any caller context and of previous file calls. Reinitializing it inside the read loop would instead hash each scratch block as a separate message.",
+      "expectedObservation": "The private context has an empty-message state; the file has not been read yet.",
+      "quiz": {
+        "id": "q39",
+        "prompt": "How often is initialization performed for a file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before every read."
+          },
+          {
+            "id": "b",
+            "text": "Only after EOF."
+          },
+          {
+            "id": "c",
+            "text": "Once before its first read."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Read boundaries divide transport, not messages."
+        },
+        {
+          "id": "s39-h2",
+          "text": "All positive reads contribute to one running context."
+        }
+      ],
+      "region": "file_init",
+      "code": "    move $a0, $s0\n    jal sha256_init\n    nop\n"
+    },
+    {
+      "id": "s40",
+      "title": "Request a bounded scratch prefix",
+      "kind": "author",
+      "prose": "Pass the retained descriptor, scratch address and positive capacity to the read syscall. Inspect its returned count before deciding how to use the scratch bytes. At this construction stage the temporary exit still closes the descriptor after this one read, so a provisional return is not a successful hash of the file.",
+      "expectedObservation": "The first read writes only its returned prefix; an injected short read can return fewer bytes than the capacity.",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Which bytes in scratch are new input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every byte up to the capacity."
+          },
+          {
+            "id": "b",
+            "text": "Only the number reported by the positive result."
+          },
+          {
+            "id": "c",
+            "text": "Every byte that happens to be nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "The buffer may retain older bytes after the returned prefix."
+        },
+        {
+          "id": "s40-h2",
+          "text": "The return value defines the valid input interval."
+        }
+      ],
+      "region": "file_read",
+      "code": "    move $a0, $s4\n    move $a1, $s1\n    move $a2, $s2\n    li $v0, 14\n    syscall\n"
+    },
+    {
+      "id": "s41",
+      "title": "Separate read errors, EOF and positive input",
+      "kind": "author",
+      "prose": "A negative read result branches to status two and cleanup. Zero branches to finalization. Positive results continue to update. The order matters: passing a negative result as an update length would convert an error into an invalid memory request. The EOF branch remains unfinished until the finalization region is authored.",
+      "expectedObservation": "Positive input reaches the update boundary; a failed read closes the descriptor and preserves the output.",
+      "quiz": {
+        "id": "q41",
+        "prompt": "What does a positive short read mean here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The returned bytes are valid and another read is needed."
+          },
+          {
+            "id": "b",
+            "text": "The complete file has ended."
+          },
+          {
+            "id": "c",
+            "text": "The hash must restart."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Only zero denotes EOF in this interface."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The amount returned may be smaller than the amount requested."
+        }
+      ],
+      "region": "file_result",
+      "code": "    bltz $v0, file_read_error\n    nop\n    beq $v0, $zero, file_finish\n    nop\n"
+    },
+    {
+      "id": "s42",
+      "title": "Hash exactly the returned read count",
+      "kind": "author",
+      "prose": "Move the positive read result into the update length argument before another call can replace v0. Pass the private context and scratch pointer, then call the completed update routine. The original file capacity remains retained separately; it controls requests, not the length of valid data returned by a particular read.",
+      "expectedObservation": "The private byte total includes the first returned prefix; no digest output has been written.",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Why copy v0 into the length argument first?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is the actual successful read count."
+          },
+          {
+            "id": "b",
+            "text": "It is always equal to the capacity."
+          },
+          {
+            "id": "c",
+            "text": "It contains the expected digest."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Nested functions may replace v0."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Retain the syscall result before entering the hash routine."
+        }
+      ],
+      "region": "file_update",
+      "code": "    move $a2, $v0\n    move $a0, $s0\n    move $a1, $s1\n    jal sha256_update\n    nop\n"
+    },
+    {
+      "id": "s43",
+      "title": "Continue reading until a terminal result",
+      "kind": "author",
+      "prose": "Return to file_read after each successful update. The context persists, so several short reads assemble the same logical message as larger reads. EOF reaches file_finish after all successful bytes have been consumed. At this step its temporary exit still reports unfinished status; the next edit will publish a completed digest.",
+      "expectedObservation": "For the chosen fixture, all bytes have been consumed before file_finish; the descriptor is still open at that internal checkpoint.",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Does the hash depend on the number of read calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, every read adds padding."
+          },
+          {
+            "id": "b",
+            "text": "No, only the ordered byte sequence contributes."
+          },
+          {
+            "id": "c",
+            "text": "Only if the capacity is odd."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "The update function never adds final padding."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Read boundaries disappear at the context interface."
+        }
+      ],
+      "region": "file_repeat",
+      "code": "    b file_read\n    nop\n"
+    },
+    {
+      "id": "s44",
+      "title": "Publish only after successful EOF and close",
+      "kind": "author",
+      "prose": "Finalize the private context into the caller's output, select success status zero and branch to the common close path. Error branches already select their own status and preserve output. The close path then restores the caller's full saved values and returns. The complete wrapper now has a single publication event at successful EOF.",
+      "expectedObservation": "Status is zero and all thirty-two digest bytes match the complete file; missing and failed reads leave output unchanged.",
+      "quiz": {
+        "id": "q44",
+        "prompt": "When is the output a digest of this complete file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After any positive read."
+          },
+          {
+            "id": "b",
+            "text": "When scratch is full."
+          },
+          {
+            "id": "c",
+            "text": "After EOF and successful finalization, with status zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "A partial prefix may not be the entire file."
+        },
+        {
+          "id": "s44-h2",
+          "text": "The caller must inspect status before interpreting output bytes."
+        }
+      ],
+      "region": "file_final",
+      "code": "    move $a0, $s0\n    move $a1, $s3\n    jal sha256_final\n    nop\n    move $s5, $zero\n    b file_close\n    nop\n"
+    },
+    {
+      "id": "s45",
+      "title": "Distinguish ordinary files from controlled read tests",
+      "kind": "observe",
+      "prose": "Use a real file to compare the published digest with a host calculation. Separately use the CLI fixtures to force positive short reads, an unsuccessful open and a failure after a selected prefix. A real file with known bytes checks normal I/O; it does not by itself establish every error branch.",
+      "expectedObservation": "Both read sizes give the same successful digest; errors close acquired descriptors and preserve output.",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Does an ordinary small file force a read-error branch?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if its length is not a multiple of sixty-four."
+          },
+          {
+            "id": "b",
+            "text": "No; the error must be exercised deliberately."
+          },
+          {
+            "id": "c",
+            "text": "Only when the filename contains digits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "File contents and transport failures are separate test inputs."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Controlled fixtures make otherwise hard-to-repeat outcomes observable."
+        }
+      ]
+    },
+    {
+      "id": "s46",
+      "title": "Exercise equivalent code and independent contexts",
+      "kind": "observe",
+      "prose": "Use the completed function contracts to test a different register allocation or Boolean identity. Interleave two contexts, then reinitialize one and hash an empty message. Completed free-writing checks compare state, digest, ownership and preservation rather than requiring this chapter's temporary registers or exact instruction sequence.",
+      "expectedObservation": "Both contexts and the reinitialized message match their independent expected digests.",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What must an equivalent implementation preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The observable interface and memory contract."
+          },
+          {
+            "id": "b",
+            "text": "Every temporary register value used by this illustration."
+          },
+          {
+            "id": "c",
+            "text": "The same source labels inside its loop."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Separate an internal teaching checkpoint from a public return boundary."
+        },
+        {
+          "id": "s46-h2",
+          "text": "The caller relies on results and ownership, not the chosen expression for choice."
+        }
+      ]
+    },
+    {
+      "id": "s47",
+      "title": "Measure the change at a fixed boundary",
+      "kind": "observe",
+      "prose": "Compare the word-rotate implementation with complementary shifts and OR. Count initialization, update and finalization separately, using the same message and return boundary. A block boundary can move compression work from finalization into update, so compare complete paths as well as isolated loops.",
+      "expectedObservation": "Both versions produce identical bytes; the measured instruction totals differ as described in the work table.",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Do fewer simulated instructions establish lower host elapsed time?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always, with the same numerical ratio."
+          },
+          {
+            "id": "b",
+            "text": "No; host time requires a separate measurement."
+          },
+          {
+            "id": "c",
+            "text": "Only when the file is missing."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Identify exactly what the counter records."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Session creation, host execution costs and file latency are outside these instruction counts."
+        }
+      ]
+    }
+  ]
+}

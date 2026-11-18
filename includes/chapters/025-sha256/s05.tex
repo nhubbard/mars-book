@@ -1,0 +1,32 @@
+\section{Step 5 Complete and store one decoded word}\label{sha-s05}
+
+Load source bytes two and three, place byte two in bits 15 through 8, and combine both with the high fields. Store the completed low word through \texttt{t0}. This is the first observable schedule write. Its bytes in little-endian memory have a different display order from the original block, but loading the numeric schedule word recovers the intended value.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN sch\_low} and \texttt{\# END sch\_low}. Keep the supplied labels outside that region.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t3, 2($a0)
+    sll $t3, $t3, 8
+    or $t2, $t2, $t3
+    lbu $t3, 3($a0)
+    or $t2, $t2, $t3
+    sw $t2, 0($t0)
+\end{minted}
+
+Use recipe \texttt{s05-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The first schedule word is \texttt{61626380}; later schedule words retain their old contents.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why is \texttt{lbu} used for the final source byte?
+
+\begin{itemize}
+\item \textbf{A} A signed final byte could set higher fields during OR.
+\item \textbf{B} It swaps every pair of bytes.
+\item \textbf{C} It writes the schedule automatically.
+\end{itemize}

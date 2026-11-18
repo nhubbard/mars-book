@@ -1,5 +1,8 @@
 from pathlib import Path
 import hashlib
+import importlib.util
+import subprocess
+import sys
 import json
 import re
 import struct
@@ -30,7 +33,63 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
         self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
         self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
-        self.assertEqual(1, len(book.validate('drafts/sha256.tex')))
+        self.assertEqual(51, len(book.validate('drafts/sha256.tex')))
+
+    def test_sha_cumulative_edits_follow_native_order(self):
+        folder = book.ROOT / 'drafts/sha-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        self.assertEqual(47, len(steps))
+        self.assertEqual(38, sum(step['kind'] == 'author' for step in steps))
+        self.assertEqual(47, len({step['quiz']['id'] for step in steps}))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        order = [path.stem for path, _ in book.sources('drafts/sha256.tex')
+                 if path.parent.name == '025-sha256' and re.fullmatch(r's[0-9]{2}', path.stem)]
+        self.assertEqual([step['id'] for step in steps], order)
+        starter = (folder / 'main.asm').read_text()
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            text = (book.ROOT / 'includes/chapters/025-sha256' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [match[1] for match in book.CODE.finditer(text)])
+            if step['kind'] == 'author':
+                self.assertEqual(1, starter.count('# BEGIN ' + step['region'] + '\n'))
+                self.assertIn('    b ', starter.split('# BEGIN ' + step['region'] + '\n')[1].split('# END ')[0])
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(58, len(recipes))
+        self.assertEqual(58, len({q['id'] for q in recipes}))
+        self.assertEqual({step['id'] for step in steps if step['kind'] == 'author'} |
+                         {'s10', 's20', 's28', 's37', 's45'}, {q['step'] for q in recipes})
+        plan = json.loads((folder / 'captures/plan.json').read_text())
+        self.assertEqual(4, len(plan['figures']))
+        self.assertTrue(all(figure['status'].startswith('planned') for figure in plan['figures']))
+
+    def test_sha_preparation_preserves_work_and_refuses_existing_outputs(self):
+        folder = book.ROOT / 'drafts/sha-construction'
+        spec = importlib.util.spec_from_file_location('sha_prepare_test', folder / 'prepare.py')
+        prepare = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(prepare)
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        source = (folder / 'main.asm').read_text()
+        for q in recipes:
+            arenas = prepare.arenas(q)
+            self.assertEqual((4160, 96, 320, 832, 96, 128, 320), tuple(map(len, arenas.values())))
+            self.assertEqual(q['contextTotal'], int.from_bytes(bytes(arenas['context'][32:40]), 'little'))
+            self.assertEqual(q['contextTail'], arenas['context'][48:48 + len(q['contextTail'])])
+            prepared = prepare.prepare(source, q)
+            self.assertEqual(source.split('.text\n')[1], prepared.split('.text\n')[1])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            working = root / 'working.asm'
+            working.write_text(source)
+            output = root / 'observation.asm'
+            command = [sys.executable, str(folder / 'prepare.py'), 's03-1', '--source', str(working), '--output', str(output)]
+            first = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(0, first.returncode, first.stderr)
+            contents = output.read_bytes()
+            second = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(0, second.returncode)
+            self.assertEqual(contents, output.read_bytes())
+            self.assertEqual(source, working.read_text())
 
     def test_sha_worked_digest_padding_and_measured_rows(self):
         native = book.ROOT / 'includes/chapters/025-sha256'

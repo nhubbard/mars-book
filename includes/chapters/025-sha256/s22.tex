@@ -1,0 +1,28 @@
+\section{Step 22 Reset the original length and incomplete-buffer count}\label{sha-s22}
+
+Clear the eight-byte original byte count and the four-byte used count. Use \texttt{sd} for the former so an earlier long message cannot leave stale high bits. With an empty buffer prefix, old buffer contents have no meaning. Initialization now returns zero and can start a fresh message in a previously used context.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN init\_counts} and \texttt{\# END init\_counts}. Keep the supplied labels outside that region.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sd $zero, 32($a0)
+    sw $zero, 40($a0)
+\end{minted}
+
+Use recipe \texttt{s22-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The initialized context has the initial state, total zero and used zero.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why clear eight bytes at context offset thirty-two?
+
+\begin{itemize}
+\item \textbf{A} It is the full 64-bit byte counter.
+\item \textbf{B} The next source byte is eight bytes long.
+\item \textbf{C} The schedule contains eight words.
+\end{itemize}

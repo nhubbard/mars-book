@@ -1,0 +1,31 @@
+\section{Step 18 Advance constants and schedule entries together}\label{sha-s18}
+
+Increment each word pointer by four and decrement the round count. Repeat at compress\_round while the count is nonzero. Both pointers must advance once per round, since Kt and Wt refer to the same round index. After sixty-four rounds the working vector is ready for feed-forward; it has not yet replaced the running state.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN comp\_walk} and \texttt{\# END comp\_walk}. Keep the supplied labels outside that region.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $t6, $t6, 4
+    daddiu $t7, $t7, 4
+    addiu $t8, $t8, -1
+    bne $t8, $zero, compress_round
+    nop
+\end{minted}
+
+Use recipe \texttt{s18-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The two pointers have advanced by 256 bytes and \texttt{t8} is zero; caller state remains unchanged before feed-forward.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+How many constants does one block consume?
+
+\begin{itemize}
+\item \textbf{A} Sixteen.
+\item \textbf{B} Sixty-four.
+\item \textbf{C} One per input byte including padding twice.
+\end{itemize}
