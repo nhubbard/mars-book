@@ -4,6 +4,7 @@ import json
 import re
 import struct
 import wave
+import zlib
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -28,6 +29,34 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(43, len(book.validate('drafts/fixed-point-fir.tex')))
         self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
         self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
+        self.assertEqual(0, len(book.validate('drafts/crc32.tex')))
+
+    def test_crc_worked_values_and_measurement_tables(self):
+        native = book.ROOT / 'includes/chapters/024-crc32'
+        worked = (native / 'worked.tex').read_text()
+        state = 0xffffffff ^ 0x31
+        for _ in range(9):
+            self.assertIn(f'{state:08x}', worked)
+            state = (state >> 1) ^ (0xedb88320 if state & 1 else 0)
+        streaming = (native / 'streaming.tex').read_text()
+        for length in [0, 1, 3, 6, 7, 9]:
+            checksum = zlib.crc32(b'123456789'[:length])
+            self.assertIn(f'{checksum:08x}', streaming)
+            self.assertIn(f'{checksum ^ 0xffffffff:08x}', streaming)
+        self.assertEqual(0xae426082, zlib.crc32(b'IEND'))
+        self.assertIn('ae426082', (native / 'png.tex').read_text())
+        receipt = json.loads((book.ROOT / 'book/measurements/024-crc32.json').read_text())
+        self.assertTrue(receipt['tableConstructionSeparate'])
+        one, two = receipt['implementations']
+        self.assertEqual((17420, 18444), (one['tableInitializationInstructions'], two['tableInitializationInstructions']))
+        labels = ['Empty', 'One byte', 'Check message', 'Zero bytes', 'All octets', 'Strided octets']
+        text = (native / 'work.tex').read_text()
+        for index, label in enumerate(labels):
+            a, b = one['rows'][index * 2:index * 2 + 2]
+            c, d = two['rows'][index * 2:index * 2 + 2]
+            self.assertEqual((a['dataset'], a['bytes'], a['crc']), (d['dataset'], d['bytes'], d['crc']))
+            row = f"{label} & {a['instructions']} & {c['instructions']} & {b['instructions']} & {d['instructions']}"
+            self.assertIn(row, text)
 
     def test_delta_construction_transcript_matches_native_edits(self):
         folder = book.ROOT / 'drafts/delta-construction'

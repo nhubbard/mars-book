@@ -1,0 +1,41 @@
+\section{Apply the update to a PNG chunk}
+PNG uses the same CRC parameters, but its checked interval is a chunk's four type bytes
+followed by its data. The chunk length and stored CRC field are outside that interval.
+Even a chunk with no data has four type bytes to check. PNG stores the finalized CRC
+most significant byte first. These choices are properties of the file format, separate
+from the raw-state update interface.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={A PNG chunk has a four-byte length, a four-byte type, a variable-length data field and a four-byte stored CRC. A bracket covers only type and data as the bytes supplied to the CRC update. The length and stored CRC are excluded.},x=1cm,y=0.8cm,font=\small]
+\draw (0,0) rectangle (2,-1);
+\draw (2,0) rectangle (4,-1);
+\draw (4,0) rectangle (8,-1);
+\draw (8,0) rectangle (10,-1);
+\node at (1,-0.5) {Length};
+\node at (3,-0.5) {Type};
+\node at (6,-0.5) {Data};
+\node at (9,-0.5) {Stored CRC};
+\node at (1,-1.5) {4 bytes};
+\node at (3,-1.5) {4 bytes};
+\node at (6,-1.5) {Length bytes};
+\node at (9,-1.5) {4 bytes};
+\draw[very thick,MARSAccent] (2,0.3)--(2,0.65)--(8,0.65)--(8,0.3);
+\node at (5,1.05) {CRC input};
+\end{tikzpicture}
+\caption{A chunk's CRC covers its type and data, regardless of how those bytes are buffered.}
+\end{figure}
+
+For the zero-data \texttt{IEND} chunk, the input bytes are hexadecimal
+\texttt{49 45 4e 44}. Their finalized CRC is \texttt{ae426082}, stored as
+\texttt{ae 42 60 82}. A little-endian simulator word containing the numeric value
+\texttt{ae426082} instead has memory bytes \texttt{82 60 42 ae}. A direct word
+load from the four file bytes therefore does not produce the intended numeric value
+under this chapter's little-endian memory configuration. Assemble the value from byte
+loads and shifts, or use an explicitly justified byte-order conversion.
+
+To check a chunk in parts, initialize once, update with the type, continue over every
+data block, and complement once before comparison with the stored field. Changing
+read boundaries does not change the checked interval. This exercise does not yet
+validate PNG chunk ordering, decompression, image dimensions or the enclosing file.
+It establishes the reusable checksum routine needed by later image work.

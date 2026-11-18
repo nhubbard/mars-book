@@ -1,0 +1,30 @@
+\section{Finish the checksum and release the descriptor}
+A successful EOF is the only path that returns a finalized checksum. Complement the
+running state once, close the descriptor with syscall 16, and return status zero.
+Closing uses \texttt{v0} to select a service, so retain the checksum somewhere else
+until the close has completed. A checksum held only in \texttt{v0} would be replaced
+by the close service number before return.
+
+A read error follows a different result path but has the same resource obligation:
+close the descriptor, return checksum zero, and return status two. An unsuccessful
+open returns status one without closing an invalid result. The close service supplies
+no separate success result in this educational ABI. Do not interpret the service
+selector left in a register as a returned close status.
+
+The file routine calls an update routine, and the table method also calls the table
+initializer. Each call replaces \texttt{ra}. Save the incoming return address in the
+frame before making either call, then restore it before returning to the caller.
+Likewise retain the buffer pointer, capacity, descriptor, method and running state
+across calls rather than trusting caller-saved temporaries to survive.
+
+The illustrated frame occupies 64 bytes and saves seven full saved registers plus
+\texttt{ra}. Eight-byte stores and loads retain their high halves. The original
+stack alignment is maintained because the frame size is a multiple of eight. A
+routine that uses a different set of registers may use a different frame, provided
+it meets the same preservation and return contract.
+
+\subsection*{Exercise: Audit all exits}
+Draw the control-flow paths for unsuccessful open, immediate EOF, several successful
+reads followed by EOF, and several reads followed by an error. Mark where a valid
+descriptor first exists, where it is closed, and where the checksum becomes finalized.
+For each path, identify the state that must survive a nested update call.

@@ -1,0 +1,27 @@
+\section{Use failures to locate the changed operation}
+Change the low bit of the first check-message byte from hexadecimal \texttt{31} to
+\texttt{30}. The visible string changes from \texttt{123456789} to
+\texttt{023456789}; the finalized checksum changes from \texttt{cbf43926} to
+\texttt{dc8f2d65}. Trace both states through the first eight bit steps. The first
+state difference arises before any later bytes are read, so the investigation need
+not begin with file handling or table lookup.
+
+Then restore the byte and change one table entry that the message actually indexes.
+Compare the bit and table methods. A disagreement between the two methods can locate
+an error in the table path, but agreement alone is insufficient: both routines could
+share the same wrong polynomial or boundary convention. Keep independently specified
+check values and a model with a different computational orientation.
+
+\subsection*{Exercise: Plan the verification domain}
+List cases that test arithmetic width, every possible single input octet, all table
+entries, an unaligned source, an empty update, offsets within backing arenas, and
+addresses above 32 bits. Add repeated calls that alternate methods and supplied return
+continuations. Explain which properties final-memory comparison cannot establish when
+a routine writes a byte and restores it before returning.
+
+\subsection*{Exercise: Distinguish detection from trust}
+Two different messages can have the same 32-bit result because there are more possible
+messages than possible checksums. Explain why finding accidental corruption and
+establishing who authored a file are different requirements. A stronger unkeyed hash
+in the next project still needs a trusted expected digest or an authentication scheme
+when the sender's identity matters.

@@ -1,0 +1,44 @@
+\section{Carry a raw state across read boundaries}
+Let \(U(r,B)\) mean updating raw state \(r\) with byte sequence \(B\). The update
+contract requires
+\[
+ U(U(r,A),B)=U(r,A\Vert B),
+\]
+where \(A\Vert B\) is concatenation. The left side uses two calls but represents
+one message. It neither reinitializes nor complements the state between the calls.
+This is what lets a buffer of seven bytes process a file of any number of bytes.
+
+\begin{table}[htbp]
+\centering
+\caption{Prefix states for the nine-byte check message.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\toprule
+Bytes consumed & Raw state & Checksum if the message ended here\\
+\midrule
+0 & \texttt{ffffffff} & \texttt{00000000}\\
+1 & \texttt{7c231048} & \texttt{83dcefb7}\\
+3 & \texttt{77b79c2d} & \texttt{884863d2}\\
+6 & \texttt{f68d2c9e} & \texttt{0972d361}\\
+7 & \texttt{affc9660} & \texttt{5003699f}\\
+9 & \texttt{340bc6d9} & \texttt{cbf43926}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+With three-byte reads, the file reader retains the raw states in rows three, six and
+nine. With a seven-byte first read, it retains the states in rows seven and nine.
+Both routes end at the same state because they consumed the same ordered bytes.
+The complemented column is useful for checking a prefix as an independent message;
+those values are not the arguments for continuing the raw-state interface.
+
+The two methods must also compose with each other. Process a prefix with the bit
+routine and its suffix with the table routine, then reverse the methods. Carry the
+actual returned state between calls. Checking only two complete-message results would
+not establish that their intermediate state conventions agree.
+
+\subsection*{Exercise: Explain a boundary-dependent failure}
+A file checker succeeds when the entire file fits in one read but fails with a small
+buffer. Trace the effect of complementing after each read, and then the effect of
+reinitializing before each read. Explain which prefix information each mistake changes
+or discards.

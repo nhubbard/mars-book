@@ -123,6 +123,11 @@ contain 50 cumulative edits, five supplied excerpts, 60 quizzes, 120 hints and 8
 recipes, public intermediate/final checks and separate student/instructor distributions.
 Actual IDE figures remain in progress.
 
+The next independent draft, [CRC-32 file checking](drafts/crc32.tex), explains raw
+state, reflected bit updates, lookup construction, chunk composition, file cleanup
+and PNG chunk reuse. Its prototype checks use explicit in-memory files, short reads
+and read failures. This foundation has not yet joined the package sequence.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.

@@ -1,0 +1,38 @@
+\section*{Project contract}
+Use the reflected 32-bit CRC specified below. The two update entries take a full byte
+pointer in \texttt{a0}, a length \(0\leq n\leq4096\) in \texttt{a1}, and the
+current raw unsigned state in \texttt{a2}. Its upper 32 bits are zero. Return the next
+raw state, also zero-extended, in \texttt{v0}. The bit entry is
+\texttt{crc32\_bit\_update}; \texttt{crc32\_table\_update} also receives a
+word-aligned pointer to 256 prepared words in \texttt{a3}. Source bytes may be unaligned.
+Read only the selected source interval and, for the table entry, the supplied 1024-byte
+table. Write no caller bytes. Zero input length returns the state unchanged and reads
+neither source nor table. The table and source slices are disjoint.
+
+Implement \texttt{crc32\_table\_init} separately. It takes a word-aligned table
+pointer in \texttt{a0}, initializes exactly 256 words and returns 256 in
+\texttt{v0}. Its result must not depend on the old table contents. Only those
+1024 caller bytes may be written. Submission-owned constants and private stack storage
+are allowed in all routines. Functions receive full pointers, including addresses above
+32 bits; adding a small offset must retain the full base.
+
+The file entry, \texttt{crc32\_file}, receives a terminated path in \texttt{a0},
+a scratch pointer in \texttt{a1}, a capacity \(1\leq c\leq256\) in
+\texttt{a2}, and method zero or one in \texttt{a3}. Zero selects the bit update;
+one selects the table update. Return the finalized unsigned checksum in \texttt{v0}
+and status zero in \texttt{v1}. An unsuccessful open returns zero with status one;
+a read error returns zero with status two. A successfully opened descriptor must be
+closed on both success and read failure. An unsuccessful open creates no descriptor
+to close. Do not return a partial checksum as a successful file result.
+
+The file routine owns the selected scratch capacity and the first 1024 bytes of its
+\texttt{crc\_table} workspace. It may read and write within them, but only bytes
+reported by successful reads may contribute to the checksum. Preserve the path and
+all other caller bytes. Retain the supplied arenas and caller labels for grading;
+independent kernel calls may select offsets within the larger backing arenas.
+
+Every entry preserves all bits of \texttt{s0} through \texttt{s7}, \texttt{fp}
+and \texttt{sp}, and returns through the supplied \texttt{ra}. The incoming stack
+is eight-byte aligned. The kernels perform no I/O. The file entry opens the requested
+path read-only and produces no console output. Each file call begins a new checksum;
+only the explicit raw-state argument carries state between kernel calls.

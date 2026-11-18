@@ -1,0 +1,25 @@
+\section{Specify the CRC before writing its loop}
+A name such as CRC-32 is insufficient to determine a result. This project uses the
+PNG/GZIP polynomial, reflected input processing, initial state \texttt{ffffffff},
+and final XOR \texttt{ffffffff}. All hexadecimal state values in this chapter have
+exactly 32 significant bits. The right-shifting feedback mask is
+\texttt{edb88320}; the corresponding normal polynomial mask is \texttt{04c11db7}.
+These masks describe the same polynomial under different bit orientations, but they
+cannot be exchanged in the same shift loop.
+
+Keep two values distinct in the interface. The \emph{raw state} is the running
+remainder used by an update. The \emph{finalized checksum} is that state XOR
+\texttt{ffffffff}. Initialization and finalization belong to the boundary of a
+complete message. Neither update routine performs them automatically. For empty
+input, the raw state remains \texttt{ffffffff} and its finalized checksum is zero.
+
+A caller starts a message by passing \texttt{ffffffff}, retains each returned raw
+state, and complements the last result once. To start an unrelated message, initialize
+again. To continue the same message, pass the prior raw result, rather than a printed
+checksum or a simulator register left over from a previous run.
+
+\subsection*{Exercise: Identify the boundary operation}
+An update returns \texttt{7c231048} after the first byte of a message. State which
+value should be passed to the next update and which value would be displayed if that
+one byte were the entire message. Explain why displaying a value and continuing a
+calculation require different boundary operations.

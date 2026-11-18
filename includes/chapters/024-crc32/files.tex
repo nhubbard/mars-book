@@ -1,0 +1,29 @@
+\section{Read the number of bytes the environment actually returned}
+The file reader opens the terminated path with syscall 13 and read flag zero. A
+negative result means the open failed. Otherwise retain the returned descriptor in a
+saved register; it is a resource handle, not a byte pointer. The same descriptor is
+passed to subsequent reads and the final close.
+
+For syscall 14, place the descriptor in \texttt{a0}, the scratch address in
+\texttt{a1}, and a positive request no larger than the scratch capacity in
+\texttt{a2}. The result in \texttt{v0} determines the next action. A positive
+result is the number of valid bytes placed at the start of the buffer. Zero means EOF.
+A negative result is a read error. Test for the error before interpreting a result as
+a length; a negative value is not a very large unsigned chunk.
+
+Suppose the capacity is seven but a read returns three. Update with those three bytes.
+The other four positions can still contain old workspace data. Hashing all seven
+would append bytes that this read did not supply. After the update, issue another
+read. A short positive result does not imply EOF, and a return of exactly the requested
+capacity does not imply that another byte exists. EOF is established by a subsequent
+zero result.
+
+This project permits different positive request sizes within capacity. That freedom
+allows equivalent buffering strategies while retaining the same file result. The
+workspace itself is writable scratch storage; its contents are not a terminated string.
+The low-level update routine still receives a precise read-only interval for each call.
+
+The grader's explicit in-memory fixtures force short reads and failures at chosen
+byte positions. This tests the control flow reproducibly without depending on disk
+behavior or opening files on the instructor's machine. Ordinary IDE and CLI runs use
+the existing MARS file environment. Their syscall result meanings are the same.
