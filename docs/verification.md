@@ -773,3 +773,44 @@ recipe table, pages 1 through 54 are pixel-identical to the reviewed render. No 
 font substitution or missing-glyph warning remains. Tagged headings, table headers,
 math and the native figure description are inspected; PDF/UA certification remains
 outstanding. Native diagrams and planned IDE capture slots are distinguished.
+
+
+## ChaCha20 distribution and main integration
+
+Chapter 26 is integrated in main.tex with separate public/student and private/instructor
+packages. The deterministic student ZIP contains 176 files, 36 guided construction
+checks and six completed-interface suites. Native snapshots retain the exact include
+sequence; descriptors do not regenerate edited prose. Private quiz keys include
+explanatory feedback. Instructor archives embed the exact student ZIP and verification
+receipt. A default preparation retains the unfinished starter; a step-specific guided
+check is run against a working copy completed through that step.
+
+The final package verifier records 165 grading runs and 5,748 positive executions,
+including 97 construction runs with 933 positives and four additional control runs
+with 223 positives. The final domains include 1,930 private cases per implementation.
+The public arithmetic model uses masked Long values and explicit quarter-round locals,
+independent of the private prototype's Int wraparound/indexed updates; whole-message
+comparisons use JDK ChaCha20. These are bounded finite checks, not exhaustive proof
+or cryptographic certification. The 31-bit/32-bit boundary and rejected large counts
+do not claim that enormous messages were read or transformed.
+
+Two complete implementations pass public and private domains. Wide code/data, changed
+scalar/vector allocation, larger private frames, an owned rotate constant and owned
+temporary workspace also pass the public functional domains. Caller ownership protects
+all supplied objects while allowing candidate-owned gaps. Thirty-five faulty variants
+and the unfinished starter are rejected. The hidden advancing counter passes single
+calls but fails repeated-call checks. Same-value source/state stores are detected by
+access traces, even though byte snapshots alone would miss them.
+
+All 35 book-tooling tests and seven renderer tests pass. No assembly listing changed
+in this packaging step: the actual 663-snippet IntelliJ export remains unchanged.
+The standalone chapter builds to 58 pages with 53 single-page assembly listings. The
+manuscript builds to 1,069 physical pages with 681 literal assembly listings and 35
+described native figures. Embedded fonts remain Minion Pro, Noto Sans Math and
+JetBrains Mono. Fifty-five chapter pages are pixel-identical to the previously
+reviewed cumulative draft; changed pages 3, 4, 58 were reviewed at 1500px along with the
+manuscript chapter opening, final page and contents entry. Prior chapters were reviewed
+in earlier steps. Tags, table headers, math and figure alternatives are inspected;
+independent accessibility validation and PDF/UA certification remain outstanding.
+Four ChaCha IDE figures remain plans. Remote progression and the substantial
+author-requested exposition/length edit remain unfinished.

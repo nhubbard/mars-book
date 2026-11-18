@@ -220,12 +220,13 @@ column/diagonal selection, feed-forward, MSA row lanes and inverse shuffles, byt
 preflight counter exhaustion, in-place operation and nonce/authentication boundaries.
 A native described row-selection figure and headed tables support the worked example.
 Private scalar and MSA prototypes pass independent arithmetic and JDK comparisons,
-including wide code/data and 19 deliberate faults. The independent chapter is not yet
-in main.tex. Its cumulative expansion now has 42 steps, 36 authored regions, 42 quizzes,
+including wide code/data and 19 deliberate faults. Its cumulative expansion has 42 steps, 36 authored regions, 42 quizzes,
 84 progressive hints, 54 recipes and four planned figure slots. Prepared data, intermediate
 register/memory states, caller and offset-function views, safe development returns and
-complete reconstructions are verified. Separate distributions and main integration remain
-the next step.
+complete reconstructions are verified. Separate student/instructor distributions now
+include public guided and final checks, private domains, quiz feedback and exact archives.
+The chapter is included in main.tex as the twenty-sixth text package. Actual IDE captures,
+remote progression, deferred author rewriting and independent accessibility work remain.
 
 ## Author feedback and deferred revision
 

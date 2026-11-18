@@ -1,0 +1,72 @@
+\section{Observe the boundaries before comparing work}
+Begin with four separated writable words and stop after each quarter-round group.
+Next stop the scalar block after its first column round, then its first diagonal
+round. For the vector version, inspect each row immediately before selection,
+immediately after selection and after the inverse selection. These three views
+separate a word-arithmetic error from a lane-order error.
+
+The free-writing contract concerns output, preservation and owned accesses. It does
+not require the illustrated scratch registers, local labels or exact instruction
+sequence. A working implementation can retain words in registers, choose a different
+stack frame or express a rotate through shifts. The register-specific observations
+apply to the worked construction, not to every equivalent solution.
+
+Use the same 64-byte initial state when measuring the two block entries. Start the
+instruction trace at the function entry and stop at its return continuation. Include
+its frame saves and restores; exclude caller setup, assembly and session creation.
+The scalar prototype calls its quarter-round eighty times, constructing four pointers
+for each call. The MSA prototype keeps rows in registers and selects diagonals with
+six shuffles per double-round. Their work difference therefore includes register
+residency and call overhead as well as lane arithmetic.
+
+The verified prototypes execute the following work at that boundary. The second
+scalar version expresses each word rotate with two shifts and an OR. All three
+block versions retain the same input/output contract.
+
+\begin{table}[htbp]\centering
+\caption{Executed instructions for one block, including normal return paths.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lr}\toprule
+Implementation & Instructions\\\midrule
+Scalar quarter-round calls, rotates & 2816\\
+Scalar quarter-round calls, shifts and OR & 3456\\
+MSA rows and lane shuffles & 510\\
+\bottomrule\end{tabular}\end{table}
+
+The cumulative scalar version retains supplied status checks after all eighty
+nested calls. Each check adds a branch and a no-op, accounting for 160 instructions
+beyond the earlier prototype. These checks preserve a clear development return while
+the program is incomplete; they are included in the measured normal path here.
+
+There are 320 word rotations in eighty quarter-rounds. Replacing each single
+rotate with three instructions adds 640 instructions, matching the difference
+between the two scalar counts. That comparison isolates the rotate expression;
+the MSA comparison changes more of the implementation. The block instruction
+counts are independent of the tested input words because the loop bounds and
+selection order are fixed.
+
+Count the XOR wrapper separately at message lengths zero, one, 63, 64, 65 and 4096.
+The jump from 64 to 65 includes a whole additional block even though only one extra
+message byte is transformed. A graph of instructions per byte should identify that
+boundary instead of treating the curve as smooth. These are simulated instruction
+counts. They establish neither host elapsed-time speedup nor processor cycle counts.
+
+After correctness, try inlining the scalar quarter-round or retaining the scalar
+working state in registers. Compare those changes with the original scalar function
+before attributing the whole difference to MSA. Keep the same input/output ownership
+and counter behavior for each experiment. A shorter loop that reads past a final
+fragment has changed the program's contract.
+
+\begin{MARSExercise}{Explain a misplaced lane}
+Suppose row one still contains indices \([4,5,6,7]\) during the diagonal round,
+while rows two and three are selected correctly. State the four indices used by lane
+zero. Identify which intended diagonal input is missing. Explain why restoring the
+rows afterward cannot undo the arithmetic already performed on the wrong selection.
+\end{MARSExercise}
+\begin{MARSExercise}{Design a retained keystream context}
+Extend the whole-message interface on paper so a one-byte call followed by a 64-byte
+call consumes consecutive keystream bytes. Name the retained block, byte position,
+next counter and exhaustion state. Describe how the context represents the last
+counter's remaining bytes without allowing another block after they are consumed.
+Do not implement it by restarting the supplied state for each call.
+\end{MARSExercise}

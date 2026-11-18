@@ -1,0 +1,46 @@
+\section{Retain the scalar frame while the body grows}
+The supplied block entry allocates 48 stack bytes and saves the incoming return
+address and three working registers. The body uses \texttt{s0} for the immutable
+input base, \texttt{s1} for the working output base and \texttt{s2} for the
+double-round count. Sixteen bytes at the bottom of this frame are unused padding.
+The frame protects full 64-bit values even though the round arithmetic uses words.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Supplied scalar entry and saves.}
+\begin{minted}[samepage=true]{mars-idea}
+chacha_block_scalar:
+    daddiu $sp, $sp, -48
+    sd $ra, 40($sp)
+    sd $s0, 32($sp)
+    sd $s1, 24($sp)
+    sd $s2, 16($sp)
+\end{minted}
+
+Every missing scalar region branches to \texttt{scalar\_development}. After each
+nested quarter-round call, a supplied status check takes that same exit when the
+leaf reports unfinished work. Keep those checks outside the authored call regions.
+They prevent a later block phase from treating a partial quarter-round as a result.
+The normal and development exits restore the same frame; only the returned status
+differs. The partly updated output remains an observation, not a valid block.
+
+\Needspace{22\baselineskip}
+\MARSCodeLabel{Supplied scalar normal and development restores.}
+\begin{minted}[samepage=true]{mars-idea}
+    ld $s2, 16($sp)
+    ld $s1, 24($sp)
+    ld $s0, 32($sp)
+    ld $ra, 40($sp)
+    daddiu $sp, $sp, 48
+    move $v0, $zero
+    jr $ra
+    nop
+scalar_development:
+    li $v0, 3
+    ld $s2, 16($sp)
+    ld $s1, 24($sp)
+    ld $s0, 32($sp)
+    ld $ra, 40($sp)
+    daddiu $sp, $sp, 48
+    jr $ra
+    nop
+\end{minted}

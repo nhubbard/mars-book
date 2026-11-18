@@ -1,3 +1,6 @@
+The current student distribution is `packages/026-chacha20`; this draft remains
+construction provenance. Use the packaged helper and starter for current student work.
+
 # ChaCha20 cumulative construction
 
 This is an unpackaged cumulative draft. The directly edited native chapter is the

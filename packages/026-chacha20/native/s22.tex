@@ -1,0 +1,36 @@
+\section{Step 22 Add the matching original words}\label{chacha-s22}
+
+Walk the input and working output together, adding matching low words with wraparound. Store each sum over its working word. The target is little-endian, so the word stores also provide the required byte serialization.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{scalar\_feed}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddu $t1, $s0, $t0
+    lw $t2, 0($t1)
+    daddu $t1, $s1, $t0
+    lw $t3, 0($t1)
+    addu $t2, $t2, $t3
+    sw $t2, 0($t1)
+    daddiu $t0, $t0, 4
+    sltiu $t1, $t0, 64
+    bnez $t1, scalar_feed
+    nop
+\end{minted}
+
+Use recipe \texttt{s22-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The 64-byte output equals the published block, beginning 10 f1 e7 e4; the input is unchanged.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which word pairs are added?
+
+\begin{itemize}
+\item \textbf{A} Adjacent transformed words.
+\item \textbf{B} Original and transformed words at the same index.
+\item \textbf{C} The first original word and every transformed word.
+\end{itemize}

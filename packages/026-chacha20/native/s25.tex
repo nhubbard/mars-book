@@ -1,0 +1,36 @@
+\section{Step 25 Mix the first half of the column groups}\label{chacha-s25}
+
+Perform the first two dependent groups across all four lanes. Word-vector addition wraps separately in each lane. Use logical right shifts to construct the rotations, retaining the unshifted XOR value until both shift operands have been read.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{msa\_column\_a}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addv.w $w0, $w0, $w1
+    xor.v $w3, $w3, $w0
+    slli.w $w8, $w3, 16
+    srli.w $w9, $w3, 16
+    or.v $w3, $w8, $w9
+    addv.w $w2, $w2, $w3
+    xor.v $w1, $w1, $w2
+    slli.w $w8, $w1, 12
+    srli.w $w9, $w1, 20
+    or.v $w1, $w8, $w9
+\end{minted}
+
+Use recipe \texttt{s25-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Every column has completed its first two groups in vector registers; caller output remains unchanged.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Can a carry leave one word lane and enter the next?
+
+\begin{itemize}
+\item \textbf{A} Yes; the vector is one 128-bit integer.
+\item \textbf{B} No; \texttt{addv.w} treats each word lane independently.
+\item \textbf{C} Only in lane zero.
+\end{itemize}

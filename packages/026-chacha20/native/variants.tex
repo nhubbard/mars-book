@@ -1,0 +1,45 @@
+\section{Choose an additional observation deliberately}
+The recipe ending in \texttt{-1} is each authored step's primary observation.
+The additional recipes below keep that same cumulative program and vary its inputs
+or caller controls. Prepare each in a new source file. A changed input can change
+every working value, so do not compare a marker-state result with the hexadecimal
+values printed for the RFC example.
+
+A marker seed starts with state words zero through fifteen. At the load checkpoint,
+those values reveal row and lane positions directly. After column arithmetic they
+have already changed; a later shuffle moves those changed values. The diagram labels
+\emph{state positions}, not numerical values that remain zero through fifteen
+throughout the calculation. Compare a selected lane with the corresponding lane
+before selection, or with the independently calculated recipe observation.
+
+\begin{longtable}{lp{0.28\linewidth}p{0.47\linewidth}}
+\caption{Additional exact recipes and their observation purpose.}\\
+\toprule Recipe & Prepared variation & Observation\\\midrule\endfirsthead
+\toprule Recipe & Prepared variation & Observation\\\midrule\endhead
+\texttt{s04-2} & Four all-one words & Word carry is discarded in the first group.\\
+\texttt{s07-2} & Four all-one words & Check all four final working words before stores.\\
+\texttt{s24-2} & Marker state & Loaded rows retain the seed's index order.\\
+\texttt{s27-2} & Marker state & Selected rows use the correct column-round positions.\\
+\texttt{s30-2} & Marker state & Ten pairs end in restored state order.\\
+\texttt{s33-2} & Zero bytes & Return zero without supplied pointer accesses.\\
+\texttt{s33-3} & 4097 bytes & Return one before a frame or output store.\\
+\texttt{s33-4} & \(2^{32}\) bytes & Check the full count; return one.\\
+\texttt{s34-2} & 65 bytes, last counter & Return two before output stores.\\
+\texttt{s41-2} & One byte & Transform only one destination byte.\\
+\texttt{s41-3} & 64 bytes, last counter & The last available block succeeds.\\
+\texttt{s41-4} & 65 bytes, last counter & A required second block is rejected.\\
+\texttt{s41-5} & 128 bytes, counter \texttt{fffffffe} & Use exactly the last two blocks.\\
+\texttt{s41-6} & 129 bytes, counter \texttt{fffffffe} & Reject the required third block.\\
+\texttt{s41-7} & 4096 bytes in place & Check full-block repetition at the local size limit.\\
+\texttt{s41-8} & 65 bytes in place & Read each original byte before replacing it.\\
+\texttt{s41-9} & Zero bytes & Return zero without allocating a frame.\\
+\texttt{s41-10} & 4097 bytes & Reject the count and preserve caller memory.\\
+\bottomrule
+\end{longtable}
+
+Here the last counter means hexadecimal \texttt{ffffffff}. Requests that return
+early have no internal arithmetic checkpoint to visit. Pause at \texttt{main\_done}
+in the caller to inspect their status before it is stored; the function view pauses
+at its supplied return continuation. The input files contain only the actual bounded
+fixture bytes. A declared rejected count such as \(2^{32}\) does not allocate or
+claim to process a message of that size.

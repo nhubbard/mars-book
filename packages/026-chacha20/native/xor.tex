@@ -1,0 +1,39 @@
+\section{Consume only the keystream bytes the message needs}
+Once the two block functions agree, the outer transformation has a smaller task.
+Copy the starting state into private working storage. Generate a block from that
+copy, then XOR at most 64 message bytes with its 64 keystream bytes. A final message
+fragment may use only one byte. Do not load the other 63 source bytes merely because
+a whole keystream block was generated.
+
+Keep source, destination and remaining count in saved registers across the block
+call. Choose \(m=\min(64,\text{remaining})\). For each byte, load both operands
+before storing the result. This ordering also supports exact in-place operation:
+the store changes only the byte whose original input has already been read.
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Transform one byte; advance both pointers afterward.}
+\begin{minted}[samepage=true]{mars-idea}
+lbu $t1, 0($t0)
+lbu $t2, 0($s0)
+xor $t1, $t1, $t2
+sb $t1, 0($s1)
+\end{minted}
+
+Here \texttt{t0} points to the current keystream byte, \texttt{s0} to the source
+byte, and \texttt{s1} to its destination. Increment those addresses with full-width
+instructions. After exactly \(m\) iterations, subtract \(m\) from the remaining
+count. If it becomes zero, return without requesting another block. Otherwise,
+increment only local state word twelve and generate the next block.
+
+A 65-byte message uses all bytes of counter \(c\), followed by the first byte of
+counter \(c+1\). A 64-byte message uses only counter \(c\). Unused bytes from a final
+block are discarded by this whole-message interface. Splitting the same 65-byte
+message into independent calls of one and 64 bytes does not reproduce that stream
+unless the caller also tracks the unused 63 bytes of the first block. A block counter
+alone cannot identify a position inside a block.
+
+For a correctness check, encrypt a byte array with the prototype and compare it
+with JDK ChaCha20 using the same key, nonce and counter. Then decrypt the prototype's
+result and recover the input. The round trip is useful but insufficient by itself:
+two matching errors can undo each other. The independent comparison detects that
+case. Include binary bytes, unaligned buffers and exact in-place buffers; printable
+text alone does not cover these storage conditions.

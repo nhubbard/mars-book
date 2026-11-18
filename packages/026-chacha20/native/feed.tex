@@ -1,0 +1,40 @@
+\section{Add the original state and serialize the result}
+The working words after twenty rounds are not yet the output block. Add each
+original word to its corresponding working word, retaining the low 32 bits, and
+write that sum in little-endian byte order. This final addition is called
+\emph{feed-forward}. Its inputs are the original state and the fully transformed
+working state. Adding the original words once per double-round would define a
+different calculation.
+
+In the scalar version, \texttt{s0} points to the preserved input state and
+\texttt{s1} points to the working output. With a byte offset in \texttt{t0}, one
+iteration loads the matching words, adds them, and overwrites the working word.
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Publish one feed-forward word on the little-endian target.}
+\begin{minted}[samepage=true]{mars-idea}
+daddu $t1, $s0, $t0
+lw $t2, 0($t1)
+daddu $t1, $s1, $t0
+lw $t3, 0($t1)
+addu $t2, $t2, $t3
+sw $t2, 0($t1)
+\end{minted}
+
+Advance the offset by four and stop at sixty-four. The input/output separation
+allows every original word to remain intact until it is used. Bytes beyond the
+64-byte output are outside the function's ownership, including any convenient
+padding allocated by a caller.
+
+For the block example in RFC 8439, section 2.3.2, use key bytes zero through 31,
+counter one, and nonce bytes shown below. The nonce differs from the RFC's later
+whole-message cipher example; copying that example's nonce would change the block.
+\begin{verbatim}
+00 00 00 09 00 00 00 4a 00 00 00 00
+\end{verbatim}
+The first working word after twenty rounds is \texttt{837778ab}. Adding its original
+constant \texttt{61707865} gives \texttt{e4e7f110} after the carry is discarded.
+The first four output bytes are therefore \texttt{10 f1 e7 e4}. The following word
+is \texttt{15593bd1}, whose bytes are \texttt{d1 3b 59 15}. A word display and a
+byte display show the same storage in different forms. A comparison that reverses
+only the displayed hexadecimal string can hide an actual serialization error;
+compare the bytes that the XOR routine will load.

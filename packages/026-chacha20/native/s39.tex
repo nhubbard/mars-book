@@ -1,0 +1,38 @@
+\section{Step 39 XOR exactly one selected fragment}\label{chacha-s39}
+
+Start a local keystream index at zero. For each byte load the keystream and source before storing the result, then advance full-width source and destination pointers. Stop when the local index reaches the selected fragment size.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{stream\_bytes}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s4, $zero
+stream_byte:
+    daddu $t0, $sp, $s4
+    lbu $t1, 64($t0)
+    lbu $t2, 0($s0)
+    xor $t1, $t1, $t2
+    sb $t1, 0($s1)
+    daddiu $s0, $s0, 1
+    daddiu $s1, $s1, 1
+    daddiu $s4, $s4, 1
+    bne $s4, $s3, stream_byte
+    nop
+\end{minted}
+
+Use recipe \texttt{s39-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first sixty-four destination bytes are transformed; byte sixty-four remains a guard until the next block.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why load before storing in place?
+
+\begin{itemize}
+\item \textbf{A} The original input byte must be read before its slot is overwritten.
+\item \textbf{B} In-place output requires reversing byte order.
+\item \textbf{C} Stores automatically retain the original byte.
+\end{itemize}

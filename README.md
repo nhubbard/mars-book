@@ -140,7 +140,7 @@ in the main manuscript as chapter 25. Four IDE figure slots remain plans.
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-five chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-six chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -155,7 +155,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-five text packages, starters, public checks, deterministic student archive builder,
+The first twenty-six text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
@@ -169,8 +169,11 @@ Noto Sans Math equations, and JetBrains Mono code. Frontmatter is editable; fina
 review and PDF accessibility validation remain. Licensing must be selected before broader reuse;
 this repository does not grant an additional license by implication.
 
-The independent native ChaCha20 draft is at `drafts/chacha20.tex`. It now interleaves
-42 cumulative steps with the retained quarter-round, scalar/MSA block and bounded-byte
-transformation exposition. Its safe starter, 54 observation recipes and progressive hints
-are at `drafts/chacha-construction`. Separate student/instructor packages and integration
-remain pending; the main manuscript currently contains 25 packages.
+The [ChaCha20 chapter](drafts/chacha20.tex) interleaves 42 cumulative steps with the
+retained quarter-round, scalar/MSA block and bounded-byte transformation exposition.
+Its [student package](packages/026-chacha20/assignment.md) includes the safe starter,
+54 recipes, 36 exported construction checks and six completed-interface suites.
+Instructor solutions, hidden domains and quiz feedback remain in the private repository.
+The chapter is included in main.tex as the twenty-sixth text package. Four light-theme
+IDE figures remain plans; remote progression, the deferred author rewrite and independent
+accessibility validation are still pending.

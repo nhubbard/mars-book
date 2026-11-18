@@ -1,0 +1,46 @@
+\section{Place four independent quarter-rounds in vector lanes}
+A word-format MSA register contains four 32-bit lanes. Place the first state row
+in \texttt{w0}, the second in \texttt{w1}, the third in \texttt{w2}, and the fourth
+in \texttt{w3}. Number the lanes zero through three in increasing memory order.
+A word-vector load at state offset sixteen therefore gives \texttt{w1} the key
+words at indices four through seven.
+
+In this arrangement lane zero across the four registers holds state indices
+\((0,4,8,12)\); lane one holds \((1,5,9,13)\). These are different quarter-rounds
+with no shared words. The same sequence of vector operations can update all four
+lanes independently. Within each lane, the dependent order from the scalar
+quarter-round still applies.
+
+Preserve original rows in \texttt{w4} through \texttt{w7} before changing the working
+rows. The vector version has enough registers to retain all sixteen original words
+without writing a second caller buffer. The instruction \texttt{move.v} copies a
+complete register; it does not change the row's lane order.
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Load and preserve the first two rows.}
+\begin{minted}[samepage=true]{mars-idea}
+ld.w $w0, 0($a0)
+move.v $w4, $w0
+ld.w $w1, 16($a0)
+move.v $w5, $w1
+\end{minted}
+
+Use \texttt{addv.w} for independent modulo-\(2^{32}\) lane sums. A carry out of lane
+zero does not enter lane one. \texttt{xor.v} and \texttt{or.v} are bitwise operations
+over the vector; because they do not move bits between positions, they also respect
+these word boundaries. A lane rotation needs word shifts, not a shift of the full
+128-bit register.
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Perform the first quarter-round group in all four lanes.}
+\begin{minted}[samepage=true]{mars-idea}
+addv.w $w0, $w0, $w1
+xor.v $w3, $w3, $w0
+slli.w $w8, $w3, 16
+srli.w $w9, $w3, 16
+or.v $w3, $w8, $w9
+\end{minted}
+
+The two temporary registers hold the two parts of each lane's rotation. Continue
+with the three remaining groups using left amounts twelve, eight and seven and
+complementary logical right amounts twenty, twenty-four and twenty-five.
+Completing these groups finishes one column round for the entire state. It does not
+finish a complete block.

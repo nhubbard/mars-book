@@ -1,0 +1,42 @@
+\section{Use word arithmetic inside full-width addresses}
+Adding two algorithm words discards a carry out of bit 31. For example,
+\texttt{ffffffff} plus one produces \texttt{00000000}. A signed-overflow exception
+would interrupt a valid calculation, so use \texttt{addu}. Its result on MIPS64 is a
+sign-extended word. The upper 32 register bits may therefore all be one even though
+the algorithm stores only a 32-bit pattern. Compare the low word when observing the
+calculation, and use \texttt{sw} to write its four bytes.
+
+A left rotation moves the high bits that leave a word back into its low positions.
+For a rotation by \(r\), where \(0<r<32\),
+\[
+\operatorname{ROTL}_r(x)=
+ ((x\ll r)\bmod2^{32})\mathbin{\mathrm{OR}}(x\gg(32-r)).
+\]
+The right shift here is logical. An arithmetic right shift can insert ones at the
+left edge and corrupt the wraparound bits. MIPS supplies a word right rotate, so a
+left rotate by 12 can be expressed as a right rotate by 20.
+\Needspace{6\baselineskip}
+\MARSCodeLabel{Rotate the low word left by twelve bits.}
+\begin{minted}[samepage=true]{mars-idea}
+rotr $t1, $t1, 20
+\end{minted}
+
+Alternatively, use two word shifts and combine their results. Both shifts read the
+original word; storing the left shift back into \texttt{t1} before the right shift
+would destroy the source needed for the second half.
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Keep the original word until both shifts have read it.}
+\begin{minted}[samepage=true]{mars-idea}
+sll $t4, $t1, 12
+srl $t5, $t1, 20
+or $t1, $t4, $t5
+\end{minted}
+
+The final OR may leave a sign-extended upper half. The next word operation and the
+four-byte store still use the intended low pattern. A doubleword rotate changes the
+rotation width and is therefore unsuitable here.
+
+Address calculations have a different rule. Increment a byte pointer with
+\texttt{daddiu}, and combine a base with an offset using \texttt{daddu}. A word-sized
+increment can truncate a valid address above 4 GiB. The fact that the pointed-to value
+is a word does not narrow its address.

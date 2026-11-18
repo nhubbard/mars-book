@@ -1,0 +1,56 @@
+\section{Rearrange rows so lanes select diagonals}
+After a column round, the next quarter-round needs indices \((0,5,10,15)\) in lane
+zero. Leave row zero fixed. Rearrange row one so its lane zero receives index five,
+row two so its lane zero receives index ten, and row three so its lane zero receives
+index fifteen. The same rearrangement supplies the other three diagonal selections
+in lanes one through three.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[alt={Four rows before and during the diagonal round. Row zero stays in order zero one two three. Row one changes from four five six seven to five six seven four. Row two changes from eight nine ten eleven to ten eleven eight nine. Row three changes from twelve thirteen fourteen fifteen to fifteen twelve thirteen fourteen. Each resulting column is one diagonal quarter-round.},font=\small,x=0.8cm,y=0.7cm]
+\node[anchor=west] at (0,1) {Before selection};
+\node[anchor=west] at (7,1) {During the diagonal round};
+\foreach \row/\left/\right in {0/{0,1,2,3}/{0,1,2,3},1/{4,5,6,7}/{5,6,7,4},2/{8,9,10,11}/{10,11,8,9},3/{12,13,14,15}/{15,12,13,14}} {
+ \foreach \n [count=\col from 0] in \left {\node[draw,minimum width=0.72cm,minimum height=0.46cm] at (\col,-\row) {\n};}
+ \foreach \n [count=\col from 0] in \right {\node[draw,minimum width=0.72cm,minimum height=0.46cm] at (7+\col,-\row) {\n};}
+ \draw[-{Stealth}] (3.8,-\row)--(6,-\row);
+}
+\end{tikzpicture}
+\caption{Selecting diagonals by rearranging row lanes. Entries are state indices.}
+\end{figure}
+
+\texttt{shf.w} encodes four source selectors in an eight-bit immediate. Bits zero
+and one select the source for destination lane zero; the next two bits select the
+source for lane one, and so on. To obtain source lanes \([1,2,3,0]\), encode
+\(1+4\cdot2+16\cdot3+64\cdot0=57\), or hexadecimal \texttt{39}.
+The selectors describe which source each destination receives. They do not say
+where a source lane moves.
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Align the diagonal selections in corresponding lanes.}
+\begin{minted}[samepage=true]{mars-idea}
+shf.w $w1, $w1, 57
+shf.w $w2, $w2, 78
+shf.w $w3, $w3, 147
+\end{minted}
+
+Apply the same vector quarter-round sequence used for the columns. Its lane zero
+now changes indices zero, five, ten and fifteen. After that quarter-round, restore
+the row order before starting the next double-round. The inverse selectors for rows
+one, two and three are 147, 78 and 57.
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Return the working rows to state order.}
+\begin{minted}[samepage=true]{mars-idea}
+shf.w $w1, $w1, 147
+shf.w $w2, $w2, 78
+shf.w $w3, $w3, 57
+\end{minted}
+
+Restoring row order is necessary even on the last iteration: feed-forward must add
+matching state positions. A wrong inverse can leave plausible-looking words in
+every lane while pairing them with the wrong original words. Check an index-marker
+state before using random-looking cryptographic values. The pattern
+\([0,1,\ldots,15]\) makes an incorrect source selector visible directly.
+
+After ten vector double-rounds, add \texttt{w4} to \texttt{w0}, and similarly for
+the other three preserved rows. Store the four sums in row order. The raw block
+contract permits arbitrary input words, so test states with all zero words, all one
+bits, individual bits and random values as well as constructed key/nonce states.

@@ -1,0 +1,24 @@
+\section{Separate transformation and authentication}
+XOR makes reuse visible without any knowledge of the quarter-round. If two messages
+use the same keystream bytes, then
+\[
+ (P_1\oplus K)\oplus(P_2\oplus K)=P_1\oplus P_2.
+\]
+The repeated \(K\) cancels. A caller therefore needs a nonce-allocation policy for
+each key as well as correct counter arithmetic inside one message. Incrementing
+counters correctly does not make repeating the same initial state for another
+message safe.
+
+The transformation also has no way to recognize modification. Flipping a bit in a
+ciphertext byte flips that same bit in the recovered plaintext. A successful return
+from \texttt{chacha\_xor} reports only that the local count and counter conditions
+were valid and the transformation completed. It does not authenticate the sender or
+the message. ChaCha20-Poly1305 is a separate authenticated construction; implementing
+this chapter's stream cipher does not implement that construction.
+
+The prototype uses a fixed sequence of word operations for each block, without
+key-indexed lookup tables. This observation about its source is narrower than a
+constant-time claim about compiled hardware execution. A simulator instruction count
+does not measure caches, speculative execution, power or other physical leakage.
+Use the exercise to study dataflow and storage. Production cryptographic software
+requires the surrounding protocol and implementation review as well.

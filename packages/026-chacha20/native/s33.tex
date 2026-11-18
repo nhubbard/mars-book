@@ -1,0 +1,31 @@
+\section{Step 33 Check the bounded count and empty request}\label{chacha-s33}
+
+Interpret \texttt{a3} as an unsigned count. Reject values above 4096 before examining any pointer, and return success immediately for zero. These paths use no frame because no nested work has begun.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{stream\_validate}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $a3, 4097
+    beqz $t0, stream_length_error
+    nop
+    beqz $a3, stream_empty
+    nop
+\end{minted}
+
+Use recipe \texttt{s33-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+A valid positive count reaches preflight; zero returns without pointer access and excessive counts return one.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+May an empty request dereference its state pointer?
+
+\begin{itemize}
+\item \textbf{A} No; the interface promises no supplied pointer access.
+\item \textbf{B} Yes; every call must read the key.
+\item \textbf{C} Only if the counter is zero.
+\end{itemize}
