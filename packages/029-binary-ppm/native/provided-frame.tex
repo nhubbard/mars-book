@@ -1,0 +1,47 @@
+\section{Read the supplied save and restore instructions}
+The decoder entry allocates the frame and stores the saved state before the first
+authored region. A doubleword save retains the complete register. Keep these supplied
+instructions while filling later bodies; a word save would discard the high half.
+The metadata slot at offset eighty lies after all ten saved values.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{Supplied MIPS scaffolding}
+\begin{minted}[samepage=true]{mars-idea}
+ppm_decode:
+    daddiu $sp, $sp, -128
+    sd $s0, 0($sp)
+    sd $s1, 8($sp)
+    sd $s2, 16($sp)
+    sd $s3, 24($sp)
+    sd $s4, 32($sp)
+    sd $s5, 40($sp)
+    sd $s6, 48($sp)
+    sd $s7, 56($sp)
+    sd $fp, 64($sp)
+    sd $ra, 72($sp)
+\end{minted}
+
+The matching restore reloads the same slots before releasing the frame. The return
+uses the saved full-width address. Decoder, loader and saver use this common layout,
+so a nested parser call does not force the caller's arguments to survive in temporary
+registers. The provided frame is an implementation aid for guided work, not a frame-size
+rule for completed free-writing solutions.
+
+\Needspace{18\baselineskip}
+\MARSCodeLabel{Supplied MIPS scaffolding}
+\begin{minted}[samepage=true]{mars-idea}
+decode_restore:
+    ld $s0, 0($sp)
+    ld $s1, 8($sp)
+    ld $s2, 16($sp)
+    ld $s3, 24($sp)
+    ld $s4, 32($sp)
+    ld $s5, 40($sp)
+    ld $s6, 48($sp)
+    ld $s7, 56($sp)
+    ld $fp, 64($sp)
+    ld $ra, 72($sp)
+    daddiu $sp, $sp, 128
+    jr $ra
+    nop
+\end{minted}

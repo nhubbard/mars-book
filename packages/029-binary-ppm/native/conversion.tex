@@ -1,0 +1,17 @@
+\section{Convert one validated triplet at a time}
+The decoder keeps metadata in a private stack object while it calls the parser. Retain
+the framebuffer pointer and capacity in saved registers: parser temporaries are not
+part of the calling contract. After parsing succeeds, compare the pixel count with
+unsigned capacity. A set high bit must not make a large capacity appear too small.
+
+At the first pixel, the source cursor is input base plus raster offset. Its destination
+cursor names the first output word. Keep a separate remaining-pixel count. Each
+iteration reads three unsigned samples, forms the numerical color word and stores it,
+then advances the cursors by three and four respectively. The validated dimensions
+make the first remaining count positive. Decrement once per pixel and stop at zero.
+
+The final cursors identify different object ends because their strides differ. Inspect
+the last stored word and the following sentinel word. Correct colors alone do not
+establish that the decoder stopped at the correct extent. Pack the width and height
+for the return after conversion; neither the input byte count nor the framebuffer byte
+count is a substitute for a dimension.

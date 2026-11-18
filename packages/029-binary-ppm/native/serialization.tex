@@ -1,0 +1,22 @@
+\section{Size the canonical header before storing it}
+The canonical header has a fixed nine-byte contribution plus the decimal digit counts
+of width and height. Each digit count is one or two under the exercise bounds. Thus
+\[
+ L=9+\operatorname{digits}(w)+\operatorname{digits}(h)+3wh.
+\]
+For the worked image, \(L=23\). At sixty-four by sixty-four it is 12301 bytes.
+Validate dimensions first, then compute this bounded length and compare it with capacity
+before any pixel read or header store. A short destination should not contain a new
+magic number followed by an old raster.
+
+Write the magic and LF, width, space, height, LF, then \texttt{255} and LF. For a
+two-digit dimension, unsigned division by ten supplies the tens digit and remainder
+supplies the units digit. Add ASCII zero to each numerical digit. A one-digit dimension
+omits the zero quotient rather than writing a leading zero. Width nine and width ten
+therefore exercise different header lengths even for the same height.
+
+Once the header is complete, extract one input word's red, green and blue fields into
+three consecutive bytes. The high byte does not enter the file. A byte-oriented encoder
+can instead load the appropriate three byte positions from each little-endian word.
+Both methods must preserve the sample codes and emit the same canonical bytes. The
+completed-interface checks should accept either method.

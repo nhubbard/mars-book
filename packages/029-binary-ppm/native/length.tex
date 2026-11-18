@@ -1,0 +1,21 @@
+\section{Prove the raster extent before publishing pixels}
+Once width \(w\) and height \(h\) satisfy the bounds, the pixel count is \(p=wh\).
+This exercise has at most 4096 pixels. Each PPM pixel needs three bytes, giving
+\(r=3p\); each framebuffer pixel occupies four bytes, giving \(f=4p\).
+At the largest dimensions these are 12288 and 16384 bytes. The file arena needs room
+for the separately bounded header as well as the raster.
+
+Let \(o\) be the saved raster offset and \(n\) the actual file byte count. Establish
+\(o\leq n\), then compare \(n-o\) with \(r\). Subtracting only after proving the order
+avoids turning a short input into a huge unsigned remainder. Equality proves both that
+the last pixel is present and that this single-image input has no trailer.
+
+Validate the header, extent and destination capacity before the first framebuffer
+store. Otherwise a late error leaves an apparently updated display containing a mixture
+of old and new rows. The input byte buffer can be partial while a file read is in
+progress; the visible framebuffer should change only after the file-level checks have
+succeeded. These are separate publication boundaries, with different promises.
+
+For the two-by-two fixture, calculate \(p=4\), \(r=12\), \(f=16\), \(o=11\) and
+\(n=23\). Now shorten the file by one byte. The header remains plausible, but
+\(n-o=11\) cannot satisfy the required raster extent. No pixel store should occur.

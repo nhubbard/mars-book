@@ -1,0 +1,10 @@
+\section{Load through EOF before accepting the image}
+Keep the byte count already read independently of capacity. The unused suffix starts
+at buffer base plus that count, and its request length is capacity minus the count.
+A positive read result advances the count. Zero reaches EOF. A negative result goes to
+a path that closes the descriptor and returns I/O status.
+
+When the count reaches capacity, read a separate one-byte private probe. A positive
+result proves excess input; zero proves exact-fit EOF. An error remains an I/O failure.
+Never place the probe after the caller's buffer. Close the input before parsing the
+buffer and publishing metadata. A malformed image must not leak a descriptor.

@@ -307,3 +307,19 @@ partial metadata, packed pixels, header prefixes and file state; complete varian
 the interface checks. Step and recipe metadata does not regenerate native prose.
 Separate distributions and main-manuscript integration remain next. The earlier prose
 remains intact, with split includes preserving its publication order around the edits.
+
+
+Public PPM completion feedback now covers parsing, decoding, encoding, malformed/count
+boundaries, file transfers and connected callers with same-session recovery. A separately
+authored regular-expression host model supplies exact metadata, RGB samples and file
+expectations; caller-object traces and full-width register sentinels enforce the public
+contract. Complete assembly, quiz feedback and negative-control construction remain
+private. This is a grading increment before the PPM distribution/integration step.
+
+
+Chapter029 is now included in the main native manuscript. The separate student package
+contains 42 steps, 38 exported guided checks, six completed-interface check domains and
+the worked-image helper. The private counterpart retains complete solutions, quiz
+feedback and additional memory/file domains. Package verification checks exact archive
+membership, safe unfinished bodies, native reading order and extracted-file execution.
+The manuscript now has 29 packaged chapters; six roadmap chapters remain to be drafted.

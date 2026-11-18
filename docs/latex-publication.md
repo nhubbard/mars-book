@@ -253,3 +253,13 @@ scaffolding; complete instructor algorithm bodies remain private. Frames, checkp
 recipes, quizzes and four unfulfilled capture plans are native includes. The current
 standalone composition has 41 pages. Separate distributions and main.tex integration
 remain pending.
+
+
+The PPM distribution/integration step includes chapter029 in `main.tex`, bringing the
+manuscript to 29 packaged chapters and 792 actual-IntelliJ-highlighted listings. The
+standalone PPM composition remains 41 pages with three supplied scaffold listings and
+one described native image diagram. It has 38 exported guided checks, six public
+completion domains and an archived worked-image helper. File-error fixtures are explicit
+grading fixtures; normal IDE Run/Debug provisioning and actual annotated captures remain
+unfinished. The next roadmap chapter is QOI. The substantial prose rewrite remains
+intentionally deferred until all35 chapter drafts exist.

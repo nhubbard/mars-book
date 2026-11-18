@@ -29,5 +29,14 @@ a screenshot or annotation-coordinate receipt.
 Guided observations constrain this illustrated construction. Completed free-writing
 checks accept equivalent algorithms, frames and register assignments. Instructor hint
 and progression policy fields will use the shared exercise protocol; this draft does
-not implement remote enforcement. Separate distributions and the author’s substantial
-prose rewrite remain pending, with rewriting deferred until all 35 drafts exist.
+not implement remote enforcement. The packaged counterpart is `packages/029-binary-ppm`. The author’s substantial
+prose rewrite remains deferred until all 35 drafts exist.
+
+## Public completion feedback
+
+The `checks` directory now contains six independently authored completed-interface
+checks. Run a domain with `java -jar /path/to/cli.jar grade checks/parse.kts your-main.asm`.
+See `checks/README.md` for the domains and fixture requirements. They accept equivalent
+complete implementations and do not require the illustrated scratch-register allocation
+or frame. The packaged counterpart includes exported guided checks and is included in the main
+manuscript; see `packages/029-binary-ppm`.

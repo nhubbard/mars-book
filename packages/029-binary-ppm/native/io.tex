@@ -1,0 +1,35 @@
+\section{Track progress across short file operations}
+A successful open returns a descriptor that belongs to that open operation. Save it;
+do not assume it is always three. For a read request, distinguish a positive count,
+zero at end of file, and a negative error. A positive result can be smaller than the
+request. Advance the destination pointer and accumulated count by the result, then
+continue. Treating the first short read as EOF can lose the rest of a valid image.
+
+When the input arena is full, one more read into a separate one-byte private probe can
+distinguish exact-fit EOF from an overlarge file. Do not put that probe beyond the
+caller's arena. Check an error from the probe separately from EOF. Every successful
+open needs a close on success, malformed input, capacity failure and I/O error paths.
+
+Writing uses the same progress invariant. Keep a current source pointer and a remaining
+byte count. After a positive result, advance the pointer by that count and subtract it
+from the remainder. Retry the remainder, not the original request. A negative result
+is an error. A zero result for a nonempty request cannot make progress and must also
+terminate with an error rather than loop forever.
+
+\section{Account for the current syscall's read footprint}
+The current MARS write service reads one byte after the requested interval before passing
+the buffer to its file environment. This is an existing educational ABI behavior, verified
+by the core boundary test. It also occurs when the file environment later accepts a
+short prefix. The file count does not include that extra byte.
+
+Provide a readable guard byte after the complete serialized file buffer. It is storage,
+not an additional PPM sample and not a terminator written to the output file. On the
+last request, the guard supplies the service's extra read. On earlier short requests,
+the next serialized byte lies within the still-readable buffer. A trace should account
+for this source read while continuing to forbid writes outside the actual file interval.
+
+The grading fixtures now distinguish declared input and output paths. A write can be
+shortened or failed at a chosen byte count, and the resulting bytes can be inspected
+without opening a host file. The file operations themselves remain observable, including
+the supplied descriptor, requested count, returned count and close. An image that merely
+looks correct cannot establish these resource and error-path properties.
