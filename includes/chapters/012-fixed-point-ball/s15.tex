@@ -1,0 +1,33 @@
+\section{Step 15 Keep the raw state live across calls}\label{ball-s15}
+
+Main owns the evolving state. Put the four raw quantities in saved registers so that calls to the updater and renderer can use temporary registers freely. Keep the display base as a full pointer. These register choices explain the walkthrough; free-writing solutions can choose another convention that meets the public behavior.
+
+\subsection{Write or inspect}
+Append the frame base and four seed loads in the \texttt{initialize} region. No publication has been implemented yet, so this partial main simply reaches the marker and exits through the fallback.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dla $s7, frame
+    dla $t0, seed_x
+    lw $s0, 0($t0)
+    dla $t0, seed_y
+    lw $s1, 0($t0)
+    dla $t0, seed_vx
+    lw $s2, 0($t0)
+    dla $t0, seed_vy
+    lw $s3, 0($t0)
+\end{minted}
+
+\subsection{Expected observation}
+The saved registers hold the input position and velocity. They are raw scaled integers. The frame and output metadata have not yet been replaced.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why retain state in saved registers across renderer calls?
+
+\begin{itemize}
+\item \textbf{A} Rendering automatically updates those registers.
+\item \textbf{B} The callee promises to preserve them.
+\item \textbf{C} Saved registers are limited to positive values.
+\end{itemize}

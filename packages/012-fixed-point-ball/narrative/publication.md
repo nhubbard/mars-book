@@ -1,0 +1,11 @@
+# Publish the state and frame at one boundary
+
+A simulation step updates both axes, then renders the resulting position. The walkthrough also renders the initial state before taking any steps. For a request of $`N`$ steps, the observable sequence therefore has $`N+1`$ frames, numbered zero through $`N`$. A request of zero still publishes the initial frame.
+
+At each stopped `frame_ready` boundary, publish the four raw state words, the tick number, the selected pixel ID, and the complete frame. A debugger may stop there before the supplied marker instruction executes. This gives the numeric and visual observations one meaning: every word belongs to the same simulation state.
+
+The initial inputs, requested step count, and rounding mode are read-only. Guards and a spare caller-owned frame remain untouched by the main animation. The main frame starts at the configured Bitmap Display base. An independently called renderer instead receives its destination pointer as an argument, so it can render into the spare frame or a relocated allocation as well.
+
+The frame represents the current state, not a trail. Clearing the previous white cell is part of producing the next complete frame. The reference can clear all 64 words and then draw the new point; an alternative can classify every cell in one pass. Correctness at the boundary does not prescribe either implementation or an exact instruction count. Preserve the calling convention when the main loop calls the axis updater and renderer: full saved-register contents and the stack pointer survive each call.
+
+The supplied single-instruction marker between `frame_ready` and `frame_continue` also provides a countable publication boundary. Observing that region distinguishes the expected initial-and-step sequence from an extra or omitted frame. The marker remains part of the teaching harness. It is not a delay instruction for real time, and it does not make a simulator step last a specified number of milliseconds.

@@ -309,3 +309,41 @@ The chapter is native LaTeX with a semantic tile diagram, headed tables, actual
 IntelliJ-derived minted spans, and separately compiled review output. Four real
 light-theme IDE captures, author review, and full PDF accessibility validation remain
 pending. No lesson screenshot has been fabricated or marked verified.
+
+## Fixed-point ball
+
+The twelfth package uses a signed raw/256 state and a bounded single-reflection rule.
+Its public animation checks run six seeds, four requested counts, and both quantizers
+(48 cases), inspecting the complete raw state, tick, ID, and frame at every ready marker.
+Public kernels add twenty axis pairs, 288 render calls, and 64 signed-word sum pairs.
+They vary destination pointers and return continuations, check full saved-register
+canaries, protect caller-owned data, and inspect again after exit. A scoped return-marker
+observation rejects a hardcoded continuation that would otherwise fall through to the
+requested marker. A legal stack-backed implementation remains accepted.
+
+Private axis coverage has 7937 cases: all velocities at three positions and all raw
+positions with a varying velocity. This is not an exhaustive Cartesian product. An
+independent periodic folding oracle contrasts with the assembly branches. Rendering
+runs 3586 calls covering all raw x and y values in both modes through a permutation of
+y values and alternating arenas. The 400 probe pairs combine signed extremes and
+fraction-boundary values. Animation has 240 seed/count/mode cases, with every publication
+checked. The actual renderer and public kernel checks also run above 4 GiB.
+
+Sixteen cumulative programs are reconstructed from student transcripts and compared
+with their native listings. Their intermediate trial, reflected, black-frame, pixel-ID,
+initial-publication, and live-but-unpublished states are checked explicitly. The complete
+reconstruction then runs all public and private scripts. Thirty quiz keys remain private.
+Eighteen warning-free faulty programs and the incomplete starter fail grading; the
+separate intentional ADD experiment produces the expected native overflow error.
+
+The four planned capture model states are checked through complete main: initial floor,
+initial nearest, tick-five reflection, and the standalone overflow results. These are
+model-state checks, not verification of IDE pixels. Default reference whole counts remain
+3901/3919 for floor/nearest and alternative counts 6165/6165. The proof of safe bounded
+motion arithmetic and the broader overflow experiment are kept separate. Exact counts
+are reference measurements, not equivalent-solution requirements or elapsed-time claims.
+
+The chapter is native LaTeX with a reflection diagram and two-quantizer coordinate grids,
+headed tables, extractable code, tagged mathematics, and actual IntelliJ-derived minted
+spans. All 146 prior distinct highlight exports are unchanged. Actual IDE capture,
+independent accessibility validation, and author review remain pending.

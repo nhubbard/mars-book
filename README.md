@@ -54,6 +54,13 @@ checks accept equivalent registers, stack usage, tile orders, and within-tile sc
 while verifying the stated matrix-access contract. Cache comparisons use the actual
 shared core/IDE cache model and separate misses from completed instructions.
 
+The twelfth composition, [Fixed-point ball](packages/012-fixed-point-ball/assignment.md),
+adds thirty steps, sixteen verified code increments, seven connected explanatory passages,
+six teaching fixtures, two native diagrams, and four planned IDE figures. It develops
+signed scaled integers, overshoot-preserving reflection, exact contacts, display rounding,
+coherent frame publication, and a separate word-overflow experiment. Its checks accept
+equivalent branches, scratch registers, stack usage, and rendering store orders.
+
 ## Use the materials
 
 The publication source is native LaTeX in main.tex and includes/. Exercise packages
@@ -77,7 +84,7 @@ See [verification](docs/verification.md) for the tested package behavior.
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first eleven chapters are now composed through ordinary LaTeX input/include files.
+The first twelve chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -92,7 +99,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first eleven text packages, starters, public checks, deterministic student archive builder,
+The first twelve text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

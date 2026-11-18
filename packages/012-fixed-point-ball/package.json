@@ -1,0 +1,1336 @@
+{
+  "formatVersion": 1,
+  "id": "012-fixed-point-ball",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Move a ball with fixed-point coordinates",
+  "audience": "Students with basic programming knowledge who are learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "1f2de4ff48d5e70a76763edf489000fd6ca7fa3c",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "readWord",
+      "readDataAddress",
+      "expectCondition",
+      "runUntil",
+      "traceMemoryStores",
+      "traceExecution",
+      "setRegisterToDataAddress",
+      "setRegisterToTextAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Signed word interpretation and full-width pointers",
+    "Row-major framebuffer addressing",
+    "Saved-register calling conventions and publication boundaries"
+  ],
+  "learningObjectives": [
+    "Interpret signed words with eight fractional bits",
+    "Preserve overshoot and exact-contact directions",
+    "Separate model state from display rounding",
+    "Publish initial and updated states coherently",
+    "Compare wrapped word arithmetic with an exact wider sum"
+  ],
+  "inputDomain": {
+    "type": "fixed-point-ball",
+    "rawScale": 256,
+    "rawPositionMinimum": 0,
+    "rawPositionMaximum": 1792,
+    "rawVelocityMinimum": -1024,
+    "rawVelocityMaximum": 1024,
+    "stepsMinimum": 0,
+    "stepsMaximum": 32,
+    "roundModes": {
+      "0": "floor",
+      "1": "nearest nonnegative ties upward"
+    },
+    "frameWords": 64,
+    "probeInputs": "correctly sign-extended signed 32-bit integers"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native book, text microsteps, author-verified cumulative programs, and executable final-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the scale before adding a velocity",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What raw value represents one pixel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "256."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Use the stated scale."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Divide a raw value by 256 to interpret it."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Interpret a negative raw word as one signed value",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which value does raw minus 96 represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Minus three eighths."
+          },
+          {
+            "id": "b",
+            "text": "Positive 160 pixels."
+          },
+          {
+            "id": "c",
+            "text": "Minus 96 pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Interpret the entire word first."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The low byte alone omits the sign information."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Identify the three function contracts",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why test the renderer independently of main?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To force the same temporary registers."
+          },
+          {
+            "id": "b",
+            "text": "To skip checking the frame."
+          },
+          {
+            "id": "c",
+            "text": "To supply a different destination pointer and raw position."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Treat the pointer as an argument."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The spare frame is a valid alternate destination."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Calculate a trial axis position",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which scale does the trial sum use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The same 256 raw units per pixel."
+          },
+          {
+            "id": "b",
+            "text": "One raw unit per pixel."
+          },
+          {
+            "id": "c",
+            "text": "A scale chosen by the renderer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Track units through the addition."
+        },
+        {
+          "id": "s04-h2",
+          "text": "No shift is needed to add these two raw values."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "axis"
+    },
+    {
+      "id": "s05",
+      "title": "Reflect at the lower wall",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why include trial zero in the lower-wall branch?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To move the wall to pixel one."
+          },
+          {
+            "id": "b",
+            "text": "To reverse the velocity at an exact contact."
+          },
+          {
+            "id": "c",
+            "text": "To clear the frame."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Check the direction, not just the position."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Without the equality case, the frame may look right while velocity is wrong."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "axis"
+    },
+    {
+      "id": "s06",
+      "title": "Reflect at the upper wall",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What is the reflected position for trial 2048?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "1792."
+          },
+          {
+            "id": "b",
+            "text": "2048."
+          },
+          {
+            "id": "c",
+            "text": "1536."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Measure the overshoot beyond 1792."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Subtract that same overshoot from the wall."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "axis"
+    },
+    {
+      "id": "s07",
+      "title": "Check contacts that an image can hide",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Which observation detects a missed exact-contact reflection immediately?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The returned velocity."
+          },
+          {
+            "id": "b",
+            "text": "Only the white pixel\u2019s color."
+          },
+          {
+            "id": "c",
+            "text": "The host execution time."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Inspect both result registers."
+        },
+        {
+          "id": "s07-h2",
+          "text": "A correct position alone does not prove a correct update."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Use the velocity bound in the proof",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why not accept arbitrary signed-word velocities with this same single-reflection routine?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The frame would need a different color."
+          },
+          {
+            "id": "b",
+            "text": "A reflected trial could still lie beyond the opposite wall."
+          },
+          {
+            "id": "c",
+            "text": "Signed words cannot represent fractions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The proof uses the maximum step distance."
+        },
+        {
+          "id": "s08-h2",
+          "text": "A larger domain needs repeated reflection or periodic folding."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Clear a complete destination frame",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why clear cells other than the new point?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To erase the old point and any stale frame contents."
+          },
+          {
+            "id": "b",
+            "text": "To reset the raw position."
+          },
+          {
+            "id": "c",
+            "text": "To reverse the velocity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Think about a point that moved away from its old cell."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The model state is separate from the frame contents."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s10",
+      "title": "Apply the selected rounding adjustment",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What does adding raw 128 represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One hundred twenty-eight pixels."
+          },
+          {
+            "id": "b",
+            "text": "One whole pixel."
+          },
+          {
+            "id": "c",
+            "text": "Half a pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Use the same scale as the position."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Nearest rounding adds half a unit before flooring."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s11",
+      "title": "Convert the selected cell to a word index",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "How is the row-major pixel ID calculated?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight times the row plus the column."
+          },
+          {
+            "id": "b",
+            "text": "Eight times the column plus the row."
+          },
+          {
+            "id": "c",
+            "text": "Four times the raw x coordinate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Separate geometric coordinates from memory width."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Byte scaling comes after the word index."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s12",
+      "title": "Draw the point through the full pointer",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why use a full-width addition for the destination address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The frame always occupies four GiB."
+          },
+          {
+            "id": "b",
+            "text": "A small frame can be allocated above the 32-bit address range."
+          },
+          {
+            "id": "c",
+            "text": "The color has sixty-four bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Bound the offset and pointer separately."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The widest address bits must survive."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s13",
+      "title": "Compare two pictures of the same state",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Should the axis updater bounce from the rounded display cell?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; the frame is the authoritative position."
+          },
+          {
+            "id": "b",
+            "text": "Only in nearest mode."
+          },
+          {
+            "id": "c",
+            "text": "No; collision uses the raw coordinate bound."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Keep rendering downstream of the state update."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The two modes should share one raw trajectory."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Check the leaf functions as callers would",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What can a low-word-only saved-register check miss?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Loss of the register\u2019s original high 32 bits."
+          },
+          {
+            "id": "b",
+            "text": "The pixel\u2019s row number."
+          },
+          {
+            "id": "c",
+            "text": "A change in rounding mode constants."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Use a canary with nonzero high bits."
+        },
+        {
+          "id": "s14-h2",
+          "text": "A 32-bit save can appear correct when the original high half was zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Keep the raw state live across calls",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Why retain state in saved registers across renderer calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Rendering automatically updates those registers."
+          },
+          {
+            "id": "b",
+            "text": "The callee promises to preserve them."
+          },
+          {
+            "id": "c",
+            "text": "Saved registers are limited to positive values."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Review the renderer\u2019s preservation contract."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Temporary registers are allowed to change."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "initialize"
+    },
+    {
+      "id": "s16",
+      "title": "Distinguish remaining steps from the current tick",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "How many frames does a request of zero require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "Eight."
+          },
+          {
+            "id": "c",
+            "text": "One initial frame."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Count states rather than updates."
+        },
+        {
+          "id": "s16-h2",
+          "text": "N updates produce states zero through N."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "initialize"
+    },
+    {
+      "id": "s17",
+      "title": "Publish the raw state before the marker",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Which values belong in the published position words?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The raw scaled coordinates."
+          },
+          {
+            "id": "b",
+            "text": "Only the integer display cells."
+          },
+          {
+            "id": "c",
+            "text": "The cache line numbers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Keep the fractions available for the next update."
+        },
+        {
+          "id": "s17-h2",
+          "text": "A display cell cannot recover discarded fractional bits."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "publish"
+    },
+    {
+      "id": "s18",
+      "title": "Render and publish the selected pixel ID",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why store the pixel ID before the ready marker?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To change the next velocity."
+          },
+          {
+            "id": "b",
+            "text": "To make the numeric and frame observations agree at the stopped boundary."
+          },
+          {
+            "id": "c",
+            "text": "To delay execution by one real second."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Treat the boundary as one coherent snapshot."
+        },
+        {
+          "id": "s18-h2",
+          "text": "A correct frame with stale metadata is an incomplete publication."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "publish"
+    },
+    {
+      "id": "s19",
+      "title": "Inspect the initial publication in both modes",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What should stay identical between these two initial runs?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The selected pixel ID."
+          },
+          {
+            "id": "b",
+            "text": "The exact host elapsed time."
+          },
+          {
+            "id": "c",
+            "text": "The raw position and velocity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Check the raw publication words."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Only the derived cell is allowed to differ."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Stop at zero remaining steps and advance x",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Why copy the horizontal results out before calling the axis updater for y?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The next call can overwrite both result registers."
+          },
+          {
+            "id": "b",
+            "text": "The renderer uses a different color for y."
+          },
+          {
+            "id": "c",
+            "text": "The stack pointer is a pixel index."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Consider the live values across the next call."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Save both position and velocity, not only one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "advance"
+    },
+    {
+      "id": "s21",
+      "title": "Advance y without mixing velocity components",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which velocity is paired with the vertical position argument?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The horizontal velocity."
+          },
+          {
+            "id": "b",
+            "text": "The vertical velocity."
+          },
+          {
+            "id": "c",
+            "text": "The remaining-step counter."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Follow the argument pair for one axis."
+        },
+        {
+          "id": "s21-h2",
+          "text": "The two result pairs must not be crossed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "advance"
+    },
+    {
+      "id": "s22",
+      "title": "Close the update-and-publication loop",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "How many ready publications should eight updates produce?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "Seven."
+          },
+          {
+            "id": "c",
+            "text": "Nine."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Include tick zero."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The last published tick equals the requested count."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "advance"
+    },
+    {
+      "id": "s23",
+      "title": "Follow the first two reflections",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Which observation distinguishes those last two horizontal states when their nearest column is the same?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The raw coordinate and velocity."
+          },
+          {
+            "id": "b",
+            "text": "Only the pixel\u2019s color."
+          },
+          {
+            "id": "c",
+            "text": "The input guard\u2019s value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Read the raw state alongside the image."
+        },
+        {
+          "id": "s23-h2",
+          "text": "A repeated display column is not necessarily a stationary coordinate."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Count publications at the supplied marker",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Why check a publication count as well as the final state?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To require an exact whole-program instruction total."
+          },
+          {
+            "id": "b",
+            "text": "To detect an omitted or extra observable frame."
+          },
+          {
+            "id": "c",
+            "text": "To set a wall-clock animation rate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "A correct final image does not prove the intermediate sequence."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The scoped count covers the supplied marker only."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Compare equal motion before comparing work",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What must remain equal in an optimization comparison?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The required trajectory, publications, and rendering result."
+          },
+          {
+            "id": "b",
+            "text": "The temporary-register names."
+          },
+          {
+            "id": "c",
+            "text": "The exact source length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Define equal specified work first."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Keep simulated instructions separate from host time."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Reproduce the wrapped word result",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Does returning normally from this word addition prove the mathematical sum fit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because the general register is wide."
+          },
+          {
+            "id": "b",
+            "text": "Yes, because the mnemonic ends in u."
+          },
+          {
+            "id": "c",
+            "text": "No; the word result can wrap without an exception."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Separate fault behavior from representability."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Inspect the width of the operation, not only the register."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "probe"
+    },
+    {
+      "id": "s27",
+      "title": "Compute the exact wider raw sum",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why must widening happen before the addition that needs the larger range?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A wrapped word result has already lost information about the exact signed sum."
+          },
+          {
+            "id": "b",
+            "text": "Widening changes the input scale automatically."
+          },
+          {
+            "id": "c",
+            "text": "A doubleword cannot represent negative numbers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Compare the high bits of the two results."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Compute from the original signed operands."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      },
+      "editTarget": "probe"
+    },
+    {
+      "id": "s28",
+      "title": "Run the separate overflow demonstration",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why put the overflow example in a separate path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To change the bitmap address."
+          },
+          {
+            "id": "b",
+            "text": "Its operand range is broader than the bounded motion update."
+          },
+          {
+            "id": "c",
+            "text": "To avoid using result registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Keep both numeric contracts explicit."
+        },
+        {
+          "id": "s28-h2",
+          "text": "A useful failure experiment need not be a reachable normal-animation state."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Distinguish a trapped addition from a wrapped result",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q29",
+        "prompt": "What does the intentional ADD experiment demonstrate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A native signed word overflow exception."
+          },
+          {
+            "id": "b",
+            "text": "That every fixed-point update must trap."
+          },
+          {
+            "id": "c",
+            "text": "That nearest rounding changes the raw sum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Keep the chosen operands and operation width in view."
+        },
+        {
+          "id": "s29-h2",
+          "text": "A fault and a wrapped value are different outcomes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Submit a checked equivalent and plan a variation",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which variation is accepted under the current rendering contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Leaving an old white trail."
+          },
+          {
+            "id": "b",
+            "text": "Rounding the stored raw position after each step."
+          },
+          {
+            "id": "c",
+            "text": "Producing the same complete frame with a different internal store order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Preserve observable behavior."
+        },
+        {
+          "id": "s30-h2",
+          "text": "An alternative implementation need not use the same internal instructions."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Authoring verifies each cumulative source and its illustrated state. Complete-program CLI checks are executable; interactive edit recognition and IDE capture remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/program.kts",
+    "checks/kernels.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

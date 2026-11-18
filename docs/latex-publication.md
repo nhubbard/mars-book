@@ -61,7 +61,7 @@ IDE values remain in the receipt; token roles and font styles are preserved. Lit
 plain native text block. A changed assembly listing requires a fresh IntelliJ export.
 
 The initial nine-chapter migration covered 121 assembly listings and one specimen listing.
-The native-first maze chapter adds seventeen assembly listings; matrix transpose adds thirteen more. Preserve source bytes and indentation. Do not enable math escapes,
+The native-first maze chapter adds seventeen assembly listings; matrix transpose adds thirteen more, and fixed-point ball adds sixteen. Preserve source bytes and indentation. Do not enable math escapes,
 TeX escapes, or code ligatures that change the meaning of a listing. Code must remain
 extractable text rather than an image. Short chapter marks keep running headers within
 the page; code labels reserve room for the opening lines of their listings.
@@ -105,12 +105,15 @@ for their label and complete listing. Quizzes reserve space for their choices. T
 are editable LaTeX layout decisions, independent of exercise metadata. Actual IDE
 captures and full publication accessibility review remain outstanding.
 
-The initial fixed-point ball composition can likewise be reviewed independently:
+The complete fixed-point ball text draft can likewise be reviewed independently:
 
 ```sh
 python3 tools/book.py build --entry drafts/fixed-point-ball.tex
 ```
 
-This produces `build/native/fixed-point-ball.pdf`. Its current native prose, equations,
-trace tables, and reflection diagram are work in progress; the chapter is not yet in
-the main manuscript. The entry uses the same selected fonts and tagging setup.
+It produces `build/native/fixed-point-ball.pdf` and is also included in the main book.
+Its directly editable include sequence combines the existing numerical passages with
+thirty steps, sixteen actual IntelliJ-highlighted listings, native coordinate diagrams,
+and marked pending IDE figures. Font embedding, literal code extraction, headed tables,
+mathematical structure, and figure alternatives are checked in the rendered output.
+Full accessibility review, author review, and actual light-theme captures remain pending.

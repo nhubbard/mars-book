@@ -1,0 +1,34 @@
+\section{Step 17 Publish the raw state before the marker}\label{ball-s17}
+
+A stopped observation needs a coherent numeric state. Store all four raw values and the tick number from the live saved registers. These words are an observation of the model, not the values from which rendering should reconstruct a lower-precision trajectory.
+
+\subsection{Write or inspect}
+Append the metadata stores in the \texttt{publish} region. Inspect the words at the supplied \texttt{frame\_ready} marker. The pixel field and frame are still unfinished until the next increment.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dla $t0, x_raw
+    sw $s0, 0($t0)
+    dla $t0, y_raw
+    sw $s1, 0($t0)
+    dla $t0, vx_raw
+    sw $s2, 0($t0)
+    dla $t0, vy_raw
+    sw $s3, 0($t0)
+    dla $t0, tick
+    sw $s5, 0($t0)
+\end{minted}
+
+\subsection{Expected observation}
+At tick zero, the published raw state equals the seed state. A poisoned frame remains poisoned because main has not called the renderer yet.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which values belong in the published position words?
+
+\begin{itemize}
+\item \textbf{A} The raw scaled coordinates.
+\item \textbf{B} Only the integer display cells.
+\item \textbf{C} The cache line numbers.
+\end{itemize}

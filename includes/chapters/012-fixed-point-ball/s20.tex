@@ -1,0 +1,32 @@
+\section{Step 20 Stop at zero remaining steps and advance x}\label{ball-s20}
+
+Test the remaining count before either axis update. Otherwise a request of zero would still move once. For a positive count, call the one-axis function with x and its velocity, then save both returned values before reusing the result registers.
+
+\subsection{Write or inspect}
+Append the zero-count guard and horizontal update in the \texttt{advance} region. Run this partial program once with zero steps and once with a positive request.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s4, $zero, done
+    nop
+    move $a0, $s0
+    move $a1, $s2
+    jal advance_axis
+    nop
+    move $s0, $v0
+    move $s2, $v1
+\end{minted}
+
+\subsection{Expected observation}
+Zero steps exits after the initial frame. A positive request updates the live horizontal state once, but the stored publication still describes tick zero; a second publication has not been added yet.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why copy the horizontal results out before calling the axis updater for y?
+
+\begin{itemize}
+\item \textbf{A} The next call can overwrite both result registers.
+\item \textbf{B} The renderer uses a different color for y.
+\item \textbf{C} The stack pointer is a pixel index.
+\end{itemize}

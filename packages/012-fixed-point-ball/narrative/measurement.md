@@ -1,0 +1,12 @@
+# Measure implementations at the same simulation scope
+
+The two verified prototypes publish the same nine states for the default request of eight steps. The reference clears the frame and then draws the point; the alternative classifies each cell in one pass. Their axis-update code also uses different branch arrangements. Whole-run native instruction counts are
+
+| Implementation | Floor mode | Nearest mode |
+|:---------------|-----------:|-------------:|
+| Reference      |       3901 |         3919 |
+| Alternative    |       6165 |         6165 |
+
+These counts include initialization, nine publications, eight paired axis updates, and normal exit. They do not estimate cycles or host elapsed time. The reference executes two extra coordinate adjustments per rendered frame in nearest mode, accounting for its eighteen-instruction difference. The alternative uses a mode-derived adjustment without that conditional path, so its two modes have equal instruction counts for this workload.
+
+Writing each frame cell once does not by itself minimize instructions. A per-cell classification can add work that a simple clear loop avoids. Any optimization experiment must retain the same raw trajectory, publication sequence, rounding result, and protected memory before comparing its count. Exact prototype counts explain this workload; they are not requirements for equivalent submissions.

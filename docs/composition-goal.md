@@ -46,22 +46,15 @@ substantive, verified composition to producing many skeletal chapter packages. R
 instruction semantics and the explanatory text together before committing each increment.
 
 The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter,
-MarsBot-square, Bresenham-line, Life, sorting-visualizer, maze-explorer, and matrix-transpose
-chapters are composed text drafts with verified companion programs. They still need
-author review and actual IDE figures. The remaining projects stay planned until their
-text and companions are written and checked. Fixed-point bouncing ball is next.
+MarsBot-square, Bresenham-line, Life, sorting-visualizer, maze-explorer, matrix-transpose,
+and fixed-point ball chapters are composed text drafts with verified companion programs.
+They still need author review and actual IDE figures. The remaining projects stay
+planned until their text and companions are written and checked. Binary packet parser
+is next in the roadmap.
 
-Matrix transpose is composed through ordinary includes and is included in `main.tex`.
-The separate `drafts/matrix-transpose.tex` entry remains useful for reviewing that one
-chapter without rebuilding the full book. Its 28 microsteps, thirteen code increments,
-public checks, private exhaustive fixtures, alternative implementations, and four
-planned light-theme figures have matching student and instructor distributions.
-
-The fixed-point ball chapter has initial native passages in
-`includes/chapters/012-fixed-point-ball/`, reviewed with the separate
-`drafts/fixed-point-ball.tex` entry. They establish signed scaled integers, bounded
-overshoot-preserving reflection, exact contacts, two rendering quantizers, publication
-boundaries, and a word-overflow experiment. Two companion prototypes and their independent
-oracles are private. Guided code increments, questions/keys, the student package, and
-actual IDE figures remain outstanding. It is not included in the main manuscript or
-counted as a completed text package yet.
+Matrix transpose and fixed-point ball are composed through ordinary includes in the
+main manuscript. Their independent entries, `drafts/matrix-transpose.tex` and
+`drafts/fixed-point-ball.tex`, support focused editorial and layout review. The ball
+chapter has thirty microsteps, sixteen cumulative code increments, public animation
+and kernel checks, independent private oracles, and four planned light-theme figures.
+Student and instructor distributions pin the same public version and archive digest.

@@ -1,0 +1,27 @@
+# Choose a display cell without changing the model
+
+After reflecting the raw position, select one of the eight display cells. The exercise compares floor rounding with rounding to the nearest integer, resolving an exact half upward. For a nonnegative raw position $`p`$, these are
+``` math
+\operatorname{floorCell}(p)=\left\lfloor\frac p{256}\right\rfloor,
+ \qquad
+ \operatorname{nearestCell}(p)=\left\lfloor\frac{p+128}{256}\right\rfloor.
+```
+The second rule is specifically for the renderer’s nonnegative domain. Applying the same adjustment to arbitrary negative values would define a different signed tie rule and needs its own explanation.
+
+Adding 128 adds half a pixel before dropping the fractional bits. At raw 127, the nearest cell is zero. At raw 128, it is one. At raw 129, it is also one. The upper coordinate raw 1792 still selects cell seven under either rule. The renderer cannot produce cell eight from a valid position.
+
+| Raw position | Position in pixels | Floor cell | Nearest cell |
+|-------------:|-------------------:|-----------:|-------------:|
+|          127 |        $`127/256`$ |          0 |            0 |
+|          128 |            $`1/2`$ |          0 |            1 |
+|          192 |            $`3/4`$ |          0 |            1 |
+|          320 |          $`1+1/4`$ |          1 |            1 |
+|          448 |          $`1+3/4`$ |          1 |            2 |
+|         1664 |          $`6+1/2`$ |          6 |            7 |
+|         1792 |                  7 |          7 |            7 |
+
+The initial raw position $`(320,448)`$ becomes cell $`(1,1)`$ with floor and $`(1,2)`$ with nearest rounding. Those are pixel IDs nine and seventeen in an eight-column row-major frame. The raw position is the same in both runs.
+
+The renderer receives the raw values and a rounding-mode argument. It writes one white cell in an otherwise black 64-word frame and returns that cell’s ID. Its cell coordinates are derived values. Do not write them back as the next raw positions. Doing so discards the accumulated fractions and changes the motion.
+
+Nearest rounding can display the ball in wall cell seven while its raw coordinate is only 6.5. That displayed cell does not mean a collision has occurred. A later step may still have a positive velocity even while the screen cell remains seven. The collision rule uses the raw interval, and the renderer observes its result. Bouncing from the rounded cell would give the two display modes different physical trajectories.

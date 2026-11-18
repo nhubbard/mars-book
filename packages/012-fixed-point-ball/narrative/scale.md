@@ -1,0 +1,39 @@
+# Store a fraction as a scaled integer
+
+A ball can move by less than one pixel per simulation step. If the program stores only the integer pixel coordinate, an increment of three quarters of a pixel has no representation in that state. Rounding that increment to zero makes the ball stationary; rounding it to one makes the ball too fast. Retain a more precise position and choose a display cell when rendering it.
+
+This chapter represents each coordinate as a signed 32-bit integer with eight fractional bits. A raw integer $`r`$ represents
+``` math
+x=\frac{r}{256},\qquad 256=2^8.
+```
+One pixel is 256 raw units, and one raw unit is $`1/256`$ pixel, or 0.00390625 pixel. The binary point is a convention used by the program. The register and memory word contain an integer bit pattern; neither marks a binary-point position.
+
+For this exercise the drawing is an eight-by-eight grid. Horizontal positions increase rightward, and vertical positions increase downward. The ball is represented by one selected cell, with its model position measured from the center of cell zero to the center of cell seven on each axis. Each position is therefore between zero and seven pixels, inclusive, or between zero and 1792 raw units. Velocity is measured in pixels per simulation step. A raw velocity of 192 means $`192/256=3/4`$ pixel per step. This is a discrete simulation clock; a step does not promise a particular duration in host seconds.
+
+| Raw integer | Represented value | Role in the walkthrough     |
+|------------:|------------------:|:----------------------------|
+|           1 |         $`1/256`$ | Smallest positive increment |
+|         128 |           $`1/2`$ | Half a pixel                |
+|         192 |           $`3/4`$ | Initial horizontal velocity |
+|         256 |                 1 | One pixel                   |
+|         320 |         $`1+1/4`$ | Initial horizontal position |
+|         448 |         $`1+3/4`$ | Initial vertical position   |
+|        1792 |                 7 | Upper coordinate bound      |
+
+To encode an exactly representable position, multiply its pixel value by 256. For example, $`1.25\cdot256=320`$. A value whose product is not an integer needs an explicit input-quantization rule. The initial data in this exercise already consist of raw integers, so no decimal-to-fixed conversion occurs during execution.
+
+# Keep the whole raw word signed
+
+Eight fractional bits do not make the low byte a separate signed fraction. The whole 32-bit raw integer uses two’s-complement signed interpretation. Raw $`-96`$, stored as hexadecimal `ffffffa0`, represents $`-3/8`$. Its low byte is hexadecimal `a0`, or 160. Reading that byte as an independent positive fraction would lose the meaning of the higher bits.
+
+An arithmetic right shift by eight rounds a negative raw value downward when interpreted as division by 256. For raw $`-96`$, that integer part is $`-1`$, and the low eight bits supply the remaining $`160/256`$:
+``` math
+-1+\frac{160}{256}=-\frac{3}{8}.
+```
+Signed integer division truncated toward zero would instead produce zero as its quotient. These are different rounding rules. The renderer below receives only nonnegative positions, but velocities can be negative. Keep that distinction when choosing a shift or interpreting a register.
+
+With a signed 32-bit raw word, the representable range is
+``` math
+-2^{23}\leq x\leq2^{23}-\frac1{256}.
+```
+Descriptions using the letter Q differ in whether the sign bit is counted among the integer bits. Stating the total width and the eight fractional bits avoids that ambiguity. The ball uses only a small bounded part of this format’s range.
