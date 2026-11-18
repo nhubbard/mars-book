@@ -1,0 +1,32 @@
+# Validate structure before validating targets
+The first pass decodes the complete image from left to right. Recognize the opcode,
+select its encoded size, and require that all of its bytes remain in the supplied
+slice. Unknown opcodes report minus one. A recognized instruction whose operands
+are incomplete reports minus two. Both identify that instruction's first byte.
+Record each successfully decoded instruction start and advance by its whole size.
+Operand bytes are skipped as operands, regardless of their numerical values.
+
+The second pass checks every encoded `JMP` and `JZ` target against
+the recorded instruction starts. An invalid target reports minus three at the branch
+instruction's offset. This includes targets outside the image, at the image end, or
+inside another instruction's operands. Validate targets even for branches that would
+not be taken and instructions after an earlier halt.
+
+The first structural failure wins over all branch-target errors. After structure is
+valid, the first invalid branch in byte order wins. Thus `30 01 ff` reports
+an invalid opcode at byte two before considering the branch's invalid target one.
+No guest instruction has retired in either validation phase. The result has empty
+logical stack, PC zero and retired count zero, with the failing encoded instruction
+identified separately.
+
+An empty image has no malformed record, so both validation passes succeed. A positive
+budget then attempts a fetch at the image end and reports the runtime end fault. A
+zero budget returns budget exhaustion without that fetch. Likewise, a valid instruction
+stream need not contain a halt; reaching its end is checked when execution next tries
+to fetch an instruction.
+
+The caller may replace the bytes at the same address between calls, even while the
+length stays unchanged. Validate the current contents each time. A cached boundary
+map keyed only by pointer and length can retain starts that have become operand
+positions in the replacement image. A reusable prepared-image interface would need
+an explicit content-identity and ownership contract beyond this function's inputs.

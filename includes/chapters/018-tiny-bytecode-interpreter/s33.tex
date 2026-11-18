@@ -1,0 +1,34 @@
+\section{Step 33 Complete the shared duplicate and over copy}\label{vm-s33}
+
+Convert the chosen source index to a full stack address and load its word. Store that value at the next free slot, increase depth, select PC plus one, and retire. The earlier source-depth and capacity guards ensure both addresses fit the selected workspace.
+
+\Needspace{20\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{copy}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sll $t1, $t1, 2
+    daddu $t1, $s3, $t1
+    lw $t2, 0($t1)
+    sll $t3, $s7, 2
+    daddu $t3, $s3, $t3
+    sw $t2, 0($t3)
+    addiu $s7, $s7, 1
+    addiu $t8, $s6, 1
+    beq $zero, $zero, vm_retire
+    nop
+\end{minted}
+\subsection{Expected observation}
+Seven, twelve, \texttt{OVER} leaves live values seven, twelve, seven. Seven, \texttt{DUP} leaves two sevens.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What happens to the original source value?
+
+\begin{itemize}
+\item \textbf{A} It is consumed.
+\item \textbf{B} It remains live.
+\item \textbf{C} It becomes a branch target.
+\end{itemize}

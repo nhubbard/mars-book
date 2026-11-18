@@ -1,0 +1,27 @@
+\section{Step 12 Walk complete records through the whole image}\label{vm-s12}
+
+Advance by encoded size and return to the bound-before-fetch entry. This skips payload bytes as part of their owning instruction. The supplied targets\_begin label resets the cursor before the second pass. At this stage that pass still takes a temporary return, so inspect the completed bitmap rather than treating the call as executed bytecode.
+
+\Needspace{13\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{format\_advance}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $s6, $s6, $t1
+    beq $zero, $zero, format_loop
+    nop
+\end{minted}
+\subsection{Expected observation}
+The default image marks thirteen starts. Sixty-four halt bytes set all sixty-four bitmap bits, including bit sixty-three.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why advance by size rather than one?
+
+\begin{itemize}
+\item \textbf{A} Every payload byte is a halt.
+\item \textbf{B} Operand bytes must remain part of their record.
+\item \textbf{C} Guest stack depth determines instruction length.
+\end{itemize}

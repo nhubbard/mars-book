@@ -1,0 +1,29 @@
+\section{Step 28 Complete ordinary guest retirement}\label{vm-s28}
+
+Install the next PC from \texttt{t8}, increment retired count, consume one budget unit, and return to the budget-before-fetch loop. Later handlers join this path only after success. With halt and short push implemented, ordinary guest sequences can now execute complete prefixes.
+
+\Needspace{15\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{retire}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s6, $t8
+    addiu $v1, $v1, 1
+    addiu $a3, $a3, -1
+    beq $zero, $zero, vm_loop
+    nop
+\end{minted}
+\subsection{Expected observation}
+\texttt{PUSH8} seven followed by halt now returns status one, retired count two, PC three and live value seven.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+When should an ordinary handler enter this path?
+
+\begin{itemize}
+\item \textbf{A} Before checking its stack requirements.
+\item \textbf{B} Whenever it detects a fault.
+\item \textbf{C} After its guest effect succeeds and its next PC is selected.
+\end{itemize}

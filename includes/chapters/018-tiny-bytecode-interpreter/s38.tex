@@ -1,0 +1,29 @@
+\section{Step 38 Check a zero divisor before a wide quotient}\label{vm-s38}
+
+Reject a zero right value before executing \texttt{ddiv}. Otherwise calculate the signed doubleword quotient and transfer to the shared word check. The quotient can exceed the guest range even when doubleword division itself succeeds, as with minimum word divided by minus one.
+
+\Needspace{15\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{divide}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $t2, $zero, zero_divisor
+    nop
+    ddiv $t3, $t1, $t2
+    beq $zero, $zero, vm_check_word
+    nop
+\end{minted}
+\subsection{Expected observation}
+For minus seven and three, \texttt{t3} holds minus two while the still-unfinished result check leaves both operands live. Zero division already reports minus eight.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why does minimum word divided by minus one still need a range test?
+
+\begin{itemize}
+\item \textbf{A} Its wide quotient is positive two to the thirty-first power.
+\item \textbf{B} Its divisor is zero.
+\item \textbf{C} The encoded instruction is five bytes long.
+\end{itemize}

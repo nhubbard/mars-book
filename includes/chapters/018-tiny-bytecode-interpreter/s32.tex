@@ -1,0 +1,31 @@
+\section{Step 32 Select the second value from the top}\label{vm-s32}
+
+Require two live values, then require room for one more. Select source index depth minus two and fall through to the copy. This copies a value without removing either existing operand; it is not a swap or a pop.
+
+\Needspace{17\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{over}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t1, $s7, 2
+    bne $t1, $zero, underflow_stack
+    nop
+    sltu $t1, $s7, $s4
+    beq $t1, $zero, overflow_stack
+    nop
+    addiu $t1, $s7, -2
+\end{minted}
+\subsection{Expected observation}
+After pushes seven and twelve, \texttt{OVER} selects source index zero while the shared copy is still unfinished.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which value does \texttt{OVER} select?
+
+\begin{itemize}
+\item \textbf{A} The second live value from the top.
+\item \textbf{B} The next inactive slot.
+\item \textbf{C} The current guest PC.
+\end{itemize}

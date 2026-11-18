@@ -63,7 +63,7 @@ Binary packet parser is composed in native includes and has an independent entry
 explicit error priority, byte order and checksum reasoning, a native input-window
 diagram, and measured instruction/read comparisons. Its grader adds native read-width
 observations to detect logical overreads into mapped padding. Three actual IDE figures
-remain planned. The full roadmap remains the goal; seventeen text drafts do not complete it.
+remain planned. The full roadmap remains the goal; eighteen text drafts do not complete it.
 
 Ring-buffer logger has a complete native text draft and an independent entry,
 `drafts/ring-buffer-logger.tex`. Thirty steps and eighteen cumulative code increments
@@ -100,11 +100,13 @@ Nineteen faulty variants and the unfinished starter are rejected. Four actual ID
 captures, human review and independent accessibility validation remain pending. The
 full 35-project book and capture objective remains active.
 
-Tiny bytecode interpreter is in progress. Its native foundation excerpt at
-`drafts/tiny-bytecode-interpreter.tex` defines thirteen variable-length guest opcodes,
-whole-image/target validation, checked word arithmetic, stack capacity, instruction
-retirement and budget behavior. It includes a descriptor layout, instruction-boundary
-diagram and concrete countdown trace. Verified implementation prototypes and development
-checks remain private while the instructional increments, student package, quizzes/hints
-and capture plans are composed. It is not yet included in main.tex or counted as a
-completed text package. The full 35-project objective remains active.
+Tiny bytecode interpreter is a full native text draft at
+`drafts/tiny-bytecode-interpreter.tex`, included in main.tex as chapter eighteen.
+Fifty-one steps and forty cumulative assembly edits develop thirteen variable-length
+opcodes, whole-image and target-validation priority, checked arithmetic, stack bounds,
+precise retirement and fresh-call behavior. Six provided frame/exit excerpts, a native
+instruction-boundary diagram, complete countdown prefixes, measured composite
+implementations and guided/free-writing packages accompany the prose. All forty partial
+programs have fifty-eight executable observations. Four actual light-theme captures,
+human review and independent accessibility validation remain pending. Eighteen text
+packages do not complete the full 35-project and capture objective, which remains active.

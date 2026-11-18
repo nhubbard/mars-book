@@ -1,0 +1,27 @@
+\section{Step 20 Complete target validation before execution}\label{vm-s20}
+
+Advance by the selected size and repeat. When all records pass, execute\_begin resets the shared cursor to guest PC zero. The still-unfinished execution region then returns provisionally. An invalid branch anywhere in the image instead reaches the image-error return before any guest retirement.
+
+\Needspace{13\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{target\_advance}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $s6, $s6, $t1
+    beq $zero, $zero, targets_loop
+    nop
+\end{minted}
+\subsection{Expected observation}
+The default image completes both validation passes with zero retirements. Changing its conditional target to six reports fault five and PC zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does a successful validation pass guarantee about branch destinations?
+
+\begin{itemize}
+\item \textbf{A} Each encoded target identifies an instruction beginning.
+\item \textbf{B} Every branch will execute.
+\item \textbf{C} Every program will halt.
+\end{itemize}

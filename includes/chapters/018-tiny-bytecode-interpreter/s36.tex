@@ -1,0 +1,32 @@
+\section{Step 36 Locate left and right without popping them}\label{vm-s36}
+
+Require two live values and address index depth minus two. Load the older word as left and the top word as right. Keep depth unchanged while computing a candidate. A failure must return the original live prefix, so consuming operands before checks would publish incorrect state.
+
+\Needspace{18\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{binary\_operands}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t1, $s7, 2
+    bne $t1, $zero, underflow_stack
+    nop
+    addiu $t7, $s7, -2
+    sll $t7, $t7, 2
+    daddu $t7, $s3, $t7
+    lw $t1, 0($t7)
+    lw $t2, 4($t7)
+\end{minted}
+\subsection{Expected observation}
+After pushes seven and twelve, the common entry loads left seven and right twelve.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which value is the right operand?
+
+\begin{itemize}
+\item \textbf{A} The older of the top two.
+\item \textbf{B} The top live value.
+\item \textbf{C} The current depth.
+\end{itemize}

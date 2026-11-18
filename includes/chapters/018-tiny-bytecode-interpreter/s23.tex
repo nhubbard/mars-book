@@ -1,0 +1,36 @@
+\section{Step 23 Share the arithmetic operand path}\label{vm-s23}
+
+Route all four arithmetic opcodes to vm\_binary. That common path will enforce two live operands and locate the left and right values. A later inner dispatch selects the actual arithmetic operation while retaining the original opcode.
+
+\Needspace{22\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{dispatch\_arithmetic}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t1, 16
+    beq $t9, $t1, vm_binary
+    nop
+    li $t1, 17
+    beq $t9, $t1, vm_binary
+    nop
+    li $t1, 18
+    beq $t9, $t1, vm_binary
+    nop
+    li $t1, 19
+    beq $t9, $t1, vm_binary
+    nop
+\end{minted}
+\subsection{Expected observation}
+An \texttt{ADD} byte selects vm\_binary; its stack handling remains unfinished.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why retain the opcode through the common entry?
+
+\begin{itemize}
+\item \textbf{A} The arithmetic operation still has to be selected.
+\item \textbf{B} It is the public return status.
+\item \textbf{C} It is always equal to stack depth.
+\end{itemize}

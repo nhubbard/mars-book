@@ -1,0 +1,32 @@
+\section{Step 42 Publish arithmetic only after representability succeeds}\label{vm-s42}
+
+Sign extend the candidate low word with a word shift by zero and compare it with the original wide candidate. Inequality selects arithmetic overflow without changing depth or the live pair. Equality stores the result in the left slot, reduces depth by one, selects the next byte, and retires.
+
+\Needspace{18\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{check\_word}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sll $t4, $t3, 0
+    bne $t4, $t3, arithmetic_overflow
+    nop
+    sw $t3, 0($t7)
+    addiu $s7, $s7, -1
+    addiu $t8, $s6, 1
+    beq $zero, $zero, vm_retire
+    nop
+\end{minted}
+\subsection{Expected observation}
+The 46341-squared program reports minus seven with its two original operands live. Seven minus twelve succeeds with minus five.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What is retained after an arithmetic overflow?
+
+\begin{itemize}
+\item \textbf{A} A wrapped result replacing both values.
+\item \textbf{B} The pre-instruction live prefix and current guest PC.
+\item \textbf{C} An automatically cleared stack.
+\end{itemize}

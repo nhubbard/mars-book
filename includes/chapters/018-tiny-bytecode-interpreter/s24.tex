@@ -1,0 +1,36 @@
+\section{Step 24 Route the four stack operations}\label{vm-s24}
+
+Select separate \texttt{DUP}, \texttt{DROP}, \texttt{SWAP} and \texttt{OVER} entries. Their live-value requirements and depth changes differ, so sharing their opcode width does not make their execution effects interchangeable. \texttt{DUP} and \texttt{OVER} will later share the actual copy after choosing different source indices.
+
+\Needspace{22\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{dispatch\_stack}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t1, 32
+    beq $t9, $t1, vm_dup
+    nop
+    li $t1, 33
+    beq $t9, $t1, vm_drop
+    nop
+    li $t1, 34
+    beq $t9, $t1, vm_swap
+    nop
+    li $t1, 35
+    beq $t9, $t1, vm_over
+    nop
+\end{minted}
+\subsection{Expected observation}
+A \texttt{DUP} byte selects its handler with the opcode still available.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which operations can share a copy after choosing a source?
+
+\begin{itemize}
+\item \textbf{A} \texttt{DROP} and \texttt{HALT}.
+\item \textbf{B} \texttt{DUP} and \texttt{OVER}.
+\item \textbf{C} \texttt{SUB} and \texttt{JMP}.
+\end{itemize}

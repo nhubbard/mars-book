@@ -1,0 +1,2212 @@
+{
+  "formatVersion": 1,
+  "id": "018-tiny-bytecode-interpreter",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Run a tiny bytecode interpreter",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "traceExecution",
+      "readDataAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Bounded byte decoding and full-width addresses",
+    "Saved registers and native stack frames",
+    "Checked signed-word arithmetic and branch control"
+  ],
+  "learningObjectives": [
+    "Distinguish guest execution from native interpretation",
+    "Decode variable-length records and instruction boundaries",
+    "Apply structural and branch-validation priority before execution",
+    "Preserve semantic stack state on faults",
+    "Count retirement and budget at precise boundaries",
+    "Measure complete work while preserving fresh-call behavior"
+  ],
+  "inputDomain": {
+    "type": "bounded-stack-bytecode",
+    "maximumBytes": 64,
+    "inputArenaBytes": 96,
+    "maximumCapacityWords": 8,
+    "stackBackingWords": 16,
+    "maximumBudget": 64,
+    "resultMinimum": -2147483648,
+    "resultMaximum": 2147483647
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose, region replacements and CLI grading; interactive trainer and screenshot runner pending"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Separate the program from the interpreter",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which quantity does the guest budget limit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Successfully retired bytecode instructions."
+          },
+          {
+            "id": "b",
+            "text": "Native MIPS loads only."
+          },
+          {
+            "id": "c",
+            "text": "The number of encoded bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "The MIPS source implements a second, smaller instruction set."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The completed default call retires thirty-three guest instructions and returns one live value, six."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Read the descriptor as an interface",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "May a later call resume using the old output PC?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if capacity is unchanged."
+          },
+          {
+            "id": "b",
+            "text": "No, each call begins at zero with an empty logical stack."
+          },
+          {
+            "id": "c",
+            "text": "Only if the old status was halt."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Capacity and the full stack pointer are inputs."
+        },
+        {
+          "id": "s02-h2",
+          "text": "For a valid zero-budget call, outputs are PC zero, depth zero, retired zero, status zero and fault minus one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Inspect the saved frame and initial state",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why copy the state pointer before assigning minus one to a2?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The state descriptor has no address."
+          },
+          {
+            "id": "b",
+            "text": "Minus one is another valid descriptor pointer."
+          },
+          {
+            "id": "c",
+            "text": "a2 is being reassigned from an input pointer to the fault register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The supplied leaf function reserves sixty-four native stack bytes and saves all eight saved registers with doubleword stores."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The saved frame restores all bits of the original s0 through s7. No jal occurs inside this leaf function, so its incoming return address stays live."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Use the common publication and restore path",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Where should an unfinished region return?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Through the provided publication and balanced frame restore."
+          },
+          {
+            "id": "b",
+            "text": "Through jr while the frame remains allocated."
+          },
+          {
+            "id": "c",
+            "text": "By loading the guest target into the native return address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The supplied validation exits record a fault offset before resetting the output PC."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The untouched starter returns provisional state and exits; it does not implement or pass the final interpreter contract."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Fetch only an available opcode",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What does the cursor identify during this pass?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An encoded instruction start."
+          },
+          {
+            "id": "b",
+            "text": "A native MIPS return address."
+          },
+          {
+            "id": "c",
+            "text": "The top operand slot."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Compare the decode cursor with image length before forming an address."
+        },
+        {
+          "id": "s05-h2",
+          "text": "For the one-byte halt image, t9 is zero and t1 is one; no guest instruction has retired."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_fetch"
+    },
+    {
+      "id": "s06",
+      "title": "Recognize the arithmetic opcode family",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "When are arithmetic stack requirements checked?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "While marking its opcode byte."
+          },
+          {
+            "id": "b",
+            "text": "During execution of that guest instruction."
+          },
+          {
+            "id": "c",
+            "text": "While reading the state pointer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Compare against decimal 16 through 19, the four one-byte arithmetic opcodes."
+        },
+        {
+          "id": "s06-h2",
+          "text": "An ADD byte selects size one without attempting to pop an empty operand stack."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_arithmetic"
+    },
+    {
+      "id": "s07",
+      "title": "Recognize the one-byte stack operations",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What can a structurally valid stack instruction still do at runtime?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Change its encoded size."
+          },
+          {
+            "id": "b",
+            "text": "Turn an operand into a new opcode."
+          },
+          {
+            "id": "c",
+            "text": "Fail for insufficient live values."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Recognize decimal 32 through 35 as the four stack opcodes."
+        },
+        {
+          "id": "s07-h2",
+          "text": "An OVER byte selects the size-one path; its two-value requirement is not yet being evaluated."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_stack"
+    },
+    {
+      "id": "s08",
+      "title": "Recognize the two-byte records",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which statement follows from selecting size two?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One operand byte must still pass the remaining-length check."
+          },
+          {
+            "id": "b",
+            "text": "Its operand is necessarily a valid branch target."
+          },
+          {
+            "id": "c",
+            "text": "The guest instruction has already retired."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Select size two for PUSH8, JMP and JZ."
+        },
+        {
+          "id": "s08-h2",
+          "text": "PUSH8 followed by seven selects encoded size two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_short"
+    },
+    {
+      "id": "s09",
+      "title": "Recognize a wide constant or reject the opcode",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What does the image-error return preserve separately from output PC?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The native instruction address."
+          },
+          {
+            "id": "b",
+            "text": "The offending encoded-instruction offset."
+          },
+          {
+            "id": "c",
+            "text": "The last popped operand."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Select size five only for PUSH32."
+        },
+        {
+          "id": "s09-h2",
+          "text": "PUSH32 selects size five. Byte ff in opcode position reports minus one at that instruction start."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_wide"
+    },
+    {
+      "id": "s10",
+      "title": "Require all encoded operand bytes",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why can a zero budget still report truncation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The missing operand defaults to zero."
+          },
+          {
+            "id": "b",
+            "text": "Halt must be present in every image."
+          },
+          {
+            "id": "c",
+            "text": "Structural validation precedes the execution-budget check."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Subtract the current cursor from length and compare the remaining count with the selected size."
+        },
+        {
+          "id": "s10-h2",
+          "text": "A lone PUSH8 byte reports minus two at zero, even with a zero guest budget."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_bound"
+    },
+    {
+      "id": "s11",
+      "title": "Record an instruction beginning in full width",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What does one set bit mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A decoded instruction begins at that offset."
+          },
+          {
+            "id": "b",
+            "text": "The byte value equals one."
+          },
+          {
+            "id": "c",
+            "text": "A guest instruction retired there."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Create one full-width bit at the current byte offset and combine it with the bitmap."
+        },
+        {
+          "id": "s11-h2",
+          "text": "For halt at byte zero, s5 becomes one while the decode cursor remains zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_mark"
+    },
+    {
+      "id": "s12",
+      "title": "Walk complete records through the whole image",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why advance by size rather than one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every payload byte is a halt."
+          },
+          {
+            "id": "b",
+            "text": "Operand bytes must remain part of their record."
+          },
+          {
+            "id": "c",
+            "text": "Guest stack depth determines instruction length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Advance by encoded size and return to the bound-before-fetch entry."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The default image marks thirteen starts. Sixty-four halt bytes set all sixty-four bitmap bits, including bit sixty-three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "format_advance"
+    },
+    {
+      "id": "s13",
+      "title": "Begin a second bounded walk",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "What fact is established before this pass?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every branch is taken."
+          },
+          {
+            "id": "b",
+            "text": "The runtime stack is nonempty."
+          },
+          {
+            "id": "c",
+            "text": "All encoded records have legal opcodes and complete payloads."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Read each opcode again after the supplied phase reset."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The halt image is fetched with size one; its execution is still unfinished."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "targets_fetch"
+    },
+    {
+      "id": "s14",
+      "title": "Route constant records to their known sizes",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Which bytes belong to this constant record?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its opcode and its complete immediate payload."
+          },
+          {
+            "id": "b",
+            "text": "Every later byte until halt."
+          },
+          {
+            "id": "c",
+            "text": "Only its first byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Recognize PUSH32 and PUSH8 and transfer to their respective size assignments."
+        },
+        {
+          "id": "s14-h2",
+          "text": "PUSH32 selects target_wide_size; its assignment is still a temporary return at this stage."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "targets_sizes"
+    },
+    {
+      "id": "s15",
+      "title": "Select both branch forms for validation",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Should an untaken JZ be allowed an invalid target?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if its condition is nonzero."
+          },
+          {
+            "id": "b",
+            "text": "No; every encoded branch target is validated."
+          },
+          {
+            "id": "c",
+            "text": "Only when the budget is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Route JMP and JZ to the same target check."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The JMP zero image reaches the target-check region before any guest instruction executes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "targets_branches"
+    },
+    {
+      "id": "s16",
+      "title": "Reject targets at or beyond image length",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Why is a target equal to length invalid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It wraps to the first operand."
+          },
+          {
+            "id": "b",
+            "text": "It is a signed displacement."
+          },
+          {
+            "id": "c",
+            "text": "No instruction begins at the one-past-end position."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Load the branch operand as an unsigned byte and require target less than length."
+        },
+        {
+          "id": "s16-h2",
+          "text": "For JMP two in a two-byte image, validation reports minus three at branch offset zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "target_range"
+    },
+    {
+      "id": "s17",
+      "title": "Require a decoded beginning at the target",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What does the bitmap test add to the range test?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It distinguishes starts from operand positions."
+          },
+          {
+            "id": "b",
+            "text": "It checks whether the stack is full."
+          },
+          {
+            "id": "c",
+            "text": "It makes all forward branches invalid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Form a bit only after the range test succeeds and intersect it with the completed start bitmap."
+        },
+        {
+          "id": "s17-h2",
+          "text": "JMP one in its own two-byte record reports invalid target: byte one is its payload."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "target_bit"
+    },
+    {
+      "id": "s18",
+      "title": "Advance the target walk over short records",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which records use this size?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only taken conditional branches."
+          },
+          {
+            "id": "b",
+            "text": "PUSH8, JMP and JZ."
+          },
+          {
+            "id": "c",
+            "text": "All arithmetic records."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Assign size two to a validated branch or a short constant."
+        },
+        {
+          "id": "s18-h2",
+          "text": "JMP zero retains selected size two at its temporary return."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "target_short"
+    },
+    {
+      "id": "s19",
+      "title": "Advance over a four-byte payload",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Must this pass calculate every constant value to validate targets?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because constants are addresses."
+          },
+          {
+            "id": "b",
+            "text": "Only for negative constants."
+          },
+          {
+            "id": "c",
+            "text": "No; encoded size and start membership suffice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Assign size five for PUSH32."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The wide-constant path now selects size five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "target_wide"
+    },
+    {
+      "id": "s20",
+      "title": "Complete target validation before execution",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What does a successful validation pass guarantee about branch destinations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each encoded target identifies an instruction beginning."
+          },
+          {
+            "id": "b",
+            "text": "Every branch will execute."
+          },
+          {
+            "id": "c",
+            "text": "Every program will halt."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Advance by the selected size and repeat."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The default image completes both validation passes with zero retirements. Changing its conditional target to six reports fault five and PC zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "target_advance"
+    },
+    {
+      "id": "s21",
+      "title": "Check budget before the next guest fetch",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which check comes first at an execution boundary?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether the next opcode is halt."
+          },
+          {
+            "id": "b",
+            "text": "Whether any guest budget remains."
+          },
+          {
+            "id": "c",
+            "text": "Whether capacity is nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Test remaining guest budget first."
+        },
+        {
+          "id": "s21-h2",
+          "text": "An empty image with zero budget returns status zero; with budget one it reports minus four at zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "execute_guard"
+    },
+    {
+      "id": "s22",
+      "title": "Route halt and both push forms",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What is the destination of this native dispatch branch?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The guest operand byte as a native address."
+          },
+          {
+            "id": "b",
+            "text": "A caller-selected stack slot."
+          },
+          {
+            "id": "c",
+            "text": "Interpreter code that implements the selected guest operation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Use the fetched opcode to select halt, PUSH8 or PUSH32."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A halt byte reaches vm_halt without retiring at this unfinished stage."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "dispatch_constants"
+    },
+    {
+      "id": "s23",
+      "title": "Share the arithmetic operand path",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Why retain the opcode through the common entry?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The arithmetic operation still has to be selected."
+          },
+          {
+            "id": "b",
+            "text": "It is the public return status."
+          },
+          {
+            "id": "c",
+            "text": "It is always equal to stack depth."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Route all four arithmetic opcodes to vm_binary."
+        },
+        {
+          "id": "s23-h2",
+          "text": "An ADD byte selects vm_binary; its stack handling remains unfinished."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "dispatch_arithmetic"
+    },
+    {
+      "id": "s24",
+      "title": "Route the four stack operations",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which operations can share a copy after choosing a source?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "DROP and HALT."
+          },
+          {
+            "id": "b",
+            "text": "DUP and OVER."
+          },
+          {
+            "id": "c",
+            "text": "SUB and JMP."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Select separate DUP, DROP, SWAP and OVER entries."
+        },
+        {
+          "id": "s24-h2",
+          "text": "A DUP byte selects its handler with the opcode still available."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "dispatch_stack"
+    },
+    {
+      "id": "s25",
+      "title": "Route unconditional and conditional control flow",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why is the remaining opcode known to be JZ?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All nonzero values mean JZ."
+          },
+          {
+            "id": "b",
+            "text": "JZ has no payload."
+          },
+          {
+            "id": "c",
+            "text": "The validated opcode set and earlier dispatch tests leave only that case."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Select JMP explicitly; the remaining legal opcode is JZ."
+        },
+        {
+          "id": "s25-h2",
+          "text": "JMP zero reaches vm_jump; its handler is still a temporary return."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "dispatch_branches"
+    },
+    {
+      "id": "s26",
+      "title": "Retire halt and publish success",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Does halt count as a retired guest instruction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only when the stack contains one value."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Advance PC past the one-byte halt, increment retired count, consume one budget unit, and select status one."
+        },
+        {
+          "id": "s26-h2",
+          "text": "A one-byte halt with budget one returns status one, PC one and retired count one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "halt"
+    },
+    {
+      "id": "s27",
+      "title": "Store a signed short operand after checking room",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Which address is the push destination?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Stack base minus depth."
+          },
+          {
+            "id": "b",
+            "text": "Stack base plus four times depth."
+          },
+          {
+            "id": "c",
+            "text": "Program base plus the operand value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Require depth below capacity before reading and storing the value."
+        },
+        {
+          "id": "s27-h2",
+          "text": "For PUSH8 of byte f9, the workspace contains minus seven at depth one and t8 is two. This is a provisional handler result."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "push8"
+    },
+    {
+      "id": "s28",
+      "title": "Complete ordinary guest retirement",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q28",
+        "prompt": "When should an ordinary handler enter this path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before checking its stack requirements."
+          },
+          {
+            "id": "b",
+            "text": "Whenever it detects a fault."
+          },
+          {
+            "id": "c",
+            "text": "After its guest effect succeeds and its next PC is selected."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Install the next PC from t8, increment retired count, consume one budget unit, and return to the budget-before-fetch loop."
+        },
+        {
+          "id": "s28-h2",
+          "text": "PUSH8 seven followed by halt now returns status one, retired count two, PC three and live value seven."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "retire"
+    },
+    {
+      "id": "s29",
+      "title": "Assemble an unaligned little-endian constant",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Why are individual byte loads used here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The encoded constant may begin at an unaligned address."
+          },
+          {
+            "id": "b",
+            "text": "The payload is a decimal string."
+          },
+          {
+            "id": "c",
+            "text": "Every constant is positive."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Check push capacity first, then load four unsigned payload bytes."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Payload 00 00 00 80 produces the signed value minus 2147483648 in t2 without yet increasing depth."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "push32_decode"
+    },
+    {
+      "id": "s30",
+      "title": "Push the complete signed word",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Can this constant directly encode the minimum signed word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; its positive magnitude is too large."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the payload is a signed-word bit pattern."
+          },
+          {
+            "id": "c",
+            "text": "Only after a subtraction instruction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Use the current depth to locate the next free word, store the assembled value, increase depth, and select PC plus five."
+        },
+        {
+          "id": "s30-h2",
+          "text": "PUSH32 of the minimum word followed by halt succeeds with that value live and two retirements."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "push32_store"
+    },
+    {
+      "id": "s31",
+      "title": "Check a duplicate source before checking room",
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Which failure has priority for an empty zero-capacity DUP?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Invalid target."
+          },
+          {
+            "id": "b",
+            "text": "Stack overflow."
+          },
+          {
+            "id": "c",
+            "text": "Stack underflow."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Require one live value before testing capacity."
+        },
+        {
+          "id": "s31-h2",
+          "text": "After pushing seven, DUP selects source index zero. Empty DUP reports minus five, including at capacity zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "dup"
+    },
+    {
+      "id": "s32",
+      "title": "Select the second value from the top",
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Which value does OVER select?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The second live value from the top."
+          },
+          {
+            "id": "b",
+            "text": "The next inactive slot."
+          },
+          {
+            "id": "c",
+            "text": "The current guest PC."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Require two live values, then require room for one more."
+        },
+        {
+          "id": "s32-h2",
+          "text": "After pushes seven and twelve, OVER selects source index zero while the shared copy is still unfinished."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "over"
+    },
+    {
+      "id": "s33",
+      "title": "Complete the shared duplicate and over copy",
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "What happens to the original source value?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is consumed."
+          },
+          {
+            "id": "b",
+            "text": "It remains live."
+          },
+          {
+            "id": "c",
+            "text": "It becomes a branch target."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Convert the chosen source index to a full stack address and load its word."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Seven, twelve, OVER leaves live values seven, twelve, seven. Seven, DUP leaves two sevens."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "copy"
+    },
+    {
+      "id": "s34",
+      "title": "Remove one logical operand",
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Does DROP need to zero its former top slot?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always."
+          },
+          {
+            "id": "b",
+            "text": "Only for a negative value."
+          },
+          {
+            "id": "c",
+            "text": "No; that slot becomes inactive."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Check that a top value exists, decrement depth, select PC plus one, and retire."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Pushing seven and dropping it before halt leaves depth zero after three retirements."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "drop"
+    },
+    {
+      "id": "s35",
+      "title": "Exchange two live words without changing depth",
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Why load both words before the first store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To retain both original values for the exchange."
+          },
+          {
+            "id": "b",
+            "text": "To increase capacity."
+          },
+          {
+            "id": "c",
+            "text": "To convert their bytes into opcodes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Require two values and address the older of the top pair."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Seven, twelve, SWAP leaves twelve below seven."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "swap"
+    },
+    {
+      "id": "s36",
+      "title": "Locate left and right without popping them",
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which value is the right operand?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The older of the top two."
+          },
+          {
+            "id": "b",
+            "text": "The top live value."
+          },
+          {
+            "id": "c",
+            "text": "The current depth."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Require two live values and address index depth minus two."
+        },
+        {
+          "id": "s36-h2",
+          "text": "After pushes seven and twelve, the common entry loads left seven and right twelve."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "binary_operands"
+    },
+    {
+      "id": "s37",
+      "title": "Choose the checked arithmetic operation",
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "What can be shared across all four operations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A rule that every result wraps."
+          },
+          {
+            "id": "b",
+            "text": "An unconditional pop before calculation."
+          },
+          {
+            "id": "c",
+            "text": "Operand location and the final signed-word result check."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Select ADD, SUB or MUL from the cached opcode; the remaining arithmetic opcode is DIV."
+        },
+        {
+          "id": "s37-h2",
+          "text": "A SUB opcode reaches vm_sub with both original values still live."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "binary_dispatch"
+    },
+    {
+      "id": "s38",
+      "title": "Check a zero divisor before a wide quotient",
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Why does minimum word divided by minus one still need a range test?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its wide quotient is positive two to the thirty-first power."
+          },
+          {
+            "id": "b",
+            "text": "Its divisor is zero."
+          },
+          {
+            "id": "c",
+            "text": "The encoded instruction is five bytes long."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Reject a zero right value before executing ddiv."
+        },
+        {
+          "id": "s38-h2",
+          "text": "For minus seven and three, t3 holds minus two while the still-unfinished result check leaves both operands live. Zero division already reports minus eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "divide"
+    },
+    {
+      "id": "s39",
+      "title": "Form an exact wide sum before checking",
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "What decides whether the candidate is a legal guest result?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether it is nonnegative."
+          },
+          {
+            "id": "b",
+            "text": "The subsequent signed-word representability test."
+          },
+          {
+            "id": "c",
+            "text": "Whether the opcode is below twenty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Use daddu for the two sign-extended word operands."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Seven plus five produces candidate twelve in t3; the active operands remain unchanged until checking succeeds."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "add"
+    },
+    {
+      "id": "s40",
+      "title": "Keep the subtraction operand order",
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Which result should seven followed by twelve and SUB produce?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Five."
+          },
+          {
+            "id": "b",
+            "text": "Nineteen."
+          },
+          {
+            "id": "c",
+            "text": "Minus five."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Compute left minus right with dsubu and retain the wide candidate."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Seven minus twelve produces candidate minus five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "subtract"
+    },
+    {
+      "id": "s41",
+      "title": "Retain the high product information",
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Why retain a doubleword product?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To preserve evidence of signed-word overflow."
+          },
+          {
+            "id": "b",
+            "text": "To double the operand-stack capacity."
+          },
+          {
+            "id": "c",
+            "text": "To make every quotient unsigned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Multiply the sign-extended word values in doubleword width."
+        },
+        {
+          "id": "s41-h2",
+          "text": "46341 squared produces candidate 2147488281 before the shared check is completed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "multiply"
+    },
+    {
+      "id": "s42",
+      "title": "Publish arithmetic only after representability succeeds",
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q42",
+        "prompt": "What is retained after an arithmetic overflow?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A wrapped result replacing both values."
+          },
+          {
+            "id": "b",
+            "text": "The pre-instruction live prefix and current guest PC."
+          },
+          {
+            "id": "c",
+            "text": "An automatically cleared stack."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Sign extend the candidate low word with a word shift by zero and compare it with the original wide candidate."
+        },
+        {
+          "id": "s42-h2",
+          "text": "The 46341-squared program reports minus seven with its two original operands live. Seven minus twelve succeeds with minus five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "check_word"
+    },
+    {
+      "id": "s43",
+      "title": "Retire a branch to its validated target",
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Does a self-branch consume guest budget?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No, because PC does not change."
+          },
+          {
+            "id": "b",
+            "text": "Only after the second visit."
+          },
+          {
+            "id": "c",
+            "text": "Yes, for every successful retirement."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Load the unsigned target byte as the next PC and join common retirement."
+        },
+        {
+          "id": "s43-h2",
+          "text": "JMP zero with budget five returns status zero, PC zero and retired count five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "jump"
+    },
+    {
+      "id": "s44",
+      "title": "Pop the test value on both branch outcomes",
+      "content": "steps/44.md",
+      "prerequisites": [
+        "s43"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q44",
+        "prompt": "What happens to a nonzero JZ test value?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is popped before falling through."
+          },
+          {
+            "id": "b",
+            "text": "It remains on the stack."
+          },
+          {
+            "id": "c",
+            "text": "It changes the branch payload."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Require one value and load the top word."
+        },
+        {
+          "id": "s44-h2",
+          "text": "The complete default image halts after thirty-three retirements with PC eighteen and live value six."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      },
+      "editTarget": "jump_zero"
+    },
+    {
+      "id": "s45",
+      "title": "Run the whole countdown image",
+      "content": "steps/45.md",
+      "prerequisites": [
+        "s44"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Which memory already contains returned interpreter state at vm_ready?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The caller result words, before their stores."
+          },
+          {
+            "id": "b",
+            "text": "The state descriptor."
+          },
+          {
+            "id": "c",
+            "text": "The program operand bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Complete all regions, then debug the supplied program to vm_ready."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Status is one, retired count thirty-three, PC eighteen, depth one, fault minus one and the live value is six. The two caller result words are still ninety-nine."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s46",
+      "title": "Stop at a budget boundary",
+      "content": "steps/46.md",
+      "prerequisites": [
+        "s45"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What happened to the nonzero test value?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It remains as a third live value."
+          },
+          {
+            "id": "b",
+            "text": "It was converted to a branch offset."
+          },
+          {
+            "id": "c",
+            "text": "JZ popped it while falling through."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Change fuel to four and run from the beginning."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Status zero, PC seven, depth two, retired four, fault minus one and live values zero then three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s47",
+      "title": "Distinguish yielding from a stack fault",
+      "content": "steps/47.md",
+      "prerequisites": [
+        "s46"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Does the faulting DUP increase retired count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Yes, because it was decoded."
+          },
+          {
+            "id": "c",
+            "text": "Only when its target is in range."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Set capacity two and compare fuel two with fuel three."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Fuel two yields with PC four and fault minus one. Fuel three reports status minus six and fault four; both have depth two and retired count two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s48",
+      "title": "Reject a target inside an operand",
+      "content": "steps/48.md",
+      "prerequisites": [
+        "s47"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Which position identifies the invalid branch record?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The invalid target, six."
+          },
+          {
+            "id": "b",
+            "text": "The branch instruction start, five."
+          },
+          {
+            "id": "c",
+            "text": "The input end, eighteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "Restore capacity eight."
+        },
+        {
+          "id": "s48-h2",
+          "text": "Status minus three, fault five, PC zero, depth zero and retired zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s49",
+      "title": "Grade complete calls and repeated use",
+      "content": "steps/49.md",
+      "prerequisites": [
+        "s48"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Can a cached boundary map be reused after arbitrary bytes change at the same address and length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because the address is unchanged."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if fuel is zero."
+          },
+          {
+            "id": "c",
+            "text": "Only after establishing validity for the current contents."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Run both public scripts, then compare another implementation under the same contract."
+        },
+        {
+          "id": "s49-h2",
+          "text": "The full guided function passes. The untouched starter is rejected; private teaching labels are unnecessary for a free-writing solution."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s50",
+      "title": "Compare work with the same complete behavior",
+      "content": "steps/50.md",
+      "prerequisites": [
+        "s49"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q50",
+        "prompt": "What do these counts establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Work for these implementations and scenes."
+          },
+          {
+            "id": "b",
+            "text": "Elapsed time on every host processor."
+          },
+          {
+            "id": "c",
+            "text": "A causal measurement of only one representation change."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "Measure whole native function calls for the bitmap design and a dense-byte-map alternative."
+        },
+        {
+          "id": "s50-h2",
+          "text": "The default full call uses 2394 native instructions in the bitmap design and 2259 in the tested alternative; both retire thirty-three guest instructions."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s51",
+      "title": "Write another interpreter under the same contract",
+      "content": "steps/51.md",
+      "prerequisites": [
+        "s50"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q51",
+        "prompt": "Which change still requires complete behavioral verification?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only comments."
+          },
+          {
+            "id": "b",
+            "text": "Replacing dispatch or validation with a faster strategy."
+          },
+          {
+            "id": "c",
+            "text": "Renaming a chapter heading."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "In free-writing mode, retain run_vm and the caller/data harness while replacing private implementation details."
+        },
+        {
+          "id": "s51-h2",
+          "text": "Equivalent valid behavior is accepted without matching private registers, label names or native instruction counts."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI verification covers complete behavior and guided intermediate observations; interactive recognition and actual IDE captures remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json"
+  ]
+}

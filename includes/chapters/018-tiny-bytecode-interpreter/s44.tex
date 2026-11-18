@@ -1,0 +1,36 @@
+\section{Step 44 Pop the test value on both branch outcomes}\label{vm-s44}
+
+Require one value and load the top word. Reduce depth regardless of the test result. Select PC plus two for a nonzero value and the validated target for zero, then retire. This final handler completes the interpreter: the countdown can now loop through its conditional cleanup.
+
+\Needspace{22\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{jump\_zero}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t1, $s7, 1
+    bne $t1, $zero, underflow_stack
+    nop
+    addiu $t1, $s7, -1
+    sll $t1, $t1, 2
+    daddu $t1, $s3, $t1
+    lw $t2, 0($t1)
+    addiu $s7, $s7, -1
+    addiu $t8, $s6, 2
+    bne $t2, $zero, vm_retire
+    nop
+    lbu $t8, 1($t0)
+\end{minted}
+\subsection{Expected observation}
+The complete default image halts after thirty-three retirements with PC eighteen and live value six.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What happens to a nonzero \texttt{JZ} test value?
+
+\begin{itemize}
+\item \textbf{A} It is popped before falling through.
+\item \textbf{B} It remains on the stack.
+\item \textbf{C} It changes the branch payload.
+\end{itemize}

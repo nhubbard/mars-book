@@ -541,3 +541,40 @@ chain and 6194/5248 for 31 nested groups. The seven-scene table also records inp
 notices. Setup, assembly, session construction and exit are excluded. These are native
 work counts without elapsed-time claims or exact-count grading requirements. Human
 review and independent accessibility validation remain outstanding.
+
+## Tiny bytecode interpreter
+
+Package 018 has 51 steps, forty authored region replacements, six provided frame/exit
+listings and 102 hints. Each of forty cumulative programs passes its stated partial
+observations, 58 in total, before returning through the balanced frame restore. Their
+assembly reconstructs the tested reference exactly; Markdown and native listings agree.
+Public free-writing grading checks complete behavior without private labels, register
+assignments or instruction-count requirements.
+
+Both the 64-bit bitmap reference and private byte-map alternative pass 1247 public
+kernel cases, 23 caller cases and 12720 private cases each, plus wide-data kernel/caller
+checks. The private domain includes 4369 images through length three over a sixteen-byte
+alphabet, 1280 byte substitutions, 512 late-opcode images, sixty wide-payload images,
+4158 unreachable-target combinations, 800 random arithmetic pairs, 700 random encoded
+images, 585 countdown capacity/budget pairs and 256 full-range target operands. These
+do not exhaust all 64-byte images or all signed-word operands.
+
+Ten same-session sequences per implementation make ten calls each, replacing bytes at
+the same pointer and length and rotating success, structural failure and target failure.
+The byte map with its clearing removed is rejected by all ten sequences. The complete verifier records 87 grading runs and 33134 positive case executions
+across repeated variants, observations and models. Twenty-four
+faulty assembled variants and the unfinished starter are rejected. Caller traces check
+every byte of reads and writes against the selected image, descriptor and stack capacity;
+a write followed by restoration still violates an immutable region. Inactive cells
+inside capacity are unspecified workspace. Legal private stack and submission-owned
+constant reads pass. Mapped data above four GiB is covered; high text and high stack
+addresses are not claimed.
+
+The seven-scene native-work fixture compares complete function calls, including validation
+and restoration, excluding caller setup, assembly, session creation and exit. The default
+full call retires 33 guest instructions and uses 2394 bitmap or 2259 byte-map native
+instructions; zero-budget validation uses 794 or 659. The one-halt call uses 94 or 101.
+The alternative also changes opcode classification, so those differences cannot be
+attributed solely to boundary representation. Counts are not elapsed-time claims or
+grading requirements. Four numerical checkpoint models are checked independently;
+actual IDE screenshots and coordinate receipts remain pending.

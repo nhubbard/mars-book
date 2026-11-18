@@ -1,0 +1,31 @@
+\section{Step 5 Fetch only an available opcode}\label{vm-s05}
+
+Compare the decode cursor with image length before forming an address. At equality, transfer to the next validation phase. Otherwise add the cursor to the full code base, load an unsigned opcode, and begin with size one. Halt selects that size immediately. The private cursor still describes decoding, not executed guest progress.
+
+\Needspace{17\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{format\_fetch}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s6, $s1, targets_begin
+    nop
+    daddu $t0, $s0, $s6
+    lbu $t9, 0($t0)
+    li $t1, 1
+    beq $t9, $zero, format_size
+    nop
+\end{minted}
+\subsection{Expected observation}
+For the one-byte halt image, \texttt{t9} is zero and \texttt{t1} is one; no guest instruction has retired.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does the cursor identify during this pass?
+
+\begin{itemize}
+\item \textbf{A} An encoded instruction start.
+\item \textbf{B} A native MIPS return address.
+\item \textbf{C} The top operand slot.
+\end{itemize}

@@ -1,0 +1,35 @@
+\section{Step 27 Store a signed short operand after checking room}\label{vm-s27}
+
+Require depth below capacity before reading and storing the value. Load the immediate with signed byte interpretation, form the full address of the next free word, store it, and increase depth. Put the next guest PC in \texttt{t8}. The common retirement region is still temporary, so the current PC and retired count do not yet advance.
+
+\Needspace{21\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{push8}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltu $t1, $s7, $s4
+    beq $t1, $zero, overflow_stack
+    nop
+    lb $t2, 1($t0)
+    sll $t3, $s7, 2
+    daddu $t3, $s3, $t3
+    sw $t2, 0($t3)
+    addiu $s7, $s7, 1
+    addiu $t8, $s6, 2
+    beq $zero, $zero, vm_retire
+    nop
+\end{minted}
+\subsection{Expected observation}
+For \texttt{PUSH8} of byte f9, the workspace contains minus seven at depth one and \texttt{t8} is two. This is a provisional handler result.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which address is the push destination?
+
+\begin{itemize}
+\item \textbf{A} Stack base minus depth.
+\item \textbf{B} Stack base plus four times depth.
+\item \textbf{C} Program base plus the operand value.
+\end{itemize}

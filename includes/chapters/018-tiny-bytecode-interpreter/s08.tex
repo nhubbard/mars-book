@@ -1,0 +1,34 @@
+\section{Step 8 Recognize the two-byte records}\label{vm-s08}
+
+Select size two for \texttt{PUSH8}, \texttt{JMP} and \texttt{JZ}. Their second byte is payload. A branch payload will later be interpreted as an unsigned offset, while a short push payload is a signed value. Both interpretations share the same structural requirement that one operand byte exists.
+
+\Needspace{20\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{format\_short}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t1, 2
+    li $t2, 1
+    beq $t9, $t2, format_size
+    nop
+    li $t2, 48
+    beq $t9, $t2, format_size
+    nop
+    li $t2, 49
+    beq $t9, $t2, format_size
+    nop
+\end{minted}
+\subsection{Expected observation}
+\texttt{PUSH8} followed by seven selects encoded size two.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which statement follows from selecting size two?
+
+\begin{itemize}
+\item \textbf{A} One operand byte must still pass the remaining-length check.
+\item \textbf{B} Its operand is necessarily a valid branch target.
+\item \textbf{C} The guest instruction has already retired.
+\end{itemize}

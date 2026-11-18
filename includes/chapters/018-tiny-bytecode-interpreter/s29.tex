@@ -1,0 +1,37 @@
+\section{Step 29 Assemble an unaligned little-endian constant}\label{vm-s29}
+
+Check push capacity first, then load four unsigned payload bytes. Shift the higher bytes into place and combine them. The word shift of the high byte supplies the signed-word representation when bit thirty-one is set. Byte loads keep this path valid for unaligned image addresses. Storage and retirement remain in the next edit.
+
+\Needspace{23\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{push32\_decode}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltu $t1, $s7, $s4
+    beq $t1, $zero, overflow_stack
+    nop
+    lbu $t2, 1($t0)
+    lbu $t3, 2($t0)
+    sll $t3, $t3, 8
+    or $t2, $t2, $t3
+    lbu $t3, 3($t0)
+    sll $t3, $t3, 16
+    or $t2, $t2, $t3
+    lbu $t3, 4($t0)
+    sll $t3, $t3, 24
+    or $t2, $t2, $t3
+\end{minted}
+\subsection{Expected observation}
+Payload 00 00 00 80 produces the signed value minus 2147483648 in \texttt{t2} without yet increasing depth.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why are individual byte loads used here?
+
+\begin{itemize}
+\item \textbf{A} The encoded constant may begin at an unaligned address.
+\item \textbf{B} The payload is a decimal string.
+\item \textbf{C} Every constant is positive.
+\end{itemize}

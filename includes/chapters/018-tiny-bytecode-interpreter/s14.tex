@@ -1,0 +1,30 @@
+\section{Step 14 Route constant records to their known sizes}\label{vm-s14}
+
+Recognize \texttt{PUSH32} and \texttt{PUSH8} and transfer to their respective size assignments. The assignments themselves will be completed below. These paths advance over constant payloads without treating them as branch targets or opcodes. Other legal records continue to the branch tests.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{targets\_sizes}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t2, 2
+    beq $t9, $t2, target_wide_size
+    nop
+    li $t2, 1
+    beq $t9, $t2, target_short_size
+    nop
+\end{minted}
+\subsection{Expected observation}
+\texttt{PUSH32} selects target\_wide\_size; its assignment is still a temporary return at this stage.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which bytes belong to this constant record?
+
+\begin{itemize}
+\item \textbf{A} Its opcode and its complete immediate payload.
+\item \textbf{B} Every later byte until halt.
+\item \textbf{C} Only its first byte.
+\end{itemize}

@@ -87,10 +87,16 @@ through forty-five steps and thirty-four verified assembly edits. Its native cha
 includes stack/grammar/diagnostic fixtures, equivalent parsing strategies, measured
 workloads and four planned light-theme captures.
 
+The [tiny bytecode interpreter](packages/018-tiny-bytecode-interpreter/assignment.md)
+uses 51 steps and 40 cumulative edits to develop whole-image validation, instruction
+boundaries, a bounded operand stack, checked arithmetic and precise guest retirement.
+It includes native state/encoding fixtures, two measured implementations, executable
+intermediate observations and four planned light-theme captures.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first seventeen chapters are now composed through ordinary LaTeX input/include files.
+The first eighteen chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -105,7 +111,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first seventeen text packages, starters, public checks, deterministic student archive builder,
+The first eighteen text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

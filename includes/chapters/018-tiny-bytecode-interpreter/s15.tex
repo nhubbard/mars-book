@@ -1,0 +1,30 @@
+\section{Step 15 Select both branch forms for validation}\label{vm-s15}
+
+Route \texttt{JMP} and \texttt{JZ} to the same target check. Nonbranch one-byte records advance without a target test. A conditional branch is validated here regardless of what value execution might eventually test; no runtime stack value determines whether its encoded target is legal.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{targets\_branches}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t2, 48
+    beq $t9, $t2, target_check
+    nop
+    li $t2, 49
+    bne $t9, $t2, target_advance
+    nop
+\end{minted}
+\subsection{Expected observation}
+The \texttt{JMP} zero image reaches the target-check region before any guest instruction executes.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Should an untaken \texttt{JZ} be allowed an invalid target?
+
+\begin{itemize}
+\item \textbf{A} Yes, if its condition is nonzero.
+\item \textbf{B} No; every encoded branch target is validated.
+\item \textbf{C} Only when the budget is zero.
+\end{itemize}

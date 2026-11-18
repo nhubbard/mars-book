@@ -1,0 +1,20 @@
+\section{Turn guest indices into native addresses}\label{vm-addresses}
+An operand index counts words. Shift it left by two to obtain a byte displacement,
+then add that displacement to the full stack pointer with \texttt{daddu}. To load
+the top pair at depth two, use indices zero and one: the older value is the left
+operand and the newest value is the right operand. Keep that order for subtraction
+and division even when an exchange would leave addition unchanged.
+
+The common binary path leaves the left slot address in \texttt{t7}. Arithmetic
+first produces a full-width candidate in
+\texttt{t3}. The range check can then reject it while the live pair and depth still
+describe the failing instruction's input. After success, a store to the left slot
+and one depth decrement replace two values with one. The handler then assigns the
+proposed next PC to \texttt{t8} before entering common retirement. The guided implementation
+leaves the old right slot inactive; an equivalent implementation may use that cell
+as workspace because it lies within capacity.
+
+The opcode address in \texttt{t0} is recomputed for each executed instruction. A
+branch payload is an offset, not a pointer. Load it unsigned into the proposed next
+PC; the next fetch combines it with the unchanged full code base. A valid self-branch
+therefore leaves guest PC unchanged while still consuming budget.

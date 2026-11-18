@@ -1,0 +1,31 @@
+\section{Step 21 Check budget before the next guest fetch}\label{vm-s21}
+
+Test remaining guest budget first. With positive budget, require PC below length before loading an opcode. The validated control flow can reach a beginning or the image end; the latter produces the end-fetch fault when an instruction is actually attempted. The input address still requires full-width addition.
+
+\Needspace{17\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{execute\_guard}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $a3, $zero, vm_commit
+    nop
+    sltu $t0, $s6, $s1
+    beq $t0, $zero, end_fault
+    nop
+    daddu $t0, $s0, $s6
+    lbu $t9, 0($t0)
+\end{minted}
+\subsection{Expected observation}
+An empty image with zero budget returns status zero; with budget one it reports minus four at zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which check comes first at an execution boundary?
+
+\begin{itemize}
+\item \textbf{A} Whether the next opcode is halt.
+\item \textbf{B} Whether any guest budget remains.
+\item \textbf{C} Whether capacity is nonzero.
+\end{itemize}

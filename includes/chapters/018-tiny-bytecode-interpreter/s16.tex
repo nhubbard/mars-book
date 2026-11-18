@@ -1,0 +1,28 @@
+\section{Step 16 Reject targets at or beyond image length}\label{vm-s16}
+
+Load the branch operand as an unsigned byte and require target less than length. This also rejects the one-past-end position. Perform this check before shifting a mask: a variable shift is not itself a range test and can discard high shift-count bits.
+
+\Needspace{14\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{target\_range}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t3, 1($t0)
+    sltu $t4, $t3, $s1
+    beq $t4, $zero, bad_target
+    nop
+\end{minted}
+\subsection{Expected observation}
+For \texttt{JMP} two in a two-byte image, validation reports minus three at branch offset zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why is a target equal to length invalid?
+
+\begin{itemize}
+\item \textbf{A} It wraps to the first operand.
+\item \textbf{B} It is a signed displacement.
+\item \textbf{C} No instruction begins at the one-past-end position.
+\end{itemize}

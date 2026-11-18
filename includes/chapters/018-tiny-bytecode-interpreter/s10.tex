@@ -1,0 +1,28 @@
+\section{Step 10 Require all encoded operand bytes}\label{vm-s10}
+
+Subtract the current cursor from length and compare the remaining count with the selected size. Both quantities are small nonnegative values in a valid decode progression. An insufficient remainder selects truncated-image status. Do this before interpreting or reading missing operand bytes.
+
+\Needspace{14\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{format\_bound}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    subu $t2, $s1, $s6
+    sltu $t2, $t2, $t1
+    bne $t2, $zero, truncated_image
+    nop
+\end{minted}
+\subsection{Expected observation}
+A lone \texttt{PUSH8} byte reports minus two at zero, even with a zero guest budget.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why can a zero budget still report truncation?
+
+\begin{itemize}
+\item \textbf{A} The missing operand defaults to zero.
+\item \textbf{B} Halt must be present in every image.
+\item \textbf{C} Structural validation precedes the execution-budget check.
+\end{itemize}

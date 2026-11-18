@@ -1,0 +1,27 @@
+\section{Step 43 Retire a branch to its validated target}\label{vm-s43}
+
+Load the unsigned target byte as the next PC and join common retirement. Range and boundary membership were established before execution, so this path performs no stack operation. A branch to its own address still retires and consumes budget.
+
+\Needspace{13\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{jump}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t8, 1($t0)
+    beq $zero, $zero, vm_retire
+    nop
+\end{minted}
+\subsection{Expected observation}
+\texttt{JMP} zero with budget five returns status zero, PC zero and retired count five.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does a self-branch consume guest budget?
+
+\begin{itemize}
+\item \textbf{A} No, because PC does not change.
+\item \textbf{B} Only after the second visit.
+\item \textbf{C} Yes, for every successful retirement.
+\end{itemize}

@@ -1,0 +1,30 @@
+\section{Step 26 Retire halt and publish success}\label{vm-s26}
+
+Advance PC past the one-byte halt, increment retired count, consume one budget unit, and select status one. Then publish through the provided output/restore path. Halt retains every live operand and does not require a particular depth. A zero budget never enters this handler.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{halt}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $s6, $s6, 1
+    addiu $v1, $v1, 1
+    addiu $a3, $a3, -1
+    li $v0, 1
+    beq $zero, $zero, vm_commit
+    nop
+\end{minted}
+\subsection{Expected observation}
+A one-byte halt with budget one returns status one, PC one and retired count one.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does halt count as a retired guest instruction?
+
+\begin{itemize}
+\item \textbf{A} Yes.
+\item \textbf{B} Only when the stack contains one value.
+\item \textbf{C} No.
+\end{itemize}

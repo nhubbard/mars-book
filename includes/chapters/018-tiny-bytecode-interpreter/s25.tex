@@ -1,0 +1,29 @@
+\section{Step 25 Route unconditional and conditional control flow}\label{vm-s25}
+
+Select \texttt{JMP} explicitly; the remaining legal opcode is \texttt{JZ}. The first validation pass ensures there is no unknown opcode in this final path. Execution will use already-validated targets while preserving the different stack effects of the two branch forms.
+
+\Needspace{15\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{dispatch\_branches}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t1, 48
+    beq $t9, $t1, vm_jump
+    nop
+    beq $zero, $zero, vm_jump_zero
+    nop
+\end{minted}
+\subsection{Expected observation}
+\texttt{JMP} zero reaches vm\_jump; its handler is still a temporary return.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why is the remaining opcode known to be \texttt{JZ}?
+
+\begin{itemize}
+\item \textbf{A} All nonzero values mean \texttt{JZ}.
+\item \textbf{B} \texttt{JZ} has no payload.
+\item \textbf{C} The validated opcode set and earlier dispatch tests leave only that case.
+\end{itemize}

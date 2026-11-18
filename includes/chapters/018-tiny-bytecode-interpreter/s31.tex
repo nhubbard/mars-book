@@ -1,0 +1,33 @@
+\section{Step 31 Check a duplicate source before checking room}\label{vm-s31}
+
+Require one live value before testing capacity. Then choose source index depth minus one and transfer to the shared copy. The copy is still unfinished, so this stage establishes the index rather than claiming a new live value. Empty capacity zero reports underflow because no source exists.
+
+\Needspace{19\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch in \texttt{dup}. Preserve surrounding labels and the provided frame and exits.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t1, $s7, 1
+    bne $t1, $zero, underflow_stack
+    nop
+    sltu $t1, $s7, $s4
+    beq $t1, $zero, overflow_stack
+    nop
+    addiu $t1, $s7, -1
+    beq $zero, $zero, vm_copy
+    nop
+\end{minted}
+\subsection{Expected observation}
+After pushing seven, \texttt{DUP} selects source index zero. Empty \texttt{DUP} reports minus five, including at capacity zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which failure has priority for an empty zero-capacity \texttt{DUP}?
+
+\begin{itemize}
+\item \textbf{A} Invalid target.
+\item \textbf{B} Stack overflow.
+\item \textbf{C} Stack underflow.
+\end{itemize}

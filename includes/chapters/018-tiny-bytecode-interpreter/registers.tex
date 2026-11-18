@@ -1,0 +1,40 @@
+\section{Assign roles inside the leaf function}\label{vm-registers}
+The public calling convention describes values at entry and return. Inside the guided
+function, saved registers hold a private protocol. The prologue saves their original
+full values before assigning these roles.
+
+\begin{table}[htbp]
+\centering
+\caption{Register roles during the guided call. The bitmap uses all sixty-four register bits.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{ll}
+\toprule
+Registers & Meaning\\
+\midrule
+\texttt{s0}, \texttt{s1} & Full code base and byte length\\
+\texttt{s2}, \texttt{s3} & Full descriptor and operand-stack addresses\\
+\texttt{s4}, \texttt{s5} & Capacity in words and instruction-start bitmap\\
+\texttt{s6}, \texttt{s7} & Phase cursor or guest PC, and live depth\\
+\texttt{v0}, \texttt{v1} & Status and retired guest count\\
+\texttt{a2}, \texttt{a3} & Fault offset and remaining guest budget\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The supplied \texttt{targets\_begin} and \texttt{execute\_begin} entries each reset
+\texttt{s6} to zero. During validation it is a decode cursor; after the second reset
+it becomes guest PC. No validation record increments \texttt{v1}. The fault register
+begins at minus one and changes only when a failure is selected.
+
+Every unfinished region initially branches to \texttt{vm\_commit}. Replace that
+branch and its \texttt{nop}, leaving the named boundary comments and surrounding
+labels. The resulting partial call can return cleanly before its full semantics are
+implemented. Intermediate observations below stop at \texttt{vm\_commit} before its
+stores and restores. At that point saved registers still contain interpreter roles.
+After returning to \texttt{vm\_ready}, they contain the caller's restored values.
+Do not confuse a partial decode cursor with a completed public output PC.
+
+The guided code includes a \texttt{nop} after each retained delayed transfer. A
+future native instruction placed in one of those slots would execute according to
+that MIPS instruction's delay behavior. Preserve the listed slots while developing
+the guest semantics; the bytecode language has no guest delay slots.
