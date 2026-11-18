@@ -1,0 +1,21 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{Convert model bytes into display
+words}\label{008-life-generations-p04-convert-model-bytes-into-display-words}
+
+The model uses one byte per state because it only needs zero and one.
+Bitmap Display uses one word per visible cell. Rendering is a separate
+conversion loop with its own source and destination strides: ten bytes
+per padded row, thirty-two bytes per frame row.
+
+For a binary value c, zero minus c produces zero or an all-one word
+result. Masking it with 0x00ffffff gives black or white. This expression
+depends on the stated binary domain; an arbitrary byte such as 127 would
+not become a valid white state through the same operation. The
+completed-board invariant makes the conversion safe.
+
+Every cell is stored on each render. Skipping dead cells would leave old
+white pixels visible after deaths. Rendering occurs after a complete
+current board exists, but the 64 frame stores are still separate
+instructions. A UI refresh during them could show a partial frame. A
+paused \texttt{generation\_ready} boundary is the place to require a
+complete visible image, not an arbitrary moment during Run.

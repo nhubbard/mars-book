@@ -43,7 +43,8 @@ class HighlightTests(unittest.TestCase):
         self.assertEqual(self.source, "".join(value for _, value in tokens))
         style = get_style_by_name("mars-idea-light")
         appearance = style.style_for_token(tokens[0][0])
-        self.assertEqual("808080", appearance["color"])
+        from mars_book_highlight.style import contrast_on_white
+        self.assertGreaterEqual(contrast_on_white(appearance["color"]), 4.5)
         self.assertTrue(appearance["italic"])
         self.assertFalse(appearance["bold"])
 
@@ -80,3 +81,12 @@ class HighlightTests(unittest.TestCase):
                 bad = dict(base, **{key: value})
                 with self.assertRaises(ValueError):
                     appearance_token(bad)
+
+    def test_print_palette_preserves_compliant_colors_and_darkens_pale_ide_colors(self):
+        from mars_book_highlight.style import contrast_on_white, print_color
+        for color in ["000000", "000080", "0000ff", "0033b3", "008000", "644db2", "660e7a"]:
+            self.assertEqual(color, print_color(color))
+        for color in ["4a86e8", "808080"]:
+            darker = print_color(color)
+            self.assertNotEqual(color, darker)
+            self.assertGreaterEqual(contrast_on_white(darker), 4.5)

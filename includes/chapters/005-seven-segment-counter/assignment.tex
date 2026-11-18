@@ -1,0 +1,62 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{Project contract}\label{005-seven-segment-counter-assignment-count-through-hexadecimal-glyphs-on-digital-lab}
+
+Read a sixteen-byte lookup table and write a requested consecutive range
+of its glyphs to the right seven-segment display port. With the default
+table, \texttt{first\_digit} = 0 and \texttt{digit\_count} = 16, the
+sequence represents hexadecimal indices 0 through F. Each output must be
+a one-byte store to address 0xffff0010 in the Default memory layout.
+
+The inputs satisfy 0 \ensuremath{\leq} \texttt{first\_digit} \ensuremath{\leq} 16 and 0 \ensuremath{\leq}
+\texttt{digit\_count} \ensuremath{\leq} 16 \ensuremath{-} \texttt{first\_digit}. An empty range,
+including \texttt{first\_digit} = 16 and \texttt{digit\_count} = 0,
+produces no I/O writes. For other ranges, write the bytes at
+glyphs{[}\texttt{first\_digit}{]} through glyphs{[}\texttt{first\_digit}
++ \texttt{digit\_count} \ensuremath{-} 1{]}, once each and in that order. Repeated
+table values still require repeated stores. The table bytes may contain
+any patterns from 00 through ff; an instructor may replace the default
+glyph design.
+
+Perform no writes to another MMIO address, and use byte-sized
+transactions so adjacent ports are untouched. Do not write to glyphs,
+\texttt{glyph\_guard}, \texttt{first\_digit}, \texttt{digit\_count}, or
+\texttt{inputs\_guard}, even temporarily. Produce no console output and
+exit normally within 1,000 completed instructions. No host-time delay or
+fixed animation rate is required.
+
+\subsection{The device
+interface}\label{005-seven-segment-counter-assignment-the-device-interface}
+
+The source header connects Digital Lab Sim before execution. In this
+MARS peripheral model, the right display is at MMIO base + 0x10, the
+left display is at +0x11, keypad control is at +0x12, and timer control
+is at +0x13. The keypad result is at +0x14. The Default base is
+0xffff0000. This project writes only the right display.
+
+A byte is a segment mask, not an ASCII character or a number the device
+decodes. The mask table and segment diagram define the intended default
+shapes. The left unit is left blank; blank mask 00 is different from the
+zero glyph 3f.
+
+\subsection{Guided and free-writing
+versions}\label{005-seven-segment-counter-assignment-guided-and-free-writing-versions}
+
+The guide uses an index and remaining count. An equivalent
+implementation can instead compare a current table pointer with an
+exclusive end pointer. The grader observes actual execution stores, so
+it does not require the reference registers, labels, or branch
+arrangement. Transaction address, width, order, count, and values are
+part of the published interface and must agree.
+
+The CLI checks the I/O protocol and protected data. It does not draw or
+verify the IDE widget. In Debug, stop at the supplied observation
+boundaries to inspect individual glyphs. A full-speed Run may reach its
+final value before intermediate repaints are seen.
+
+\subsection{Submission}\label{005-seven-segment-counter-assignment-submission}
+
+Submit main.asm and a trace for the first two iterations. Derive the
+loop invariant, explain the zero-count path, and distinguish a digit
+index from its segment mask. Explain why a final display value alone
+cannot establish that a counter visited the required sequence. Run the
+public checks and design one custom glyph in a separate copy.

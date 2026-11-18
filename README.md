@@ -7,7 +7,7 @@ The first package, [Calculate twice an integer plus one](packages/001-console-ca
 contains a barebones starter, 22 instructional microsteps, a multiple-choice question
 and two hints at every step, 22 connective prose sections, ten teaching fixtures, two
 vector diagrams, public executable checks, and five screenshot recipes.
-Read [the first step](packages/001-console-calculation/steps/01.md) or build the combined
+Read [the first step](packages/001-console-calculation/steps/01.md) or compile the native LaTeX
 book draft. The second composition, [Paint one cell and change a byte](packages/002-single-pixel/assignment.md),
 adds addresses, word and byte stores, RGB packing, byte order, and memory preservation.
 It contains eleven steps, nine prose sections, six teaching fixtures, and three capture recipes.
@@ -44,30 +44,33 @@ from console programs to algorithms, bounded assignments, vector kernels, and co
 
 ## Use the materials
 
-The source is Markdown and JSON. Python 3.10 or newer is sufficient for validation,
-book assembly, packaging, and annotation rendering. Running assembly checks additionally
+The publication source is native LaTeX in main.tex and includes/. Exercise packages
+retain Markdown and JSON for student guides and future guided lessons. Python 3.11 or
+newer supports validation, packaging, and annotation tools. Running assembly checks additionally
 requires JDK 25 and a built MARS CLI JAR.
 
 ```sh
 python3 tools/course.py validate
 python3 -m unittest discover -s tools -p 'test_*.py'
-python3 tools/course.py book
+python3 tools/book.py validate
 python3 tools/course.py build
 python3 tools/course.py check --cli /path/to/mars-cli.jar --source /path/to/main.asm
 ```
 
-The generated Markdown and student ZIP are under build/. The ZIP has a SHA-256 sidecar.
+Student ZIPs are under build/, each with a SHA-256 sidecar. Compile the book with
+`python3 tools/book.py build` after following the [font and minted setup](docs/latex-publication.md).
 The unmodified starter exits cleanly but intentionally does not pass the assignment.
 See [verification](docs/verification.md) for the tested package behavior.
 
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-JSON and Markdown are temporary; straight LaTeX with input/include will become the
-composition source once MacTeX and the author template are available for testing.
+The first nine chapters are now composed through ordinary LaTeX input/include files.
+Edit them directly and insert author passages wherever they belong. Task metadata
+does not constrain the publication.
 
 - [Writing style](docs/writing-style.md) applies the requested Wikipedia editorial guidance.
-- [Editorial workflow](docs/editorial-workflow.md) keeps human interludes separate from generated assembly of the book.
+- [Editorial workflow](docs/editorial-workflow.md) preserves human passages in the directly edited book.
 - [Package format](docs/package-format.md) defines the structured lesson source.
 - [Native LaTeX publication](docs/latex-publication.md) defines final typesetting and accessibility requirements.
 - [Capture workflow](docs/capture-workflow.md) defines light-mode IDE captures and annotation generation.
@@ -78,14 +81,15 @@ composition source once MacTeX and the author template are available for testing
 ## Current delivery status
 
 The first nine text packages, starters, public checks, deterministic student archive builder,
-Markdown book assembler, and annotation renderer are implemented. The private companion
+native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
 
 IDE screenshot capture will be driven by a separate authoring plugin depending on MARS.
-That plugin is not implemented yet, and
-no lesson screenshots are included yet. The book uses labelled placeholders for the
+The separate plugin now exports actual IntelliJ language colors. Its screenshot capture
+and lesson runner are still pending, and no lesson screenshots are included yet. The book uses labelled placeholders for the
 planned figures in each chapter. Remote download, an in-plugin lesson runner, and instructor policy
-controls are documented future capabilities. MacTeX template, frontmatter, and final PDF
-production will be added by the author. Licensing must be selected before broader reuse;
+controls are documented future capabilities. The tested template uses Minion Pro prose,
+Noto Sans Math equations, and JetBrains Mono code. Frontmatter is editable; final author
+review and PDF accessibility validation remain. Licensing must be selected before broader reuse;
 this repository does not grant an additional license by implication.

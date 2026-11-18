@@ -1,0 +1,55 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{Step 5 Order the working
+endpoints}\label{007-bresenham-line-s05-step-5-order-the-working-endpoints}
+
+\texttt{slt} tests whether the second x is smaller. A taken branch
+selects the swap. If x differs and no swap is needed, \texttt{bne} skips
+the equal-x comparison. For equal x, a second \texttt{slt} compares y.
+Each three-move group exchanges one coordinate using a temporary
+register.
+
+\subsection{Write or
+inspect}\label{007-bresenham-line-s05-write-or-inspect}
+
+Append the complete comparison and swap block.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}{mars-idea}
+    slt $t1, $s2, $s0
+    bne $t1, $zero, swap_endpoints
+    nop
+    bne $s0, $s2, ordered
+    nop
+    slt $t1, $s3, $s1
+    beq $t1, $zero, ordered
+    nop
+swap_endpoints:
+    move $t1, $s0
+    move $s0, $s2
+    move $s2, $t1
+    move $t1, $s1
+    move $s1, $s3
+    move $s3, $t1
+ordered:
+\end{minted}
+
+\subsection{Expected
+observation}\label{007-bresenham-line-s05-expected-observation}
+
+At \texttt{ordered}, x0 is no greater than x1. When x is equal, y0 is no
+greater than y1. Source memory is unchanged.
+
+\subsection{Check your
+understanding}\label{007-bresenham-line-s05-check-your-understanding}
+
+Why must the swap exchange both coordinates?
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{A} Only x ever affects a pixel address.
+\item
+  \textbf{B} Each x must remain paired with its original y.
+\item
+  \textbf{C} Swapping y clears the canvas.
+\end{itemize}

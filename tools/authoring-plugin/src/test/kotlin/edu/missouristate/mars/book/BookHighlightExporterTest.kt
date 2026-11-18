@@ -3,23 +3,23 @@ package edu.missouristate.mars.book
 import com.google.gson.GsonBuilder
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
-import com.intellij.openapi.extensions.PluginId
-import java.security.MessageDigest
-import org.junit.jupiter.api.assertThrows
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.platform.testFramework.junit5.codeInsight.fixture.codeInsightFixture
 import com.intellij.platform.testFramework.junit5.codeInsight.fixture.codeInsightProjectFixture
 import com.intellij.testFramework.common.timeoutRunBlocking
 import com.intellij.testFramework.junit5.TestApplication
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @TestApplication
 class BookHighlightExporterTest {
@@ -56,7 +56,7 @@ class BookHighlightExporterTest {
     }
 
     @Test
-    fun `exports an empty assembly file and rejects another language`() = timeoutRunBlocking {
+    fun `exports an empty assembly file and rejects another language`(): Unit = timeoutRunBlocking {
         withContext(Dispatchers.EDT) {
             val empty = fixture.configureByText("empty.asm", "")
             fixture.doHighlighting()

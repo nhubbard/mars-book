@@ -10,26 +10,17 @@ avoid repeatedly explaining ordinary editor use or elementary programming vocabu
 
 ## Writing between instructional segments
 
-The package reading.json lists prose, steps, teaching fixtures, and figures in reading
-order. It is the chapter's composition source. Prose is already written between the
-instruction segments; it is not a request for the human author to fill all the gaps.
-The author may edit these passages directly, add a new passage, or change the order.
+Edit main.tex and includes/ directly. Chapter masters include passages, steps, fixtures,
+and figures with ordinary LaTeX commands. Place a new author file before, after, or
+within any segment. The include order is the publication order; no layout schema or
+JSON anchor is required. The reserved native interludes under includes/interludes/
+remain unused writing space. Their historical Markdown counterparts contain comments,
+not authored prose, and are retained as records.
 
-book/book.json can insert a separate author passage before or after any stable segment
-ID. An insertion names an anchor, a position, and a content path. For example:
-
-```json
-{
-  "anchor": "s10",
-  "position": "after",
-  "content": "book/interludes/a-memory-from-teaching.md"
-}
-```
-
-Create the named Markdown file before adding that insertion. Several passages can share
-an anchor; their order follows the insertion list. The previous opening and closing
-files remain as unused writing space. They do not constrain chapter composition.
-The assembler reads source files without modifying them.
+Package Markdown and reading.json continue as downloadable exercise/trainer drafts.
+They are no longer the publication composition source. Never overwrite edited native
+TeX by regenerating it from those drafts. The retired composition receipt is archived
+under book/legacy-draft/.
 
 Git records edits to both human and AI-authored source. book/editorial-log.json records
 material authorship and review transitions. An AI revision of a human passage requires
@@ -53,14 +44,14 @@ must not depend on matching the reference source, scratch registers, or private 
 
 ## Review and typesetting
 
-Run package validation, tooling tests, behavioral checks, the book assembler, and archive
+Run package validation, tooling tests, behavioral checks, native LaTeX validation and compilation, and archive
 export. Review correctness and pedagogy independently. A passing program does not prove
 that an explanation teaches the right mental model. Review figures at intended print
 size and in grayscale. Use the verification record to distinguish completed checks from
 planned work.
 
-MacTeX installation, template, and frontmatter are pending author inputs. The final
-publication source will be native LaTeX, including diagrams and screenshot annotations.
+MacTeX and the native template are tested. The publication source is native LaTeX,
+including diagrams and future screenshot annotations.
 SVGs are Markdown previews only. Follow [the publication requirements](latex-publication.md)
 for semantic structure and accessibility validation. Preserve raw captures and receipt
 coordinates so labels can be typeset by the template.

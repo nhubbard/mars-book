@@ -1,0 +1,40 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{A load that misses the tick still leads to a timely
+stop}\label{006-marsbot-square-x-stale-read-a-load-that-misses-the-tick-still-leads-to-a-timely-stop}
+
+Let T be the completion callback that reaches the target after returning
+an older coordinate from the current load. For the reference polling
+loop:
+
+{\def\LTcaptype{table} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\RaggedRight\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\RaggedRight\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\RaggedRight\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\RaggedRight
+Completion offset from T
+\end{minipage} & \begin{minipage}[b]{\linewidth}\RaggedRight
+Operation
+\end{minipage} & \begin{minipage}[b]{\linewidth}\RaggedRight
+Result
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+0 & Load completes; device reaches target & Loaded register is stale \\
+1 & \texttt{bne} & Branches using the stale register \\
+2 & \texttt{nop} & Taken-branch delay slot \\
+3 & \texttt{lw} & Reloads the target coordinate \\
+4 & \texttt{bne} & Falls through \\
+5 & \texttt{nop} & Final branch delay slot \\
+6 & \texttt{sw} zero to move & Disables motion before its completion
+callback \\
+\end{longtable}
+}
+
+The next movement tick is at T + rate. The permitted rate is at least
+eight, so no extra pixel occurs in this worst phase. This argument
+depends on the shown short path; adding instructions requires revisiting
+the bound.

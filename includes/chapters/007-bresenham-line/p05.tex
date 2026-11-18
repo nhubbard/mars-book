@@ -1,0 +1,19 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{Keep pixel addressing separate from
+geometry}\label{007-bresenham-line-p05-keep-pixel-addressing-separate-from-geometry}
+
+The rasterizer first chooses a coordinate, then converts it to a memory
+address. For width eight, row y begins at cell index 8 \ensuremath{\times} y. Adding x
+selects the cell, and multiplying by four converts the cell index into a
+byte offset. Only then is the full frame base added.
+
+At (1, 1), the index is nine and the offset is thirty-six bytes, or
+0x24. The word store therefore targets 0x10010024. Moving from one row
+to the next changes an address by thirty-two bytes, not eight and not
+four.
+
+The display\textquotesingle s high byte is not an excuse to leave it
+stale. The contract requires a full color word in each selected cell and
+complete preservation of other words. The checks seed high bytes too, so
+a byte or halfword store that leaves part of an old selected cell will
+be exposed even if its visible RGB channels happen to look close.

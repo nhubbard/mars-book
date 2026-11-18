@@ -1,0 +1,19 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{A color load placed in the wrong
+slot}\label{003-eight-byte-sprite-x-delay-slot-a-color-load-placed-in-the-wrong-slot}
+
+This sequence is incorrect for conditional color selection:
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}{mars-idea}
+beq $t5, $zero, write_pixel
+ori $t6, $zero, 0xffff
+write_pixel:
+sw $t6, 0($t2)
+\end{minted}
+
+The single-instruction color load is in the delayed
+branch\textquotesingle s slot and executes for both outcomes, setting
+the color to 0x0000ffff. The illustrated program instead places nop in
+the slot and the conditional white load after it. Keep multi-instruction
+pseudos out of delay slots.

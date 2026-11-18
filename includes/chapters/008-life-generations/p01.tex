@@ -1,0 +1,23 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{Synchronous updates need a stable
+source}\label{008-life-generations-p01-synchronous-updates-need-a-stable-source}
+
+Synchronous means that every next-state decision uses the same old
+generation. The row and column loops run one instruction at a time, but
+their decisions must act as if they were based on one shared snapshot.
+The physical order of destination stores must not change what later
+cells read.
+
+An in-place sweep breaks that condition. In the default pattern, the
+cell at (3,2) is born above the horizontal line. If its new state is
+written into the old board, a later cell at (2,3) can count that newborn
+along with its old neighbor at (3,3). It then sees two neighbors and
+survives, although the synchronous rule would see only one and kill it.
+The local rule can be implemented perfectly and still receive the wrong
+generation as input.
+
+Separate current and destination allocations prevent that dependency.
+Each result goes to the other board. Only after every cell is complete
+do the two allocations exchange roles. The distinction will recur in
+image filters, finite-difference stencils, and other computations whose
+outputs must not contaminate their inputs.

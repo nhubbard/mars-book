@@ -14,7 +14,7 @@ passages anywhere, with new MARS-specific frontmatter and content.
 
 The source's historical font-file paths, Kotlin-specific aliases, prose, sales placeholders,
 old copyright date, and commented personal/publication metadata are not MARS inputs.
-The new book can use distribution-provided fonts while a reusable typography layer is tested.
+The selected typography now uses installed Minion Pro, Noto Sans Math, and distribution-provided JetBrains Mono.
 No build is run inside the reference directory, and no reference file is modified.
 
 ## Current tagging work
@@ -28,11 +28,10 @@ review are still required; setting a PDF/UA target is not proof of conformance.
 
 ## Migration gate and plan
 
-At review time LuaLaTeX and latexmk were not yet available; Pandoc and PDF inspection tools
-were present. Once the installation exposes the engine, first compile a small native
-MARS specimen containing prose, assembly code, a headed table, math, and a TikZ figure.
-Render and inspect it, then inspect structure and text extraction. Resolve code/table/figure
-package compatibility before moving the composed chapters into authoritative editable TeX.
+MacTeX updates are complete. The native specimen and nine-chapter manuscript compile
+with LuaLaTeX. The specimen has been rendered and inspected for the selected fonts,
+actual IntelliJ-derived minted code, a headed table, math structure, and TikZ alternatives.
+Full-document layout and accessibility review continue.
 
 Convert prose once into ordinary TeX files, then edit those files directly. Compose main.tex
 with input/include; do not regenerate edited book TeX from JSON or Markdown. Retire the old

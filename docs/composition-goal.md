@@ -25,11 +25,10 @@ call a chapter illustrated or print-ready because its capture recipes exist.
 
 ## Composition after MacTeX installation
 
-Once the author supplies MacTeX, a template, and frontmatter for testing, convert the
-composition to straight LaTeX files. Use input/include directly for chapters, sections,
-worked examples, and teaching fixtures. LaTeX source becomes the editable authority.
-The JSON and Markdown composition tools are temporary and will be retired from the
-publication path. The final book must not depend on rendering a JSON-defined document
+MacTeX is installed and the first nine chapters have been migrated once to ordinary
+LaTeX. Use input/include directly for chapters, sections, worked examples, and teaching
+fixtures. main.tex and includes/ are the editable publication authority. The old
+JSON/Markdown book assembler has been retired from the publication path. The final book must not depend on rendering a JSON-defined document
 model or on round-tripping edited LaTeX through Markdown.
 
 Machine-readable task metadata may still serve the trainer and grading distribution.

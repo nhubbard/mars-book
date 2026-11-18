@@ -35,7 +35,8 @@ Use a dedicated test instance and a light theme for all future screenshot captur
 
 The Python package in `../pygments` registers a `mars-idea` lexer and `mars-idea-light`
 style for minted. The lexer replays these exact exported spans. It does not contain a
-second MIPS grammar, instruction catalog, symbol resolver, or independently chosen palette.
+second MIPS grammar, instruction catalog, symbol resolver, or independently chosen palette. The print style darkens only exported colors below
+4.5:1 contrast on white; original RGB values remain in the receipt.
 A changed listing fails until its export is refreshed. Code text remains native LaTeX
 source; highlighting metadata cannot change the chapter's composition.
 

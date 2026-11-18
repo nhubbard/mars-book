@@ -1,0 +1,23 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{Give the renderer an explicit register
+contract}\label{009-sorting-visualizer-p02-give-the-renderer-an-explicit-register-contract}
+
+The renderer\textquotesingle s arguments are an array pointer in
+\texttt{a0} and a length in \texttt{a1}. It writes the fixed frame,
+reaches the public ready label, and returns through \texttt{ra}. It
+preserves the saved-register group \texttt{s0} through \texttt{s7} and
+the stack pointer. Its temporary and argument registers are caller-owned
+scratch under this exercise\textquotesingle s contract.
+
+Main keeps algorithm state in the preserved group. It can therefore call
+the renderer in the middle of a loop without rebuilding its indices from
+memory afterward. The caller still reloads arguments before each call
+and does not rely on temporary values surviving.
+
+This is a small explicit interface rather than a complete description of
+every MIPS ABI. The guide\textquotesingle s renderer is a leaf: it calls
+no other function and uses no saved registers, so it needs no stack
+frame. Introducing a nested call would require preserving the incoming
+return address before another \texttt{jal} overwrites it. A larger
+calling convention will need its own stack, alignment, and register
+rules.

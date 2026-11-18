@@ -1,0 +1,24 @@
+% One-time imported draft. Editable native source; no Markdown regeneration.
+\section{The arithmetic instruction chooses the result
+width}\label{004-bit-inspector-p05-the-arithmetic-instruction-chooses-the-result-width}
+
+The register\textquotesingle s capacity is 64 bits, but \texttt{addiu}
+produces a 32-bit word result and sign-extends it. For the maximum
+signed word, adding one gives the low-word pattern 80000000. The full
+result is ffffffff80000000, whose signed value is \ensuremath{-}2147483648. The
+non-trapping instruction completes without an overflow trap.
+
+\texttt{daddiu} computes at doubleword width instead. Starting from the
+same positive 2147483647, it produces 0000000080000000, or 2147483648.
+That result fits in 64 bits and retains a zero sign bit at position 63.
+
+The difference arises at a width boundary, not from a change to the
+input bits. For many inputs, including the default \ensuremath{-}1, both plus-one
+operations produce the same signed value. Testing only those inputs
+would fail to reveal an incorrect choice of arithmetic width.
+
+The wide sum in this assignment uses the sign-extended input. For an
+all-one word, that input is \ensuremath{-}1 and its sum is zero. Adding one to the
+zero-extended 4294967295 would instead produce 4294967296. Both sums
+have low word zero, but their full values differ. The required source
+value is part of the contract alongside the instruction width.

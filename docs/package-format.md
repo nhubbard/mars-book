@@ -84,13 +84,13 @@ A fixture also has a semantic role, such as worked-example, state-table, referen
 concept-box, diagnostic-example, diagnostic-table, exercise, or figure. Its typesetting
 metadata gives a stable label, inline placement, and numbering intent. The Markdown
 body contains the complete explanation and any table, code, or diagram. It can be read
-without a LaTeX template. The native LaTeX typesetter will map roles to environments and labels. SVGs are
+without a LaTeX template. The directly edited LaTeX publication preserves these explanations, environments, and labels. SVGs are
 Markdown previews; nativeLatex identifies existing TikZ sources where provided.
 These fields describe content; they do not execute LaTeX or HTML.
 
-The chapter's insertions list in book/book.json adds author passages before or after
-any segment by anchor ID. This replaces the fixed before/after slots. Invalid anchors
-fail the book build. Local image links are rebased when composing the output Markdown.
+The publication uses main.tex and native includes. Add author passages directly with
+input/include wherever they belong. No JSON insertion list or generated Markdown
+controls the publication. reading.json continues to describe the guided exercise order.
 
 ## Pixel address checks
 
@@ -100,9 +100,8 @@ configured display base, without prescribing a scratch register. An exact word b
 is insufficient if the label has moved away from that base. The check supports byte
 addresses and addresses above 4 GiB. It does not verify an IDE frame or a source header.
 
-This package representation is temporary book-authoring infrastructure. On migration,
-straight LaTeX includes will control the publication; task metadata may remain for the
-trainer without defining the book's composition.
+This package representation supplies exercise/trainer drafts. Native LaTeX includes
+control the publication independently.
 
 ## Execution-history contracts
 
