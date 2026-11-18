@@ -1,0 +1,26 @@
+\section{Step 34 Reload the initialized partial sum}\label{matmul-s34}
+
+Load the complete doubleword through \texttt{t7} into \texttt{t4}. For L=0 it is the zero established by the initialization loop. For later reduction tiles it is the sum already contributed by earlier positions. Clearing \texttt{t4} here would silently erase that earlier work.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_partial}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ld $t4, 0($t7)
+\end{minted}
+Use \texttt{s34-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first partial sum is zero; later tiles must reload their existing contribution.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+What belongs in the accumulator before a later reduction tile?
+
+\begin{itemize}
+\item \textbf{A} The already accumulated output partial sum.
+\item \textbf{B} Always zero.
+\item \textbf{C} The previous output column value.
+\end{itemize}

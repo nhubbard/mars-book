@@ -1,0 +1,29 @@
+\section{Step 21 Guard empty tiled output}\label{matmul-s21}
+
+Perform the same M and N checks before zeroing the product. Tile boundaries and reduction reads are irrelevant when no output cell exists. Keep this guard ahead of the zeroing loop, whose body must not execute for a zero output count.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_empty}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s0, $zero, tiled_return
+    nop
+    beq $s2, $zero, tiled_return
+    nop
+\end{minted}
+Use \texttt{s21-1}, \texttt{s21-2}, \texttt{s21-3} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+Empty M or N leaves every output byte unchanged and performs no matrix access.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+May an empty output call clear the first product cell?
+
+\begin{itemize}
+\item \textbf{A} No; there is no selected output cell.
+\item \textbf{B} Yes; mapped memory is always writable.
+\item \textbf{C} Only when K is positive.
+\end{itemize}

@@ -1,0 +1,29 @@
+\section{Step 45 Advance L and retain earlier tile contributions}\label{matmul-s45}
+
+Add T to the reduction start \texttt{t0} and repeat \texttt{block\_reduction} while L<K. Recompute the clipped reduction end and revisit the current output tile. Each cell reloads its earlier partial sum before consuming the new segment. The default final segment has one product.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_next\_reduction}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $t0, $t0, $s3
+    sltu $t9, $t0, $s1
+    bne $t9, $zero, block_reduction
+    nop
+\end{minted}
+Use \texttt{s45-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The default product becomes 58,64,139,154 after both reduction tiles.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+What would resetting the partial sum at this stage discard?
+
+\begin{itemize}
+\item \textbf{A} Every earlier reduction-tile contribution.
+\item \textbf{B} Only unused output suffix bytes.
+\item \textbf{C} The descriptor pointer alignment.
+\end{itemize}

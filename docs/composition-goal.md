@@ -150,22 +150,17 @@ capture objective, which remains active. Blocked matrix multiplication is next.
 
 
 Blocked matrix multiplication is a full native text draft at
-`drafts/blocked-matmul.tex`. Fifty instructional steps and forty-two cumulative edits
-are interleaved with rectangular arithmetic, full-width addressing, exact width proofs,
-empty-shape behavior, clipped three-dimensional tiles and initialized partial sums.
-Two supplied frame/exit excerpts, fifty quizzes, one hundred progressive hints and
-fifty-eight public recipes accompany the sequence. Each author edit is checked through
-an offset direct call and the actual program caller; the internal second-reduction visit
-separately verifies stored contributions before the final sum. All cumulative edits
-reconstruct the previously checked function instruction streams exactly, and complete-call
-measurements match the prototype. Forty-four listings use fresh actual IntelliJ
-highlighting, with all earlier exports retained. A native tile diagram, exercises and
-instruction/cache tables explain the measured tradeoff: tile four reduces misses while
-increasing simulated instructions. Aligned doubleword instructions emit two word notices
-in the current core, and the text keeps those units distinct.
-
-Four native figure slots explicitly await actual light-theme captures and coordinate
-receipts. Student/instructor archive packaging, public per-step check exports, enforced
-progression, author review and independent accessibility validation remain unfinished.
-This chapter has not yet joined main.tex, which retains twenty-one text packages. The
-full 35-project objective remains active.
+`drafts/blocked-matmul.tex`, included in main.tex as chapter twenty-two. Fifty steps
+and forty-two cumulative edits develop rectangular arithmetic, full-width addresses,
+exact sums, empty-shape behavior, clipped tiles and retained partial sums. Two supplied
+excerpts, fifty quizzes, one hundred progressive hints and fifty-eight public recipes
+accompany the sequence. Public construction scripts verify the illustrated states;
+final checks accept equivalent schedules and alternate supplied continuations. The
+private companion adds every legal dimension triple at a deterministic tile, all tile
+values on wide-sum boundary shapes, alternatives, quiz keys and exact archive receipts.
+Forty-four listings retain actual IntelliJ highlighting. A native diagram and measured
+tables keep retired instructions, notices and cache misses separate. Four numerical
+capture models support the pending figures. Actual IDE pixels and annotations, remote
+lessons, enforced progression, author review and independent accessibility validation
+remain unfinished. Twenty-two text packages do not complete the full 35-project book
+and capture objective, which remains active. Delta and variable-length encoding is next.

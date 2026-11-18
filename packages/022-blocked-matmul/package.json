@@ -1,0 +1,2176 @@
+{
+  "formatVersion": 1,
+  "version": "0.1.0",
+  "status": "draft",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "traceExecution",
+      "connectDataCache",
+      "readDataAddress"
+    ]
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose, public intermediate and final CLI checks; remote lesson runner and enforced policies remain pending"
+  },
+  "id": "022-blocked-matmul",
+  "title": "Multiply matrices in clipped tiles",
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "reading": "reading.json",
+  "prerequisites": [
+    "Row-major addressing and matrix transpose",
+    "Exact signed products and full-width sums",
+    "Function frames and logical memory intervals"
+  ],
+  "learningObjectives": [
+    "Derive rectangular matrix strides",
+    "Prove the complete accumulation width",
+    "Handle empty output and zero reduction separately",
+    "Retain partial sums across clipped reduction tiles",
+    "Compare instruction work, data notices and cache placement",
+    "Accept equivalent correct schedules under one interface"
+  ],
+  "inputDomain": {
+    "type": "rectangular-exact-integer-product",
+    "dimensionMaximum": 16,
+    "tileMinimum": 1,
+    "tileMaximum": 8,
+    "inputValueMinimum": -32768,
+    "inputValueMaximum": 32767,
+    "inputElementBytes": 4,
+    "outputElementBytes": 8,
+    "leftArenaBytes": 1088,
+    "rightArenaBytes": 1088,
+    "outputArenaBytes": 2176,
+    "pairwiseDisjointSlices": true
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Trace a rectangular product before writing loops",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which values determine output row one, column zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The second left row and first right column."
+          },
+          {
+            "id": "b",
+            "text": "The second row of both inputs."
+          },
+          {
+            "id": "c",
+            "text": "Only the diagonal of each input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Fix one output row and column before following k."
+        },
+        {
+          "id": "s01-h2",
+          "text": "For C[1,0], pair 4,5,6 with 7,9,11."
+        }
+      ],
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Separate row stride from tile edge",
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What determines the right-input reduction stride?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The left row count M."
+          },
+          {
+            "id": "b",
+            "text": "The tile edge T."
+          },
+          {
+            "id": "c",
+            "text": "The right row width N."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Keep the original packed row widths beside each address formula."
+        },
+        {
+          "id": "s02-h2",
+          "text": "A tile edge limits iteration; it does not become the stride of B."
+        }
+      ],
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Prove the width of a partial sum",
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which part must retain more than thirty-two bits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the loop index."
+          },
+          {
+            "id": "b",
+            "text": "The accumulator and output."
+          },
+          {
+            "id": "c",
+            "text": "Only the tile edge."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Calculate two minimum-times-minimum products explicitly."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The sum crosses the signed-word endpoint before the individual product does."
+        }
+      ],
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Inspect the supplied frame and safe exits",
+      "kind": "observe",
+      "quiz": {
+        "id": "q04",
+        "prompt": "When should the saved registers be restored?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After releasing the stack frame and overwriting its contents."
+          },
+          {
+            "id": "b",
+            "text": "Only for nonempty matrices."
+          },
+          {
+            "id": "c",
+            "text": "Before releasing their private stack storage."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Locate the saved slots and the restoring exit before replacing a region."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The provisional branch uses that exit so unfinished code still obeys register preservation."
+        }
+      ],
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Guard empty scalar output and start row zero",
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which shape needs no output store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "M=0, K=3, N=2."
+          },
+          {
+            "id": "b",
+            "text": "M=3, K=0, N=2."
+          },
+          {
+            "id": "c",
+            "text": "M=3, K=2, N=2."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Ask whether any output row and column both exist."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Test M and N before entering a body that can load or store a matrix element."
+        }
+      ],
+      "editTarget": "n_empty",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s05.kts"
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Reset the scalar column at each row",
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Where must column zero be established?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Once for the entire function."
+          },
+          {
+            "id": "b",
+            "text": "At the start of every output row."
+          },
+          {
+            "id": "c",
+            "text": "After every output cell."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Separate entering a new row from entering a new cell."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The row label must reset j; the column loop must leave that reset behind."
+        }
+      ],
+      "editTarget": "n_column",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s06.kts"
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Start a fresh reduction for each output cell",
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why clear the sum inside the column loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every output cell has its own dot product."
+          },
+          {
+            "id": "b",
+            "text": "All matrix elements are unsigned."
+          },
+          {
+            "id": "c",
+            "text": "The previous sum is always an input operand."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Write the invariant for zero products consumed."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Both the reduction index and the accumulator start at zero for every output."
+        }
+      ],
+      "editTarget": "n_sum",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s07.kts"
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Form the full left-row address",
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which factor converts a left-input element offset into bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "Four."
+          },
+          {
+            "id": "c",
+            "text": "T."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Count elements before row i before converting to bytes."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Use i*K words, scale by four, then add the full left base."
+        }
+      ],
+      "editTarget": "n_left",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s08.kts"
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Form the right-column address and row stride",
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What stays fixed as the right walker advances?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its row number."
+          },
+          {
+            "id": "b",
+            "text": "Its address."
+          },
+          {
+            "id": "c",
+            "text": "Its selected column."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Follow one fixed column across the physical rows of B."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The first position is column j; successive positions differ by N stored words."
+        }
+      ],
+      "editTarget": "n_right",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s09.kts"
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Skip the scalar reduction when K is zero",
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What is the output of a nonempty zero-reduction product?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The previous output values."
+          },
+          {
+            "id": "b",
+            "text": "A zero matrix."
+          },
+          {
+            "id": "c",
+            "text": "An absent output allocation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "An empty sum has a value even when no input pair exists."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Bypass the pair loads for K=0 and continue toward the output store with a zero accumulator."
+        }
+      ],
+      "editTarget": "n_zero_k",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s10.kts"
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Load one signed left value",
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "How should stored -32768 be interpreted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "As unsigned 4294934528."
+          },
+          {
+            "id": "b",
+            "text": "As the address -32768."
+          },
+          {
+            "id": "c",
+            "text": "As signed -32768."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "The value is stored in a word even though its numerical range is narrower."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Use a signed word load; the register must retain a negative input as a negative full-width value."
+        }
+      ],
+      "editTarget": "n_load_left",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s11.kts"
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Load the matching signed right value",
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which pair belongs to reduction position zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A[0,0] and B[0,0] for the first output."
+          },
+          {
+            "id": "b",
+            "text": "A[0,0] and B[1,0]."
+          },
+          {
+            "id": "c",
+            "text": "A[0,1] and B[0,0]."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Match the same reduction position in both inputs."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Keep the left operand in `t7` while loading the right operand through its separate walker."
+        }
+      ],
+      "editTarget": "n_load_right",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s12.kts"
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Compute the exact signed product",
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Can the loaded left operand be replaced by its product here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it is the immutable source memory."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the register value has already been consumed."
+          },
+          {
+            "id": "c",
+            "text": "Only if the product is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Distinguish the loaded operand from the memory it came from."
+        },
+        {
+          "id": "s13-h2",
+          "text": "After forming the product, the left-operand register can hold that product; the input memory remains unchanged."
+        }
+      ],
+      "editTarget": "n_product",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s13.kts"
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Add the product to the full scalar sum",
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does the sum contain immediately after this edit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every matrix element."
+          },
+          {
+            "id": "b",
+            "text": "Only the right operand."
+          },
+          {
+            "id": "c",
+            "text": "Exactly the first pair product."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Track how many products the sum represents before incrementing k."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Add the full product into `t3` with a doubleword addition."
+        }
+      ],
+      "editTarget": "n_accumulate",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s14.kts"
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Consume the row and column until K products are complete",
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "When is the scalar sum complete?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After K matched products."
+          },
+          {
+            "id": "b",
+            "text": "After N matched products."
+          },
+          {
+            "id": "c",
+            "text": "After T matched products."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Each iteration consumes one row value and one column value."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Advance A by one word, B by one full right row, and repeat until k reaches K."
+        }
+      ],
+      "editTarget": "n_reduce",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s15.kts"
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Address the current doubleword output",
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Why shift the output offset by three?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The tile has three axes."
+          },
+          {
+            "id": "b",
+            "text": "Each output occupies eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "The input words have eight bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Output cells are twice as wide as input words."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Use i*N+j as the element index and scale it by eight before adding C."
+        }
+      ],
+      "editTarget": "n_output_address",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s16.kts"
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Store both halves of the completed output",
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What must an output store preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the low byte."
+          },
+          {
+            "id": "b",
+            "text": "Only a signed thirty-two-bit approximation."
+          },
+          {
+            "id": "c",
+            "text": "All eight bytes of the exact result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Inspect the high word of the two-product boundary result."
+        },
+        {
+          "id": "s17-h2",
+          "text": "A full result needs a doubleword store even when the default small example fits a word."
+        }
+      ],
+      "editTarget": "n_store",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s17.kts"
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Advance the scalar column and restart its reduction",
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which state must restart for the next output column?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the result pointer."
+          },
+          {
+            "id": "b",
+            "text": "The reduction index, accumulator and input walkers."
+          },
+          {
+            "id": "c",
+            "text": "The matrix descriptor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "A new column starts a new dot product."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Branch to the column initialization so its sum and both walkers restart."
+        }
+      ],
+      "editTarget": "n_next_column",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s18.kts"
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Advance the scalar row and complete the baseline",
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why target `naive_row` after changing the row?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It resets the column for the new row."
+          },
+          {
+            "id": "b",
+            "text": "It restores every output to sentinel."
+          },
+          {
+            "id": "c",
+            "text": "It repeats the previous row address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "The old row has already consumed all columns."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Return to the row label so the next row begins again at column zero."
+        }
+      ],
+      "editTarget": "n_next_row",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s19.kts"
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Select the tiled function without changing the contract",
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What changes when the selector becomes one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The word width of both inputs."
+          },
+          {
+            "id": "b",
+            "text": "The right matrix is automatically transposed."
+          },
+          {
+            "id": "c",
+            "text": "Only the selected function entry."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Keep the source used for preparing recipes at its documented defaults."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The recipe writes method one into a separate observation file for the tiled entry."
+        }
+      ],
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Guard empty tiled output",
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "May an empty output call clear the first product cell?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; there is no selected output cell."
+          },
+          {
+            "id": "b",
+            "text": "Yes; mapped memory is always writable."
+          },
+          {
+            "id": "c",
+            "text": "Only when K is positive."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Consider an output interval of length zero."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Place both output-dimension tests before the first zeroing store."
+        }
+      ],
+      "editTarget": "t_empty",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s21.kts"
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Count the product cells to initialize",
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What unit does the zeroing counter use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bytes."
+          },
+          {
+            "id": "b",
+            "text": "Output cells."
+          },
+          {
+            "id": "c",
+            "text": "Reduction tiles."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Keep the units of the counter and pointer separate."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Count M*N cells while the pointer moves eight bytes for each cell."
+        }
+      ],
+      "editTarget": "t_zero_setup",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s22.kts"
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Initialize one full output cell",
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Why initialize before reading a partial sum?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A previous call always produced the same answer."
+          },
+          {
+            "id": "b",
+            "text": "Only zero inputs require initialization."
+          },
+          {
+            "id": "c",
+            "text": "The caller grants arbitrary initial output contents."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "A partial-sum load will later read all eight bytes."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Initialize the entire doubleword without reading its old contents."
+        }
+      ],
+      "editTarget": "t_zero_store",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s23.kts"
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Initialize the complete product interval",
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which bytes may this loop clear?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Exactly the selected output interval."
+          },
+          {
+            "id": "b",
+            "text": "The complete backing allocation."
+          },
+          {
+            "id": "c",
+            "text": "Both input matrices."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "The zeroing body handles one complete cell per visit."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Advance by eight and subtract one cell; the empty-output guard handles the zero-iteration case."
+        }
+      ],
+      "editTarget": "t_zero_next",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s24.kts"
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Return a zero reduction or start the first row tile",
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "When does a zero-reduction product become complete?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before any output initialization."
+          },
+          {
+            "id": "b",
+            "text": "After every selected output cell is zeroed."
+          },
+          {
+            "id": "c",
+            "text": "After loading one input from each matrix."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The zeroing work already gives the answer for an empty reduction."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Return after zeroing when K=0; otherwise establish the first row-tile start."
+        }
+      ],
+      "editTarget": "t_reduction_gate",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s25.kts"
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Clip the row-tile exclusive end",
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which row index is excluded from this tile?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "I."
+          },
+          {
+            "id": "b",
+            "text": "Every index below I."
+          },
+          {
+            "id": "c",
+            "text": "The exclusive end min(I+T,M)."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Write the half-open row interval before coding the comparison."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Choose the smaller of I+T and M without changing the stored start I."
+        }
+      ],
+      "editTarget": "t_row_bound",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s26.kts"
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Reset the column-tile start for each row band",
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why is using `fp` here compatible with the interface?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its incoming full value is saved and restored."
+          },
+          {
+            "id": "b",
+            "text": "It is always zero on entry."
+          },
+          {
+            "id": "c",
+            "text": "Every function may destroy it."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Every new row band needs all of the output columns."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Reset J to zero after calculating the row end, before entering its first column tile."
+        }
+      ],
+      "editTarget": "t_column_start",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s27.kts"
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Clip the column-tile exclusive end",
+      "kind": "author",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which dimension clips the column end?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "K."
+          },
+          {
+            "id": "b",
+            "text": "N."
+          },
+          {
+            "id": "c",
+            "text": "M."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "The right and output matrices share a column count."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Clip J+T against N, keeping element width out of the index comparison."
+        }
+      ],
+      "editTarget": "t_column_bound",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s28.kts"
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Restart the reduction tiles for this output tile",
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "When should the reduction-tile start return to zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only once per program execution."
+          },
+          {
+            "id": "b",
+            "text": "After every individual product."
+          },
+          {
+            "id": "c",
+            "text": "At the start of each output tile."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "A different output tile has not yet received any dot-product segments."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Restart L at zero for every new output tile."
+        }
+      ],
+      "editTarget": "t_reduction_start",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s29.kts"
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Clip the reduction-tile exclusive end",
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What bounds the last reduction pair?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "min(L+T,K)."
+          },
+          {
+            "id": "b",
+            "text": "min(J+T,N)."
+          },
+          {
+            "id": "c",
+            "text": "The size of the mapped data segment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Consider K smaller than T and K not divisible by T."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Clip L+T against K so the segment stops at the final real pair."
+        }
+      ],
+      "editTarget": "t_reduction_bound",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s30.kts"
+      }
+    },
+    {
+      "id": "s31",
+      "title": "Start the current output row at I",
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Which start initializes the current output row?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The reduction start L."
+          },
+          {
+            "id": "b",
+            "text": "The row-tile start I."
+          },
+          {
+            "id": "c",
+            "text": "The output column end."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "The outer tile start and inner current row are distinct state."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Copy I into i at the beginning of each reduction tile."
+        }
+      ],
+      "editTarget": "t_row_start",
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s31.kts"
+      }
+    },
+    {
+      "id": "s32",
+      "title": "Start the current output column at J",
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Why reset j for every row?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The previous row consumed its selected columns."
+          },
+          {
+            "id": "b",
+            "text": "The right matrix has become transposed."
+          },
+          {
+            "id": "c",
+            "text": "The output is one-dimensional."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Each row in a tile needs its whole selected column interval."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Copy J into j whenever the row loop starts a new row."
+        }
+      ],
+      "editTarget": "t_inner_column",
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s32.kts"
+      }
+    },
+    {
+      "id": "s33",
+      "title": "Address the current output partial sum",
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Which index expression identifies this cell?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "i*K+j."
+          },
+          {
+            "id": "b",
+            "text": "k*N+j."
+          },
+          {
+            "id": "c",
+            "text": "i*N+j."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Keep this output address available through the complete segment."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Form i*N+j and scale by eight; retain the result in the dedicated C walker."
+        }
+      ],
+      "editTarget": "t_output_address",
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s33.kts"
+      }
+    },
+    {
+      "id": "s34",
+      "title": "Reload the initialized partial sum",
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What belongs in the accumulator before a later reduction tile?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The already accumulated output partial sum."
+          },
+          {
+            "id": "b",
+            "text": "Always zero."
+          },
+          {
+            "id": "c",
+            "text": "The previous output column value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Think about what the second reduction tile must preserve."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Load the previously stored full sum, which is zero only on the first segment."
+        }
+      ],
+      "editTarget": "t_partial",
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s34.kts"
+      }
+    },
+    {
+      "id": "s35",
+      "title": "Address the left input at the reduction-tile start",
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Which reduction index belongs in this start address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The clipped column end."
+          },
+          {
+            "id": "b",
+            "text": "L, the reduction-tile start."
+          },
+          {
+            "id": "c",
+            "text": "The previous cell count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "The segment begins at L rather than reduction position zero."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Address A[i,L] using the physical left row width K."
+        }
+      ],
+      "editTarget": "t_left_address",
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s35.kts"
+      }
+    },
+    {
+      "id": "s36",
+      "title": "Address the right input at the same reduction start",
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Why use N in L*N+j?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A tile has repacked the right input."
+          },
+          {
+            "id": "b",
+            "text": "Every matrix is square."
+          },
+          {
+            "id": "c",
+            "text": "N is the actual right-input row width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Use the same L in the two input starts."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Address B[L,j] with row width N; T has not changed the representation."
+        }
+      ],
+      "editTarget": "t_right_address",
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s36.kts"
+      }
+    },
+    {
+      "id": "s37",
+      "title": "Retain the right stride and current reduction index",
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Why can `a3` hold a stride now?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The descriptor fields are already retained elsewhere."
+          },
+          {
+            "id": "b",
+            "text": "The descriptor has been overwritten."
+          },
+          {
+            "id": "c",
+            "text": "Arguments are never needed by a function."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "The original descriptor pointer is no longer needed after its fields are retained."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Reuse its argument register for 4N and initialize k from L."
+        }
+      ],
+      "editTarget": "t_dot_setup",
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s37.kts"
+      }
+    },
+    {
+      "id": "s38",
+      "title": "Load the matched pair inside this tile",
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "What does `t4` represent before these operands are added?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire right row."
+          },
+          {
+            "id": "b",
+            "text": "The current output partial sum."
+          },
+          {
+            "id": "c",
+            "text": "The next tile start."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Leave the existing accumulator untouched while fetching operands."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Load a signed word from each walker at the same reduction position."
+        }
+      ],
+      "editTarget": "t_load_pair",
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s38.kts"
+      }
+    },
+    {
+      "id": "s39",
+      "title": "Form a full product for the tiled sum",
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Does changing tile edge alter the product arithmetic?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; a larger tile requires rounding."
+          },
+          {
+            "id": "b",
+            "text": "Yes; products become unsigned."
+          },
+          {
+            "id": "c",
+            "text": "No; the same signed values are multiplied."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Blocking changes traversal, while the arithmetic domain remains fixed."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Multiply the signed operands into a full product before adding it to the retained sum."
+        }
+      ],
+      "editTarget": "t_product",
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s39.kts"
+      }
+    },
+    {
+      "id": "s40",
+      "title": "Extend the retained output sum",
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "When does this new private sum become visible in C?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "When the segment store executes."
+          },
+          {
+            "id": "b",
+            "text": "As soon as `dmul` executes."
+          },
+          {
+            "id": "c",
+            "text": "When the tile bound is calculated."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "At a later segment, the accumulator already includes previous contributions."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Extend `t4` with the current product; do not replace `t4` with the product."
+        }
+      ],
+      "editTarget": "t_accumulate",
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s40.kts"
+      }
+    },
+    {
+      "id": "s41",
+      "title": "Consume exactly the clipped reduction segment",
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "What does `a2` hold in this loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output-cell count."
+          },
+          {
+            "id": "b",
+            "text": "The clipped exclusive reduction end."
+          },
+          {
+            "id": "c",
+            "text": "The right matrix base."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "The endpoint is an original reduction index, not a segment length."
+        },
+        {
+          "id": "s41-h2",
+          "text": "Start k at L and stop at the clipped end after advancing both physical walkers."
+        }
+      ],
+      "editTarget": "t_reduce",
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s41.kts"
+      }
+    },
+    {
+      "id": "s42",
+      "title": "Publish this segment contribution",
+      "kind": "author",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Is this segment store always the final output value?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if it is the last reduction segment for that cell."
+          },
+          {
+            "id": "b",
+            "text": "Yes; a tile contains the entire matrix."
+          },
+          {
+            "id": "c",
+            "text": "No; no partial sum may ever be stored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "The public output can temporarily hold an incomplete dot product."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Store the full segment sum through the C pointer retained before the input walks."
+        }
+      ],
+      "editTarget": "t_store",
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s42.kts"
+      }
+    },
+    {
+      "id": "s43",
+      "title": "Visit every selected column in the current row",
+      "kind": "author",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Which state must remain independent between neighboring cells?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The matrix descriptor."
+          },
+          {
+            "id": "b",
+            "text": "The tile edge."
+          },
+          {
+            "id": "c",
+            "text": "The output accumulator."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Neighboring cells have independent partial sums."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Restart the cell body for each j until the clipped column endpoint."
+        }
+      ],
+      "editTarget": "t_next_column",
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s43.kts"
+      }
+    },
+    {
+      "id": "s44",
+      "title": "Visit every selected row in this output tile",
+      "kind": "author",
+      "quiz": {
+        "id": "q44",
+        "prompt": "What does the next reduction tile need from this state?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original sentinel."
+          },
+          {
+            "id": "b",
+            "text": "The stored partial sum of each output cell."
+          },
+          {
+            "id": "c",
+            "text": "Only the last scalar temporary."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "The next row must begin at J again."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Advance i and branch to the row label, which resets the current column."
+        }
+      ],
+      "editTarget": "t_next_row",
+      "content": "steps/44.md",
+      "prerequisites": [
+        "s43"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s44.kts"
+      }
+    },
+    {
+      "id": "s45",
+      "title": "Advance L and retain earlier tile contributions",
+      "kind": "author",
+      "quiz": {
+        "id": "q45",
+        "prompt": "What would resetting the partial sum at this stage discard?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every earlier reduction-tile contribution."
+          },
+          {
+            "id": "b",
+            "text": "Only unused output suffix bytes."
+          },
+          {
+            "id": "c",
+            "text": "The descriptor pointer alignment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "The next group contributes to the same output cells."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Advance L by T, reclip its end, and reload every stored partial sum."
+        }
+      ],
+      "editTarget": "t_next_reduction",
+      "content": "steps/45.md",
+      "prerequisites": [
+        "s44"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s45.kts"
+      }
+    },
+    {
+      "id": "s46",
+      "title": "Advance J and restart its full reduction",
+      "kind": "author",
+      "quiz": {
+        "id": "q46",
+        "prompt": "Why restart L after advancing J?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A new column tile contains no output elements."
+          },
+          {
+            "id": "b",
+            "text": "The next output tile also needs every reduction position."
+          },
+          {
+            "id": "c",
+            "text": "The input rows have been repacked."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "A new output tile needs the reduction from its beginning."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Advance J by T and target the column-tile label so L resets to zero."
+        }
+      ],
+      "editTarget": "t_next_column_tile",
+      "content": "steps/46.md",
+      "prerequisites": [
+        "s45"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s46.kts"
+      }
+    },
+    {
+      "id": "s47",
+      "title": "Advance I and finish all output tiles",
+      "kind": "author",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Which bound clips the final row band?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "K."
+          },
+          {
+            "id": "b",
+            "text": "N."
+          },
+          {
+            "id": "c",
+            "text": "M."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "A new row band must revisit all column tiles."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Advance I by T and target the row-tile label so the row end and J are rebuilt."
+        }
+      ],
+      "editTarget": "t_next_row_tile",
+      "content": "steps/47.md",
+      "prerequisites": [
+        "s46"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s47.kts"
+      }
+    },
+    {
+      "id": "s48",
+      "title": "Observe the first reduction tile before the second",
+      "kind": "observe",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Which observation proves that the second tile must retain prior state?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output allocation is mapped."
+          },
+          {
+            "id": "b",
+            "text": "The descriptor tile edge is positive."
+          },
+          {
+            "id": "c",
+            "text": "C already contains valid first-segment contributions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "The first breakpoint visit occurs before any reduction segment."
+        },
+        {
+          "id": "s48-h2",
+          "text": "Step beyond the first visit, then stop again with L=2 to inspect the first stored contributions."
+        }
+      ],
+      "content": "steps/48.md",
+      "prerequisites": [
+        "s47"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s48.kts"
+      }
+    },
+    {
+      "id": "s49",
+      "title": "Compare complete-call instructions and cache notices",
+      "kind": "observe",
+      "quiz": {
+        "id": "q49",
+        "prompt": "What has this measurement established?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A tradeoff between simulated instruction work and cache-model misses."
+          },
+          {
+            "id": "b",
+            "text": "A host elapsed-time speedup of the same ratio."
+          },
+          {
+            "id": "c",
+            "text": "That all tile sizes have identical data traffic."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Use the same entry and return boundaries for both functions."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Record simulated instructions, data notices and cache misses as separate columns."
+        }
+      ],
+      "content": "steps/49.md",
+      "prerequisites": [
+        "s48"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s50",
+      "title": "Test equivalence and a fresh second call",
+      "kind": "observe",
+      "quiz": {
+        "id": "q50",
+        "prompt": "May free-writing grading require the illustrated temporary register assignment?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; register spelling defines the product."
+          },
+          {
+            "id": "b",
+            "text": "No; final checks use the public arithmetic and ownership contract."
+          },
+          {
+            "id": "c",
+            "text": "Only when the result is positive."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "Ask which internal details are observable in the public interface."
+        },
+        {
+          "id": "s50-h2",
+          "text": "Use a second call in the same session to expose stale sums or loop state."
+        }
+      ],
+      "content": "steps/50.md",
+      "prerequisites": [
+        "s49"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/program.kts",
+    "checks/reuse.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json",
+    "inputs.json",
+    "steps.json",
+    "prepare.py",
+    "native"
+  ]
+}

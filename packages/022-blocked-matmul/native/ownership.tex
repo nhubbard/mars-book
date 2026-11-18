@@ -1,0 +1,28 @@
+\section{Keep caller data and private work separate}
+The caller grants read access to two exact input slices and the four descriptor
+words. It grants write access to the exact output slice. The backing allocations
+are larger than many test matrices, so an access can remain mapped while violating
+the logical boundary. A successful load does not prove that its address was allowed.
+
+The checks vary each supplied base within its backing allocation. They inspect
+full-width memory notices, including accesses that cross a selected boundary.
+They also observe writes to input and descriptor storage. Writing a value and then
+restoring it still violates read-only ownership, even if the final bytes look correct.
+
+The tiled implementation reads partial output sums. Every byte it reads must first
+have been initialized during the same call. Initial memory contents and a previous
+call's product are not valid starting sums. A zero-reduction call is particularly
+useful here: it must replace existing output contents with zeros while leaving both
+inputs unread.
+
+Use repeated calls in one execution session to test this lifetime. Compute a
+nonempty product, then a zero-reduction product of another shape, then another
+nonempty product. Reset all loop starts, shape values and partial sums at the
+appropriate call boundary. A test harness that always creates a fresh memory image
+can hide dependence on stale state.
+
+\begin{MARSExercise}{Explain what a sentinel proves}
+Suppose the last output word still has its sentinel value after a call. Give two
+possible explanations, then describe the memory observation that distinguishes
+them. Explain why final sentinels alone cannot prove that an input was never written.
+\end{MARSExercise}

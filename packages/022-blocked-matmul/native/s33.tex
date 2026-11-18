@@ -1,0 +1,29 @@
+\section{Step 33 Address the current output partial sum}\label{matmul-s33}
+
+At \texttt{blocked\_column}, compute i*N+j, multiply by eight, and add the full C base. Keep this address in \texttt{t7} while the reduction uses \texttt{t5} and \texttt{t6} as input walkers. The same output cell will be revisited for later L values.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_output\_address}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    mul $t7, $t1, $s2
+    addu $t7, $t7, $t2
+    dsll $t7, $t7, 3
+    daddu $t7, $s6, $t7
+\end{minted}
+Use \texttt{s33-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+For the first tile and cell, \texttt{t7} addresses the selected product start.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Which index expression identifies this cell?
+
+\begin{itemize}
+\item \textbf{A} i*K+j.
+\item \textbf{B} k*N+j.
+\item \textbf{C} i*N+j.
+\end{itemize}

@@ -1,0 +1,26 @@
+\section{Step 27 Reset the column-tile start for each row band}\label{matmul-s27}
+
+At \texttt{row\_bound}, set \texttt{fp} to zero as the column-tile start J. The frame has already saved the incoming \texttt{fp} value, so this temporary role does not change the public preservation requirement. The reset runs once for each new row band.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_column\_start}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $fp, $zero
+\end{minted}
+Use \texttt{s27-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first column tile begins at zero; caller \texttt{fp} is restored on provisional return.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Why is using \texttt{fp} here compatible with the interface?
+
+\begin{itemize}
+\item \textbf{A} Its incoming full value is saved and restored.
+\item \textbf{B} It is always zero on entry.
+\item \textbf{C} Every function may destroy it.
+\end{itemize}

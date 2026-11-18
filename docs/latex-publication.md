@@ -186,7 +186,7 @@ Five actual light-theme captures and independent accessibility validation remain
 
 The independent blocked-matrix chapter can be built with
 `python3 tools/book.py build --entry drafts/blocked-matmul.tex`. It is directly edited
-native LaTeX and has not yet joined the main manuscript's completed text-package sequence.
+native LaTeX and is also included in the main manuscript as chapter twenty-two.
 
 The matrix entry now includes fifty native teaching steps, forty-two cumulative edits
 and two provided excerpts, for forty-four actual IntelliJ-highlighted listings. Keep

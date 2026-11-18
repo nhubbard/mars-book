@@ -110,17 +110,16 @@ exact eight-tap filtering through 47 steps and 36 edits. It includes explicit hi
 wide partial sums, signed rounding, public construction/final checks, six reproducible
 listening files and five planned light-theme capture models.
 
-The next chapter has an independent [blocked-matrix foundation](drafts/blocked-matmul.tex).
-It develops rectangular products through 50 steps and 42 cumulative edits, with exact
-accumulator bounds, clipped reduction tiles, a native index diagram and measured
-instruction/cache tradeoffs. Fifty-eight input recipes, two supplied excerpts, quizzes
-and progressive hints accompany the text. Student/instructor archives and actual IDE
-captures remain pending; it has not yet joined the main manuscript.
+The [blocked-matrix chapter](packages/022-blocked-matmul/assignment.md) develops
+rectangular products through 50 steps and 42 cumulative edits. It includes exact
+accumulator bounds, clipped reduction tiles, 58 observation recipes, public
+construction/final checks and four planned light-theme capture models. Its whole-call
+measurements distinguish simulated instructions, data notices and cache misses.
 
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-one chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-two chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -135,7 +134,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-one text packages, starters, public checks, deterministic student archive builder,
+The first twenty-two text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

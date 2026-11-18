@@ -1,0 +1,42 @@
+\section*{Project contract}
+Multiply an \(M\)-by-\(K\) matrix \(A\) by a \(K\)-by-\(N\) matrix \(B\).
+Produce an \(M\)-by-\(N\) matrix \(C\), with
+\[
+ C_{i,j}=\sum_{k=0}^{K-1}A_{i,k}B_{k,j}.
+\]
+Each dimension is an integer from zero through sixteen. Input elements are signed
+integers in \([-32768,32767]\), stored in four-byte words. Output elements are
+exact signed integers stored in eight-byte doublewords. There is no fixed-point
+scale, rounding, saturation or deliberate wraparound in this exercise.
+
+On entry, \texttt{a0}, \texttt{a1} and \texttt{a2} hold the full addresses of
+\(A\), \(B\) and \(C\). Register \texttt{a3} points to four consecutive words:
+\(M,K,N,T\), in that order. The tile edge \(T\) is an integer from one through
+eight. All matrices use packed row-major storage. Input pointers and the descriptor
+are word aligned; the output pointer and incoming stack pointer are doubleword
+aligned. Selected input, output and descriptor byte intervals are pairwise disjoint.
+Do not assume the pointers equal the buffer labels or fit in thirty-two bits.
+
+The active input lengths are \(4MK\) and \(4KN\) bytes; the active output length
+is \(8MN\) bytes. Only the selected output bytes may change in caller-owned data.
+Reads must remain in the selected slices and descriptor. Private stack storage
+and submission-owned constants are allowed. Initialize an output byte before reading
+it as a partial sum; preexisting output contents are arbitrary.
+
+Return \(MN\) in \texttt{v0}. Preserve every bit of \texttt{s0} through
+\texttt{s7}, \texttt{fp} and \texttt{sp}, and return through the supplied
+\texttt{ra} continuation. Produce no console output. When \(M=0\) or \(N=0\),
+perform no matrix reads or writes. When \(K=0\), write \(MN\) zero doublewords
+without reading either input matrix. Descriptor and private-stack accesses remain
+permitted in all three cases.
+
+Keep the supplied caller, arena labels and allocation sizes for grading. The direct
+checks may supply \texttt{function\_return}, a distinct continuation that rejoins the
+caller after the function has returned. The actual caller returns to
+\texttt{matmul\_done}. Use the supplied \texttt{ra} in either case.
+
+Develop \texttt{matmul\_naive} with a row--column--reduction traversal, then
+\texttt{matmul\_tiled} with clipped tiles. Both implement the same numerical and
+ownership contract. Final free-writing grading accepts other correct schedules.
+An instructor may separately assess the requested blocking strategy; numerical
+agreement alone does not demonstrate that a program uses tiles.

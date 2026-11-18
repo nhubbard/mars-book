@@ -1,0 +1,28 @@
+\section{Step 25 Return a zero reduction or start the first row tile}\label{matmul-s25}
+
+After zeroing, return immediately when K is zero. For a nonzero reduction, initialize the row-tile start \texttt{s7} to zero. This start is private working state and will be restored to the caller value by the supplied exit; do not confuse the returned saved register with the internal tile start.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_reduction\_gate}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s1, $zero, tiled_return
+    nop
+    move $s7, $zero
+\end{minted}
+Use \texttt{s25-1}, \texttt{s25-2} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+K=0 produces a complete zero matrix without either input read.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+When does a zero-reduction product become complete?
+
+\begin{itemize}
+\item \textbf{A} Before any output initialization.
+\item \textbf{B} After every selected output cell is zeroed.
+\item \textbf{C} After loading one input from each matrix.
+\end{itemize}

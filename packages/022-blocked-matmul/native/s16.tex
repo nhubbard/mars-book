@@ -1,0 +1,29 @@
+\section{Step 16 Address the current doubleword output}\label{matmul-s16}
+
+At \texttt{naive\_store}, compute row*N+column, multiply by eight, then add the output base. Reuse \texttt{t4} only now that the reduction no longer needs its left walker. The output index uses N, whereas the left-input row index used K.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{n\_output\_address}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    mul $t4, $t0, $s2
+    addu $t4, $t4, $t1
+    dsll $t4, $t4, 3
+    daddu $t4, $s6, $t4
+\end{minted}
+Use \texttt{s16-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first output address is the supplied product base.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Why shift the output offset by three?
+
+\begin{itemize}
+\item \textbf{A} The tile has three axes.
+\item \textbf{B} Each output occupies eight bytes.
+\item \textbf{C} The input words have eight bytes.
+\end{itemize}

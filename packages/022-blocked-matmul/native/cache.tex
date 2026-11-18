@@ -1,0 +1,48 @@
+\section{Measure the actual data-access sequence}
+Use a cold cache at function entry with sixteen lines, sixteen bytes per line,
+and least-recently-used replacement. Compare fully associative, direct-mapped and
+two-way placement at the same 256-byte capacity. Stop at the supplied return
+continuation, before the caller stores \texttt{v0} in \texttt{completed}. Include
+the function's descriptor loads and frame traffic; exclude assembly, session
+creation, the caller and debugger inspection.
+
+A completed simulated instruction and a data-access notice are different units.
+In the current core, an aligned \texttt{ld} performs two four-byte reads and an
+aligned \texttt{sd} performs two four-byte writes. Each notice is counted separately
+by the Data Cache Simulator. The first notice can miss and the second hit in the
+same line. This is an implementation detail of the observation stream, not two
+architectural load instructions.
+
+Supply an eight-byte-aligned stack for these comparisons. The current core handles
+an unaligned doubleword through byte accesses, changing the notice count and address
+sequence. Even though both paths can produce the same saved register values, mixing
+stack alignments would make the table compare more than tile size. The measurement
+fixture sets \texttt{sp} to \texttt{0x7fff0000} for every call.
+
+The model places each notice using its starting address. It does not split a
+notice that crosses a cache-line boundary. Here all input word accesses and both
+word halves of aligned output/frame doublewords fit within sixteen-byte lines.
+These choices make the address interpretation explicit. The model has no memory
+latency, prefetcher or simulated pipeline and supplies no cycle estimate.
+
+\subsection{Predict the baseline's notice count}
+For nonempty output, the baseline makes \(2MNK\) input word reads and \(2MN\)
+output word writes. Saving and restoring nine full registers contributes thirty-six
+word notices; loading the descriptor contributes four. Thus its whole-function
+count is
+\[
+ 2MNK+2MN+40.
+\]
+For \(M=K=N=16\), this is 8744. An empty output still has the forty frame and
+descriptor notices in this implementation. These counts describe the illustrated
+program. An equivalent solution that uses different private storage can have a
+different whole-function count.
+
+The blocked version still reads two input words per product. For nonzero \(K\),
+it additionally zeroes output, then reads and writes each output doubleword once
+per reduction tile. Its notice count is
+\[
+ 2MNK+2MN+4MN\left\lceil K/T\right\rceil+40.
+\]
+Fewer cache misses therefore need not imply fewer accesses. Output partial sums
+add traffic while the changed ordering can preserve useful input lines.

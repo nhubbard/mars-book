@@ -1,0 +1,30 @@
+\section{Step 30 Clip the reduction-tile exclusive end}\label{matmul-s30}
+
+At \texttt{block\_reduction}, form L+T in \texttt{a2} and clip it against K. This endpoint controls the number of products contributed in the current tile. A complete last tile is allowed; a shorter last tile must stop before reading an absent input pair.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_reduction\_bound}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $a2, $t0, $s3
+    sltu $t9, $s1, $a2
+    beq $t9, $zero, reduction_bound
+    nop
+    move $a2, $s1
+\end{minted}
+Use \texttt{s30-1}, \texttt{s30-2} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first default reduction tile ends at two. For K=1,T=3, \texttt{a2} clips to one.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+What bounds the last reduction pair?
+
+\begin{itemize}
+\item \textbf{A} min(L+T,K).
+\item \textbf{B} min(J+T,N).
+\item \textbf{C} The size of the mapped data segment.
+\end{itemize}

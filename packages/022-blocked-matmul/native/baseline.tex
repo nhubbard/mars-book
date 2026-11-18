@@ -1,0 +1,41 @@
+\section{Complete one dot product before reordering work}
+Build the baseline with three loops. The outer loop chooses \(i\), the middle
+loop chooses \(j\), and the inner loop chooses \(k\). At the start of each
+output cell, set the accumulator to zero and reset both input walkers to the first
+pair for that cell. A walker left over from the previous column points past the
+selected row or column and cannot be reused without adjustment.
+
+Immediately before inner iteration \(k\), maintain this invariant:
+\[
+ \text{accumulator}=\sum_{q=0}^{k-1}A_{i,q}B_{q,j}.
+\]
+The empty sum at \(k=0\) is zero. One iteration loads the next pair, multiplies
+it, adds the product, advances the walkers and increments \(k\). At \(k=K\),
+the invariant gives the complete value for this output. Store it at
+\(c+8(iN+j)\), then advance the column index.
+
+Test the zero bounds before entering the corresponding body. A loop that executes
+once and then tests whether \(k<K\) reads two input elements when \(K=0\).
+The correct output still exists in that case: it is an \(M\)-by-\(N\) matrix
+of zeros. Skip only the product loop, then store zero for every selected output.
+When either output dimension is zero, skip the matrix work entirely.
+
+Both implementations save nine full registers in an eighty-byte private frame.
+The nine eight-byte slots occupy offsets zero through sixty-four; the remaining
+eight bytes are padding. Subtracting eighty preserves an incoming eight-byte
+alignment. Restore the saved values before releasing the frame. The functions are
+leaves and leave \texttt{ra} unchanged while computing.
+
+\begin{MARSWorkedExample}{Distinguish two kinds of empty input}
+For \((M,K,N)=(3,0,2)\), six outputs exist. Write forty-eight zero bytes and return
+six. Neither input has any active bytes. For \((M,K,N)=(0,3,2)\), no outputs exist;
+return zero without any matrix access. Descriptor loads and private frame accesses
+are allowed in both calls, so a cache counter need not read zero for an empty product.
+\end{MARSWorkedExample}
+
+\begin{MARSExercise}{Specify the stopped observation}
+For the worked two-by-three product, choose a breakpoint immediately after the
+first complete output store. Record the required output prefix, the remaining
+sentinel bytes, and the next \((i,j,k)\) to be visited. Identify which values are
+public results and which depend on this particular loop construction.
+\end{MARSExercise}

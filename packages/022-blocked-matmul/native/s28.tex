@@ -1,0 +1,30 @@
+\section{Step 28 Clip the column-tile exclusive end}\label{matmul-s28}
+
+At \texttt{block\_column}, form J+T in \texttt{a1} and clip it against N. The output and right input share this column bound. Their element widths differ, but neither width changes the index comparison. Keep the full output pointer in \texttt{s6}.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_column\_bound}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $a1, $fp, $s3
+    sltu $t9, $s2, $a1
+    beq $t9, $zero, column_bound
+    nop
+    move $a1, $s2
+\end{minted}
+Use \texttt{s28-1}, \texttt{s28-2} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+For N=2,T=2, \texttt{a1}=2. A single-column matrix clips to one even when T=3.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Which dimension clips the column end?
+
+\begin{itemize}
+\item \textbf{A} K.
+\item \textbf{B} N.
+\item \textbf{C} M.
+\end{itemize}
