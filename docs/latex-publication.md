@@ -61,7 +61,7 @@ IDE values remain in the receipt; token roles and font styles are preserved. Lit
 plain native text block. A changed assembly listing requires a fresh IntelliJ export.
 
 The initial nine-chapter migration covered 121 assembly listings and one specimen listing.
-The native-first maze chapter adds seventeen assembly listings. Preserve source bytes and indentation. Do not enable math escapes,
+The native-first maze chapter adds seventeen assembly listings; matrix transpose adds thirteen more. Preserve source bytes and indentation. Do not enable math escapes,
 TeX escapes, or code ligatures that change the meaning of a listing. Code must remain
 extractable text rather than an image. Short chapter marks keep running headers within
 the page; code labels reserve room for the opening lines of their listings.
@@ -87,18 +87,20 @@ text extraction. These checks are evidence about specific features, **not PDF/UA
 certification**. Full-book reading order, repeated table headers, links, visual layout,
 screen-reader behavior, and an independent accessibility checker still require review.
 
-## Reviewing an unfinished native chapter
+## Reviewing a chapter independently
 
-The matrix-transpose composition has its own native entry while the student package
-and guided increments are being completed:
+Matrix transpose has a separate native entry for isolated editorial and layout review:
 
 ```sh
 python3 tools/book.py build --entry drafts/matrix-transpose.tex
 ```
 
-It produces `build/native/matrix-transpose.pdf` with the same fonts, tagging,
-layout checks, and ordinary includes as the main book. It does not add that unfinished
-chapter to the main publication or change the completed-package count. Its initial
-measured table uses the shared core/IDE cache model from upstream commit
-`1f2de4ff48d5e70a76763edf489000fd6ca7fa3c`. Counts describe the measured private
+It produces `build/native/matrix-transpose.pdf` with the same fonts, tagging, layout
+checks, and ordinary includes as the main book. The chapter is also included in the
+main manuscript. Its measured table uses the shared core/IDE cache model from upstream
+commit `1f2de4ff48d5e70a76763edf489000fd6ca7fa3c`. Counts describe the measured private
 reference and are not exact-count requirements for equivalent student solutions.
+Short new assembly increments use minted's native `samepage` option with space reserved
+for their label and complete listing. Quizzes reserve space for their choices. These
+are editable LaTeX layout decisions, independent of exercise metadata. Actual IDE
+captures and full publication accessibility review remain outstanding.

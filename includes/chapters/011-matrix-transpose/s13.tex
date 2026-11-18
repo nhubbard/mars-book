@@ -1,0 +1,31 @@
+\section{Step 13 Give the tiled function the same empty-case behavior}\label{transpose-s13}
+
+The tiled function has a different traversal but the same interface and result. Start it with the same count and early returns. Its destination stride remains four times the input row count. Use \texttt{\$v1} for that stride and keep \texttt{\$v0} available as the return value.
+
+\subsection{Write or inspect}
+Append this entry fragment in the \texttt{tiled} region. Set \texttt{METHOD} to one for the remaining guided tiled steps.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    mul $v0, $a2, $a3
+    beq $a2, $zero, tiled_return
+    nop
+    beq $a3, $zero, tiled_return
+    nop
+    sll $v1, $a2, 2
+    move $t0, $zero
+\end{minted}
+
+\subsection{Expected observation}
+Zero dimensions return zero without matrix traffic. With three by five, the incomplete tiled function returns fifteen and has not copied any words.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which property changes when switching from ordinary to tiled?
+
+\begin{itemize}
+\item \textbf{A} The word values being copied.
+\item \textbf{B} The order of visiting source coordinates.
+\item \textbf{C} The required final transpose.
+\end{itemize}

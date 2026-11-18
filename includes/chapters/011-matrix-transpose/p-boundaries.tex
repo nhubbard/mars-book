@@ -1,0 +1,19 @@
+\section{Use a stopped boundary as evidence}\label{transpose-p-boundaries}
+A breakpoint at a source label stops before the instruction at that label. At
+\texttt{transpose\_done}, the return value and output can therefore be checked
+before the caller changes temporary registers or stores metadata. This is also
+the place to check the saved registers and restored stack pointer. Checking only
+after program exit can miss a caller that accidentally hides a callee's error.
+
+The automated checks install their data before starting the observation. They
+resolve data addresses without executing simulated reads, run the selected kernel,
+and stop at the return boundary. A complete access log then distinguishes a
+matrix read from a debugger inspection and a word access from a byte access.
+Protected-region store traces detect forbidden writes even if the program later
+restores the old value. Finally, the checks continue to exit and inspect memory
+again, so code after the observed return cannot silently corrupt the result.
+
+These boundaries make the observations repeatable without fixing an internal
+instruction count or register assignment. The book's particular scratch-register
+states explain its walkthrough. The submission contract specifies which states
+must be externally observable for any equivalent implementation.

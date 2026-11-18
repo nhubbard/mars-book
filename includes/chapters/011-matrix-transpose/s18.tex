@@ -1,0 +1,29 @@
+\section{Step 18 Reuse the one-cell copy inside a tile}\label{transpose-s18}
+
+The coordinate formula has selected the first cell of a tile row. The cell body now has the same structure as the ordinary version: load one word, store it, advance the source by one word and the destination by one output row. Only the surrounding bounds have changed.
+
+\subsection{Write or inspect}
+Append the tiled cell body. This partial function copies one word for a nonempty matrix, because its repetition branches are still absent.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+next_tiled_column:
+    lw $t8, 0($t6)
+    sw $t8, 0($t7)
+    daddiu $t6, $t6, 4
+    daddu $t7, $t7, $v1
+\end{minted}
+
+\subsection{Expected observation}
+The first word reaches output word zero. Both pointers retain their full widths, and the source allocation is unchanged.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why can the cell-copy logic be reused?
+
+\begin{itemize}
+\item \textbf{A} Every cell still obeys the same transpose address mapping.
+\item \textbf{B} Every tile begins at address zero.
+\item \textbf{C} All tile rows are packed into four words.
+\end{itemize}

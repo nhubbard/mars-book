@@ -8,9 +8,9 @@ import book
 
 class NativeCompositionTests(unittest.TestCase):
     def test_actual_native_composition_and_highlight_integrity(self):
-        self.assertEqual(138, len(book.validate()))
+        self.assertEqual(151, len(book.validate()))
         self.assertEqual(1, len(book.validate('specimen.tex')))
-        self.assertEqual(0, len(book.validate('drafts/matrix-transpose.tex')))
+        self.assertEqual(13, len(book.validate('drafts/matrix-transpose.tex')))
 
     def test_author_can_include_prose_between_any_two_segments(self):
         with tempfile.TemporaryDirectory() as folder:

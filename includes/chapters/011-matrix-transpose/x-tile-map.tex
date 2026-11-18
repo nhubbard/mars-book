@@ -1,0 +1,29 @@
+\section{See the clipped partition}\label{transpose-x-tile-map}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={A three-row five-column input matrix contains indices zero through fourteen. Tile A encloses columns zero through three in all three rows. Tile B encloses only column four, containing indices four, nine, and fourteen.},x=15mm,y=12mm]
+\foreach \r in {0,1,2} {
+ \foreach \c in {0,1,2,3,4} {
+  \draw[gray] (\c,-\r) rectangle +(1,-1);
+  \pgfmathtruncatemacro{\cell}{5*\r+\c}
+  \node at (\c+0.5,-\r-0.5) {\cell};
+ }
+}
+\draw[very thick] (0,0) rectangle (4,-3);
+\draw[very thick,dashed] (4,0) rectangle (5,-3);
+\node at (2,0.5) {Tile A: three by four};
+\node[anchor=west,align=left] at (5.3,-1.5) {Tile B:\\three by one};
+\end{tikzpicture}
+\caption{The first tile is clipped in height; the second is clipped in both height and width. Labels and line styles distinguish the tiles without relying on color.}
+\end{figure}
+For a row-major traversal inside tile A, the source and destination word indices are
+\[
+\begin{aligned}
+ \text{Source:}\quad&0,1,2,3,5,6,7,8,10,11,12,13,\\
+ \text{Destination:}\quad&0,3,6,9,1,4,7,10,2,5,8,11.
+\end{aligned}
+\]
+Tile B then fills output indices \(12,13,14\).
+Together the two destination sets partition the fifteen output words. There is no
+required sixteen-word temporary array for an edge tile, and no padding cell is
+part of this traversal.

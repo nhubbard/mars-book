@@ -1,0 +1,30 @@
+\section{Step 8 Advance to the next source row}\label{transpose-s08}
+
+The inner source pointer is now past the completed row, but the program still keeps its row starts separately. Advance the source row start by the full source stride. Advance the first destination by four bytes so that the next input row fills the next column of every output row. Reenter the row initialization to reset the column index and inner pointers.
+
+\subsection{Write or inspect}
+Append the outer loop. This completes the ordinary function. Run the three-by-five example to the return boundary and read the output as five rows of three.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddu $t2, $t2, $t7
+    daddiu $t4, $t4, 4
+    addiu $t0, $t0, 1
+    sltu $t9, $t0, $a2
+    bne $t9, $zero, naive_row
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+The output is zero, five, ten; one, six, eleven; two, seven, twelve; three, eight, thirteen; four, nine, fourteen. The returned count is fifteen.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why does the destination row-start pointer advance by four?
+
+\begin{itemize}
+\item \textbf{A} The next input row supplies the next column in each output row.
+\item \textbf{B} The cache has four words per line.
+\item \textbf{C} Every matrix is four columns wide.
+\end{itemize}

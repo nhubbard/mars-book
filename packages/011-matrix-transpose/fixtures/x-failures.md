@@ -1,0 +1,16 @@
+# Diagnose the first incorrect address
+
+When a value appears in the wrong place, record the current coordinate, both word indices, and both full byte addresses before changing an instruction. A final output dump alone can hide which of those quantities first became incorrect.
+
+| Observed symptom | Likely violated relationship | First useful observation |
+|:---|:---|:---|
+| Square works, rectangle fails | Destination stride used $`C`$ instead of $`R`$ | Destination after the first cell |
+| First row works, later rows fail | Inner pointer reused as row start | Two row starts before the second row |
+| Only tile zero works | Inner coordinate reset to zero | $`i_0,j_0,i,j`$ at the second tile |
+| Extra cells appear at an edge | End not clipped, or end treated as inclusive | Final valid coordinate and next comparison |
+| Small positives pass, masks fail | Partial-width copy | All four destination bytes |
+| Default main passes, checks fail | Global label used instead of supplied pointer | Actual argument addresses at entry |
+| Correct output, traversal fails | Repeated reads, output reads, or incomplete tile | First offending native access notice |
+| Counts differ by one after return | Caller result store included | Stopped program counter and observation boundary |
+
+Several errors can produce the same symptom. Use the table to choose an observation, then trace the specific instruction that breaks the relationship. Changing a cache option cannot repair an incorrect matrix address.

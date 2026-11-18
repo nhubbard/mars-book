@@ -47,6 +47,13 @@ passages, twelve teaching fixtures, two native diagrams, and four planned IDE ca
 Its checks accept different neighbor orders and shortest routes. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
+The eleventh composition, [Matrix transpose](packages/011-matrix-transpose/assignment.md),
+adds 28 steps, thirteen verified code increments, five connected explanatory passages,
+five teaching fixtures, a native tile diagram, and four planned IDE figures. Its
+checks accept equivalent registers, stack usage, tile orders, and within-tile schedules
+while verifying the stated matrix-access contract. Cache comparisons use the actual
+shared core/IDE cache model and separate misses from completed instructions.
+
 ## Use the materials
 
 The publication source is native LaTeX in main.tex and includes/. Exercise packages
@@ -70,7 +77,7 @@ See [verification](docs/verification.md) for the tested package behavior.
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first ten chapters are now composed through ordinary LaTeX input/include files.
+The first eleven chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -85,7 +92,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first ten text packages, starters, public checks, deterministic student archive builder,
+The first eleven text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

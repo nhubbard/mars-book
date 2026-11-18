@@ -1,0 +1,32 @@
+\section{Step 19 Finish the current clipped tile}\label{transpose-s19}
+
+The inner column test uses the clipped column end, not the entire matrix width. After those columns, increment the current row and compare it with the clipped row end. Reentering \texttt{next\_tiled\_row} recomputes the two starting pointers for that row.
+
+\subsection{Write or inspect}
+Append the column and row back edges. Run the partial program to the return boundary. Identify which output positions remain untouched.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $t5, $t5, 1
+    sltu $t9, $t5, $t3
+    bne $t9, $zero, next_tiled_column
+    nop
+    addiu $t4, $t4, 1
+    sltu $t9, $t4, $t2
+    bne $t9, $zero, next_tiled_row
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+The first tile copies the twelve source cells in rows zero through two and columns zero through three. The source values four, nine, and fourteen have not been copied; they belong to the remaining tile.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which bound controls the inner column loop?
+
+\begin{itemize}
+\item \textbf{A} The full allocation capacity.
+\item \textbf{B} The clipped exclusive tile column end.
+\item \textbf{C} The return count.
+\end{itemize}

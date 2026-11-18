@@ -45,13 +45,14 @@ any needed prerequisite lessons before changing its progression. Prefer completi
 substantive, verified composition to producing many skeletal chapter packages. Review
 instruction semantics and the explanatory text together before committing each increment.
 
-The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter, MarsBot-square, Bresenham-line, Life, sorting-visualizer, and maze-explorer chapters
-are composed text drafts with verified companion programs. They still need author review and actual
-IDE figures. The remaining projects are planned until their text and companions are
-written and checked. Matrix transpose is in progress. Its first native explanatory passages are in
-`includes/chapters/011-matrix-transpose/`; compile the separate
-`drafts/matrix-transpose.tex` entry for review. They cover row-major representation,
-ordinary and clipped tiled traversal, calling contracts, and actual cache measurements.
-The guided assembly increments, quizzes, student package, and IDE figures remain
-outstanding. This draft is not yet included in `main.tex` or counted as a completed
-package. Verified companion prototypes and adversarial checks are private.
+The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter,
+MarsBot-square, Bresenham-line, Life, sorting-visualizer, maze-explorer, and matrix-transpose
+chapters are composed text drafts with verified companion programs. They still need
+author review and actual IDE figures. The remaining projects stay planned until their
+text and companions are written and checked. Fixed-point bouncing ball is next.
+
+Matrix transpose is composed through ordinary includes and is included in `main.tex`.
+The separate `drafts/matrix-transpose.tex` entry remains useful for reviewing that one
+chapter without rebuilding the full book. Its 28 microsteps, thirteen code increments,
+public checks, private exhaustive fixtures, alternative implementations, and four
+planned light-theme figures have matching student and instructor distributions.

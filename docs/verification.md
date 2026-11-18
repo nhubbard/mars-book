@@ -262,3 +262,50 @@ publishing simulator accesses or changing undo history. Three new tests brought 
 complete CLI suite to 77 passing tests. The public memory ABI states four-byte array
 alignment; byte entries still have byte stride. Capture recipes remain pending actual
 light-theme IDE automation.
+
+## Matrix transpose
+
+The eleventh package checks both rectangular word-transpose functions with supplied
+full-width pointers, not global-label assumptions. Twenty public cases cover empty,
+one-row, one-column, square, rectangular, and clipped shapes. The private companion
+exhausts all 289 shapes from zero through sixteen in both functions (578 cases),
+varies active-window offsets, and uses arbitrary word patterns including signed
+extremes. It protects input, guard, and inactive output writes, verifies full saved
+registers and the restored stack pointer before the continuation, and checks memory
+again after exit.
+
+Both independent checkers decode native access histories to verify the published
+one-word-read/one-word-write schedule. Ordinary histories follow source row-major
+order; tiled histories complete clipped 4-by-4 tiles in any order. The verifier accepts
+an alternative outer tile order, stack-backed saved state, and reversed rows inside
+each tile. A full-address relocation above 4 GiB uses the same actual execution path. A legal
+variant with 65,540 auxiliary stack reads per call verifies that grading histories
+extend beyond the ordinary logger default and fit the instruction resource budget.
+A second ordinary kernel posing as tiled is rejected even if its output is correct.
+
+Thirteen cumulative programs are reconstructed from the student transcripts and
+compared with all thirteen native assembly listings. Every partial result is checked
+before the completed reconstruction runs the public, exhaustive, and measurement
+checks. Twenty-eight quiz keys are private. Eleven warning-free faulty programs and
+the intentionally incomplete starter fail the checks. Four planned capture model
+states are independently checked through the actual complete main program; these
+checks do not certify an IDE screenshot.
+
+The shared core/IDE cache model and CLI observation API are pinned at upstream commit
+`1f2de4ff48d5e70a76763edf489000fd6ca7fa3c`. The extension passed seven focused core
+Jupiter tests, all 82 CLI tests, and three relevant plugin tests before this chapter.
+Counts-only observation, bounded immutable access logs, explicit overflow, cold reset,
+cleanup, external-inspection filtering, and full addresses are covered. No parallel
+cache implementation is used by the grader.
+
+For the measured aligned 16-by-16 reference, fully associative misses fall from 320
+to 128 with tiling, while completed instructions rise from 2204 to 3117. Both perform
+512 native matrix data accesses. Direct mapping produces 344 misses for each, and
+two-way placement produces 320 for each at the same eight-line, four-word capacity.
+The cold boundary excludes the caller's result store. Exact counts are reference
+measurements, not equivalent-solution requirements or elapsed-time claims.
+
+The chapter is native LaTeX with a semantic tile diagram, headed tables, actual
+IntelliJ-derived minted spans, and separately compiled review output. Four real
+light-theme IDE captures, author review, and full PDF accessibility validation remain
+pending. No lesson screenshot has been fabricated or marked verified.

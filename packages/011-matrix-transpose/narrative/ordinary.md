@@ -1,0 +1,25 @@
+# Make one ordinary traversal precise
+
+The ordinary version visits source rows in order, and columns from left to right within each row. For each source cell, read its word and store that word at its transposed destination. The next source is four bytes farther along the same row. The next destination is one complete output row farther along the output. Its stride, the byte distance between those stores, is $`4R`$.
+
+For the three-by-five example, the first source row produces stores at output byte offsets $`0,12,24,36,48`$. The next source row produces offsets $`4,16,28,40,52`$. The third produces offsets $`8,20,32,44,56`$. Each individual pass is strided, but the three passes together fill every output word exactly once.
+
+Keep separate registers for a row’s starting address and the pointer that advances inside the row. At the end of a source row, its next starting address advances by $`4C`$. The first destination for the next input row advances by only four bytes. An inner pointer has already advanced past several destinations; using it as the next row’s starting address loses this distinction.
+
+<div class="MARSWorkedExample">
+
+State at the second source row Before reading input coordinate $`(1,0)`$, the source pointer is $`\operatorname{input}+20`$, and the destination pointer is $`\operatorname{output}+4`$. Load the value five from the source and store it at the destination. Advance the source by four bytes and the destination by twelve. The next coordinate $`(1,1)`$ therefore loads six and stores it at output byte offset sixteen. The destination is $`B_{1,1}`$, the middle entry of the second output row.
+
+</div>
+
+There are two related ways to check a loop. Its bounds show which coordinates can execute, and its invariant states what is already true at each repeated boundary. At the start of source row $`i`$, all rows with index less than $`i`$ have been copied to their transposed destinations. At the start of column $`j`$ in that row, all earlier columns of that row have also been copied. The pointers name exactly $`\operatorname{src}(i,j)`$ and $`\operatorname{dst}(i,j)`$. One load, one corresponding store, and the two pointer advances preserve that statement for the next column. After the last column, reset the inner state for the next row.
+
+This argument proves coverage as well as termination. Different source coordinates have different destinations: if $`jR+i=j'R+i'`$, with both $`i`$ and $`i'`$ in $`0`$ through $`R-1`$, division by $`R`$ recovers $`j=j'`$, and the remainder recovers $`i=i'`$. For nonempty matrices, no two iterations write the same output word. Empty matrices have no iterations.
+
+# Preserve the function’s interface
+
+The two functions will share one calling interface. Registers `$a0` and `$a1` hold the source and destination pointers; `$a2` and `$a3` hold $`R`$ and $`C`$. Return $`RC`$ in `$v0`. Preserve the full contents of `$s0` through `$s7`, and restore `$sp` before returning. The allocations do not overlap. Each has room for 256 words, but only the first $`RC`$ words from its supplied pointer belong to the active matrix.
+
+Do not clear the entire output buffer as part of a transpose. The caller can place the active matrix inside a larger allocation. Words before or after it remain the caller’s data. Copying each active cell once also makes a preliminary clear unnecessary. Keep the input unchanged, including writes that restore its old contents later.
+
+A word load may sign-extend a negative 32-bit value into its destination general register. The following word store writes the low 32 bits, so the input word’s bit pattern survives. Arithmetic on that loaded value would need a separate width and overflow argument. The address arithmetic depends on the dimensions, not on whether the matrix contains positive or negative values.

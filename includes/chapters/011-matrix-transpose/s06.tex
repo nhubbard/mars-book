@@ -1,0 +1,29 @@
+\section{Step 6 Copy one cell to its transposed address}\label{transpose-s06}
+
+The load and store operate on one word. Moving the source pointer by four selects the next input column. Moving the destination pointer by the destination stride selects the next output row. Use full-width additions for both pointers; the small dimensions do not constrain the address at which the caller allocated the arrays.
+
+\subsection{Write or inspect}
+Append the one-cell body. Stop after the store and inspect output word zero. There is still no loop back edge, so this version copies exactly one word for any nonempty matrix.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+naive_column:
+    lw $t8, 0($t3)
+    sw $t8, 0($t5)
+    daddiu $t3, $t3, 4
+    daddu $t5, $t5, $t6
+\end{minted}
+
+\subsection{Expected observation}
+Input word zero reaches output word zero. The next source pointer is input plus four; the next destination pointer is output plus twelve in the default fixture.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What must survive the load and store unchanged?
+
+\begin{itemize}
+\item \textbf{A} The source word’s 32-bit pattern.
+\item \textbf{B} Only its sign bit.
+\item \textbf{C} Its original memory address.
+\end{itemize}

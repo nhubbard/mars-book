@@ -1,0 +1,24 @@
+\section{Keep coordinates and addresses in different roles}\label{transpose-x-registers}
+The guided ordinary function uses a pair of row starts plus a pair of advancing
+inner pointers. The tiled function recomputes the inner pointers at each tile row.
+These are explanatory conventions, not required register choices.
+\tagpdfsetup{table/header-rows={1}}
+\begin{longtable}{p{26mm}p{64mm}p{57mm}}
+\toprule
+State&Ordinary walkthrough&Tiled walkthrough\\
+\midrule
+Current cell&\texttt{\$t0} row, \texttt{\$t1} column&\texttt{\$t4} row, \texttt{\$t5} column\\
+Tile bounds&No tile state&\texttt{\$t0}, \texttt{\$t1} origins; \texttt{\$t2}, \texttt{\$t3} exclusive ends\\
+Source pointer&Row start \texttt{\$t2}; inner pointer \texttt{\$t3}&Inner pointer \texttt{\$t6}\\
+Destination&Row's first destination \texttt{\$t4}; inner pointer \texttt{\$t5}&Inner pointer \texttt{\$t7}\\
+Destination stride&\texttt{\$t6}=4R&\texttt{\$v1}=4R\\
+Source row stride&\texttt{\$t7}=4C&Recomputed row start from \(iC+j_0\)\\
+Copied word&\texttt{\$t8}&\texttt{\$t8}\\
+Return count&\texttt{\$v0}=RC&\texttt{\$v0}=RC\\
+\bottomrule
+\end{longtable}
+A register has no permanent source-language type. Its role follows from the code
+that defines and consumes it. Mark each quantity as a coordinate, an exclusive
+bound, a byte stride, a full address, or a data word when tracing. Adding a column
+index directly to a pointer omits the four-byte scale. Adding a byte displacement
+twice scales the address twice. Neither error is corrected by the cache.

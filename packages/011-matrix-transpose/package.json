@@ -1,0 +1,1246 @@
+{
+  "formatVersion": 1,
+  "id": "011-matrix-transpose",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Transpose a matrix and measure its memory accesses",
+  "audience": "Students with basic programming knowledge who are learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "1f2de4ff48d5e70a76763edf489000fd6ca7fa3c",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "readDataAddress",
+      "connectDataCache",
+      "recordedAccesses",
+      "readWord",
+      "expectCondition",
+      "runUntil",
+      "traceMemoryStores",
+      "traceExecution",
+      "setRegisterToDataAddress",
+      "setRegisterToTextAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Row-major word addressing",
+    "Nested loops and retained delayed branches",
+    "Leaf function calling conventions"
+  ],
+  "learningObjectives": [
+    "Derive separate rectangular source and destination strides",
+    "Implement empty and clipped tile bounds",
+    "Preserve full pointer width while using bounded indices",
+    "Distinguish data correctness from traversal order",
+    "Compare cold cache placement and simulated instruction counts without inferring elapsed time"
+  ],
+  "inputDomain": {
+    "type": "word-matrix-transpose",
+    "minimumDimension": 0,
+    "maximumDimension": 16,
+    "allocationWords": 256,
+    "tileSide": 4,
+    "elementBytes": 4,
+    "wordValues": "arbitrary 32-bit patterns",
+    "activeWindows": "nonoverlapping, word aligned, wholly inside named allocations"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Text guides, author-verified cumulative programs, and complete-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Predict a rectangular transpose",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which output coordinate receives input coordinate (1, 0)?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "(0, 1)."
+          },
+          {
+            "id": "b",
+            "text": "(1, 0)."
+          },
+          {
+            "id": "c",
+            "text": "(1, 4)."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Exchange the coordinate roles."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The input row becomes the output column."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Inspect allocation and active dimensions",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "How many words may the current transpose write?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All 256 reserved output words."
+          },
+          {
+            "id": "b",
+            "text": "Exactly fifteen active output words."
+          },
+          {
+            "id": "c",
+            "text": "Five guard words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Multiply the dimensions."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Capacity is an upper bound, not the active length."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Stop before and after a call",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "When should a function-only cache measurement stop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the caller stores the returned count."
+          },
+          {
+            "id": "b",
+            "text": "After the exit syscall."
+          },
+          {
+            "id": "c",
+            "text": "Before the continuation executes its result store."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Identify the first instruction after the return."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The source label is a stopped boundary, not an instruction already executed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Return before accessing an empty matrix",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why test the dimensions before the body?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To avoid the first access when the active extent is empty."
+          },
+          {
+            "id": "b",
+            "text": "To force the matrix into the cache."
+          },
+          {
+            "id": "c",
+            "text": "To turn every matrix into a square."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Trace the first load in a post-test loop."
+        },
+        {
+          "id": "s04-h2",
+          "text": "An empty range has no valid first cell."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "naive"
+    },
+    {
+      "id": "s05",
+      "title": "Establish row starts and strides",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which stride advances the destination inside one source row?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four times the input column count."
+          },
+          {
+            "id": "b",
+            "text": "Four times the input row count."
+          },
+          {
+            "id": "c",
+            "text": "One byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Use the width of the output."
+        },
+        {
+          "id": "s05-h2",
+          "text": "The output has three words per row in this fixture."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "naive"
+    },
+    {
+      "id": "s06",
+      "title": "Copy one cell to its transposed address",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What must survive the load and store unchanged?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source word\u2019s 32-bit pattern."
+          },
+          {
+            "id": "b",
+            "text": "Only its sign bit."
+          },
+          {
+            "id": "c",
+            "text": "Its original memory address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Separate data from its address."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The low word written by sw is the word read by lw."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "naive"
+    },
+    {
+      "id": "s07",
+      "title": "Finish the columns of one row",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Which destination word receives input word four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Word four."
+          },
+          {
+            "id": "b",
+            "text": "Word one."
+          },
+          {
+            "id": "c",
+            "text": "Word twelve."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Use jR+i."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The stored value four starts at output byte offset forty-eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "naive"
+    },
+    {
+      "id": "s08",
+      "title": "Advance to the next source row",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why does the destination row-start pointer advance by four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The next input row supplies the next column in each output row."
+          },
+          {
+            "id": "b",
+            "text": "The cache has four words per line."
+          },
+          {
+            "id": "c",
+            "text": "Every matrix is four columns wide."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Track input row i changing to i+1."
+        },
+        {
+          "id": "s08-h2",
+          "text": "In jR+i, that change adds one word."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "naive"
+    },
+    {
+      "id": "s09",
+      "title": "Expose a wrong output stride",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why are square-only tests weak here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They never contain negative data."
+          },
+          {
+            "id": "b",
+            "text": "They hide a swapped row-count and column-count stride."
+          },
+          {
+            "id": "c",
+            "text": "They disable word stores."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Compare the two address formulas."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Choose R different from C to distinguish them."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Move signed values without changing their bits",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why is a byte-store implementation insufficient?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It copies only part of each required word."
+          },
+          {
+            "id": "b",
+            "text": "It always reverses the bytes."
+          },
+          {
+            "id": "c",
+            "text": "It changes the matrix dimensions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Use a value with nonzero bits above bit seven."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Inspect all four output bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Check the function independently of main",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Can a function use the global input label instead of its source argument?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because the starter uses that label."
+          },
+          {
+            "id": "b",
+            "text": "Only if all data values are positive."
+          },
+          {
+            "id": "c",
+            "text": "No; the caller can pass an interior active window."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Treat arguments as the function\u2019s input."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The label names an allocation; the pointer can name a later word."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Establish a cold observation boundary",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Does reading a word in the debugger count as a simulated data-cache access?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the model filters out external inspection."
+          },
+          {
+            "id": "b",
+            "text": "Yes, as an execution load."
+          },
+          {
+            "id": "c",
+            "text": "Only when the word is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Distinguish inspection from executing lw."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Keep observation from changing the experiment."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Give the tiled function the same empty-case behavior",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which property changes when switching from ordinary to tiled?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The word values being copied."
+          },
+          {
+            "id": "b",
+            "text": "The order of visiting source coordinates."
+          },
+          {
+            "id": "c",
+            "text": "The required final transpose."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Keep B[j,i]=A[i,j] fixed."
+        },
+        {
+          "id": "s13-h2",
+          "text": "A different order can produce the same required output."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s14",
+      "title": "Clip the tile row end",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "For a tile starting at row twelve in a fifteen-row matrix, what is the exclusive row end?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twelve."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen."
+          },
+          {
+            "id": "c",
+            "text": "Fifteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Use the smaller of the candidate and the dimension."
+        },
+        {
+          "id": "s14-h2",
+          "text": "An exclusive end is one beyond the last valid row."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s15",
+      "title": "Clip the column end and select the first tile row",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "How many cells belong to the next tile at origin (0,4)?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Three."
+          },
+          {
+            "id": "b",
+            "text": "Four."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Clip both dimensions independently."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The last tile is three by one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s16",
+      "title": "Form the first source address in a tile row",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which width belongs in the source row multiplication?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four, because the tile side is four."
+          },
+          {
+            "id": "b",
+            "text": "The matrix column count."
+          },
+          {
+            "id": "c",
+            "text": "The cache line size in bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Tiling changes traversal, not storage."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Use iC+j0 before multiplying by four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s17",
+      "title": "Form the corresponding destination address",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What error follows from resetting the inner column counter to zero for every tile?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the return count changes."
+          },
+          {
+            "id": "b",
+            "text": "The matrix becomes signed."
+          },
+          {
+            "id": "c",
+            "text": "Later tiles can revisit earlier columns."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Distinguish j0 from zero."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Trace the tile whose first column is four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s18",
+      "title": "Reuse the one-cell copy inside a tile",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why can the cell-copy logic be reused?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every cell still obeys the same transpose address mapping."
+          },
+          {
+            "id": "b",
+            "text": "Every tile begins at address zero."
+          },
+          {
+            "id": "c",
+            "text": "All tile rows are packed into four words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Separate mapping from scheduling."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Compare the two source and destination formulas."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s19",
+      "title": "Finish the current clipped tile",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Which bound controls the inner column loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The full allocation capacity."
+          },
+          {
+            "id": "b",
+            "text": "The clipped exclusive tile column end."
+          },
+          {
+            "id": "c",
+            "text": "The return count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Compare j with the stored end t3."
+        },
+        {
+          "id": "s19-h2",
+          "text": "A tile must finish before the next tile begins."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s20",
+      "title": "Advance tile origins in steps of four",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Why must the tile column origin reset when the tile row changes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To clear the output cache."
+          },
+          {
+            "id": "b",
+            "text": "To increase the return count."
+          },
+          {
+            "id": "c",
+            "text": "To cover the leftmost tile in the next group of rows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Trace a matrix taller than four."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Each tile row needs all of its tile columns."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      },
+      "editTarget": "tiled"
+    },
+    {
+      "id": "s21",
+      "title": "Trace a clipped edge without reading padding",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Does a mapped padding word make an extra tile load valid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it lies outside the active matrix."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if the result is discarded."
+          },
+          {
+            "id": "c",
+            "text": "Yes, if the load hits in the cache."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Memory mapping and object bounds are separate."
+        },
+        {
+          "id": "s21-h2",
+          "text": "A harmless value does not justify an extra read."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Compare both outputs and both access orders",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Why is final output equality insufficient for this exercise?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It cannot establish that a tiled traversal occurred."
+          },
+          {
+            "id": "b",
+            "text": "It cannot compare negative words."
+          },
+          {
+            "id": "c",
+            "text": "It always requires identical registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Separate the algorithmic objective from the result."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Observe which source cell is read fifth."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Keep cache capacity constant when changing placement",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "How many sets does an eight-line two-way cache have?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two."
+          },
+          {
+            "id": "b",
+            "text": "Four."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Divide total lines by ways."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Capacity stays fixed in this comparison."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Measure the larger square at the return boundary",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which conclusion follows directly from these counters?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Tiled execution is exactly sixty percent faster."
+          },
+          {
+            "id": "b",
+            "text": "Tiled uses fewer instructions."
+          },
+          {
+            "id": "c",
+            "text": "Tiled has fewer modeled misses but more completed instructions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Name the quantity each counter measures."
+        },
+        {
+          "id": "s24-h2",
+          "text": "A miss reduction is not an elapsed-time measurement."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Explain the direct-mapped counterexample",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What can prevent a small tile from benefiting a direct-mapped cache?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Different live lines mapping to the same set."
+          },
+          {
+            "id": "b",
+            "text": "The matrix containing negative values."
+          },
+          {
+            "id": "c",
+            "text": "Debugger inspection of the output."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Calculate set numbers from line numbers."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Rows sixty-four bytes apart advance four sixteen-byte lines."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Keep wide pointers and small offsets separate",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which fact justifies a 32-bit index calculation here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All allocation addresses fit in 32 bits."
+          },
+          {
+            "id": "b",
+            "text": "The largest bounded displacement is 1020 bytes."
+          },
+          {
+            "id": "c",
+            "text": "The cache has eight lines."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Bound the offset independently."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Use a full-width addition after forming the offset."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Separate permitted variation from required behavior",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Which alternative satisfies the tiled schedule?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Starting the next tile before finishing the current one."
+          },
+          {
+            "id": "b",
+            "text": "Reading padding and discarding it."
+          },
+          {
+            "id": "c",
+            "text": "Visiting tile columns before tile rows while completing each tile."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Review the observable requirement."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Changing tile order does not change a cell\u2019s destination."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Plan a measured variation",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "What should accompany a lower cache-miss count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Evidence that the changed program still meets its stated output and traversal contract."
+          },
+          {
+            "id": "b",
+            "text": "An assumption that all architectures run it faster."
+          },
+          {
+            "id": "c",
+            "text": "Removal of the edge cases."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Verify the result after each change."
+        },
+        {
+          "id": "s28-h2",
+          "text": "A program that omits work can have misleadingly low counters."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Cumulative drafts are verified during authoring; complete-program CLI checks are executable. Interactive step recognition and IDE captures remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

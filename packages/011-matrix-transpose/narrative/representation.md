@@ -1,0 +1,57 @@
+# Keep the values and change their coordinates
+
+A matrix transpose exchanges the roles of the row and column coordinates. If the input has $`R`$ rows and $`C`$ columns, its transpose has $`C`$ rows and $`R`$ columns. The value at input row $`i`$, column $`j`$ becomes the value at output row $`j`$, column $`i`$:
+``` math
+B_{j,i}=A_{i,j},\qquad 0\leq i<R,\quad 0\leq j<C.
+```
+The values themselves do not change. A negative integer, a bit mask, and a pixel word all retain the same 32 bits. This program copies words without performing arithmetic on their contents.
+
+Use separate input and output allocations. An in-place transpose has additional problems: a store can overwrite an input that has not yet been read, and a rectangular matrix requires a different permutation from the familiar exchange across a square matrix’s diagonal. Separate buffers let us study the addresses and traversal order before taking on those problems.
+
+<div class="MARSWorkedExample">
+
+Three rows become five rows Number the input words from zero to fourteen so that the stored value identifies its original position. The input rows are
+``` math
+A=\begin{pmatrix}
+ 0&1&2&3&4\\
+ 5&6&7&8&9\\
+ 10&11&12&13&14
+ \end{pmatrix},\qquad
+ B=\begin{pmatrix}
+ 0&5&10\\
+ 1&6&11\\
+ 2&7&12\\
+ 3&8&13\\
+ 4&9&14
+ \end{pmatrix}.
+```
+The first output row is the first input column. The output has fifteen words, just as the input does, but each output row contains three words. Read the flattened output as $`0,5,10,1,6,11,2,7,12,3,8,13,4,9,14`$. A rotation would also reverse one coordinate. A transpose does not do that.
+
+</div>
+
+# Derive both byte addresses
+
+Both arrays use row-major storage: finish one row before storing the next row. For input coordinate $`(i,j)`$, the $`i`$ complete rows before that coordinate contain $`iC`$ words. Add the $`j`$ preceding words in its own row. The input word index is therefore $`iC+j`$. Four bytes per word give the source address
+``` math
+\operatorname{src}(i,j)=\operatorname{input}+4(iC+j).
+```
+The output coordinate is $`(j,i)`$, and the output row width is $`R`$. Its address is
+``` math
+\operatorname{dst}(i,j)=\operatorname{output}+4(jR+i).
+```
+Use the input width for the source and the output width for the destination. A square example hides the mistake of using $`C`$ in both expressions, because then $`R=C`$. The three-by-five example exposes it.
+
+| Input row $`i`$ | Input column $`j`$ | Input index | Output index | Output byte offset |
+|---:|---:|---:|---:|---:|
+| 0 | 0 | 0 | 0 | 0 |
+| 0 | 1 | 1 | 3 | 12 |
+| 0 | 4 | 4 | 12 | 48 |
+| 1 | 0 | 5 | 1 | 4 |
+| 1 | 2 | 7 | 7 | 28 |
+| 2 | 4 | 14 | 14 | 56 |
+
+The middle entry $`(1,2)`$ happens to have the same linear index on both sides. That coincidence does not make the rest of the transformation a sequential copy. Check several off-diagonal entries when tracing the program.
+
+The exercise bounds each dimension between zero and sixteen. The largest active array has 256 words, and its last word starts at byte offset 1020. These small indices fit comfortably in 32-bit integer arithmetic. The buffer’s address may still be wider than 32 bits. Form the small displacement first, then add it to the full pointer with a 64-bit address operation such as `daddu`. A small object does not imply a small address.
+
+An empty dimension makes the product $`RC`$ zero. Return a count of zero before executing a matrix load or store. A loop that tests its bound only after its first iteration will incorrectly access memory for this case. An empty three-by-zero matrix also has a valid zero-by-three transpose; it needs no special data representation beyond the dimensions and the empty active range.
