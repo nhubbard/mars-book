@@ -1,0 +1,52 @@
+\section{Step 4 Inspect the balanced stack frame}\label{blit-s04}
+
+Keep the provided save and restore sections. The function uses eight saved registers internally but must return all eight full caller values. The two result registers are cleared at entry so every empty-intersection exit already has the correct result.
+
+\subsection{Provided entry}
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+blit_sprite:
+    daddiu $sp, $sp, -64
+    sd $s0, 0($sp)
+    sd $s1, 8($sp)
+    sd $s2, 16($sp)
+    sd $s3, 24($sp)
+    sd $s4, 32($sp)
+    sd $s5, 40($sp)
+    sd $s6, 48($sp)
+    sd $s7, 56($sp)
+    move $v0, $zero
+    move $v1, $zero
+\end{minted}
+
+\subsection{Provided return}
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+blit_restore:
+    ld $s0, 0($sp)
+    ld $s1, 8($sp)
+    ld $s2, 16($sp)
+    ld $s3, 24($sp)
+    ld $s4, 32($sp)
+    ld $s5, 40($sp)
+    ld $s6, 48($sp)
+    ld $s7, 56($sp)
+    daddiu $sp, $sp, 64
+    jr $ra
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+A return through blit\_restore recovers all saved values and the incoming stack pointer.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why are the saved values stored with \texttt{sd}?
+
+\begin{itemize}
+\item \textbf{A} Pixel colors have sixty-four bits.
+\item \textbf{B} Caller register values may contain meaningful high bits.
+\item \textbf{C} The descriptor dimensions have eight bytes.
+\end{itemize}

@@ -47,9 +47,9 @@ instruction semantics and the explanatory text together before committing each i
 
 The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter,
 MarsBot-square, Bresenham-line, Life, sorting-visualizer, maze-explorer, matrix-transpose,
-fixed-point ball, binary packet parser, ring-buffer logger, and UTF-8 scanner chapters are composed text drafts with verified companion programs.
+fixed-point ball, binary packet parser, ring-buffer logger, UTF-8 scanner, and clipped sprite blitter chapters are composed text drafts with verified companion programs.
 They still need author review and actual IDE figures. The remaining projects stay
-planned until their text and companions are written and checked. Clipped sprite blitter is next in the roadmap.
+planned until their text and companions are written and checked. Expression evaluator is next in the roadmap.
 
 Matrix transpose and fixed-point ball are composed through ordinary includes in the
 main manuscript. Their independent entries, `drafts/matrix-transpose.tex` and
@@ -63,7 +63,7 @@ Binary packet parser is composed in native includes and has an independent entry
 explicit error priority, byte order and checksum reasoning, a native input-window
 diagram, and measured instruction/read comparisons. Its grader adds native read-width
 observations to detect logical overreads into mapped padding. Three actual IDE figures
-remain planned. The full roadmap remains the goal; fifteen text drafts do not complete it.
+remain planned. The full roadmap remains the goal; sixteen text drafts do not complete it.
 
 Ring-buffer logger has a complete native text draft and an independent entry,
 `drafts/ring-buffer-logger.tex`. Thirty steps and eighteen cumulative code increments
@@ -80,3 +80,10 @@ start/detection positions, and terminal-state preservation. The programs are che
 against all scalar encodings and all two-byte inputs, with additional transition,
 split, wide-address, and equivalent implementation tests. Four actual IDE figures
 remain planned. The complete 35-project composition and capture goal remains active.
+
+Clipped sprite blitter has a full native draft at `drafts/clipped-sprite-blitter.tex`.
+Twenty-five steps and sixteen cumulative increments develop half-open intersection,
+signed coordinate width, independent row strides, full-word key equality, no-store
+transparency and full caller preservation. Native clipping/stride/count fixtures,
+measured preclipped/per-cell work, public checks and private geometry checks accompany
+separate student/instructor archives. Four actual light-theme captures remain planned.

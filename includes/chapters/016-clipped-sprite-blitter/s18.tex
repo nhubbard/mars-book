@@ -1,0 +1,30 @@
+\section{Step 18 Copy an opaque cell and count visibility}\label{blit-s18}
+
+Load one source word and increment the visible count. Compare it with the complete key. A matching key branches over both the store and the opaque count. Otherwise store the word unchanged and increment \texttt{v0}, even if its value already existed at the destination.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{pixel} region. Keep the scaffold labels and return section.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lw $t3, 0($t1)
+    addiu $v1, $v1, 1
+    beq $t3, $s4, blit_skip
+    nop
+    sw $t3, 0($t0)
+    addiu $v0, $v0, 1
+\end{minted}
+
+\subsection{Expected observation}
+The first default cell is transparent: \texttt{v1} becomes one, \texttt{v0} stays zero, and there is no destination store.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What happens for an opaque value already present at the destination?
+
+\begin{itemize}
+\item \textbf{A} It still contributes one to \texttt{v0}.
+\item \textbf{B} It becomes transparent.
+\item \textbf{C} It contributes only if a store changes bits.
+\end{itemize}

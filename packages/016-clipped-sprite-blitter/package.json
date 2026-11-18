@@ -1,0 +1,1120 @@
+{
+  "formatVersion": 1,
+  "id": "016-clipped-sprite-blitter",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Clip and copy a transparent sprite",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "traceExecution",
+      "readDataAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Strided word arrays and full-width addresses",
+    "Signed comparisons and half-open intervals",
+    "Saved-register calling conventions"
+  ],
+  "learningObjectives": [
+    "Clip all four rectangle edges before addressing",
+    "Separate logical width from row stride",
+    "Compare a complete transparency word",
+    "Preserve full caller registers",
+    "Check write history as well as final pixels",
+    "Measure native work while retaining the full behavior contract"
+  ],
+  "inputDomain": {
+    "type": "clipped-sprite",
+    "maximumWidth": 8,
+    "maximumHeight": 8,
+    "maximumStrideWords": 16,
+    "allocationWords": 128,
+    "coordinateBits": 32
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native chapter, incremental edits and callable CLI checks; trainer and capture runner pending"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the two results",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does v1 include?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only changed words."
+          },
+          {
+            "id": "b",
+            "text": "All visible source pixels, including transparent pixels."
+          },
+          {
+            "id": "c",
+            "text": "All twenty source pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "The default sprite is placed at x minus two, y one."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Expect twelve visible cells and eight opaque cells selected for copy."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Inspect the descriptors",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Where is the sprite height?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Byte twelve."
+          },
+          {
+            "id": "b",
+            "text": "Byte sixteen."
+          },
+          {
+            "id": "c",
+            "text": "Byte twenty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Read the descriptor fields by byte offset, not by counting source directives."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The source stride field is at byte sixteen, and its key is at byte twenty."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Trace a padded row",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What advances the destination row start?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The copy width times four."
+          },
+          {
+            "id": "b",
+            "text": "The source stride."
+          },
+          {
+            "id": "c",
+            "text": "The destination stride times four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "For the default framebuffer, row one begins sixteen words after row zero."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The first destination pointer is frame_a plus sixty-four bytes; the source pointer is sprite_a plus eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Inspect the balanced stack frame",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why are the saved values stored with sd?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Pixel colors have sixty-four bits."
+          },
+          {
+            "id": "b",
+            "text": "Caller register values may contain meaningful high bits."
+          },
+          {
+            "id": "c",
+            "text": "The descriptor dimensions have eight bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Keep the provided save and restore sections."
+        },
+        {
+          "id": "s04-h2",
+          "text": "A return through blit_restore recovers all saved values and the incoming stack pointer."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Load four logical dimensions",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which quantity is absent from these four loads?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Stride."
+          },
+          {
+            "id": "b",
+            "text": "Source width."
+          },
+          {
+            "id": "c",
+            "text": "Destination height."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Load destination width and height from a0, then source width and height from a1."
+        },
+        {
+          "id": "s05-h2",
+          "text": "For the default descriptors, t0 through t3 hold eight, six, five, and four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "dimensions"
+    },
+    {
+      "id": "s06",
+      "title": "Clamp the left edge",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "May a positive left edge already be outside the framebuffer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Only when the source is transparent."
+          },
+          {
+            "id": "c",
+            "text": "Yes; the later extent test detects that case."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Start the left edge at x."
+        },
+        {
+          "id": "s06-h2",
+          "text": "With x minus two, s5 becomes zero. With x eight, it remains eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "left"
+    },
+    {
+      "id": "s07",
+      "title": "Clamp the top edge",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What does the top clamp compute?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The lesser of y and zero."
+          },
+          {
+            "id": "b",
+            "text": "The greater of y and zero."
+          },
+          {
+            "id": "c",
+            "text": "The source height."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Apply the same maximum-with-zero operation to y."
+        },
+        {
+          "id": "s07-h2",
+          "text": "With y one, s6 remains one; with y minus two, it becomes zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "top"
+    },
+    {
+      "id": "s08",
+      "title": "Clamp the right edge",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why use full-width addition for this edge?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The valid signed coordinate can be near the word limit."
+          },
+          {
+            "id": "b",
+            "text": "Every pixel has eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "The stride is signed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Form x plus source width with daddu, then compare the resulting signed edge with destination width."
+        },
+        {
+          "id": "s08-h2",
+          "text": "For x minus two and source width five, s7 becomes three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "right"
+    },
+    {
+      "id": "s09",
+      "title": "Clamp the bottom edge",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which comparison is appropriate for possibly negative edges?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Unsigned."
+          },
+          {
+            "id": "b",
+            "text": "An RGB comparison."
+          },
+          {
+            "id": "c",
+            "text": "Signed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Form y plus source height in full width."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The default bottom edge is five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "bottom"
+    },
+    {
+      "id": "s10",
+      "title": "Reject empty intersections before addressing",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "May a negative extent be used as a loop count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, after masking."
+          },
+          {
+            "id": "b",
+            "text": "No; it indicates an empty intersection."
+          },
+          {
+            "id": "c",
+            "text": "Only for a negative x."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Subtract left from right and top from bottom with dsubu."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The default t8 and t9 are three and four. At x eight, width is zero and there are no pixel accesses."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "extent"
+    },
+    {
+      "id": "s11",
+      "title": "Recover the clipped source origin",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Where does the source begin after clipping x minus two to destination column zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Source column zero."
+          },
+          {
+            "id": "b",
+            "text": "Source column minus two."
+          },
+          {
+            "id": "c",
+            "text": "Source column two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Subtract the original placement from the destination intersection origin."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The default source origin is column two, row zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "source_origin"
+    },
+    {
+      "id": "s12",
+      "title": "Load both full pixel addresses",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What does ld from offset zero of a0 load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The framebuffer pixel pointer."
+          },
+          {
+            "id": "b",
+            "text": "The first pixel color."
+          },
+          {
+            "id": "c",
+            "text": "The descriptor width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Load the eight-byte base fields with ld."
+        },
+        {
+          "id": "s12-h2",
+          "text": "s0 and s1 hold the selected destination and source pixel addresses."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "bases"
+    },
+    {
+      "id": "s13",
+      "title": "Convert each stride to bytes",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Does left clipping reduce a row stride?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "No."
+          },
+          {
+            "id": "c",
+            "text": "Only for the source."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Load each word stride and shift it left by two."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The default byte strides in s2 and s3 are sixty-four and twenty-eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "strides"
+    },
+    {
+      "id": "s14",
+      "title": "Locate the first destination pixel",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Which part needs full-width addition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the column counter."
+          },
+          {
+            "id": "b",
+            "text": "The RGB mask."
+          },
+          {
+            "id": "c",
+            "text": "Adding the bounded offset to the pixel base address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Multiply top by destination byte stride and add four times left."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The default destination address is frame_a plus sixty-four bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "destination_address"
+    },
+    {
+      "id": "s15",
+      "title": "Locate the first source pixel",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which stride belongs in the source row product?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source descriptor stride."
+          },
+          {
+            "id": "b",
+            "text": "The framebuffer stride."
+          },
+          {
+            "id": "c",
+            "text": "The copy width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Use the clipped source row and column with the source byte stride."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The default source pointer advances eight bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "source_address"
+    },
+    {
+      "id": "s16",
+      "title": "Retain the key and loop extents",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "When may s5 stop holding the left edge?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before computing the destination origin."
+          },
+          {
+            "id": "b",
+            "text": "After all origin calculations using it are complete."
+          },
+          {
+            "id": "c",
+            "text": "Only after return."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Load the complete key word."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The default live values are key 00ff00ff, width three, height four, and row count zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "key_extent"
+    },
+    {
+      "id": "s17",
+      "title": "Start one row with fresh cursors",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Why retain separate row starts?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To skip the source key."
+          },
+          {
+            "id": "b",
+            "text": "To turn stride into width."
+          },
+          {
+            "id": "c",
+            "text": "To advance the next row by its stride independently of inner-loop cursor movement."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Copy the current row starts into t0 and t1 and the copy width into t2."
+        },
+        {
+          "id": "s17-h2",
+          "text": "For the first default row, t2 is three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "row"
+    },
+    {
+      "id": "s18",
+      "title": "Copy an opaque cell and count visibility",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "What happens for an opaque value already present at the destination?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It still contributes one to v0."
+          },
+          {
+            "id": "b",
+            "text": "It becomes transparent."
+          },
+          {
+            "id": "c",
+            "text": "It contributes only if a store changes bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Load one source word and increment the visible count."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The first default cell is transparent: v1 becomes one, v0 stays zero, and there is no destination store."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "pixel"
+    },
+    {
+      "id": "s19",
+      "title": "Advance within the selected row",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Which paths advance the cursors?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only opaque pixels."
+          },
+          {
+            "id": "b",
+            "text": "Both transparent and opaque pixels."
+          },
+          {
+            "id": "c",
+            "text": "Only the final pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Advance each cursor by four bytes, decrement the remaining cell count, and repeat while that count is nonzero."
+        },
+        {
+          "id": "s19-h2",
+          "text": "After the first default row, v0 is one and v1 is three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "advance"
+    },
+    {
+      "id": "s20",
+      "title": "Advance each row start by its own stride",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Should next-row code add a stride to an already advanced end-of-row cursor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always."
+          },
+          {
+            "id": "b",
+            "text": "Only when the image is square."
+          },
+          {
+            "id": "c",
+            "text": "Only after accounting for the cursor displacement; the shown loop uses retained row starts instead."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Add the destination byte stride to the destination row start and the source byte stride to the source row start."
+        },
+        {
+          "id": "s20-h2",
+          "text": "After four default rows, the results are eight and twelve."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      },
+      "editTarget": "next_row"
+    },
+    {
+      "id": "s21",
+      "title": "Inspect the default clipped image",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which observation distinguishes the two breakpoints?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether the caller has stored the returned counts."
+          },
+          {
+            "id": "b",
+            "text": "Whether the sprite is clipped."
+          },
+          {
+            "id": "c",
+            "text": "Whether the key is magenta."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Run to blit_ready and compare the logical image with the worked fixture."
+        },
+        {
+          "id": "s21-h2",
+          "text": "At blit_ready v0 is eight and v1 twelve; after continuation the memory counters match."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Change the key without changing RGB policy",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Are 00ff00ff and 01ff00ff equal transparency words?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because they display alike."
+          },
+          {
+            "id": "b",
+            "text": "No."
+          },
+          {
+            "id": "c",
+            "text": "Only on the first row."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Test key zero, a key with bit 31 set, and words differing only in their high byte."
+        },
+        {
+          "id": "s22-h2",
+          "text": "With default key 00ff00ff, black and 01ff00ff are opaque."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Test every edge and extreme coordinates",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What does exact contact at x equal to destination width produce?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One visible column."
+          },
+          {
+            "id": "b",
+            "text": "An error by contract."
+          },
+          {
+            "id": "c",
+            "text": "An empty horizontal intersection."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Try top-right and bottom-left clips, exact contact with each boundary, a completely invisible sprite, and zero dimensions."
+        },
+        {
+          "id": "s23-h2",
+          "text": "At x six and y minus two, the default image selects four visible cells and copies two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Check memory history as well as the picture",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Can a store followed by restoration satisfy the transparent-cell rule?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if the screenshot matches."
+          },
+          {
+            "id": "c",
+            "text": "Yes, if v0 is correct."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Run the public kernel and caller checks."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Both the complete frame and the source stay within their allowed changes; transparent destination stores fail even if restored."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Measure clipping work on several scenes",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What establishes an equivalent optimization?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Matching scratch registers."
+          },
+          {
+            "id": "b",
+            "text": "The complete behavior contract, followed by comparable measurements."
+          },
+          {
+            "id": "c",
+            "text": "A smaller source listing alone."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Compare a per-source-cell bounds-checking implementation with a preclipped loop after both pass the behavioral suite."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Different traversal strategies are allowed; the performance comparison is evidence for the tested scenes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior; native partial checks are author verification, and interactive recognition and automated IDE capture remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json"
+  ]
+}

@@ -1,0 +1,25 @@
+\section{Locate rows in memory}\label{blit-x-layout}
+\begin{table}[htbp]
+\centering
+\caption{Default row geometry. All byte offsets are relative to the selected allocation base.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrr}
+\toprule
+Object & Width & Word stride & Row-one byte offset\\
+\midrule
+Framebuffer & 8 & 16 & 64\\
+Sprite & 5 & 7 & 28\\
+\bottomrule
+\end{tabular}
+\end{table}
+A copy width of three does not make either row stride twelve bytes. After the
+inner loop consumes its three source cells, the next source row still begins
+28 bytes after the previous row start. Likewise, the next destination row
+begins 64 bytes after its previous row start. The guided implementation retains
+these starts instead of reconstructing them from the advanced cursors.
+
+For a base subview beginning at word offset three, add twelve bytes to the
+allocation base before applying row and column offsets. The descriptor already
+contains this adjusted address. Adding that displacement again in the function
+would select the wrong cells. The public checks choose such subviews independently
+for source and destination.

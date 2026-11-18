@@ -1,0 +1,29 @@
+\section{Step 8 Clamp the right edge}\label{blit-s08}
+
+Form x plus source width with \texttt{daddu}, then compare the resulting signed edge with destination width. Retain the smaller edge. Although widths fit in a word, the coordinate sum need not; a trapping word addition here can raise an exception for a valid off-screen call. Full-width addition also keeps the computed edge equal to the stated geometric formula.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{right} region. Keep the scaffold labels and return section.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddu $s7, $a2, $t2
+    slt $t4, $t0, $s7
+    beq $t4, $zero, clip_right_ready
+    nop
+    move $s7, $t0
+\end{minted}
+
+\subsection{Expected observation}
+For x minus two and source width five, \texttt{s7} becomes three.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why use full-width addition for this edge?
+
+\begin{itemize}
+\item \textbf{A} The valid signed coordinate can be near the word limit.
+\item \textbf{B} Every pixel has eight bytes.
+\item \textbf{C} The stride is signed.
+\end{itemize}

@@ -86,3 +86,31 @@ IDE import feature. The final instructor report and archives pin the committed s
 
 These checks do not replace the remaining full-book accessibility and author review,
 and they do not claim that pending IDE screenshots have been captured.
+
+## Clipped sprite blitter snapshot
+
+The sixteenth text chapter has 25 microsteps, sixteen authored assembly increments,
+two provided stack listings, a native clipping diagram, headed geometry/count/work
+tables, and an independent 29-page entry at `drafts/clipped-sprite-blitter.tex`.
+The complete native manuscript is now 485 pages. Its include graph contains 786 files
+and 240 highlighted assembly blocks; the exporter receipt contains 235 distinct
+sources. All 217 previous distinct exports remain byte-for-byte unchanged.
+
+The compiled manuscript has 310 table header cells, twenty figures with alternative
+text, 543 mathematical structures, and 249 code/output structures. The standalone
+chapter has sixteen header cells, one figure with alternative text, seventeen math
+structures and eighteen code structures. Minion Pro, Noto Sans Math and JetBrains Mono
+are embedded; literal assembly extraction succeeds. No missing glyphs, font substitution,
+content overflow, duplicate labels or unresolved minted placeholders were reported.
+Selected chapter pages were rendered and reviewed, including the corrected cell grid,
+stack return, copy loop and measured-work table. Build-local inspection files retain
+PDF digests and structure/font details.
+
+Thirteen composition/package tests, seven renderer tests and three IntelliJ exporter
+tests pass. The full-corpus editor export uses the platform's supported bounded timeout;
+individual small tests retain the default. CLI verification records 52 grading runs and
+31,275 positive case executions, including repeated variants and observations. Sixteen
+faulty programs and the incomplete starter are rejected. Four capture model states
+have verified expected pixels and counters; they are not IDE screenshots. Human review,
+full reading-order and screen-reader work, independent accessibility validation and
+actual light-theme IDE captures remain pending. These checks do not certify PDF/UA.

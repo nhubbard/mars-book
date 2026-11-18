@@ -1,0 +1,24 @@
+\section{Trace a negative placement}\label{blit-x-clip}
+For destination size eight by six, source size five by four, and placement
+minus two, one, the horizontal intersection is $[0,3)$ and the vertical
+intersection is $[1,5)$. Thus $W=3$, $H=4$, and $WH=12$. The selected source
+origin is $(0-(-2),1-1)=(2,0)$.
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={An eight-column six-row framebuffer has a sprite placed two columns to its left and one row down. The sprite covers source columns zero through four and rows zero through three. The intersection covers destination columns zero through two and rows one through four, corresponding to source columns two through four and rows zero through three.},x=8mm,y=-8mm]
+\foreach \r in {0,...,6} {\draw[gray] (0,\r)--(8,\r);}
+\foreach \c in {0,...,8} {\draw[gray] (\c,0)--(\c,6);}
+\draw[very thick] (0,0) rectangle (8,6);
+\draw[dashed,thick] (-2,1) rectangle (3,5);
+\draw[very thick] (0,1) rectangle (3,5);
+\foreach \v in {0,1,2,3,4,5,6,7} {\node[above,font=\scriptsize] at (\v+0.5,0) {\v};}
+\foreach \v in {0,1,2,3,4,5} {\node[right,font=\scriptsize] at (8,\v+0.5) {\v};}
+\node[align=center,font=\small] at (-1,3) {Clipped\\columns};
+\node[below,align=center,font=\small] at (4,6.2) {Heavy inner outline: twelve visible cells};
+\end{tikzpicture}
+\caption{Half-open edge arithmetic selects cells before pixel addresses are formed. The diagram describes logical coordinates.}
+\end{figure}
+The first selected source word is a key, followed by green and a key. The next
+selected source row contains yellow, the opaque high-byte magenta word, and red.
+The third contains cyan, a key, and green; the fourth contains blue, yellow, and
+a key. The per-row opaque counts are one, three, two, and two, totaling eight.

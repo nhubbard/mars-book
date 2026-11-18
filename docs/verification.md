@@ -479,3 +479,28 @@ IDE screenshot pixels have been captured. Native fonts, mathematical structure,
 headed tables, diagram alternative text, assembly extraction, and actual color spans
 are checked separately. Final author review, full reading-order/screen-reader work,
 and independent accessibility validation remain outstanding.
+
+## Clipped sprite blitter
+
+Package 016 has 25 steps, sixteen authored increments and two provided balanced-stack
+listings. Both preclipped and per-source-cell implementations pass 581 public kernel
+cases, ten caller cases and 7220 private geometry cases each, plus wide-address kernel
+and caller checks. The private suite covers every 0..8 width/height tuple for both
+objects with varied placements, the -9..9 placement square for packed 8x8 images, every
+legal width/stride pair in each role, and matching destination values. It does not
+exhaust every coordinate, stride, color and key combination.
+
+Each partial listing passes its own intermediate observation and restores full caller
+state. The completed assembly is byte-identical to the reference. Same-value store
+elision and bounded wrapping-edge equivalence are accepted; sixteen faulty assembled
+variants and the unfinished starter are rejected. Writes into transparent pixels,
+padding, source and guards are checked through native access history, even if restored.
+Reads are validated byte by byte within selected descriptor fields and logical cells.
+Equivalent load widths and traversal orders remain permitted; private stack is legal.
+
+Five complete-function measurements use identical inputs: preclipped instruction
+counts 227/308/126/170/44 versus 446/604/332/434/306 per-cell. Source/store notices agree
+at 12/8, 20/13, 4/2, 8/6, 0/0. Setup, assembly, session creation, display and exit are
+excluded; these are native work counts without elapsed-time claims. Exact counts are
+not a free-writing grading requirement. Four capture models verify full frame cells,
+return counters and physical RGB view expectations; actual IDE captures are pending.
