@@ -1,0 +1,28 @@
+\section{Step 20 Combine the shifted state and table feedback}\label{crc-s20}
+
+Shift the old raw state down by eight and XOR in the loaded feedback value. The table has already accounted for the low-byte transition, so the remaining contribution is the old upper 24 bits in their new positions. This completes one byte without changing the pointer yet.
+
+\Needspace{9\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{t\_fold}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsrl $v0, $v0, 8
+    xor $v0, $v0, $t1
+\end{minted}
+
+Use \texttt{s20-1}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+The first default byte reaches the same raw state \texttt{7c231048} as eight bit transitions.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What has the lookup replaced?
+
+\begin{itemize}
+\item \textbf{A} The entire file reader.
+\item \textbf{B} Initialization and finalization.
+\item \textbf{C} Eight reflected state steps for one byte.
+\end{itemize}

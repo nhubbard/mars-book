@@ -182,7 +182,7 @@ additional private domains. The chapter has joined main.tex as the twenty-third 
 package. Actual IDE captures, enforced progression, author review and independent
 accessibility validation remain unfinished. The full objective remains active.
 
-CRC-32 file checking has a directly edited native foundation at `drafts/crc32.tex`.
+CRC-32 file checking has a directly edited native draft at `drafts/crc32.tex`.
 It develops one message state through a bit update, a table update and a streaming file
 reader, with exact width/ABI/ownership contracts. Worked byte transitions, raw/finalized
 prefix states, a described native PNG chunk diagram and complete-call instruction
@@ -191,8 +191,12 @@ open/read/close only for explicitly supplied read-only memory files, records des
 history and supports forced short reads and injected errors. The existing simulator
 syscall path remains authoritative. The tested prototype pair accepts different
 feedback/load strategies and rejects arithmetic, boundary, resource and return faults.
-Cumulative microsteps, quizzes, distributions and actual IDE captures remain unfinished.
-This foundation does not increase the main manuscript's twenty-three text packages.
+The cumulative expansion contains 34 steps and 24 edits, with seven supplied excerpts,
+34 quizzes, 68 hints and 52 recipes. It retains cleanup for incomplete file code and
+checks the actual caller as well as isolated offset functions. Thirty-one native
+assembly listings use exported IntelliJ colors. Four capture slots remain plans.
+Distributions, public check exports and actual IDE captures are unfinished. This draft
+does not increase the main manuscript's twenty-three text packages.
 
 ## Author feedback and deferred revision
 

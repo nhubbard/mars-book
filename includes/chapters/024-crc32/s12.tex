@@ -1,0 +1,31 @@
+\section{Step 12 Use the reflected transition for table construction}\label{crc-s12}
+
+Apply the same bit transition to the entry remainder in \texttt{t0}. This is the operation being precomputed, so its polynomial and shift direction must agree with the byte kernel. A separately specified table oracle will check the initializer rather than trusting agreement between two student routines.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{i\_step}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    andi $t2, $t0, 1
+    dsrl $t0, $t0, 1
+    beq $t2, $zero, init_no_feedback
+    nop
+    xor $t0, $t0, $t3
+\end{minted}
+
+Use \texttt{s12-1}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+Entry zero remains zero after this first transition.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why check table words independently?
+
+\begin{itemize}
+\item \textbf{A} A matching wrong initializer and updater can conceal a shared error.
+\item \textbf{B} Only the first table word matters.
+\item \textbf{C} A table makes the polynomial irrelevant.
+\end{itemize}

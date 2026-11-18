@@ -29,7 +29,29 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(43, len(book.validate('drafts/fixed-point-fir.tex')))
         self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
         self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
-        self.assertEqual(0, len(book.validate('drafts/crc32.tex')))
+        self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
+
+    def test_crc_construction_transcript_and_native_order(self):
+        folder = book.ROOT / 'drafts/crc-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        self.assertEqual(34, len(steps))
+        self.assertEqual(24, sum(step['kind'] == 'author' for step in steps))
+        self.assertEqual(34, len({step['quiz']['id'] for step in steps}))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        order = [path.stem for path, _ in book.sources('drafts/crc32.tex')
+                 if path.parent.name == '024-crc32' and re.fullmatch(r's[0-9]{2}', path.stem)]
+        self.assertEqual([step['id'] for step in steps], order)
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            text = (book.ROOT / 'includes/chapters/024-crc32' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [match[1] for match in book.CODE.finditer(text)])
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(52, len(recipes))
+        self.assertEqual(52, len({recipe['id'] for recipe in recipes}))
+        self.assertEqual({step['id'] for step in steps if step['kind'] == 'author'} |
+                         {'s09', 's16', 's22', 's30', 's31', 's32', 's34'},
+                         {recipe['step'] for recipe in recipes})
 
     def test_crc_worked_values_and_measurement_tables(self):
         native = book.ROOT / 'includes/chapters/024-crc32'

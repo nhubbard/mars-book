@@ -202,10 +202,11 @@ and hints. The chapter is included in main.tex as its twenty-third text package;
 separate student/instructor archives retain exact native snapshots.
 The four capture slots are plans; no screenshot is claimed for them.
 
-Build the independent CRC-32 foundation with
+Build the independent CRC-32 cumulative draft with
 `python3 tools/book.py build --entry drafts/crc32.tex`. It has native state tables,
 a PNG chunk-coverage figure and measured instruction comparisons. The two-row work
 table identifies both header rows for tagging. Its file-grading controls require MARS
 revision d41d95ec or later for explicit read-only fixture files; no IDE capture is
-claimed. The native chapter remains a working draft pending cumulative construction,
+claimed. The native sequence now includes 34 steps, 24 edits and 31 actual
+IntelliJ-highlighted listings. It remains a working draft pending distribution
 packaging, the author's deferred rewrite and independent accessibility validation.

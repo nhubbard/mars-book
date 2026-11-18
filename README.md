@@ -126,7 +126,9 @@ Actual IDE figures remain in progress.
 The next independent draft, [CRC-32 file checking](drafts/crc32.tex), explains raw
 state, reflected bit updates, lookup construction, chunk composition, file cleanup
 and PNG chunk reuse. Its prototype checks use explicit in-memory files, short reads
-and read failures. This foundation has not yet joined the package sequence.
+and read failures. Its cumulative lesson has 34 steps, 24 edits, seven supplied
+excerpts, 34 quizzes, 68 hints and 52 exact recipes. It has not yet joined the
+package sequence; public check exports and actual IDE figures remain pending.
 
 ## Author the book
 

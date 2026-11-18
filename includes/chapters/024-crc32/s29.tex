@@ -1,0 +1,35 @@
+\section{Step 29 Finalize once and preserve the result across close}\label{crc-s29}
+
+At successful EOF, complement the retained raw state, close the descriptor, then place the checksum and success status in their result registers. Keep the checksum in a saved register during close because \texttt{v0} is also the syscall selector. The final branch goes directly to restoration, bypassing temporary cleanup.
+
+\Needspace{16\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{f\_finish}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dli $t0, 0xffffffff
+    xor $s5, $s5, $t0
+    move $a0, $s4
+    li $v0, 16
+    syscall
+    move $v0, $s5
+    move $v1, $zero
+    beq $zero, $zero, file_return
+    nop
+\end{minted}
+
+Use \texttt{s29-1}, \texttt{s29-2}, \texttt{s29-3}. The CLI checks install explicit in-memory files and read/error controls. Ordinary IDE files do not force these short-read or failure conditions.
+
+\subsection{Expected observation}
+The complete check file returns unsigned \texttt{cbf43926}/status zero and no open descriptor; the empty file returns zero/status zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why retain the checksum outside \texttt{v0} while closing?
+
+\begin{itemize}
+\item \textbf{A} The close service needs \texttt{v0} as its selector.
+\item \textbf{B} The polynomial is wider than the register.
+\item \textbf{C} Closing appends a checksum byte.
+\end{itemize}
