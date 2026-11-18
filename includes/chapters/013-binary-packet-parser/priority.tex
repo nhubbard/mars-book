@@ -1,0 +1,30 @@
+\section{Define which error wins}
+Several defects can coexist. A header might have both the wrong magic and an
+unsupported version. A declared length of 65535 might also exceed the available
+input. The interface defines an order so that independently written parsers return
+the same status. Apply the following decisions from top to bottom.
+
+\Needspace{14\baselineskip}
+\begin{longtable}{rlp{91mm}}
+\toprule Status&Name&Condition, after earlier checks pass\\\midrule
+\(-1\)&Need more&Fewer than eight available bytes\\
+\(-2\)&Bad magic&Either identifier byte differs\\
+\(-3\)&Bad version&Version byte is not one\\
+\(-4\)&Bad flags&Any reserved flag bit is set\\
+\(-5\)&Bad length&Declared payload length exceeds 64\\
+\(-1\)&Need more&Fewer than \(9+L\) bytes are available\\
+\(-6\)&Bad checksum&Sum of the first \(9+L\) bytes is nonzero modulo 256\\
+\bottomrule
+\end{longtable}
+For seven available bytes, return \texttt{-1} even if the first byte is wrong.
+The format checks begin only once a full fixed header is available. For eight
+bytes with correct earlier fields and a declared length of 65, return \texttt{-5}.
+The semantic length limit takes priority over missing body bytes. For a valid
+length of three with eleven available bytes, return \texttt{-1}; the twelfth byte
+is still required as the trailer.
+
+This ordering constrains returned behavior, not every internal load. An alternative
+parser can read all eight header bytes after confirming their availability and then
+validate their fields. It can also use a wider aligned load wholly within the
+supplied interval. Grading does not require the demonstration's exact read order or
+number of loads. It does require the specified error and safe complete read widths.

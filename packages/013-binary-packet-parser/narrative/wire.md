@@ -1,0 +1,19 @@
+# Interpret bytes before treating them as fields
+
+A binary parser assigns meaning to a sequence of bytes. Memory does not retain the field boundaries or types that a sender intended. A parser must recover them from an agreed format, check that the bytes are available, and decide whether the values are permitted. This chapter uses a small format invented for the exercise. It is not a specification for an existing network protocol.
+
+An octet is an eight-bit quantity. Every byte in this format is an octet. The first eight bytes form a fixed header; a variable-length payload and a one-byte checksum follow it. Offsets are relative to the input pointer, not to the beginning of the simulator’s data segment.
+
+| Offset | Bytes | Meaning |
+|---:|:---|:---|
+| 0–1 | `4d 50` | Magic identifier, hexadecimal |
+| 2 | `01` | Format version |
+| 3 | One octet | Flags: only bit zero may be set |
+| 4–5 | Two octets | Unsigned payload length, most significant byte first |
+| 6–7 | Two octets | Unsigned sequence number, most significant byte first |
+| 8 onward | $`L`$ octets | Payload, where $`0\leq L\leq64`$ |
+| $`8+L`$ | One octet | Checksum trailer |
+
+The magic identifier distinguishes this format from unrelated data. The version selects its interpretation. The reserved flag bits must be zero; this exercise accepts bit zero as metadata and assigns it no further behavior. The sequence number is reported without imposing ordering or rejecting duplicates. Validating sequence order would require state across calls and a separate interface.
+
+The length field describes only the payload. A packet therefore consumes $`8+L+1=9+L`$ bytes. A zero-length payload still requires its checksum trailer, so eight available header bytes do not make a complete empty packet. A buffer can contain a second packet or unrelated suffix bytes. Parse the first packet and return its own consumed length. The caller can advance its pointer by that length and reduce its available count by the same amount before a later call.

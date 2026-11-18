@@ -1,0 +1,7 @@
+# Project contract
+
+Write a callable parser for the teaching packet format specified below. The caller supplies an input address, a count of available bytes, and a separate output-record address. Return the number of bytes consumed by the first complete valid packet, or a specified negative error. A successful call also returns a pointer to the payload and writes four decoded words. A failed call returns a null payload pointer and makes no writes to the output record, including writes later restored.
+
+The supplied arena contains 256 bytes. The input pointer can select any byte in it, with an available count from zero through the remaining arena capacity. The output pointer selects either supplied 16-byte, word-aligned record. The input and output never overlap. Preserve full saved registers and the stack pointer; return through the caller’s return address and produce no console output. Within the observed input arena and guards, every input read must fit wholly within the caller’s available interval. Extra mapped bytes grant no permission to read them.
+
+Use the supplied main routine to inspect the default example. Free-writing grading calls `parse_packet` independently, so implement its pointer interface rather than relying on main’s labels or scratch-register values. The book develops one leaf implementation. Different register allocations, loops, and safe load widths are accepted when they satisfy the same interface and error priority.

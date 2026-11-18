@@ -1,0 +1,28 @@
+\section{Decode the format's byte order}
+The format puts the most significant byte of each 16-bit field first. If the two
+unsigned bytes are \(h\) and \(l\), the decoded integer is
+\[
+ u=256h+l=(h\ll8)\mathbin{\mathrm{OR}}l.
+\]
+For sequence bytes \texttt{12 34}, this gives hexadecimal \texttt{1234}, or
+\(18\cdot256+52=4660\). For \texttt{80 ff}, it gives 33023. The latter remains
+positive: an unsigned 16-bit field ranges from zero through 65535.
+
+\texttt{lbu} loads one byte and extends it with zeros, yielding zero through 255.
+The shifted high byte occupies bits 8 through 15; the low byte occupies bits zero
+through seven, so OR combines them without overlap. Both values fit a positive
+signed word. Use word arithmetic for these bounded field values and full-width
+arithmetic for addresses.
+
+The default MARS memory configuration is little-endian. A halfword load would
+interpret the low-address byte as the less significant one and would also impose
+alignment requirements. The input pointer can be unaligned. Separate byte loads
+make the specified order explicit and work at every allowed pointer offset. The
+four output words use ordinary native word storage. Their values are decoded
+integers; the output record is not another copy of the wire-format header.
+
+Do not confuse a signed source literal with a signed field interpretation. The
+starter writes payload bytes 128 and 255 as \texttt{.byte -128, -1}, which preserves
+their eight-bit patterns without an out-of-range signed-byte warning. Loading those
+patterns with \texttt{lbu} yields 128 and 255. A debugger's signed decimal view may
+show different numbers for the same stored bits.

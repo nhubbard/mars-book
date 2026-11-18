@@ -1,0 +1,37 @@
+\section{Work a checksum by hand}
+The checksum rule requires the sum of the header, payload, and trailer to be a
+multiple of 256. Given all preceding bytes with sum \(S\), choose trailer
+\[
+ c=(-S)\bmod256,\qquad 0\leq c\leq255.
+\]
+This is an additive checksum, not encryption or authentication. It detects some
+accidental changes. It does not prove that the sender is trustworthy or that each
+field has been decoded correctly.
+
+\begin{MARSWorkedExample}{The default twelve-byte packet}
+Read all numbers in this byte sequence as hexadecimal:
+\begin{quote}\texttt{4d 50 01 01 00 03 12 34 7f 80 ff 1a}\end{quote}
+The first eight bytes sum to 232 in decimal. The three payload bytes sum to
+\(127+128+255=510\), whose residue modulo 256 is 254. Header and payload together
+sum to 742, with residue 230. The trailer \texttt{1a} is 26; the complete sum is
+768, exactly three times 256. The returned consumed length is 12. The output words
+are flags 1, sequence 4660, payload length 3, and payload-sum residue 254.
+\end{MARSWorkedExample}
+The header and payload need separate interpretations. The checksum uses the raw
+byte values. Adding decoded sequence number 4660 in place of its two bytes 18 and
+52 changes the calculation. The record's payload sum excludes both header and
+trailer. A single accumulator for the entire packet does not directly provide that
+separate output field.
+
+At most 73 packet bytes contribute to the full checksum, giving a loose unsigned
+sum bound of \(73\cdot255=18615\). The payload-only sum is at most 16320. Both fit
+comfortably in a signed 32-bit word, so the example can defer masking until the
+end. Applying \texttt{andi} with 255 retains the low eight bits and computes the
+nonnegative residue for these sums.
+
+Signed payload-byte loads provide a useful counterexample to simplistic testing.
+For a high-bit byte, \texttt{lb} differs from \texttt{lbu} by exactly 256. Their sums
+therefore have the same residue modulo 256. A parser using signed payload loads
+and masking the final sums can satisfy this contract. A signed low byte used in
+the sequence-field OR generally does not: its extended high bits corrupt the
+decoded integer. Check field values and checksum values independently.

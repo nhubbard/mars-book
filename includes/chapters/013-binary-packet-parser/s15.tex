@@ -1,0 +1,30 @@
+\section{Step 15 Validate the checksum trailer}\label{packet-s15}
+
+Read one trailer byte at the current cursor. Add it to the full sum, then keep the low eight bits. Select bad checksum and return if the residue is nonzero. The complete-packet bound established earlier covers this exact byte.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{trailer} region. Keep the scaffold labels and return stub.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t7, 0($t5)
+    addu $t3, $t3, $t7
+    andi $t3, $t3, 255
+    li $v0, -6
+    bne $t3, $zero, packet_return
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+The default sum becomes 768 and its masked residue is zero. Increasing only the trailer by one reports -6.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What complete checksum residue is accepted?
+
+\begin{itemize}
+\item \textbf{A} Zero.
+\item \textbf{B} 255.
+\item \textbf{C} The payload length.
+\end{itemize}

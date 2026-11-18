@@ -1,0 +1,22 @@
+\section{Draw the allowed input window}\label{packet-x-window}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={A row of twelve byte cells shows offsets zero through eleven. The first eleven are inside an available interval of eleven bytes; the checksum cell at offset eleven lies outside it. A four-byte read starting at offset eight spans payload bytes eight through ten and the unavailable checksum, so its entire width does not fit.},x=10mm,y=10mm]
+\foreach \i in {0,...,11} {
+ \draw (\i,0) rectangle +(1,1);
+ \node[font=\scriptsize] at (\i+0.5,0.5) {\i};
+}
+\draw[very thick] (0,1.25)--(11,1.25);
+\draw[very thick] (11,-0.2)--(11,1.5);
+\node[above] at (5.5,1.3) {Eleven available bytes};
+\draw[<->] (8,-0.4)--(12,-0.4);
+\node[below] at (10,-0.5) {Four-byte read};
+\node[above,anchor=east] at (12,2) {End boundary at offset 11};
+\end{tikzpicture}
+\caption{A load can begin inside the input and still cross its end. Cell numbers are offsets, not byte values.}
+\end{figure}
+The default packet needs twelve bytes. With only eleven available, offsets zero
+through ten may be read, but the trailer at offset eleven may not. A four-byte
+load from offset eight would overlap that forbidden byte. The preceding availability
+check must return need more before this implementation reaches its checksum scan.
+The diagram is native explanatory artwork, separate from the pending IDE captures.

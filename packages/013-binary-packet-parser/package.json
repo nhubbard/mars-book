@@ -1,0 +1,1078 @@
+{
+  "formatVersion": 1,
+  "id": "013-binary-packet-parser",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Parse a bounded binary packet",
+  "audience": "Students with basic programming knowledge who are learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "401d4fed76424179c28f4d414af4c8040acf3d1b",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "traceMemoryAccesses",
+      "expectReadsWithin",
+      "readDataAddress",
+      "traceMemoryStores",
+      "setRegisterToDataAddress",
+      "setRegisterToTextAddress",
+      "traceExecution"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Full-width pointer arithmetic",
+    "Saved-register call interfaces",
+    "Byte interpretation and bounded loops"
+  ],
+  "learningObjectives": [
+    "Decode unsigned big-endian fields independently of host layout",
+    "Enforce whole-access logical read bounds",
+    "Apply deterministic error priority",
+    "Accumulate separate packet and payload checksums",
+    "Publish output only after complete validation"
+  ],
+  "inputDomain": {
+    "type": "binary-packet",
+    "arenaBytes": 256,
+    "payloadMaximum": 64,
+    "availableMaximum": "256 minus input offset",
+    "recordBytes": 16
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native chapter, text microsteps, cumulative author verification, and executable CLI function/program checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the byte layout",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "How many bytes does a zero-payload packet consume?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "Nine."
+          },
+          {
+            "id": "c",
+            "text": "Zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Count the trailer even when the body is empty."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The header ends at offset 7, the payload occupies offsets 8 through 10, and the trailer is at offset 11."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Identify the call interface",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which value controls the permitted input interval?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire mapped data segment."
+          },
+          {
+            "id": "b",
+            "text": "The declared payload length before validation."
+          },
+          {
+            "id": "c",
+            "text": "The caller supplied available count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Separate the caller count from bytes that claim their own length."
+        },
+        {
+          "id": "s02-h2",
+          "text": "At function entry the arguments describe addresses and a length. They do not contain the first header word or a predecoded length."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Reject a short fixed header",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What must v1 contain on failure?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "The input pointer."
+          },
+          {
+            "id": "c",
+            "text": "The partially decoded sequence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Set the failure pointer before any early return."
+        },
+        {
+          "id": "s03-h2",
+          "text": "With a1 equal to seven, the function returns -1 with v1 equal to zero and leaves both records unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "bounds"
+    },
+    {
+      "id": "s04",
+      "title": "Check both magic bytes",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which error wins for a wrong magic and wrong version in a full header?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bad version."
+          },
+          {
+            "id": "b",
+            "text": "Bad magic."
+          },
+          {
+            "id": "c",
+            "text": "Need more in all cases."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Read the priority table from top to bottom."
+        },
+        {
+          "id": "s04-h2",
+          "text": "With eight bytes available, changing either first byte reports -2. A short prefix still reports -1."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "magic"
+    },
+    {
+      "id": "s05",
+      "title": "Require the supported version",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Where is the version byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Offset zero."
+          },
+          {
+            "id": "b",
+            "text": "Offset two."
+          },
+          {
+            "id": "c",
+            "text": "Offset eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "The identifier occupies the first two bytes."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Changing byte two to two reports -3 after a complete fixed header is available."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "version"
+    },
+    {
+      "id": "s06",
+      "title": "Reject reserved flag bits",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which mask tests the reserved bits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "0x01."
+          },
+          {
+            "id": "b",
+            "text": "0x00."
+          },
+          {
+            "id": "c",
+            "text": "0xfe."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Keep every bit except bit zero in the test."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Flags zero and one pass; two, three, and 255 fail. The record is still untouched at this stage."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "flags"
+    },
+    {
+      "id": "s07",
+      "title": "Assemble the unsigned length",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What value do length bytes 01 00 encode?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "256."
+          },
+          {
+            "id": "c",
+            "text": "65536."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "The first byte contributes 256 times its unsigned value."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Bytes 00 03 produce three. Bytes 01 00 produce 256 and will fail the next semantic check."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "length"
+    },
+    {
+      "id": "s08",
+      "title": "Apply the payload limit",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What happens for length 65 and available count eight?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Need more."
+          },
+          {
+            "id": "b",
+            "text": "Success with an empty body."
+          },
+          {
+            "id": "c",
+            "text": "Bad length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The semantic cap comes before the complete-packet count."
+        },
+        {
+          "id": "s08-h2",
+          "text": "A complete header claiming 65 payload bytes reports -5 even when only eight input bytes are available."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "limit"
+    },
+    {
+      "id": "s09",
+      "title": "Require the trailer as well as the body",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which count is required for a three-byte payload?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eleven."
+          },
+          {
+            "id": "b",
+            "text": "Twelve."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Include eight header bytes and one checksum byte."
+        },
+        {
+          "id": "s09-h2",
+          "text": "For payload length three, counts eight through eleven report -1; twelve permits checksum processing."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "available"
+    },
+    {
+      "id": "s10",
+      "title": "Decode the sequence number",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What should sequence 80 ff become?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "-32513."
+          },
+          {
+            "id": "b",
+            "text": "255."
+          },
+          {
+            "id": "c",
+            "text": "33023."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Zero extend both bytes before combining them."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Bytes 80 ff decode to positive 33023, even though a signed byte view may display -128 and -1."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "sequence"
+    },
+    {
+      "id": "s11",
+      "title": "Prepare a bounded header scan",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which register here is an address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "t5."
+          },
+          {
+            "id": "b",
+            "text": "The checksum in t3."
+          },
+          {
+            "id": "c",
+            "text": "The count in t6."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "A cursor holds a location rather than the byte stored there."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The cursor starts at header offset zero and the remaining count is eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "header_init"
+    },
+    {
+      "id": "s12",
+      "title": "Sum exactly eight header bytes",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why use daddiu to move the cursor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The format uses 64-bit fields."
+          },
+          {
+            "id": "b",
+            "text": "The address must retain its full width."
+          },
+          {
+            "id": "c",
+            "text": "It makes a byte load signed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Pointer width is independent of field width."
+        },
+        {
+          "id": "s12-h2",
+          "text": "For the default fixture the header accumulator is 232 and the cursor equals input plus eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "header_loop"
+    },
+    {
+      "id": "s13",
+      "title": "Handle an empty payload before its loop",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "What does an empty payload skip?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The trailer check."
+          },
+          {
+            "id": "b",
+            "text": "The header checks."
+          },
+          {
+            "id": "c",
+            "text": "Only the payload loop."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "A zero-length body still leaves one required trailer byte."
+        },
+        {
+          "id": "s13-h2",
+          "text": "For length zero, the next input byte read is the checksum at offset eight. There are no payload bytes to visit."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "payload_init"
+    },
+    {
+      "id": "s14",
+      "title": "Accumulate the payload twice",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Which output uses the payload-only accumulator?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The sequence number."
+          },
+          {
+            "id": "b",
+            "text": "The payload-sum residue."
+          },
+          {
+            "id": "c",
+            "text": "The consumed length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Exclude the header and trailer from that output field."
+        },
+        {
+          "id": "s14-h2",
+          "text": "For the default payload the payload sum is 510 and the combined header-plus-body sum is 742."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "payload_loop"
+    },
+    {
+      "id": "s15",
+      "title": "Validate the checksum trailer",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What complete checksum residue is accepted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "255."
+          },
+          {
+            "id": "c",
+            "text": "The payload length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "The entire byte sum must be a multiple of 256."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The default sum becomes 768 and its masked residue is zero. Increasing only the trailer by one reports -6."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "trailer"
+    },
+    {
+      "id": "s16",
+      "title": "Commit the decoded record",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "When may this function start writing its output record?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After seeing the magic."
+          },
+          {
+            "id": "b",
+            "text": "After the checksum passes."
+          },
+          {
+            "id": "c",
+            "text": "Before reading the header if it later restores the bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "A failed call must have no output-store history."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The default record becomes 1, 4660, 3, 254 at offsets zero, four, eight, and twelve."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "commit"
+    },
+    {
+      "id": "s17",
+      "title": "Return the count and payload slice",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What is v1 for a valid empty payload?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "The input pointer plus eight, describing a zero-length slice."
+          },
+          {
+            "id": "c",
+            "text": "The address of the output record."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "A valid empty slice can have a nonzero address without containing a byte."
+        },
+        {
+          "id": "s17-h2",
+          "text": "For the default packet v0 is twelve, v1 points at payload byte 7f, and the record is complete."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      },
+      "editTarget": "success"
+    },
+    {
+      "id": "s18",
+      "title": "Trace the default call",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Where is the return count preserved after main exits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Necessarily in v0."
+          },
+          {
+            "id": "b",
+            "text": "In the sequence word."
+          },
+          {
+            "id": "c",
+            "text": "In the supplied status word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "The syscall selector reuses v0 after the parser returns."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The returned count is twelve at the marker. After exit the status word remains twelve even though main uses v0 to select the exit syscall."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Test incomplete prefixes",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why keep mapped bytes after the available prefix?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To permit speculative overreads."
+          },
+          {
+            "id": "b",
+            "text": "To expose logical overreads that do not fault in hardware."
+          },
+          {
+            "id": "c",
+            "text": "To change the declared payload length automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "A mapped byte can still lie outside the caller interval."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The default packet reports -1 for every count below twelve, with no record writes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Combine header defects deliberately",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Does a bad checksum override a bad version?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because it is checked last."
+          },
+          {
+            "id": "b",
+            "text": "Only for an empty body."
+          },
+          {
+            "id": "c",
+            "text": "No; bad version has earlier priority."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "An error table defines externally visible order."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The first pair yields -2, then -3. Fixing an earlier defect can reveal a later one without changing its bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Check the absence of failed writes",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which program violates failure preservation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One that never writes the output."
+          },
+          {
+            "id": "b",
+            "text": "One that writes a field then restores it before returning an error."
+          },
+          {
+            "id": "c",
+            "text": "One that keeps tentative fields in temporary registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "The contract constrains actions as well as final bytes."
+        },
+        {
+          "id": "s21-h2",
+          "text": "The checksum error returns v1 zero and leaves the complete output-store history empty."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Move both supplied pointers",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Which input operation is safe at every byte alignment?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An ordinary lw."
+          },
+          {
+            "id": "b",
+            "text": "An ordinary lh."
+          },
+          {
+            "id": "c",
+            "text": "lbu."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Byte loads impose no wider alignment requirement."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A valid unaligned input still produces the same decoded fields in the selected record. The other record remains untouched."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Retain high pointer bits",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Which test exposes a narrowed payload pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Relocating the data above four GiB."
+          },
+          {
+            "id": "b",
+            "text": "Changing only the sequence number."
+          },
+          {
+            "id": "c",
+            "text": "Clearing the output words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The default low address cannot exercise lost high bits."
+        },
+        {
+          "id": "s23-h2",
+          "text": "A successful return preserves the high address bits and the full values of s0 through s7 and sp."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Review equivalents and limits",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Must signed payload loads fail this checksum contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always."
+          },
+          {
+            "id": "b",
+            "text": "No; final reduction modulo 256 can give the same results."
+          },
+          {
+            "id": "c",
+            "text": "Only when the payload is empty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Signed and unsigned byte interpretations differ by a multiple of 256."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Equivalent implementations can differ in load count and scratch registers while returning the same results and respecting bounds."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification assembles and executes cumulative source increments. Interactive edit recognition and IDE captures remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/parser.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

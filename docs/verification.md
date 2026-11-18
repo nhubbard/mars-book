@@ -347,3 +347,40 @@ The chapter is native LaTeX with a reflection diagram and two-quantizer coordina
 headed tables, extractable code, tagged mathematics, and actual IntelliJ-derived minted
 spans. All 146 prior distinct highlight exports are unchanged. Actual IDE capture,
 independent accessibility validation, and author review remain pending.
+
+## Binary packet parser
+
+Package 013-binary-packet-parser supplies 24 microsteps, 48 staged hints, 15 native
+IntelliJ-highlighted code increments, a callable function starter, and separate
+public function/main checks. The upstream grader is pinned to commit
+`401d4fed76424179c28f4d414af4c8040acf3d1b`, whose native data-access trace records
+complete read widths and full addresses, excludes external inspection/backstep,
+retains replayed forward accesses, and fails explicitly on history overflow. Its
+87 CLI Jupiter tests pass, including a packaged-JAR script integration test.
+
+Public checks exercise 619 independent parser calls and 38 main-routine cases per
+implementation. The private domain has 5016 calls covering all payload lengths,
+all incomplete prefixes, unsigned sequence combinations, malformed header bytes,
+reserved flags, length boundaries, suffixes, and maximum available windows. It is
+not an exhaustive Cartesian product. Both a moving-pointer parser and an indexed
+parser pass. A signed-payload-load variant also passes because final sums modulo
+256 preserve its result. Both ordinary implementations pass with data above 4 GiB.
+
+All fifteen cumulative programs assemble warning-free and produce checked intermediate
+results. The final source reconstructed from student snippets matches the reference,
+and runs both public scripts and the full private domain. Fourteen warning-free faulty
+parsers and the unfinished starter are rejected. The verifier records 50 grading runs
+with 32,168 positive case executions; repeated executions are not unique test inputs.
+Output histories catch writes restored before an error return, and access histories
+catch reads beyond logical input that would otherwise succeed in mapped memory.
+
+Successful native function instruction counts for payload lengths 0/3/64 are
+111/132/559 for the moving-pointer reference and 70/94/582 for the indexed alternative.
+The corresponding byte-read counts are 17/20/81 and 9/12/73. Counts exclude assembly,
+session creation, argument setup, main, and exit. They illustrate fixed/per-byte
+tradeoffs and impose no exact instruction or load count on equivalent solutions.
+The chapter states the actual generated payload pattern and measurement scope.
+
+Three capture recipes have checked numerical model states; no IDE pixels have been
+captured. The light-theme capture plugin runner, visual assertions, independent
+accessibility review, and final author review remain outstanding.

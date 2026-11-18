@@ -1,0 +1,33 @@
+\section{Step 4 Check both magic bytes}\label{packet-s04}
+
+Select the bad-magic status, load each identifier byte unsigned, and compare it with its constant. Either mismatch returns the same status. Keep the input address in \texttt{a0}; the small immediate offsets select bytes without moving it.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{magic} region. Keep the scaffold labels and return stub.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $v0, -2
+    lbu $t7, 0($a0)
+    li $t9, 0x4d
+    bne $t7, $t9, packet_return
+    nop
+    lbu $t7, 1($a0)
+    li $t9, 0x50
+    bne $t7, $t9, packet_return
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+With eight bytes available, changing either first byte reports -2. A short prefix still reports -1.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which error wins for a wrong magic and wrong version in a full header?
+
+\begin{itemize}
+\item \textbf{A} Bad version.
+\item \textbf{B} Bad magic.
+\item \textbf{C} Need more in all cases.
+\end{itemize}

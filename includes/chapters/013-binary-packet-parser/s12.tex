@@ -1,0 +1,30 @@
+\section{Step 12 Sum exactly eight header bytes}\label{packet-s12}
+
+Load one unsigned byte, add it to the checksum, advance the cursor with a full-width increment, and reduce the count. The retained conditional branch has a \texttt{nop} following it. After eight iterations, the cursor already points to payload offset eight.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{header\_loop} region. Keep the scaffold labels and return stub.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t7, 0($t5)
+    addu $t3, $t3, $t7
+    daddiu $t5, $t5, 1
+    addiu $t6, $t6, -1
+    bne $t6, $zero, header_sum
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+For the default fixture the header accumulator is 232 and the cursor equals input plus eight.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why use \texttt{daddiu} to move the cursor?
+
+\begin{itemize}
+\item \textbf{A} The format uses 64-bit fields.
+\item \textbf{B} The address must retain its full width.
+\item \textbf{C} It makes a byte load signed.
+\end{itemize}

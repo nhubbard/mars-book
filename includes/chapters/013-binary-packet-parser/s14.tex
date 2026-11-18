@@ -1,0 +1,31 @@
+\section{Step 14 Accumulate the payload twice}\label{packet-s14}
+
+Add each byte to both the whole-packet checksum and the payload-only sum. Advance the same full-width cursor and count down the validated length. The loop exits with the cursor at the trailer. The output record still has not been written.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{payload\_loop} region. Keep the scaffold labels and return stub.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t7, 0($t5)
+    addu $t3, $t3, $t7
+    addu $t4, $t4, $t7
+    daddiu $t5, $t5, 1
+    addiu $t6, $t6, -1
+    bne $t6, $zero, payload_sum
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+For the default payload the payload sum is 510 and the combined header-plus-body sum is 742.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which output uses the payload-only accumulator?
+
+\begin{itemize}
+\item \textbf{A} The sequence number.
+\item \textbf{B} The payload-sum residue.
+\item \textbf{C} The consumed length.
+\end{itemize}

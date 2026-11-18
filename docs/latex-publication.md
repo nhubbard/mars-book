@@ -117,3 +117,15 @@ thirty steps, sixteen actual IntelliJ-highlighted listings, native coordinate di
 and marked pending IDE figures. Font embedding, literal code extraction, headed tables,
 mathematical structure, and figure alternatives are checked in the rendered output.
 Full accessibility review, author review, and actual light-theme captures remain pending.
+
+The binary packet parser chapter has a focused entry:
+
+```sh
+python3 tools/book.py build --entry drafts/binary-packet-parser.tex
+```
+
+It produces `build/native/binary-packet-parser.pdf` from the same native include
+sequence used by the main manuscript. Its diagrams, headed tables, mathematics,
+and measured comparison are native LaTeX. Run document builds sequentially: the
+entries share chapter auxiliary files under `build/native`. Actual IDE screenshots
+and independent accessibility certification remain pending.

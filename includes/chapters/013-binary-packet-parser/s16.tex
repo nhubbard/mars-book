@@ -1,0 +1,29 @@
+\section{Step 16 Commit the decoded record}\label{packet-s16}
+
+Mask the payload-only sum to its low byte and write the four accepted fields through \texttt{a2}. Every error branch bypasses these stores. The word-aligned output address is a caller guarantee, unlike the potentially unaligned input pointer.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{commit} region. Keep the scaffold labels and return stub.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    andi $t4, $t4, 255
+    sw $t1, 0($a2)
+    sw $t2, 4($a2)
+    sw $t0, 8($a2)
+    sw $t4, 12($a2)
+\end{minted}
+
+\subsection{Expected observation}
+The default record becomes 1, 4660, 3, 254 at offsets zero, four, eight, and twelve.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+When may this function start writing its output record?
+
+\begin{itemize}
+\item \textbf{A} After seeing the magic.
+\item \textbf{B} After the checksum passes.
+\item \textbf{C} Before reading the header if it later restores the bytes.
+\end{itemize}

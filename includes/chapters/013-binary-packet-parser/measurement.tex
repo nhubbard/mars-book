@@ -1,0 +1,37 @@
+\section{Measure the scan and loop separately}\label{packet-measurement}
+The two verified implementations make a useful comparison. The moving-pointer
+version shown in the increments scans the eight header bytes again to compute
+their checksum. The indexed version accumulates those bytes while decoding them.
+Its body loop has a top test, indexed address calculation, and unconditional
+backward branch. Eliminating eight repeated reads therefore changes both fixed
+setup work and the per-payload-byte instruction cost.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{rrrrr}
+\toprule
+Payload bytes&Pointer instr.&Indexed instr.&Pointer reads&Indexed reads\\\midrule
+0&111&70&17&9\\
+3&132&94&20&12\\
+64&559&582&81&73\\\bottomrule
+\end{longtable}
+These are native forward-execution counts for one successful independently called
+function in the default memory layout. Counting begins immediately before the
+parser executes and stops before its supplied return continuation. Argument setup,
+assembly, session construction, main, and the exit syscall are excluded. Input
+reads count simulator data-access notices overlapping the arena; each read in these
+two implementations is a byte load. The generated valid packets use sequence 4660, flags one, and payload
+byte \(i\) equal to \((129i+127)\bmod256\). Their three-byte body is
+\texttt{7f 00 81}; it differs from the worked packet while following the same
+successful control path for that length.
+
+The indexed version executes fewer instructions for the empty and short examples,
+but more for the 64-byte payload. For these implementations the measured successful
+paths follow \(111+7L\) and \(70+8L\) instructions. The fixed saving is exhausted
+at 41 payload bytes. Both loops are correct; the lower load count alone does not
+predict the lower instruction count for every valid input.
+
+Instruction counts are not host elapsed time or a target processor cycle model.
+A different loop, register allocation, calling convention, or memory configuration
+can change them. Use these measurements to locate repeated work and formulate an
+optimization, then rerun the behavioral and read-boundary checks. The counts are
+an illustration, never an exact-count requirement imposed on student submissions.

@@ -1,0 +1,28 @@
+\section{Step 13 Handle an empty payload before its loop}\label{packet-s13}
+
+Initialize the separate payload sum and copy the validated length into the loop counter. When it is zero, branch directly to trailer\_sum. Without this initial check, a body-first countdown loop would read a byte for an empty payload and underflow its counter.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{payload\_init} region. Keep the scaffold labels and return stub.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $t4, $zero
+    move $t6, $t0
+    beq $t6, $zero, trailer_sum
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+For length zero, the next input byte read is the checksum at offset eight. There are no payload bytes to visit.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does an empty payload skip?
+
+\begin{itemize}
+\item \textbf{A} The trailer check.
+\item \textbf{B} The header checks.
+\item \textbf{C} Only the payload loop.
+\end{itemize}
