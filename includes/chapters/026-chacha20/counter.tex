@@ -1,0 +1,47 @@
+\section{Check the last required counter before writing}
+Counter exhaustion is a property of the whole request. For a positive byte count
+\(n\), the number of blocks is \(b=\lceil n/64\rceil\), and the last required
+counter is \(c+b-1\). The request is valid exactly when that value is at most
+\(2^{32}-1\). A one-byte request at counter \texttt{ffffffff} is valid; a
+65-byte request there is not. Rejecting every use of the largest counter would
+unnecessarily discard its last block.
+
+First enforce the local unsigned count limit. That makes \(n+63\) safe to compute
+in a doubleword. Handle zero separately, then compute the last counter in 64 bits.
+\texttt{lwu} zero-extends the starting counter, including values with bit 31 set.
+A sign-extended \texttt{lw} used directly in this wide comparison would interpret
+those counter bit patterns incorrectly.
+\Needspace{13\baselineskip}
+\MARSCodeLabel{Validate a positive bounded request before allocating its workspace.}
+\begin{minted}[samepage=true]{mars-idea}
+daddiu $t0, $a3, 63
+dsrl $t0, $t0, 6
+lwu $t1, 48($a0)
+daddu $t0, $t0, $t1
+daddiu $t0, $t0, -1
+dsrl $t0, $t0, 32
+bnez $t0, stream_counter_error
+nop
+\end{minted}
+
+The shifted high part is zero when the last counter fits in one word. This check
+precedes output stores, so a rejected request cannot leave a partly transformed
+message behind. Checking for wrap only after writing the first block would violate
+that interface.
+
+\begin{table}[htbp]\centering
+\caption{Requests at the end of the counter range. Counts are decimal.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrl}\toprule
+Starting counter & Bytes & Blocks & Result\\\midrule
+\texttt{ffffffff} & 0 & 0 & Success without pointer access\\
+\texttt{ffffffff} & 64 & 1 & Success\\
+\texttt{ffffffff} & 65 & 2 & Reject, status two\\
+\texttt{fffffffe} & 128 & 2 & Success\\
+\texttt{fffffffe} & 129 & 3 & Reject, status two\\
+\bottomrule\end{tabular}\end{table}
+
+The local state copy lets the transformation advance its counter without changing
+the caller's state or nonce. Counter arithmetic never carries into word thirteen.
+That word belongs to the nonce. Treating the last row as one 128-bit integer would
+silently change which encryption the later blocks belong to.

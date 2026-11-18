@@ -34,6 +34,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
         self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
         self.assertEqual(51, len(book.validate('drafts/sha256.tex')))
+        self.assertEqual(12, len(book.validate('drafts/chacha20.tex')))
 
     def test_sha_cumulative_edits_follow_native_order(self):
         folder = book.ROOT / 'drafts/sha-construction'

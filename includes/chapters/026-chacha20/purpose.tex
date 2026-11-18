@@ -1,0 +1,25 @@
+\section{Generate bytes before transforming a message}
+A stream cipher produces a sequence of bytes called a \emph{keystream}. Encryption
+combines each message byte with the corresponding keystream byte using exclusive OR.
+Decryption performs the same operation. If a message byte is \texttt{4c} and the
+keystream byte is \texttt{22}, the encrypted byte is \texttt{6e}. Applying XOR with
+\texttt{22} again recovers \texttt{4c}. The byte's position matters: decrypting with
+the next keystream byte generally gives a different result.
+
+This project builds that process from a four-word calculation. First trace a
+quarter-round and check its intermediate values. Then apply quarter-rounds to selected
+positions in a sixteen-word state, producing one 64-byte block. After the scalar block
+works, place four independent quarter-rounds in the four word lanes of MSA registers.
+Finally, use complete blocks and a partial last block to transform a message.
+
+The first observation is deliberately smaller than an encrypted message. If four
+words are wrong after a quarter-round, inspecting the file format or the XOR loop
+cannot repair them. Likewise, if a complete block agrees but a 65-byte message fails,
+inspect the transition to the next block and the final one-byte store. The boundaries
+in this chapter give each failure a short path back to the calculation that produced it.
+
+The algorithm here is the IETF form of ChaCha20, with an eight-word key, a one-word
+counter and a three-word nonce. A nonce identifies an encryption under a key; the
+counter identifies a block within that encryption. This exercise uses explicit test
+values so results can be reproduced. It does not provide key generation, nonce
+allocation, a message authentication tag or a deployable encryption format.

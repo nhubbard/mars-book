@@ -1,0 +1,33 @@
+\section{Give every state word an index and an address}
+Arrange the sixteen state words as four rows of four words. Number indices from
+zero in row order. The address of word \(i\) is \(B+4i\), where \(B\) is the state
+base. A row occupies sixteen bytes. A column is a set of four words sixteen bytes
+apart; it is not four adjacent words.
+
+\begin{table}[htbp]
+\centering\caption{State fields in row order. Byte offsets are decimal.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rlll}\toprule
+Indices & Offsets & Contents & Size\\\midrule
+0--3 & 0--15 & Four fixed constant words & 16 bytes\\
+4--11 & 16--47 & Key bytes decoded as words & 32 bytes\\
+12 & 48--51 & Initial block counter & 4 bytes\\
+13--15 & 52--63 & Nonce bytes decoded as words & 12 bytes\\
+\bottomrule\end{tabular}
+\end{table}
+
+The constants are \texttt{61707865}, \texttt{3320646e}, \texttt{79622d32} and
+\texttt{6b206574}. In little-endian memory their bytes spell the fixed 16-byte
+string \texttt{expand 32-byte k}. This string is a prescribed constant, not a
+password supplied by the user. The key and nonce follow in their byte order.
+
+For key bytes \texttt{00 01 02 03}, the first decoded key word is
+\texttt{03020100}. On this little-endian target a word-aligned \texttt{lw} reads that
+pattern directly. Compare this with the preceding SHA project: that algorithm's
+source words required a different byte interpretation. Reusing its byte-combining
+sequence unchanged here would reverse every input word.
+
+Keep the state used to start a block unchanged until feed-forward is complete.
+The scalar version copies it into the output area and uses that area as working
+storage. The vector version retains an original copy in vector registers. Both
+arrangements leave the caller's input available for later blocks and for inspection.

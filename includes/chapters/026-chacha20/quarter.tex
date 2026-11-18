@@ -1,0 +1,61 @@
+\section{Follow the dependency through one quarter-round}
+A quarter-round updates four words. Each update uses the values produced by the
+preceding updates. The calculation therefore has an order even when its words occupy
+separate registers. Load the words into \texttt{t0}, \texttt{t1}, \texttt{t2} and
+\texttt{t3}, representing \(a,b,c,d\). The first group adds \(b\) into \(a\), XORs
+that new \(a\) into \(d\), then rotates the new \(d\) left by sixteen.
+\Needspace{8\baselineskip}
+\MARSCodeLabel{The first dependent group changes a, then d.}
+\begin{minted}[samepage=true]{mars-idea}
+addu $t0, $t0, $t1
+xor $t3, $t3, $t0
+rotr $t3, $t3, 16
+\end{minted}
+
+The second group adds the new \(d\) into \(c\), XORs the new \(c\) into \(b\), and
+rotates \(b\) left by twelve. The third and fourth groups repeat the two pairings,
+with left rotations by eight and seven. In the listing, the right-rotate immediates
+are the complementary amounts, 24 and 25.
+\Needspace{14\baselineskip}
+\MARSCodeLabel{Complete the quarter-round using the updated words.}
+\begin{minted}[samepage=true]{mars-idea}
+addu $t2, $t2, $t3
+xor $t1, $t1, $t2
+rotr $t1, $t1, 20
+addu $t0, $t0, $t1
+xor $t3, $t3, $t0
+rotr $t3, $t3, 24
+addu $t2, $t2, $t3
+xor $t1, $t1, $t2
+rotr $t1, $t1, 25
+\end{minted}
+
+Load all four source words before making any stores, then store the four final words
+through their corresponding argument pointers. This leaf function needs no saved
+working registers and makes no nested call. Returning through \texttt{ra} preserves
+its full address. The disjoint-word contract keeps the four destinations unambiguous.
+
+For the first numerical check, use \(a=\mathtt{11111111}\),
+\(b=\mathtt{01020304}\), \(c=\mathtt{9b8d6f43}\) and
+\(d=\mathtt{01234567}\). These are the quarter-round inputs in RFC 8439,
+section 2.1.1. The following intermediate table is calculated by the independent
+word model. Every entry is hexadecimal.
+
+\begin{table}[htbp]
+\centering\caption{Working words after each add, XOR and rotation group.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rllll}\toprule
+Group & \(a\) & \(b\) & \(c\) & \(d\)\\\midrule
+1 & \texttt{12131415} & \texttt{01020304} & \texttt{9b8d6f43} & \texttt{51721330}\\
+2 & \texttt{12131415} & \texttt{d8177edf} & \texttt{ecff8273} & \texttt{51721330}\\
+3 & \texttt{ea2a92f4} & \texttt{d8177edf} & \texttt{ecff8273} & \texttt{5881c4bb}\\
+4 & \texttt{ea2a92f4} & \texttt{cb1cf8ce} & \texttt{4581472e} & \texttt{5881c4bb}\\
+\bottomrule\end{tabular}
+\end{table}
+
+In group one, XOR produces \texttt{13305172} before rotation. Swapping its two
+16-bit halves gives \texttt{51721330}. In group two, the pre-rotation value is
+\texttt{edfd8177}; a left rotation by twelve gives \texttt{d8177edf}. Stop after
+each group and inspect only the two words it changes. If the first changed word
+agrees and the second does not, inspect the XOR operands and rotate amount before
+altering the addition.

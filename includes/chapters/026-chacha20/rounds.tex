@@ -1,0 +1,48 @@
+\section{Call the same operation on different word selections}
+One column round applies four quarter-rounds to the four columns. Those selections
+are disjoint, so changing column zero does not change any input of column one.
+The next round uses diagonals that wrap from the right edge to the left edge.
+The following table states the selections in \(a,b,c,d\) order; the integers are
+word indices, not byte offsets.
+
+\begin{table}[htbp]
+\centering\caption{Word selections in one double-round.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{cll}\toprule
+Call & Column round & Diagonal round\\\midrule
+0 & 0,4,8,12 & 0,5,10,15\\
+1 & 1,5,9,13 & 1,6,11,12\\
+2 & 2,6,10,14 & 2,7,8,13\\
+3 & 3,7,11,15 & 3,4,9,14\\
+\bottomrule\end{tabular}
+\end{table}
+
+A column round followed by a diagonal round is a \emph{double-round}. Repeat that
+pair ten times. There are twenty rounds and eighty quarter-round calls. Counting
+individual calls as complete rounds would execute too little work.
+
+For the scalar implementation, keep the working base in a saved register. Construct
+the four argument pointers immediately before each call. The first column at a
+working base in \texttt{s1} begins as follows.
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Select four separated words of column zero.}
+\begin{minted}[samepage=true]{mars-idea}
+daddiu $a0, $s1, 0
+daddiu $a1, $s1, 16
+daddiu $a2, $s1, 32
+daddiu $a3, $s1, 48
+jal chacha_quarter
+nop
+\end{minted}
+
+The quarter-round can change argument and temporary registers. A saved base and
+saved double-round count survive that nested call. Save the block function's incoming
+\texttt{ra} before its first \texttt{jal}; otherwise the last nested return address
+would replace the address needed to return to the caller.
+
+Write the four column selections first and inspect their output. Then add the four
+diagonal selections. For a diagonal pointer, multiply its selected index by four;
+for example index ten is byte offset forty. Advancing every argument by four after
+a column works across the column group, but cannot express the wrapped diagonals
+without additional selection logic. Explicit offsets make this first version easier
+to compare with the table.

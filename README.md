@@ -168,3 +168,8 @@ controls are documented future capabilities. The tested template uses Minion Pro
 Noto Sans Math equations, and JetBrains Mono code. Frontmatter is editable; final author
 review and PDF accessibility validation remain. Licensing must be selected before broader reuse;
 this repository does not grant an additional license by implication.
+
+The independent native ChaCha20 foundation is at `drafts/chacha20.tex`. It explains
+scalar quarter-rounds and blocks before MSA row-lane selection, then bounded byte
+transformation and counter exhaustion. Its cumulative student package and integration
+are still being prepared; the main manuscript currently contains 25 packages.

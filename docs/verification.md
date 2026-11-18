@@ -707,3 +707,32 @@ opening, final page and updated contents. Existing chapters were reviewed in pri
 Tags, table headings and figure descriptions are inspected; PDF/UA certification and
 independent accessibility review remain outstanding. Four SHA IDE figures remain plans.
 The author requested substantial exposition and length edits after all 35 drafts exist.
+
+
+## ChaCha20 native foundation
+
+The independent entry drafts/chacha20.tex contains 14 native sections, 12 assembly
+listings and one described native lane-selection figure. Main integration and the
+cumulative exercise package remain pending. Separate scalar and MSA prototypes pass
+217 cases each at normal addresses and with both code and data above 4 GiB: 868
+positive executions in four grading runs. Nineteen deliberately faulty variants are
+rejected. Each variant is warning-free assembled before grading.
+
+An independent Int-arithmetic model checks arbitrary-state quarter-rounds and blocks;
+JDK ChaCha20 checks actual whole-message transforms through 4096 bytes. The domains
+include bit patterns, unaligned byte buffers, exact in-place operation, counter values
+with bit31 set, the last counter, rejected requests and no-access zero length. Access
+traces and snapshots inspect caller ownership; saved registers retain their high bits.
+The Python masked-integer oracle verifies all four illustrated quarter-round states,
+the published serialized block, shuffle inverses and counter-table rows. Synthetic
+limits do not claim large messages were processed.
+
+Measured normal-return block work is 2656 scalar instructions with word rotates,
+3296 with shifts/ORs, and 510 with MSA rows and shuffles. This compares specific
+prototypes, including scalar pointer setup and nested calls; it is not a host-time
+or hardware-cycle speedup. Both block entries are checked against the same contract.
+The real IntelliJ highlighter exports 624 distinct snippets after adding this chapter.
+All three authoring-plugin tests, 33 book-tooling tests and seven renderer tests pass.
+The native PDF builds with Minion Pro, Noto Sans Math and JetBrains Mono. PDF tags
+and a visual review do not establish PDF/UA certification or student usability.
+Actual IDE screenshots, cumulative packages and the deferred author rewrite remain.

@@ -214,6 +214,15 @@ exports, completed-interface checks, private domains and explanatory quiz feedba
 The chapter is included in main.tex as the twenty-fifth text package. Actual IDE pixels,
 remote progression, deferred author rewriting and independent accessibility work remain.
 
+The ChaCha20 foundation is directly edited at `drafts/chacha20.tex`. Fourteen native
+sections explain the quarter-round's dependent updates, full-width pointers, raw state,
+column/diagonal selection, feed-forward, MSA row lanes and inverse shuffles, byte tails,
+preflight counter exhaustion, in-place operation and nonce/authentication boundaries.
+A native described row-selection figure and headed tables support the worked example.
+Private scalar and MSA prototypes pass independent arithmetic and JDK comparisons,
+including wide code/data and 19 deliberate faults. The independent chapter is not yet
+in main.tex; cumulative student construction and distributions remain the next step.
+
 ## Author feedback and deferred revision
 
 On 18 November 2026, the author reviewed excerpts and judged the draft too long and
