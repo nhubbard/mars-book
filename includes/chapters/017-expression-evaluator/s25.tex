@@ -1,0 +1,31 @@
+\section{Step 25 Retain a prefix operation across recursion}\label{expression-s25}
+
+Save the sign position and sign byte in this invocation, advance once, and recursively parse another unary operand. This permits repeated signs and whitespace between tokens. Check the shared error state before applying the saved operation; an operand failure must propagate unchanged.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{unary\_sign} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sd $s1, 0($sp)
+    sd $t0, 8($sp)
+    addiu $s1, $s1, 1
+    jal parse_unary
+    nop
+    bne $s3, $zero, unary_return
+    nop
+\end{minted}
+\subsection{Expected observation}
+Before the negation region is filled, -7 reaches cursor two and returns the operand value seven. That provisional value is not the completed negative result.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why does each unary call need separate sign slots?
+
+\begin{itemize}
+\item \textbf{A} Several prefix operations can be unfinished simultaneously.
+\item \textbf{B} All signs share one byte offset.
+\item \textbf{C} A recursive call preserves the previous sign automatically.
+\end{itemize}

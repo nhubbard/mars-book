@@ -1,0 +1,34 @@
+\section{Use one shared parse state}\label{expression-helper-state}
+The private helpers share five saved registers. They are part of one internal protocol,
+not independently callable public functions with the outer calling convention. The public
+wrapper preserves the original caller values before assigning these parser roles.
+
+\begin{table}[htbp]
+\centering
+\caption{Shared registers during one parse. The base and length stay fixed; the cursor and first-error fields describe progress.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\toprule
+Register & Meaning & Helper changes\\
+\midrule
+\texttt{s0} & Full input base & None\\
+\texttt{s1} & Cursor byte offset & Consume accepted syntax\\
+\texttt{s2} & Input length & None\\
+\texttt{s3} & Error status, initially zero & First failure\\
+\texttt{s4} & Error byte offset & With first failure\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A helper returns its value in \texttt{v0} when \texttt{s3} is zero. On an error,
+its caller first observes \texttt{s3} and propagates the existing diagnostic. The
+public wrapper finally translates this internal protocol into the two-register
+public result. In particular, a successful helper's value register is not a public
+status code. Interpret registers according to the call boundary being inspected.
+
+The scaffold gives every unfinished region a temporary branch to that helper's
+balanced return. Its first unfinished parser region also supplies provisional zero.
+Replace a region's placeholder rather than appending after its unconditional branch.
+A partial routine may stop before consuming its complete grammar rule; the expected
+observations below explicitly identify such stages. Final behavioral grading applies
+only after the whole function is complete.

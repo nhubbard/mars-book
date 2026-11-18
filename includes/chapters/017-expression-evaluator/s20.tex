@@ -1,0 +1,38 @@
+\section{Step 20 Require the closing parenthesis after an inner value}\label{expression-s20}
+
+Save the nested value in this primary frame before calling the whitespace helper. Then require an available closing parenthesis, consume it, and reload the saved value. Until the expression routine is implemented, an inner digit has not been consumed by that stub; the resulting partial state must not be mistaken for final group semantics.
+
+\Needspace{23\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{primary\_close} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sd $v0, 0($sp)
+    jal skip_space
+    nop
+    beq $s1, $s2, primary_syntax
+    nop
+    daddu $t0, $s0, $s1
+    lbu $t0, 0($t0)
+    li $t1, 41
+    bne $t0, $t1, primary_syntax
+    nop
+    addiu $s1, $s1, 1
+    ld $v0, 0($sp)
+    beq $zero, $zero, primary_return
+    nop
+\end{minted}
+\subsection{Expected observation}
+For (7), the temporary inner-expression stub leaves cursor one, so the close check reaches the still-unfinished syntax path at the digit.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+When is the closing-parenthesis test meaningful for the final language?
+
+\begin{itemize}
+\item \textbf{A} Before consuming the opening parenthesis.
+\item \textbf{B} After the inner expression has successfully supplied its value.
+\item \textbf{C} Only after the public caller stores the result.
+\end{itemize}

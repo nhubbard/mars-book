@@ -1,0 +1,18 @@
+\section{Keep accumulator slots separate from shared state}\label{expression-slots}
+The term and expression frames use byte offset zero for their current left value,
+eight for a pending operator, sixteen for its byte offset, and forty for their
+return address. Both frames occupy 48 bytes. Loading the right operand may require
+another invocation of the same rules, but its frame occupies different addresses.
+Do not replace those slots with one shared accumulator register.
+
+The primary and unary frames occupy 32 bytes and keep their return address at byte
+24. A primary saves a grouped value at zero while checking the close. A unary call
+saves its sign position at zero and sign byte at eight. These are local meanings:
+a word at byte zero of a unary frame is not the same object as a word at byte zero
+of an expression frame.
+
+The supplied frame saves use doublewords. The values stored there include return
+addresses and full-register operands. Restoration runs on success and on every error
+exit. The helper's cursor and diagnostic registers are deliberately shared and are
+not restored from a recursive frame; doing that would undo input consumption or hide
+the first failure.

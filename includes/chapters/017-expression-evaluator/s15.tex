@@ -1,0 +1,38 @@
+\section{Step 15 Distinguish a group from a decimal literal}\label{expression-s15}
+
+Skip permitted whitespace, reject end of input as a missing primary, and inspect the next byte. An opening parenthesis selects the group path. Otherwise subtract ASCII zero and use an unsigned comparison with ten. Values below ASCII zero become large unsigned values after subtraction, so they fail this digit test. Initialize the literal accumulator only after the first digit is established.
+
+\Needspace{23\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{primary\_entry} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    jal skip_space
+    nop
+    beq $s1, $s2, primary_syntax
+    nop
+    daddu $t0, $s0, $s1
+    lbu $t0, 0($t0)
+    li $t1, 40
+    beq $t0, $t1, primary_group
+    nop
+    addiu $t1, $t0, -48
+    sltiu $t2, $t1, 10
+    beq $t2, $zero, primary_syntax
+    nop
+    move $t3, $zero
+\end{minted}
+\subsection{Expected observation}
+For 7, \texttt{t1} is digit value seven, \texttt{t2} is one, \texttt{t3} is zero, and the cursor is still zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why does the unsigned digit comparison reject a slash?
+
+\begin{itemize}
+\item \textbf{A} Slash becomes digit nine.
+\item \textbf{B} The slash is a whitespace byte.
+\item \textbf{C} Subtracting ASCII zero gives a negative value, which is outside unsigned zero through nine.
+\end{itemize}

@@ -47,9 +47,9 @@ instruction semantics and the explanatory text together before committing each i
 
 The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter,
 MarsBot-square, Bresenham-line, Life, sorting-visualizer, maze-explorer, matrix-transpose,
-fixed-point ball, binary packet parser, ring-buffer logger, UTF-8 scanner, and clipped sprite blitter chapters are composed text drafts with verified companion programs.
+fixed-point ball, binary packet parser, ring-buffer logger, UTF-8 scanner, clipped sprite blitter, and expression evaluator chapters are composed text drafts with verified companion programs.
 They still need author review and actual IDE figures. The remaining projects stay
-planned until their text and companions are written and checked. Expression evaluator is next in the roadmap.
+planned until their text and companions are written and checked. Tiny bytecode interpreter is next in the roadmap.
 
 Matrix transpose and fixed-point ball are composed through ordinary includes in the
 main manuscript. Their independent entries, `drafts/matrix-transpose.tex` and
@@ -63,7 +63,7 @@ Binary packet parser is composed in native includes and has an independent entry
 explicit error priority, byte order and checksum reasoning, a native input-window
 diagram, and measured instruction/read comparisons. Its grader adds native read-width
 observations to detect logical overreads into mapped padding. Three actual IDE figures
-remain planned. The full roadmap remains the goal; sixteen text drafts do not complete it.
+remain planned. The full roadmap remains the goal; seventeen text drafts do not complete it.
 
 Ring-buffer logger has a complete native text draft and an independent entry,
 `drafts/ring-buffer-logger.tex`. Thirty steps and eighteen cumulative code increments
@@ -88,10 +88,14 @@ transparency and full caller preservation. Native clipping/stride/count fixtures
 measured preclipped/per-cell work, public checks and private geometry checks accompany
 separate student/instructor archives. Four actual light-theme captures remain planned.
 
-Expression evaluator is in progress. `drafts/expression-evaluator.tex` is a native
-foundation excerpt covering the grammar, byte-slice bounds, diagnostic ordering,
-checked signed-word arithmetic, recursive frame ownership and worked value reductions.
-It is not yet included in the full manuscript or counted as a completed chapter:
-instructional code increments, step quizzes/hints, the student package, capture plans
-and full companion verification remain to be composed. Tested implementation prototypes
-and development checks stay in the private instructor repository while that work proceeds.
+Expression evaluator is a full native text draft at `drafts/expression-evaluator.tex`.
+Forty-five steps and thirty-four cumulative edits develop bounded lexical reads,
+checked arithmetic, literals, recursive groups/signs and left-associated precedence
+loops. All edits pass forty-six intermediate observations and reconstruct the tested
+reference exactly. The public package supports guided and free-writing modes; private
+checks accept a precedence-climbing alternative and submission-owned constant reads.
+Repeated calls verify fresh parser state in one session. The 76 grading runs record
+23,887 positive case executions, including repeated variants and observations.
+Nineteen faulty variants and the unfinished starter are rejected. Four actual IDE
+captures, human review and independent accessibility validation remain pending. The
+full 35-project book and capture objective remains active.

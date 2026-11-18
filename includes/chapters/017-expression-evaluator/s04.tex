@@ -1,0 +1,79 @@
+\section{Step 4 Inspect the helper scaffolding}\label{expression-s04}
+
+The supplied prologues preserve each nonleaf helper return address; the corresponding exits restore that frame. The private arithmetic helper is a leaf and uses shared value/error exits. Every unfinished region initially branches to its helper exit. Replace that placeholder with the listed instructions so the new code can execute.
+
+\Needspace{12\baselineskip}
+\subsection{A primary frame entry}
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+parse_primary:
+    daddiu $sp, $sp, -32
+    sd $ra, 24($sp)
+\end{minted}
+\Needspace{14\baselineskip}
+\subsection{Its balanced return}
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+primary_return:
+    ld $ra, 24($sp)
+    daddiu $sp, $sp, 32
+    jr $ra
+    nop
+\end{minted}
+\Needspace{12\baselineskip}
+\subsection{A term frame entry}
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+parse_term:
+    daddiu $sp, $sp, -48
+    sd $ra, 40($sp)
+\end{minted}
+\Needspace{14\baselineskip}
+\subsection{Its balanced return}
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+term_return:
+    ld $ra, 40($sp)
+    daddiu $sp, $sp, 48
+    jr $ra
+    nop
+\end{minted}
+\Needspace{14\baselineskip}
+\subsection{The shared arithmetic error return}
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+apply_error:
+    move $s4, $a3
+    move $v0, $zero
+    jr $ra
+    nop
+\end{minted}
+\Needspace{13\baselineskip}
+\subsection{The shared arithmetic value return}
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+apply_value:
+    move $v0, $t0
+    jr $ra
+    nop
+\end{minted}
+The unary frame follows the 32-byte primary layout; the expression frame follows the 48-byte term layout. Their supplied exits use their own labels. The leaf whitespace helper returns directly. These scaffold instructions remain in the starter; the numbered edits replace only the unfinished regions.
+
+\subsection{Expected observation}
+The unfinished starter exits cleanly but does not satisfy the final evaluator contract.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Where should an early nonleaf-helper exit go?
+
+\begin{itemize}
+\item \textbf{A} Through that helper frame restore.
+\item \textbf{B} Directly through \texttt{jr} before undoing the frame.
+\item \textbf{C} Through the outer wrapper restore, skipping intervening helper frames.
+\end{itemize}

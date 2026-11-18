@@ -1,0 +1,33 @@
+\section{Step 17 Consume an accepted digit and classify its successor}\label{expression-s17}
+
+Advance the cursor after the candidate passes. If that reaches the length, finish the number immediately. Otherwise load the next available byte and apply the same digit test. A digit loops back to accumulation; a nondigit leaves the cursor at that byte for the surrounding parser.
+
+\Needspace{18\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{primary\_next} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $s1, $s1, 1
+    beq $s1, $s2, primary_number
+    nop
+    daddu $t0, $s0, $s1
+    lbu $t0, 0($t0)
+    addiu $t1, $t0, -48
+    sltiu $t2, $t1, 10
+    bne $t2, $zero, primary_digit
+    nop
+\end{minted}
+\subsection{Expected observation}
+For 123, the accumulator becomes 123 and the cursor reaches three. The number-result region is still unfinished.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What happens to a plus byte after a literal?
+
+\begin{itemize}
+\item \textbf{A} It is included in the literal.
+\item \textbf{B} It remains unconsumed for a surrounding rule.
+\item \textbf{C} It is always a syntax error inside this helper.
+\end{itemize}

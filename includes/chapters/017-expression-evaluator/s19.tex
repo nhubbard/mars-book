@@ -1,0 +1,29 @@
+\section{Step 19 Enter a parenthesized expression}\label{expression-s19}
+
+Consume the opening parenthesis and call the expression routine. Each primary invocation has already preserved its return address in its own stack frame. If the nested call establishes an error, leave immediately instead of replacing that diagnostic while looking for a closing parenthesis. The expression routine is still a temporary stub at this stage.
+
+\Needspace{14\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{primary\_group\_call} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $s1, $s1, 1
+    jal parse_expr
+    nop
+    bne $s3, $zero, primary_return
+    nop
+\end{minted}
+\subsection{Expected observation}
+For an opening-parenthesis-only slice, the temporary nested call returns zero with cursor one. This is an intermediate scaffold observation, not a successful complete expression.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why must the primary save its own \texttt{ra} before the nested call?
+
+\begin{itemize}
+\item \textbf{A} The call overwrites \texttt{ra} with a new return address.
+\item \textbf{B} The saved input base is only a word wide.
+\item \textbf{C} The input length changes during a nested call.
+\end{itemize}

@@ -1,0 +1,30 @@
+\section{Step 13 Test representability before returning a value}\label{expression-s13}
+
+A word shift by zero takes the low word and sign extends that word to a full register. Compare this canonical word value with the original wide candidate. Equality permits the value path. Inequality sets overflow status and transfers to the provided error return, which records the operator offset and returns provisional value zero.
+
+\Needspace{15\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{apply\_check} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sll $t1, $t0, 0
+    beq $t1, $t0, apply_value
+    nop
+    li $s3, -2
+    beq $zero, $zero, apply_error
+    nop
+\end{minted}
+\subsection{Expected observation}
+The 46341-squared candidate reports status minus two at the supplied operator offset. Seven times five returns thirty-five with no error.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does equality prove?
+
+\begin{itemize}
+\item \textbf{A} That the candidate is representable as a signed word.
+\item \textbf{B} That the remaining expression has no later overflow.
+\item \textbf{C} That all remaining input is valid.
+\end{itemize}

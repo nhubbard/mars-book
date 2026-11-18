@@ -1,0 +1,39 @@
+\section{Measure complete parser calls}\label{expression-measurement}
+The two verified designs share primary, unary and arithmetic helpers. The reference
+uses separate term and expression loops. The alternative uses a precedence threshold
+for binary operators. Each measurement runs a complete public function call on the
+same bytes, excluding caller setup, assembly, session construction and program exit.
+
+\begin{table}[htbp]
+\centering
+\caption{Native instruction work and input-read notices. Counts describe the listed implementations and inputs, not host processor cycles or elapsed time.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrrr}
+\toprule
+Scene & Loop work & Threshold work & Loop reads & Threshold reads\\
+\midrule
+Single literal & 174 & 158 & 4 & 4\\
+Default expression & 1062 & 1050 & 49 & 45\\
+31 binary plus signs & 6281 & 6520 & 283 & 281\\
+63 unary minus signs & 3450 & 3434 & 130 & 130\\
+31 nested groups & 6194 & 5248 & 315 & 253\\
+Overflow before trailing byte & 537 & 514 & 25 & 23\\
+Missing group close & 616 & 603 & 24 & 22\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The chain input contains thirty-two digit-one operands. The unary input has sixty-three
+minus signs followed by one. The group input encloses one in thirty-one pairs of
+parentheses. The final two inputs are \texttt{2147483647+1?} and \texttt{1/(2-2}.
+The separate-loop design uses fewer instructions on the addition chain, while the
+threshold design saves work for nested groups. Neither result establishes a universal
+winner. Input reads can repeat the same byte as several rules inspect a boundary.
+Private stack accesses are outside the input-read column. An equivalent parser may
+use another read width or traversal and produce other counts without violating the
+contract; every byte in each load must still fit inside the input slice.
+
+An optimization must preserve intermediate overflow checks and diagnostic priority.
+Combining arithmetic algebraically or validating all syntax first can change those
+results even when successful examples still agree. Measure work only after checking
+that complete behavior, and state the expression shape with the measurement.

@@ -1,0 +1,82 @@
+\section{Step 3 Inspect the public entry and restore}\label{expression-s03}
+
+The provided wrapper saves the original saved registers and its return address in an eighty-byte frame. It initializes shared parser state, calls the expression rule, skips final whitespace after success, and rejects trailing input. It returns the saved value on success or the first diagnostic on error, then restores the full caller state.
+
+\Needspace{20\baselineskip}
+\subsection{Save caller state}
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+eval_expr:
+    daddiu $sp, $sp, -80
+    sd $s0, 0($sp)
+    sd $s1, 8($sp)
+    sd $s2, 16($sp)
+    sd $s3, 24($sp)
+    sd $s4, 32($sp)
+    sd $s5, 40($sp)
+    sd $s6, 48($sp)
+    sd $s7, 56($sp)
+    sd $ra, 64($sp)
+\end{minted}
+\Needspace{33\baselineskip}
+\subsection{Parse and select the public result}
+\Needspace{27\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s0, $a0
+    move $s1, $zero
+    move $s2, $a1
+    move $s3, $zero
+    move $s4, $zero
+    jal parse_expr
+    nop
+    bne $s3, $zero, eval_error
+    nop
+    move $s5, $v0
+    jal skip_space
+    nop
+    beq $s1, $s2, eval_success
+    nop
+    li $s3, -1
+    move $s4, $s1
+eval_error:
+    move $v0, $s3
+    move $v1, $s4
+    beq $zero, $zero, eval_restore
+    nop
+eval_success:
+    move $v0, $zero
+    move $v1, $s5
+\end{minted}
+\Needspace{22\baselineskip}
+\subsection{Restore before returning}
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+eval_restore:
+    ld $s0, 0($sp)
+    ld $s1, 8($sp)
+    ld $s2, 16($sp)
+    ld $s3, 24($sp)
+    ld $s4, 32($sp)
+    ld $s5, 40($sp)
+    ld $s6, 48($sp)
+    ld $s7, 56($sp)
+    ld $ra, 64($sp)
+    daddiu $sp, $sp, 80
+    jr $ra
+    nop
+\end{minted}
+\subsection{Expected observation}
+A completed default call returns success without changing caller data. At the checkpoint the caller has not yet stored the two results.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why retain the parsed value before the final whitespace call?
+
+\begin{itemize}
+\item \textbf{A} To let the whitespace helper reset the input cursor to zero.
+\item \textbf{B} To use it as the number of bytes left to skip.
+\item \textbf{C} The live result must survive another helper call.
+\end{itemize}

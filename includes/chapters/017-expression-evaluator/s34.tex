@@ -1,0 +1,36 @@
+\section{Step 34 Look for the next expression operator}\label{expression-s34}
+
+Skip whitespace, stop at the input bound, and inspect the next byte. Recognize only addition or subtraction at this level. A different byte returns the accumulated value without consuming that byte. This is how the grammar transfers responsibility between rules rather than requiring every helper to understand every operator.
+
+\Needspace{21\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{expr\_probe} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    jal skip_space
+    nop
+    beq $s1, $s2, expr_value
+    nop
+    daddu $t0, $s0, $s1
+    lbu $t0, 0($t0)
+    li $t1, 43
+    beq $t0, $t1, expr_operator
+    nop
+    li $t1, 45
+    bne $t0, $t1, expr_value
+    nop
+\end{minted}
+\subsection{Expected observation}
+For 1+2*3, the operator probe finds decimal 43 at cursor one.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What should an inner expression do when it encounters its closing parenthesis?
+
+\begin{itemize}
+\item \textbf{A} Consume it as an operand.
+\item \textbf{B} Leave it for the surrounding caller.
+\item \textbf{C} Restart from the input base.
+\end{itemize}

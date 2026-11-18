@@ -1,0 +1,31 @@
+\section{Step 35 Save the pending expression operation}\label{expression-s35}
+
+Save both the operator byte and its cursor position before advancing. Then call the term routine for the right operand. The right call may recurse, skip whitespace, or fail. If it fails, return that diagnostic before attempting this pending binary operation.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary return in the \texttt{expr\_operator} region. Preserve its surrounding labels and frame scaffolding.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sd $t0, 8($sp)
+    sd $s1, 16($sp)
+    addiu $s1, $s1, 1
+    jal parse_term
+    nop
+    bne $s3, $zero, expr_return
+    nop
+\end{minted}
+\subsection{Expected observation}
+For 1+2*3, the right operand returns six; the left value and operator remain in the frame.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why retain the operator position before the right call?
+
+\begin{itemize}
+\item \textbf{A} The position is always zero.
+\item \textbf{B} The right call cannot advance the cursor.
+\item \textbf{C} An arithmetic failure must identify this operator after the cursor has moved.
+\end{itemize}

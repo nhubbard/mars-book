@@ -114,3 +114,38 @@ faulty programs and the incomplete starter are rejected. Four capture model stat
 have verified expected pixels and counters; they are not IDE screenshots. Human review,
 full reading-order and screen-reader work, independent accessibility validation and
 actual light-theme IDE captures remain pending. These checks do not certify PDF/UA.
+
+## Expression evaluator snapshot
+
+The seventeenth text chapter is a 55-page native composition with 45 steps, 34 authored
+assembly edits and nine provided wrapper/frame/return listings. Its independent entry
+is `drafts/expression-evaluator.tex`. The full manuscript now has 538 pages. The main
+include graph contains 851 files and 283 highlighted assembly blocks; the real IntelliJ
+export receipt contains 277 distinct sources. All 235 prior distinct exports remain
+byte-for-byte unchanged.
+
+The chapter has seventeen table header cells, one conceptual figure with alternative
+text, twenty-one mathematical structures and forty-three code structures. All forty-three
+normalized assembly blocks are found literally in the extracted PDF text. The manuscript
+has 327 headed table cells, twenty-one figures with alternatives, 564 math structures
+and 292 code/output structures. Minion Pro prose, Noto Sans Math equations and JetBrains
+Mono code remain embedded. No content overflow, missing glyphs, font substitution,
+duplicate labels or unresolved minted placeholders were reported.
+
+Every initial chapter page was rendered and reviewed in contact sheets. Code introductions
+were then grouped with their listings, and the measured-work float was separated from
+its surrounding paragraphs to prevent an interrupted sentence. Final frame, table and
+closing pages were checked enlarged. Build-local inspection files retain document hashes,
+font names, structural counts and the scope of visual review.
+
+Fourteen public composition/package tests, seven renderer tests and three authoring-plugin
+Jupiter tests pass. The 76 CLI grading runs record 23887 positive case executions, including
+34 cumulative programs with 46 observations, two parser designs, repeated same-session
+calls, wide data, ownership checks, exact reconstruction and four capture models.
+Nineteen faulty programs and the incomplete starter are rejected. These are bounded tests,
+not exhaustion of every 64-byte expression or every signed-word operand.
+
+The four numerical screenshot models are not IDE captures. Actual automated light-theme
+screenshots, final author review, complete reading-order/screen-reader review and independent
+accessibility validation remain pending. The PDF/UA-2 target and structural checks do not
+certify conformance. The full 35-project book and capture goal remains active.

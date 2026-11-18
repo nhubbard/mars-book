@@ -504,3 +504,40 @@ at 12/8, 20/13, 4/2, 8/6, 0/0. Setup, assembly, session creation, display and ex
 excluded; these are native work counts without elapsed-time claims. Exact counts are
 not a free-writing grading requirement. Four capture models verify full frame cells,
 return counters and physical RGB view expectations; actual IDE captures are pending.
+
+## Expression evaluator
+
+Package 017 is a complete native text draft with 45 steps, 34 authored region edits,
+nine provided frame/wrapper/return listings and 90 hints. The temporary region returns
+keep partial programs assemblable; their own observations are distinct from final
+behavioral grading. All 34 cumulative programs pass 46 observations and reconstruct
+the verified reference byte for byte. The provided native listings also match it.
+
+Both recursive-descent and precedence-climbing implementations pass 540 public kernel,
+20 caller and 10230 private cases each, plus wide-input kernel/caller runs. The short
+private domain contains every string through length four over `01+-*/() ` (7381
+strings). Further cases cover 1024 byte substitutions, 400 boundary operand pairs,
+fourteen error-order inputs, 128 unary-depth inputs, 64 group-depth inputs, 1200 valid
+chains checked by an independent operator-stack oracle and nineteen whitespace
+expansions within the length limit. This is not every 64-byte input or every operand.
+
+Each implementation also passes eleven rotated same-session sequences, eleven calls
+per case, covering success after prior syntax, overflow and zero-division results.
+The grader permits private stack and submission-owned constant reads, rejects all
+caller-data stores even if restored, and checks every byte of observed reads against
+the selected slice. Scratch-register choices, traversal order and load width are not
+prescribed. Data above four GiB is executed; the attempted high text/stack addresses
+are outside the pinned Default map and are not claimed as positive coverage.
+
+The 76 grading runs record 23887 positive case executions across repeated variants,
+illustrations and models. Nineteen faulty assembled implementations and the incomplete
+starter are rejected. The final archives pin the CLI, scripts, source revisions and
+student ZIP digest. Four numerical capture models verify checkpoint registers, input
+preservation and pre-store memory values; actual IDE screenshot capture remains pending.
+
+Measured function work varies by input shape. The separate-loop and threshold designs
+use 1062/1050 native instructions for the default expression, 6281/6520 for the 31-plus
+chain and 6194/5248 for 31 nested groups. The seven-scene table also records input-read
+notices. Setup, assembly, session construction and exit are excluded. These are native
+work counts without elapsed-time claims or exact-count grading requirements. Human
+review and independent accessibility validation remain outstanding.

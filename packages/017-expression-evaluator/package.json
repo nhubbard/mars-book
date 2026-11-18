@@ -1,0 +1,1958 @@
+{
+  "formatVersion": 1,
+  "id": "017-expression-evaluator",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Evaluate integer expressions",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "traceExecution",
+      "readDataAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Bounded byte slices and logical read bounds",
+    "Full-width addresses and saved-register frames",
+    "Signed comparisons and representability checks"
+  ],
+  "learningObjectives": [
+    "Encode precedence and left association in parser calls and loops",
+    "Preserve local pending operations across recursion",
+    "Check every intermediate signed-word arithmetic result",
+    "Locate syntax, literal and operator failures precisely",
+    "Preserve the first failure in the specified evaluation procedure",
+    "Compare parser work while retaining complete behavior"
+  ],
+  "inputDomain": {
+    "type": "integer-expression",
+    "maximumBytes": 64,
+    "inputArenaBytes": 96,
+    "literalMaximum": 2147483647,
+    "resultMinimum": -2147483648,
+    "resultMaximum": 2147483647
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose, region replacements and CLI grading; interactive trainer and screenshot runner pending"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read status before interpreting the second result",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does `v1` contain after a syntax error?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A byte offset."
+          },
+          {
+            "id": "b",
+            "text": "An expression result."
+          },
+          {
+            "id": "c",
+            "text": "The input address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "The same second result register represents a signed expression value on success and a byte offset on failure."
+        },
+        {
+          "id": "s01-h2",
+          "text": "At expression_ready for the complete program, `v0` is zero and `v1` is twenty-four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Assign operators to grammar levels",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What makes subtraction left associative in the guided design?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Recursive unary signs."
+          },
+          {
+            "id": "b",
+            "text": "Updating a left accumulator in a loop."
+          },
+          {
+            "id": "c",
+            "text": "Treating every operator as equal precedence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Compare 1+2*3 with (1+2)*3 and compare 1-2-3 with 1-(2-3)."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The first pair yields seven and nine; the second yields minus four and two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Inspect the public entry and restore",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why retain the parsed value before the final whitespace call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To let the whitespace helper reset the input cursor to zero."
+          },
+          {
+            "id": "b",
+            "text": "To use it as the number of bytes left to skip."
+          },
+          {
+            "id": "c",
+            "text": "The live result must survive another helper call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The provided wrapper saves the original saved registers and its return address in an eighty-byte frame."
+        },
+        {
+          "id": "s03-h2",
+          "text": "A completed default call returns success without changing caller data. At the checkpoint the caller has not yet stored the two results."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Inspect the helper scaffolding",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Where should an early nonleaf-helper exit go?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Through that helper frame restore."
+          },
+          {
+            "id": "b",
+            "text": "Directly through `jr` before undoing the frame."
+          },
+          {
+            "id": "c",
+            "text": "Through the outer wrapper restore, skipping intervening helper frames."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The supplied prologues preserve each nonleaf helper return address; the corresponding exits restore that frame."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The unfinished starter exits cleanly but does not satisfy the final evaluator contract."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Check the bound before reading a character",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What must be established before `lbu`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That the next byte is nonzero."
+          },
+          {
+            "id": "b",
+            "text": "That the cursor identifies an available byte."
+          },
+          {
+            "id": "c",
+            "text": "That the base fits in a word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Test the shared cursor against the length before forming an address."
+        },
+        {
+          "id": "s05-h2",
+          "text": "For the slice \" 7\", the first byte read is decimal 32 and the cursor remains zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "space_read"
+    },
+    {
+      "id": "s06",
+      "title": "Recognize the four whitespace bytes",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which byte is excluded from this whitespace list?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Horizontal tab, 9."
+          },
+          {
+            "id": "b",
+            "text": "Line feed, 10."
+          },
+          {
+            "id": "c",
+            "text": "Vertical tab, 11."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Compare the byte with decimal 32, 9, 10, and 13."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Before the advance region is written, the space match reaches its temporary return. The cursor still remains zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "space_classify"
+    },
+    {
+      "id": "s07",
+      "title": "Skip a run without reading past its end",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Where does the next iteration begin?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At the length check."
+          },
+          {
+            "id": "b",
+            "text": "At an unconditional byte load."
+          },
+          {
+            "id": "c",
+            "text": "At the public function entry."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Increment the cursor once and branch back to the bound check."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The slice space, tab, carriage return, line feed, 7 leaves the cursor at four. An empty slice causes no input load."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "space_advance"
+    },
+    {
+      "id": "s08",
+      "title": "Select a binary arithmetic operation",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Who ensures that the fourth path represents division?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The input length alone."
+          },
+          {
+            "id": "b",
+            "text": "The calling parser, through its operator classification."
+          },
+          {
+            "id": "c",
+            "text": "The result-range check."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The private arithmetic helper receives the left value in `a0`, right value in `a1`, operator byte in `a2`, and operator offset in `a3`."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The plus byte, decimal 43, selects apply_add. Arithmetic regions that are still unfinished return provisional zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_dispatch"
+    },
+    {
+      "id": "s09",
+      "title": "Reject zero before signed division",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why check the denominator first?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To round negative quotients downward."
+          },
+          {
+            "id": "b",
+            "text": "To accept an implicit zero result for a missing operand."
+          },
+          {
+            "id": "c",
+            "text": "To report the specified error without executing a zero-divisor instruction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Test the right operand before issuing `ddiv`."
+        },
+        {
+          "id": "s09-h2",
+          "text": "With operands eight and three, `t0` contains two before the unfinished range region returns. The candidate is not yet the public result."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_divide"
+    },
+    {
+      "id": "s10",
+      "title": "Compute an exact wide sum",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What range is checked after the wide operation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The required signed 32-bit result range."
+          },
+          {
+            "id": "b",
+            "text": "The unsigned byte range."
+          },
+          {
+            "id": "c",
+            "text": "Only whether the result is nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Add the two sign-extended signed-word values with `daddu`, retaining the candidate in `t0`."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Operands seven and five leave candidate twelve in `t0`."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_add"
+    },
+    {
+      "id": "s11",
+      "title": "Preserve operand order in subtraction",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which calculation implements `a0` minus `a1`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "`a1` minus `a0`."
+          },
+          {
+            "id": "b",
+            "text": "`a0` minus `a1`."
+          },
+          {
+            "id": "c",
+            "text": "The absolute difference."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Use the left value minus the right value."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Operands seven and twelve leave candidate minus five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_subtract"
+    },
+    {
+      "id": "s12",
+      "title": "Keep the complete product for checking",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why is a word multiply insufficient here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A word multiply always traps when its signed result is too large."
+          },
+          {
+            "id": "b",
+            "text": "It treats every operand as unsigned."
+          },
+          {
+            "id": "c",
+            "text": "It can discard the evidence needed to detect signed-word overflow."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Use `dmul` rather than the word-result multiply."
+        },
+        {
+          "id": "s12-h2",
+          "text": "46341 times 46341 leaves exact candidate 2147488281, which exceeds the signed-word maximum."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_multiply"
+    },
+    {
+      "id": "s13",
+      "title": "Test representability before returning a value",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "What does equality prove?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That the candidate is representable as a signed word."
+          },
+          {
+            "id": "b",
+            "text": "That the remaining expression has no later overflow."
+          },
+          {
+            "id": "c",
+            "text": "That all remaining input is valid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "A word shift by zero takes the low word and sign extends that word to a full register."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The 46341-squared candidate reports status minus two at the supplied operator offset. Seven times five returns thirty-five with no error."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_check"
+    },
+    {
+      "id": "s14",
+      "title": "Assign the division-by-zero status",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What identifies the failing slash?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The length register."
+          },
+          {
+            "id": "b",
+            "text": "The operator offset retained in `a3`."
+          },
+          {
+            "id": "c",
+            "text": "The next unread character."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Complete the earlier denominator guard by selecting status minus three."
+        },
+        {
+          "id": "s14-h2",
+          "text": "One divided by zero reports minus three and the supplied slash offset."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "apply_zero"
+    },
+    {
+      "id": "s15",
+      "title": "Distinguish a group from a decimal literal",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Why does the unsigned digit comparison reject a slash?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Slash becomes digit nine."
+          },
+          {
+            "id": "b",
+            "text": "The slash is a whitespace byte."
+          },
+          {
+            "id": "c",
+            "text": "Subtracting ASCII zero gives a negative value, which is outside unsigned zero through nine."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Skip permitted whitespace, reject end of input as a missing primary, and inspect the next byte."
+        },
+        {
+          "id": "s15-h2",
+          "text": "For 7, `t1` is digit value seven, `t2` is one, `t3` is zero, and the cursor is still zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_entry"
+    },
+    {
+      "id": "s16",
+      "title": "Accumulate and check one decimal digit",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "When is the literal bound checked?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before consuming the digit that caused an excessive candidate."
+          },
+          {
+            "id": "b",
+            "text": "Only after the complete expression."
+          },
+          {
+            "id": "c",
+            "text": "Only when unary minus is present."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Multiply the accepted prefix by ten in doubleword width, then add the digit value."
+        },
+        {
+          "id": "s16-h2",
+          "text": "With first digit 7, the accumulator becomes seven while the cursor still identifies that digit."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_digit"
+    },
+    {
+      "id": "s17",
+      "title": "Consume an accepted digit and classify its successor",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What happens to a plus byte after a literal?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is included in the literal."
+          },
+          {
+            "id": "b",
+            "text": "It remains unconsumed for a surrounding rule."
+          },
+          {
+            "id": "c",
+            "text": "It is always a syntax error inside this helper."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Advance the cursor after the candidate passes."
+        },
+        {
+          "id": "s17-h2",
+          "text": "For 123, the accumulator becomes 123 and the cursor reaches three. The number-result region is still unfinished."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_next"
+    },
+    {
+      "id": "s18",
+      "title": "Return the completed literal",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Does a successful primary certify complete input consumption?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only when it is positive."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Copy the bounded accumulator into the private value result and leave through the primary frame restore."
+        },
+        {
+          "id": "s18-h2",
+          "text": "For 123, the helper now returns value 123 with cursor three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_number"
+    },
+    {
+      "id": "s19",
+      "title": "Enter a parenthesized expression",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why must the primary save its own `ra` before the nested call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The call overwrites `ra` with a new return address."
+          },
+          {
+            "id": "b",
+            "text": "The saved input base is only a word wide."
+          },
+          {
+            "id": "c",
+            "text": "The input length changes during a nested call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Consume the opening parenthesis and call the expression routine."
+        },
+        {
+          "id": "s19-h2",
+          "text": "For an opening-parenthesis-only slice, the temporary nested call returns zero with cursor one. This is an intermediate scaffold observation, not a successful complete expression."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_group_call"
+    },
+    {
+      "id": "s20",
+      "title": "Require the closing parenthesis after an inner value",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "When is the closing-parenthesis test meaningful for the final language?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before consuming the opening parenthesis."
+          },
+          {
+            "id": "b",
+            "text": "After the inner expression has successfully supplied its value."
+          },
+          {
+            "id": "c",
+            "text": "Only after the public caller stores the result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Save the nested value in this primary frame before calling the whitespace helper."
+        },
+        {
+          "id": "s20-h2",
+          "text": "For (7), the temporary inner-expression stub leaves cursor one, so the close check reaches the still-unfinished syntax path at the digit."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_close"
+    },
+    {
+      "id": "s21",
+      "title": "Retain the offending literal-digit position",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which position identifies literal overflow?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The beginning of the whole slice."
+          },
+          {
+            "id": "b",
+            "text": "The following operator."
+          },
+          {
+            "id": "c",
+            "text": "The first digit whose inclusion exceeds the literal maximum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Set overflow status, copy the current cursor into the diagnostic offset, clear the private value, and return through the balanced primary exit."
+        },
+        {
+          "id": "s21-h2",
+          "text": "2147483648 reports status minus two, offset nine, with cursor nine."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_overflow"
+    },
+    {
+      "id": "s22",
+      "title": "Report an unexpected byte or missing primary",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "How is a missing operand at end of input located?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "By the length offset."
+          },
+          {
+            "id": "b",
+            "text": "By reading the next mapped byte."
+          },
+          {
+            "id": "c",
+            "text": "By assuming an implicit zero operand."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Set syntax status and retain the current cursor."
+        },
+        {
+          "id": "s22-h2",
+          "text": "An empty slice reports syntax error at zero without an input read. A question mark at the first position also reports offset zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "primary_syntax"
+    },
+    {
+      "id": "s23",
+      "title": "Recognize a sign before selecting a primary",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What should an isolated minus eventually produce?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A successful zero."
+          },
+          {
+            "id": "b",
+            "text": "A missing-operand syntax error."
+          },
+          {
+            "id": "c",
+            "text": "An implicit minimum integer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Skip whitespace, then distinguish plus and minus from the primary path."
+        },
+        {
+          "id": "s23-h2",
+          "text": "For -7, the inspected operator byte is decimal 45 and the cursor is still zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "unary_entry"
+    },
+    {
+      "id": "s24",
+      "title": "Delegate an unsigned primary spelling",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "What must the no-sign path preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the first input byte."
+          },
+          {
+            "id": "b",
+            "text": "A new artificial sign."
+          },
+          {
+            "id": "c",
+            "text": "The primary value or its existing error."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Call the primary routine when no prefix sign is selected."
+        },
+        {
+          "id": "s24-h2",
+          "text": "For 7, unary now returns seven with cursor one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "unary_primary"
+    },
+    {
+      "id": "s25",
+      "title": "Retain a prefix operation across recursion",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why does each unary call need separate sign slots?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Several prefix operations can be unfinished simultaneously."
+          },
+          {
+            "id": "b",
+            "text": "All signs share one byte offset."
+          },
+          {
+            "id": "c",
+            "text": "A recursive call preserves the previous sign automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Save the sign position and sign byte in this invocation, advance once, and recursively parse another unary operand."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Before the negation region is filled, -7 reaches cursor two and returns the operand value seven. That provisional value is not the completed negative result."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "unary_sign"
+    },
+    {
+      "id": "s26",
+      "title": "Apply the saved sign with a range check",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Where does overflow from negating an already valid minimum value point?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At the final digit."
+          },
+          {
+            "id": "b",
+            "text": "At the saved unary-minus byte."
+          },
+          {
+            "id": "c",
+            "text": "At the end of the slice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Unary plus returns its operand unchanged."
+        },
+        {
+          "id": "s26-h2",
+          "text": "-7 returns minus seven, --5 returns five, and an overflowing literal inside a sign retains its literal-digit diagnostic."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "unary_negate"
+    },
+    {
+      "id": "s27",
+      "title": "Obtain the first term value",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Where does the live left value survive nested calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In this invocation's stack slot."
+          },
+          {
+            "id": "b",
+            "text": "In the input bytes."
+          },
+          {
+            "id": "c",
+            "text": "In an unpreserved temporary register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Call the unary routine for the first operand and propagate any existing error."
+        },
+        {
+          "id": "s27-h2",
+          "text": "For 3, the first unary value is three and the cursor reaches one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "term_first"
+    },
+    {
+      "id": "s28",
+      "title": "Look for the next term operator",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q28",
+        "prompt": "What does a term do when it encounters binary plus?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Consume it as an operand."
+          },
+          {
+            "id": "b",
+            "text": "Leave it for the surrounding caller."
+          },
+          {
+            "id": "c",
+            "text": "Restart from the input base."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Skip whitespace, stop at the input bound, and inspect the next byte."
+        },
+        {
+          "id": "s28-h2",
+          "text": "For 3*4, the operator probe finds decimal 42 at cursor one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "term_probe"
+    },
+    {
+      "id": "s29",
+      "title": "Save the pending term operation",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Why retain the operator position before the right call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The position is always zero."
+          },
+          {
+            "id": "b",
+            "text": "The right call cannot advance the cursor."
+          },
+          {
+            "id": "c",
+            "text": "An arithmetic failure must identify this operator after the cursor has moved."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Save both the operator byte and its cursor position before advancing."
+        },
+        {
+          "id": "s29-h2",
+          "text": "For 3*4, the right operand returns four; the left value and operator remain in the frame."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "term_operator"
+    },
+    {
+      "id": "s30",
+      "title": "Apply the pending term operation",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which value belongs in `a0`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The saved left operand."
+          },
+          {
+            "id": "b",
+            "text": "The most recently returned right operand."
+          },
+          {
+            "id": "c",
+            "text": "The input length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Move the right value into `a1`, reload the left value into `a0`, and recover the operator and its position into `a2` and `a3`."
+        },
+        {
+          "id": "s30-h2",
+          "text": "For 3*4, the checked operation now returns twelve."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "term_apply"
+    },
+    {
+      "id": "s31",
+      "title": "Accumulate term operations from left to right",
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "What becomes the next left operand?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original first operand every time."
+          },
+          {
+            "id": "b",
+            "text": "The most recent accumulated result."
+          },
+          {
+            "id": "c",
+            "text": "The following source digit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Store the successful result back into the same accumulator slot and return to the operator probe."
+        },
+        {
+          "id": "s31-h2",
+          "text": "For 3*4/2, successive operations produce twelve and then six."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "term_repeat"
+    },
+    {
+      "id": "s32",
+      "title": "Return the accumulated term value",
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Who performs the final complete-input check?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The primary rule as soon as one literal ends."
+          },
+          {
+            "id": "b",
+            "text": "Every term before returning to the expression rule."
+          },
+          {
+            "id": "c",
+            "text": "The public wrapper after the expression and final whitespace skip."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "When this level has no next operator, reload its accumulator and restore the frame."
+        },
+        {
+          "id": "s32-h2",
+          "text": "For 7+2, term returns seven and leaves the plus at cursor one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "term_value"
+    },
+    {
+      "id": "s33",
+      "title": "Obtain the first expression value",
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Where does the live left value survive nested calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In this invocation's stack slot."
+          },
+          {
+            "id": "b",
+            "text": "In the input bytes."
+          },
+          {
+            "id": "c",
+            "text": "In an unpreserved temporary register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Call the term routine for the first operand and propagate any existing error."
+        },
+        {
+          "id": "s33-h2",
+          "text": "For 1+2*3, the first term returns one and leaves the cursor at one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "expr_first"
+    },
+    {
+      "id": "s34",
+      "title": "Look for the next expression operator",
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What should an inner expression do when it encounters its closing parenthesis?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Consume it as an operand."
+          },
+          {
+            "id": "b",
+            "text": "Leave it for the surrounding caller."
+          },
+          {
+            "id": "c",
+            "text": "Restart from the input base."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Skip whitespace, stop at the input bound, and inspect the next byte."
+        },
+        {
+          "id": "s34-h2",
+          "text": "For 1+2*3, the operator probe finds decimal 43 at cursor one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "expr_probe"
+    },
+    {
+      "id": "s35",
+      "title": "Save the pending expression operation",
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Why retain the operator position before the right call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The position is always zero."
+          },
+          {
+            "id": "b",
+            "text": "The right call cannot advance the cursor."
+          },
+          {
+            "id": "c",
+            "text": "An arithmetic failure must identify this operator after the cursor has moved."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Save both the operator byte and its cursor position before advancing."
+        },
+        {
+          "id": "s35-h2",
+          "text": "For 1+2*3, the right operand returns six; the left value and operator remain in the frame."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "expr_operator"
+    },
+    {
+      "id": "s36",
+      "title": "Apply the pending expression operation",
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which value belongs in `a0`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The saved left operand."
+          },
+          {
+            "id": "b",
+            "text": "The most recently returned right operand."
+          },
+          {
+            "id": "c",
+            "text": "The input length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Move the right value into `a1`, reload the left value into `a0`, and recover the operator and its position into `a2` and `a3`."
+        },
+        {
+          "id": "s36-h2",
+          "text": "For 1+2*3, the checked operation now returns seven."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "expr_apply"
+    },
+    {
+      "id": "s37",
+      "title": "Accumulate expression operations from left to right",
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "What becomes the next left operand?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original first operand every time."
+          },
+          {
+            "id": "b",
+            "text": "The most recent accumulated result."
+          },
+          {
+            "id": "c",
+            "text": "The following source digit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Store the successful result back into the same accumulator slot and return to the operator probe."
+        },
+        {
+          "id": "s37-h2",
+          "text": "For 1+2*3-4, successive outer operations produce seven and then three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "expr_repeat"
+    },
+    {
+      "id": "s38",
+      "title": "Return the accumulated expression value",
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Who performs the final complete-input check?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The primary rule as soon as one literal ends."
+          },
+          {
+            "id": "b",
+            "text": "Every term before returning to the expression rule."
+          },
+          {
+            "id": "c",
+            "text": "The public wrapper after the expression and final whitespace skip."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "When this level has no next operator, reload its accumulator and restore the frame."
+        },
+        {
+          "id": "s38-h2",
+          "text": "All parser regions are now complete. The default expression returns twenty-four with cursor seventeen; the public wrapper reports success."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      },
+      "editTarget": "expr_value"
+    },
+    {
+      "id": "s39",
+      "title": "Run the complete default expression",
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q39",
+        "prompt": "When should the stored counters change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before the function returns."
+          },
+          {
+            "id": "b",
+            "text": "After expression_continue executes the caller stores."
+          },
+          {
+            "id": "c",
+            "text": "While parsing the first digit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "All helper regions now contain their final instructions."
+        },
+        {
+          "id": "s39-h2",
+          "text": "The register result is status zero and value twenty-four; status and result memory are still ninety-nine until continuation."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s40",
+      "title": "Distinguish an unfinished group from a zero denominator",
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Which failure wins for the input without its closing parenthesis?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Division by zero at one."
+          },
+          {
+            "id": "b",
+            "text": "Success after treating the input end as an implicit close."
+          },
+          {
+            "id": "c",
+            "text": "Syntax at the six-byte input end."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Use 1/(2-2 and then 1/(2-2)."
+        },
+        {
+          "id": "s40-h2",
+          "text": "The missing close reports syntax at six; the complete denominator reports zero division at one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s41",
+      "title": "Separate literal overflow from unary overflow",
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q41",
+        "prompt": "May unary minus rescue an already overflowing decimal token?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Yes, for every ten-digit token."
+          },
+          {
+            "id": "c",
+            "text": "Only when a later multiplication is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Test -2147483648, (-2147483647-1), and -(-2147483647-1)."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The literal error is at ten; the minimum construction succeeds; the outer negation error is at zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s42",
+      "title": "Check division and signed range boundaries",
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q42",
+        "prompt": "What status belongs to minimum signed word divided by minus one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Division by zero."
+          },
+          {
+            "id": "b",
+            "text": "Overflow."
+          },
+          {
+            "id": "c",
+            "text": "Success with a wrapped minimum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Compare -7/3, 7/-3, 1/(2-2), and (-2147483647-1)/-1."
+        },
+        {
+          "id": "s42-h2",
+          "text": "The first two values are minus two. Zero division reports minus three; minimum divided by minus one reports overflow."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s43",
+      "title": "Run the behavioral and ownership checks",
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Can a write followed by restoration satisfy the read-only input contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if output is unchanged."
+          },
+          {
+            "id": "b",
+            "text": "Only for zero bytes."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Run both public scripts with the packaged CLI."
+        },
+        {
+          "id": "s43-h2",
+          "text": "The complete guided implementation passes; the original unfinished starter is rejected."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s44",
+      "title": "Compare parser work across different shapes",
+      "content": "steps/44.md",
+      "prerequisites": [
+        "s43"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q44",
+        "prompt": "Which conclusion do these measurements support?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Costs depend on the tested expression shape."
+          },
+          {
+            "id": "b",
+            "text": "One parser must win every workload."
+          },
+          {
+            "id": "c",
+            "text": "Fewer source lines prove lower elapsed time."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Measure complete function work for both verified parser designs on the same input slices."
+        },
+        {
+          "id": "s44-h2",
+          "text": "The separate-loop reference uses fewer instructions on the long addition chain, while precedence climbing uses fewer for the deep-group scene."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s45",
+      "title": "Write another implementation under the same contract",
+      "content": "steps/45.md",
+      "prerequisites": [
+        "s44"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q45",
+        "prompt": "What must remain equivalent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The reference stack layout."
+          },
+          {
+            "id": "b",
+            "text": "The complete public behavior, including errors and memory ownership."
+          },
+          {
+            "id": "c",
+            "text": "The number of private routines."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "In free-writing mode, replace the helper design while keeping eval_expr and the caller/data harness."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Final grading accepts equivalent behavior without requiring internal labels, scratch registers, traversal order or exact instruction counts."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify final behavior and author checks verify the illustrated increments; interactive recognition and actual IDE capture remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json"
+  ]
+}

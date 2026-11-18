@@ -81,10 +81,16 @@ Student ZIPs are under build/, each with a SHA-256 sidecar. Compile the book wit
 The unmodified starter exits cleanly but intentionally does not pass the assignment.
 See [verification](docs/verification.md) for the tested package behavior.
 
+The [expression evaluator](packages/017-expression-evaluator/assignment.md) develops
+precedence, unary recursion, checked signed-word arithmetic and ordered diagnostics
+through forty-five steps and thirty-four verified assembly edits. Its native chapter
+includes stack/grammar/diagnostic fixtures, equivalent parsing strategies, measured
+workloads and four planned light-theme captures.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first sixteen chapters are now composed through ordinary LaTeX input/include files.
+The first seventeen chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -99,7 +105,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first sixteen text packages, starters, public checks, deterministic student archive builder,
+The first seventeen text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
