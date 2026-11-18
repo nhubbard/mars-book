@@ -1,0 +1,33 @@
+\section{Try another schedule under the same arithmetic contract}
+The baseline's inner loop reads a column of \(B\) with stride \(4N\). An
+\(i,k,j\) schedule instead holds one \(A_{i,k}\) value while walking adjacent
+columns of row \(k\) in \(B\). Initialize the output to zero, then add this
+held value times each \(B_{k,j}\) to \(C_{i,j}\). Every right-input row becomes
+a consecutive read, while output is read and written for every reduction position.
+
+This schedule reuses the left input in a register and changes both memory traffic
+and loop control. It is a correct free-writing alternative under the numerical
+contract, even though it does not demonstrate the guided tiled traversal. Separate
+an instructor's strategy objective from the final observable result. A private
+register choice or an exact reference instruction count does not establish correctness.
+
+Other changes include retaining several output accumulators in registers, moving
+invariant stride calculations out of inner loops, and packing a right-input panel.
+For each proposal, state which state is reused, when it becomes invalid, and where
+its storage is owned. A packed panel adds copy work and private storage; include
+that preparation in any complete-call measurement that uses it.
+
+\begin{MARSExercise}{Retain two outputs}
+For two neighboring output columns, both dot products use the same left-input value
+at each reduction position. Describe a loop with two independent full-width
+accumulators. State its input-read savings, its additional register requirements,
+and the tail condition for an odd output-column count. Keep all address and arithmetic
+bounds from the original contract.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Change the numerical domain deliberately}
+Suppose an instructor now permits arbitrary signed 32-bit inputs. Find a product
+and a sixteen-product sum that invalidate the current width proof. Does a signed
+64-bit accumulator always suffice? Specify the new overflow policy before choosing
+instructions or reusing this exercise's expected results.
+\end{MARSExercise}

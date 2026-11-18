@@ -1,0 +1,29 @@
+\section{Draw tile boundaries in index space}
+The rows of a drawn tile are index ranges, not consecutive memory blocks. In
+row-major storage, a three-column subrow has twelve input bytes. The next subrow
+starts at the next full matrix row, whose width may be larger. Padding between
+selected subrows belongs to other matrix columns; it is not part of this tile.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={A five-row by three-column output is split at row three for tile edge three. It has one three-by-three tile and one two-by-three tile. The shared reduction dimension seven is partitioned into intervals zero through two, three through five and six alone.},x=0.8cm,y=0.65cm,font=\small]
+\foreach \i in {0,...,4}{\foreach \j in {0,...,2}{\draw (\j,-\i) rectangle ++(1,-1);}}
+\draw[very thick,MARSAccent] (0,-3)--(3,-3);
+\node[anchor=west] at (3.3,-1.5) {Rows \([0,3)\)};
+\node[anchor=west] at (3.3,-4) {Rows \([3,5)\)};
+\node at (1.5,0.55) {Output columns \([0,3)\)};
+\node[anchor=west] at (0,-6) {Reduction: \([0,3),\ [3,6),\ [6,7)\)};
+\end{tikzpicture}
+\caption{Clipped output tiles for five rows, three columns and tile edge three. Each receives three reduction contributions.}
+\end{figure}
+
+For fixed tile starts \(I,J,L\), the first left value for output row \(i\)
+is at \(a+4(iK+L)\). The first right value for output column \(j\) is at
+\(b+4(LN+j)\). Advance these walkers by four and \(4N\) inside the reduction.
+When changing \(j\), recompute both starts from the fixed tile start \(L\);
+the previous dot product's walkers already point at its exclusive end.
+
+The tile edge changes traversal, not physical row stride. Replacing \(N\) by
+\(T\) in the right-input stride treats the original matrix as if it had been
+repacked into tiles. This exercise retains ordinary row-major arrays throughout.
+A packed-tile layout would need a separate representation and conversion contract.

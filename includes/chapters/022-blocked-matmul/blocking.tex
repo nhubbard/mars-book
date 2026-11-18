@@ -1,0 +1,45 @@
+\section{Split the reduction without changing its meaning}
+A tile is a bounded interval in each relevant index. For tile edge \(T\), choose
+starts \(I,J,L\) for rows, columns and reduction positions. Their exclusive ends are
+\[
+ I_e=\min(I+T,M),\qquad J_e=\min(J+T,N),\qquad L_e=\min(L+T,K).
+\]
+Process \(I\leq i<I_e\), \(J\leq j<J_e\), and \(L\leq k<L_e\).
+The last tile can be shorter than \(T\) in any of the three dimensions.
+Compute and clip each end independently. A correct row bound does not protect a
+right-input column or a reduction position.
+
+The illustrated order is \(I,J,L,i,j,k\). For one output tile, process all
+reduction tiles before moving to the next output tile. Initialize every output
+cell to zero before these loops begin. At the start of a reduction tile, reload
+the cell's existing partial sum, add its next bounded group of products, and store
+that new partial sum. Resetting to zero at every reduction tile discards all earlier
+groups and computes only the final tile's contribution.
+
+For this schedule the output invariant before reduction tile \(L\) is
+\[
+ C_{i,j}=\sum_{q=0}^{L-1}A_{i,q}B_{q,j}
+ \quad\text{for the current output tile.}
+\]
+At \(L=0\), explicit initialization establishes zero. At the next tile start,
+\(L\) is advanced by \(T\). The last clipped tile ends at \(K\), so its stored
+value is the full dot product. All additions are exact integers in this exercise;
+regrouping them introduces no floating-point rounding change.
+
+\begin{MARSWorkedExample}{Keep the first reduction tile}
+Use the two-by-three example with \(T=2\). After reduction positions zero and one,
+its one output tile contains
+\[
+ \begin{pmatrix}25&28\\73&82\end{pmatrix}.
+\]
+The last reduction tile contains only position two. Its contributions are
+\(33,36,66,72\), giving the final \(58,64,139,154\). A program that clears the
+accumulator for the last tile stores only those four contributions. A program that
+assumes two products in the last tile reads beyond the active input.
+\end{MARSWorkedExample}
+
+\begin{MARSExercise}{Clip all three ends}
+For \((M,K,N,T)=(5,7,3,3)\), list the row, column and reduction intervals. How many
+output tiles exist, and how many reduction tiles contribute to each? Check the
+last element's address in each interval against the active byte length.
+\end{MARSExercise}

@@ -1,0 +1,30 @@
+\section{Use a working-set estimate as a prediction}
+For a complete \(T\)-by-\(T\)-by-\(T\) multiplication tile, the selected values
+occupy \(4T^2\) bytes in each input and \(8T^2\) in the output, or \(16T^2\)
+bytes in total. With \(T=4\), this equals the cache's 256-byte capacity. With
+\(T=8\), the selected values occupy 1024 bytes. A larger tile contains more
+opportunities to reuse a value, but also more values competing to remain resident.
+
+This byte estimate is not a miss-count proof. Subrows can occupy partial cache
+lines, the last tiles have different dimensions, and the stack and descriptor
+also produce accesses. Placement adds another constraint. For a direct-mapped
+sixteen-line cache, a byte address \(x\) selects
+\[
+ \left\lfloor x/16\right\rfloor\bmod16.
+\]
+Two live lines with the same set number displace each other. A fully associative
+cache allows any resident line to occupy any of its sixteen positions. A two-way
+cache has eight sets with two positions per set.
+
+The allocation bases are part of a cache experiment. Moving one matrix by a cache
+line preserves the arithmetic but changes its set numbers. Moving a matrix by
+only one element can also change which rows straddle line boundaries. Record both
+logical shape and actual addresses, together with line size, associativity,
+replacement policy and cache reset boundary.
+
+\begin{MARSExercise}{A fit that still conflicts}
+For sixteen input columns, neighboring row starts differ by sixty-four bytes.
+List the direct-mapped set numbers of the first five row starts when the first
+starts in set zero. How many different sets have those five starts used? Explain
+why total byte capacity alone does not predict their coexistence.
+\end{MARSExercise}

@@ -147,3 +147,18 @@ Five numerical capture models are verified, but actual IDE figures, the interact
 runner, enforced progression, author review and independent accessibility validation
 remain pending. Twenty-one text packages do not complete the full 35-project and
 capture objective, which remains active. Blocked matrix multiplication is next.
+
+
+Blocked matrix multiplication has a directly editable native foundation at
+`drafts/blocked-matmul.tex`. It derives rectangular packed-row addresses, exact
+64-bit accumulation for signed-16-bit-valued word inputs, empty-shape behavior,
+clipped three-dimensional tiles and initialized partial sums. A native tile diagram,
+worked rectangular results, exercises and whole-function cache/instruction measurements
+accompany it. Private scalar, blocked and independent i-k-j prototypes have meaningful
+memory ownership, full-width pointer and repeated-call checks. The current measurement
+shows a tradeoff: tile four reduces full-associative misses while increasing simulated
+instruction count. Aligned doubleword instructions emit two word notices in the current
+core; the text distinguishes those units. This foundation is not yet a complete text
+package and is not included in main.tex. Cumulative programming steps, construction
+observations, quizzes, student/instructor archives and actual IDE captures remain to be
+written and verified. The full 35-project objective remains active.

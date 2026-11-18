@@ -182,3 +182,8 @@ seven supplied excerpts use actual IntelliJ-derived minted highlighting. Native 
 window and waveform diagrams, exact impulse/rounding examples and whole-call tables
 accompany the student package. Entries share auxiliary files and must build sequentially.
 Five actual light-theme captures and independent accessibility validation remain pending.
+
+
+The independent blocked-matrix foundation can be built with
+`python3 tools/book.py build --entry drafts/blocked-matmul.tex`. It is directly edited
+native LaTeX and has not yet joined the main manuscript's completed text-package sequence.

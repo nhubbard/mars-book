@@ -110,6 +110,12 @@ exact eight-tap filtering through 47 steps and 36 edits. It includes explicit hi
 wide partial sums, signed rounding, public construction/final checks, six reproducible
 listening files and five planned light-theme capture models.
 
+The next chapter has an independent [blocked-matrix foundation](drafts/blocked-matmul.tex).
+It develops rectangular products, exact accumulator bounds, clipped reduction tiles,
+a native index diagram and measured instruction/cache tradeoffs. It is not yet a
+complete student package or part of the main manuscript; cumulative steps and captures
+remain in progress.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
