@@ -1,0 +1,29 @@
+\section*{Project contract}
+Implement \texttt{eval\_expr} for a byte slice containing an integer expression.
+Pass its full address in \texttt{a0} and its length, zero through 64 bytes, in
+\texttt{a1}. The slice lies within one of the supplied 96-byte input arenas and
+may begin at an unaligned byte address. Its length is authoritative: no trailing
+zero byte is required, and a zero byte inside the slice is an invalid input byte.
+The function produces no console output and writes no caller data, even temporarily.
+Private stack storage is allowed. Preserve all bits of \texttt{s0} through
+\texttt{s7}, \texttt{fp}, and \texttt{sp}, and return through the supplied
+\texttt{ra}. Source labels and temporary-register choices inside the function are
+not part of the free-writing interface.
+
+Return a status in \texttt{v0}. Zero means success, with the signed 32-bit value
+in \texttt{v1}. Minus one means syntax error, minus two means arithmetic overflow,
+and minus three means division by zero. On error, \texttt{v1} instead contains
+a zero-based byte offset. An offset equal to the supplied length identifies a
+missing item at end of input. Every input load must fit wholly inside the supplied
+slice. Reading ahead within that slice is permitted when it does not change the
+specified result or diagnostic.
+
+The language accepts decimal digit sequences, binary addition, subtraction,
+multiplication and division, unary plus and minus, and parentheses. Space, horizontal
+tab, carriage return and line feed may appear between tokens. They do not join
+separated digit sequences into one number. No comments, identifiers, implicit
+multiplication, hexadecimal literals or floating-point notation are accepted.
+Every decimal literal has a value from zero through 2,147,483,647. Each intermediate
+arithmetic result must lie from $-2^{31}$ through $2^{31}-1$. Division truncates its
+quotient toward zero. The order of validation and evaluation below determines which
+failure is reported when an input permits more than one diagnosis.

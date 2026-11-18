@@ -87,3 +87,11 @@ signed coordinate width, independent row strides, full-word key equality, no-sto
 transparency and full caller preservation. Native clipping/stride/count fixtures,
 measured preclipped/per-cell work, public checks and private geometry checks accompany
 separate student/instructor archives. Four actual light-theme captures remain planned.
+
+Expression evaluator is in progress. `drafts/expression-evaluator.tex` is a native
+foundation excerpt covering the grammar, byte-slice bounds, diagnostic ordering,
+checked signed-word arithmetic, recursive frame ownership and worked value reductions.
+It is not yet included in the full manuscript or counted as a completed chapter:
+instructional code increments, step quizzes/hints, the student package, capture plans
+and full companion verification remain to be composed. Tested implementation prototypes
+and development checks stay in the private instructor repository while that work proceeds.

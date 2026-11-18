@@ -1,0 +1,28 @@
+\section{Trace the default result}\label{expression-trace}
+The supplied byte slice is \texttt{18 - 3 * (2 + -4)}, seventeen bytes long.
+The outer subtraction is at offset three, multiplication at seven, addition at
+twelve, and unary minus at fourteen. Byte offsets include the spaces. The following
+reductions explain the successful result; the parser still has to consume each
+required closing parenthesis and check that no trailing token remains.
+
+\begin{table}[htbp]
+\centering
+\caption{Value reductions for the default slice. A reduction occurs after its operand or operands have succeeded.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrr}
+\toprule
+Operation & Operator offset & Result\\
+\midrule
+Unary minus of 4 & 14 & $-4$\\
+2 plus $-4$ & 12 & $-2$\\
+3 times $-2$ & 7 & $-6$\\
+18 minus $-6$ & 3 & 24\\
+\bottomrule
+\end{tabular}
+\end{table}
+On return from \texttt{eval\_expr}, \texttt{v0} is zero and \texttt{v1} is 24.
+The caller pauses at \texttt{expression\_ready} before storing those registers.
+At that point the memory words \texttt{status} and \texttt{result} still hold their
+initial value, 99. Continue through \texttt{expression\_continue} before checking
+the stored zero and 24. This separates a completed function result from the caller's
+later record of it.

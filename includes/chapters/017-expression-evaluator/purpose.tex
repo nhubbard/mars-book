@@ -1,0 +1,19 @@
+\section{Translate characters into a computation}\label{expression-purpose}
+An expression gives the evaluator two kinds of information. Digit sequences supply
+values; operators and parentheses specify how to combine those values. Reading the
+characters in order does not imply applying every operator immediately. In
+\texttt{18 - 3 * (2 + -4)}, the subtraction's right operand includes an entire
+multiplication. That multiplication must obtain the parenthesized value before the
+subtraction can finish. The final result is 24.
+
+The parser will recognize the expression and calculate its value in the same pass.
+It will not allocate a syntax tree. A returned value represents the expression that
+one parser call has consumed, while a shared cursor identifies the next unconsumed
+byte. The caller of that parser routine decides whether that next byte belongs to
+another operator at its own level, closes a group, or ends the complete input.
+
+This division of work makes a recursive call useful. A group can ask the expression
+routine to evaluate its contents even while an outer expression is unfinished.
+The unfinished operation must survive that call. In assembly, that means preserving
+both the return address and any live local values that the nested call can overwrite.
+The stack will hold those separate invocations; the input itself remains read-only.

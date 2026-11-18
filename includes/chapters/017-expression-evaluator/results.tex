@@ -1,0 +1,32 @@
+\section{Separate success values from error positions}\label{expression-results}
+The meaning of \texttt{v1} depends on \texttt{v0}. On success it is a signed
+integer result; on failure it is an unsigned, nonnegative byte offset no greater
+than the supplied length. Inspect the status before interpreting the second result.
+The value minus two in \texttt{v0}, for example, is an overflow status rather than
+an expression result. A successful expression can itself evaluate to minus two,
+which is then returned in \texttt{v1} with a zero status.
+
+A syntax error points at the unexpected byte, or at end of input if a required
+operand or closing parenthesis is absent. A decimal-literal overflow points at
+the first digit whose inclusion makes that literal exceed its maximum. Overflow
+from a unary operation points at its sign byte. Overflow or division by zero from
+a binary operation points at that operator's byte. These positions describe the
+operation that failed; they need not be the rightmost byte that was examined.
+
+\begin{table}[htbp]
+\centering
+\caption{Diagnostic examples. Positions are decimal byte offsets; all displayed inputs contain only ASCII bytes.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrl}
+\toprule
+Input & Status & Offset & Reason\\
+\midrule
+\texttt{1 2} & $-1$ & 2 & Unexpected second literal\\
+\texttt{(1} & $-1$ & 2 & Missing closing parenthesis\\
+\texttt{1+} & $-1$ & 2 & Missing right operand\\
+\texttt{2147483648} & $-2$ & 9 & Literal's final digit exceeds range\\
+\texttt{2147483647+1} & $-2$ & 10 & Addition exceeds range\\
+\texttt{1/(2-2)} & $-3$ & 1 & Division has a zero denominator\\
+\bottomrule
+\end{tabular}
+\end{table}

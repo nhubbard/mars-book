@@ -1,0 +1,35 @@
+\section{Specify precedence in the grammar}\label{expression-grammar}
+The grammar uses four named rules. An expression contains terms separated by plus
+or minus. A term contains unary operands separated by multiplication or division.
+A unary operand is either a sign followed by another unary operand, or a primary.
+A primary is a decimal literal or a parenthesized expression.
+
+\begin{table}[htbp]
+\centering
+\caption{Grammar for this exercise. Braces mean zero or more repetitions; a vertical bar separates alternatives. Whitespace may appear between tokens.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{ll}
+\toprule
+Rule & Production\\
+\midrule
+Expression & \texttt{term \{ (\char`+ | \char`-) term \}}\\
+Term & \texttt{unary \{ (\char`* | /) unary \}}\\
+Unary & \texttt{(\char`+ | \char`-) unary | primary}\\
+Primary & \texttt{digits | ( expression )}\\
+Digits & One or more bytes from \texttt{0} through \texttt{9}\\
+\bottomrule
+\end{tabular}
+\end{table}
+The grammar gives multiplication and division higher precedence than binary plus
+and minus: a term finishes its multiplicative work before returning a value to the
+expression routine. A unary sign binds to its operand before that operand is used
+by a binary operator. Parentheses let a primary contain a complete expression,
+regardless of the precedence level outside the group.
+
+The repetition in the expression and term rules is evaluated left to right.
+For \texttt{1-2-3}, start with one, subtract two to obtain minus one, and then
+subtract three to obtain minus four. For \texttt{8/3/2}, the first quotient is
+two and the second is one. Right association would produce a different computation.
+Unary signs recurse instead: in \texttt{--5}, the inner minus produces minus five
+and the outer minus produces five. Repeated signs do not form a separate decrement
+or increment token in this language; \texttt{1++2} means one plus unary-positive two.

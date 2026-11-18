@@ -1,0 +1,34 @@
+\section{Retain one unfinished operation per call}\label{expression-frames}
+Consider \texttt{18-3*(2+-4)} without whitespace. The outer expression retains its
+left value, eighteen, while the right term evaluates the multiplication. The term
+retains three while the primary evaluates its group. Within that group, the expression
+retains two while unary minus evaluates four. A nested call cannot borrow the caller's
+live temporary registers without preserving the values the caller still needs.
+
+The guided design uses shared parser registers for the input base, cursor, length,
+status and error offset. They describe one parse and deliberately change as helper
+calls consume input. Stack slots hold values that belong to one invocation: its
+return address, its accumulated left value, and a pending operator and operator
+position. A nested expression has its own slots for the same roles. Restoring a
+call frame must not roll back the shared cursor or discard the first error.
+
+The public entry preserves the caller's saved registers before assigning those
+registers parser roles. Each nonleaf helper preserves its own incoming return address
+before another call overwrites \texttt{ra}. Store and reload all sixty-four bits.
+A small input does not make a return address a small integer. The final restore must
+recover the original stack pointer and caller registers on success and on every error
+path, including errors several calls deep.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={Four nested parser invocations hold different unfinished operations. The outer expression waits to subtract a term from eighteen. The term waits to multiply three by a grouped value. The group expression waits to add a unary value to two. The unary invocation negates four and returns minus four; the group returns minus two, the term returns minus six, and the outer expression returns twenty-four.},node distance=7mm]
+\node[draw,align=left,text width=105mm] (outer) {Outer expression: retain 18; await subtraction's right term};
+\node[draw,align=left,text width=105mm,below=of outer] (term) {Term: retain 3; await multiplication's right operand};
+\node[draw,align=left,text width=105mm,below=of term] (group) {Group expression: retain 2; await addition's right operand};
+\node[draw,align=left,text width=105mm,below=of group] (unary) {Unary minus: retain sign position; obtain primary value 4};
+\draw[-{Stealth}] (outer)--(term);
+\draw[-{Stealth}] (term)--(group);
+\draw[-{Stealth}] (group)--(unary);
+\end{tikzpicture}
+\caption{Live local values belong to separate recursive invocations. This is a conceptual call diagram, not an IDE call-stack capture.}
+\end{figure}
