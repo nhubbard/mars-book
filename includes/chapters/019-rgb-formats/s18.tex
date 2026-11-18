@@ -1,0 +1,31 @@
+\section{Step 18 Complete the scalar expansion loop}\label{rgb-s18}
+
+Advance the full input pointer by two and output pointer by three, then consume one pixel. Repeat until the remaining count is zero. Both conversion functions now work through their scalar paths. Preserve this behavior while adding complete vector groups, and keep these bodies as the short tail.
+
+\Needspace{15\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{unpack\_next}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $a0, $a0, 2
+    daddiu $a1, $a1, 3
+    addiu $a2, $a2, -1
+    bne $a2, $zero, unpack_pixel
+    nop
+\end{minted}
+Use \texttt{s18-1} (count 1), \texttt{s18-2} (count 2) from the companion input recipes. Pause at \texttt{unpack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+A two-pixel input expands to six bytes and returns count two.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which part of this implementation remains useful after vectorization?
+
+\begin{itemize}
+\item \textbf{A} An unconditional overread.
+\item \textbf{B} The last pixel's temporary register values.
+\item \textbf{C} The bounded scalar tail.
+\end{itemize}

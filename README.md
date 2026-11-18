@@ -93,10 +93,16 @@ boundaries, a bounded operand stack, checked arithmetic and precise guest retire
 It includes native state/encoding fixtures, two measured implementations, executable
 intermediate observations and four planned light-theme captures.
 
+The [RGB888/RGB565 chapter](packages/019-rgb-formats/assignment.md) develops exact
+component conversion through 49 steps and 39 cumulative edits, beginning with scalar
+loops and adding bounded MSA groups. Three native diagrams explain fields, overlapping
+windows and reconstructed colors. Lane observations, measured whole-call work and four
+planned capture models accompany the guided and free-writing package.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first eighteen chapters are now composed through ordinary LaTeX input/include files.
+The first nineteen chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -111,7 +117,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first eighteen text packages, starters, public checks, deterministic student archive builder,
+The first nineteen text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

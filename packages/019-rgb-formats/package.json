@@ -1,0 +1,2127 @@
+{
+  "formatVersion": 1,
+  "id": "019-rgb-formats",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Convert RGB888 and RGB565 pixels",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6 with MSA",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "traceExecution",
+      "readDataAddress",
+      "expectVectorLane"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Unsigned byte fields and little-endian storage",
+    "Full-width pointers and logical memory slices",
+    "Scalar loops and calling conventions"
+  ],
+  "learningObjectives": [
+    "Define exact quantization and expansion rules",
+    "Build correct unaligned scalar conversion loops",
+    "Arrange component bytes into vector halfword lanes",
+    "Derive bounded input and output windows",
+    "Keep shuffle controls independent of results",
+    "Handle scalar tails and compare complete work"
+  ],
+  "inputDomain": {
+    "type": "rgb-format-conversion",
+    "maximumPixels": 32,
+    "rgbArenaBytes": 128,
+    "packedArenaBytes": 96,
+    "sourceAndDestinationDisjoint": true
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose, region edits and CLI checks; interactive runner and screenshot capture pending"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the two conversion interfaces",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does v0 report?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original pixel count."
+          },
+          {
+            "id": "b",
+            "text": "A packed color."
+          },
+          {
+            "id": "c",
+            "text": "The number of source bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Both functions use full source and destination pointers and a pixel count."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Packing one pixel consumes three source bytes and produces two; expansion consumes two and produces three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Work the stored bytes before writing the loop",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which stored byte appears at the lower address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "79."
+          },
+          {
+            "id": "b",
+            "text": "68."
+          },
+          {
+            "id": "c",
+            "text": "The original red value, 123."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Use the pixel (123,45,67) to follow field truncation, positioning and little-endian storage."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The packed value is hexadecimal 7968, its stored bytes are 68 79, and the expanded pixel is (123,44,66)."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Inspect the supplied leaf entries and returns",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why retain the count before the loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To set the memory allocation size."
+          },
+          {
+            "id": "b",
+            "text": "To choose a native return address."
+          },
+          {
+            "id": "c",
+            "text": "The remaining count will be consumed while the public result stays original."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Each entry copies the incoming count to v0 before a0, a1 and a2 become working pointers and remaining count."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The provided exits return through ra. Temporary vector gates initially choose the scalar path; other unfinished regions choose their function return."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Return before reading an empty slice",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which count decides whether a pixel may be loaded?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining pixel count."
+          },
+          {
+            "id": "b",
+            "text": "The source allocation size."
+          },
+          {
+            "id": "c",
+            "text": "The number of saved registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The initial vector placeholder transfers directly to the scalar tail."
+        },
+        {
+          "id": "s04-h2",
+          "text": "A zero-count pack returns zero without a caller-data read or write. A positive call still stops at the next unfinished region."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_bound"
+    },
+    {
+      "id": "s05",
+      "title": "Load three unsigned component bytes",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why use lbu rather than an uncorrected lb?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every input component is below 128."
+          },
+          {
+            "id": "b",
+            "text": "Components range from zero through 255."
+          },
+          {
+            "id": "c",
+            "text": "The source pointer is a halfword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Load the red, green and blue bytes at offsets zero, one and two from the current full source pointer."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Input bytes 123, 45 and 67 leave those unsigned values in t0, t1 and t2."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_load"
+    },
+    {
+      "id": "s06",
+      "title": "Place the retained red bits",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which bits does this contribution occupy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bits four through zero."
+          },
+          {
+            "id": "b",
+            "text": "All eight low bits."
+          },
+          {
+            "id": "c",
+            "text": "Bits fifteen through eleven."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Shift the red byte right by three to discard its low bits."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Red 123 retains fifteen and contributes 30720 to the packed value."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_red"
+    },
+    {
+      "id": "s07",
+      "title": "Keep six green bits",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "How many low green bits are discarded?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two."
+          },
+          {
+            "id": "b",
+            "text": "Three."
+          },
+          {
+            "id": "c",
+            "text": "Five."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Discard two green low bits and position the resulting six-bit value at bit five."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Green 45 retains eleven and contributes 352."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_green"
+    },
+    {
+      "id": "s08",
+      "title": "Retain blue in the low field",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why is there no following left shift for blue?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Blue is stored outside the halfword."
+          },
+          {
+            "id": "b",
+            "text": "Its field starts at bit zero."
+          },
+          {
+            "id": "c",
+            "text": "Blue always equals zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Shift blue right by three and leave it in the low five positions."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Blue 67 contributes eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_blue"
+    },
+    {
+      "id": "s09",
+      "title": "Combine independent packed fields",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What has been produced at this point?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A three-byte Bitmap Display pixel."
+          },
+          {
+            "id": "b",
+            "text": "A full source address."
+          },
+          {
+            "id": "c",
+            "text": "A numerical RGB565 halfword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "OR the green and blue contributions into the positioned red value."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The worked RGB pixel produces 31080, hexadecimal 7968, in t0."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_join"
+    },
+    {
+      "id": "s10",
+      "title": "Write low byte before high byte",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why are two byte stores suitable here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They respect the chosen order and arbitrary byte alignment."
+          },
+          {
+            "id": "b",
+            "text": "They clear the entire output allocation."
+          },
+          {
+            "id": "c",
+            "text": "They reverse the component quantizer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Store the low byte of the packed value, shift the value right by eight and store the high byte at the next address."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The worked pixel writes hexadecimal bytes 68 then 79. Pointers and remaining count still identify the current pixel until the next edit."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_store"
+    },
+    {
+      "id": "s11",
+      "title": "Advance by each format size",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which value should be returned after the loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining zero count."
+          },
+          {
+            "id": "b",
+            "text": "The original pixel count."
+          },
+          {
+            "id": "c",
+            "text": "The last packed halfword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Advance the full source pointer by three and the destination pointer by two."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Two RGB pixels produce four packed bytes. The remaining count becomes zero while v0 still contains two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "pack_next"
+    },
+    {
+      "id": "s12",
+      "title": "Guard the expansion input before loading",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Does a mapped byte beyond an empty slice permit a load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if the allocation is large."
+          },
+          {
+            "id": "b",
+            "text": "Only when its value is zero."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "The unpack entry retains the original count, then its current vector placeholder transfers to the scalar tail."
+        },
+        {
+          "id": "s12-h2",
+          "text": "A zero-count expansion returns zero with no caller-data access."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_bound"
+    },
+    {
+      "id": "s13",
+      "title": "Reconstruct the little-endian halfword",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which input byte contributes bits fifteen through eight?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The byte at offset one."
+          },
+          {
+            "id": "b",
+            "text": "The byte at offset zero."
+          },
+          {
+            "id": "c",
+            "text": "The next pixel's first byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Load the low and high bytes unsigned."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Bytes 68 79 reconstruct decimal 31080 in t0."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_load"
+    },
+    {
+      "id": "s14",
+      "title": "Repeat the high red bits",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does field thirty-one expand to?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "248."
+          },
+          {
+            "id": "b",
+            "text": "255."
+          },
+          {
+            "id": "c",
+            "text": "31."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Extract the top five-bit field by shifting the packed value right by eleven."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The worked field fifteen expands to red 123."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_red"
+    },
+    {
+      "id": "s15",
+      "title": "Mask the six-bit green field",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Why is the mask still needed after the right shift?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To recover discarded source bits."
+          },
+          {
+            "id": "b",
+            "text": "To align the destination address."
+          },
+          {
+            "id": "c",
+            "text": "Higher red bits are still present."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Shift the packed word right by five, then mask with 63 to exclude the red field that remains above green."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The worked green field eleven expands to 44."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_green"
+    },
+    {
+      "id": "s16",
+      "title": "Expand the low five-bit field",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which input does this mask isolate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The blue field of the numerical packed value."
+          },
+          {
+            "id": "b",
+            "text": "The high input byte as a whole component."
+          },
+          {
+            "id": "c",
+            "text": "The source allocation length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Mask the low five bits directly, then use left shift three and right shift two to repeat their high bits."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The worked blue field eight expands to 66."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_blue"
+    },
+    {
+      "id": "s17",
+      "title": "Publish three RGB component bytes",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What is the legal output size for one expanded pixel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two bytes."
+          },
+          {
+            "id": "b",
+            "text": "Three bytes."
+          },
+          {
+            "id": "c",
+            "text": "Four bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Store the expanded red, green and blue values at consecutive offsets zero, one and two."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The worked packed value writes bytes 123, 44 and 66."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_store"
+    },
+    {
+      "id": "s18",
+      "title": "Complete the scalar expansion loop",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which part of this implementation remains useful after vectorization?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An unconditional overread."
+          },
+          {
+            "id": "b",
+            "text": "The last pixel's temporary register values."
+          },
+          {
+            "id": "c",
+            "text": "The bounded scalar tail."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Advance the full input pointer by two and output pointer by three, then consume one pixel."
+        },
+        {
+          "id": "s18-h2",
+          "text": "A two-pixel input expands to six bytes and returns count two."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "unpack_next"
+    },
+    {
+      "id": "s19",
+      "title": "Require a complete eight-pixel input group",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "How many RGB888 bytes belong to one eligible group?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twenty-four."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen."
+          },
+          {
+            "id": "c",
+            "text": "Thirty-two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Replace the initial direct transfer to the scalar tail with a test for fewer than eight remaining pixels."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Seven pixels still convert through the scalar loop. Eight pixels reach the unfinished vector setup without reading their source."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_gate"
+    },
+    {
+      "id": "s20",
+      "title": "Load reusable channel selector vectors",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What does selector 64 request in these controls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Input byte sixty-four."
+          },
+          {
+            "id": "b",
+            "text": "A zero result byte."
+          },
+          {
+            "id": "c",
+            "text": "The next packed halfword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Load the supplied red, green and blue control tables into w16, w17 and w18."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The three preserved registers hold the selector rows derived in the gathering fixture."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_controls"
+    },
+    {
+      "id": "s21",
+      "title": "Load the complete group without overreading",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which claim describes the second load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It starts after the twenty-four-byte block."
+          },
+          {
+            "id": "b",
+            "text": "It reads only eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "It transfers sixteen bytes beginning at offset eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Load sixteen bytes at source offset zero and another sixteen at offset eight."
+        },
+        {
+          "id": "s21-h2",
+          "text": "w0 contains source bytes zero through fifteen; w1 contains eight through twenty-three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_load"
+    },
+    {
+      "id": "s22",
+      "title": "Prepare fresh controls for this block",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Why copy rather than repeatedly use a prior shuffle result as controls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The destination is overwritten by each shuffle."
+          },
+          {
+            "id": "b",
+            "text": "The preserved table contains pixel addresses."
+          },
+          {
+            "id": "c",
+            "text": "A vector move decrements count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Copy the preserved controls into w4, w5 and w6."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The working registers now equal their corresponding preserved control vectors."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_copy"
+    },
+    {
+      "id": "s23",
+      "title": "Gather eight zero-extended channel values",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Why place a zero after each component byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To add another output pixel."
+          },
+          {
+            "id": "b",
+            "text": "To make that halfword contain only the component value."
+          },
+          {
+            "id": "c",
+            "text": "To preserve the previous shuffle controls."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Shuffle from w0 as the right source and w1 as the left source, using the prepared destination controls."
+        },
+        {
+          "id": "s23-h2",
+          "text": "The low halfwords of w4, w5 and w6 are the eight unsigned red, green and blue component values in pixel order."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_shuffle"
+    },
+    {
+      "id": "s24",
+      "title": "Position red in eight halfwords",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "What does the h suffix select?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight-byte loads."
+          },
+          {
+            "id": "b",
+            "text": "A permanent register type."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen-bit arithmetic lanes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Apply the same red quantizer and positioning shifts to all eight halfwords."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Each w4 halfword contains only its pixel's red contribution."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_red"
+    },
+    {
+      "id": "s25",
+      "title": "Position green with its own width",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "How many green bits survive in each lane?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Six."
+          },
+          {
+            "id": "b",
+            "text": "Five."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Shift all green halfwords right by two, then left by five."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Each w5 halfword contains its pixel's six-bit green contribution at bit five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_green"
+    },
+    {
+      "id": "s26",
+      "title": "Keep the low blue fields in lane order",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Does this operation change the order of pixels?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, it reverses the lanes."
+          },
+          {
+            "id": "b",
+            "text": "No, each lane keeps its pixel."
+          },
+          {
+            "id": "c",
+            "text": "Only for values above 127."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Shift blue halfwords right by three."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Each w6 halfword is the corresponding blue value divided by eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_blue"
+    },
+    {
+      "id": "s27",
+      "title": "Combine the three field vectors",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "What is still required before the output slice changes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A return-count decrement."
+          },
+          {
+            "id": "b",
+            "text": "Another source allocation."
+          },
+          {
+            "id": "c",
+            "text": "The vector store."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "OR red with green and then blue into w4."
+        },
+        {
+          "id": "s27-h2",
+          "text": "All eight w4 halfwords agree with the independent scalar packing formula."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_join"
+    },
+    {
+      "id": "s28",
+      "title": "Write sixteen packed output bytes",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why does this store fit an eight-pixel output block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight RGB565 pixels occupy sixteen bytes."
+          },
+          {
+            "id": "b",
+            "text": "Every vector store writes only two bytes."
+          },
+          {
+            "id": "c",
+            "text": "The allocation padding is always writable."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Store all sixteen bytes of w4 at the current output pointer."
+        },
+        {
+          "id": "s28-h2",
+          "text": "The current block's sixteen packed bytes are correct; the remaining count still names the original group until advancement is completed."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_store"
+    },
+    {
+      "id": "s29",
+      "title": "Repeat full groups and hand off the tail",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "What count reaches the scalar tail after one group of a nine-pixel call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "One."
+          },
+          {
+            "id": "c",
+            "text": "Zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Advance input by twenty-four bytes, output by sixteen and remaining count by eight pixels."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Eight, nine and sixteen pixels all pack correctly. The nine-pixel call executes one full group and one scalar pixel."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_pack_next"
+    },
+    {
+      "id": "s30",
+      "title": "Select full groups for expansion",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "How many input bytes are needed for a full expansion group?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twenty-four."
+          },
+          {
+            "id": "b",
+            "text": "Eight."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Replace the direct scalar transfer with the same eight-pixel eligibility rule."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Seven pixels still expand correctly; eight reach setup without a source read."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_gate"
+    },
+    {
+      "id": "s31",
+      "title": "Retain both output shuffle patterns",
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Why do the two patterns overlap?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Their sixteen-byte stores cover one twenty-four-byte output group."
+          },
+          {
+            "id": "b",
+            "text": "Every pixel has four components."
+          },
+          {
+            "id": "c",
+            "text": "The input is resumed from a previous call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Load the two supplied selector tables into w16 and w17."
+        },
+        {
+          "id": "s31-h2",
+          "text": "The preserved registers contain the first and last output-window controls."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_controls"
+    },
+    {
+      "id": "s32",
+      "title": "Read eight packed halfwords as bytes",
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "How many bytes does ld.b transfer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen."
+          },
+          {
+            "id": "c",
+            "text": "The remaining pixel count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Load the sixteen-byte packed group into w0."
+        },
+        {
+          "id": "s32-h2",
+          "text": "The eight w0 halfwords equal the input packed values in pixel order."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_load"
+    },
+    {
+      "id": "s33",
+      "title": "Isolate red, green and blue lanes",
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Why is green masked after shifting?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To swap byte order."
+          },
+          {
+            "id": "b",
+            "text": "To restore the original low bits."
+          },
+          {
+            "id": "c",
+            "text": "To remove the red bits that remain above it."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Extract red with a halfword shift by eleven."
+        },
+        {
+          "id": "s33-h2",
+          "text": "w1, w2 and w3 contain the retained five-, six- and five-bit channel fields."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_fields"
+    },
+    {
+      "id": "s34",
+      "title": "Expand red through two nonoverlapping parts",
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What does the right-shifted copy provide?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The repeated high bits for the low output positions."
+          },
+          {
+            "id": "b",
+            "text": "A new source address."
+          },
+          {
+            "id": "c",
+            "text": "The next pixel's green value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Retain a copy shifted right by two, shift red left by three, then OR those parts."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Each w1 halfword equals the scalar red expansion for that pixel."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_red"
+    },
+    {
+      "id": "s35",
+      "title": "Expand all green values",
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Which shifts belong to six-bit green expansion?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Left three and right two."
+          },
+          {
+            "id": "b",
+            "text": "Left two and right four."
+          },
+          {
+            "id": "c",
+            "text": "Left eleven and right five."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Repeat the green high bits using right shift four, left shift two and OR."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Each w2 halfword equals the scalar green expansion."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_green"
+    },
+    {
+      "id": "s36",
+      "title": "Expand blue without losing its source",
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "May w4 be reused at this stage?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No, every temporary vector is permanently assigned."
+          },
+          {
+            "id": "b",
+            "text": "Only if blue is zero."
+          },
+          {
+            "id": "c",
+            "text": "Yes, the earlier temporary is no longer needed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Use the five-bit expansion shifts for blue, keeping the shifted copy in the reusable temporary vector w4."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Each w3 halfword equals the scalar blue expansion."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_blue"
+    },
+    {
+      "id": "s37",
+      "title": "Collect the even component bytes",
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Which halfword byte is selected by the even-byte pack?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its low component byte."
+          },
+          {
+            "id": "b",
+            "text": "Its zero high byte."
+          },
+          {
+            "id": "c",
+            "text": "Its neighboring pixel's byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Pack even bytes from each red and green register using that register as both sources."
+        },
+        {
+          "id": "s37-h2",
+          "text": "w1 and w2 each contain their eight expanded component bytes twice."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_compact"
+    },
+    {
+      "id": "s38",
+      "title": "Alternate the red and green bytes",
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Which source supplies the first byte with this operand order?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Green."
+          },
+          {
+            "id": "b",
+            "text": "Red."
+          },
+          {
+            "id": "c",
+            "text": "Blue."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Interleave the right, low halves of the compacted registers with red as the right source and green as the left."
+        },
+        {
+          "id": "s38-h2",
+          "text": "w4 bytes are R0,G0,R1,G1 through R7,G7."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_interleave"
+    },
+    {
+      "id": "s39",
+      "title": "Copy controls before overwriting destinations",
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "What happens to the working controls after vshf?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They remain unchanged in the destination."
+          },
+          {
+            "id": "b",
+            "text": "They become the guest program counter."
+          },
+          {
+            "id": "c",
+            "text": "They are replaced by shuffled output bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Copy the preserved output-window controls into w5 and w6."
+        },
+        {
+          "id": "s39-h2",
+          "text": "w5 and w6 equal their respective preserved selector patterns before the shuffles."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_copy"
+    },
+    {
+      "id": "s40",
+      "title": "Construct both windows of the triple stream",
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "What must be true about the two output windows' shared positions?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They contain identical bytes."
+          },
+          {
+            "id": "b",
+            "text": "They are outside the output slice."
+          },
+          {
+            "id": "c",
+            "text": "They alternate between old and new data."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Shuffle with the red/green sequence as the right source and blue halfwords as the left source."
+        },
+        {
+          "id": "s40-h2",
+          "text": "w5 holds the first sixteen expanded bytes and w6 the last sixteen, including identical overlap values."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_shuffle"
+    },
+    {
+      "id": "s41",
+      "title": "Store the bounded overlapping output windows",
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Does this store pattern authorize writes into surrounding allocation padding?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, when restored afterward."
+          },
+          {
+            "id": "b",
+            "text": "No."
+          },
+          {
+            "id": "c",
+            "text": "Only for the final group."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Store the first window at output offset zero and the second at offset eight."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The current group's twenty-four expanded bytes are correct, with eight positions written twice."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_store"
+    },
+    {
+      "id": "s42",
+      "title": "Finish the group loop and scalar tail",
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Which quantity determines whether to repeat a group?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Output allocation size."
+          },
+          {
+            "id": "b",
+            "text": "The last pixel's packed value."
+          },
+          {
+            "id": "c",
+            "text": "Remaining pixel count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Advance packed input by sixteen bytes, RGB output by twenty-four and count by eight pixels."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Eight, nine and sixteen packed pixels expand correctly; the nine-pixel input needs one scalar tail pixel."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      },
+      "editTarget": "vector_unpack_next"
+    },
+    {
+      "id": "s43",
+      "title": "Inspect the completed pack return",
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Which result is already available here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The packed byte array."
+          },
+          {
+            "id": "b",
+            "text": "The expanded display row."
+          },
+          {
+            "id": "c",
+            "text": "The caller's stored expanded count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Run the completed default program to pack_ready."
+        },
+        {
+          "id": "s43-h2",
+          "text": "v0 is thirty-two; packed_count and expanded_count are still ninety-nine. The original RGB input remains unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s44",
+      "title": "Inspect the completed expansion return",
+      "content": "steps/44.md",
+      "prerequisites": [
+        "s43"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q44",
+        "prompt": "When does expanded_count change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "While the first vector control is loaded."
+          },
+          {
+            "id": "b",
+            "text": "After the caller continues past this return checkpoint."
+          },
+          {
+            "id": "c",
+            "text": "Before unpack_rgb565 starts."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Continue to unpack_ready."
+        },
+        {
+          "id": "s44-h2",
+          "text": "v0 and packed_count are thirty-two, expanded_count is still ninety-nine, and rgb_b contains the specified reconstructed components."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s45",
+      "title": "Compare the two rendered component rows",
+      "content": "steps/45.md",
+      "prerequisites": [
+        "s44"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q45",
+        "prompt": "What data does Bitmap Display consume in this preview?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Raw RGB565 halfwords."
+          },
+          {
+            "id": "b",
+            "text": "Consecutive RGB triples directly."
+          },
+          {
+            "id": "c",
+            "text": "The separately assembled display words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Continue to preview_ready."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Both count words are thirty-two and all sixty-four preview words match the formulas. The native chart illustrates those same component codes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s46",
+      "title": "Exercise a group and a tail together",
+      "content": "steps/46.md",
+      "prerequisites": [
+        "s45"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What count reaches each scalar tail?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Eight."
+          },
+          {
+            "id": "c",
+            "text": "Nine."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Set count to nine and run a fresh caller."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Both returned counts are nine, with no source read or output write outside the logical conversion slices."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s47",
+      "title": "Check behavior and memory ownership",
+      "content": "steps/47.md",
+      "prerequisites": [
+        "s46"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Can a vector read use mapped allocation padding beyond the source slice?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because it does not write."
+          },
+          {
+            "id": "b",
+            "text": "No."
+          },
+          {
+            "id": "c",
+            "text": "Only when the later output matches."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Run the public function and caller checks."
+        },
+        {
+          "id": "s47-h2",
+          "text": "The completed implementation passes; the untouched starter is rejected. Equivalent scalar and vector algorithms share the same behavioral contract."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s48",
+      "title": "Explain the measured block boundaries",
+      "content": "steps/48.md",
+      "prerequisites": [
+        "s47"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Why can thirty-two pixels take fewer instructions than thirty-one here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The extra pixel is ignored."
+          },
+          {
+            "id": "b",
+            "text": "Every vector instruction is free."
+          },
+          {
+            "id": "c",
+            "text": "The fourth complete group replaces a seven-pixel scalar tail."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "Compare complete scalar and vector calls for short counts, exact blocks and blocks with tails."
+        },
+        {
+          "id": "s48-h2",
+          "text": "Packing thirty-two pixels uses 120 MSA-path instructions versus 581 scalar; expansion uses 148 versus 805. These are simulator work counts, not elapsed-time claims."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    },
+    {
+      "id": "s49",
+      "title": "Choose another implementation under the contract",
+      "content": "steps/49.md",
+      "prerequisites": [
+        "s48"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Which property still has to agree after changing the algorithm?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The exact public conversion and ownership behavior."
+          },
+          {
+            "id": "b",
+            "text": "Every private control register."
+          },
+          {
+            "id": "c",
+            "text": "The reference's instruction count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "In free-writing mode, retain the two public entries and caller/data harness while changing private helpers, vector group size or conversion strategy."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Correct solutions need not match private labels, scratch registers, native counts or the illustrated overlapping windows."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks cover complete behavior and intermediate construction fixtures; interactive recognition and actual IDE captures are pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json"
+  ]
+}

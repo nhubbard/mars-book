@@ -1,0 +1,28 @@
+\section{Step 12 Guard the expansion input before loading}\label{rgb-s12}
+
+The unpack entry retains the original count, then its current vector placeholder transfers to the scalar tail. Test remaining count before entering the body. A zero-length conversion must not read even the first input byte, regardless of how much mapped memory follows it.
+
+\Needspace{12\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{unpack\_bound}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $a2, $zero, unpack_return
+    nop
+\end{minted}
+Use \texttt{s12-1} (count 0) from the companion input recipes. Pause at \texttt{unpack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+A zero-count expansion returns zero with no caller-data access.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does a mapped byte beyond an empty slice permit a load?
+
+\begin{itemize}
+\item \textbf{A} Yes, if the allocation is large.
+\item \textbf{B} Only when its value is zero.
+\item \textbf{C} No.
+\end{itemize}

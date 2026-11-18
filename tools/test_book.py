@@ -8,7 +8,7 @@ import book
 
 class NativeCompositionTests(unittest.TestCase):
     def test_actual_native_composition_and_highlight_integrity(self):
-        self.assertEqual(329, len(book.validate()))
+        self.assertEqual(372, len(book.validate()))
         self.assertEqual(1, len(book.validate('specimen.tex')))
         self.assertEqual(13, len(book.validate('drafts/matrix-transpose.tex')))
         self.assertEqual(16, len(book.validate('drafts/fixed-point-ball.tex')))
@@ -18,7 +18,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(18, len(book.validate('drafts/clipped-sprite-blitter.tex')))
         self.assertEqual(43, len(book.validate('drafts/expression-evaluator.tex')))
         self.assertEqual(46, len(book.validate('drafts/tiny-bytecode-interpreter.tex')))
-        self.assertEqual(0, len(book.validate('drafts/rgb-formats.tex')))
+        self.assertEqual(43, len(book.validate('drafts/rgb-formats.tex')))
 
     def test_author_can_include_prose_between_any_two_segments(self):
         with tempfile.TemporaryDirectory() as folder:

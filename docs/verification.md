@@ -578,3 +578,54 @@ The alternative also changes opcode classification, so those differences cannot 
 attributed solely to boundary representation. Counts are not elapsed-time claims or
 grading requirements. Four numerical checkpoint models are checked independently;
 actual IDE screenshots and coordinate receipts remain pending.
+
+## RGB888 and RGB565
+
+Package 019 has 49 steps, 39 authored edits, four supplied leaf entry/return excerpts
+and 98 hints. The sequence completes both scalar loops before vector blocks. All
+39 cumulative programs pass 47 observations, including full scalar values, pointer
+advances, controls, gathered lanes, fields, interleaved bytes and overlapping output
+windows. Each Markdown fragment equals its native listing and reconstructs the verified
+reference exactly after removing only region boundary comments.
+
+Both MSA-block and scalar implementations pass 619 public function cases, 6656 private
+cases, 33 caller cases and twelve repeated-call sequences each, plus wide-data function
+and caller checks. The private suite covers every 16-bit RGB565 encoding for expansion,
+every red/green byte pair with coupled blue for packing, and one input with nonzero
+discarded bits for each RGB565 bucket. Each exhaustive domain contains 65536 pixels,
+checked in groups of 32; another 512 scenes vary counts. This is not all 16777216
+RGB888 colors or every multipixel arrangement.
+
+The public checks rotate both source and destination allocations and byte offsets,
+dirty outputs, full saved-register canaries, valid stack pointers and supplied return
+continuations. Each access byte must fit the selected logical source or destination;
+only destination bytes may change, even temporarily. Private stack, owned constants
+and equivalent access widths are permitted. Twelve same-session sequences make twelve
+calls each with changed pixels, operation and count. High mapped data is covered;
+high text and high stack addresses are not claimed.
+
+The full verifier records 83 grading runs and 17346 positive case executions across
+repeated variants, observations and models. Twenty-one faulty assembled variants and
+the untouched starter are rejected. Faults
+target field widths, byte order, bit repetition, unaligned/overwide scalar output,
+shuffle state, vector boundaries, zero count, return values, callee preservation and
+full pointers. Four dedicated CLI capture models verify exact packed and expanded
+bytes, all preview words, guard values, unchanged source and caller pre-store state.
+Actual automated IDE pixels and annotation receipts remain pending.
+
+Complete-call work includes setup, controls, groups, tails and return, excluding caller
+preparation, assembly, session creation, preview and exit. At eight pixels scalar/MSA
+packing takes 149/54 native instructions and expansion 205/55. At 32 it takes 581/120
+and 805/148. Short inputs pay for the block guard; 31 pixels can take more work than
+32 because of its scalar tail. Overlapping pack loads and expansion stores increase
+observed bytes from 24 to 32 per group. The pinned core emits per-byte vector notices;
+these are not host bus transactions. Counts neither establish elapsed-time gains nor
+serve as exact grading requirements. Scalar and vector strategies share the public
+behavioral contract; a separate vectorization objective may require instructor review.
+
+The 47 construction observations are each checked twice: through an isolated function
+call on unaligned slices and through the student caller using the published input
+recipe. The caller checks also verify pre-store count words, exact scratch/lane values,
+output prefixes and unchanged original input. Public recipes name the step, source
+RGB values, count, focused function and checkpoint. Native instructions explain how
+to replace only the initializer prefix while preserving arena size and guards.

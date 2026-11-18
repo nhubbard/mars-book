@@ -1,0 +1,28 @@
+\section{Step 4 Return before reading an empty slice}\label{rgb-s04}
+
+The initial vector placeholder transfers directly to the scalar tail. Test the remaining pixel count before loading any input byte. At zero, use the supplied return; at positive count, enter the pixel body. The original count is already retained in \texttt{v0}, so this guard must not replace it with another value.
+
+\Needspace{12\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{pack\_bound}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $a2, $zero, pack_return
+    nop
+\end{minted}
+Use \texttt{s04-1} (count 0) from the companion input recipes. Pause at \texttt{pack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+A zero-count pack returns zero without a caller-data read or write. A positive call still stops at the next unfinished region.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which count decides whether a pixel may be loaded?
+
+\begin{itemize}
+\item \textbf{A} The remaining pixel count.
+\item \textbf{B} The source allocation size.
+\item \textbf{C} The number of saved registers.
+\end{itemize}

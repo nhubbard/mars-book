@@ -1,0 +1,29 @@
+\section{Step 10 Write low byte before high byte}\label{rgb-s10}
+
+Store the low byte of the packed value, shift the value right by eight and store the high byte at the next address. Byte stores keep the path valid at arbitrary destination byte alignment and change only two output bytes. The temporary packed register is consumed by the shift; the return count is separate.
+
+\Needspace{13\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{pack\_store}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sb $t0, 0($a1)
+    srl $t0, $t0, 8
+    sb $t0, 1($a1)
+\end{minted}
+Use \texttt{s10-1} (count 1) from the companion input recipes. Pause at \texttt{pack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+The worked pixel writes hexadecimal bytes 68 then 79. Pointers and remaining count still identify the current pixel until the next edit.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why are two byte stores suitable here?
+
+\begin{itemize}
+\item \textbf{A} They respect the chosen order and arbitrary byte alignment.
+\item \textbf{B} They clear the entire output allocation.
+\item \textbf{C} They reverse the component quantizer.
+\end{itemize}

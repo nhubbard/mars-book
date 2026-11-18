@@ -1,0 +1,32 @@
+\section{Step 29 Repeat full groups and hand off the tail}\label{rgb-s29}
+
+Advance input by twenty-four bytes, output by sixteen and remaining count by eight pixels. Test eligibility again; repeat a full block when possible, otherwise fall through to the existing scalar bound check. A count exactly divisible by eight reaches that check with zero and performs no tail access.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{vector\_pack\_next}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $a0, $a0, 24
+    daddiu $a1, $a1, 16
+    addiu $a2, $a2, -8
+    sltiu $t0, $a2, 8
+    beq $t0, $zero, pack_block
+    nop
+\end{minted}
+Use \texttt{s29-1} (count 8), \texttt{s29-2} (count 9), \texttt{s29-3} (count 16) from the companion input recipes. Pause at \texttt{pack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+Eight, nine and sixteen pixels all pack correctly. The nine-pixel call executes one full group and one scalar pixel.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What count reaches the scalar tail after one group of a nine-pixel call?
+
+\begin{itemize}
+\item \textbf{A} Eight.
+\item \textbf{B} One.
+\item \textbf{C} Zero.
+\end{itemize}

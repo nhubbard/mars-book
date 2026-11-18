@@ -111,12 +111,13 @@ programs have fifty-eight executable observations. Four actual light-theme captu
 human review and independent accessibility validation remain pending. Eighteen text
 packages do not complete the full 35-project and capture objective, which remains active.
 
-RGB888/RGB565 is in progress. The native foundation at `drafts/rgb-formats.tex`
-explains the complete two-function interface, packed byte order, quantization and
-bit repetition, channel error bounds, vector lanes, overlapping bounded transfers,
-shuffle controls, the scalar tail and the Bitmap Display adapter. Native field,
-footprint and component-chart diagrams accompany it. Private scalar/MSA development
-checks and measured complete-call counts support the contract while the full
-instructional edits and public student package are developed. Chapter nineteen is
-not yet included in main.tex or counted as a completed text package. The full
-35-project composition and capture objective remains active.
+RGB888/RGB565 is a full native text draft at `drafts/rgb-formats.tex`, included in
+main.tex as chapter nineteen. Forty-nine steps and thirty-nine cumulative assembly
+edits develop unaligned scalar conversion first, then bounded MSA groups and scalar
+tails. Three native diagrams, exact quantization/expansion formulas, error bounds,
+selector derivations and complete-call measurements accompany it. Forty-seven
+intermediate observations check scalar values and vector lanes both in isolated calls
+and through the student caller, using published reproducible input recipes. Final grading also
+accepts an equivalent scalar implementation. Four actual light-theme captures,
+author review and independent accessibility validation remain pending. Nineteen
+text drafts do not complete the full 35-project and capture objective, which remains active.

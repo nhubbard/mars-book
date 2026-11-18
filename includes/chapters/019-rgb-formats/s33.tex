@@ -1,0 +1,32 @@
+\section{Step 33 Isolate red, green and blue lanes}\label{rgb-s33}
+
+Extract red with a halfword shift by eleven. Shift green by five and mask with a vector of 63, then mask the original packed values with 31 for blue. The masks are halfword values, so their high bytes are zero. This removes other fields before expansion.
+
+\Needspace{16\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{vector\_unpack\_fields}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    srli.h $w1, $w0, 11
+    srli.h $w2, $w0, 5
+    ldi.h $w7, 63
+    and.v $w2, $w2, $w7
+    ldi.h $w7, 31
+    and.v $w3, $w0, $w7
+\end{minted}
+Use \texttt{s33-1} (count 8) from the companion input recipes. Pause at \texttt{unpack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+\texttt{w1}, \texttt{w2} and \texttt{w3} contain the retained five-, six- and five-bit channel fields.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why is green masked after shifting?
+
+\begin{itemize}
+\item \textbf{A} To swap byte order.
+\item \textbf{B} To restore the original low bits.
+\item \textbf{C} To remove the red bits that remain above it.
+\end{itemize}

@@ -1,0 +1,24 @@
+# Repeat retained bits when expanding
+Read the low and high input bytes unsigned, then combine them as low plus 256 times
+high. Extract the five-bit red field, six-bit green field and five-bit blue field.
+The expansion rule is
+$$
+ R'=8r+\left\lfloor r/4\right\rfloor,\qquad
+ G'=4g+\left\lfloor g/16\right\rfloor,\qquad
+ B'=8b+\left\lfloor b/4\right\rfloor.
+$$
+For a five-bit component, shift its retained bits left by three and copy its highest
+three bits into the empty positions. For a six-bit component, shift left by two and
+copy its highest two bits. The shifted ranges do not overlap, so OR implements
+the same combination. Maximum fields expand to 255 rather than stopping at 248 or
+252, as zero-filling would.
+
+The worked packed value `7968` expands to $(123,44,66)$. Its original green
+and blue low bits cannot be recovered from the packed bytes. Expanding the same
+stored value always gives this result, regardless of which original input selected
+that bucket. Packing the expanded values again recovers the same RGB565 value.
+The reverse round trip generally changes an RGB888 input.
+
+Bit repetition is the exact rule for this exercise. It is not defined as rounding
+an ideal real-valued rescaling. Implementing a visually similar interpolation can
+therefore disagree at particular field values even when black and white agree.

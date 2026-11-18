@@ -1,0 +1,29 @@
+\section{Step 19 Require a complete eight-pixel input group}\label{rgb-s19}
+
+Replace the initial direct transfer to the scalar tail with a test for fewer than eight remaining pixels. Short calls still use the completed scalar path. An eligible call continues into vector setup, which is still unfinished and therefore returns provisionally. This edit establishes eligibility, not conversion of a block.
+
+\Needspace{13\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{vector\_pack\_gate}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $a2, 8
+    bne $t0, $zero, pack_tail
+    nop
+\end{minted}
+Use \texttt{s19-1} (count 7), \texttt{s19-2} (count 8) from the companion input recipes. Pause at \texttt{pack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+Seven pixels still convert through the scalar loop. Eight pixels reach the unfinished vector setup without reading their source.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+How many RGB888 bytes belong to one eligible group?
+
+\begin{itemize}
+\item \textbf{A} Twenty-four.
+\item \textbf{B} Sixteen.
+\item \textbf{C} Thirty-two.
+\end{itemize}

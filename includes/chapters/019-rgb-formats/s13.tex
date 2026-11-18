@@ -1,0 +1,30 @@
+\section{Step 13 Reconstruct the little-endian halfword}\label{rgb-s13}
+
+Load the low and high bytes unsigned. Shift the high byte left by eight and OR it into the low byte. This reconstructs a zero-extended value from zero through 65535 without requiring a halfword-aligned source. Each of its component fields can now be extracted from the same numerical value.
+
+\Needspace{14\baselineskip}
+\subsection{Write or inspect}
+Replace the temporary branch and nop in \texttt{unpack\_load}. Preserve surrounding labels and the provided entry and return.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t0, 0($a0)
+    lbu $t1, 1($a0)
+    sll $t1, $t1, 8
+    or $t0, $t0, $t1
+\end{minted}
+Use \texttt{s13-1} (count 1) from the companion input recipes. Pause at \texttt{unpack\_ready} before comparing the construction state.
+
+\subsection{Expected observation}
+Bytes 68 79 reconstruct decimal 31080 in \texttt{t0}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which input byte contributes bits fifteen through eight?
+
+\begin{itemize}
+\item \textbf{A} The byte at offset one.
+\item \textbf{B} The byte at offset zero.
+\item \textbf{C} The next pixel's first byte.
+\end{itemize}

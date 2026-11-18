@@ -1,0 +1,46 @@
+\section{Prepare a reproducible construction input}\label{rgb-guided-inputs}
+The supplied caller can reproduce each programming observation. Set its
+\texttt{count} word and replace the first three times count values in
+\texttt{rgb\_a}'s existing byte initializer. Keep the remaining initializer values,
+the following \texttt{.space 32}, all guards and other data declarations. This keeps
+the arena sizes intact. For a byte above 127, write its value minus 256 when the
+assembler requires signed initializer notation. For example, 255 becomes
+\texttt{-1}; an unsigned byte load still recovers 255.
+
+For the scalar worked pixel, use count one and RGB bytes 123, 45 and 67. For a zero
+count observation, no prefix needs replacing. The vector examples use eight distinct
+pixels so that a lane-order error cannot hide behind repeated gray values.
+
+\begin{table}[htbp]
+\centering
+\caption{One complete vector group's RGB input. Values are unsigned decimal bytes; pixel indices start at zero.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrr}
+\toprule
+Pixel & Red & Green & Blue\\
+\midrule
+0 & 123 & 45 & 67\\
+1 & 255 & 128 & 7\\
+2 & 0 & 255 & 128\\
+3 & 1 & 2 & 3\\
+4 & 248 & 252 & 248\\
+5 & 31 & 63 & 95\\
+6 & 200 & 100 & 50\\
+7 & 127 & 64 & 255\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Use the first seven rows for a short-group comparison and all eight for an exact
+group. The companion input recipes give the additional tail and repeated-group
+scenes and identify the scene for every edit. They also supply RGB preimages for
+isolated expansion examples: the completed pack path first creates the required
+RGB565 bytes, then the caller invokes the partial expansion path. A different RGB
+preimage in the same quantization bucket produces the same packed input.
+
+Run \texttt{main} and pause at \texttt{pack\_ready} for a pack observation or
+\texttt{unpack\_ready} for expansion. No following caller instruction has executed.
+The leaf return does not overwrite temporary registers or vector lanes. The
+verification checks each observation both through an isolated call and through this
+supplied caller. A partial output is still a construction fixture; a correct return
+count alone does not satisfy the final conversion contract.

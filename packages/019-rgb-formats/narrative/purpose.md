@@ -1,0 +1,18 @@
+# Change a representation without changing the interface
+A pixel format specifies how component values occupy bits and bytes. This project
+converts a sequence between two such formats. Start with a scalar conversion that
+handles every legal count and byte alignment. Then replace groups of eight scalar
+iterations with vector operations while retaining the same tail and public result.
+The independent scalar implementation remains available as a comparison.
+
+A smaller representation cannot retain every original color. Three eight-bit
+components have $2^{24}$ possible combinations; sixteen packed bits have only
+$2^{16}$. Several inputs must therefore select the same output. Establish which
+bits are discarded before comparing code or judging a displayed result. A different
+rounding rule may be useful in another application, but it would implement a
+different conversion contract here.
+
+The kernel operates on component code values. It does not apply a transfer function,
+perform gamma correction, blend pixels or convert between color spaces. Those are
+separate operations with their own arithmetic and display assumptions. The examples
+below can be checked from bytes and integer formulas without relying on a monitor.
