@@ -54,19 +54,22 @@ fun AssemblyCase.checkTable(offset:Int=0){
  runToExit();expectOutput("")
 }
 fun AssemblyCase.checkFile(input:List<Int>,capacity:Int,method:Int,maxRead:Int=Int.MAX_VALUE,failAt:Int?=null,missing:Boolean=false,caller:Boolean=false){
- val files=provideFiles(if(missing)emptyMap() else mapOf("fixture.bin" to input.map{it.toByte()}.toByteArray()),maxReadSize=maxRead,failAfterBytes=failAt)
+ val filename="input-$capacity-$method-${input.size}.bin";val pathOffset=if(caller)0 else 1+(capacity+method)%16
+ val pathname=MutableList(128){165};filename.forEachIndexed{index,char->pathname[pathOffset+index]=char.code};pathname[pathOffset+filename.length]=0
+ for(index in 0 until 32)setWord("path",(0..3).fold(0){word,j->word or(pathname[4*index+j] shl(8*j))},offset=4*index)
+ val files=provideFiles(if(missing)emptyMap() else mapOf(filename to input.map{it.toByte()}.toByteArray()),maxReadSize=maxRead,failAfterBytes=failAt)
  val status=if(missing)1 else if(failAt!=null && failAt<=input.size)2 else 0;val expected=if(status==0)expectedChecksum(input) else 0L
  val offset=if(caller)0 else (capacity+method)%32
  for(index in 0 until 80)setWord("scratch",0xa5a5a5a5.toInt(),offset=4*index)
  for(index in 0 until 272)setWord("crc_table",0x6a6b6c6d,offset=4*index)
  setWord("exercise",3);setWord("method",method);setWord("buffer_capacity",capacity);setWord("file_crc",-1);setWord("file_status",-1)
  val saved=preserveSetup()
- if(caller){startAt("main");runUntil("file_call")} else {setRegisterToDataAddress("a0","path");setRegisterToDataAddress("a1","scratch",offset.toLong());setRegister("a2",capacity);setRegister("a3",method)}
- val base=readDataAddress("data");val size=(readDataAddress("file_status")+4-base).toInt();val before=readBytes("data",size);val scratch=readDataAddress("scratch",offset.toLong());val table=readDataAddress("crc_table");val path=readDataAddress("path");val owned=callerRegions();val accesses=traceMemoryAccesses(base,size,maxAccesses=100000)
+ if(caller){startAt("main");runUntil("file_call")} else {setRegisterToDataAddress("a0","path",pathOffset.toLong());setRegisterToDataAddress("a1","scratch",offset.toLong());setRegister("a2",capacity);setRegister("a3",method)}
+ val base=readDataAddress("data");val size=(readDataAddress("file_status")+4-base).toInt();val before=readBytes("data",size);val scratch=readDataAddress("scratch",offset.toLong());val table=readDataAddress("crc_table");val path=readDataAddress("path",pathOffset.toLong());val owned=callerRegions();val accesses=traceMemoryAccesses(base,size,maxAccesses=100000)
  if(caller)runUntil("file_done") else callFunction("crc32_file","function_return")
  accesses.close();expectRegister("v0",expected);expectRegister("v1",status);checkPreserved(saved);files.expectAllClosed()
  val events=files.snapshot();val opens=events.filter{it.operation==Operation.OPEN};val reads=events.filter{it.operation==Operation.READ};val closes=events.filter{it.operation==Operation.CLOSE}
- expectCondition(opens.size==1 && opens[0].path=="fixture.bin" && opens[0].flags==0,"Open the supplied path read-only")
+ expectCondition(opens.size==1 && opens[0].path==filename && opens[0].flags==0,"Open the supplied path read-only")
  if(missing)expectCondition(opens[0].result==-1 && reads.isEmpty() && closes.isEmpty(),"Failed open creates no descriptor")
  else {
   val descriptor=opens[0].descriptor
@@ -78,7 +81,7 @@ fun AssemblyCase.checkFile(input:List<Int>,capacity:Int,method:Int,maxRead:Int=I
  }
  for(event in accesses.snapshot()){
   val workspace=within(event.address,event.length,scratch,capacity) || within(event.address,event.length,table,1024);val known=owned.any{(start,n)->event.address<start+n && event.address+event.length>start}
-  expectCondition(if(event.write)workspace else workspace || within(event.address,event.length,path,12) || !known,"Only scratch/table workspace and the read-only path may be used")
+  expectCondition(if(event.write)workspace else workspace || within(event.address,event.length,path,filename.length+1) || !known,"Only scratch/table workspace and the read-only path may be used")
  }
  val after=readBytes("data",size);for(index in before.indices)if(base+index !in scratch until scratch+capacity && base+index !in table until table+1024)expectCondition(before[index]==after[index],"Other caller bytes unchanged")
  if(caller){expectWord("file_crc",-1);expectWord("file_status",-1);runUntil("results_ready");expectWord("file_crc",expected.toInt());expectWord("file_status",status)}
