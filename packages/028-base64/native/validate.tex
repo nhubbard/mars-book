@@ -1,0 +1,38 @@
+\section{Validate the whole text before publishing output}
+A late malformed character should not leave an apparently useful decoded prefix in
+the destination. This interface gives every malformed-input failure an unchanged output,
+so its decoder uses two passes. The first checks the text and calculates the output
+size. Only after validation and capacity checks succeed does the second pass write bytes.
+
+Track a pointer, remaining character count, provisional decoded size and previous sextet.
+For ordinary alphabet characters, call the classifier, reject minus one and retain the
+sextet for a possible following padding check. A padding character can be the last input
+byte or the first of exactly two final pads. At any earlier position it is invalid.
+For two final pads, confirm that the next character is also \texttt{=}.
+
+The previous sextet provides the unused-bit test. One final pad requires its low two
+bits zero; two final pads require its low four bits zero. For example, \texttt{Zh==}
+has the same significant decoded bits as \texttt{Zg==}, but its second sextet has a
+nonzero unused bit. The project rejects it. Likewise, \texttt{Zm9=} is rejected where
+\texttt{Zm8=} is canonical. RFC 4648 permits a decoder policy that rejects nonzero pad
+bits; that strict choice is explicit in this project's contract.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{For a single final pad, check the previous sextet before adjusting length.}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 1
+    bne $s1, $t0, validate_bad
+    nop
+    andi $t0, $s3, 3
+    bnez $t0, validate_bad
+    nop
+    daddiu $s2, $s2, -1
+    b validate_good
+    nop
+\end{minted}
+
+Do not treat a zero byte as the end of encoded text. Counts select the input interval;
+a zero byte inside that interval fails classification. Do not ignore a newline merely
+because a terminal displayed it as whitespace. The chosen input language contains no
+line breaks. Error rules are part of the interface, so tests should include misplaced
+pads, extra pads, omitted pads, non-alphabet bytes and invalid unused bits separately.

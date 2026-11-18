@@ -1,0 +1,50 @@
+\section{Fix counts, capacities and ownership}
+The four whole-buffer entries receive \texttt{a0}: source pointer, \texttt{a1}: unsigned
+64-bit input count, \texttt{a2}: destination pointer and \texttt{a3}: unsigned 64-bit
+output capacity. The scalar and MSA versions have the same results and failure rules.
+All pointers may be byte-aligned. Source and destination are disjoint for encoding;
+decoding permits either disjoint buffers or exactly the same starting address. Other
+partial overlap is outside this project.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{longtable}{p{.30\textwidth}p{.34\textwidth}p{.24\textwidth}}
+Entry & Selected input & Selected output \\
+\hline
+\texttt{b64\_encode\_scalar} & At most 4096 binary bytes & \(4\lceil n/3\rceil\) ASCII bytes \\
+\texttt{b64\_encode\_msa} & The same binary domain & The same encoded bytes \\
+\texttt{b64\_decode\_scalar} & At most 5464 canonical text bytes & \(3(n/4)-p\) binary bytes \\
+\texttt{b64\_decode\_msa} & The same canonical text domain & The same decoded bytes \\
+\texttt{b64\_encode12\_msa} & Exactly twelve binary bytes & Exactly sixteen ASCII bytes \\
+\texttt{b64\_decode16\_msa} & Sixteen alphabet bytes, no padding & Exactly twelve binary bytes \\
+\end{longtable}
+
+Here \(p\) is zero, one or two final padding characters, after the text has been
+validated. The kernels use \texttt{a0} for source and \texttt{a1} for destination.
+They require those exact mapped intervals and return success; the decoder kernel's
+input must already be known valid and unpadded. Its buffers may be disjoint or exactly
+in place. The encoder kernel's buffers are disjoint. The kernels do not infer capacity
+or accept a partial group.
+
+Whole-buffer success returns \texttt{v0}=0 and the exact output byte count in
+\texttt{v1}. The kernels return counts sixteen and twelve respectively. No entry adds
+a terminating zero. On a whole-buffer error, \texttt{v1} is zero and caller memory is
+unchanged. Status one rejects an input count above the entry's bound, before pointer
+access. Status two rejects malformed decoder input; a count not divisible by four is
+rejected before reading source. Status three reports insufficient output capacity.
+
+An empty whole-buffer request returns success with count zero before accessing either
+pointer, even if both are invalid and capacity is zero. For nonempty encoding, the
+required size is known from the input count, so check capacity before reading source.
+For nonempty decoding, validate text first, then check capacity. Malformed text therefore
+returns status two even when capacity is also too small. A capacity of \(2^{63}\) is a
+large unsigned value, not a negative buffer size. Only the bytes actually consumed or
+produced must be mapped.
+
+Entries preserve every bit of \texttt{s0} through \texttt{s7}, \texttt{fp} and
+\texttt{sp}, return through the full supplied \texttt{ra}, and perform no console I/O.
+The caller supplies an eight-byte-aligned stack. Temporary scalar and vector registers are volatile in this teaching interface. The
+illustrated kernels use \texttt{w0} through \texttt{w7} and also change their
+floating-point aliases. Read only selected input or output intervals among caller-owned objects,
+and write only the selected output and private storage. Constants and private workspace
+are permitted. Exact in-place decoding changes the output prefix of its input object;
+bytes beyond that prefix remain unchanged.

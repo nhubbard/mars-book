@@ -1,0 +1,44 @@
+\section{Turn each value into a character}
+The alphabet has four ordinary ranges and two final symbols. Keep the numerical
+sextet separate from the ASCII code stored in output: decimal 19 is an index, while
+ASCII \texttt{T} has decimal code 84.
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{lll}
+Sextet values & Characters & ASCII calculation \\
+\hline
+0--25 & \texttt{A} through \texttt{Z} & \(q+65\) \\
+26--51 & \texttt{a} through \texttt{z} & \(q+71\) \\
+52--61 & \texttt{0} through \texttt{9} & \(q-4\) \\
+62 & \texttt{+} & 43 \\
+63 & \texttt{/} & 47 \\
+\end{tabular}
+\end{center}
+
+The scalar encoder uses a 64-byte alphabet table. Add the sextet to the table's full
+address, load the selected unsigned byte, then store it at the corresponding output
+position. A one-byte table entry needs no scale factor. With \texttt{t0}, \texttt{t1}
+and \texttt{t2} holding the three input bytes and \texttt{s4} the alphabet pointer,
+the first two output positions are:
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{Keep sextet formation separate from the alphabet lookup.}
+\begin{minted}[samepage=true]{mars-idea}
+    srl $t3, $t0, 2
+    daddu $t4, $s4, $t3
+    lbu $t4, 0($t4)
+    sb $t4, 0($s2)
+    andi $t3, $t0, 3
+    sll $t3, $t3, 4
+    srl $t4, $t1, 4
+    or $t3, $t3, $t4
+    daddu $t4, $s4, $t3
+    lbu $t4, 0($t4)
+    sb $t4, 1($s2)
+\end{minted}
+
+Use \texttt{lbu} for both input and table bytes. A signed byte load turns a binary
+input such as hexadecimal \texttt{ff} into a negative register value, which can change
+a shift or produce an out-of-range table address. The table pointer still needs
+\texttt{daddu}; the fact that the selected entry occupies one byte does not reduce its
+address to a word.

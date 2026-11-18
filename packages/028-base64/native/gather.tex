@@ -1,0 +1,42 @@
+\section{Load selectors before a destructive gather}
+For \texttt{vshf.b}, the destination initially contains selector bytes and is then
+replaced by the selected bytes. The kernel supplies the same source register twice,
+so its selectors from zero through fifteen all choose bytes from that source. Reload
+the selector table before the next kernel call; the previous result is no longer a
+selector vector.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{The destination changes from selectors to gathered input bytes.}
+\begin{minted}[samepage=true]{mars-idea}
+    ld.b $w0, 0($sp)
+    dla $t1, enc_left
+    ld.b $w1, 0($t1)
+    vshf.b $w1, $w0, $w0
+    dla $t1, enc_left_shift
+    ld.b $w2, 0($t1)
+    sll.b $w1, $w1, $w2
+    dla $t1, enc_left_right
+    ld.b $w2, 0($t1)
+    srl.b $w1, $w1, $w2
+\end{minted}
+
+Here \texttt{w0} is the private input vector, \texttt{w1} becomes the left contribution
+and \texttt{w2} holds per-lane shift counts. The right contribution follows the second
+gather, a logical shift and its masks. The final combination is:
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Join the two bit contributions and retain six bits per lane.}
+\begin{minted}[samepage=true]{mars-idea}
+    and.v $w3, $w3, $w2
+    or.v $w1, $w1, $w3
+    andi.b $w1, $w1, 63
+\end{minted}
+
+For input bytes zero through eleven, the sextets are
+\[
+[0,0,4,2,0,48,16,5,1,32,28,8,2,16,40,11],
+\]
+and the final text is \texttt{AAECAwQFBgcICQoL}. Inspect \texttt{w1} as sixteen byte
+lanes before translating to ASCII. Viewing it as four signed words combines adjacent
+sextets into unrelated numerical values and makes the lane-level observation harder
+to follow.

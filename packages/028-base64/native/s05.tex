@@ -1,0 +1,37 @@
+\section{Step 5 Publish the first two sextets}\label{base64-s05}
+
+Form the first two numerical sextets from the loaded bytes. Use each as an unsigned offset into the alphabet table and store the selected character. Inspect the numerical index before interpreting its table result as ASCII. The remaining regions are still unfinished at this boundary.
+
+Replace the body of region \texttt{enc\_pair}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+encode_pack:
+    srl $t3, $t0, 2
+    daddu $t4, $s4, $t3
+    lbu $t4, 0($t4)
+    sb $t4, 0($s2)
+    andi $t3, $t0, 3
+    sll $t3, $t3, 4
+    srl $t4, $t1, 4
+    or $t3, $t3, $t4
+    daddu $t4, $s4, $t3
+    lbu $t4, 0($t4)
+    sb $t4, 1($s2)
+\end{minted}
+
+Use recipe \texttt{s05-1} with the cumulative source through this edit. Stop at \texttt{after\_enc\_pair} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The output prefix is TW, with the other destination bytes still sentinels.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What does a sextet select?
+
+\begin{itemize}
+\item \textbf{A} A whole output word.
+\item \textbf{B} The next source address.
+\item \textbf{C} One byte in the 64-character alphabet.
+\end{itemize}

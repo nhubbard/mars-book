@@ -1,0 +1,41 @@
+\section{Calculate the exact output size before storing}
+Every complete three-byte group produces four characters. A partial group also occupies
+four characters after padding, so an encoder needs
+\[
+L=4\left\lceil\frac n3\right\rceil
+ =4\left\lfloor\frac{n+2}{3}\right\rfloor.
+\]
+Reject an excessive unsigned input count before evaluating \(n+2\). In this project,
+\(n\le4096\), so the addition and multiplication are then small and cannot wrap.
+A count with bit 63 set must reach the bound error rather than become an empty request
+through a word-sized truncation.
+
+\Needspace{18\baselineskip}
+\MARSCodeLabel{Bound the count, handle empty input, then compare full-width capacity.}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 4096
+    sltu $t0, $t0, $a1
+    bnez $t0, b64_limit
+    nop
+    beqz $a1, b64_empty
+    nop
+    daddiu $t0, $a1, 2
+    li $t1, 3
+    ddivu $t0, $t0, $t1
+    dsll $t0, $t0, 2
+    sltu $t1, $a3, $t0
+    bnez $t1, b64_capacity
+    nop
+\end{minted}
+
+A valid nonempty request with insufficient capacity returns before its source is read.
+This makes its failure observable even with an invalid source pointer. After the size
+check succeeds, retain \(L\) as the eventual return count; walking pointers and decreasing
+remaining input must not destroy it.
+
+For decoding, a valid input count is a multiple of four. Its size is
+\(L=3(n/4)-p\), after validating the number and placement of final padding characters.
+The text limit of 5464 admits up to 4098 decoded bytes when no padding occurs. Encoding
+4096 bytes produces 5464 characters ending in two pads, which decode to 4096 bytes.
+These are separate input bounds, so do not assume that every valid maximum-size text
+must contain the padding produced by the maximum-size binary example.

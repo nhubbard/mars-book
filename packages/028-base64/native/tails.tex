@@ -1,0 +1,23 @@
+\section{Keep complete vector groups separate from scalar tails}
+The whole encoder calls its vector kernel while at least twelve input bytes remain,
+advancing source by twelve and destination by sixteen. It then uses the scalar group
+loop for the remaining zero through eleven bytes. Those bytes can include several
+complete triples before the final padded group; a scalar tail is not necessarily just
+one or two bytes.
+
+The decoder excludes a final padded quartet from its vector-eligible count. It can then
+call the sixteen-character kernel only for complete unpadded groups, advancing source
+by sixteen and destination by twelve. Any remainder is handled by the validated scalar
+quartet loop. A sixteen-character input ending in padding therefore uses the scalar
+path in this implementation, since its unpadded prefix contains only twelve characters.
+
+Keep original input count, remaining input, vector-eligible input and fixed total output
+count distinct. The loop's source increment is not its output increment. Their units
+are bytes in different representations, so using one stride for both corrupts the next
+group's position. For exact in-place decoding, the output pointer falls progressively
+behind unread input, which preserves the next group's source bytes.
+
+Exercise lengths on both sides of the twelve-byte encoding boundary and the
+sixteen-character decoding boundary. Include every input remainder modulo three,
+along with padded text whose unpadded prefix is just shorter than a vector group.
+A test of only complete large groups can leave an incorrect tail path untouched.

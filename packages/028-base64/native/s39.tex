@@ -1,0 +1,50 @@
+\section{Step 39 Store privately before the exact caller copy}\label{base64-s39}
+
+Store the full compact vector into the sixteen-byte private frame, then copy exactly twelve bytes to the caller. A direct sixteen-byte caller store would cross the output interval. All input characters were loaded before this copy, which also supports exact in-place operation.
+
+Replace the body of region \texttt{dec16\_publish}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{30\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    st.b $w7, 0($sp)
+    lbu $t0, 0($sp)
+    sb $t0, 0($a1)
+    lbu $t0, 1($sp)
+    sb $t0, 1($a1)
+    lbu $t0, 2($sp)
+    sb $t0, 2($a1)
+    lbu $t0, 3($sp)
+    sb $t0, 3($a1)
+    lbu $t0, 4($sp)
+    sb $t0, 4($a1)
+    lbu $t0, 5($sp)
+    sb $t0, 5($a1)
+    lbu $t0, 6($sp)
+    sb $t0, 6($a1)
+    lbu $t0, 7($sp)
+    sb $t0, 7($a1)
+    lbu $t0, 8($sp)
+    sb $t0, 8($a1)
+    lbu $t0, 9($sp)
+    sb $t0, 9($a1)
+    lbu $t0, 10($sp)
+    sb $t0, 10($a1)
+    lbu $t0, 11($sp)
+    sb $t0, 11($a1)
+\end{minted}
+
+Use recipe \texttt{s39-1} with the cumulative source through this edit. Stop at \texttt{after\_dec16\_publish} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Exactly twelve caller bytes change; the following bytes remain sentinels.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which store would violate this output contract?
+
+\begin{itemize}
+\item \textbf{A} Twelve byte stores within the output.
+\item \textbf{B} A sixteen-byte store to the caller.
+\item \textbf{C} A sixteen-byte store to private storage.
+\end{itemize}

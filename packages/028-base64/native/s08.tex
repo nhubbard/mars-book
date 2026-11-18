@@ -1,0 +1,31 @@
+\section{Step 8 Write the final one or two pad characters}\label{base64-s08}
+
+Share the last pad store between both short-tail paths. The one-byte tail first writes a pad at position two, then falls through to the final position. Finish without subtracting three from a smaller remaining count. The stored padding determines text shape, not additional binary output.
+
+Replace the body of region \texttt{enc\_padding}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+encode_pad_two:
+    li $t4, 61
+    sb $t4, 2($s2)
+encode_pad_one:
+    li $t4, 61
+    sb $t4, 3($s2)
+\end{minted}
+
+Use recipe \texttt{s08-1} with the cumulative source through this edit. Stop at \texttt{encode\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The one-byte and two-byte recipes produce Zg== and Zm8=.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Does a pad represent a decoded zero byte?
+
+\begin{itemize}
+\item \textbf{A} Yes, always.
+\item \textbf{B} Only when output is aligned.
+\item \textbf{C} No; it marks an incomplete input group.
+\end{itemize}

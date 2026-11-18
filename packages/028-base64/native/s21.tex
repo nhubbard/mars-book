@@ -1,0 +1,47 @@
+\section{Step 21 Read all four characters before storing a byte}\label{base64-s21}
+
+Classify a complete quartet into four private words, using zero for the already-validated pad positions. Retain the loop index across helper calls. Loading the entire quartet before publication is what permits exact in-place decoding without overwriting a character still needed by this group.
+
+Replace the body of region \texttt{dec\_quartet}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{27\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+decode_quartet:
+    daddu $t0, $s0, $s4
+    lbu $a0, 0($t0)
+    li $t0, 61
+    beq $a0, $t0, decode_pad_zero
+    nop
+    jal b64_digit
+    nop
+    bltz $v0, decode_development
+    nop
+    b decode_digit_store
+    nop
+decode_pad_zero:
+    move $v0, $zero
+decode_digit_store:
+    dsll $t0, $s4, 2
+    daddu $t0, $sp, $t0
+    sw $v0, 64($t0)
+    daddiu $s4, $s4, 1
+    sltiu $t0, $s4, 4
+    bnez $t0, decode_quartet
+    nop
+\end{minted}
+
+Use recipe \texttt{s21-1} with the cumulative source through this edit. Stop at \texttt{after\_dec\_quartet} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The private sextets for TWFu are 19, 22, 5, 46, and output is untouched.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What protects an in-place quartet from self-corruption?
+
+\begin{itemize}
+\item \textbf{A} Assume source and output strides are equal.
+\item \textbf{B} Load all of its characters before writing decoded bytes.
+\item \textbf{C} Store the first byte before reading the second character.
+\end{itemize}

@@ -1,0 +1,27 @@
+\section{Use a canonical oracle and watch actual accesses}
+Compare encoded bytes with the JDK basic Base64 encoder. For decoding, the host library
+alone does not define this project's accepted language: some decoders accept missing
+padding or nonzero unused bits. Decode with the basic decoder, re-encode the result,
+and require byte-for-byte equality with the original input. Also require a text count
+divisible by four. This canonical round trip supplies an independent acceptance check
+for the local strict policy.
+
+The seven short anchors begin with the empty input and proceed through \texttt{f},
+\texttt{fo}, \texttt{foo}, \texttt{foob}, \texttt{fooba} and \texttt{foobar}. Add binary
+patterns containing zero and high bytes, random data, every possible input octet at a
+selected text position, and direct kernels spanning all 64 alphabet values. Compare
+all returned bytes and both result registers, including a zero count on failure.
+
+Protect the complete caller objects with sentinels and retain the original input bytes.
+Trace reads as well as writes: a sixteen-byte load may return a correct twelve-byte
+encoding while still violating its input footprint. A same-value source store also
+violates a read-only input even when before/after snapshots agree. In-place decoding
+permits writes only in its selected decoded prefix, leaving the rest of the original
+text and surrounding bytes unchanged.
+
+Use invalid pointers for paths that promise no access: empty input, excessive counts,
+short encoder capacity and short decoder capacity after a valid source. Put a malformed
+character late in a valid-looking prefix and verify that no output was published.
+Repeat an encode/decode pair in one stopped session using the first call's actual
+bytes, then test an error followed by a valid call. Full-width preserved registers and
+wide code/data addresses complete the state and addressing checks.

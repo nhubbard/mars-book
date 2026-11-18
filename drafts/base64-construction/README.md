@@ -1,3 +1,6 @@
+The current student distribution is `packages/028-base64`; this directory retains
+construction provenance. Use the packaged starter and helper for student work.
+
 # Base64 cumulative construction
 
 This draft accompanies the directly edited native chapter at drafts/base64.tex.

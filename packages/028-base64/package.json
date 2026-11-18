@@ -1,0 +1,1891 @@
+{
+  "formatVersion": 1,
+  "version": "0.1.0",
+  "status": "draft",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "3f69e76756b45f13ba692235ca945dc941e4f4b4",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "readDataAddress",
+      "readBytes(address,length)",
+      "runUntil",
+      "expectVectorLane"
+    ]
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose and public intermediate/final CLI checks; remote delivery and enforced instructor policies remain pending"
+  },
+  "id": "028-base64",
+  "title": "Encode and decode Base64",
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "reading": "reading.json",
+  "prerequisites": [
+    "Unsigned bytes, shifts, masks and full-width pointers",
+    "Nested calls, preserved registers and private stack frames",
+    "MSA byte lanes, masks and destructive gathers"
+  ],
+  "learningObjectives": [
+    "Regroup three bytes into four numerical sextets",
+    "Separate alphabet indices from ASCII characters",
+    "Validate canonical pad shape and unused bits before publication",
+    "Compute exact capacities with bounded unsigned counts",
+    "Support exact in-place decoding and unaligned byte pointers",
+    "Build exact-footprint MSA kernels and scalar tails",
+    "Compare whole-function work with matching observation boundaries"
+  ],
+  "inputDomain": {
+    "type": "canonical-standard-base64",
+    "encodeMaximumBytes": 4096,
+    "decodeMaximumTextBytes": 5464,
+    "decodeMaximumOutputBytes": 4098,
+    "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+    "padding": "Required canonical padding; unused bits zero",
+    "whitespace": "Rejected",
+    "byteOrder": "little-endian",
+    "pointerAlignmentBytes": 1,
+    "stackAlignmentBytes": 8,
+    "overlap": "Encoding disjoint; decoding disjoint or exact in-place"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Trace the bits before writing code",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which quantity is an alphabet index?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A six-bit sextet."
+          },
+          {
+            "id": "b",
+            "text": "A full source pointer."
+          },
+          {
+            "id": "c",
+            "text": "The output capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Account for the same twenty-four bits on both sides of the conversion."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Write three eight-bit rows, then mark boundaries every six bits across the joined rows."
+        }
+      ],
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Bound the input before sizing output",
+      "kind": "author",
+      "quiz": {
+        "id": "q02",
+        "prompt": "When is adding two to the count safe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before inspecting any count bits."
+          },
+          {
+            "id": "b",
+            "text": "Only after storing output."
+          },
+          {
+            "id": "c",
+            "text": "After the unsigned bound has been established."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Establish the unsigned bound before performing length arithmetic."
+        },
+        {
+          "id": "s02-h2",
+          "text": "After rejecting counts above 4096, compute four times the integer quotient of count plus two divided by three; compare with capacity."
+        }
+      ],
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "editTarget": "enc_guard",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s02.kts"
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Retain counts and pointers in the encoder frame",
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which value must remain fixed while the loop walks?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining input count."
+          },
+          {
+            "id": "b",
+            "text": "The total output count returned on success."
+          },
+          {
+            "id": "c",
+            "text": "The source pointer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Separate the remaining input count from the total promised output count."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Keep advancing input and output pointers in saved registers while retaining the exact output length for the eventual return."
+        }
+      ],
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "editTarget": "enc_state",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s03.kts"
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Read only the available source bytes",
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why clear the missing-byte registers?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Their zero bits form canonical short-tail sextets."
+          },
+          {
+            "id": "b",
+            "text": "A byte load always clears every temporary."
+          },
+          {
+            "id": "c",
+            "text": "The caller guarantees three readable bytes for every tail."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "A short final group must not load bytes outside the supplied range."
+        },
+        {
+          "id": "s04-h2",
+          "text": "Load the first byte unconditionally for a nonempty group; zero the other temporaries and load each only when the remaining count permits it."
+        }
+      ],
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "editTarget": "enc_load",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s04.kts"
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Publish the first two sextets",
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What does a sextet select?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A whole output word."
+          },
+          {
+            "id": "b",
+            "text": "The next source address."
+          },
+          {
+            "id": "c",
+            "text": "One byte in the64-character alphabet."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "A sextet is a number before it becomes a character."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Split the first byte at bit two; combine its low two bits with the high four bits of the second byte before the alphabet lookup."
+        }
+      ],
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "editTarget": "enc_pair",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s05.kts"
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Publish the third character when it exists",
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which source bits form this third sextet?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output capacity bits."
+          },
+          {
+            "id": "b",
+            "text": "The second byte low four bits and third byte high two bits."
+          },
+          {
+            "id": "c",
+            "text": "Only the first byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "The third sextet crosses the second byte boundary."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Join the low four bits of the second byte with the high two bits of the third, then look up that six-bit index."
+        }
+      ],
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "editTarget": "enc_third",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s06.kts"
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Complete a triple and advance by different strides",
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why are the two pointer strides different?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The representation expands three bytes into four characters."
+          },
+          {
+            "id": "b",
+            "text": "Both pointers must remain word aligned."
+          },
+          {
+            "id": "c",
+            "text": "The alphabet address advances with the input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "The pointers advance by different amounts on the two sides."
+        },
+        {
+          "id": "s07-h2",
+          "text": "A full group consumes three bytes and reserves four output positions. Finish when the input remainder reaches zero."
+        }
+      ],
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "editTarget": "enc_advance",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s07.kts"
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Write the final one or two pad characters",
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Does a pad represent a decoded zero byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, always."
+          },
+          {
+            "id": "b",
+            "text": "Only when output is aligned."
+          },
+          {
+            "id": "c",
+            "text": "No; it marks an incomplete input group."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Padding replaces positions whose source bits do not exist."
+        },
+        {
+          "id": "s08-h2",
+          "text": "One source byte requires two equals signs; two source bytes require one. Retain the meaningful earlier alphabet characters."
+        }
+      ],
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "editTarget": "enc_padding",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s08.kts"
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Check short tails independently",
+      "kind": "observe",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What determines the number of final pads?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The destination alignment."
+          },
+          {
+            "id": "b",
+            "text": "The input remainder modulo three."
+          },
+          {
+            "id": "c",
+            "text": "The first zero input byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Compare the same algorithm at each possible remainder."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Prepare one-, two- and three-byte inputs and inspect all four output positions, including padding and the byte beyond the result."
+        }
+      ],
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Recognize the uppercase interval",
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why can zero not indicate an invalid character?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A is a valid character with sextet zero."
+          },
+          {
+            "id": "b",
+            "text": "All invalid characters have value zero."
+          },
+          {
+            "id": "c",
+            "text": "Zero is the padding character."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Test a character interval before subtracting its base."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Uppercase ASCII letters map to zero through twenty-five. Characters below A or above Z must continue to the next range."
+        }
+      ],
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "editTarget": "digit_upper",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s10.kts"
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Map lowercase and numeric intervals",
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What is the numeric range first sextet?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "Twenty-six."
+          },
+          {
+            "id": "c",
+            "text": "Fifty-two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Adjacent ASCII intervals do not imply adjacent alphabet indices."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Lowercase letters start at twenty-six; decimal digits start at fifty-two. Subtract the appropriate ASCII base before adding its alphabet base."
+        }
+      ],
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "editTarget": "digit_ranges",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s11.kts"
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Handle the final symbols and invalid octets",
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which value marks unfinished classifier work?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "Minus two."
+          },
+          {
+            "id": "c",
+            "text": "Four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "The final two valid characters are individual cases."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Map plus to sixty-two and slash to sixty-three; return minus one for every other character after the letter and digit tests."
+        }
+      ],
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "editTarget": "digit_symbols",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s12.kts"
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Initialize a provisional decoded size",
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "When can padding reduce the provisional size?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After its final position and unused bits are validated."
+          },
+          {
+            "id": "b",
+            "text": "Before the input count is known."
+          },
+          {
+            "id": "c",
+            "text": "Whenever a zero character occurs."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Initialize validation state before scanning any characters."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Retain the full text count, a provisional three-per-quartet decoded length and a previous-sextet value for final pad-bit checks."
+        }
+      ],
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "editTarget": "val_state",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s13.kts"
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Classify the ordinary characters without output",
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Why retain the previous sextet?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is an output pointer."
+          },
+          {
+            "id": "b",
+            "text": "It determines the source length."
+          },
+          {
+            "id": "c",
+            "text": "Its unused bits must be checked if a pad follows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "A padding character changes which positions may follow it."
+        },
+        {
+          "id": "s14-h2",
+          "text": "For ordinary characters, call the classifier, reject minus one and propagate minus two. Advance only after the character has been accepted."
+        }
+      ],
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "editTarget": "val_scan",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s14.kts"
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Validate one final pad",
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which bits are unused before one final pad?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All bits of the first byte."
+          },
+          {
+            "id": "b",
+            "text": "The preceding sextet low two bits."
+          },
+          {
+            "id": "c",
+            "text": "The first sextet high two bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "One equals sign removes one output byte from the provisional length."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Require padding to be in the last position and require the preceding sextet\u2019s low two bits to be zero."
+        }
+      ],
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "editTarget": "val_one",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s15.kts"
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Validate the final pair of pads",
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What does the second pad check establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That both final positions have the required pad form."
+          },
+          {
+            "id": "b",
+            "text": "That source is zero terminated."
+          },
+          {
+            "id": "c",
+            "text": "That capacity is large enough."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Two equals signs leave only one decoded byte in the last quartet."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Require both final pad characters and test the second sextet\u2019s low four bits before subtracting two from the provisional length."
+        }
+      ],
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "editTarget": "val_two",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s16.kts"
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Inspect the supplied restores",
+      "kind": "observe",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Why cannot four mark an unfinished classifier?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four is an invalid address."
+          },
+          {
+            "id": "b",
+            "text": "All returns must be zero."
+          },
+          {
+            "id": "c",
+            "text": "Four is a valid sextet."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "A nested call changes the return address register."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Trace where each frame saves ra and where every normal, error and development exit restores the full saved state."
+        }
+      ],
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Reject impossible text counts before reading",
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "What happens before the decoder reads text?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output count is guessed from a terminator."
+          },
+          {
+            "id": "b",
+            "text": "Its count is bounded and checked for quartet alignment."
+          },
+          {
+            "id": "c",
+            "text": "The first output byte is stored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Some malformed requests can be rejected without reading their pointers."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Handle over-limit and empty counts first, then reject a nonzero text count whose low two bits are not zero."
+        }
+      ],
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "editTarget": "dec_guard",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s18.kts"
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Validate before checking capacity and publishing",
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Which result may be used after successful validation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The exact decoded byte count."
+          },
+          {
+            "id": "b",
+            "text": "A count from an unsuccessful helper."
+          },
+          {
+            "id": "c",
+            "text": "The original capacity as the decoded length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Error precedence determines the order of preflight checks."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Validate the whole text first. Only after successful validation compare its decoded length with destination capacity."
+        }
+      ],
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "editTarget": "dec_setup",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s19.kts"
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Exclude the padded final quartet from vector work",
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Why exclude a padded final quartet?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its source address changes width."
+          },
+          {
+            "id": "b",
+            "text": "Padding ends every complete group."
+          },
+          {
+            "id": "c",
+            "text": "The16-character kernel requires alphabet characters without pads."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "A padded final quartet needs scalar handling."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Inspect the final text positions and exclude that quartet from the full-vector body count when padding is present."
+        }
+      ],
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "editTarget": "dec_body",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s20.kts"
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Read all four characters before storing a byte",
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "What protects an in-place quartet from self-corruption?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Assume source and output strides are equal."
+          },
+          {
+            "id": "b",
+            "text": "Load all of its characters before writing decoded bytes."
+          },
+          {
+            "id": "c",
+            "text": "Store the first byte before reading the second character."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Exact in-place decoding requires reading ahead of output stores."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Classify all four text characters into the private quartet area before publishing any decoded byte."
+        }
+      ],
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "editTarget": "dec_quartet",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s21.kts"
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Publish the first decoded byte",
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What determines whether another output store is permitted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The validated remaining output count."
+          },
+          {
+            "id": "b",
+            "text": "Whether the previous byte was zero."
+          },
+          {
+            "id": "c",
+            "text": "The size of a vector register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "The first byte joins the first two sextets."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Shift the first sextet left by two, combine it with the second shifted right by four, then store only if output remains."
+        }
+      ],
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "editTarget": "dec_first",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s22.kts"
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Publish the second decoded byte",
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Which tail ends after this second store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A three-byte full group."
+          },
+          {
+            "id": "b",
+            "text": "Every input containing a lowercase letter."
+          },
+          {
+            "id": "c",
+            "text": "A decoded two-byte tail."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The middle output byte joins the second and third sextets."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Use the low four bits of the second sextet and the high four bits of the third. Decrement the remaining output count after storing."
+        }
+      ],
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "editTarget": "dec_second",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s23.kts"
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Complete the quartet and continue",
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which count belongs in the success return?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source pointer difference divided by two."
+          },
+          {
+            "id": "b",
+            "text": "The retained total output count."
+          },
+          {
+            "id": "c",
+            "text": "The final remaining count zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "The final output byte uses the last two sextets."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Join the low two bits of the third sextet with the fourth; advance input by four characters only after this quartet is finished."
+        }
+      ],
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "editTarget": "dec_third",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s24.kts"
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Follow exact in-place decoding",
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Which overlap is included in this contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Exactly identical starting addresses."
+          },
+          {
+            "id": "b",
+            "text": "Every possible partial overlap."
+          },
+          {
+            "id": "c",
+            "text": "Only overlapping buffers of equal lengths."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Compare consumed input with published output throughout the loop."
+        },
+        {
+          "id": "s25-h2",
+          "text": "At each in-place quartet boundary, mark four input positions already read and at most three output positions already written."
+        }
+      ],
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Copy exactly twelve bytes to private storage",
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Where may the kernel safely load sixteen bytes here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "From any12-byte caller object."
+          },
+          {
+            "id": "b",
+            "text": "Only from destination."
+          },
+          {
+            "id": "c",
+            "text": "From its initialized private object."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A sixteen-byte vector load cannot read directly from a twelve-byte object."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Copy exactly twelve caller bytes into the private sixteen-byte area and explicitly zero the four remaining positions before loading the vector."
+        }
+      ],
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "editTarget": "enc12_copy",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s26.kts"
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Gather the left contribution to each sextet",
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "What did the gather destination hold before vshf?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A caller return address."
+          },
+          {
+            "id": "b",
+            "text": "Selector bytes."
+          },
+          {
+            "id": "c",
+            "text": "The final ASCII output."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Each sextet has a left contribution and sometimes a right contribution."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Use the lane-selector and shift tables to place the appropriate first source byte contribution into every output lane."
+        }
+      ],
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "editTarget": "enc12_left",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s27.kts"
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Join the right contribution and mask sextets",
+      "kind": "author",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which representation is present before alphabet translation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Six-bit numerical indices."
+          },
+          {
+            "id": "b",
+            "text": "ASCII characters already."
+          },
+          {
+            "id": "c",
+            "text": "Four signed machine words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "The join must leave exactly six useful bits in each lane."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Gather the complementary source bytes, shift them, OR the contributions and mask every lane with sixty-three."
+        }
+      ],
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "editTarget": "enc12_right",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s28.kts"
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Apply the first alphabet correction",
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Why AND the comparison result with six?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It selects the sixth source byte."
+          },
+          {
+            "id": "b",
+            "text": "It makes every lane true."
+          },
+          {
+            "id": "c",
+            "text": "It converts an all-one mask into the needed correction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Start translation with a common base and then correct intervals."
+        },
+        {
+          "id": "s29-h2",
+          "text": "For sextets at least twenty-six, add the correction for the lowercase alphabet interval; inspect the mask separately from the corrected bytes."
+        }
+      ],
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "editTarget": "enc12_upper",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s29.kts"
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Apply the numeric-range correction",
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Must every intermediate byte be printable ASCII?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only when input is aligned."
+          },
+          {
+            "id": "b",
+            "text": "No; only the completed translation must be."
+          },
+          {
+            "id": "c",
+            "text": "Yes, after every subtraction."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "A later interval may need to undo part of an earlier correction."
+        },
+        {
+          "id": "s30-h2",
+          "text": "For sextets at least fifty-two, subtract the additional correction that moves the numeric interval to its ASCII digit positions."
+        }
+      ],
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "editTarget": "enc12_digit",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s30.kts"
+      }
+    },
+    {
+      "id": "s31",
+      "title": "Distinguish plus and slash at the upper end",
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Which vector must the threshold tests read?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original sextets."
+          },
+          {
+            "id": "b",
+            "text": "The partly translated bytes."
+          },
+          {
+            "id": "c",
+            "text": "The output address bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "The two largest indices do not continue the digit interval."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Correct sextet sixty-two to plus and sextet sixty-three to slash before adding the common ASCII base."
+        }
+      ],
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "editTarget": "enc12_symbols",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s31.kts"
+      }
+    },
+    {
+      "id": "s32",
+      "title": "Add the common ASCII base and store sixteen bytes",
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "How many caller bytes does this kernel publish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twelve."
+          },
+          {
+            "id": "b",
+            "text": "Twenty-four."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Publication changes caller memory; prior vector calculations do not."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Add ASCII A to the corrected lanes, store exactly sixteen output bytes and then continue through the supplied restore."
+        }
+      ],
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "editTarget": "enc12_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s32.kts"
+      }
+    },
+    {
+      "id": "s33",
+      "title": "Build the uppercase character contribution",
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Why can a valid uppercase contribution be zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A is padding."
+          },
+          {
+            "id": "b",
+            "text": "A represents sextet zero."
+          },
+          {
+            "id": "c",
+            "text": "The source is empty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Only matching lanes should contribute to the result."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Make an uppercase interval mask, subtract ASCII A and AND the values with that mask before starting the accumulated sextet vector."
+        }
+      ],
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "editTarget": "dec16_upper",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s33.kts"
+      }
+    },
+    {
+      "id": "s34",
+      "title": "Add the lowercase contribution",
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Why is OR suitable for merging these contributions?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The character classes are disjoint."
+          },
+          {
+            "id": "b",
+            "text": "All classes overlap."
+          },
+          {
+            "id": "c",
+            "text": "OR automatically validates punctuation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "A disjoint interval can be merged without altering previous lanes."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Mask lowercase letters, subtract ASCII a, add twenty-six and OR those contributions into the accumulated sextets."
+        }
+      ],
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "editTarget": "dec16_lower",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s34.kts"
+      }
+    },
+    {
+      "id": "s35",
+      "title": "Add the digit contribution",
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What sextet does ASCII zero represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "Forty-eight."
+          },
+          {
+            "id": "c",
+            "text": "Fifty-two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Numeric characters have alphabet indices above both letter intervals."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Mask the zero-through-nine ASCII interval, subtract ASCII zero, add fifty-two and merge the result."
+        }
+      ],
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "editTarget": "dec16_digit",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s35.kts"
+      }
+    },
+    {
+      "id": "s36",
+      "title": "Complete the validated sextet vector",
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Where was invalid text rejected?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After writing decoded output."
+          },
+          {
+            "id": "b",
+            "text": "In the complete preflight validation pass."
+          },
+          {
+            "id": "c",
+            "text": "By treating zero sextets as invalid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "The direct kernel already assumes validated, unpadded text."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Create equality masks for plus and slash, insert sixty-two and sixty-three, and check the complete sextet vector before packing."
+        }
+      ],
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "editTarget": "dec16_symbols",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s36.kts"
+      }
+    },
+    {
+      "id": "s37",
+      "title": "Form the first packed byte contribution",
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "What does the fourth position represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Private packing space to be removed."
+          },
+          {
+            "id": "b",
+            "text": "A caller output zero that must be stored."
+          },
+          {
+            "id": "c",
+            "text": "An extra encoded character."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Packing reverses the earlier bit regrouping."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Select the sextets that supply each packed byte\u2019s left portion, shift within lanes and mask away bits that do not belong to that byte."
+        }
+      ],
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "editTarget": "dec16_left",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s37.kts"
+      }
+    },
+    {
+      "id": "s38",
+      "title": "Join and compact the twelve useful bytes",
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Why is another gather needed after packing?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The input alphabet changes."
+          },
+          {
+            "id": "b",
+            "text": "It adds the missing output terminator."
+          },
+          {
+            "id": "c",
+            "text": "Useful bytes are separated by group padding positions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "The packed groups still contain an unused position after each triple."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Merge right contributions, then gather positions zero, one, two, four, five, six and the corresponding later triples; select zeros for the last four lanes."
+        }
+      ],
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "editTarget": "dec16_compact",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s38.kts"
+      }
+    },
+    {
+      "id": "s39",
+      "title": "Store privately before the exact caller copy",
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Which store would violate this output contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twelve byte stores within the output."
+          },
+          {
+            "id": "b",
+            "text": "A sixteen-byte store to the caller."
+          },
+          {
+            "id": "c",
+            "text": "A sixteen-byte store to private storage."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "The caller owns twelve output bytes, even though the vector has sixteen lanes."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Store the vector into private storage, then copy exactly its first twelve bytes to the caller destination."
+        }
+      ],
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "editTarget": "dec16_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s39.kts"
+      }
+    },
+    {
+      "id": "s40",
+      "title": "Integrate full vector groups with the scalar tail",
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "How many raw bytes remain after two kernels consume25 input bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Nine."
+          },
+          {
+            "id": "c",
+            "text": "Zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "The scalar tail and vector body must share a single remaining-count invariant."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Process twelve input bytes per vector call, advance output by sixteen, propagate a nonzero kernel status and hand a smaller remainder to scalar encoding."
+        }
+      ],
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "editTarget": "enc_vector",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s40.kts"
+      }
+    },
+    {
+      "id": "s41",
+      "title": "Integrate unpadded vector groups and exact tails",
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Which count controls vector eligibility?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The destination capacity alone."
+          },
+          {
+            "id": "b",
+            "text": "The original binary input count."
+          },
+          {
+            "id": "c",
+            "text": "The unpadded complete-prefix count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Validation and padding decisions belong outside the direct vector kernel."
+        },
+        {
+          "id": "s41-h2",
+          "text": "Decode only complete unpadded sixteen-character groups, advance output by twelve and retain the final padded or short group for the scalar path."
+        }
+      ],
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "editTarget": "dec_vector",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s41.kts"
+      }
+    },
+    {
+      "id": "s42",
+      "title": "Compare complete work boundaries",
+      "kind": "observe",
+      "quiz": {
+        "id": "q42",
+        "prompt": "What makes two instruction-work measurements comparable?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the vector register count."
+          },
+          {
+            "id": "b",
+            "text": "The same input and function boundary."
+          },
+          {
+            "id": "c",
+            "text": "An identical source-line count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Choose equal observation boundaries before comparing costs."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Count from each whole-function entry through its return, including validation, frame handling, guards and called kernels; record the same raw input pattern."
+        }
+      ],
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s43",
+      "title": "Verify canonical round trips",
+      "kind": "observe",
+      "quiz": {
+        "id": "q43",
+        "prompt": "What should a completed free-writing check require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The declared interface contract."
+          },
+          {
+            "id": "b",
+            "text": "The reference temporary-register choices."
+          },
+          {
+            "id": "c",
+            "text": "An exact instruction count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "A round trip alone can conceal matching encoder and decoder mistakes."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Compare each direction with an independent host codec and canonical re-encoding, then add malformed padding, capacity and exact in-place cases."
+        }
+      ],
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/reuse.kts"
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/encode.kts",
+    "checks/decode.kts",
+    "checks/canonical.kts",
+    "checks/bounds.kts",
+    "checks/kernels.kts",
+    "checks/caller.kts",
+    "checks/reuse.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json",
+    "inputs.json",
+    "steps.json",
+    "prepare.py",
+    "native"
+  ]
+}

@@ -1,0 +1,42 @@
+\section{Regroup twenty-four bits into four sextets}
+A \emph{sextet} is a group of six bits, whose unsigned value is from zero through 63.
+Let the three input bytes be \(b_0,b_1,b_2\). The first byte supplies all six bits of
+\(q_0\) and the high two bits of \(q_1\). The next byte finishes \(q_1\) and starts
+\(q_2\); the third finishes \(q_2\) and supplies \(q_3\):
+\[
+\begin{aligned}
+q_0&=b_0\gg2,\\
+q_1&=((b_0\mathbin{\&}3)\ll4)\mathbin{\mathrm{OR}}(b_1\gg4),\\
+q_2&=((b_1\mathbin{\&}15)\ll2)\mathbin{\mathrm{OR}}(b_2\gg6),\\
+q_3&=b_2\mathbin{\&}63.
+\end{aligned}
+\]
+The right shifts are logical. Masking the low two or four bits before shifting makes
+each contribution occupy only its assigned part of the next sextet. Their bit fields
+do not overlap, so OR joins them without a carry.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={The three input bytes for Man, binary 01001101, 01100001 and 01101110, occupy one 24-bit span. Repartitioning the same span into six-bit groups gives 010011,010110,000101,101110: decimal 19,22,5,46 and characters T,W,F,u.}]
+\foreach \x/\bits/\name in {0/01001101/M,4/01100001/a,8/01101110/n} {
+ \draw (\x,1.5) rectangle +(4,1);
+ \node at (\x+2,2.1) {\texttt{\bits}};
+ \node at (\x+2,1.7) {\name};
+}
+\foreach \x/\bits/\value/\name in {0/010011/19/T,3/010110/22/W,6/000101/5/F,9/101110/46/u} {
+ \draw (\x,0) rectangle +(3,1);
+ \node at (\x+1.5,.7) {\texttt{\bits}};
+ \node at (\x+1.5,.25) {\value\quad\name};
+}
+\draw[->] (6,1.45)--(6,1.05);
+\end{tikzpicture}
+\caption{Byte boundaries and sextet boundaries partition the same bits differently.}\label{base64-bit-split}
+\end{figure}
+
+For \texttt{Man}, the decimal bytes are 77, 97 and 110. Substitution gives
+\(77\gg2=19\), \(((77\mathbin{\&}3)\ll4)|(97\gg4)=22\),
+\(((97\mathbin{\&}15)\ll2)|(110\gg6)=5\), and \(110\mathbin{\&}63=46\).
+The standard alphabet maps these values to \texttt{T}, \texttt{W}, \texttt{F} and
+\texttt{u}. The order follows the input bit stream, even though the simulator stores
+words in little-endian memory. Loading individual bytes avoids reversing a three-byte
+group by treating it as a host-endian word.

@@ -1,0 +1,30 @@
+\section{Recover a sextet from an input character}
+Decoding reverses the alphabet mapping. An uppercase character \(x\) represents
+\(x-65\); lowercase represents \(x-71\); a digit represents \(x+4\).
+\texttt{+} and \texttt{/} represent 62 and 63. Every other input octet is invalid
+except a padding character handled at its permitted final position.
+
+The scalar classifier first tries the uppercase interval. Subtract its lower bound,
+then compare that unsigned difference with the interval width. A character below
+\texttt{A} produces a wrapped large unsigned difference and fails the comparison.
+A character above \texttt{Z} produces a difference at least 26 and also fails.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Recognize an ASCII interval with one unsigned range test.}
+\begin{minted}[samepage=true]{mars-idea}
+b64_digit:
+    daddiu $t0, $a0, -65
+    sltiu $t1, $t0, 26
+    bnez $t1, digit_direct
+    nop
+\end{minted}
+
+Use the same reasoning for lowercase and digits, then test the two final symbols.
+The classifier returns a sextet or minus one; the validator checks that return before
+using it. A zero sextet is a valid result for \texttt{A}, so a zero/nonzero test cannot
+distinguish success from failure.
+
+The alternative implementation uses a 256-byte decode table, with minus one in invalid
+positions. The input byte is zero-extended before indexing; the table result is loaded
+signed so its minus-one marker remains distinguishable. Both strategies must agree for
+all 256 possible octets, including zero, spaces, newlines and bytes at least 128.

@@ -140,7 +140,7 @@ in the main manuscript as chapter 25. Four IDE figure slots remain plans.
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-seven chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-eight chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -155,7 +155,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-seven text packages, starters, public checks, deterministic student archive builder,
+The first twenty-eight text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
@@ -187,3 +187,12 @@ complete implementations, 312 additional cases and quiz feedback. The chapter is
 included in main.tex as the twenty-seventh text package. Actual IDE figures, remote
 progression, the deferred substantial author rewrite and independent accessibility
 validation remain pending.
+
+
+Chapter 28, Base64, now has a native cumulative composition with 43 steps, 37 authored
+regions, 52 exact recipes, 43 quizzes and 86 progressive hints. Package `028-base64`
+includes public guided checks and seven completed-interface domains covering canonical
+text, exact capacities and footprints, caller boundaries and same-session reuse. Private
+solutions, seeded cases and quiz feedback remain in the instructor repository. The four
+light-theme figure plans are unfulfilled; actual IDE captures, remote progression,
+independent accessibility review and the author’s substantial prose edit remain pending.

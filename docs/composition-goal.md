@@ -262,11 +262,13 @@ ASCII classification, transactional validation, exact in-place decoding, MSA gat
 masked alphabet translation, compaction and scalar tails. A native described bit diagram,
 headed tables and measured instruction-work comparisons support thirteen selected
 assembly fragments. Two equivalent private implementations pass normal/wide checks and
-24 deliberate faults. The manuscript keeps its 27 packaged chapters while this
-twenty-eighth draft receives separate distributions. Its cumulative expansion now has
+24 deliberate faults. The manuscript now includes this twenty-eighth text package
+with separate student and instructor distributions. Its cumulative expansion now has
 43 steps, 37 authored regions, 52 exact recipes, 43 quizzes and 86 progressive hints.
 Connected native includes weave the construction around the foundation, with supplied
 frames and restore paths, explicit unfinished-call propagation and four planned IDE
 figures. Intermediate state, equivalent completed interfaces and wide addresses are
-checked independently. Actual screenshot capture and package integration remain pending.
+checked independently. The package exports guided observations and seven public
+completed-interface domains; private cases and quiz feedback remain separate. Actual
+screenshot capture and remote progression remain pending.
 The author's substantial exposition and length rewrite remains deferred.

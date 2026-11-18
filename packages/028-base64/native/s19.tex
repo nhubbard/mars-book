@@ -1,0 +1,39 @@
+\section{Step 19 Validate before checking capacity and publishing}\label{base64-s19}
+
+Retain all input arguments in the supplied frame. Call validation and check status before interpreting its count. Compare that count with the original unsigned capacity, then retain both total and remaining output. A malformed input wins over a short-capacity error under this contract.
+
+Replace the body of region \texttt{dec\_setup}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{19\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s0, $a0
+    move $s1, $a1
+    move $s2, $a2
+    move $s3, $a3
+    move $s5, $t9
+    jal b64_validate
+    nop
+    bnez $v0, decode_failed
+    nop
+    sltu $t0, $s3, $v1
+    bnez $t0, decode_capacity
+    nop
+    move $s3, $v1
+    move $s6, $v1
+\end{minted}
+
+Use recipe \texttt{s19-1} with the cumulative source through this edit. Stop at \texttt{after\_dec\_setup} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+TWFu establishes three output bytes while destination remains unchanged.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which result may be used after successful validation?
+
+\begin{itemize}
+\item \textbf{A} The exact decoded byte count.
+\item \textbf{B} A count from an unsuccessful helper.
+\item \textbf{C} The original capacity as the decoded length.
+\end{itemize}

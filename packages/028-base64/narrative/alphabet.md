@@ -1,0 +1,3 @@
+# Alphabet
+
+Read the directly edited native composition at `native/alphabet.tex`. Metadata does not regenerate this prose.

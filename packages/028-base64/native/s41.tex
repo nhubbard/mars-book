@@ -1,0 +1,41 @@
+\section{Step 41 Integrate unpadded vector groups and exact tails}\label{base64-s41}
+
+Call the decoder kernel only while at least sixteen eligible characters remain. Advance source and destination by different strides, updating both total and vector-eligible counts. The scalar tail still processes any excluded padded quartet. Check the disjoint and exact in-place recipes.
+
+Replace the body of region \texttt{dec\_vector}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{21\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $s4, 16
+    bnez $t0, decode_scalar_loop
+    nop
+    move $a0, $s0
+    move $a1, $s2
+    jal b64_decode16_msa
+    nop
+    bnez $v0, decode_failed
+    nop
+    daddiu $s0, $s0, 16
+    daddiu $s1, $s1, -16
+    daddiu $s2, $s2, 12
+    daddiu $s4, $s4, -16
+    daddiu $s6, $s6, -12
+    b decode_vector_loop
+    nop
+\end{minted}
+
+Use recipe \texttt{s41-1} with the cumulative source through this edit. Stop at \texttt{decode\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The25-byte decoded result includes a final scalar byte and preserves all following input bytes in place.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which count controls vector eligibility?
+
+\begin{itemize}
+\item \textbf{A} The destination capacity alone.
+\item \textbf{B} The original binary input count.
+\item \textbf{C} The unpadded complete-prefix count.
+\end{itemize}

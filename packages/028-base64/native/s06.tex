@@ -1,0 +1,35 @@
+\section{Step 6 Publish the third character when it exists}\label{base64-s06}
+
+A one-byte input tail needs padding at the third position, so route it to the supplied pad label. Otherwise combine the low four bits of the second byte with the high two bits of the third. A two-byte tail uses a zero third input register.
+
+Replace the body of region \texttt{enc\_third}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t3, $s1, 2
+    bnez $t3, encode_pad_two
+    nop
+    andi $t3, $t1, 15
+    sll $t3, $t3, 2
+    srl $t4, $t2, 6
+    or $t3, $t3, $t4
+    daddu $t4, $s4, $t3
+    lbu $t4, 0($t4)
+    sb $t4, 2($s2)
+\end{minted}
+
+Use recipe \texttt{s06-1} with the cumulative source through this edit. Stop at \texttt{after\_enc\_third} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+For Man, the third sextet is five and the prefix becomes TWF.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which source bits form this third sextet?
+
+\begin{itemize}
+\item \textbf{A} The output capacity bits.
+\item \textbf{B} The second byte low four bits and third byte high two bits.
+\item \textbf{C} Only the first byte.
+\end{itemize}

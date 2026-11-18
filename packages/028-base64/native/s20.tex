@@ -1,0 +1,32 @@
+\section{Step 20 Exclude the padded final quartet from vector work}\label{base64-s20}
+
+Begin with the full text count as eligible input. If its final character is a pad, exclude the last four characters from vector eligibility. Keep remaining total input separate: the scalar tail still has to process that final quartet after all vector groups.
+
+Replace the body of region \texttt{dec\_body}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s4, $s1
+    daddu $t0, $s0, $s1
+    lbu $t0, -1($t0)
+    li $t1, 61
+    bne $t0, $t1, decode_vector_loop
+    nop
+    daddiu $s4, $s4, -4
+\end{minted}
+
+Use recipe \texttt{s20-1} with the cumulative source through this edit. Stop at \texttt{decode\_vector\_loop} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The unpadded TWFu fixture has four vector-eligible characters.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why exclude a padded final quartet?
+
+\begin{itemize}
+\item \textbf{A} Its source address changes width.
+\item \textbf{B} Padding ends every complete group.
+\item \textbf{C} The 16-character kernel requires alphabet characters without pads.
+\end{itemize}

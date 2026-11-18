@@ -1,0 +1,53 @@
+\section{Finish one-byte and two-byte input groups}
+When only one input byte remains, form its first two sextets with zero in the missing
+byte positions and write two padding characters. For decimal 102, binary
+\texttt{01100110}, the sextets are 25 and 32, giving \texttt{Zg==}. Only the high two
+bits of sextet 32 carry input; its low four bits are zero. The equal signs occupy
+character positions but do not represent additional decoded bytes.
+
+When two input bytes remain, form three sextets and write one padding character.
+For bytes 102 and 111, the sextets are 25, 38 and 60, giving \texttt{Zm8=}. The last
+sextet carries four input bits and has two zero low bits. A complete three-byte group
+uses all four sextets and no padding.
+
+Initialize the missing input-byte registers to zero, and load a second or third byte
+only after checking the remaining count. Reading a whole word for a one-byte tail would
+access bytes beyond the selected input, even if the surrounding mapped arena happens
+to hide the error. Use exact byte loads.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{Load only the bytes that remain in the selected input.}
+\begin{minted}[samepage=true]{mars-idea}
+encode_scalar_group:
+    lbu $t0, 0($s0)
+    move $t1, $zero
+    move $t2, $zero
+    sltiu $t3, $s1, 2
+    bnez $t3, encode_pack
+    nop
+    lbu $t1, 1($s0)
+    sltiu $t3, $s1, 3
+    bnez $t3, encode_pack
+    nop
+    lbu $t2, 2($s0)
+\end{minted}
+
+The output still receives four characters for either short tail. After storing the
+available sextets, the two-pad path stores \texttt{=} at position two, then shares the
+one-pad path's store at position three. Finish immediately rather than subtracting
+three from a remaining count of one or two.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Share the final pad store without creating an extra output character.}
+\begin{minted}[samepage=true]{mars-idea}
+encode_pad_two:
+    li $t4, 61
+    sb $t4, 2($s2)
+encode_pad_one:
+    li $t4, 61
+    sb $t4, 3($s2)
+\end{minted}
+
+Check lengths one, two and three independently before testing longer buffers. Then test
+lengths eleven, twelve and thirteen: they cross the first MSA group boundary while
+retaining the same tail rules.

@@ -1,0 +1,36 @@
+\section{Step 22 Publish the first decoded byte}\label{base64-s22}
+
+Combine the first two sextets and store the low byte. Decrease remaining output and stop immediately if the validated size has been reached. This early exit is required for a one-byte decoded tail even though four text characters were loaded.
+
+Replace the body of region \texttt{dec\_first}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 64($sp)
+    lwu $t1, 68($sp)
+    lwu $t2, 72($sp)
+    lwu $t3, 76($sp)
+    sll $t4, $t0, 2
+    srl $t5, $t1, 4
+    or $t4, $t4, $t5
+    sb $t4, 0($s2)
+    daddiu $s6, $s6, -1
+    beqz $s6, decode_done
+    nop
+\end{minted}
+
+Use recipe \texttt{s22-1} with the cumulative source through this edit. Stop at \texttt{after\_dec\_first} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The partial Man fixture publishes only M before the next unfinished region.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What determines whether another output store is permitted?
+
+\begin{itemize}
+\item \textbf{A} The validated remaining output count.
+\item \textbf{B} Whether the previous byte was zero.
+\item \textbf{C} The size of a vector register.
+\end{itemize}

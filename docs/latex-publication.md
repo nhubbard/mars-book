@@ -230,7 +230,8 @@ footprints, woven through 43 steps and 37 authored regions. Fifty-seven assembly
 fragments use actual IntelliJ highlighting, including supplied frames and restores.
 Native equations, headed tables and a described 24-bit regrouping diagram remain editable.
 The 65-page draft has 52 exact observation recipes, 43 quizzes, 86 progressive hints
-and four explicitly planned IDE figures. It is not yet included in main.tex; separate
-distributions and actual IDE figures remain subsequent work. Embedded fonts, tagged
+and four explicitly planned IDE figures. It is included in main.tex as the twenty-eighth
+text package, with separate student and instructor distributions. Actual IDE figures
+remain subsequent work. Embedded fonts, tagged
 structure and complete single-page listings are checked; independent accessibility
 certification and student usability review remain pending.

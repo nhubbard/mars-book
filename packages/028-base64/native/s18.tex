@@ -1,0 +1,34 @@
+\section{Step 18 Reject impossible text counts before reading}\label{base64-s18}
+
+Check the unsigned text bound first, then handle empty input and require a multiple of four. These paths run before decoder frame allocation and can return without accessing source or destination. The following region will perform character validation for bounded nonempty text.
+
+Replace the body of region \texttt{dec\_guard}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 5464
+    sltu $t0, $t0, $a1
+    bnez $t0, b64_limit
+    nop
+    beqz $a1, b64_empty
+    nop
+    andi $t0, $a1, 3
+    bnez $t0, b64_text
+    nop
+\end{minted}
+
+Use recipe \texttt{s18-1} with the cumulative source through this edit. Stop at \texttt{decode\_frame} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+A four-character input reaches the frame; malformed counts return before source access.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What happens before the decoder reads text?
+
+\begin{itemize}
+\item \textbf{A} The output count is guessed from a terminator.
+\item \textbf{B} Its count is bounded and checked for quartet alignment.
+\item \textbf{C} The first output byte is stored.
+\end{itemize}
