@@ -211,3 +211,10 @@ claimed. The native sequence now includes 34 steps, 24 edits and 31 actual
 IntelliJ-highlighted listings. It is included in main.tex as the twenty-fourth text package, with separate student
 and instructor archives. It remains a working draft pending actual IDE captures,
 the author's deferred rewrite and independent accessibility validation.
+
+
+Build the independent RSA arithmetic foundation with
+`python3 tools/book.py build --entry drafts/rsa-arithmetic.tex`. Its native includes
+remain directly editable. Eight selected assembly fragments use the actual IntelliJ
+light highlighter; native equations, five headed tables and a described limb-layout
+figure support the arithmetic explanation. It is not yet included in main.tex.

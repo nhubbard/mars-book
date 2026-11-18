@@ -1,0 +1,54 @@
+\section{Measure work after the arithmetic agrees}
+Count simulated instructions over a stated function boundary, including its normal
+saves, nested calls and return. Record the base, exponent, modulus, scan direction and
+whether the input reduction took its direct-copy path. These choices affect work.
+A sparse exponent such as 17 has only two set bits; an all-ones 128-bit exponent
+selects a multiply at every bit. A fixed 128-bit scan also visits leading zero bits
+that a significant-bit scan can skip.
+
+Predict the number of selected multiplies and squarings before measuring. For a
+nonzero exponent with bit length \(L\), the right-to-left loop shown earlier performs
+\(L-1\) squarings and one result multiply for every set exponent bit. Its zero-exponent
+case performs neither. The nested cost still depends on residue values and multiplier
+bits in this teaching implementation. Instruction counts describe simulator work;
+they do not measure wall-clock latency, hardware cycles or constant-time behavior.
+
+The current complete prototypes give the following counts for base 65 and modulus
+\(2^{128}-159\). The first scans only the significant remaining bits from right to
+left. The second scans all 128 bits from left to right, including leading zeros.
+The measured boundary starts at the function entry and ends at its caller's return
+label; caller setup, assembly and session construction are excluded.
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{lrr}
+Exponent & Right-to-left & Fixed left-to-right \\
+\hline
+0 & 124 & 25,594 \\
+1 & 1,025 & 26,481 \\
+17 & 27,024 & 38,770 \\
+2753 & 249,393 & 194,034 \\
+\(2^{127}\) & 2,742,659 & 2,723,784 \\
+\(2^{128}-1\) & 5,478,789 & 2,898,135 \\
+\end{tabular}
+\end{center}
+The fixed scan spends work even on exponent zero. It nevertheless uses fewer simulated
+instructions for some larger exponents in this comparison. Its intermediate residues
+and the operands supplied to nested multiplication differ. These totals combine those
+value-dependent costs with scan control and storage; they do not isolate one instruction
+or establish that either scan direction is always faster. Both implementations produce
+the same checked output. Exact totals are observations of these prototypes, not grading
+requirements or security properties.
+
+First investigate repeated argument setup, copies and reductions of already bounded
+residues. A private helper whose preconditions explicitly require residues can avoid
+some public-entry work, provided callers establish those bounds. Keep the public
+interfaces unchanged and run the same value, aliasing, preservation and address checks
+after a change. Do not optimize by dropping a high limb or assuming that every modulus
+is below \(2^{127}\).
+
+As further exercises, derive a 256-bit bitwise reducer for the full product, or extend
+the limb count beyond four. State the larger buffer sizes and loop bounds before
+changing assembly. Compare its work with add-and-double modular multiplication. These
+extensions require new checks; the four-limb cases cannot establish an arbitrary-length
+integer library. More advanced reductions also need their own modulus preconditions
+and derivations.

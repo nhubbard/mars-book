@@ -1,0 +1,52 @@
+\section{Retain the 129th bit of a modular sum}
+Now build the smaller operation used by modular multiplication. Its inputs satisfy
+\(0\leq A,B<N\), so \(S=A+B<2N\). The result is either \(S\), when \(S<N\), or
+\(S-N\). Only one subtraction can be necessary, but \(S\) may require 129 bits.
+Store its low 128 bits and keep the final carry separately.
+
+Within each limb, add the two zero-extended words and the previous carry in a 64-bit
+register. This temporary needs at most 33 bits. Store its low word, then shift right
+by 32 to obtain the next carry. Load both operand words before storing the result
+word so that an output exactly equal to either operand remains valid.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Produce one low result limb and its one-bit carry.}
+\begin{minted}[samepage=true]{mars-idea}
+daddu $t3, $t3, $t4
+    daddu $t3, $t3, $t1
+    daddu $t2, $a3, $t0
+    sw $t3, 0($t2)
+    dsrl $t1, $t3, 32
+\end{minted}
+
+If the final carry is zero, compare the stored result with \(N\) from the highest
+limb down. Subtract when it is greater than or equal to \(N\). Equality matters:
+\(N\bmod N\) is zero. If the carry is one, subtraction is required even when the
+stored low 128 bits compare below \(N\).
+
+For a concrete carry case, let \(N=2^{128}-159\) and \(A=B=N-1\). The true sum is
+\(2^{129}-320\). Its low 128 bits are \(2^{128}-320\), which are below \(N\).
+Returning those bits would be wrong. The carried sum minus \(N\) is
+\(2^{128}-161=N-2\), the correct residue. Subtracting \(N\) from the stored low
+bits with wraparound produces those same final 128 bits; the retained carry explains
+why this subtraction must happen.
+
+Subtraction needs a borrow between limbs. For zero-extended limbs \(z_i,n_i\) and
+incoming borrow \(b\), compute \(D=z_i-n_i-b\). Its signed mathematical range is
+\([-2^{32},2^{32}-1]\), which fits in a signed 64-bit temporary. A negative result
+has bit 63 set, so a logical shift by 63 extracts the outgoing borrow as zero or one.
+This use of the sign bit relies on that range; it is not a general unsigned 64-bit
+borrow test.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Keep the borrow before advancing to the next limb.}
+\begin{minted}[samepage=true]{mars-idea}
+dsubu $t3, $t3, $t4
+    dsubu $t3, $t3, $t1
+    dsrl $t1, $t3, 63
+    sw $t3, 0($t2)
+\end{minted}
+
+Reject a zero modulus before reading operands or storing any low limb. This guard is
+part of the function boundary, not a test to defer until subtraction. For modulus one,
+the only permitted residue inputs to this addition are both zero.

@@ -240,3 +240,13 @@ small code changes into an explained algorithm, state what each phase accomplish
 why, and establish a coherent progression through each chapter. Preserve the native
 include structure so the author can place and revise connecting prose freely. The
 author has explicitly deferred this rewrite until the chapter sequence is complete.
+
+
+The RSA arithmetic foundation is directly edited at `drafts/rsa-arithmetic.tex`. Seventeen
+connected sections explain unsigned Euclid, the toy inverse, square-and-multiply, limb
+representation, full schoolbook multiplication, 129-bit modular addition, reduction,
+modular multiplication and the full 128-bit exponent. Worked numerical transitions, a
+native described limb diagram and measured instruction-work counts accompany the prose.
+The book keeps its 26 packaged chapters while this twenty-seventh foundation receives
+cumulative steps, guided/free-writing exports and separate distributions. The existing
+chapters have not been rewritten; the author's substantial edit remains deferred.

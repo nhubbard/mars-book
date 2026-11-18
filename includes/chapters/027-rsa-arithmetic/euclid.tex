@@ -1,0 +1,43 @@
+\section{Replace a gcd pair with a smaller pair}
+The greatest common divisor of two nonnegative integers is the largest integer that
+divides both, apart from the stated zero-pair convention. Division gives
+\(A=qB+r\). Any common divisor of \(A\) and \(B\) divides \(r=A-qB\), and any common
+divisor of \(B\) and \(r\) divides \(A=qB+r\). Thus replacing \((A,B)\) with
+\((B,A\bmod B)\) preserves the set of common divisors. When \(B\) becomes zero,
+\(A\) is the answer.
+
+For \((3120,17)\), the successive divisions are
+\[
+\begin{aligned}
+3120&=183\cdot17+9,\\
+17&=1\cdot9+8,\\
+9&=1\cdot8+1,\\
+8&=8\cdot1+0.
+\end{aligned}
+\]
+The pairs at the loop boundary are therefore \((3120,17)\), \((17,9)\), \((9,8)\),
+\((8,1)\) and \((1,0)\). Check the second value before taking a remainder: the
+last pair is a successful termination, not a request to divide by zero.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{Replace both values only after saving the remainder.}
+\begin{minted}[samepage=true]{mars-idea}
+gcd_loop:
+    beqz $t1, gcd_done
+    nop
+    dmodu $t2, $t0, $t1
+    move $t0, $t1
+    move $t1, $t2
+    b gcd_loop
+    nop
+\end{minted}
+
+Here \texttt{t0} holds \(A\), \texttt{t1} holds \(B\), and \texttt{t2} temporarily
+holds the remainder. Writing \texttt{t0} first is safe because the remainder has already
+been computed from the old pair. The doubleword unsigned remainder instruction treats
+bit 63 as part of the magnitude. A signed remainder would interpret an input at least
+\(2^{63}\) as negative. Use \texttt{dmodu} for the full unsigned input contract.
+
+Trace the five pairs above before trying larger values. Then test a zero first
+operand, a zero second operand, equal operands and a pair with bit 63 set. Observe
+\texttt{v0} as an unsigned bit pattern: a valid gcd can itself have bit 63 set.

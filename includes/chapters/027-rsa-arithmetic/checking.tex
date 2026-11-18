@@ -1,0 +1,28 @@
+\section{Compare values with an independent integer model}
+Use \texttt{BigInteger} as the host-side numerical oracle. Reconstruct each unsigned
+value from the exact bytes passed to the simulator. Its byte-array magnitude constructor
+with positive sign expects most significant byte first, so reverse the little-endian
+object bytes and use sign one. Another option is to accumulate zero-extended limbs
+with shifts and additions. Passing the bytes directly to the signed two's-complement
+constructor can make an input with bit 127 set negative.
+
+For modulus \(N>0\), compare reduction with \texttt{mod}, multiplication with
+\texttt{multiply} followed by \texttt{mod}, and powers with \texttt{modPow}. Compare
+the full eight-limb product with \texttt{multiply} before taking any remainder.
+Convert the expected number back to exactly sixteen or thirty-two little-endian bytes,
+including leading zero limbs, then compare every output byte. Gcd uses the full
+unsigned 64-bit operands and compares the returned bit pattern.
+
+Numerical agreement alone does not check the memory interface. Surround the selected
+output with sentinels, retain copies of read-only inputs, and watch accesses to caller
+objects. An in-place modular addition may write exactly its selected operand object;
+the other multiword functions must leave inputs intact. A zero-modulus case should use
+invalid non-modulus pointers as well as an unchanged output sentinel. It should return
+the error before those pointers can be dereferenced.
+
+Set high bits in preserved registers, including \texttt{sp} when a private stack lies
+above 4 GiB, and compare their entire 64-bit values after return. A word save or restore
+can preserve the low half while losing the address or caller value. Both exponent scan
+directions should pass the same completed-interface checks. Use time or instruction
+limits to stop accidental infinite loops, without turning one implementation's exact
+instruction count into the definition of correctness.

@@ -1,0 +1,44 @@
+\section{Choose representations and call boundaries}
+All multiword inputs in this project are unsigned integers from zero through
+\(2^{128}-1\). Each occupies sixteen bytes: the least significant word is at offset
+zero, followed by words at offsets four, eight and twelve. Each word is itself stored
+in little-endian byte order in the project environment. A full product occupies
+thirty-two bytes. Do not use a negative Java integer as the numerical meaning of a
+limb whose top bit is one.
+
+The table fixes the interfaces used by the checks. An argument named \(A\), \(B\),
+\(N\), \(E\) or \(Z\) in a pointer position is the address of its bytes. The two
+scalar functions instead receive their numerical operands directly in registers.
+\tagpdfsetup{table/header-rows={1}}
+\begin{longtable}{p{.25\textwidth}p{.36\textwidth}p{.29\textwidth}}
+Entry & Arguments in register order & Result \\
+\hline
+\texttt{rsa\_gcd64} & \texttt{a0}: unsigned 64-bit \(A\); \texttt{a1}: unsigned 64-bit \(B\) & \texttt{v0}: gcd bits; \texttt{v1}: zero \\
+\texttt{rsa\_pow32} & \texttt{a0}: base; \texttt{a1}: exponent; \texttt{a2}: modulus; \texttt{a3}: \(Z\) & One word at \(Z\) \\
+\texttt{rsa\_mul128} & \texttt{a0}: \(A\); \texttt{a1}: \(B\); \texttt{a2}: \(Z\) & Eight words at \(Z\) \\
+\texttt{rsa\_addmod128} & \texttt{a0}: \(A\); \texttt{a1}: \(B\); \texttt{a2}: \(N\); \texttt{a3}: \(Z\) & Four words: \((A+B)\bmod N\) \\
+\texttt{rsa\_reduce128} & \texttt{a0}: \(A\); \texttt{a1}: \(N\); \texttt{a2}: \(Z\) & Four words: \(A\bmod N\) \\
+\texttt{rsa\_mulmod128} & \texttt{a0}: \(A\); \texttt{a1}: \(B\); \texttt{a2}: \(N\); \texttt{a3}: \(Z\) & Four words: \(AB\bmod N\) \\
+\texttt{rsa\_pow128} & \texttt{a0}: base; \texttt{a1}: \(E\); \texttt{a2}: \(N\); \texttt{a3}: \(Z\) & Four words: base\(^{E}\bmod N\) \\
+\end{longtable}
+
+The scalar power takes zero-extended 32-bit numerical inputs. Its exponent is
+nonnegative. The multiword addition requires \(A<N\) and \(B<N\); reduction, modular
+multiplication and modular power accept arbitrary unsigned 128-bit inputs. All pointer
+arguments refer to four-byte-aligned objects. Use full 64-bit addresses even though
+individual limbs are only four bytes. The caller supplies an eight-byte-aligned stack.
+
+Except for the gcd's numerical return, successful functions return status zero in
+\texttt{v0}. Every function with a modulus rejects zero with status one before reading
+other input objects or accessing the output. Its output remains unchanged on that
+error. The modulus object itself must be readable. The local gcd convention is
+\(\gcd(0,0)=0\). An exponent of zero produces \(1\bmod N\), including when the base
+is zero; modulus one therefore produces zero.
+
+Outputs must be disjoint from inputs, with one deliberate exception: the output of
+\texttt{rsa\_addmod128} may exactly equal either or both operand addresses. Its modulus
+must remain disjoint from its output. Exact sharing among read-only input objects is
+permitted in the other multiword functions, including squaring by passing one object
+twice. Other partial overlaps are outside the contract. Functions preserve every bit
+of \texttt{s0} through \texttt{s7}, \texttt{fp} and \texttt{sp}, return through the full
+\texttt{ra}, write only their output and private stack, and perform no console I/O.

@@ -35,6 +35,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
         self.assertEqual(51, len(book.validate('drafts/sha256.tex')))
         self.assertEqual(53, len(book.validate('drafts/chacha20.tex')))
+        self.assertEqual(8, len(book.validate('drafts/rsa-arithmetic.tex')))
 
     def test_chacha_cumulative_native_order_and_preparation(self):
         folder = book.ROOT / 'drafts/chacha-construction'

@@ -1,0 +1,24 @@
+\section{Check the complete toy calculation}
+Represent decimal 65, 17 and 3233 in separate sixteen-byte objects, with unused high
+limbs zero. Call \texttt{rsa\_pow128} with those base, exponent and modulus pointers.
+Inspect status zero and all sixteen output bytes. The result is decimal 2790,
+hexadecimal \texttt{0ae6}; its first two bytes are \texttt{e6 0a}, followed by fourteen
+zero bytes. Inspecting only the first word can hide a stale high limb.
+
+Copy the resulting numerical ciphertext into the next call's base object, use exponent
+2753, and keep modulus 3233. The result must be 65. Perform both calls in the same
+stopped execution session so the second call exercises ordinary reuse of stack and
+temporary storage. Do not repair the inputs between calls by silently substituting
+a known ciphertext constant.
+
+Then vary a boundary at a time. Try exponent zero, exponent one, base zero, a base
+larger than its modulus, and modulus one. Set only exponent bit 127, and then set all
+128 exponent bits. A function that reads only the first exponent word can pass the
+toy calculation and fail both larger cases. Fill scratch storage with a nonzero pattern
+before calling to reveal an accumulator or carry that was never initialized.
+
+Finally, put the same objects above address \(2^{32}\), with a code return address
+above that boundary too. Their arithmetic values have not changed. A failure there
+points toward pointer truncation, a narrow saved address or return-state handling,
+not a different mathematical modulus. Caller objects at an offset of four bytes test
+the promised four-byte alignment rather than accidental eight-byte alignment.

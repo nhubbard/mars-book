@@ -1,0 +1,51 @@
+\section{Reuse the power loop with multiword operations}
+The exponentiation rule is unchanged when a residue occupies four words. What changes
+is where state lives across a call. The nested modular multiplication can overwrite
+argument and temporary registers. Retain the modulus pointer, output pointer, base,
+exponent and result in saved registers or assigned stack slots. Save \texttt{ra} before
+the first \texttt{jal}: a nested call replaces its old return address.
+
+One possible private frame occupies 96 bytes. It contains sixteen-byte objects for
+current base, remaining exponent, result and temporary output, followed by full-width
+saved registers. This is a local implementation choice, not a requirement on equivalent
+solutions. Copy caller objects word by word before using aligned doubleword accesses
+inside the frame. Initialize the result as \(1\bmod N\), so exponent zero and modulus
+one have their specified behavior.
+
+For the right-to-left loop, inspect the low bit of the private exponent. When it is
+one, call modular multiplication with the private result and base, writing into a
+separate temporary object. Only after the call returns successfully should that object
+replace the private result. In this layout result begins at stack offset 32, base at
+offset zero, temporary output at offset 48, and \texttt{s0} retains the modulus pointer.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{Multiply into separate private storage before replacing the accumulated result.}
+\begin{minted}[samepage=true]{mars-idea}
+daddiu $a0, $sp, 32
+    move $a1, $sp
+    move $a2, $s0
+    daddiu $a3, $sp, 48
+    jal rsa_mulmod128
+    nop
+    ld $t0, 48($sp)
+    ld $t1, 56($sp)
+    sd $t0, 32($sp)
+    sd $t1, 40($sp)
+\end{minted}
+
+Shift the entire exponent right, using the transfer rule from modular multiplication.
+If any exponent bits remain, square the current base modulo \(N\), again using a
+separate temporary. Do not accidentally square the result in this right-to-left
+variant: the result and current base have different roles.
+
+A left-to-right variant is equally valid. Begin with \(R=1\bmod N\), visit exponent
+bits from high to low, square \(R\), and multiply it by the original reduced base when
+the next bit is one. After a prefix \(p\), the invariant is \(R\equiv\text{base}^{p}\).
+Appending bit \(b\) changes the prefix to \(2p+b\), so the square followed by an optional
+multiply produces the next value. For binary exponent \(10001\), the results after
+its five significant bits are 65, 992, 1232, 1547 and 2790 modulo 3233.
+
+These scan directions have different intermediate states. A grader for the completed
+function should compare its interface result and state obligations rather than require
+the right-to-left register trace. Guided observations can name a particular variant
+when teaching that variant's invariant.

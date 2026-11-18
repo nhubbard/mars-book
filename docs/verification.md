@@ -814,3 +814,39 @@ in earlier steps. Tags, table headers, math and figure alternatives are inspecte
 independent accessibility validation and PDF/UA certification remain outstanding.
 Four ChaCha IDE figures remain plans. Remote progression and the substantial
 author-requested exposition/length edit remain unfinished.
+
+
+## RSA arithmetic native foundation, 18 November 2026
+
+The directly edited standalone entry is drafts/rsa-arithmetic.tex. Seventeen connected
+sections develop unsigned gcd, the inverse example, scalar modular power, four-limb
+representation, full eight-limb multiplication, modular addition with its129th bit,
+reduction, modular multiplication and full128-bit exponentiation. Native tables and a
+described limb diagram accompany selected code. No earlier chapter was rewritten.
+
+Two private implementations use opposite exponent scan directions and agree with
+BigInteger. Each passes423 cases at ordinary addresses and423 with code/data above
+4GiB:1,692 positive executions. Twelve faulty variants are rejected, covering signed
+remainder, sign-extended limbs, truncated products, lost carry/borrow, uninitialized
+output, exponent transfer, narrow pointers, preserved high bits and invalid-path reads.
+A separate Python integer model verifies the numerical prose anchors. Checks exercise
+four-byte-aligned offsets, poisoned private stack, shared inputs, permitted in-place
+addition, zero-modulus preflight and sequential encryption/decryption in one session.
+Instruction-work counts include ordinary function frames and nested calls; they are
+neither host timings nor exact-count acceptance rules. No upstream grader change was
+necessary for these interfaces.
+
+All35 book-tooling tests, seven renderer tests and three actual IntelliJ highlighter
+Jupiter tests pass. All26 existing student distributions validate and rebuild; the
+ChaCha archive retains its previous digest. The existing663 highlight records are exact;
+eight records were appended for this foundation. The standalone PDF has15 pages and
+eight complete literal assembly fragments, each on one page. Embedded fonts are Minion
+Pro, Noto Sans Math and JetBrains Mono. All15 rendered pages were reviewed, with the
+interface table, limb/carry figure, product and final scheme explanation inspected at
+1200px. Tags, formula structure, table headers and the figure alternative are present;
+this is not independent accessibility validation or PDF/UA certification.
+
+The manuscript still contains26 packaged chapters. RSA cumulative construction, student
+starter and public checks, private package exports, quizzes and future capture recipes
+remain next. Actual automated light-theme IDE pixels, remote progression, student
+usability review and the author's deferred substantial rewrite remain unfinished.
