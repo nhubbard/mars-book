@@ -221,7 +221,11 @@ preflight counter exhaustion, in-place operation and nonce/authentication bounda
 A native described row-selection figure and headed tables support the worked example.
 Private scalar and MSA prototypes pass independent arithmetic and JDK comparisons,
 including wide code/data and 19 deliberate faults. The independent chapter is not yet
-in main.tex; cumulative student construction and distributions remain the next step.
+in main.tex. Its cumulative expansion now has 42 steps, 36 authored regions, 42 quizzes,
+84 progressive hints, 54 recipes and four planned figure slots. Prepared data, intermediate
+register/memory states, caller and offset-function views, safe development returns and
+complete reconstructions are verified. Separate distributions and main integration remain
+the next step.
 
 ## Author feedback and deferred revision
 

@@ -736,3 +736,40 @@ All three authoring-plugin tests, 33 book-tooling tests and seven renderer tests
 The native PDF builds with Minion Pro, Noto Sans Math and JetBrains Mono. PDF tags
 and a visual review do not establish PDF/UA certification or student usability.
 Actual IDE screenshots, cumulative packages and the deferred author rewrite remain.
+
+## ChaCha20 cumulative construction
+
+The native draft interleaves 42 steps and 36 authored edits with the retained foundation.
+It has 42 quizzes, 84 progressive hints, 54 exact recipes and four planned light-theme
+figure slots. The supplied scalar and wrapper frames distinguish unallocated and
+allocated development paths. Post-call guards propagate incomplete nested routines.
+The public preparation helper retains authored regions and refuses existing outputs.
+
+The construction verifier warning-free assembles all 36 partial programs and all 54
+prepared sources. Each recipe checks its exact prepared data, supplied caller path
+and an offset-function path, including named intermediate registers/vectors and caller
+ownership. It checks the exact full reconstruction, the complete alternative, four
+unedited development paths and complete reference code/data above 4 GiB. Those 61
+grading runs contain 825 positive executions. A separate control verifier adds the
+current alternative at wide code/data addresses and six caller/direct checks proving
+propagation from missing quarter-round, scalar-block and MSA-block bodies. The total
+is 65 grading runs and 1048 positive executions. Previous 19 foundation fault controls
+remain provenance; package-specific equivalence and fault controls are still pending.
+
+The completed cumulative block counts are 2816 scalar rotates, 3456 scalar shifts/ORs,
+and 510 MSA instructions. The scalar difference from the earlier prototypes is 160
+instructions from the eighty retained branch/no-op status guards. Frame saves/restores
+are included, setup/session/assembly/host time excluded. No exact count is a free-writing
+grade requirement. All 34 book-tooling tests, seven renderer tests and three IntelliJ
+highlighter tests pass; the actual exported corpus now contains 663 distinct snippets.
+The native chapter has 53 highlighted listings. Actual IDE pixels, student/instructor
+distributions, main integration, the deferred author rewrite and independent PDF
+accessibility validation remain unfinished.
+
+The expanded chapter builds to 58 pages. All 53 assembly listings extract literally
+and each fits on one page. All 58 pages were visually reviewed in four-page sheets,
+with full-resolution checks of pages 20, 21, 46, 55, 57, 58. After adding the additional
+recipe table, pages 1 through 54 are pixel-identical to the reviewed render. No overflow,
+font substitution or missing-glyph warning remains. Tagged headings, table headers,
+math and the native figure description are inspected; PDF/UA certification remains
+outstanding. Native diagrams and planned IDE capture slots are distinguished.

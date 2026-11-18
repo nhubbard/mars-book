@@ -1,0 +1,36 @@
+\section{Step 29 Finish the diagonal groups}\label{chacha-s29}
+
+Apply the groups with left rotations eight and seven to the selected rows. The values are correct for the diagonal round, but rows one through three are still in their selected order. They cannot yet be paired with original rows for feed-forward.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{msa\_diagonal\_b}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addv.w $w0, $w0, $w1
+    xor.v $w3, $w3, $w0
+    slli.w $w8, $w3, 8
+    srli.w $w9, $w3, 24
+    or.v $w3, $w8, $w9
+    addv.w $w2, $w2, $w3
+    xor.v $w1, $w1, $w2
+    slli.w $w8, $w1, 7
+    srli.w $w9, $w1, 25
+    or.v $w1, $w8, $w9
+\end{minted}
+
+Use recipe \texttt{s29-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+One diagonal round is complete in the shuffled layout.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+May feed-forward use this layout directly?
+
+\begin{itemize}
+\item \textbf{A} Yes; addition ignores lane order.
+\item \textbf{B} Only for a zero key.
+\item \textbf{C} No; matching state positions must be restored first.
+\end{itemize}

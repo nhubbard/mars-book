@@ -169,7 +169,8 @@ Noto Sans Math equations, and JetBrains Mono code. Frontmatter is editable; fina
 review and PDF accessibility validation remain. Licensing must be selected before broader reuse;
 this repository does not grant an additional license by implication.
 
-The independent native ChaCha20 foundation is at `drafts/chacha20.tex`. It explains
-scalar quarter-rounds and blocks before MSA row-lane selection, then bounded byte
-transformation and counter exhaustion. Its cumulative student package and integration
-are still being prepared; the main manuscript currently contains 25 packages.
+The independent native ChaCha20 draft is at `drafts/chacha20.tex`. It now interleaves
+42 cumulative steps with the retained quarter-round, scalar/MSA block and bounded-byte
+transformation exposition. Its safe starter, 54 observation recipes and progressive hints
+are at `drafts/chacha-construction`. Separate student/instructor packages and integration
+remain pending; the main manuscript currently contains 25 packages.

@@ -1,0 +1,1655 @@
+{
+  "status": "Native cumulative draft; distributions and remote runner pending",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Identify the byte transformation",
+      "kind": "observe",
+      "prose": "Use one message byte and one keystream byte to establish the XOR operation before generating any blocks. The source and destination positions must refer to corresponding bytes. A complete block calculation will later supply the keystream, but it will not determine the message length.",
+      "expectedObservation": "Hexadecimal 4c XOR 22 is 6e; XOR with 22 again recovers 4c.",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What fixes the length of the output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of nonzero key bytes."
+          },
+          {
+            "id": "b",
+            "text": "The declared message byte count."
+          },
+          {
+            "id": "c",
+            "text": "The nearest terminating zero byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Treat binary data as counted bytes."
+        },
+        {
+          "id": "s01-h2",
+          "text": "A zero byte can occur inside a message."
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Locate the safe development returns",
+      "kind": "observe",
+      "prose": "Open the cumulative starter and locate its marked regions. Missing regions branch to a routine-specific development exit with status three. Framed exits restore saved registers; early wrapper exits do not restore a frame that has not been allocated. The default caller selects the quarter-round.",
+      "expectedObservation": "The unedited caller records development status three and leaves the selected words unchanged.",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Does status three report valid encryption?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if the destination looks unchanged."
+          },
+          {
+            "id": "b",
+            "text": "Only for a zero key."
+          },
+          {
+            "id": "c",
+            "text": "No; it explicitly reports unfinished work."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Find the first missing region."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Its branch bypasses the normal success return."
+        }
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "Load the four selected words",
+      "kind": "author",
+      "prose": "Load all four argument words before changing any caller memory. The arguments are addresses; the low word loaded through each address is the corresponding arithmetic input. Keep a through d in `t0` through `t3` for the illustrated calculation.",
+      "expectedObservation": "The four working registers contain the published inputs, while all four memory words are unchanged.",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What does `a2` contain at this entry?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address of c."
+          },
+          {
+            "id": "b",
+            "text": "The current value of c."
+          },
+          {
+            "id": "c",
+            "text": "The destination block length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Follow the address before interpreting its contents."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The load at offset zero supplies c to `t2`."
+        }
+      ],
+      "region": "qr_load",
+      "code": "    lw $t0, 0($a0)\n    lw $t1, 0($a1)\n    lw $t2, 0($a2)\n    lw $t3, 0($a3)\n",
+      "target": "quarter",
+      "phase": 1,
+      "checkpoint": "after_qr_load"
+    },
+    {
+      "id": "s04",
+      "title": "Update a and rotate d",
+      "kind": "author",
+      "prose": "Add b into a with word wraparound, then use the new a in the XOR that updates d. Rotate the XOR result left by sixteen. For this amount the complementary right rotation is also sixteen.",
+      "expectedObservation": "The low words of a and d are 12131415 and 51721330; b and c retain their input values.",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which value of a participates in the XOR?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original a."
+          },
+          {
+            "id": "b",
+            "text": "The newly computed sum."
+          },
+          {
+            "id": "c",
+            "text": "The address of a."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Inspect the sum before the XOR."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The first group has a dependency from its first instruction to its second."
+        }
+      ],
+      "region": "qr_group1",
+      "code": "    addu $t0, $t0, $t1\n    xor $t3, $t3, $t0\n    rotr $t3, $t3, 16\n",
+      "target": "quarter",
+      "phase": 2,
+      "checkpoint": "after_qr_group1"
+    },
+    {
+      "id": "s05",
+      "title": "Update c and rotate b",
+      "kind": "author",
+      "prose": "The new d now contributes to c. XOR that new c into b, then rotate b left by twelve using a word right rotate by twenty. The right-rotate immediate describes the opposite direction, not a different algorithm parameter.",
+      "expectedObservation": "c is ecff8273 and b is d8177edf in their low words.",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why is the rotate immediate twenty?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The state contains twenty words."
+          },
+          {
+            "id": "b",
+            "text": "The high register half supplies twelve extra bits."
+          },
+          {
+            "id": "c",
+            "text": "A word left rotation by twelve equals a word right rotation by twenty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Subtract twelve from the word width."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Use the low 32-bit circle when comparing rotate directions."
+        }
+      ],
+      "region": "qr_group2",
+      "code": "    addu $t2, $t2, $t3\n    xor $t1, $t1, $t2\n    rotr $t1, $t1, 20\n",
+      "target": "quarter",
+      "phase": 3,
+      "checkpoint": "after_qr_group2"
+    },
+    {
+      "id": "s06",
+      "title": "Update a a second time",
+      "kind": "author",
+      "prose": "Add the updated b into a and XOR this new sum into d. This time d rotates left by eight, so the right-rotate immediate is twenty-four. The first group's result remains an input to this group.",
+      "expectedObservation": "a becomes ea2a92f4 and d becomes 5881c4bb.",
+      "quiz": {
+        "id": "q06",
+        "prompt": "May this addition run before the preceding b update?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it needs the updated b."
+          },
+          {
+            "id": "b",
+            "text": "Yes; all additions are independent."
+          },
+          {
+            "id": "c",
+            "text": "Only when the pointers are adjacent."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Trace the value consumed from `t1`."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The four groups within one quarter-round have a fixed dependency order."
+        }
+      ],
+      "region": "qr_group3",
+      "code": "    addu $t0, $t0, $t1\n    xor $t3, $t3, $t0\n    rotr $t3, $t3, 24\n",
+      "target": "quarter",
+      "phase": 4,
+      "checkpoint": "after_qr_group3"
+    },
+    {
+      "id": "s07",
+      "title": "Complete the fourth group",
+      "kind": "author",
+      "prose": "Add the latest d into c and use that sum to update b. A left rotation by seven completes the quarter-round. At this checkpoint all four final words are in registers, but the caller words have not yet been replaced.",
+      "expectedObservation": "The working tuple is ea2a92f4, cb1cf8ce, 4581472e, 5881c4bb.",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What has changed in caller memory at this checkpoint?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All sixteen state words."
+          },
+          {
+            "id": "b",
+            "text": "Nothing; the store region is still absent."
+          },
+          {
+            "id": "c",
+            "text": "Only the nonce."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Distinguish working registers from the pointed-to words."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The next edit publishes four word stores."
+        }
+      ],
+      "region": "qr_group4",
+      "code": "    addu $t2, $t2, $t3\n    xor $t1, $t1, $t2\n    rotr $t1, $t1, 25\n",
+      "target": "quarter",
+      "phase": 5,
+      "checkpoint": "after_qr_group4"
+    },
+    {
+      "id": "s08",
+      "title": "Publish the four quarter-round results",
+      "kind": "author",
+      "prose": "Store each final working word through its original argument pointer. A four-byte store publishes the low pattern even when a register's high half is sign-extended. The supplied normal exit then returns zero.",
+      "expectedObservation": "The four selected words contain the final tuple; bytes between them remain unchanged.",
+      "quiz": {
+        "id": "q08",
+        "prompt": "How many caller bytes may this routine write?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A contiguous sixty-four-byte block."
+          },
+          {
+            "id": "b",
+            "text": "Every byte up to the greatest pointer."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen bytes across the four selected words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Count the four four-byte stores."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Separated words do not authorize stores in the gaps."
+        }
+      ],
+      "region": "qr_store",
+      "code": "    sw $t0, 0($a0)\n    sw $t1, 0($a1)\n    sw $t2, 0($a2)\n    sw $t3, 0($a3)\n",
+      "target": "quarter",
+      "phase": 6,
+      "checkpoint": "after_qr_store"
+    },
+    {
+      "id": "s09",
+      "title": "Compare the completed leaf with its interface",
+      "kind": "observe",
+      "prose": "Call the quarter-round on separated words as well as the prepared numerical example. Inspect the four stores and the bytes between them. The worked register allocation helps explain this construction; an equivalent leaf may use different scratch registers.",
+      "expectedObservation": "Exactly the selected words change, preserved registers retain their full values and the return status is zero.",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Must a free-writing solution use t0 through t3?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it must satisfy the observable interface."
+          },
+          {
+            "id": "b",
+            "text": "Yes; register names define the cipher."
+          },
+          {
+            "id": "c",
+            "text": "Only the first input may use different registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Separate an illustrated checkpoint from a public function contract."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Correct addresses, results and preservation are observable requirements."
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "title": "Keep the scalar bases and copy offset",
+      "kind": "author",
+      "prose": "The supplied scalar frame protects its incoming return address and three saved registers. Put the immutable input base in `s0`, working output base in `s1`, and byte offset zero in `t0`. This separates algorithm storage from loop progress.",
+      "expectedObservation": "The two bases are retained and the copy offset is zero; the output is still untouched.",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why keep a base in a saved register?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Saved registers automatically allocate memory."
+          },
+          {
+            "id": "b",
+            "text": "Nested quarter-round calls may change temporary and argument registers."
+          },
+          {
+            "id": "c",
+            "text": "A base must fit in thirty-two bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Look ahead to the nested calls."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The frame will restore the caller's original saved-register contents."
+        }
+      ],
+      "region": "scalar_setup",
+      "code": "    move $s0, $a0\n    move $s1, $a1\n    move $t0, $zero\n",
+      "target": "scalar",
+      "phase": 1,
+      "checkpoint": "after_scalar_setup"
+    },
+    {
+      "id": "s11",
+      "title": "Copy the sixteen original words",
+      "kind": "author",
+      "prose": "Copy one word at matching offsets from the input to the working output. Advance the byte offset by four until it reaches sixty-four. The destination now holds the initial working state, while the immutable input remains available for feed-forward.",
+      "expectedObservation": "All sixteen output words equal the input state; the copy offset is sixty-four.",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why does the offset advance by four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "There are four rounds."
+          },
+          {
+            "id": "b",
+            "text": "Every address is four bits wide."
+          },
+          {
+            "id": "c",
+            "text": "Each algorithm word occupies four bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Convert a word index into a byte offset."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The loop covers offsets zero through sixty in steps of four."
+        }
+      ],
+      "region": "scalar_copy",
+      "code": "    daddu $t1, $s0, $t0\n    lw $t2, 0($t1)\n    daddu $t1, $s1, $t0\n    sw $t2, 0($t1)\n    daddiu $t0, $t0, 4\n    sltiu $t1, $t0, 64\n    bnez $t1, scalar_copy\n    nop\n",
+      "target": "scalar",
+      "phase": 2,
+      "checkpoint": "after_scalar_copy"
+    },
+    {
+      "id": "s12",
+      "title": "Set ten double-rounds",
+      "kind": "author",
+      "prose": "Initialize the saved count to ten before entering the column selections. Each loop iteration will include four column calls and four diagonal calls. The count measures pairs of rounds, not quarter-round calls.",
+      "expectedObservation": "`s2` is ten and the copied working state has not yet been mixed.",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What does one iteration represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One column round followed by one diagonal round."
+          },
+          {
+            "id": "b",
+            "text": "One quarter-round."
+          },
+          {
+            "id": "c",
+            "text": "One encrypted byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Count the eight selections in the body."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Ten pairs provide the required twenty rounds."
+        }
+      ],
+      "region": "scalar_count",
+      "code": "    li $s2, 10\n",
+      "target": "scalar",
+      "phase": 3,
+      "checkpoint": "after_scalar_count"
+    },
+    {
+      "id": "s13",
+      "title": "Mix column zero",
+      "kind": "author",
+      "prose": "Pass word indices zero, four, eight and twelve to the leaf routine. Multiply each index by four when forming its address. The supplied check after the call propagates an unfinished quarter-round instead of continuing with an invalid working state.",
+      "expectedObservation": "Only column zero of the working copy has changed.",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which bytes contain state word eight?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The bytes beginning at base plus eight."
+          },
+          {
+            "id": "b",
+            "text": "The four bytes beginning at base plus thirty-two."
+          },
+          {
+            "id": "c",
+            "text": "The entire third row."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Separate a word index from its address offset."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The call passes four full-width pointers."
+        }
+      ],
+      "region": "scalar_call1",
+      "code": "    daddiu $a0, $s1, 0\n    daddiu $a1, $s1, 16\n    daddiu $a2, $s1, 32\n    daddiu $a3, $s1, 48\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 4,
+      "checkpoint": "after_scalar_call1"
+    },
+    {
+      "id": "s14",
+      "title": "Mix column one",
+      "kind": "author",
+      "prose": "Select indices one, five, nine and thirteen. They are disjoint from column zero, so the first column's stores do not change this call's inputs. Keep the same a,b,c,d ordering across the rows.",
+      "expectedObservation": "The first two columns are mixed; columns two and three retain their copied inputs.",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Does this call consume column zero's results?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every quarter-round uses the preceding column."
+          },
+          {
+            "id": "b",
+            "text": "Only if the counter is one."
+          },
+          {
+            "id": "c",
+            "text": "No; the column selections are disjoint."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "List this call's four indices."
+        },
+        {
+          "id": "s14-h2",
+          "text": "None appears in the first selection."
+        }
+      ],
+      "region": "scalar_call2",
+      "code": "    daddiu $a0, $s1, 4\n    daddiu $a1, $s1, 20\n    daddiu $a2, $s1, 36\n    daddiu $a3, $s1, 52\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 5,
+      "checkpoint": "after_scalar_call2"
+    },
+    {
+      "id": "s15",
+      "title": "Mix column two",
+      "kind": "author",
+      "prose": "Build the pointers for indices two, six, ten and fourteen and call the same quarter-round. The operation stays identical; only its selected words change. Verify the offsets before interpreting any hexadecimal result.",
+      "expectedObservation": "Three columns have been mixed independently.",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What changes between these column calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The selected addresses."
+          },
+          {
+            "id": "b",
+            "text": "The quarter-round rotate amounts."
+          },
+          {
+            "id": "c",
+            "text": "The output byte order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Compare the argument setup sequences."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The leaf routine has no column-specific arithmetic."
+        }
+      ],
+      "region": "scalar_call3",
+      "code": "    daddiu $a0, $s1, 8\n    daddiu $a1, $s1, 24\n    daddiu $a2, $s1, 40\n    daddiu $a3, $s1, 56\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 6,
+      "checkpoint": "after_scalar_call3"
+    },
+    {
+      "id": "s16",
+      "title": "Mix column three",
+      "kind": "author",
+      "prose": "Use indices three, seven, eleven and fifteen to finish the first column round. At this checkpoint every working word has participated in exactly one quarter-round. No diagonal operation has run yet.",
+      "expectedObservation": "The output area contains the complete first column-round state.",
+      "quiz": {
+        "id": "q16",
+        "prompt": "How many quarter-rounds complete a column round?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Ten."
+          },
+          {
+            "id": "b",
+            "text": "Four."
+          },
+          {
+            "id": "c",
+            "text": "Twenty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "One call handles one column."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Four columns cover all sixteen working words once."
+        }
+      ],
+      "region": "scalar_call4",
+      "code": "    daddiu $a0, $s1, 12\n    daddiu $a1, $s1, 28\n    daddiu $a2, $s1, 44\n    daddiu $a3, $s1, 60\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 7,
+      "checkpoint": "after_scalar_call4"
+    },
+    {
+      "id": "s17",
+      "title": "Mix the first wrapped diagonal",
+      "kind": "author",
+      "prose": "Select zero, five, ten and fifteen from the column-round result. The offsets increase by twenty in this first selection, but the later diagonals wrap at row edges. Use the selection table instead of inventing one uniform pointer increment.",
+      "expectedObservation": "The first diagonal is mixed using column-round outputs.",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Which state feeds the diagonal round?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original unmodified input."
+          },
+          {
+            "id": "b",
+            "text": "The serialized ciphertext."
+          },
+          {
+            "id": "c",
+            "text": "The result of the column round."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "The output working copy persists across calls."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The immutable input is reserved for the final addition."
+        }
+      ],
+      "region": "scalar_call5",
+      "code": "    daddiu $a0, $s1, 0\n    daddiu $a1, $s1, 20\n    daddiu $a2, $s1, 40\n    daddiu $a3, $s1, 60\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 8,
+      "checkpoint": "after_scalar_call5"
+    },
+    {
+      "id": "s18",
+      "title": "Mix the second wrapped diagonal",
+      "kind": "author",
+      "prose": "Select one, six, eleven and twelve. The last selection wraps to the first word of the final row; it does not continue to index sixteen. The leaf sees the selected words in a,b,c,d order.",
+      "expectedObservation": "The first two diagonal selections are complete.",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why is d at index twelve here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The diagonal wraps within the four-word row."
+          },
+          {
+            "id": "b",
+            "text": "The counter always replaces d."
+          },
+          {
+            "id": "c",
+            "text": "The last word is omitted."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Draw the four rows and follow the diagonal."
+        },
+        {
+          "id": "s18-h2",
+          "text": "After column three, wrap to column zero of the next selected row."
+        }
+      ],
+      "region": "scalar_call6",
+      "code": "    daddiu $a0, $s1, 4\n    daddiu $a1, $s1, 24\n    daddiu $a2, $s1, 44\n    daddiu $a3, $s1, 48\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 9,
+      "checkpoint": "after_scalar_call6"
+    },
+    {
+      "id": "s19",
+      "title": "Mix the third wrapped diagonal",
+      "kind": "author",
+      "prose": "Pass indices two, seven, eight and thirteen. The third argument wraps to the first word of row two. Each diagonal remains disjoint from the other diagonals in this same round.",
+      "expectedObservation": "Three diagonals have been mixed; the last selection remains.",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Where does the third argument point?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "State word twelve in the immutable input."
+          },
+          {
+            "id": "b",
+            "text": "State word eight in the working copy."
+          },
+          {
+            "id": "c",
+            "text": "The first output byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Read the third index of this selection."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Its byte offset is thirty-two."
+        }
+      ],
+      "region": "scalar_call7",
+      "code": "    daddiu $a0, $s1, 8\n    daddiu $a1, $s1, 28\n    daddiu $a2, $s1, 32\n    daddiu $a3, $s1, 52\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 10,
+      "checkpoint": "after_scalar_call7"
+    },
+    {
+      "id": "s20",
+      "title": "Mix the fourth wrapped diagonal",
+      "kind": "author",
+      "prose": "Use indices three, four, nine and fourteen. This completes the first double-round. The next edit will repeat the full eight-call body; do not repeat only this last call.",
+      "expectedObservation": "The working copy holds one complete double-round's result.",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Which calls must be repeated together?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the four diagonal calls."
+          },
+          {
+            "id": "b",
+            "text": "Only the last quarter-round."
+          },
+          {
+            "id": "c",
+            "text": "All four column calls and all four diagonal calls."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Locate the loop's first selection label."
+        },
+        {
+          "id": "s20-h2",
+          "text": "It begins before column zero."
+        }
+      ],
+      "region": "scalar_call8",
+      "code": "    daddiu $a0, $s1, 12\n    daddiu $a1, $s1, 16\n    daddiu $a2, $s1, 36\n    daddiu $a3, $s1, 56\n    jal chacha_quarter\n    nop\n",
+      "target": "scalar",
+      "phase": 11,
+      "checkpoint": "after_scalar_call8"
+    },
+    {
+      "id": "s21",
+      "title": "Repeat the pair and prepare feed-forward",
+      "kind": "author",
+      "prose": "Decrement the double-round count and branch back while it is positive. After ten iterations, clear the byte offset for the final word walk. The immutable input has survived every working-state update.",
+      "expectedObservation": "The working copy holds the twenty-round result; `s2` and the feed-forward offset are zero.",
+      "quiz": {
+        "id": "q21",
+        "prompt": "When should the original words be added?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After all ten double-rounds."
+          },
+          {
+            "id": "b",
+            "text": "After every quarter-round."
+          },
+          {
+            "id": "c",
+            "text": "Before copying the state."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Keep the original and working roles separate."
+        },
+        {
+          "id": "s21-h2",
+          "text": "The next region performs exactly one final addition per word."
+        }
+      ],
+      "region": "scalar_repeat",
+      "code": "    addiu $s2, $s2, -1\n    bgtz $s2, scalar_double_round\n    nop\n    move $t0, $zero\n",
+      "target": "scalar",
+      "phase": 12,
+      "checkpoint": "after_scalar_repeat"
+    },
+    {
+      "id": "s22",
+      "title": "Add the matching original words",
+      "kind": "author",
+      "prose": "Walk the input and working output together, adding matching low words with wraparound. Store each sum over its working word. The target is little-endian, so the word stores also provide the required byte serialization.",
+      "expectedObservation": "The 64-byte output equals the published block, beginning 10 f1 e7 e4; the input is unchanged.",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Which word pairs are added?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Adjacent transformed words."
+          },
+          {
+            "id": "b",
+            "text": "Original and transformed words at the same index."
+          },
+          {
+            "id": "c",
+            "text": "The first original word and every transformed word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Use the same byte offset for both arrays."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Feed-forward preserves each state position's identity."
+        }
+      ],
+      "region": "scalar_feed",
+      "code": "    daddu $t1, $s0, $t0\n    lw $t2, 0($t1)\n    daddu $t1, $s1, $t0\n    lw $t3, 0($t1)\n    addu $t2, $t2, $t3\n    sw $t2, 0($t1)\n    daddiu $t0, $t0, 4\n    sltiu $t1, $t0, 64\n    bnez $t1, scalar_feed\n    nop\n",
+      "target": "scalar",
+      "phase": 13,
+      "checkpoint": "after_scalar_feed"
+    },
+    {
+      "id": "s23",
+      "title": "Compare bytes before changing the implementation",
+      "kind": "observe",
+      "prose": "Run the completed scalar block on the RFC state and compare all sixty-four output bytes. Then use arbitrary raw states, because the block interface accepts sixteen words without requiring a particular key layout. Keep its immutable input visible beside the output.",
+      "expectedObservation": "The known block and independent arbitrary-state model agree; the original sixty-four bytes are intact.",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Is matching only the first output word enough?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; later words are repeated."
+          },
+          {
+            "id": "b",
+            "text": "Only for a zero counter."
+          },
+          {
+            "id": "c",
+            "text": "No; every output byte and ownership condition matters."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "A mistake can affect a later column or row."
+        },
+        {
+          "id": "s23-h2",
+          "text": "The block publishes sixteen independently checked sums."
+        }
+      ]
+    },
+    {
+      "id": "s24",
+      "title": "Load the vector rows and retain originals",
+      "kind": "author",
+      "prose": "Load the four rows into `w0` through `w3` and copy them to `w4` through `w7`. Set the scalar double-round count to ten. Lane zero corresponds to the first word loaded from each row.",
+      "expectedObservation": "Working and original vector rows agree with the prepared state; no output has been stored.",
+      "quiz": {
+        "id": "q24",
+        "prompt": "What is lane zero of row one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "State word four."
+          },
+          {
+            "id": "b",
+            "text": "State word one."
+          },
+          {
+            "id": "c",
+            "text": "The lowest byte of the entire key."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Use row-major state indices."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Each word-vector register contains four words."
+        }
+      ],
+      "region": "msa_load",
+      "code": "    ld.w $w0, 0($a0)\n    move.v $w4, $w0\n    ld.w $w1, 16($a0)\n    move.v $w5, $w1\n    ld.w $w2, 32($a0)\n    move.v $w6, $w2\n    ld.w $w3, 48($a0)\n    move.v $w7, $w3\n    li $t0, 10\n",
+      "target": "msa",
+      "phase": 1,
+      "checkpoint": "after_msa_load"
+    },
+    {
+      "id": "s25",
+      "title": "Mix the first half of the column groups",
+      "kind": "author",
+      "prose": "Perform the first two dependent groups across all four lanes. Word-vector addition wraps separately in each lane. Use logical right shifts to construct the rotations, retaining the unshifted XOR value until both shift operands have been read.",
+      "expectedObservation": "Every column has completed its first two groups in vector registers; caller output remains unchanged.",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Can a carry leave one word lane and enter the next?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; the vector is one 128-bit integer."
+          },
+          {
+            "id": "b",
+            "text": "No; `addv.w` treats each word lane independently."
+          },
+          {
+            "id": "c",
+            "text": "Only in lane zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The instruction's element format selects the arithmetic width."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Cross-lane carry would change the quarter-round."
+        }
+      ],
+      "region": "msa_column_a",
+      "code": "    addv.w $w0, $w0, $w1\n    xor.v $w3, $w3, $w0\n    slli.w $w8, $w3, 16\n    srli.w $w9, $w3, 16\n    or.v $w3, $w8, $w9\n    addv.w $w2, $w2, $w3\n    xor.v $w1, $w1, $w2\n    slli.w $w8, $w1, 12\n    srli.w $w9, $w1, 20\n    or.v $w1, $w8, $w9\n",
+      "target": "msa",
+      "phase": 2,
+      "checkpoint": "after_msa_column_a"
+    },
+    {
+      "id": "s26",
+      "title": "Finish the vector column round",
+      "kind": "author",
+      "prose": "Apply the remaining two groups with left rotations eight and seven. The row layout still represents ordinary state order. Each lane has now completed the same quarter-round as the corresponding scalar column call.",
+      "expectedObservation": "The four working rows equal the scalar first column-round state.",
+      "quiz": {
+        "id": "q26",
+        "prompt": "What do these vector groups complete?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twenty rounds of one block."
+          },
+          {
+            "id": "b",
+            "text": "Four encrypted messages."
+          },
+          {
+            "id": "c",
+            "text": "Four quarter-rounds, one in each lane."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Follow one lane through all four registers."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The next work is diagonal selection within the same block."
+        }
+      ],
+      "region": "msa_column_b",
+      "code": "    addv.w $w0, $w0, $w1\n    xor.v $w3, $w3, $w0\n    slli.w $w8, $w3, 8\n    srli.w $w9, $w3, 24\n    or.v $w3, $w8, $w9\n    addv.w $w2, $w2, $w3\n    xor.v $w1, $w1, $w2\n    slli.w $w8, $w1, 7\n    srli.w $w9, $w1, 25\n    or.v $w1, $w8, $w9\n",
+      "target": "msa",
+      "phase": 3,
+      "checkpoint": "after_msa_column_b"
+    },
+    {
+      "id": "s27",
+      "title": "Select diagonal inputs by row shuffling",
+      "kind": "author",
+      "prose": "Leave row zero fixed and rearrange rows one through three with selectors fifty-seven, seventy-eight and one hundred forty-seven. These immediates encode source lanes for successive destinations. Check the marker recipe as well as the cryptographic state.",
+      "expectedObservation": "Lane zero across the working rows selects state positions zero, five, ten and fifteen after the column round.",
+      "quiz": {
+        "id": "q27",
+        "prompt": "What does the low two-bit selector choose?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source for destination lane zero."
+          },
+          {
+            "id": "b",
+            "text": "The destination for source lane zero."
+          },
+          {
+            "id": "c",
+            "text": "The number of quarter-rounds."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Decode the immediate in four two-bit fields."
+        },
+        {
+          "id": "s27-h2",
+          "text": "The direction matters when finding the inverse."
+        }
+      ],
+      "region": "msa_select",
+      "code": "    shf.w $w1, $w1, 57\n    shf.w $w2, $w2, 78\n    shf.w $w3, $w3, 147\n",
+      "target": "msa",
+      "phase": 4,
+      "checkpoint": "after_msa_select"
+    },
+    {
+      "id": "s28",
+      "title": "Mix the first half of the diagonal groups",
+      "kind": "author",
+      "prose": "Run the same first two vector groups after selection. The arithmetic code is unchanged, but lane zero now represents a diagonal rather than a column. Preserve the shuffled layout until all four groups complete.",
+      "expectedObservation": "All four diagonal selections have completed their first two groups.",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why can the arithmetic sequence be reused?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Columns and diagonals have identical original values."
+          },
+          {
+            "id": "b",
+            "text": "The shuffle places the required four words in corresponding lanes."
+          },
+          {
+            "id": "c",
+            "text": "The shuffle computes the additions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "The code operates on register roles a,b,c,d."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Selection changes which state word occupies each role."
+        }
+      ],
+      "region": "msa_diagonal_a",
+      "code": "    addv.w $w0, $w0, $w1\n    xor.v $w3, $w3, $w0\n    slli.w $w8, $w3, 16\n    srli.w $w9, $w3, 16\n    or.v $w3, $w8, $w9\n    addv.w $w2, $w2, $w3\n    xor.v $w1, $w1, $w2\n    slli.w $w8, $w1, 12\n    srli.w $w9, $w1, 20\n    or.v $w1, $w8, $w9\n",
+      "target": "msa",
+      "phase": 5,
+      "checkpoint": "after_msa_diagonal_a"
+    },
+    {
+      "id": "s29",
+      "title": "Finish the diagonal groups",
+      "kind": "author",
+      "prose": "Apply the groups with left rotations eight and seven to the selected rows. The values are correct for the diagonal round, but rows one through three are still in their selected order. They cannot yet be paired with original rows for feed-forward.",
+      "expectedObservation": "One diagonal round is complete in the shuffled layout.",
+      "quiz": {
+        "id": "q29",
+        "prompt": "May feed-forward use this layout directly?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; addition ignores lane order."
+          },
+          {
+            "id": "b",
+            "text": "Only for a zero key."
+          },
+          {
+            "id": "c",
+            "text": "No; matching state positions must be restored first."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "A value's lane position identifies its original state word."
+        },
+        {
+          "id": "s29-h2",
+          "text": "The inverse selections restore that identity."
+        }
+      ],
+      "region": "msa_diagonal_b",
+      "code": "    addv.w $w0, $w0, $w1\n    xor.v $w3, $w3, $w0\n    slli.w $w8, $w3, 8\n    srli.w $w9, $w3, 24\n    or.v $w3, $w8, $w9\n    addv.w $w2, $w2, $w3\n    xor.v $w1, $w1, $w2\n    slli.w $w8, $w1, 7\n    srli.w $w9, $w1, 25\n    or.v $w1, $w8, $w9\n",
+      "target": "msa",
+      "phase": 6,
+      "checkpoint": "after_msa_diagonal_b"
+    },
+    {
+      "id": "s30",
+      "title": "Restore rows and repeat ten pairs",
+      "kind": "author",
+      "prose": "Undo the row selections using the inverse immediates. Then decrement the scalar count and repeat the vector column/diagonal pair while positive. The final restored rows contain the twenty-round working state in ordinary row order.",
+      "expectedObservation": "The working rows equal the scalar twenty-round state and the counter is zero.",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Why restore rows on the final iteration?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Feed-forward must pair corresponding original and transformed words."
+          },
+          {
+            "id": "b",
+            "text": "The output buffer requires a zero first lane."
+          },
+          {
+            "id": "c",
+            "text": "The state must be sorted numerically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "The original copies retained ordinary row order."
+        },
+        {
+          "id": "s30-h2",
+          "text": "The inverse is required even when no next iteration follows."
+        }
+      ],
+      "region": "msa_repeat",
+      "code": "    shf.w $w1, $w1, 147\n    shf.w $w2, $w2, 78\n    shf.w $w3, $w3, 57\n    addiu $t0, $t0, -1\n    bgtz $t0, msa_double_round\n    nop\n",
+      "target": "msa",
+      "phase": 7,
+      "checkpoint": "after_msa_repeat"
+    },
+    {
+      "id": "s31",
+      "title": "Publish the vector feed-forward rows",
+      "kind": "author",
+      "prose": "Add each preserved original row to its matching working row with word-vector addition. Store the four sums at offsets zero, sixteen, thirty-two and forty-eight. The completed vector entry now has the scalar block's byte contract.",
+      "expectedObservation": "The vector output equals the scalar block byte for byte, including feed-forward and little-endian order.",
+      "quiz": {
+        "id": "q31",
+        "prompt": "How much output does this entry own?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All bytes until the next label."
+          },
+          {
+            "id": "b",
+            "text": "Exactly sixty-four bytes."
+          },
+          {
+            "id": "c",
+            "text": "One hundred twenty-eight bytes for originals and results."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Four stores each cover sixteen bytes."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Original copies remain in registers and are not an extra caller output."
+        }
+      ],
+      "region": "msa_feed",
+      "code": "    addv.w $w0, $w0, $w4\n    st.w $w0, 0($a1)\n    addv.w $w1, $w1, $w5\n    st.w $w1, 16($a1)\n    addv.w $w2, $w2, $w6\n    st.w $w2, 32($a1)\n    addv.w $w3, $w3, $w7\n    st.w $w3, 48($a1)\n",
+      "target": "msa",
+      "phase": 8,
+      "checkpoint": "after_msa_feed"
+    },
+    {
+      "id": "s32",
+      "title": "Compare scalar and MSA at the same boundary",
+      "kind": "observe",
+      "prose": "Use identical input state and output alignment for both block entries. Compare bytes before counting work. The MSA layout changes register residency, pointer setup and nested calls as well as the number of lanes processed together.",
+      "expectedObservation": "Both outputs agree while their simulated instruction counts differ.",
+      "quiz": {
+        "id": "q32",
+        "prompt": "What does a lower simulator instruction count establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A measured hardware cycle speedup."
+          },
+          {
+            "id": "b",
+            "text": "A guarantee of constant-time hardware execution."
+          },
+          {
+            "id": "c",
+            "text": "Less simulated instruction work at the measured boundary."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Keep the unit of measurement explicit."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Instruction count does not include host scheduling or real processor effects."
+        }
+      ]
+    },
+    {
+      "id": "s33",
+      "title": "Check the bounded count and empty request",
+      "kind": "author",
+      "prose": "Interpret `a3` as an unsigned count. Reject values above 4096 before examining any pointer, and return success immediately for zero. These paths use no frame because no nested work has begun.",
+      "expectedObservation": "A valid positive count reaches preflight; zero returns without pointer access and excessive counts return one.",
+      "quiz": {
+        "id": "q33",
+        "prompt": "May an empty request dereference its state pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the interface promises no supplied pointer access."
+          },
+          {
+            "id": "b",
+            "text": "Yes; every call must read the key."
+          },
+          {
+            "id": "c",
+            "text": "Only if the counter is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "The count check precedes state interpretation."
+        },
+        {
+          "id": "s33-h2",
+          "text": "The zero path is valid even with deliberately invalid pointers."
+        }
+      ],
+      "region": "stream_validate",
+      "code": "    sltiu $t0, $a3, 4097\n    beqz $t0, stream_length_error\n    nop\n    beqz $a3, stream_empty\n    nop\n",
+      "target": "stream",
+      "phase": 1,
+      "checkpoint": "after_stream_validate"
+    },
+    {
+      "id": "s34",
+      "title": "Validate the last required counter",
+      "kind": "author",
+      "prose": "Compute the block count by rounding the bounded positive length upward, then form the last required counter in 64 bits. Load the initial counter unsigned. Reject a nonzero high word before allocating the frame or writing output.",
+      "expectedObservation": "A 65-byte request at counter one passes; the same count at ffffffff returns two before stores.",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Is one block at counter ffffffff valid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the largest counter is always reserved."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the last available block may be used."
+          },
+          {
+            "id": "c",
+            "text": "Only when the nonce is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Compute c plus blocks minus one."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Do not require a nonexistent next counter after the final block."
+        }
+      ],
+      "region": "stream_counter_check",
+      "code": "    daddiu $t0, $a3, 63\n    dsrl $t0, $t0, 6\n    lwu $t1, 48($a0)\n    daddu $t0, $t0, $t1\n    daddiu $t0, $t0, -1\n    dsrl $t0, $t0, 32\n    bnez $t0, stream_counter_error\n    nop\n",
+      "target": "stream",
+      "phase": 2,
+      "checkpoint": "after_stream_counter_check"
+    },
+    {
+      "id": "s35",
+      "title": "Retain the outer byte walkers",
+      "kind": "author",
+      "prose": "After successful preflight, the supplied 192-byte frame saves the outer working registers and return address. Keep source, destination and remaining count in `s0`, `s1` and `s2`; clear the state-copy offset. The frame's first 128 bytes hold a local state and keystream.",
+      "expectedObservation": "The outer byte walkers and remaining count are retained; the local state copy is not yet initialized.",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Why do the walkers need to survive a block call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The simulator automatically moves them to the heap."
+          },
+          {
+            "id": "b",
+            "text": "The source must be word-aligned."
+          },
+          {
+            "id": "c",
+            "text": "The nested block routine may change arguments and temporaries."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Separate persistent wrapper state from nested-call arguments."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Saved registers are restored at the wrapper's exit."
+        }
+      ],
+      "region": "stream_setup",
+      "code": "    move $s0, $a1\n    move $s1, $a2\n    move $s2, $a3\n    move $t0, $zero\n",
+      "target": "stream",
+      "phase": 3,
+      "checkpoint": "after_stream_setup"
+    },
+    {
+      "id": "s36",
+      "title": "Copy a private block state",
+      "kind": "author",
+      "prose": "Copy all sixteen input words into the first sixty-four bytes of the frame. Later block counters change only this private copy. The caller's constants, key, initial counter and nonce remain available unchanged.",
+      "expectedObservation": "The private state equals the caller state; no destination byte has changed.",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which state receives counter increments?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The private stack copy."
+          },
+          {
+            "id": "b",
+            "text": "The caller's state."
+          },
+          {
+            "id": "c",
+            "text": "The original key array only."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Inspect the address used by the later counter store."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Its base is the current frame pointer in `sp`."
+        }
+      ],
+      "region": "stream_copy",
+      "code": "    daddu $t1, $a0, $t0\n    lw $t2, 0($t1)\n    daddu $t1, $sp, $t0\n    sw $t2, 0($t1)\n    daddiu $t0, $t0, 4\n    sltiu $t1, $t0, 64\n    bnez $t1, stream_copy_state\n    nop\n",
+      "target": "stream",
+      "phase": 4,
+      "checkpoint": "after_stream_copy"
+    },
+    {
+      "id": "s37",
+      "title": "Generate the next keystream block",
+      "kind": "author",
+      "prose": "Pass the private state and the next sixty-four frame bytes to the completed scalar block entry. The supplied guard propagates a development result through the wrapper's restore path. The first generated block is ready before any message byte is read.",
+      "expectedObservation": "The frame holds the first full keystream block; the caller destination remains untouched.",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Does generating a block itself consume source bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it must read sixty-four message bytes."
+          },
+          {
+            "id": "b",
+            "text": "No; the block depends on state, not plaintext."
+          },
+          {
+            "id": "c",
+            "text": "Only if the input is in place."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Inspect the block entry's two arguments."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Neither is the message source pointer."
+        }
+      ],
+      "region": "stream_block",
+      "code": "    move $a0, $sp\n    daddiu $a1, $sp, 64\n    jal chacha_block_scalar\n    nop\n",
+      "target": "stream",
+      "phase": 5,
+      "checkpoint": "after_stream_block"
+    },
+    {
+      "id": "s38",
+      "title": "Choose the current fragment size",
+      "kind": "author",
+      "prose": "Select the lesser of the remaining count and sixty-four into `s3`. A final fragment owns only its declared message bytes even though the private keystream has a full block. Avoid rounding the output request upward.",
+      "expectedObservation": "For the initial 65-byte recipe, the first fragment size is sixty-four.",
+      "quiz": {
+        "id": "q38",
+        "prompt": "How many message bytes may the final fragment of a 65-byte input read?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixty-four."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-five again."
+          },
+          {
+            "id": "c",
+            "text": "One."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Subtract the first full block from the total."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Unused keystream bytes are not permission to read extra message bytes."
+        }
+      ],
+      "region": "stream_count",
+      "code": "    li $s3, 64\n    sltiu $t0, $s2, 64\n    beqz $t0, stream_count_ready\n    nop\n    move $s3, $s2\n",
+      "target": "stream",
+      "phase": 6,
+      "checkpoint": "after_stream_count"
+    },
+    {
+      "id": "s39",
+      "title": "XOR exactly one selected fragment",
+      "kind": "author",
+      "prose": "Start a local keystream index at zero. For each byte load the keystream and source before storing the result, then advance full-width source and destination pointers. Stop when the local index reaches the selected fragment size.",
+      "expectedObservation": "The first sixty-four destination bytes are transformed; byte sixty-four remains a guard until the next block.",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Why load before storing in place?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original input byte must be read before its slot is overwritten."
+          },
+          {
+            "id": "b",
+            "text": "In-place output requires reversing byte order."
+          },
+          {
+            "id": "c",
+            "text": "Stores automatically retain the original byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Input and output may name the same current byte."
+        },
+        {
+          "id": "s39-h2",
+          "text": "The ordering makes exact aliasing safe without a second message buffer."
+        }
+      ],
+      "region": "stream_bytes",
+      "code": "    move $s4, $zero\nstream_byte:\n    daddu $t0, $sp, $s4\n    lbu $t1, 64($t0)\n    lbu $t2, 0($s0)\n    xor $t1, $t1, $t2\n    sb $t1, 0($s1)\n    daddiu $s0, $s0, 1\n    daddiu $s1, $s1, 1\n    daddiu $s4, $s4, 1\n    bne $s4, $s3, stream_byte\n    nop\n",
+      "target": "stream",
+      "phase": 7,
+      "checkpoint": "after_stream_bytes"
+    },
+    {
+      "id": "s40",
+      "title": "Decide whether another block is needed",
+      "kind": "author",
+      "prose": "Subtract the completed fragment size from the remaining count. A zero remainder takes the normal restore path immediately. With the 65-byte recipe the remainder is one, so execution continues toward the counter advance.",
+      "expectedObservation": "The first fragment is complete and `s2` is one; no second block has been generated yet.",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Should a 64-byte request generate a second block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every loop needs a terminating empty block."
+          },
+          {
+            "id": "b",
+            "text": "No; its remainder is zero."
+          },
+          {
+            "id": "c",
+            "text": "Only when the first ciphertext byte is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "The message count controls completion."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Keystream generation has no EOF marker block."
+        }
+      ],
+      "region": "stream_remaining",
+      "code": "    dsubu $s2, $s2, $s3\n    beqz $s2, stream_done\n    nop\n",
+      "target": "stream",
+      "phase": 8,
+      "checkpoint": "after_stream_remaining"
+    },
+    {
+      "id": "s41",
+      "title": "Advance the local counter and finish",
+      "kind": "author",
+      "prose": "Increment word twelve of the private state, then return to block generation. Preflight has already proved that every counter required by this request fits. The second pass transforms the last byte and returns zero through the common frame restore.",
+      "expectedObservation": "All sixty-five output bytes match the independent cipher; caller state and guard bytes are unchanged.",
+      "quiz": {
+        "id": "q41",
+        "prompt": "May the counter carry into the nonce word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; the last row is one large integer."
+          },
+          {
+            "id": "b",
+            "text": "Only for a final one-byte fragment."
+          },
+          {
+            "id": "c",
+            "text": "No; the nonce is a separate field."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "The counter is one 32-bit state word."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The whole-request check prevents a required wrap."
+        }
+      ],
+      "region": "stream_advance",
+      "code": "    lw $t0, 48($sp)\n    addiu $t0, $t0, 1\n    sw $t0, 48($sp)\n    b stream_next_block\n    nop\n",
+      "target": "stream",
+      "phase": 9,
+      "checkpoint": "main_done"
+    },
+    {
+      "id": "s42",
+      "title": "Exercise tails, errors and in-place buffers",
+      "kind": "observe",
+      "prose": "Run the completed wrapper for zero, one, sixty-three, sixty-four and sixty-five bytes, then at the local 4096-byte limit. Use disjoint and exact in-place buffers. Check rejection before output stores at an exhausted counter and with an excessive unsigned count. A fresh call with unchanged state restarts at the same stream position.",
+      "expectedObservation": "The JDK cipher comparison agrees on valid requests; rejected requests preserve caller memory and the zero-length path touches no supplied pointer.",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Can two independent one-byte calls automatically consume consecutive keystream bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; this interface restarts from its supplied state each time."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the simulator remembers a hidden byte index."
+          },
+          {
+            "id": "c",
+            "text": "Only if the two source buffers are adjacent."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "There is no retained partial-block context in this interface."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Continuing within a block requires retaining the unused keystream and byte position."
+        }
+      ]
+    }
+  ]
+}

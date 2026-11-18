@@ -1,0 +1,29 @@
+\section{Step 10 Keep the scalar bases and copy offset}\label{chacha-s10}
+
+The supplied scalar frame protects its incoming return address and three saved registers. Put the immutable input base in \texttt{s0}, working output base in \texttt{s1}, and byte offset zero in \texttt{t0}. This separates algorithm storage from loop progress.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{scalar\_setup}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s0, $a0
+    move $s1, $a1
+    move $t0, $zero
+\end{minted}
+
+Use recipe \texttt{s10-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The two bases are retained and the copy offset is zero; the output is still untouched.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why keep a base in a saved register?
+
+\begin{itemize}
+\item \textbf{A} Saved registers automatically allocate memory.
+\item \textbf{B} Nested quarter-round calls may change temporary and argument registers.
+\item \textbf{C} A base must fit in thirty-two bits.
+\end{itemize}

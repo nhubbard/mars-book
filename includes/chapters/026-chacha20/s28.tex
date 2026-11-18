@@ -1,0 +1,36 @@
+\section{Step 28 Mix the first half of the diagonal groups}\label{chacha-s28}
+
+Run the same first two vector groups after selection. The arithmetic code is unchanged, but lane zero now represents a diagonal rather than a column. Preserve the shuffled layout until all four groups complete.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{msa\_diagonal\_a}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addv.w $w0, $w0, $w1
+    xor.v $w3, $w3, $w0
+    slli.w $w8, $w3, 16
+    srli.w $w9, $w3, 16
+    or.v $w3, $w8, $w9
+    addv.w $w2, $w2, $w3
+    xor.v $w1, $w1, $w2
+    slli.w $w8, $w1, 12
+    srli.w $w9, $w1, 20
+    or.v $w1, $w8, $w9
+\end{minted}
+
+Use recipe \texttt{s28-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+All four diagonal selections have completed their first two groups.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why can the arithmetic sequence be reused?
+
+\begin{itemize}
+\item \textbf{A} Columns and diagonals have identical original values.
+\item \textbf{B} The shuffle places the required four words in corresponding lanes.
+\item \textbf{C} The shuffle computes the additions.
+\end{itemize}

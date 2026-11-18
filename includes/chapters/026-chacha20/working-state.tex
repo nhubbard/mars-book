@@ -1,0 +1,35 @@
+\section{Keep one cumulative program and prepare separate observations}
+Use \texttt{drafts/chacha-construction/main.asm} as the working source for this
+unpackaged draft. Each authored step replaces instructions only between its named
+BEGIN and END comments. Keep labels, caller controls, saves, restores and supplied
+status checks. A missing region takes a development exit with status three. A
+completed kernel returns zero; the wrapper also uses one and two for its declared
+count and counter errors. Development output may be partly changed and must never
+be used as a valid keystream or ciphertext.
+
+The caller's mode selects zero for the quarter-round, one for the scalar block,
+two for MSA and three for the wrapper. Its \texttt{length} is a full doubleword;
+\texttt{in\_place} selects whether the wrapper's destination aliases its source.
+The default caller demonstrates separated quarter-round words. It records the
+returned status after the \texttt{main\_done} checkpoint and exits through the
+ordinary simulator service.
+
+Each recipe specifies exact data, a target and an observation boundary for the
+program through that edit. For example, prepare the second quarter-round group
+in a separate file using the helper below. Its source argument is your current
+working copy, including your completed regions.
+\begin{verbatim}
+python3 drafts/chacha-construction/prepare.py s05-1 \
+  --source my-chacha.asm --output observe-s05.asm
+\end{verbatim}
+The helper replaces only fixture arenas and caller controls. It refuses an
+existing output file and leaves the authored code intact. Keep the cumulative
+source as your editable program; do not use a prepared observation as the next
+cumulative source, because its controls are deliberately recipe-specific.
+
+Pause at the recipe's checkpoint before continuing to the temporary or normal
+return. Inspect registers inside the frame when requested: their caller values
+will be restored on return. The independent construction checks verify both this
+inside view and the returned state, using the caller and separate offset arguments.
+The strict register mapping describes this worked construction. Final free-writing
+checks concern the completed interfaces and allow equivalent internal choices.

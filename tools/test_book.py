@@ -34,7 +34,52 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
         self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
         self.assertEqual(51, len(book.validate('drafts/sha256.tex')))
-        self.assertEqual(12, len(book.validate('drafts/chacha20.tex')))
+        self.assertEqual(53, len(book.validate('drafts/chacha20.tex')))
+
+    def test_chacha_cumulative_native_order_and_preparation(self):
+        folder = book.ROOT / 'drafts/chacha-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        self.assertEqual((42, 36), (len(steps), sum(s['kind'] == 'author' for s in steps)))
+        order = [path.stem for path, _ in book.sources('drafts/chacha20.tex')
+                 if path.parent.name == '026-chacha20' and re.fullmatch(r's[0-9]{2}', path.stem)]
+        self.assertEqual([s['id'] for s in steps], order)
+        spec = importlib.util.spec_from_file_location('chacha_prepare_test', folder / 'prepare.py')
+        prepare = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(prepare)
+        starter = (folder / 'main.asm').read_text()
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(54, len(recipes))
+        self.assertEqual(54, len({r['id'] for r in recipes}))
+        variants = (book.ROOT / 'includes/chapters/026-chacha20/variants.tex').read_text()
+        self.assertEqual({r['id'] for r in recipes if not r['id'].endswith('-1')},
+                         set(re.findall(r'\\texttt\{(s[0-9]+-[0-9]+)\}', variants)))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            text = (book.ROOT / 'includes/chapters/026-chacha20' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [m[1] for m in book.CODE.finditer(text)])
+        for q in recipes:
+            prepared = prepare.prepare(starter, q)
+            self.assertEqual((4160, 4160, 128, 96), tuple(map(len, prepare.arenas(q).values())))
+            for step in steps:
+                if step['kind'] == 'author':
+                    name = step['region']
+                    pattern = r'# BEGIN ' + name + r'\n(.*?)# END ' + name
+                    self.assertEqual(re.search(pattern, starter, re.S)[1],
+                                     re.search(pattern, prepared, re.S)[1])
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'observation.asm'
+            source = Path(directory) / 'mine.asm'
+            source.write_text(starter)
+            args = [sys.executable, str(folder / 'prepare.py'), 's05-1', '--source', str(source), '--output', str(output)]
+            subprocess.run(args, check=True, capture_output=True)
+            self.assertEqual(prepare.prepare(starter, next(r for r in recipes if r['id'] == 's05-1')), output.read_text())
+            self.assertNotEqual(0, subprocess.run(args, capture_output=True).returncode)
+            self.assertEqual(starter, source.read_text())
+        plan = json.loads((folder / 'captures/plan.json').read_text())
+        self.assertEqual(4, len(plan['figures']))
+        self.assertTrue(all(f['theme'] == 'IntelliJ Light' and f['status'].startswith('planned') for f in plan['figures']))
 
     def test_sha_cumulative_edits_follow_native_order(self):
         folder = book.ROOT / 'drafts/sha-construction'

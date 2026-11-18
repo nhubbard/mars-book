@@ -1,0 +1,31 @@
+\section{Step 41 Advance the local counter and finish}\label{chacha-s41}
+
+Increment word twelve of the private state, then return to block generation. Preflight has already proved that every counter required by this request fits. The second pass transforms the last byte and returns zero through the common frame restore.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{stream\_advance}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lw $t0, 48($sp)
+    addiu $t0, $t0, 1
+    sw $t0, 48($sp)
+    b stream_next_block
+    nop
+\end{minted}
+
+Use recipe \texttt{s41-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+All sixty-five output bytes match the independent cipher; caller state and guard bytes are unchanged.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+May the counter carry into the nonce word?
+
+\begin{itemize}
+\item \textbf{A} Yes; the last row is one large integer.
+\item \textbf{B} Only for a final one-byte fragment.
+\item \textbf{C} No; the nonce is a separate field.
+\end{itemize}

@@ -1,0 +1,70 @@
+\section{Allocate the wrapper frame only after preflight}
+The first two wrapper regions run before a frame exists. A missing region there
+returns status three through \texttt{stream\_unframed\_development}. The excessive
+count, empty input and exhausted-counter paths also return without a frame. A
+valid positive request reaches the supplied saves below.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{Supplied wrapper frame after successful preflight.}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $sp, $sp, -192
+    sd $ra, 184($sp)
+    sd $s0, 176($sp)
+    sd $s1, 168($sp)
+    sd $s2, 160($sp)
+    sd $s3, 152($sp)
+    sd $s4, 144($sp)
+\end{minted}
+
+The first sixty-four frame bytes hold a local state, and the next sixty-four hold
+its generated keystream. Saved registers and the return address occupy the upper
+part; the remaining sixteen bytes are padding. The body uses \texttt{s0} and
+\texttt{s1} as byte walkers, \texttt{s2} as the remaining count, \texttt{s3} as this
+fragment's size, and \texttt{s4} as its local keystream index. A nested block call
+allocates its own frame below this one and must restore it before returning.
+
+Once this frame exists, missing body regions use the framed development exit.
+The supplied check after block generation also uses that exit. Restoring an
+unallocated frame would corrupt the caller's stack pointer, so the early and
+framed development paths have distinct labels.
+
+\Needspace{21\baselineskip}
+\MARSCodeLabel{Supplied framed wrapper returns.}
+\begin{minted}[samepage=true]{mars-idea}
+stream_done:
+    move $v0, $zero
+    b stream_restore
+    nop
+stream_development:
+    li $v0, 3
+stream_restore:
+    ld $s4, 144($sp)
+    ld $s3, 152($sp)
+    ld $s2, 160($sp)
+    ld $s1, 168($sp)
+    ld $s0, 176($sp)
+    ld $ra, 184($sp)
+    daddiu $sp, $sp, 192
+    jr $ra
+    nop
+\end{minted}
+\Needspace{21\baselineskip}
+\MARSCodeLabel{Supplied early returns, with no frame to restore.}
+\begin{minted}[samepage=true]{mars-idea}
+stream_empty:
+    move $v0, $zero
+    jr $ra
+    nop
+stream_unframed_development:
+    li $v0, 3
+    jr $ra
+    nop
+stream_length_error:
+    li $v0, 1
+    jr $ra
+    nop
+stream_counter_error:
+    li $v0, 2
+    jr $ra
+    nop
+\end{minted}

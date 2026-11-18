@@ -1,0 +1,29 @@
+\section{Step 40 Decide whether another block is needed}\label{chacha-s40}
+
+Subtract the completed fragment size from the remaining count. A zero remainder takes the normal restore path immediately. With the 65-byte recipe the remainder is one, so execution continues toward the counter advance.
+
+\subsection{Write and inspect}
+Replace the body of region \texttt{stream\_remaining}. Retain its \texttt{\# BEGIN} and \texttt{\# END} comments and the supplied labels outside them.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsubu $s2, $s2, $s3
+    beqz $s2, stream_done
+    nop
+\end{minted}
+
+Use recipe \texttt{s40-1} with the cumulative program through this edit. Inspect its named checkpoint before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first fragment is complete and \texttt{s2} is one; no second block has been generated yet.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Should a 64-byte request generate a second block?
+
+\begin{itemize}
+\item \textbf{A} Yes; every loop needs a terminating empty block.
+\item \textbf{B} No; its remainder is zero.
+\item \textbf{C} Only when the first ciphertext byte is zero.
+\end{itemize}
