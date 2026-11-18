@@ -1,0 +1,21 @@
+\section{Decode a signed halfword at any byte address}\label{pcm-encoding}
+The low byte and high byte first form an unsigned pattern
+\[
+ u=\text{low}+256\,\text{high}.
+\]
+Interpret it as $u$ when $u<32768$, otherwise as $u-65536$. Thus stored bytes
+\texttt{ff 7f} represent 32767, \texttt{00 80} represent minus 32768, and
+\texttt{ff ff} represent minus one. Byte order chooses the pattern; signed
+interpretation chooses its integer value.
+
+The scalar path loads each byte unsigned, shifts the high byte by eight and ORs
+them together. \texttt{seh} then sign extends the low sixteen bits to the native
+register width. Without that sign extension, a negative sample would instead
+participate as a large positive number. A halfword load would also interpret a
+signed value, but an unconditional halfword access does not satisfy this exercise's
+arbitrary byte-alignment requirement.
+
+After both inputs are sign extended, their exact sum lies from minus 65536 through
+65534. It fits in a signed word. Word addition can therefore retain the exact
+intermediate before the output is narrowed. The low sixteen bits alone do not
+contain enough information to decide whether clipping occurred.

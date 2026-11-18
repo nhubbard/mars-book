@@ -1,0 +1,24 @@
+\section{Saturate eight signed lanes}\label{pcm-vector}
+Load the two groups as byte elements into vector registers. Their paired low/high
+bytes form eight halfword lanes in the pinned little-endian environment. The same
+bits can then be interpreted by halfword arithmetic without moving them to new
+storage. \texttt{adds\_s.h} adds signed halfword values and clamps each lane to its
+signed range. The unsigned saturation instruction implements a different operation.
+
+Also compute \texttt{addv.h}, which retains each sum's low halfword bits. Comparing
+the saturated and wrapping vectors yields equal lanes exactly for the samples that
+did not clip. An out-of-range positive sum wraps to a negative value while saturating
+to 32767. An out-of-range negative sum wraps to a nonnegative value while saturating
+to minus 32768. Thus no clipped lane can accidentally compare equal in this two-input
+domain.
+
+\texttt{ceq.h} represents true with all sixteen bits set and false with all bits
+clear. Invert that equality result with \texttt{nor.v} to obtain all-one lanes for
+clipped samples and all-zero lanes for in-range samples. This representation is a
+bit mask, not the integer number one per clipped sample.
+
+A group store can use the saturated vector after both inputs have been loaded and
+the counter evidence has been retained. The guided sequence completes the counter
+first and then stores. Equivalent implementations may order these internal operations
+differently while preserving inputs needed for the allowed aliases and the exact
+public result.

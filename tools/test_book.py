@@ -1,4 +1,9 @@
 from pathlib import Path
+import hashlib
+import json
+import re
+import struct
+import wave
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -19,6 +24,43 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(43, len(book.validate('drafts/expression-evaluator.tex')))
         self.assertEqual(46, len(book.validate('drafts/tiny-bytecode-interpreter.tex')))
         self.assertEqual(43, len(book.validate('drafts/rgb-formats.tex')))
+        self.assertEqual(0, len(book.validate('drafts/pcm-mixing.tex')))
+
+    def test_pcm_listening_assets_and_native_waveform_agree(self):
+        folder = book.ROOT / 'book/media/020-pcm-mixing'
+        receipt = json.loads((folder / 'receipt.json').read_text())
+        self.assertTrue(receipt['verifiedBothImplementations'])
+        self.assertEqual(12, len(receipt['files']))
+        samples = {}
+        for name, record in receipt['files'].items():
+            path = folder / name
+            self.assertEqual(record['sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
+            with wave.open(str(path), 'rb') as sound:
+                self.assertEqual((1, 2, 16000, 32000),
+                                 (sound.getnchannels(), sound.getsampwidth(), sound.getframerate(), sound.getnframes()))
+                raw = sound.readframes(sound.getnframes())
+            self.assertEqual(record['pcmSha256'], hashlib.sha256(raw).hexdigest())
+            samples[name] = struct.unpack('<' + 'h' * 32000, raw)
+        for scene, expected_clipped in [('quiet', 0), ('clipping', 11000), ('phase-offset', 11000)]:
+            sums = [a + b for a, b in zip(samples[scene + '-a.wav'], samples[scene + '-b.wav'])]
+            expected = tuple(min(32767, max(-32768, value)) for value in sums)
+            self.assertEqual(expected, samples[scene + '-saturated.wav'])
+            self.assertEqual(tuple((value + 32768) % 65536 - 32768 for value in sums),
+                             samples[scene + '-wrapped.wav'])
+            self.assertEqual(expected_clipped, sum(a != b for a, b in zip(sums, expected)))
+            self.assertEqual(expected_clipped, receipt['scenes'][scene]['clipped'])
+        self.assertEqual(samples['quiet-saturated.wav'], samples['quiet-wrapped.wav'])
+        figure = (book.ROOT / 'includes/chapters/020-pcm-mixing/listening.tex').read_text()
+        plotted = re.findall(r'\\addplot\[[^\]]*\] coordinates \{([^}]*)\};\s*\\addlegendentry\{([^}]*)\}', figure)
+        self.assertEqual(3, len(plotted))
+        expected = {
+            'Exact sum': [a + b for a, b in zip(samples['clipping-a.wav'][:64], samples['clipping-b.wav'][:64])],
+            'Saturated': samples['clipping-saturated.wav'][:64],
+            'Wrapped': samples['clipping-wrapped.wav'][:64],
+        }
+        for coordinates, label in plotted:
+            points = [(int(x), int(y)) for x, y in re.findall(r'\((\d+),(-?\d+)\)', coordinates)]
+            self.assertEqual(list(enumerate(expected[label])), points)
 
     def test_author_can_include_prose_between_any_two_segments(self):
         with tempfile.TemporaryDirectory() as folder:

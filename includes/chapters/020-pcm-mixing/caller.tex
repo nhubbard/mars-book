@@ -1,0 +1,19 @@
+\section{Read a complete caller result}\label{pcm-caller}
+The default caller mixes sixteen samples into \texttt{pcm\_c}, then computes the
+wrapping comparison into \texttt{pcm\_d}. The two original inputs are
+\texttt{pcm\_a} and \texttt{pcm\_b}. This particular caller uses separate outputs,
+while callable checks also exercise exact input/output aliases.
+
+At \texttt{mix\_ready}, the result registers contain processed count sixteen and
+clipped count six. Output samples are already stored, but caller words
+\texttt{processed}, \texttt{clipped} and \texttt{wrapped\_count} still contain 99.
+Continuing copies the first two registers before invoking the comparison routine.
+At \texttt{wrap\_ready}, the comparison returns sixteen and zero; its second result
+is not the required mixer's clipping count. At \texttt{comparison\_ready}, all
+three caller words have been stored.
+
+The first eight samples clip at indices three, four and seven. The second group
+clips at indices eight, nine and ten, giving six total. Sample five already equals
+the upper endpoint before adding zero, and sample six equals the lower endpoint.
+Neither counts as clipped. This separates saturation output from clipping evidence
+in one trace.
