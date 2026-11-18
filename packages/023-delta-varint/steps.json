@@ -1,0 +1,2205 @@
+{
+  "status": "Native construction draft; archives and interactive runner pending",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Keep the units beside both result counters",
+      "kind": "observe",
+      "prose": "The same register interface serves two directions, but the units change. Encoding consumes word readings and produces bytes; decoding consumes bytes and produces readings. Status in `a3` is separate from both counts. Use the format table before interpreting a stopped register value.",
+      "expectedObservation": "A decoder result of four consumed bytes and three readings refers to a different pair of units than an encoder result of four readings and five bytes.",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which unit belongs to decoder `v0`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bytes."
+          },
+          {
+            "id": "b",
+            "text": "Readings."
+          },
+          {
+            "id": "c",
+            "text": "Capacity remaining."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Identify the selected function before reading its result."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Decoder input is a byte stream, so its consumed counter is a byte count."
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Predict a delta that does not fit a word",
+      "kind": "observe",
+      "prose": "For a signed minimum reading followed by a signed maximum reading, calculate the exact subtraction before choosing an instruction. Both stored values fit words, but their difference is 4294967295. Retain that value before the signed mapping.",
+      "expectedObservation": "A word subtraction would turn the upward endpoint jump into -1.",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Where must widening happen?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only at the final byte store."
+          },
+          {
+            "id": "b",
+            "text": "Before subtracting the two readings."
+          },
+          {
+            "id": "c",
+            "text": "After the wrapped difference is mapped."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Compare the input range with the range of a difference."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Sign-extend each reading, then use doubleword subtraction."
+        }
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "Mark the default stream value boundaries",
+      "kind": "observe",
+      "prose": "Predict the mapped default values 2000,4,1,0,37998 and their byte groups. The stream d0 0f 04 01 00 ee a8 02 has five values in eight bytes. The first and last values each need more than one byte.",
+      "expectedObservation": "The first reading ends after two bytes; the last occupies byte positions five through seven.",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What does the continuation bit indicate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A negative reading."
+          },
+          {
+            "id": "b",
+            "text": "An output word boundary every four bytes."
+          },
+          {
+            "id": "c",
+            "text": "Another payload group of this value follows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Mask away the high bit before treating a byte as a base-128 digit."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The high bit is set on d0, ee and a8, and clear on each terminating byte."
+        }
+      ]
+    },
+    {
+      "id": "s04",
+      "title": "Inspect the supplied frame and provisional exits",
+      "kind": "observe",
+      "prose": "Both supplied frames retain the full source and destination bases, input length and output capacity, reset the predecessor and committed counts, and initialize status zero. Restoring exits copy the committed counters into `v0` and `v1`. Every unfinished region returns provisionally, except the documented initial width gate, which skips ahead to payload accumulation. Only the completed function is a final codec implementation.",
+      "expectedObservation": "The untouched starter returns zero counts and status zero, with no output stores; this is an incomplete construction state.",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Does a provisional zero status prove that all input was processed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; unfinished regions can return before processing input."
+          },
+          {
+            "id": "b",
+            "text": "Yes; zero always proves completion during construction."
+          },
+          {
+            "id": "c",
+            "text": "Only if the backing allocation is mapped."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Locate the temporary return branches before running the starter."
+        },
+        {
+          "id": "s04-h2",
+          "text": "Use the step-specific output and temporary-register observations until the full function passes final checks."
+        }
+      ]
+    },
+    {
+      "id": "s05",
+      "title": "Finish an empty encoder before checking capacity",
+      "kind": "author",
+      "prose": "At `enc_next`, compare the committed reading count `s5` with the input count `s1`. Return immediately when they are equal. This makes empty input successful even when capacity is zero, and also recognizes a completed nonempty sequence on the next loop visit.",
+      "expectedObservation": "Empty input returns `v0`=0,`v1`=0,`a3`=0 without input or output access.",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which test comes first at encoder entry?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether five bytes remain."
+          },
+          {
+            "id": "b",
+            "text": "Whether all input readings are already committed."
+          },
+          {
+            "id": "c",
+            "text": "Whether a continuation bit is set."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "An empty sequence needs no output reservation."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Compare committed readings with the source count before the capacity test."
+        }
+      ],
+      "editTarget": "e_end",
+      "code": "    beq $s5, $s1, enc_return\n    nop\n"
+    },
+    {
+      "id": "s06",
+      "title": "Stop a full encoder before reading another word",
+      "kind": "author",
+      "prose": "Compare committed output bytes `s6` with byte capacity `s3`. If equal, use the supplied `enc_full` path, which returns capacity status one. Do not load a new reading when no byte can fit, because even zero needs one byte.",
+      "expectedObservation": "A nonempty zero-capacity call returns zero counts and status one without a source read.",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Can mapped source memory be read when output capacity is zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if the first value is zero."
+          },
+          {
+            "id": "b",
+            "text": "Only if it is word aligned."
+          },
+          {
+            "id": "c",
+            "text": "No; this interface requires the capacity stop before that read."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Every mapped value needs at least one output byte."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Branch to `enc_full` when committed output equals capacity."
+        }
+      ],
+      "editTarget": "e_capacity",
+      "code": "    beq $s6, $s3, enc_full\n    nop\n"
+    },
+    {
+      "id": "s07",
+      "title": "Load the current signed reading through its full address",
+      "kind": "author",
+      "prose": "Multiply the committed reading index by four and add it to the full source base. Load the word into `t0` with `lw`. Keep the current reading while the byte-group logic uses other temporaries; it later becomes the next predecessor.",
+      "expectedObservation": "The default first current reading is `t0`=1000.",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What does `s5` count here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Input readings, each four bytes."
+          },
+          {
+            "id": "b",
+            "text": "Input bytes."
+          },
+          {
+            "id": "c",
+            "text": "Variable-length groups."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Convert an element index to a byte offset exactly once."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Use a full-width addition for the source base and a signed word load for its value."
+        }
+      ],
+      "editTarget": "e_load",
+      "code": "    dsll $t0, $s5, 2\n    daddu $t0, $s0, $t0\n    lw $t0, 0($t0)\n"
+    },
+    {
+      "id": "s08",
+      "title": "Subtract the committed predecessor in full width",
+      "kind": "author",
+      "prose": "Use `dsubu` to compute the current reading minus `s4`. At the first value `s4` is zero. Later iterations update it only after a candidate has been fully written. This subtraction must retain endpoint jumps wider than a word.",
+      "expectedObservation": "The first default delta is `t1`=1000; an initial minimum reading gives -2147483648.",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why keep the predecessor unchanged during preflight?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is a caller-saved register."
+          },
+          {
+            "id": "b",
+            "text": "A rejected candidate must not become the committed predecessor."
+          },
+          {
+            "id": "c",
+            "text": "The next reading is always identical."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Distinguish candidate work from publication."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Retain the old predecessor until the complete value has fit and been emitted."
+        }
+      ],
+      "editTarget": "e_difference",
+      "code": "    dsubu $t1, $t0, $s4\n"
+    },
+    {
+      "id": "s09",
+      "title": "Double the exact signed delta",
+      "kind": "author",
+      "prose": "Shift `t1` left by one in a doubleword and place that intermediate bit pattern in `t2`. For a negative delta this intermediate is not yet the final unsigned mapped value. The sign-mask XOR follows in a separate edit.",
+      "expectedObservation": "For the default positive delta, `t2`=2000 before the mask.",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Is the doubled negative bit pattern already the unsigned encoding?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; store it as a fixed-width word."
+          },
+          {
+            "id": "b",
+            "text": "Only when it is odd."
+          },
+          {
+            "id": "c",
+            "text": "No; the full sign mask is still needed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Separate the arithmetic intermediate from the completed mapping."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Keep all relevant bits while preparing the XOR form of ZigZag."
+        }
+      ],
+      "editTarget": "e_double",
+      "code": "    dsll $t2, $t1, 1\n"
+    },
+    {
+      "id": "s10",
+      "title": "Expand the full signed delta into a sign mask",
+      "kind": "author",
+      "prose": "Shift `t1` arithmetically by 63 into `t3`. This produces zero for a nonnegative doubleword and all one bits for a negative one. Shifting by 31 would incorrectly treat some positive exact endpoint differences as if their high word bits were a sign mask.",
+      "expectedObservation": "The mask is zero for 1000 and -1 for an initial negative reading.",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Which width determines this mask shift?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The full register containing the exact delta."
+          },
+          {
+            "id": "b",
+            "text": "Only the stored reading width."
+          },
+          {
+            "id": "c",
+            "text": "The number of emitted bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The difference is already wider than a stored word."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Use the top bit of the 64-bit working value to select zero or all ones."
+        }
+      ],
+      "editTarget": "e_sign",
+      "code": "    dsra $t3, $t1, 63\n"
+    },
+    {
+      "id": "s11",
+      "title": "Complete the unsigned signed-value mapping",
+      "kind": "author",
+      "prose": "XOR the doubled delta with its sign mask. The mapped value is now nonnegative in this domain and uses at most 33 bits. Leave the original current reading `t0` available for later commitment.",
+      "expectedObservation": "The first mapped value is 2000; input -1 maps to one.",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What does odd mapped parity indicate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A continuation byte."
+          },
+          {
+            "id": "b",
+            "text": "A negative delta."
+          },
+          {
+            "id": "c",
+            "text": "An incomplete source word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Check the small mapping table before examining bytes."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The negative branch maps magnitude m to 2m-1."
+        }
+      ],
+      "editTarget": "e_map",
+      "code": "    xor $t2, $t2, $t3\n"
+    },
+    {
+      "id": "s12",
+      "title": "Count groups without destroying the mapped value",
+      "kind": "author",
+      "prose": "Copy `t2` into `t3` and start the candidate byte count `t4` at one. The length loop consumes only this copy. Keeping the count at one initially ensures mapped zero still reserves its required terminating byte.",
+      "expectedObservation": "The default copy is 2000 and its initial candidate length is one.",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why not initialize length to zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every encoding includes at least one byte, including zero."
+          },
+          {
+            "id": "b",
+            "text": "The first byte is a file header."
+          },
+          {
+            "id": "c",
+            "text": "All values have two payload groups."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Zero is encoded by 00, not an empty sequence."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Use a non-destructive copy for length calculation and retain `t2` for emission."
+        }
+      ],
+      "editTarget": "e_length_setup",
+      "code": "    move $t3, $t2\n    li $t4, 1\n"
+    },
+    {
+      "id": "s13",
+      "title": "Remove one group from the length-counting copy",
+      "kind": "author",
+      "prose": "At `enc_length`, shift `t3` logically by seven. Each pass discards the lowest group from the copy, leaving the remaining higher payload groups. This is a width calculation; no output has been written.",
+      "expectedObservation": "The first length pass changes the default copy from 2000 to 15.",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which value must remain intact for byte emission?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The committed source index."
+          },
+          {
+            "id": "b",
+            "text": "The copied `t3` after every pass."
+          },
+          {
+            "id": "c",
+            "text": "The original mapped value `t2`."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Length preflight and emission use the same value at different times."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Consume the copy while preserving the emission operand."
+        }
+      ],
+      "editTarget": "e_length_shift",
+      "code": "    dsrl $t3, $t3, 7\n"
+    },
+    {
+      "id": "s14",
+      "title": "Stop length counting when no higher group remains",
+      "kind": "author",
+      "prose": "If the shifted copy is zero, branch to `enc_check_capacity`. Otherwise another byte is required. This gate is also what makes a mapped zero finish with candidate length one.",
+      "expectedObservation": "The zero-value recipe reaches capacity preflight with a one-byte candidate.",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does a zero shifted copy mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No further payload group is needed."
+          },
+          {
+            "id": "b",
+            "text": "The input sequence is empty."
+          },
+          {
+            "id": "c",
+            "text": "The destination has no capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "This test concerns the candidate value, not the number of readings."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Leave the count unchanged when the last useful group has been removed."
+        }
+      ],
+      "editTarget": "e_length_end",
+      "code": "    beq $t3, $zero, enc_check_capacity\n    nop\n"
+    },
+    {
+      "id": "s15",
+      "title": "Count every remaining group before reserving output",
+      "kind": "author",
+      "prose": "Increment `t4` when the shifted copy remains nonzero and repeat `enc_length`. The complete loop reaches capacity preflight with the exact encoded length. No source or destination access is needed for this count.",
+      "expectedObservation": "The default first candidate has two bytes; an initial minimum reading has five.",
+      "quiz": {
+        "id": "q15",
+        "prompt": "How many bytes are required for mapped zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "One."
+          },
+          {
+            "id": "c",
+            "text": "Five."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Count significant base-128 groups, retaining the initial group."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The loop stops after the copy becomes zero."
+        }
+      ],
+      "editTarget": "e_length_next",
+      "code": "    addiu $t4, $t4, 1\n    beq $zero, $zero, enc_length\n    nop\n"
+    },
+    {
+      "id": "s16",
+      "title": "Compute the remaining byte capacity",
+      "kind": "author",
+      "prose": "At `enc_check_capacity`, subtract committed bytes `s6` from capacity `s3`. Both quantities are byte counts. Keep the candidate length separate until the comparison.",
+      "expectedObservation": "The default first candidate sees 160 remaining bytes.",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which subtraction gives remaining capacity?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Input count minus committed readings."
+          },
+          {
+            "id": "b",
+            "text": "Encoded length minus capacity."
+          },
+          {
+            "id": "c",
+            "text": "Capacity minus committed output bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Use quantities with the same unit."
+        },
+        {
+          "id": "s16-h2",
+          "text": "`s3` and `s6` both describe destination bytes."
+        }
+      ],
+      "editTarget": "e_remaining",
+      "code": "    dsubu $t5, $s3, $s6\n"
+    },
+    {
+      "id": "s17",
+      "title": "Reject a candidate that cannot fit completely",
+      "kind": "author",
+      "prose": "Compare remaining bytes with `t4` and branch to `enc_full` only when the remainder is smaller. Equality permits the complete candidate. This test precedes all candidate stores, so a rejected value cannot leave a partial prefix in output.",
+      "expectedObservation": "Capacity one cannot hold the first two-byte value; capacity two permits it.",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Should equality between remaining capacity and length succeed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; the complete candidate fits."
+          },
+          {
+            "id": "b",
+            "text": "No; a separator byte is also required."
+          },
+          {
+            "id": "c",
+            "text": "Only for negative deltas."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "There is no separator after a value."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Use a strict remaining-less-than-length test."
+        }
+      ],
+      "editTarget": "e_fit",
+      "code": "    sltu $t5, $t5, $t4\n    bne $t5, $zero, enc_full\n    nop\n"
+    },
+    {
+      "id": "s18",
+      "title": "Place the emission walker after committed output",
+      "kind": "author",
+      "prose": "Add committed bytes `s6` to the full destination base in `s2` and retain the result in `t5`. Do not advance the public byte count merely by reserving space in registers.",
+      "expectedObservation": "The first emission walker addresses the destination start.",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Does forming this address commit output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; address arithmetic writes a byte."
+          },
+          {
+            "id": "b",
+            "text": "No; commitment follows complete emission."
+          },
+          {
+            "id": "c",
+            "text": "Only if capacity is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "An address and a memory write are different operations."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Keep the public byte count unchanged until the candidate has been stored."
+        }
+      ],
+      "editTarget": "e_output_address",
+      "code": "    daddu $t5, $s2, $s6\n"
+    },
+    {
+      "id": "s19",
+      "title": "Extract the next seven payload bits",
+      "kind": "author",
+      "prose": "At `enc_byte`, mask `t2` with 127 into `t6`. This isolates one base-128 digit. The high continuation bit will be added only when a higher group remains.",
+      "expectedObservation": "The first default payload is decimal 80, hexadecimal 50.",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What does mask 127 remove?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The complete lower payload."
+          },
+          {
+            "id": "b",
+            "text": "The source sign extension only."
+          },
+          {
+            "id": "c",
+            "text": "All bits above the lowest seven."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Seven low bits form values zero through 127."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Keep the payload free of its framing bit until the remaining-value test."
+        }
+      ],
+      "editTarget": "e_payload",
+      "code": "    andi $t6, $t2, 127\n"
+    },
+    {
+      "id": "s20",
+      "title": "Retain only the higher groups for the next test",
+      "kind": "author",
+      "prose": "Shift `t2` logically right by seven. A zero result means the extracted payload belongs to the last byte. A nonzero result means another payload group follows.",
+      "expectedObservation": "After extracting the first payload, the default remaining value is 15.",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Which shift preserves the unsigned group interpretation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A logical doubleword right shift."
+          },
+          {
+            "id": "b",
+            "text": "An arithmetic word right shift."
+          },
+          {
+            "id": "c",
+            "text": "A rotation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The mapped value is an unsigned magnitude in a full register."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Discard the low group and fill high bits with zeros."
+        }
+      ],
+      "editTarget": "e_emission_shift",
+      "code": "    dsrl $t2, $t2, 7\n"
+    },
+    {
+      "id": "s21",
+      "title": "Choose the terminal-byte path",
+      "kind": "author",
+      "prose": "Branch to `enc_last_byte` when the remaining value is zero. That path stores the unflagged payload. Otherwise continue toward a flagged continuation byte.",
+      "expectedObservation": "Mapped zero takes the terminal path with payload zero.",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which byte has a clear high bit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every byte of a negative delta."
+          },
+          {
+            "id": "b",
+            "text": "The terminating byte of this value."
+          },
+          {
+            "id": "c",
+            "text": "Only the first byte of a stream."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "The flag describes the remaining payload groups."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Test the shifted remainder, not the original signed delta."
+        }
+      ],
+      "editTarget": "e_terminal",
+      "code": "    beq $t2, $zero, enc_last_byte\n    nop\n"
+    },
+    {
+      "id": "s22",
+      "title": "Mark a byte that has another group after it",
+      "kind": "author",
+      "prose": "Set the high bit in `t6` with `ori` 128. The payload bits remain unchanged. The terminal path bypasses this edit so it retains a clear high bit.",
+      "expectedObservation": "The first default payload 50 becomes the byte d0.",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What does setting bit seven change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The framing flag while preserving payload."
+          },
+          {
+            "id": "b",
+            "text": "The sign of the reconstructed reading."
+          },
+          {
+            "id": "c",
+            "text": "The count of source words already committed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Keep the seven payload bits intact."
+        },
+        {
+          "id": "s22-h2",
+          "text": "OR the continuation bit into a nonterminal payload."
+        }
+      ],
+      "editTarget": "e_flag",
+      "code": "    ori $t6, $t6, 128\n"
+    },
+    {
+      "id": "s23",
+      "title": "Write one nonterminal candidate byte",
+      "kind": "author",
+      "prose": "Store `t6` through `t5` with `sb`. This partial construction now has a visible candidate prefix, but its committed counters have not advanced. It is not yet a complete codec implementation. Later edits finish the candidate and publish the counts.",
+      "expectedObservation": "Only byte d0 has been written for the first candidate; returned counts are still zero in this unfinished stage.",
+      "quiz": {
+        "id": "q23",
+        "prompt": "May this incomplete stage be used as a final encoder?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; one byte proves a value is complete."
+          },
+          {
+            "id": "b",
+            "text": "Only if the input is positive."
+          },
+          {
+            "id": "c",
+            "text": "No; the complete candidate and its commitment are still missing."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Inspect the documented provisional bytes separately from public counters."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Final item-atomic behavior is checked only once the emission and commitment loop is complete."
+        }
+      ],
+      "editTarget": "e_store_more",
+      "code": "    sb $t6, 0($t5)\n"
+    },
+    {
+      "id": "s24",
+      "title": "Advance the private byte walker and continue emission",
+      "kind": "author",
+      "prose": "Increment `t5` by one and return to `enc_byte`. The next pass extracts the next-lowest group from the remaining mapped value. With all continuation work installed, the default candidate reaches its terminal-byte path after writing d0.",
+      "expectedObservation": "The pending prefix is d0 and the walker addresses destination byte one.",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which counter advances in this edit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The private emission address only."
+          },
+          {
+            "id": "b",
+            "text": "The committed reading count."
+          },
+          {
+            "id": "c",
+            "text": "Both public result counts."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "A candidate can have several bytes before its public commit."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Advance `t5` while leaving `s5` and `s6` for the commitment edits."
+        }
+      ],
+      "editTarget": "e_next_byte",
+      "code": "    daddiu $t5, $t5, 1\n    beq $zero, $zero, enc_byte\n    nop\n"
+    },
+    {
+      "id": "s25",
+      "title": "Complete the candidate with its terminal byte",
+      "kind": "author",
+      "prose": "At `enc_last_byte`, store the clear-high-bit payload. The candidate now has every required byte. Keep the original reading `t0` available to update the predecessor in the following edit.",
+      "expectedObservation": "The first candidate bytes are d0 0f, while provisional committed counts are still zero.",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why is the high bit clear here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The value is nonnegative."
+          },
+          {
+            "id": "b",
+            "text": "No higher payload group remains."
+          },
+          {
+            "id": "c",
+            "text": "The destination address is aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The terminal branch bypassed the flag-setting instruction."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Store the final payload without adding a continuation bit."
+        }
+      ],
+      "editTarget": "e_store_last",
+      "code": "    sb $t6, 0($t5)\n"
+    },
+    {
+      "id": "s26",
+      "title": "Publish the new predecessor and consumed reading",
+      "kind": "author",
+      "prose": "Copy the original current reading into `s4` and increment committed readings `s5`. The next edit still needs to publish the complete byte length. Treat this temporary mismatch between the two returned counters as construction state, not a usable final result.",
+      "expectedObservation": "The provisional consumed-reading count becomes one; the byte count has not yet advanced.",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which value becomes the predecessor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The mapped unsigned integer."
+          },
+          {
+            "id": "b",
+            "text": "The last emitted byte."
+          },
+          {
+            "id": "c",
+            "text": "The original current reading."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "The next subtraction operates on readings, not encodings."
+        },
+        {
+          "id": "s26-h2",
+          "text": "`t0` retained the original signed current value throughout preflight and emission."
+        }
+      ],
+      "editTarget": "e_commit_reading",
+      "code": "    move $s4, $t0\n    addiu $s5, $s5, 1\n"
+    },
+    {
+      "id": "s27",
+      "title": "Publish the byte count and repeat the complete encoder",
+      "kind": "author",
+      "prose": "Add the candidate length `t4` into committed bytes `s6` and return to `enc_next`. The whole encoder now processes each value atomically: preflight, complete byte emission, both counts, then the next candidate. Validate the completed entry with all capacity boundaries before starting the decoder.",
+      "expectedObservation": "Default input returns five readings and eight bytes with status zero. Capacity seven returns four readings and five bytes with status one.",
+      "quiz": {
+        "id": "q27",
+        "prompt": "When are both result counters ready to describe a completed candidate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After all bytes and both commitment edits."
+          },
+          {
+            "id": "b",
+            "text": "After only the first continuation byte."
+          },
+          {
+            "id": "c",
+            "text": "Before length preflight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Use the candidate length computed before any store."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Advance `s6` only after the terminal byte and consumed-reading update."
+        }
+      ],
+      "editTarget": "e_next_value",
+      "code": "    addu $s6, $s6, $t4\n    beq $zero, $zero, enc_next\n    nop\n"
+    },
+    {
+      "id": "s28",
+      "title": "Inspect unused capacity after an atomic stop",
+      "kind": "observe",
+      "prose": "Use the completed encoder with byte capacity seven. Its first four values occupy five bytes, and the final three-byte value cannot fit the two remaining positions. Those two positions must retain the sentinel. A capacity bound authorizes potential output, not partial publication of a rejected candidate.",
+      "expectedObservation": "The result is `v0`=4,`v1`=5,`a3`=1, with bytes five and six unchanged.",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why are the two remaining positions not written?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They are outside mapped memory."
+          },
+          {
+            "id": "b",
+            "text": "The next complete value needs three bytes."
+          },
+          {
+            "id": "c",
+            "text": "Every stream must end on a word boundary."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Count the complete final value before considering stores."
+        },
+        {
+          "id": "s28-h2",
+          "text": "The destination may have unused capacity when no complete next value fits."
+        }
+      ]
+    },
+    {
+      "id": "s29",
+      "title": "Prepare byte input before selecting the decoder",
+      "kind": "observe",
+      "prose": "Keep the cumulative source at its default encoder selector. A decoder observation recipe writes the exact byte input and selects method one in a separate source file. Its word destination starts with sentinel values, so a stored reading is visible. Both directions still use the same source/destination argument layout and preserved-state rules.",
+      "expectedObservation": "The decoder default recipe supplies eight bytes and capacity for thirty-two readings.",
+      "quiz": {
+        "id": "q29",
+        "prompt": "What changes when a recipe selects decoding?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The units of input length and output capacity."
+          },
+          {
+            "id": "b",
+            "text": "The width of a stored reading."
+          },
+          {
+            "id": "c",
+            "text": "The canonicality policy."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "The pointers still describe source and destination."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Decoding consumes bytes and reserves complete output words."
+        }
+      ]
+    },
+    {
+      "id": "s30",
+      "title": "Finish the decoder at the committed byte extent",
+      "kind": "author",
+      "prose": "At `dec_next`, compare committed input bytes `s5` with the supplied byte length. Return successfully at equality. Test this before checking output capacity so an empty or exactly completed input succeeds even when no further output slot remains.",
+      "expectedObservation": "Empty byte input returns zero counts and status zero at zero capacity.",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which condition makes decoding complete?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output allocation is mapped."
+          },
+          {
+            "id": "b",
+            "text": "A fifth byte was encountered."
+          },
+          {
+            "id": "c",
+            "text": "Every supplied input byte belongs to committed complete values."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Compare positions in the source byte stream."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Check source completion before reserving a next output reading."
+        }
+      ],
+      "editTarget": "d_end",
+      "code": "    beq $s5, $s1, dec_return\n    nop\n"
+    },
+    {
+      "id": "s31",
+      "title": "Reserve an output slot before inspecting a candidate",
+      "kind": "author",
+      "prose": "Compare output-reading count `s6` with capacity `s3`. Use `dec_full` when they are equal. This gives capacity priority over malformed data that belongs to the next unstarted candidate. A nonempty zero-capacity input must remain unread.",
+      "expectedObservation": "Malformed input 80 00 at zero capacity returns status one, not malformed status two.",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Which event has priority when no output slot exists?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Parsing a possible fifth byte."
+          },
+          {
+            "id": "b",
+            "text": "The capacity stop before candidate parsing."
+          },
+          {
+            "id": "c",
+            "text": "The reading-range check."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "The function cannot commit a next reading without a slot."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Do not inspect a new candidate after the committed output count reaches capacity."
+        }
+      ],
+      "editTarget": "d_capacity",
+      "code": "    beq $s6, $s3, dec_full\n    nop\n"
+    },
+    {
+      "id": "s32",
+      "title": "Separate private scanning from committed input",
+      "kind": "author",
+      "prose": "Copy `s5` into `t0` for the candidate scan position. Later byte loads advance `t0`, while `s5` remains at the last complete value boundary. This distinction lets malformed or out-of-range candidates return without consuming any of their input bytes.",
+      "expectedObservation": "The first candidate scan begins at byte zero with no committed input.",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Which index may advance before validation finishes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The private scan position `t0`."
+          },
+          {
+            "id": "b",
+            "text": "The public committed position `s5`."
+          },
+          {
+            "id": "c",
+            "text": "The output-reading count `s6`."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "A candidate can be read without being accepted."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Start a separate scan index from the committed boundary."
+        }
+      ],
+      "editTarget": "d_scan",
+      "code": "    move $t0, $s5\n"
+    },
+    {
+      "id": "s33",
+      "title": "Clear the candidate unsigned accumulator",
+      "kind": "author",
+      "prose": "Set `t1` to zero at the beginning of each candidate. Its later payload digits belong only to that value. A previous candidate unsigned magnitude must not become part of the next one.",
+      "expectedObservation": "The initial unsigned accumulator is zero.",
+      "quiz": {
+        "id": "q33",
+        "prompt": "What is the lifetime of `t1` here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire simulator session."
+          },
+          {
+            "id": "b",
+            "text": "The preceding output reading."
+          },
+          {
+            "id": "c",
+            "text": "One candidate variable-length integer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "A new value starts a new sum of weighted digits."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Reset the unsigned accumulator at each candidate start."
+        }
+      ],
+      "editTarget": "d_unsigned",
+      "code": "    move $t1, $zero\n"
+    },
+    {
+      "id": "s34",
+      "title": "Reset payload shift and candidate byte count",
+      "kind": "author",
+      "prose": "Clear `t2` for the payload bit position and `t3` for bytes scanned in this candidate. The first payload contributes at shift zero; later groups move seven bits upward. The byte count supports separate fifth-byte and minimal-length checks.",
+      "expectedObservation": "Both the initial payload shift and candidate byte count are zero.",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Which shift belongs to the first payload?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Seven."
+          },
+          {
+            "id": "b",
+            "text": "Zero."
+          },
+          {
+            "id": "c",
+            "text": "Thirty-one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "The least significant group arrives first."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Keep the bit-position counter separate from the number of bytes scanned."
+        }
+      ],
+      "editTarget": "d_indices",
+      "code": "    move $t2, $zero\n    move $t3, $zero\n"
+    },
+    {
+      "id": "s35",
+      "title": "Bound each byte read by the supplied extent",
+      "kind": "author",
+      "prose": "At `dec_byte`, compare the private scan position with input length. If no byte remains for a candidate that has not terminated, use `dec_bad`. Do not read mapped padding to search for a convenient terminator.",
+      "expectedObservation": "An exhausted unterminated candidate reports malformed status without a read past its extent.",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What proves that the next load is allowed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The scan position is below the supplied byte length."
+          },
+          {
+            "id": "b",
+            "text": "The source arena has unused mapped bytes."
+          },
+          {
+            "id": "c",
+            "text": "The output is word aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "A continuation bit can require a byte that the caller did not supply."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Check the logical extent before computing and loading the next byte."
+        }
+      ],
+      "editTarget": "d_read_bound",
+      "code": "    beq $t0, $s1, dec_bad\n    nop\n"
+    },
+    {
+      "id": "s36",
+      "title": "Load one byte at the full scan address",
+      "kind": "author",
+      "prose": "Add the private byte index to the full source base and load through that address with `lbu` into `t4`. Unlike word readings, these bytes may start at any alignment. Keep the raw byte until both payload and continuation have been interpreted.",
+      "expectedObservation": "The default first raw byte is decimal 208, hexadecimal d0.",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Why use a byte operation here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each input reading is one byte."
+          },
+          {
+            "id": "b",
+            "text": "It automatically validates canonical length."
+          },
+          {
+            "id": "c",
+            "text": "The encoded stream has arbitrary byte boundaries and alignment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "The representation stores groups as octets."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Add a byte index directly to the full base without multiplying by four."
+        }
+      ],
+      "editTarget": "d_load",
+      "code": "    daddu $t4, $s0, $t0\n    lbu $t4, 0($t4)\n"
+    },
+    {
+      "id": "s37",
+      "title": "Remove the framing bit from the payload",
+      "kind": "author",
+      "prose": "Mask the raw byte with 127 into `t5`. The raw `t4` still retains bit seven for the continuation test. Combining an unmasked byte into the unsigned value would treat its framing flag as numerical payload.",
+      "expectedObservation": "The payload of d0 is decimal 80, hexadecimal 50.",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Which state must still retain the high bit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The raw byte `t4`."
+          },
+          {
+            "id": "b",
+            "text": "The payload accumulator after masking."
+          },
+          {
+            "id": "c",
+            "text": "The committed output count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Payload and framing are interpreted separately."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Keep the raw byte while deriving its seven-bit digit."
+        }
+      ],
+      "editTarget": "d_payload",
+      "code": "    andi $t5, $t4, 127\n"
+    },
+    {
+      "id": "s38",
+      "title": "Advance private candidate counters after the load",
+      "kind": "author",
+      "prose": "Increment the private scan position and candidate byte count. Committed input `s5` still does not change. The supplied initial width gate then skips to payload accumulation while that mechanism is being built; fifth-byte validation is installed after the byte loop works on known-valid recipes.",
+      "expectedObservation": "After the first default byte, `t0`=1 and `t3`=1, while returned committed counts remain zero.",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Has the candidate become committed after this increment?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every loaded byte is committed."
+          },
+          {
+            "id": "b",
+            "text": "No; only its private scanning state advanced."
+          },
+          {
+            "id": "c",
+            "text": "Only when bit seven is set."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Keep `s5` separate from `t0`."
+        },
+        {
+          "id": "s38-h2",
+          "text": "A complete validated value is needed before publishing consumed bytes."
+        }
+      ],
+      "editTarget": "d_advance_scan",
+      "code": "    addiu $t0, $t0, 1\n    addiu $t3, $t3, 1\n"
+    },
+    {
+      "id": "s39",
+      "title": "Shift a payload to its group position",
+      "kind": "author",
+      "prose": "At `dec_accumulate`, use `dsllv` to shift `t5` by the private bit position `t2`. The first payload uses shift zero. A later fifth payload may contribute bits above the word boundary, so keep this operation in a doubleword.",
+      "expectedObservation": "The first shifted payload is `t6`=80.",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Why keep a full-width shifted payload?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All inputs are eight-byte memory objects."
+          },
+          {
+            "id": "b",
+            "text": "The continuation bit must remain set."
+          },
+          {
+            "id": "c",
+            "text": "A fifth group can contribute above bit thirty-one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Four groups already account for twenty-eight payload bits."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Use the full register when placing the remaining high bits."
+        }
+      ],
+      "editTarget": "d_shift_payload",
+      "code": "    dsllv $t6, $t5, $t2\n"
+    },
+    {
+      "id": "s40",
+      "title": "Combine this digit with earlier payload groups",
+      "kind": "author",
+      "prose": "OR the shifted payload into `t1`. The seven-bit groups occupy disjoint bit positions. The raw continuation flag is still excluded. This edit extends only private unsigned state, not the committed byte count.",
+      "expectedObservation": "After the first default group, `t1`=80.",
+      "quiz": {
+        "id": "q40",
+        "prompt": "What is being combined here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Unflagged payload groups at distinct bit positions."
+          },
+          {
+            "id": "b",
+            "text": "The current reading and predecessor."
+          },
+          {
+            "id": "c",
+            "text": "The stream address and byte capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "The framing flag was removed before shifting."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Retain every earlier payload group while adding the new bits."
+        }
+      ],
+      "editTarget": "d_accumulate",
+      "code": "    or $t1, $t1, $t6\n"
+    },
+    {
+      "id": "s41",
+      "title": "Recognize a terminating raw byte",
+      "kind": "author",
+      "prose": "Mask bit seven of `t4` into `t6`. If it is clear, branch to `dec_terminal`. Otherwise another group is required. This condition does not inspect the reconstructed reading sign; framing belongs to the raw byte.",
+      "expectedObservation": "The first default byte has continuation set; the second will terminate.",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Which bit decides whether another group follows?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The accumulator low bit."
+          },
+          {
+            "id": "b",
+            "text": "Bit seven of the raw byte."
+          },
+          {
+            "id": "c",
+            "text": "The most significant reading bit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Parity is for inverse signed mapping later."
+        },
+        {
+          "id": "s41-h2",
+          "text": "Use the raw byte continuation flag to select the parser path."
+        }
+      ],
+      "editTarget": "d_continuation",
+      "code": "    andi $t6, $t4, 128\n    beq $t6, $zero, dec_terminal\n    nop\n"
+    },
+    {
+      "id": "s42",
+      "title": "Collect the complete candidate payload",
+      "kind": "author",
+      "prose": "Advance the payload shift by seven and repeat `dec_byte` when continuation is set. The first complete default candidate now collects two groups and reaches its terminal checks with unsigned value 2000. Only known-valid recipes are used until the width gate is installed next.",
+      "expectedObservation": "The first candidate ends at scan position two, length two, unsigned accumulator 2000 and shift seven.",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Which index still remains at the preceding committed boundary?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The private scan position `t0`."
+          },
+          {
+            "id": "b",
+            "text": "The candidate length `t3`."
+          },
+          {
+            "id": "c",
+            "text": "The committed input position `s5`."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "The parser has collected bytes but has not accepted a reading."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Keep `s5` unchanged until the output store and commitment edits."
+        }
+      ],
+      "editTarget": "d_next_byte",
+      "code": "    addiu $t2, $t2, 7\n    beq $zero, $zero, dec_byte\n    nop\n"
+    },
+    {
+      "id": "s43",
+      "title": "Route the fifth byte through its bounded-width checks",
+      "kind": "author",
+      "prose": "Replace the initial bypass branch with a comparison of candidate length and five. Earlier bytes proceed directly to `dec_accumulate`; the fifth must pass continuation and payload-width checks first. The byte loop is now available to reach this gate naturally on five-byte recipes.",
+      "expectedObservation": "A five-byte minimum-reading recipe reaches the new gate after scanning its fifth byte.",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Why validate the fifth byte before accumulation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its unused payload bits and continuation can make the wire invalid."
+          },
+          {
+            "id": "b",
+            "text": "All fifth bytes are invalid."
+          },
+          {
+            "id": "c",
+            "text": "The output word must already be stored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Thirty-three bits leave only five useful bits in the last possible payload."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Keep malformed wire classification ahead of numeric reconstruction."
+        }
+      ],
+      "editTarget": "d_fifth_gate",
+      "code": "    li $t6, 5\n    bne $t3, $t6, dec_accumulate\n    nop\n"
+    },
+    {
+      "id": "s44",
+      "title": "Reject continuation on the fifth byte",
+      "kind": "author",
+      "prose": "Test bit seven at the fifth-byte path and use `dec_bad` if it is set. A sixth byte cannot repair this width violation. The rejected candidate does not advance committed input or output, even though its private scan reached byte five.",
+      "expectedObservation": "A five-byte continued prefix returns malformed status two with zero committed counts.",
+      "quiz": {
+        "id": "q44",
+        "prompt": "Must the parser read a sixth byte to reject this case?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it might contain a terminator."
+          },
+          {
+            "id": "b",
+            "text": "No; continuation in byte five is already invalid."
+          },
+          {
+            "id": "c",
+            "text": "Only when output capacity is nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "The maximum encoded value width is already specified."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Reject the fifth continuation flag before attempting another load."
+        }
+      ],
+      "editTarget": "d_fifth_continuation",
+      "code": "    andi $t6, $t4, 128\n    bne $t6, $zero, dec_bad\n    nop\n"
+    },
+    {
+      "id": "s45",
+      "title": "Reject payload bits outside the 33-bit wire width",
+      "kind": "author",
+      "prose": "Require the fifth payload to be below 32. A terminal fifth byte can still be malformed if one of its two unused payload bits is set. A payload of 31 is permitted by wire width and will undergo reconstruction/range checks later.",
+      "expectedObservation": "Fifth payload 32 returns malformed status two; the minimum-reading encoding with fifth payload 15 passes this gate.",
+      "quiz": {
+        "id": "q45",
+        "prompt": "How many payload bits remain after four complete groups?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four."
+          },
+          {
+            "id": "b",
+            "text": "Seven."
+          },
+          {
+            "id": "c",
+            "text": "Five."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Four groups contribute twenty-eight bits."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Thirty-three minus twenty-eight leaves five final payload bits."
+        }
+      ],
+      "editTarget": "d_fifth_payload",
+      "code": "    sltiu $t6, $t5, 32\n    beq $t6, $zero, dec_bad\n    nop\n"
+    },
+    {
+      "id": "s46",
+      "title": "Allow a single-byte value without a minimality test",
+      "kind": "author",
+      "prose": "At `dec_terminal`, compare candidate length with one. A one-byte zero payload is valid and can proceed directly to inverse mapping. Longer candidates must prove their terminal payload is nonzero.",
+      "expectedObservation": "Byte 00 represents one complete zero value; the default two-byte candidate proceeds toward the minimality check.",
+      "quiz": {
+        "id": "q46",
+        "prompt": "Why is a zero terminal payload allowed for a single byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero itself needs a one-byte representation."
+          },
+          {
+            "id": "b",
+            "text": "Every byte with bit seven clear is canonical."
+          },
+          {
+            "id": "c",
+            "text": "The input extent supplies a separator."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "An empty sequence represents no values, not the value zero."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Reserve the nonzero-last-payload rule for lengths greater than one."
+        }
+      ],
+      "editTarget": "d_single",
+      "code": "    li $t6, 1\n    beq $t3, $t6, dec_unmap\n    nop\n"
+    },
+    {
+      "id": "s47",
+      "title": "Reject a redundant terminal zero group",
+      "kind": "author",
+      "prose": "For a multibyte candidate, branch to `dec_bad` when the terminal payload `t5` is zero. Earlier zero payloads are allowed because they can hold low positions below a later nonzero group. This check establishes the shortest representation before inverse mapping.",
+      "expectedObservation": "Input 80 00 returns malformed status two with no committed value or output store.",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Which zero payload is forbidden by minimality?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Any zero in any group."
+          },
+          {
+            "id": "b",
+            "text": "A terminal zero in a multibyte value."
+          },
+          {
+            "id": "c",
+            "text": "Only a zero first group."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Consider the highest significant base-128 digit."
+        },
+        {
+          "id": "s47-h2",
+          "text": "A zero final digit can be removed without changing a multibyte value."
+        }
+      ],
+      "editTarget": "d_minimal",
+      "code": "    beq $t5, $zero, dec_bad\n    nop\n"
+    },
+    {
+      "id": "s48",
+      "title": "Turn mapped parity into an inverse sign mask",
+      "kind": "author",
+      "prose": "At `dec_unmap`, isolate the unsigned accumulator low bit and negate it in a doubleword. The result is zero for even mapped values and all ones for odd values. Keep the full unsigned accumulator `t1` available for the magnitude shift.",
+      "expectedObservation": "The default even mapped value produces inverse mask zero; mapped one produces -1.",
+      "quiz": {
+        "id": "q48",
+        "prompt": "What does mapped parity represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of payload bytes."
+          },
+          {
+            "id": "b",
+            "text": "Whether a source byte was aligned."
+          },
+          {
+            "id": "c",
+            "text": "The sign choice of the original delta."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "The signed mapping alternates even and odd results."
+        },
+        {
+          "id": "s48-h2",
+          "text": "Negating a bit yields exactly zero or a full one-bit mask."
+        }
+      ],
+      "editTarget": "d_inverse_mask",
+      "code": "    andi $t5, $t1, 1\n    dsubu $t5, $zero, $t5\n"
+    },
+    {
+      "id": "s49",
+      "title": "Recover the exact signed delta",
+      "kind": "author",
+      "prose": "Shift `t1` logically right by one and XOR with the inverse mask. This implements both parity branches without narrowing the candidate. A five-byte mapped value may need bits above a word before this transformation is complete.",
+      "expectedObservation": "The default candidate gives delta 1000; mapped one gives -1.",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Should the unsigned magnitude be narrowed before this shift?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; its fifth-byte bits are still relevant."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the final reading is a word."
+          },
+          {
+            "id": "c",
+            "text": "Only if the mapped value is odd."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Validate the full candidate before storing any word-sized result."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Keep `t1` in a doubleword through the magnitude shift and inverse mapping."
+        }
+      ],
+      "editTarget": "d_inverse",
+      "code": "    dsrl $t6, $t1, 1\n    xor $t6, $t6, $t5\n"
+    },
+    {
+      "id": "s50",
+      "title": "Reconstruct a candidate reading in full width",
+      "kind": "author",
+      "prose": "Add the committed predecessor `s4` to the exact signed delta `t6`. A canonical wire integer may still reconstruct a value outside signed-word range. Keep the exact sum for both endpoint checks before attempting an output store.",
+      "expectedObservation": "At the first candidate the predecessor is zero, so the default reading is 1000.",
+      "quiz": {
+        "id": "q50",
+        "prompt": "Does canonical wire validity prove the reading fits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; five bytes always fit a word."
+          },
+          {
+            "id": "b",
+            "text": "No; reconstruction has its own signed range."
+          },
+          {
+            "id": "c",
+            "text": "Only when the byte count is even."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "Wire width and reading width are different contracts."
+        },
+        {
+          "id": "s50-h2",
+          "text": "Check the full predecessor-plus-delta result against both signed-word endpoints."
+        }
+      ],
+      "editTarget": "d_reconstruct",
+      "code": "    daddu $t6, $s4, $t6\n"
+    },
+    {
+      "id": "s51",
+      "title": "Reject a reconstructed value below the signed minimum",
+      "kind": "author",
+      "prose": "Load the full signed minimum into `t7` and compare `t6` with it. Use `dec_range` when the candidate is smaller. The canonical 33-bit mapped maximum decodes to a delta too negative for any allowed predecessor and is a useful test of this distinction.",
+      "expectedObservation": "Canonical ff ff ff ff 1f returns range status three rather than malformed status two.",
+      "quiz": {
+        "id": "q51",
+        "prompt": "Why is that five-byte sequence not malformed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its width, continuation and minimality are valid."
+          },
+          {
+            "id": "b",
+            "text": "Every five-byte sequence is valid."
+          },
+          {
+            "id": "c",
+            "text": "The output capacity is large."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "Separate syntax of the unsigned representation from the resulting reading."
+        },
+        {
+          "id": "s51-h2",
+          "text": "The inverse delta can exceed the range that any signed-word predecessor can repair."
+        }
+      ],
+      "editTarget": "d_minimum",
+      "code": "    dli $t7, -2147483648\n    slt $t9, $t6, $t7\n    bne $t9, $zero, dec_range\n    nop\n"
+    },
+    {
+      "id": "s52",
+      "title": "Reject a reconstructed value above the signed maximum",
+      "kind": "author",
+      "prose": "Load the signed maximum into `t8` and test whether it is below the exact candidate `t6`. Equality is representable and must succeed. Keeping this addition full-width prevents an excessive positive value from wrapping into a plausible negative reading.",
+      "expectedObservation": "An initial mapped value 4294967296 reconstructs 2147483648 and returns range status three.",
+      "quiz": {
+        "id": "q52",
+        "prompt": "Should a candidate equal to 2147483647 be rejected?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it has a high sign bit in another width."
+          },
+          {
+            "id": "b",
+            "text": "Only when it uses five bytes."
+          },
+          {
+            "id": "c",
+            "text": "No; the upper endpoint is included."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s52-h1",
+          "text": "Use strict comparisons at both endpoints."
+        },
+        {
+          "id": "s52-h2",
+          "text": "Check the exact sum before narrowing it through a word store."
+        }
+      ],
+      "editTarget": "d_maximum",
+      "code": "    li $t8, 2147483647\n    slt $t9, $t8, $t6\n    bne $t9, $zero, dec_range\n    nop\n"
+    },
+    {
+      "id": "s53",
+      "title": "Address the next complete output word",
+      "kind": "author",
+      "prose": "Scale the committed output-reading count `s6` by four and add the full destination base. This walker belongs to a word destination, even though the decoder scan position is a byte index.",
+      "expectedObservation": "The first output address is the supplied word destination start.",
+      "quiz": {
+        "id": "q53",
+        "prompt": "Which count is scaled by four here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Committed output readings."
+          },
+          {
+            "id": "b",
+            "text": "Consumed input bytes."
+          },
+          {
+            "id": "c",
+            "text": "The variable-length group count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s53-h1",
+          "text": "Keep source and destination units distinct."
+        },
+        {
+          "id": "s53-h2",
+          "text": "`s6` counts decoder output words; `t0` scans input bytes."
+        }
+      ],
+      "editTarget": "d_output_address",
+      "code": "    dsll $t7, $s6, 2\n    daddu $t7, $s2, $t7\n"
+    },
+    {
+      "id": "s54",
+      "title": "Store the proven signed-word reading",
+      "kind": "author",
+      "prose": "Store `t6` through the prepared word address. Both range checks have succeeded, so its low word now represents the exact legal reading. In this unfinished construction the stored value precedes the committed counter updates; final grading waits for the remaining commitment edits.",
+      "expectedObservation": "The first output word becomes 1000 while the provisional returned counts are still zero.",
+      "quiz": {
+        "id": "q54",
+        "prompt": "What makes this narrowing store valid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every canonical varint is automatically a word."
+          },
+          {
+            "id": "b",
+            "text": "The full reconstructed value passed both signed bounds."
+          },
+          {
+            "id": "c",
+            "text": "The pointer arithmetic discarded high value bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s54-h1",
+          "text": "Representation width can shrink only after its numerical proof."
+        },
+        {
+          "id": "s54-h2",
+          "text": "Use the endpoint checks to justify storing one word."
+        }
+      ],
+      "editTarget": "d_store",
+      "code": "    sw $t6, 0($t7)\n"
+    },
+    {
+      "id": "s55",
+      "title": "Publish the predecessor and consumed-byte boundary",
+      "kind": "author",
+      "prose": "Copy the accepted reading into `s4` and the private scan position into committed input `s5`. The scan index includes all bytes of the completed candidate. The output-reading count still needs its following update.",
+      "expectedObservation": "The first default candidate publishes two consumed bytes, with one output word visible but its returned reading count not yet incremented.",
+      "quiz": {
+        "id": "q55",
+        "prompt": "Which position becomes the committed input boundary?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The candidate start."
+          },
+          {
+            "id": "b",
+            "text": "The output address."
+          },
+          {
+            "id": "c",
+            "text": "The scan position after the complete validated candidate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s55-h1",
+          "text": "A two-byte value consumes both bytes as one item."
+        },
+        {
+          "id": "s55-h2",
+          "text": "Publish `t0` only after the candidate has passed checks and been stored."
+        }
+      ],
+      "editTarget": "d_commit_input",
+      "code": "    move $s4, $t6\n    move $s5, $t0\n"
+    },
+    {
+      "id": "s56",
+      "title": "Publish the output count and repeat the complete decoder",
+      "kind": "author",
+      "prose": "Increment committed readings `s6` and return to `dec_next`. The completed decoder now preserves error/capacity priorities while committing only complete validated values. Verify the full input domain and successive-call behavior before treating its result counters as the public codec interface.",
+      "expectedObservation": "Default decoding returns eight consumed bytes, five readings and status zero. An output capacity of three returns four bytes, three readings and status one.",
+      "quiz": {
+        "id": "q56",
+        "prompt": "When is the complete decoder result valid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After all candidate stores and commitment steps are installed and checked."
+          },
+          {
+            "id": "b",
+            "text": "As soon as the first source byte loads."
+          },
+          {
+            "id": "c",
+            "text": "Before the output capacity test."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s56-h1",
+          "text": "Both public counts must describe the same complete prefix."
+        },
+        {
+          "id": "s56-h2",
+          "text": "The next loop starts only after the output-reading count advances."
+        }
+      ],
+      "editTarget": "d_next_value",
+      "code": "    addiu $s6, $s6, 1\n    beq $zero, $zero, dec_next\n    nop\n"
+    },
+    {
+      "id": "s57",
+      "title": "Pause after scanning and before committing",
+      "kind": "observe",
+      "prose": "Use the completed decoder and stop at `dec_terminal` on its first visit. The default first candidate has scan position two and unsigned value 2000, while committed input and output counts in `s5` and `s6` remain zero. No reading is stored yet. Continue to `codec_done` to compare its final public results.",
+      "expectedObservation": "The private scan has reached byte two before any input is committed or any output word is stored.",
+      "quiz": {
+        "id": "q57",
+        "prompt": "Which state proves the first candidate is still private?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The backing source has eight bytes."
+          },
+          {
+            "id": "b",
+            "text": "`s5` and `s6` remain zero before the store and commitment."
+          },
+          {
+            "id": "c",
+            "text": "The accumulator is nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s57-h1",
+          "text": "An internal breakpoint precedes the restoring exit."
+        },
+        {
+          "id": "s57-h2",
+          "text": "Inspect current working saved registers at that point; they are restored to caller values only on return."
+        }
+      ]
+    },
+    {
+      "id": "s58",
+      "title": "Compare malformed and range failures after a valid prefix",
+      "kind": "observe",
+      "prose": "Use 02 80 00 to obtain one valid reading followed by a nonminimal candidate. Use fe ff ff ff 0f 02 to obtain the signed maximum followed by a canonical increment that exceeds range. Both preserve the first output, but their error statuses and consumed-byte prefixes differ.",
+      "expectedObservation": "The malformed case returns 1 byte,1 reading,status 2. The range case returns 5 bytes,1 reading,status 3.",
+      "quiz": {
+        "id": "q58",
+        "prompt": "Why do these cases have different statuses?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One violates wire canonicality; the other violates reconstructed reading range."
+          },
+          {
+            "id": "b",
+            "text": "Their destination alignments differ."
+          },
+          {
+            "id": "c",
+            "text": "One has a larger backing allocation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s58-h1",
+          "text": "Locate the first failed validation for the second candidate."
+        },
+        {
+          "id": "s58-h2",
+          "text": "Keep wire checks ahead of the exact reconstructed-value checks."
+        }
+      ]
+    },
+    {
+      "id": "s59",
+      "title": "Compose the real functions in one session",
+      "kind": "observe",
+      "prose": "Encode a complete sequence, inspect the bytes actually produced, then pass those bytes to the decoder in the same stopped execution session. Follow with zero-capacity and empty calls, then a different sequence. Both functions reset their predecessor and preserve caller state every time. Independent model checks remain necessary because paired mistakes can cancel.",
+      "expectedObservation": "Actual encoder bytes decode to the original readings; failed and empty calls do not leak state into the next call.",
+      "quiz": {
+        "id": "q59",
+        "prompt": "Does round-trip agreement alone establish this wire format?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; any mutually consistent pair is sufficient."
+          },
+          {
+            "id": "b",
+            "text": "Only when the sequence is long."
+          },
+          {
+            "id": "c",
+            "text": "No; independent expected bytes and malformed-input behavior must also agree."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s59-h1",
+          "text": "A pair can share the same wrong signed mapping."
+        },
+        {
+          "id": "s59-h2",
+          "text": "Check each direction against the published format as well as composing them."
+        }
+      ]
+    },
+    {
+      "id": "s60",
+      "title": "Compare size and work without assuming compression",
+      "kind": "observe",
+      "prose": "Use the deterministic datasets and complete-call measurements from the foundation. Steady values become small deltas, while an isolated spike creates two large transitions. The alternative threshold encoder changes instruction counts without changing bytes. State which baseline each size comparison uses.",
+      "expectedObservation": "Steady data uses 33 bytes versus 128 fixed bytes. The spike uses 36 delta bytes versus 34 independently mapped bytes.",
+      "quiz": {
+        "id": "q60",
+        "prompt": "Which conclusion follows from those measurements?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Delta encoding always beats independent mapping."
+          },
+          {
+            "id": "b",
+            "text": "Compression benefit depends on the data and chosen baseline."
+          },
+          {
+            "id": "c",
+            "text": "Fewer bytes establishes an elapsed-time speedup."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s60-h1",
+          "text": "Keep fixed-width and independently mapped baselines separate."
+        },
+        {
+          "id": "s60-h2",
+          "text": "A smaller stream and lower simulated instruction count are distinct observations."
+        }
+      ]
+    }
+  ]
+}

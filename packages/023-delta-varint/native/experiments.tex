@@ -1,0 +1,41 @@
+\section{Measure size on data with different change patterns}
+The table uses thirty-two readings per dataset, occupying 128 bytes as fixed-width
+words. The independent column maps each reading directly through ZigZag and base 128,
+without delta subtraction. The delta column applies this chapter's complete transform.
+All output bytes are checked against the independent arithmetic oracle.
+\begin{table}[htbp]
+\centering
+\caption{Encoded bytes for deterministic thirty-two-reading datasets.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrr}
+\toprule
+Dataset & Fixed words & Independent mapped values & Mapped deltas\\
+\midrule
+Steady 1000 & 128 & 64 & 33\\
+Ramp from \(-16\) through 15 & 128 & 32 & 32\\
+Timestamps increasing by 1000 & 128 & 160 & 67\\
+One spike to 1000000 & 128 & 34 & 36\\
+Alternating signed endpoints & 128 & 160 & 160\\
+Seeded random words & 128 & 159 & 159\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The steady sequence needs two bytes for its first value and one for each later zero
+delta. The ramp's independently mapped values already fit in one byte, so subtraction
+saves no further bytes. The spike creates two large changes, increasing its result from
+34 bytes to 36 relative to independent mapping. Alternating endpoints and random words
+expand relative to fixed-width storage. A variable-length code is not a guarantee of
+compression for every input.
+
+The timestamp dataset begins at 1000000000 and adds 1000 at each position. The spike
+is at zero-based position sixteen, with all other values zero. Alternating endpoints
+starts at the signed minimum. Random words use initial state \texttt{0x13579bdf},
+then \(s\gets1664525s+1013904223\) modulo \(2^{32}\), interpreting each new state
+as a signed word. These definitions make the table reproducible.
+
+\begin{MARSExercise}{Choose what a size result means}
+Calculate the byte saving of the steady sequence relative to fixed words. Then compare
+the spike with both baselines. Which comparison would conceal the cost added by delta
+subtraction? Keep input values, sequence length and signed mapping constant.
+\end{MARSExercise}

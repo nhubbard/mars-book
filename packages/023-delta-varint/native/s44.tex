@@ -1,0 +1,28 @@
+\section{Step 44 Reject continuation on the fifth byte}\label{delta-s44}
+
+Test bit seven at the fifth-byte path and use \texttt{dec\_bad} if it is set. A sixth byte cannot repair this width violation. The rejected candidate does not advance committed input or output, even though its private scan reached byte five.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{d\_fifth\_continuation}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    andi $t6, $t4, 128
+    bne $t6, $zero, dec_bad
+    nop
+\end{minted}
+Use \texttt{s44-1}, \texttt{s44-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+A five-byte continued prefix returns malformed status two with zero committed counts.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Must the parser read a sixth byte to reject this case?
+
+\begin{itemize}
+\item \textbf{A} Yes; it might contain a terminator.
+\item \textbf{B} No; continuation in byte five is already invalid.
+\item \textbf{C} Only when output capacity is nonzero.
+\end{itemize}

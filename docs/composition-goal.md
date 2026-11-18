@@ -163,7 +163,7 @@ tables keep retired instructions, notices and cache misses separate. Four numeri
 capture models support the pending figures. Actual IDE pixels and annotations, remote
 lessons, enforced progression, author review and independent accessibility validation
 remain unfinished. Twenty-two text packages do not complete the full 35-project book
-and capture objective, which remains active. Delta and variable-length encoding is next.
+and capture objective, which remains active. Delta and variable-length encoding follows.
 
 
 Delta and variable-length encoding has a directly edited native chapter at
@@ -176,6 +176,21 @@ composition, zero-capacity priorities, wide pointers and meaningful fault reject
 verified separately. The cumulative chapter now has 60 steps, 50 edits, five supplied
 excerpts, 60 quizzes, 120 hints and 84 recipes. Its 58 grading runs cover 19,675 positive
 case executions, including both offset isolated calls and the actual caller. Four native
-capture slots remain explicitly planned. Packages and actual IDE captures are unfinished.
-This chapter has not joined main.tex, which contains twenty-two text packages. The full
-objective remains active.
+capture slots remain explicitly planned. The student and private instructor packages
+contain native sources, public construction/final checks, equivalent solutions and
+additional private domains. The chapter has joined main.tex as the twenty-third text
+package. Actual IDE captures, enforced progression, author review and independent
+accessibility validation remain unfinished. The full objective remains active.
+
+## Author feedback and deferred revision
+
+On 18 November 2026, the author reviewed excerpts and judged the draft too long and
+insufficiently explanatory for a normal student. Complete all roadmap chapters before
+starting the substantial rewrite. Executable checks establish behavior within their
+tested domains; they do not establish student usability or teaching quality.
+
+The later editing pass should reduce unnecessary fragmentation and repetition, connect
+small code changes into an explained algorithm, state what each phase accomplishes and
+why, and establish a coherent progression through each chapter. Preserve the native
+include structure so the author can place and revise connecting prose freely. The
+author has explicitly deferred this rewrite until the chapter sequence is complete.

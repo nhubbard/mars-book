@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 import struct
 import tempfile
@@ -16,6 +17,32 @@ PACKAGE = '001-console-calculation'
 
 
 class PackageTests(unittest.TestCase):
+    def test_codec_distribution_retains_native_order_and_checks(self):
+        root, data = course.validate('023-delta-varint')
+        steps = json.loads((root / 'steps.json').read_text())['steps']
+        self.assertEqual([s['id'] for s in steps], [s['id'] for s in data['steps']])
+        native = course.ROOT / 'includes/chapters/023-delta-varint'
+        for path in native.glob('*.tex'):
+            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+        names = re.findall(r'\\input\{includes/chapters/023-delta-varint/([^}]+)\}',
+                           (native / 'chapter.tex').read_text())
+        reading = course.reading_segments(root, data)
+        ordered = [segment['step'] if segment['kind'] == 'step' else
+                   segment['figure'] if segment['kind'] == 'figure' else
+                   Path(segment['typesetting']['nativeLatex']).stem for segment in reading]
+        self.assertEqual(names, ordered)
+        self.assertEqual(53, sum(s['completion']['type'] == 'cli-grade' for s in data['steps']))
+        for step in data['steps']:
+            self.assertEqual(2, len(step['hints']))
+            if step['completion']['type'] == 'cli-grade':
+                self.assertTrue((root / step['completion']['check']).is_file())
+        with tempfile.TemporaryDirectory() as folder:
+            archive = course.bundle(data['id'], Path(folder) / 'student.zip')
+            with zipfile.ZipFile(archive) as zipped:
+                self.assertEqual(len(course.student_files(root, data)), len(zipped.namelist()))
+                self.assertFalse(any('quiz-key' in name or '/private' in name or '/reference/' in name
+                                     for name in zipped.namelist()))
+
     def test_real_package(self):
         _, data = course.validate(PACKAGE)
         self.assertEqual(22, len(data['steps']))

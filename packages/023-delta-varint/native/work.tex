@@ -1,0 +1,38 @@
+\section{Keep simulated work separate from encoded size}
+The first implementation maps signed differences with shifts and XOR and counts output
+groups with a loop. The alternative branches on sign and uses size thresholds. Its
+decoder accumulates weighted base-128 digits with a multiplier and branches for inverse
+mapping. Both satisfy the same byte-level contract and receive the same correctness
+checks.
+
+\begin{table}[htbp]
+\centering
+\caption{Whole-function retired instructions for the checked encoder prototypes.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrr}
+\toprule
+Dataset & Shift-count encoder & Threshold encoder\\
+\midrule
+Steady & 1041 & 1072\\
+Ramp & 1026 & 1062\\
+Timestamps & 1551 & 1546\\
+Spike & 1086 & 1120\\
+Alternating endpoints & 2946 & 2850\\
+Random & 2931 & 2840\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The interval begins at function entry and stops before its supplied continuation.
+It includes frame setup, capacity checks, all complete values and restoration. It
+excludes assembly, session creation, caller storage and I/O. The decoder measurements
+use independently modeled encoded bytes, rather than charging the encoder inside the
+decoder's interval. The two implementations have identical output sizes while their
+instruction totals differ by dataset. These counts are not elapsed host time or cycles.
+
+Possible experiments include avoiding a second scan of the mapped value, retaining a
+short candidate in a private buffer, or checking a capacity upper bound before exact
+length calculation. Every strategy still needs item-atomic output and the specified
+zero-capacity behavior. Include private preparation work in its complete-call total.
+A five-byte worst-case reservation cannot replace the exact capacity check: a one-byte
+value must succeed when only one byte remains.

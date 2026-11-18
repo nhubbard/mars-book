@@ -1,0 +1,28 @@
+\section{Step 43 Route the fifth byte through its bounded-width checks}\label{delta-s43}
+
+Replace the initial bypass branch with a comparison of candidate length and five. Earlier bytes proceed directly to \texttt{dec\_accumulate}; the fifth must pass continuation and payload-width checks first. The byte loop is now available to reach this gate naturally on five-byte recipes.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{d\_fifth\_gate}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t6, 5
+    bne $t3, $t6, dec_accumulate
+    nop
+\end{minted}
+Use \texttt{s43-1}, \texttt{s43-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+A five-byte minimum-reading recipe reaches the new gate after scanning its fifth byte.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why validate the fifth byte before accumulation?
+
+\begin{itemize}
+\item \textbf{A} Its unused payload bits and continuation can make the wire invalid.
+\item \textbf{B} All fifth bytes are invalid.
+\item \textbf{C} The output word must already be stored.
+\end{itemize}

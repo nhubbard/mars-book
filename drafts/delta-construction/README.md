@@ -1,3 +1,7 @@
+The current distribution is in `packages/023-delta-varint`. This earlier draft is
+retained for provenance; use the package starter, public checks and prepare.py for
+current student work.
+
 # Codec construction draft
 
 The directly edited native chapter is the publication authority. This folder supplies

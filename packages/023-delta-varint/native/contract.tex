@@ -1,0 +1,33 @@
+\section*{Project contract}
+Implement \texttt{delta\_encode} and \texttt{delta\_decode} for sequences of signed
+32-bit readings. Each call begins with previous reading zero. The encoder takes a
+word-aligned source in \texttt{a0}, a reading count \(0\leq n\leq32\) in
+\texttt{a1}, a byte destination in \texttt{a2}, and a byte capacity
+\(0\leq c\leq160\) in \texttt{a3}. The decoder takes a byte source and length
+\(0\leq b\leq160\) in \texttt{a0}, \texttt{a1}, a word-aligned destination in
+\texttt{a2}, and an output-reading capacity \(0\leq r\leq32\) in \texttt{a3}.
+Byte pointers may have arbitrary alignment. Source and destination slices are disjoint.
+Their logical lengths are the specified input length and output capacity, not the
+backing allocation size.
+
+Both functions return committed input units in \texttt{v0}, committed output units
+in \texttt{v1}, and status in \texttt{a3}. For encoding the units are readings and
+bytes; for decoding they are bytes and readings. Status zero means all input completed,
+one means the next output value does not fit, two means malformed wire data, and three
+means an exact reconstructed reading lies outside signed 32-bit range. Encoding can
+return only zero or one. This three-register result is the exercise's explicit
+interface; do not assume an operating-system calling convention assigns these meanings.
+
+Commit one whole reading at a time. A failed candidate contributes neither consumed
+input nor output. Earlier completed values remain committed. No destination byte
+outside that committed output prefix may be written, even if its value is restored.
+Preserve all other caller bytes. The source is read-only, and all source reads must
+fit its logical interval. Private stack storage and submission-owned constants are
+allowed. An empty input completes successfully without input or output access. With nonempty input
+and zero output capacity, return status one without reading input or writing output.
+For decoding, capacity is checked before examining the next candidate's bytes.
+
+Use full-width pointers, preserve all bits of \texttt{s0} through \texttt{s7},
+\texttt{fp} and \texttt{sp}, and return through the supplied \texttt{ra}. The incoming
+stack is doubleword aligned. Produce no console I/O. The previous reading and all
+working indices restart for every call; there is no implicit stream state.

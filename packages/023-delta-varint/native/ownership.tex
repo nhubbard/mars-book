@@ -1,0 +1,24 @@
+\section{Treat a pointer, a capacity and committed output as separate facts}
+The backing word and byte arenas are larger than many calls. Source length authorizes
+reads; destination capacity bounds potential output; the final committed prefix bounds
+permitted stores. None of these quantities is interchangeable. A mapped address outside
+the relevant interval still violates the interface.
+
+Observe writes during execution, rather than comparing final memory alone. A failed
+candidate must not leave a partial destination write in the history. The caller's
+source and metadata also remain read-only until the function returns. The supplied
+caller then stores the two counts and status, so inspect the function at
+\texttt{codec\_done} before those caller stores. A direct grader call may instead
+supply \texttt{function\_return}; return through \texttt{ra} in either case.
+
+Both byte-source and byte-destination pointers may be unaligned. Byte loads and stores
+make their boundaries explicit. A signed byte load can also work if every use masks
+the payload and continuation bits appropriately; an unsigned load is a straightforward
+choice. Numerical grading should accept such equivalent operand handling rather than
+requiring an instruction spelling.
+
+Each call starts with predecessor zero, even in one continuing simulator session.
+Encode, decode, run a zero-capacity failure, and then encode a new sequence without
+restarting the simulator. No previous reading or partial unsigned accumulator should
+survive as an implicit input. Saved registers and the full stack pointer must return
+to their incoming values on success and every error path.

@@ -1,0 +1,30 @@
+\section{Represent changes between readings}
+A delta is the difference between a reading and its predecessor. For input readings
+\(x_0,\ldots,x_{n-1}\), set \(p=0\) at call entry and compute
+\[
+ d_i=x_i-p,\qquad p\gets x_i
+\]
+for each committed reading. The first delta therefore represents the first absolute
+reading relative to zero. A constant sequence has one initial delta followed by zeros.
+A steadily rising sequence has a possibly large first delta followed by small changes.
+
+The transformation alone does not save storage. Storing every delta in a four-byte
+slot still uses four bytes per reading and also cannot represent every exact delta.
+Compression comes from giving small transformed values shorter byte sequences. A sudden
+spike can create two large deltas: one on the way up and another on the way down.
+The useful comparison depends on both the data and the representation applied afterward.
+
+\begin{MARSWorkedExample}{Five readings and four small changes}
+For \(1000,1002,1001,1001,20000\), the exact deltas are
+\[
+ 1000,\quad2,\quad-1,\quad0,\quad18999.
+\]
+Do not update the previous reading while merely testing a candidate that will fail
+its capacity check. The committed predecessor still belongs to the preceding item.
+\end{MARSWorkedExample}
+
+\begin{MARSExercise}{A spike has an entrance and an exit}
+Write the deltas for \(0,0,1000000,0,0\). Compare the number of large magnitudes with
+the original sequence. Predict whether a representation that stores each signed value
+independently could be shorter for this example.
+\end{MARSExercise}

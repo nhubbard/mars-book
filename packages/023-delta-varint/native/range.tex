@@ -1,0 +1,23 @@
+\section{Check the reconstructed integer before narrowing it}
+A canonical mapped value does not by itself establish that the next reading fits.
+Apply the inverse mapping in a doubleword, add the previous reading in that same width,
+and compare the exact result with \(-2147483648\) and 2147483647. Only then store the
+low word, whose bits now represent a proven signed 32-bit result.
+
+For bytes \texttt{fe ff ff ff 0f 02}, the first five bytes reconstruct the maximum
+reading. The next mapped value two denotes a delta of one. Its exact new reading is
+2147483648, so return range status three with five committed input bytes and one
+output reading. A word addition would wrap it to the minimum reading and accept data
+that the format rejects.
+
+One implementation of the inverse uses an unsigned right shift by one and an XOR with
+the negative of the low bit. Another branches on parity and computes
+\(-\lfloor u/2\rfloor-1\) for odd values. Both must retain the full unsigned value
+until the sign decision is complete. A signed shift of a truncated word can lose the
+fifth byte's contribution before any range check occurs.
+
+\begin{MARSExercise}{Separate two error categories}
+Compare \texttt{80 80 80 80 20} and \texttt{ff ff ff ff 1f}. Both fail to produce a
+reading from predecessor zero. State why the first reports malformed status two and
+the second reports range status three. Explain which check takes priority in each case.
+\end{MARSExercise}

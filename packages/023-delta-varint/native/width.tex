@@ -1,0 +1,37 @@
+\section{Widen before subtracting}
+A stored reading lies in \([-2^{31},2^{31}-1]\). Subtracting two such readings can
+give any difference between \(-(2^{32}-1)\) and \(2^{32}-1\). A signed 33-bit
+integer is sufficient, while a signed word is not. For the largest upward jump,
+\[
+ (2^{31}-1)-(-2^{31})=4294967295.
+\]
+A word subtraction wraps that difference to \(-1\). Widening the result afterward
+cannot distinguish that wrapped value from a real downward step of one.
+
+Load each reading with signed \texttt{lw}, retaining its sign in the full register,
+then subtract with \texttt{dsubu}. Despite its wraparound semantics, this doubleword
+subtraction is exact throughout the proven input domain. The previous reading must
+also retain its full signed value. An unsigned word load interprets stored negative
+readings as large positive integers and changes the sequence before subtraction.
+
+\begin{table}[htbp]
+\centering
+\caption{Differences whose widths are determined by the pair of readings.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrr}
+\toprule
+Previous & Current & Exact delta\\
+\midrule
+0 & \(-2147483648\) & \(-2147483648\)\\
+0 & 2147483647 & 2147483647\\
+\(-2147483648\) & 2147483647 & 4294967295\\
+2147483647 & \(-2147483648\) & \(-4294967295\)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{MARSExercise}{Distinguish two encodings of a mistaken delta}
+Trace an implementation that uses word subtraction for the upward endpoint jump.
+Which delta does it pass to the signed mapping? Explain why a decoder that shares the
+same mistake can appear to agree in a round-trip test while still violating this format.
+\end{MARSExercise}

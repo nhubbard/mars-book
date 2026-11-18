@@ -198,5 +198,6 @@ Build the independent cumulative codec chapter with
 `python3 tools/book.py build --entry drafts/delta-varint.tex`. It uses native equations,
 tables, a described bit diagram and 55 listings exported through the actual IntelliJ
 highlighter. Sixty steps interleave fifty edits with explanations, observations, quizzes
-and hints. The chapter is not yet an archived student package or part of main.tex.
+and hints. The chapter is included in main.tex as its twenty-third text package;
+separate student/instructor archives retain exact native snapshots.
 The four capture slots are plans; no screenshot is claimed for them.

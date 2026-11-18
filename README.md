@@ -116,16 +116,17 @@ accumulator bounds, clipped reduction tiles, 58 observation recipes, public
 construction/final checks and four planned light-theme capture models. Its whole-call
 measurements distinguish simulated instructions, data notices and cache misses.
 
-The next chapter has an independent [delta/variable-length chapter](drafts/delta-varint.tex).
+The [delta/variable-length chapter](packages/023-delta-varint/assignment.md) is included in the main manuscript.
 It explains exact 33-bit deltas, signed mapping, canonical seven-bit groups, item-atomic
 capacity handling, malformed-input priorities and measured size/work tradeoffs. Its 60 steps
 contain 50 cumulative edits, five supplied excerpts, 60 quizzes, 120 hints and 84 observation
-recipes. Student/instructor packaging and actual IDE figures remain in progress.
+recipes, public intermediate/final checks and separate student/instructor distributions.
+Actual IDE figures remain in progress.
 
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-two chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-three chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -140,7 +141,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-two text packages, starters, public checks, deterministic student archive builder,
+The first twenty-three text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
