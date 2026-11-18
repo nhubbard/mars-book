@@ -1,0 +1,31 @@
+\section{Step 42 Hash exactly the returned read count}\label{sha-s42}
+
+Move the positive read result into the update length argument before another call can replace \texttt{v0}. Pass the private context and scratch pointer, then call the completed update routine. The original file capacity remains retained separately; it controls requests, not the length of valid data returned by a particular read.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN file\_update} and \texttt{\# END file\_update}. Keep the supplied labels outside that region.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a2, $v0
+    move $a0, $s0
+    move $a1, $s1
+    jal sha256_update
+    nop
+\end{minted}
+
+Use recipe \texttt{s42-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The private byte total includes the first returned prefix; no digest output has been written.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why copy \texttt{v0} into the length argument first?
+
+\begin{itemize}
+\item \textbf{A} It is the actual successful read count.
+\item \textbf{B} It is always equal to the capacity.
+\item \textbf{C} It contains the expected digest.
+\end{itemize}

@@ -1,0 +1,24 @@
+\section{Build a digest from a sequence of bytes}
+A SHA-256 digest is a sequence of 32 bytes computed from a message. In this project,
+the message is initially an array in simulator memory. Later it will be the contents
+of a file. A comparison program can calculate a digest for the same bytes and check
+our result. The filename, the way the text is displayed, and the size of a read buffer
+are outside the message.
+
+The first test message is the three ASCII bytes \texttt{61 62 63}, which spell
+\texttt{abc}. There is no trailing zero or newline in that message. We will follow
+those bytes into a 64-byte block, decode the block into words, and observe the first
+compression round. Once that one-block path is working, we will handle messages that
+fill several blocks and messages that arrive in pieces.
+
+A complete hash involves several responsibilities. The compression function changes
+an eight-word state using one block. The streaming interface retains bytes that do
+not yet make a full block. Finalization adds the message terminator and length, then
+serializes the result. The file wrapper supplies bytes to that interface. Keeping these
+boundaries visible gives us more useful observations than a single final mismatch.
+
+For example, suppose \texttt{abc} produces an incorrect digest. If its first decoded
+word is not \texttt{61626380}, inspect padding and byte order before studying the
+round loop. If the schedule and first round agree but a 56-byte message fails, inspect
+the finalization boundary. Each observation narrows the part of the program we need
+to understand.

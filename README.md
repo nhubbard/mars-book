@@ -131,17 +131,16 @@ excerpts, 34 quizzes, 68 hints and 52 exact recipes. It is included in the
 main manuscript as chapter 24, with public guided/final checks and separate archives.
 Actual IDE figures remain pending.
 
-The next independent native chapter is [SHA-256](drafts/sha256.tex). Its connected
-exposition now includes 47 cumulative steps, 38 code edits, six supplied entry/exit pairs,
-47 quizzes, 94 hints and 58 exact recipes. Both caller and offset-function observations
-are executable, including private-stack and wide-length checks. Cumulative sources and
-recipes are in drafts/sha-construction; separate distributions and integration as the
-twenty-fifth package remain pending. Four IDE figure slots are still plans.
+The [SHA-256 chapter](drafts/sha256.tex) includes 47 steps, 38 cumulative code edits,
+six supplied entry/exit pairs, 47 quizzes, 94 hints and 58 exact recipes. Its student
+package has 43 guided checks and completed-interface checks; private materials retain
+implementations, additional grading cases and explanatory quiz feedback. It is included
+in the main manuscript as chapter 25. Four IDE figure slots remain plans.
 
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-four chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-five chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -156,7 +155,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-four text packages, starters, public checks, deterministic student archive builder,
+The first twenty-five text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

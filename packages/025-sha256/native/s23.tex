@@ -1,0 +1,29 @@
+\section{Step 23 Count the supplied message bytes once}\label{sha-s23}
+
+Load the original byte count, add the incoming update length using doubleword arithmetic and store the full count. This addition belongs before the copy loop. Adding the complete length during every loop iteration would overcount, and adding padding later would change the encoded message length. The provided frame already retains the source, length and current used count.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN upd\_count} and \texttt{\# END upd\_count}. Keep the supplied labels outside that region.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ld $t0, 32($s0)
+    daddu $t0, $t0, $s2
+    sd $t0, 32($s0)
+\end{minted}
+
+Use recipe \texttt{s23-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+For a fresh context and three input bytes, the total becomes three before any buffer byte is written.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What does this count include?
+
+\begin{itemize}
+\item \textbf{A} Only bytes returned by the final read.
+\item \textbf{B} All original message bytes supplied across updates.
+\item \textbf{C} Padding and schedule bytes.
+\end{itemize}

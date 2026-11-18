@@ -1,0 +1,32 @@
+\section{Step 29 Record the bit length and append the marker}\label{sha-s29}
+
+Read the original byte total and shift it left by three with \texttt{dsll}. Keep that full bit count in \texttt{s3} while writing the marker at the next free buffer position. Advance the working used count after the store. The context's original-byte total remains unchanged: the marker belongs to padding rather than the message.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_marker} and \texttt{\# END fin\_marker}. Keep the supplied labels outside that region.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ld $s3, 32($s0)
+    dsll $s3, $s3, 3
+    daddu $t0, $s0, $s2
+    li $t1, 128
+    sb $t1, 48($t0)
+    addiu $s2, $s2, 1
+\end{minted}
+
+Use recipe \texttt{s29-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+For abc, \texttt{s3} is twenty-four, the marker occupies buffer index three and the working used count is four.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Does appending 80 increase the original message length?
+
+\begin{itemize}
+\item \textbf{A} Yes, by one byte.
+\item \textbf{B} Yes, by eight bytes.
+\item \textbf{C} No; the recorded length excludes padding.
+\end{itemize}

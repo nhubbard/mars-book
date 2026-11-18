@@ -1,0 +1,30 @@
+\section{Step 41 Separate read errors, EOF and positive input}\label{sha-s41}
+
+A negative read result branches to status two and cleanup. Zero branches to finalization. Positive results continue to update. The order matters: passing a negative result as an update length would convert an error into an invalid memory request. The EOF branch remains unfinished until the finalization region is authored.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN file\_result} and \texttt{\# END file\_result}. Keep the supplied labels outside that region.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    bltz $v0, file_read_error
+    nop
+    beq $v0, $zero, file_finish
+    nop
+\end{minted}
+
+Use recipe \texttt{s41-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+Positive input reaches the update boundary; a failed read closes the descriptor and preserves the output.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What does a positive short read mean here?
+
+\begin{itemize}
+\item \textbf{A} The returned bytes are valid and another read is needed.
+\item \textbf{B} The complete file has ended.
+\item \textbf{C} The hash must restart.
+\end{itemize}

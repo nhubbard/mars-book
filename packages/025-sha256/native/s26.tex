@@ -1,0 +1,31 @@
+\section{Step 26 Compress the complete buffer}\label{sha-s26}
+
+Pass the context state, its block buffer and its schedule workspace to the completed compression entry. The outer update frame retains all values needed after the nested call. Compression changes the state to include this full message block; the original byte total is already correct and must not be incremented again here.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN upd\_compress} and \texttt{\# END upd\_compress}. Keep the supplied labels outside that region.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s0
+    daddiu $a1, $s0, 48
+    daddiu $a2, $s0, 112
+    jal sha256_compress
+    nop
+\end{minted}
+
+Use recipe \texttt{s26-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The context state includes the first full block; used is still sixty-four until the next edit resets the working count.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which pointer supplies the compression state?
+
+\begin{itemize}
+\item \textbf{A} The context base.
+\item \textbf{B} The source pointer after its increment.
+\item \textbf{C} The digest destination.
+\end{itemize}

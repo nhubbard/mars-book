@@ -1,0 +1,46 @@
+\section{Change one boundary at a time}
+A useful debugging sequence begins with the decoded block, continues through its
+schedule, and reaches a complete message before involving files. Record expected
+values beside the boundary where they can be observed. This keeps the test's question
+specific: whether the word was decoded correctly, whether a round preserved the old
+values, or whether finalization chose the right number of blocks.
+
+\begin{MARSExercise}{Distinguish message bytes from displayed text}
+Compute the digest of three bytes spelling \texttt{abc}, then of those bytes followed
+by a newline. Record both byte lengths and digests. Explain why a visual comparison of
+the text is insufficient to establish that the hash inputs agree.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Find the two-block padding boundary}
+Use otherwise identical patterned inputs of 55, 56, 63, 64 and 65 bytes. Before running,
+write the expected number of complete blocks processed by update and by finalization.
+Inspect the final length field. A 64-byte input has a fresh padding block, although
+its message bytes already filled a block exactly.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Separate state from storage history}
+Hash a 129-byte message in one update, then as 55, zero, 9 and 65 bytes. Compare its
+digests. At the last update boundary compare the eight state words, total count, used
+count and used buffer prefix. Explain why unused buffer bytes need not agree.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Interleave two messages}
+Initialize two separate contexts. Alternate updates to them, finalize each into a
+different output interval, and compare each digest with an independent reference.
+Then initialize one used context again and hash an empty message. Identify which
+fields initialization must replace for that final test to work.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Replace rotations without changing the function}
+Replace each word rotate by a logical right shift, a complementary word left shift
+and an OR. Test the replacement with high-bit and low-bit single-bit values before
+repeating complete message cases. Compare executed instruction counts while keeping
+the message, function boundary and byte result fixed.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Reduce copying after correctness is established}
+Design an update path that compresses full source blocks directly when the context
+buffer is empty. Keep the unaligned-source contract, read-only input ownership and
+zero-length behavior. Explain what remains buffered after each branch. Measure this
+change separately from any change to schedule storage or the round loop.
+\end{MARSExercise}

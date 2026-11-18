@@ -43,6 +43,25 @@ class PackageTests(unittest.TestCase):
                 self.assertFalse(any('quiz-key' in name or '/private' in name or '/reference/' in name
                                      for name in zipped.namelist()))
 
+    def test_sha_distribution_retains_native_order_and_guided_exports(self):
+        root, data = course.validate('025-sha256')
+        self.assertEqual(47, len(data['steps']))
+        self.assertEqual(43, sum(step['completion']['type'] == 'cli-grade' for step in data['steps']))
+        native = course.ROOT / 'includes/chapters/025-sha256'
+        for path in native.glob('*.tex'):
+            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+        names = re.findall(r'\\input\{includes/chapters/025-sha256/([^}]+)\}', (native / 'chapter.tex').read_text())
+        reading = json.loads((root / 'reading.json').read_text())['segments']
+        actual = [row['step'] if row['kind'] == 'step' else row['figure'] if row['kind'] == 'figure' else Path(row['typesetting']['nativeLatex']).stem for row in reading]
+        self.assertEqual(names, actual)
+        exported = {path.relative_to(root).as_posix() for path in course.student_files(root, data)}
+        for step in data['steps']:
+            if step['completion']['type'] == 'cli-grade':
+                self.assertIn(step['completion']['check'], exported)
+                self.assertNotIn('case("prepared ', (root / step['completion']['check']).read_text())
+        self.assertFalse(any('quiz-key' in name or '/private' in name or '/reference/' in name for name in exported))
+        self.assertIn('readBytes(address,length)', data['environment']['graderRequirements'])
+
     def test_crc_distribution_retains_native_order_and_checks(self):
         root, data = course.validate('024-crc32')
         steps = json.loads((root / 'steps.json').read_text())['steps']

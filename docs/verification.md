@@ -673,3 +673,37 @@ The source, recipes, CLI/JDK, normal returns and memory ownership are pinned in 
 The independent draft still awaits public/instructor packages and main integration.
 Four planned light-theme figures have verified numerical observations and no IDE pixels.
 The substantial author rewrite and independent PDF accessibility work remain pending.
+
+
+## SHA-256 distribution and main integration
+
+Chapter 25 is now integrated in main.tex, with separate public and private packages.
+The student ZIP contains 199 files, 43 guided checks and four final check scripts.
+The exact native include sequence is retained as a source snapshot. The public
+final arithmetic model uses separate Int wraparound logic; private prototypes use
+masked Long arithmetic, and complete digests are compared with JDK SHA-256.
+
+The package verification records 173 grading runs and 9,896 positive executions,
+including cumulative construction and six ordinary host-file runs recorded separately.
+Two complete implementations pass, as do controls with wide code/data, private readonly
+constants, smaller file reads and different unused context contents. Thirty-three
+fault variants and the unfinished starter are rejected. Private final checks include
+3,341 cases per implementation plus two additional 4,096-byte file cases each.
+These counts describe tested cases, not exhaustive correctness or student usability.
+
+Repeated file calls test fresh hash state, descriptor cleanup and preservation of
+an existing digest after failure. MARS revision 3f69e767 adds the explicit firstDescriptor
+fixture option: descriptors 7 and 31 expose implementations that assume descriptor 3.
+The default remains 3 and ordinary host IO is unchanged. All 101 CLI tests pass.
+The book tooling passes 33 tests and the syntax renderer passes seven tests.
+
+The standalone chapter builds to 69 pages with 51 assembly blocks. The manuscript
+builds to 1,011 physical pages with 628 assembly blocks and 34 native described figures.
+All assembly fragments extract from the PDFs; all SHA fragments fit single pages.
+Embedded fonts remain Minion Pro, Noto Sans Math and JetBrains Mono. Sixty-four SHA
+pages are pixel-identical to the previously reviewed cumulative draft; changed pages
+4,5,6,7,69 were reviewed at full resolution, together with the manuscript chapter
+opening, final page and updated contents. Existing chapters were reviewed in prior steps.
+Tags, table headings and figure descriptions are inspected; PDF/UA certification and
+independent accessibility review remain outstanding. Four SHA IDE figures remain plans.
+The author requested substantial exposition and length edits after all 35 drafts exist.

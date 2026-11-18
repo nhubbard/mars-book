@@ -1,3 +1,6 @@
+The current distribution is in `packages/025-sha256`. This earlier construction draft
+is retained for provenance; use the package starter, public checks and prepare.py.
+
 # SHA-256 cumulative construction draft
 
 The directly edited native chapter at drafts/sha256.tex is the composition authority.

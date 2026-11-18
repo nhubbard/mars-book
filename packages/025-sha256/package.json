@@ -1,0 +1,2055 @@
+{
+  "formatVersion": 1,
+  "version": "0.1.0",
+  "status": "draft",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "3f69e76756b45f13ba692235ca945dc941e4f4b4",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "readDataAddress",
+      "provideFiles",
+      "FileAccessCheck",
+      "readBytes(address,length)",
+      "provideFiles(firstDescriptor)"
+    ]
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose, public intermediate and final CLI checks; remote lesson runner and enforced policies remain pending"
+  },
+  "id": "025-sha256",
+  "title": "Compute a SHA-256 fingerprint",
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "reading": "reading.json",
+  "prerequisites": [
+    "Byte intervals, word widths and byte order",
+    "Preserved registers, nested calls and stack frames",
+    "Explicit streaming state and bounded file reads"
+  ],
+  "learningObjectives": [
+    "Decode a big-endian block into numeric schedule words",
+    "Trace schedule expansion, rounds and feed-forward",
+    "Distinguish word arithmetic from full pointers and length counters",
+    "Maintain independent contexts over arbitrary update splits",
+    "Choose correct one-block or two-block final padding",
+    "Publish a complete digest only after successful EOF",
+    "Separate simulated instruction work from host latency"
+  ],
+  "inputDomain": {
+    "type": "sha256-byte-stream",
+    "blockBytes": 64,
+    "stateWords": 8,
+    "scheduleWords": 64,
+    "contextBytes": 368,
+    "maximumUpdateBytes": 4096,
+    "maximumTotalBytesExclusive": "2305843009213693952",
+    "digestBytes": 32,
+    "fileScratchMinimum": 1,
+    "fileScratchMaximum": 256,
+    "fileFixtureMaximumBytes": 4096
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Identify the message being hashed",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Is a trailing newline included automatically in this message?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; only the declared input bytes belong to it."
+          },
+          {
+            "id": "b",
+            "text": "Yes, every text message ends with one."
+          },
+          {
+            "id": "c",
+            "text": "Only when the digest begins with a high bit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "List the selected bytes rather than their visual appearance."
+        },
+        {
+          "id": "s01-h2",
+          "text": "A fourth byte changes the message and therefore the expected digest."
+        }
+      ],
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Inspect the caller and unfinished exits",
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "May a development return be treated as a correct digest?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if output happens to contain zeros."
+          },
+          {
+            "id": "b",
+            "text": "No; it explicitly marks incomplete work."
+          },
+          {
+            "id": "c",
+            "text": "Only for an empty file."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Trace the branch in the first empty region."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Inspect status before interpreting any output array."
+        }
+      ],
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Keep a schedule destination and decode count",
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which pointer must be word-aligned?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source byte pointer."
+          },
+          {
+            "id": "b",
+            "text": "The schedule destination."
+          },
+          {
+            "id": "c",
+            "text": "Both pointers must be identical."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Separate a byte sequence from a numeric word array."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The later sw instruction addresses the schedule, not the source."
+        }
+      ],
+      "editTarget": "sch_setup",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s03.kts"
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Place the first two bytes in their word fields",
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What does shifting the first byte by 24 accomplish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It selects the next input byte."
+          },
+          {
+            "id": "b",
+            "text": "It changes the source memory order."
+          },
+          {
+            "id": "c",
+            "text": "It places that byte in the most significant field of the numeric word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Trace one byte before considering the full block."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The byte 61 becomes the word pattern 61000000."
+        }
+      ],
+      "editTarget": "sch_high",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s04.kts"
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Complete and store one decoded word",
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why is lbu used for the final source byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A signed final byte could set higher fields during OR."
+          },
+          {
+            "id": "b",
+            "text": "It swaps every pair of bytes."
+          },
+          {
+            "id": "c",
+            "text": "It writes the schedule automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Consider a final byte with value 80."
+        },
+        {
+          "id": "s05-h2",
+          "text": "A signed byte load would create ones above bit seven."
+        }
+      ],
+      "editTarget": "sch_low",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s05.kts"
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Decode the remaining fifteen words",
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why does the source advance by four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each schedule word consumes four source bytes."
+          },
+          {
+            "id": "b",
+            "text": "There are four compression rounds."
+          },
+          {
+            "id": "c",
+            "text": "The byte count is stored in words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Relate one loop iteration to one destination word."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Sixteen groups of four bytes consume the entire 64-byte block."
+        }
+      ],
+      "editTarget": "sch_walk",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s06.kts"
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Compute small sigma zero from its predecessor",
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Which word is sixty bytes before W16?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "W0."
+          },
+          {
+            "id": "b",
+            "text": "W1."
+          },
+          {
+            "id": "c",
+            "text": "W15."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Count fifteen word-sized steps backward."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Each step is four bytes."
+        }
+      ],
+      "editTarget": "sch_sigma0",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s07.kts"
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Compute small sigma one independently",
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which operation fills shifted-in bits with zeros?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "sra."
+          },
+          {
+            "id": "b",
+            "text": "drotr."
+          },
+          {
+            "id": "c",
+            "text": "srl."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "A rotate puts removed bits back into the word."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The non-rotating term in this equation requires a logical word shift."
+        }
+      ],
+      "editTarget": "sch_sigma1",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s08.kts"
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Write each expanded schedule word",
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What may influence an expanded schedule word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The old contents of unused workspace."
+          },
+          {
+            "id": "b",
+            "text": "The earlier words named by the recurrence."
+          },
+          {
+            "id": "c",
+            "text": "The file descriptor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Follow the write order from W0 onward."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Every predecessor must have been produced during this call."
+        }
+      ],
+      "editTarget": "sch_sum",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s09.kts"
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Check the entire schedule before calling compression",
+      "kind": "observe",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What does checking only W0 establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That all sixty-four rounds are correct."
+          },
+          {
+            "id": "b",
+            "text": "That every predecessor offset is correct."
+          },
+          {
+            "id": "c",
+            "text": "Only that one decoded word is correct."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Expansion has not contributed to W0."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Test a recurrence result as well as directly decoded values."
+        }
+      ],
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s10.kts"
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Call the schedule builder without losing the caller",
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why reload the state pointer after the nested call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Argument and temporary registers are not preserved by that call."
+          },
+          {
+            "id": "b",
+            "text": "A schedule is stored in the text segment."
+          },
+          {
+            "id": "c",
+            "text": "The state pointer must become a word value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Read which registers the schedule loop uses."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The frame retains full addresses in eight-byte slots."
+        }
+      ],
+      "editTarget": "comp_prepare",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s11.kts"
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Copy the incoming state into working registers",
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why retain the incoming state words in memory?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They are used again in the final feed-forward sums."
+          },
+          {
+            "id": "b",
+            "text": "They contain the file path."
+          },
+          {
+            "id": "c",
+            "text": "They are the schedule destination."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Distinguish the working vector from the running hash state."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The next state adds the final working vector to the old state."
+        }
+      ],
+      "editTarget": "comp_load",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s12.kts"
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Form capital sigma one of old e",
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which value supplies all three rotations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The new e after its replacement."
+          },
+          {
+            "id": "b",
+            "text": "The old e in s4."
+          },
+          {
+            "id": "c",
+            "text": "The byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "The right-hand side of a round uses only its old vector."
+        },
+        {
+          "id": "s13-h2",
+          "text": "No working register has been reassigned yet."
+        }
+      ],
+      "editTarget": "comp_sigma1",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s13.kts"
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Add choice, old h, the constant and the schedule word",
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does a one bit of e select in choice?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The corresponding bit of f."
+          },
+          {
+            "id": "b",
+            "text": "The corresponding bit of g."
+          },
+          {
+            "id": "c",
+            "text": "The next constant."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Think about one bit position at a time."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Use the factored expression g XOR (e AND (f XOR g))."
+        }
+      ],
+      "editTarget": "comp_t1",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s14.kts"
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Form capital sigma zero of old a",
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which temporary must survive this calculation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The already computed T1."
+          },
+          {
+            "id": "b",
+            "text": "The original source byte in a0."
+          },
+          {
+            "id": "c",
+            "text": "The current syscall number."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Identify the values needed by both new a and new e."
+        },
+        {
+          "id": "s15-h2",
+          "text": "T1 is used twice in the working-vector replacement."
+        }
+      ],
+      "editTarget": "comp_sigma0",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s15.kts"
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Add the majority term to finish T2",
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "When is one bit of majority equal to one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only when all three input bits are one."
+          },
+          {
+            "id": "b",
+            "text": "When exactly one input bit is one."
+          },
+          {
+            "id": "c",
+            "text": "When at least two input bits are one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Check the three possible pairs of inputs."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Any pair of ones establishes the majority at that position."
+        }
+      ],
+      "editTarget": "comp_t2",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s16.kts"
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Replace the working vector in dependency order",
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What goes wrong if g is overwritten before h receives old g?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The old g value can be lost."
+          },
+          {
+            "id": "b",
+            "text": "The source address becomes aligned."
+          },
+          {
+            "id": "c",
+            "text": "The round counter increases."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Trace two adjacent assignments with distinct bit patterns."
+        },
+        {
+          "id": "s17-h2",
+          "text": "A move copies the register's current value, not its value at the start of the round."
+        }
+      ],
+      "editTarget": "comp_rotate",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s17.kts"
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Advance constants and schedule entries together",
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "How many constants does one block consume?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixteen."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-four."
+          },
+          {
+            "id": "c",
+            "text": "One per input byte including padding twice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "There is one Kt in each round equation."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The schedule and constant arrays each contain one word per round."
+        }
+      ],
+      "editTarget": "comp_walk",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s18.kts"
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Add the working vector back to the incoming state",
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Which pair is added for the first output state word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Old state word zero and final working a."
+          },
+          {
+            "id": "b",
+            "text": "Initial a and initial b."
+          },
+          {
+            "id": "c",
+            "text": "The first two schedule words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Locate the feed-forward step after the round loop."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The final working vector is only one term of the next state."
+        }
+      ],
+      "editTarget": "comp_feed",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s19.kts"
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Compare a round boundary and the complete block result",
+      "kind": "observe",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Should s0 still hold working a after the function returns?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, saved registers are the digest output."
+          },
+          {
+            "id": "b",
+            "text": "No; the public function restores the caller's s0."
+          },
+          {
+            "id": "c",
+            "text": "Only when a is negative."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The state output is in caller memory."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The internal register allocation is distinct from the function's preserved-register obligation."
+        }
+      ],
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s20.kts"
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Install the initial eight-word state",
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Must initialization clear the entire schedule workspace?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, every word must initially be zero."
+          },
+          {
+            "id": "b",
+            "text": "No; later schedule construction writes every word it uses."
+          },
+          {
+            "id": "c",
+            "text": "Only when a file is opened."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Separate meaningful context fields from scratch storage."
+        },
+        {
+          "id": "s21-h2",
+          "text": "An old workspace value must never be needed to build a new schedule."
+        }
+      ],
+      "editTarget": "init_copy",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s21.kts"
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Reset the original length and incomplete-buffer count",
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Why clear eight bytes at context offset thirty-two?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is the full 64-bit byte counter."
+          },
+          {
+            "id": "b",
+            "text": "The next source byte is eight bytes long."
+          },
+          {
+            "id": "c",
+            "text": "The schedule contains eight words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "A reused context may contain a nonzero upper count word."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A four-byte store would leave half of the counter untouched."
+        }
+      ],
+      "editTarget": "init_counts",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s22.kts"
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Count the supplied message bytes once",
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What does this count include?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only bytes returned by the final read."
+          },
+          {
+            "id": "b",
+            "text": "All original message bytes supplied across updates."
+          },
+          {
+            "id": "c",
+            "text": "Padding and schedule bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The counter survives more than one update call."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Finalization converts this original-byte count to bits without incrementing it for padding."
+        }
+      ],
+      "editTarget": "upd_count",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s23.kts"
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Guard the source before copying a byte",
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which check must precede the source load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whether any input bytes remain."
+          },
+          {
+            "id": "b",
+            "text": "Whether the output digest is zero."
+          },
+          {
+            "id": "c",
+            "text": "Whether the source address is word-aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "A zero-length interval permits no byte load."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The source need not point to readable data for an empty update."
+        }
+      ],
+      "editTarget": "upd_copy",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s24.kts"
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Recognize when the buffer becomes full",
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why not immediately copy byte sixty-five into the same buffer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It would exceed the 64-byte buffer."
+          },
+          {
+            "id": "b",
+            "text": "It would make the message odd-length."
+          },
+          {
+            "id": "c",
+            "text": "It would alter the constant table automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The buffer occupies context bytes forty-eight through one hundred eleven."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The next context field begins at byte one hundred twelve."
+        }
+      ],
+      "editTarget": "upd_walk",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s25.kts"
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Compress the complete buffer",
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which pointer supplies the compression state?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The context base."
+          },
+          {
+            "id": "b",
+            "text": "The source pointer after its increment."
+          },
+          {
+            "id": "c",
+            "text": "The digest destination."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "The eight state words are the first field of the context."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The block buffer and schedule are at separate offsets from that same base."
+        }
+      ],
+      "editTarget": "upd_compress",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s26.kts"
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Begin a fresh buffer after compression",
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Which value must be cleared after a full block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original total."
+          },
+          {
+            "id": "b",
+            "text": "The used count."
+          },
+          {
+            "id": "c",
+            "text": "The running eight-word state."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "A new buffer begins, but the message continues."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Resetting the state would discard all previously compressed blocks."
+        }
+      ],
+      "editTarget": "upd_resume",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s27.kts"
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Compare one update with several updates",
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which context bytes must represent the same tail?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire unused schedule."
+          },
+          {
+            "id": "b",
+            "text": "Only the used buffer prefix."
+          },
+          {
+            "id": "c",
+            "text": "Every byte ever used by any earlier call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "The used count establishes which buffer bytes have meaning."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Scratch storage beyond the prefix is not part of the logical tail."
+        }
+      ],
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s28.kts"
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Record the bit length and append the marker",
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Does appending 80 increase the original message length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, by one byte."
+          },
+          {
+            "id": "b",
+            "text": "Yes, by eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "No; the recorded length excludes padding."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Distinguish the bytes sent by the caller from bytes added by finalization."
+        },
+        {
+          "id": "s29-h2",
+          "text": "The length field describes only the original input."
+        }
+      ],
+      "editTarget": "fin_marker",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s29.kts"
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Choose whether padding needs an extra block",
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What is the working used count after marking a 56-byte tail?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Fifty-six."
+          },
+          {
+            "id": "b",
+            "text": "Fifty-seven."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "The marker consumes one buffer byte."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Add one before applying the room-for-length test."
+        }
+      ],
+      "editTarget": "fin_decide",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s30.kts"
+      }
+    },
+    {
+      "id": "s31",
+      "title": "Finish a block that has no room for the length",
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Where will the length be written on this path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In another block."
+          },
+          {
+            "id": "b",
+            "text": "Over the last message bytes."
+          },
+          {
+            "id": "c",
+            "text": "Into the constant table."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "There were fewer than eight free bytes after the marker."
+        },
+        {
+          "id": "s31-h2",
+          "text": "This block must be compressed before a fresh zero-filled block is completed."
+        }
+      ],
+      "editTarget": "fin_zero_first",
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s31.kts"
+      }
+    },
+    {
+      "id": "s32",
+      "title": "Compress the first padding block and restart its count",
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "May the final block reuse the same 64-byte storage?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No, each block needs a separate allocation."
+          },
+          {
+            "id": "b",
+            "text": "Yes, after the previous block has been consumed."
+          },
+          {
+            "id": "c",
+            "text": "Only for ASCII input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Compression has already incorporated the previous block into state."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Reuse storage while preserving the logical sequence of blocks."
+        }
+      ],
+      "editTarget": "fin_first",
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s32.kts"
+      }
+    },
+    {
+      "id": "s33",
+      "title": "Leave exactly eight bytes for the length",
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Why stop the fill at index fifty-six?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining eight positions hold the length."
+          },
+          {
+            "id": "b",
+            "text": "Only fifty-six input bytes are allowed."
+          },
+          {
+            "id": "c",
+            "text": "The schedule has fifty-six words."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "The block is sixty-four bytes long."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Subtract the eight-byte length field from that capacity."
+        }
+      ],
+      "editTarget": "fin_zero_last",
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s33.kts"
+      }
+    },
+    {
+      "id": "s34",
+      "title": "Serialize every bit of the saved length",
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Which width is required for these variable shifts?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight bits."
+          },
+          {
+            "id": "b",
+            "text": "Thirty-two bits."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "The length field itself occupies sixty-four bits."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Its first extraction shifts by fifty-six, which a word shift cannot express as intended."
+        }
+      ],
+      "editTarget": "fin_length",
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s34.kts"
+      }
+    },
+    {
+      "id": "s35",
+      "title": "Consume the complete final block",
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What must happen before writing the digest bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The final block must be compressed."
+          },
+          {
+            "id": "b",
+            "text": "The original total must be reset."
+          },
+          {
+            "id": "c",
+            "text": "The file must be reopened."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "The length field contributes to the hash through this block."
+        },
+        {
+          "id": "s35-h2",
+          "text": "A correct padding buffer is not itself the final digest."
+        }
+      ],
+      "editTarget": "fin_compress",
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s35.kts"
+      }
+    },
+    {
+      "id": "s36",
+      "title": "Publish thirty-two big-endian digest bytes",
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Why not use sw directly on the output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output has to hold decimal text."
+          },
+          {
+            "id": "b",
+            "text": "The required byte order differs from a little-endian word store."
+          },
+          {
+            "id": "c",
+            "text": "A digest word is sixty-four bytes long."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Compare numeric ba7816bf with its required bytes ba 78 16 bf."
+        },
+        {
+          "id": "s36-h2",
+          "text": "A little-endian word store would put bf first."
+        }
+      ],
+      "editTarget": "fin_output",
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s36.kts"
+      }
+    },
+    {
+      "id": "s37",
+      "title": "Test both sides of the padding boundary",
+      "kind": "observe",
+      "quiz": {
+        "id": "q37",
+        "prompt": "How many padding blocks follow an exact 64-byte message?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "One."
+          },
+          {
+            "id": "c",
+            "text": "Two because the input was full."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Update has consumed the message block already."
+        },
+        {
+          "id": "s37-h2",
+          "text": "A fresh block still records the marker and original length."
+        }
+      ],
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s37.kts"
+      }
+    },
+    {
+      "id": "s38",
+      "title": "Acquire the supplied file descriptor",
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Which descriptor should later reads use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A fixed value of three."
+          },
+          {
+            "id": "b",
+            "text": "The nonnegative value returned by open."
+          },
+          {
+            "id": "c",
+            "text": "The scratch address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "The operating environment chooses the descriptor."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Preserve that result across all nested hash calls."
+        }
+      ],
+      "editTarget": "file_open",
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s38.kts"
+      }
+    },
+    {
+      "id": "s39",
+      "title": "Start one fresh hash for this file",
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "How often is initialization performed for a file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before every read."
+          },
+          {
+            "id": "b",
+            "text": "Only after EOF."
+          },
+          {
+            "id": "c",
+            "text": "Once before its first read."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Read boundaries divide transport, not messages."
+        },
+        {
+          "id": "s39-h2",
+          "text": "All positive reads contribute to one running context."
+        }
+      ],
+      "editTarget": "file_init",
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s39.kts"
+      }
+    },
+    {
+      "id": "s40",
+      "title": "Request a bounded scratch prefix",
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Which bytes in scratch are new input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every byte up to the capacity."
+          },
+          {
+            "id": "b",
+            "text": "Only the number reported by the positive result."
+          },
+          {
+            "id": "c",
+            "text": "Every byte that happens to be nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "The buffer may retain older bytes after the returned prefix."
+        },
+        {
+          "id": "s40-h2",
+          "text": "The return value defines the valid input interval."
+        }
+      ],
+      "editTarget": "file_read",
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s40.kts"
+      }
+    },
+    {
+      "id": "s41",
+      "title": "Separate read errors, EOF and positive input",
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "What does a positive short read mean here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The returned bytes are valid and another read is needed."
+          },
+          {
+            "id": "b",
+            "text": "The complete file has ended."
+          },
+          {
+            "id": "c",
+            "text": "The hash must restart."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Only zero denotes EOF in this interface."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The amount returned may be smaller than the amount requested."
+        }
+      ],
+      "editTarget": "file_result",
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s41.kts"
+      }
+    },
+    {
+      "id": "s42",
+      "title": "Hash exactly the returned read count",
+      "kind": "author",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Why copy v0 into the length argument first?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is the actual successful read count."
+          },
+          {
+            "id": "b",
+            "text": "It is always equal to the capacity."
+          },
+          {
+            "id": "c",
+            "text": "It contains the expected digest."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Nested functions may replace v0."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Retain the syscall result before entering the hash routine."
+        }
+      ],
+      "editTarget": "file_update",
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s42.kts"
+      }
+    },
+    {
+      "id": "s43",
+      "title": "Continue reading until a terminal result",
+      "kind": "author",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Does the hash depend on the number of read calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, every read adds padding."
+          },
+          {
+            "id": "b",
+            "text": "No, only the ordered byte sequence contributes."
+          },
+          {
+            "id": "c",
+            "text": "Only if the capacity is odd."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "The update function never adds final padding."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Read boundaries disappear at the context interface."
+        }
+      ],
+      "editTarget": "file_repeat",
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s43.kts"
+      }
+    },
+    {
+      "id": "s44",
+      "title": "Publish only after successful EOF and close",
+      "kind": "author",
+      "quiz": {
+        "id": "q44",
+        "prompt": "When is the output a digest of this complete file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After any positive read."
+          },
+          {
+            "id": "b",
+            "text": "When scratch is full."
+          },
+          {
+            "id": "c",
+            "text": "After EOF and successful finalization, with status zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "A partial prefix may not be the entire file."
+        },
+        {
+          "id": "s44-h2",
+          "text": "The caller must inspect status before interpreting output bytes."
+        }
+      ],
+      "editTarget": "file_final",
+      "content": "steps/44.md",
+      "prerequisites": [
+        "s43"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s44.kts"
+      }
+    },
+    {
+      "id": "s45",
+      "title": "Distinguish ordinary files from controlled read tests",
+      "kind": "observe",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Does an ordinary small file force a read-error branch?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if its length is not a multiple of sixty-four."
+          },
+          {
+            "id": "b",
+            "text": "No; the error must be exercised deliberately."
+          },
+          {
+            "id": "c",
+            "text": "Only when the filename contains digits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "File contents and transport failures are separate test inputs."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Controlled fixtures make otherwise hard-to-repeat outcomes observable."
+        }
+      ],
+      "content": "steps/45.md",
+      "prerequisites": [
+        "s44"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s45.kts"
+      }
+    },
+    {
+      "id": "s46",
+      "title": "Exercise equivalent code and independent contexts",
+      "kind": "observe",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What must an equivalent implementation preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The observable interface and memory contract."
+          },
+          {
+            "id": "b",
+            "text": "Every temporary register value used by this illustration."
+          },
+          {
+            "id": "c",
+            "text": "The same source labels inside its loop."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Separate an internal teaching checkpoint from a public return boundary."
+        },
+        {
+          "id": "s46-h2",
+          "text": "The caller relies on results and ownership, not the chosen expression for choice."
+        }
+      ],
+      "content": "steps/46.md",
+      "prerequisites": [
+        "s45"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s47",
+      "title": "Measure the change at a fixed boundary",
+      "kind": "observe",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Do fewer simulated instructions establish lower host elapsed time?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always, with the same numerical ratio."
+          },
+          {
+            "id": "b",
+            "text": "No; host time requires a separate measurement."
+          },
+          {
+            "id": "c",
+            "text": "Only when the file is missing."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Identify exactly what the counter records."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Session creation, host execution costs and file latency are outside these instruction counts."
+        }
+      ],
+      "content": "steps/47.md",
+      "prerequisites": [
+        "s46"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/file.kts",
+    "checks/program.kts",
+    "checks/reuse.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json",
+    "inputs.json",
+    "steps.json",
+    "prepare.py",
+    "native"
+  ]
+}

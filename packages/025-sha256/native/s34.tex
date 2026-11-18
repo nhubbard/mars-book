@@ -1,0 +1,37 @@
+\section{Step 34 Serialize every bit of the saved length}\label{sha-s34}
+
+Write the most significant length byte first, using doubleword logical variable shifts with counts fifty-six down to zero. Store the low byte of each shifted result. Word-sized variable shifts would wrap the shift count modulo thirty-two and lose the intended high half. After this loop the final block is complete, but has not yet been compressed.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_length} and \texttt{\# END fin\_length}. Keep the supplied labels outside that region.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 56
+    daddiu $t1, $s0, 104
+final_length_byte:
+    dsrlv $t2, $s3, $t0
+    sb $t2, 0($t1)
+    daddiu $t1, $t1, 1
+    addiu $t0, $t0, -8
+    bgez $t0, final_length_byte
+    nop
+\end{minted}
+
+Use recipe \texttt{s34-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+Recipe \texttt{s34-2} supplies a synthetic byte total of hexadecimal \texttt{20000003} with a three-byte tail. Its length field must be \texttt{00 00 00 01 00 00 00 18}. This checks high length bits without claiming that a large file was read.
+
+\subsection{Expected observation}
+For abc, buffer bytes fifty-six through sixty-three are 00 00 00 00 00 00 00 18.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which width is required for these variable shifts?
+
+\begin{itemize}
+\item \textbf{A} Eight bits.
+\item \textbf{B} Thirty-two bits.
+\item \textbf{C} Sixty-four bits.
+\end{itemize}

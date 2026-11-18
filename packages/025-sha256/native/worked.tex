@@ -1,0 +1,50 @@
+\section{Observe the first round of \texttt{abc}}
+The initial state is fixed by SHA-256. For this first block, its eight words become the
+initial working values shown in the first numeric column. The second column gives the
+working values immediately after round zero, before any feed-forward addition.
+
+\begin{table}[htbp]
+\centering\caption{The first round of the padded three-byte \texttt{abc} message.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\toprule
+Working value & Before round zero & After round zero\\
+\midrule
+\(a\) & \texttt{6a09e667} & \texttt{5d6aebcd}\\
+\(b\) & \texttt{bb67ae85} & \texttt{6a09e667}\\
+\(c\) & \texttt{3c6ef372} & \texttt{bb67ae85}\\
+\(d\) & \texttt{a54ff53a} & \texttt{3c6ef372}\\
+\(e\) & \texttt{510e527f} & \texttt{fa2a4622}\\
+\(f\) & \texttt{9b05688c} & \texttt{510e527f}\\
+\(g\) & \texttt{1f83d9ab} & \texttt{9b05688c}\\
+\(h\) & \texttt{5be0cd19} & \texttt{1f83d9ab}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At this round, \(K_0=\mathtt{428a2f98}\) and \(W_0=\mathtt{61626380}\).
+The values \(\Sigma_1(e)=\mathtt{3587272b}\) and
+\(\operatorname{Ch}(e,f,g)=\mathtt{1f85c98c}\) give
+\(T_1=\mathtt{54da50e8}\). Likewise,
+\(\Sigma_0(a)=\mathtt{ce20b47e}\) and
+\(\operatorname{Maj}(a,b,c)=\mathtt{3a6fe667}\) give
+\(T_2=\mathtt{08909ae5}\). Adding those two temporaries yields the new
+\(a=\mathtt{5d6aebcd}\). Adding old \(d\) to \(T_1\), keeping its low word,
+yields the new \(e=\mathtt{fa2a4622}\).
+
+In the reference register allocation, \texttt{s0} through \texttt{s7} hold
+\(a\) through \(h\), \texttt{t0} holds \(T_1\), and \texttt{t1} holds \(T_2\).
+The label \texttt{compress\_round\_done} is immediately after those working values
+have been replaced. This mapping is for the illustration and guided construction;
+an equivalent free-writing implementation may allocate registers differently.
+
+Once the remaining rounds and feed-forward have completed, serializing the eight state
+words produces the digest below. The spaces separate eight groups for reading; the
+digest itself is 32 bytes, or 64 hexadecimal digits.
+\begin{verbatim}
+ba7816bf 8f01cfea 414140de 5dae2223
+b00361a3 96177a9c b410ff61 f20015ad
+\end{verbatim}
+The empty message has a different digest. It still processes a block containing its
+marker and zero length; returning the initial state for empty input would skip that
+required compression.

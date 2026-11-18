@@ -1,0 +1,31 @@
+\section{Step 24 Guard the source before copying a byte}\label{sha-s24}
+
+Check remaining input before loading through the source pointer. For a nonempty interval, load one unsigned byte, add the current used count to the context base and store at buffer offset forty-eight. This edit copies one byte but does not yet advance either count. For zero length, the branch reaches the supplied normal update exit without touching source memory.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN upd\_copy} and \texttt{\# END upd\_copy}. Keep the supplied labels outside that region.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s2, $zero, update_done
+    nop
+    lbu $t0, 0($s1)
+    daddu $t1, $s0, $s3
+    sb $t0, 48($t1)
+\end{minted}
+
+Use recipe \texttt{s24-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The first selected input byte is copied at the old used position; an empty call performs no source read.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which check must precede the source load?
+
+\begin{itemize}
+\item \textbf{A} Whether any input bytes remain.
+\item \textbf{B} Whether the output digest is zero.
+\item \textbf{C} Whether the source address is word-aligned.
+\end{itemize}

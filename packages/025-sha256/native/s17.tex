@@ -1,0 +1,34 @@
+\section{Step 17 Replace the working vector in dependency order}\label{sha-s17}
+
+Move old g to h, old f to g and old e to f before replacing e with old d plus T1. Continue toward a, then set new a to T1 plus T2. This order preserves each old value until its last use. Pause at compress\_round\_done before the loop advances to inspect all eight new working words.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN comp\_rotate} and \texttt{\# END comp\_rotate}. Keep the supplied labels outside that region.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s7, $s6
+    move $s6, $s5
+    move $s5, $s4
+    addu $s4, $s3, $t0
+    move $s3, $s2
+    move $s2, $s1
+    move $s1, $s0
+    addu $s0, $t0, $t1
+\end{minted}
+
+Use recipe \texttt{s17-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+For padded abc, new a is \texttt{5d6aebcd} and new e is \texttt{fa2a4622}; the remaining words follow the worked table.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What goes wrong if g is overwritten before h receives old g?
+
+\begin{itemize}
+\item \textbf{A} The old g value can be lost.
+\item \textbf{B} The source address becomes aligned.
+\item \textbf{C} The round counter increases.
+\end{itemize}

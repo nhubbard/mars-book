@@ -1,0 +1,32 @@
+\section{Step 25 Recognize when the buffer becomes full}\label{sha-s25}
+
+Advance the full source pointer, reduce remaining input, and increase the used count. If the buffer has fewer than sixty-four bytes, continue at update\_byte. Reaching sixty-four must leave the copy loop and enter compression before another store occurs. Otherwise the next byte would overwrite the schedule area following the buffer.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN upd\_walk} and \texttt{\# END upd\_walk}. Keep the supplied labels outside that region.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $s1, $s1, 1
+    daddiu $s2, $s2, -1
+    addiu $s3, $s3, 1
+    li $t0, 64
+    bne $s3, $t0, update_byte
+    nop
+\end{minted}
+
+Use recipe \texttt{s25-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+For a 64-byte update to an empty context, the buffer is full, remaining input is zero and used is sixty-four at the compression boundary.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why not immediately copy byte sixty-five into the same buffer?
+
+\begin{itemize}
+\item \textbf{A} It would exceed the 64-byte buffer.
+\item \textbf{B} It would make the message odd-length.
+\item \textbf{C} It would alter the constant table automatically.
+\end{itemize}

@@ -209,9 +209,10 @@ two equivalent implementations. Private tests cover arbitrary-state compression,
 split messages, independent contexts, full length fields, real files and deliberate
 faults. The cumulative expansion has 47 steps,38 authored edits,six supplied entry/exit pairs,
 47 quizzes,94 hints,58 exact recipes and four planned IDE figure slots. Every prepared
-image is checked along with caller and offset-function execution. Public/instructor
-packages and main-manuscript integration remain pending; the integrated package count
-is still twenty-four.
+image is checked along with caller and offset-function execution. Separate public/student and private/instructor packages now contain safe guided
+exports, completed-interface checks, private domains and explanatory quiz feedback.
+The chapter is included in main.tex as the twenty-fifth text package. Actual IDE pixels,
+remote progression, deferred author rewriting and independent accessibility work remain.
 
 ## Author feedback and deferred revision
 

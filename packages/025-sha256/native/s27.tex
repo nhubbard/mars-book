@@ -1,0 +1,29 @@
+\section{Step 27 Begin a fresh buffer after compression}\label{sha-s27}
+
+Set the working used count to zero and return to the source guard. Any remaining bytes now start at buffer position zero. When input is exhausted, the common exit stores the final used count before restoring the frame. This completes update for both partial and complete source blocks, including a final incomplete tail.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN upd\_resume} and \texttt{\# END upd\_resume}. Keep the supplied labels outside that region.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s3, $zero
+    b update_byte
+    nop
+\end{minted}
+
+Use recipe \texttt{s27-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+A 65-byte input leaves total sixty-five, used one and the last input byte in buffer position zero.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which value must be cleared after a full block?
+
+\begin{itemize}
+\item \textbf{A} The original total.
+\item \textbf{B} The used count.
+\item \textbf{C} The running eight-word state.
+\end{itemize}

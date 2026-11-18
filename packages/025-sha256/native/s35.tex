@@ -1,0 +1,31 @@
+\section{Step 35 Consume the complete final block}\label{sha-s35}
+
+Pass the state, final buffer and schedule workspace to compression one last time. This call happens on both padding paths: either it is the only padding block or it follows the extra block. The resulting state is ready for byte serialization. Do not restart the initial state here, because earlier message and padding blocks must remain incorporated.
+
+\subsection{Write and inspect}
+Replace only the temporary instructions between \texttt{\# BEGIN fin\_compress} and \texttt{\# END fin\_compress}. Keep the supplied labels outside that region.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s0
+    daddiu $a1, $s0, 48
+    daddiu $a2, $s0, 112
+    jal sha256_compress
+    nop
+\end{minted}
+
+Use recipe \texttt{s35-1} with the cumulative program through this edit. The exact recipe names the entry, prepared input and checkpoint. Observe the checkpoint before continuing to its temporary or normal return.
+
+\subsection{Expected observation}
+The context state equals the complete SHA-256 result as eight numeric words; output bytes are still untouched.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What must happen before writing the digest bytes?
+
+\begin{itemize}
+\item \textbf{A} The final block must be compressed.
+\item \textbf{B} The original total must be reset.
+\item \textbf{C} The file must be reopened.
+\end{itemize}

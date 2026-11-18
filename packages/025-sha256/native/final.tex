@@ -1,0 +1,27 @@
+\section{Finalize without counting the padding as input}
+Finalization starts with the saved used count and original byte count. Convert the
+latter to a bit count with a 64-bit left shift by three. Write \texttt{80} at the next
+free buffer position. If the resulting used count is greater than 56, zero the rest
+of that block and compress it. Begin the next block with a used count of zero. Then
+zero through position 55 and write the eight length bytes at positions 56 through 63.
+Compress that final block.
+
+The condition is stated after the marker is written. A former used count of 55 becomes
+56 and still fits. A former used count of 56 becomes 57 and needs another block.
+Putting the comparison on the wrong side of the marker write moves the boundary by
+one byte. Test both lengths explicitly rather than inferring correctness from a short
+message such as \texttt{abc}.
+
+Serialize the full 64-bit bit count. Keeping only its low word works for small tests
+but fails once the message length in bits exceeds \(2^{32}-1\). The implementation
+extracts one byte at a time with doubleword logical shifts, from shift count 56 down
+to zero. This also makes the byte order independent of the simulator's memory layout.
+Synthetic contexts can test that serialization without allocating an enormous file;
+such a test checks a supplied state and length, not the digest of a file that was
+actually read.
+
+Finally, write each state word to the output most significant byte first. For the first
+word of the \texttt{abc} digest, \texttt{ba7816bf}, write bytes
+\texttt{ba 78 16 bf} at increasing addresses. A direct little-endian \texttt{sw}
+would write \texttt{bf 16 78 ba}. The numeric state can be correct while the
+published byte sequence is wrong, so compare the output bytes as well as state words.

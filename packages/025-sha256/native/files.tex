@@ -1,0 +1,30 @@
+\section{Let successful reads supply the message}
+The file routine owns the open descriptor, a private hashing context and the caller's
+selected scratch interval. Open the supplied terminated path read-only. If open fails,
+return status one and leave the digest unchanged. Otherwise initialize the private
+context and begin reading into scratch.
+
+A positive read result is a byte count. Pass exactly that count to update, even if it
+is smaller than the request, then read again. The scratch buffer may contain old bytes
+after the returned prefix. They are not part of the message. A zero result is EOF:
+finalize the context into the caller's output, close the descriptor and return status
+zero. A negative result is a read failure: close the descriptor, return status two and
+leave the output unchanged.
+
+Preserving output on failure makes publication a deliberate boundary. The output may
+still contain an earlier digest or a recognizable test pattern. The caller must read
+the status before treating those bytes as this file's result. Do not finalize a
+successfully read prefix after a later error and report it as the digest of the file.
+The prefix and the complete file are different messages.
+
+The descriptor must survive calls to the hash routines. Keep it in a preserved register
+or private stack slot. The same is true of scratch, capacity and output pointers. A
+nested \texttt{jal} also replaces \texttt{ra}; save the caller's return address before
+making the first nested call. The private context occupies 368 bytes, separate from
+saved registers, so its schedule writes cannot overwrite those saved values.
+
+Use the same exact file for an external digest comparison. A text editor may add a
+newline when saving, and a shell command that prints text may add one too. Begin with
+fixtures whose length and bytes are known. Only after those agree should a mismatch
+be treated as an arithmetic problem. The ordinary-file tests and controlled short-read
+or read-error tests establish different parts of this interface.

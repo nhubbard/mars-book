@@ -1,0 +1,34 @@
+\section{Choose the width of each operation}
+SHA-256 operates on 32-bit words. Its additions retain the low 32 bits, including when
+a carry leaves bit 31. MIPS64 addresses and the accumulated byte count, however, need
+64-bit operations. We will therefore use word arithmetic for compression values and
+doubleword arithmetic for pointers and the count.
+
+The word instruction \texttt{addu} adds modulo \(2^{32}\) without trapping on signed
+overflow. Its result occupies a 64-bit register with the low word sign-extended. The
+letter \texttt{u} does not make the register hold a zero-extended unsigned result.
+For compression, the low word is the value we need. A subsequent word rotate, word
+shift or word store uses that word. Do not turn a sign-extended state value into a
+pointer or use its upper half as extra hash bits.
+
+The instruction \texttt{rotr} rotates a word right. Bits leaving the low end re-enter
+at the high end of the same 32-bit word. \texttt{drotr} instead rotates a 64-bit value;
+it performs a different operation even when the intended hash value fits in 32 bits.
+The right shifts in the small-sigma functions are logical word shifts, written
+\texttt{srl}. An arithmetic shift would copy the sign bit into positions that the
+algorithm requires to become zero.
+
+Pointer increments use \texttt{daddiu}, and adding a byte offset to a pointer uses
+\texttt{daddu}. A word-sized increment may appear correct while the source is near
+the simulator's usual low data address. At an address above 4 GiB it discards part of
+the address. The same distinction applies when saving a return address: use an
+eight-byte stack slot with \texttt{sd} and \texttt{ld}.
+
+\begin{MARSWorkedExample}{A word with its high bit set}
+The low word \texttt{80000000} shifted right logically by one is \texttt{40000000}.
+Rotating it right by one also gives \texttt{40000000}, but shifting or rotating
+\texttt{00000001} distinguishes the operations: logical shift gives zero and word
+rotation gives \texttt{80000000}. A doubleword rotation would place that last bit in
+bit 63. Use these small values when checking an instruction choice before running a
+whole compression round.
+\end{MARSWorkedExample}

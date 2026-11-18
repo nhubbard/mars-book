@@ -1,0 +1,53 @@
+\section{Keep one cumulative program}
+Start with \texttt{packages/025-sha256/starter/main.asm} and save your working copy outside
+the draft folder. Each authoring step replaces one marked region in that same source.
+Keep all earlier edits, the markers, arenas, labels and supplied frame code. You may
+write equivalent code, but the intermediate register observations describe the illustrated
+allocation; the completed function checks use the published interfaces.
+
+The mode word selects a caller path. Zero hashes memory through initialization, update
+and finalization. One hashes a file. Two builds a schedule, three compresses one block,
+four initializes a context, five updates it and six finalizes it. The exercise dispatcher
+loads a full function address into \texttt{t9} and uses \texttt{jalr} at
+\texttt{kernel\_call}. A direct function experiment and this caller should observe the
+same function behavior. The common \texttt{main\_done} checkpoint is before its status
+store; \texttt{results\_ready} is after the store.
+
+Recipes in \texttt{inputs.json} select exact source bytes, state words, context fields,
+capacity and checkpoint. They do not compose this chapter or execute a lesson in the
+IDE. To prepare one, run the helper below with your current cumulative source. It writes
+a separate source and refuses to overwrite either the working source or an existing
+output. Assemble or debug the prepared source, then pause at the recipe's checkpoint.
+\begin{verbatim}
+python3 packages/025-sha256/prepare.py s03-1 \
+  --source /path/to/my-sha.asm --output /tmp/sha-s03.asm
+\end{verbatim}
+Recipes without an internal checkpoint use \texttt{main\_done}, before the caller's status store.
+
+The prepared image keeps each arena's full size. For example, a three-byte selected
+source does not shrink its backing array. For finalization-only recipes the context
+already represents the declared complete-block prefix and buffered tail; the helper
+is supplying test input to the finalizer, not secretly adding student implementation.
+A recipe marked synthetic supplies a state and a large count to test the length field;
+it does not claim that such a large file was read.
+
+To exercise ordinary host file I/O, add \texttt{--fixture-output} with a new absolute
+ASCII path. The helper writes exactly the recipe bytes and embeds that path in its
+128-byte arena. Forced short reads, failed opens and injected read errors are separate
+CLI fixture controls; those behaviors are not created merely by writing a host file.
+An ordinary-file digest comparison uses the same byte sequence without assuming a
+particular number of successful read calls.
+
+Public guided checks are under \texttt{checks/construction} within the package. Run
+the following command with the current cumulative source.
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  /path/to/check.kts /path/to/current.asm
+\end{verbatim}
+ Each check installs its declared inputs itself;
+preparing a separate image is for manual inspection in Run or Debug.
+
+The authoring checks execute every prepared recipe both through the supplied
+caller and through an offset function call. Actual annotated IDE figures are still
+pending. The figure slots below describe what a future automated light-theme capture
+should show; they are not screenshots of a completed lesson runner.

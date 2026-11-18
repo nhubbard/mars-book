@@ -1,0 +1,48 @@
+\section{Keep the old and new working values separate}
+The compression state contains eight words. At the beginning of a block, copy them
+into working values called \(a,b,c,d,e,f,g,h\). During each round, compute two
+temporary values from the \emph{old} working values:
+\[
+\begin{aligned}
+T_1&=h+\Sigma_1(e)+\operatorname{Ch}(e,f,g)+K_t+W_t,\\
+T_2&=\Sigma_0(a)+\operatorname{Maj}(a,b,c).
+\end{aligned}
+\]
+All additions in the compression equations are modulo \(2^{32}\). The constants
+\(K_t\) are fixed by the algorithm; \(W_t\) comes from this block's schedule.
+The capital-sigma functions use only rotations:
+\[
+\begin{aligned}
+\Sigma_0(x)&=\operatorname{ROTR}_2(x)\oplus\operatorname{ROTR}_{13}(x)
+ \oplus\operatorname{ROTR}_{22}(x),\\
+\Sigma_1(x)&=\operatorname{ROTR}_6(x)\oplus\operatorname{ROTR}_{11}(x)
+ \oplus\operatorname{ROTR}_{25}(x).
+\end{aligned}
+\]
+Do not substitute the small-sigma functions from schedule expansion. Similar names
+identify different operations.
+
+The choice function operates independently at each bit position:
+\(\operatorname{Ch}(e,f,g)=(e\mathbin{\&}f)\oplus((\mathord{\sim}e)\mathbin{\&}g)\).
+A one bit in \(e\) selects the corresponding bit from \(f\); a zero bit selects it
+from \(g\). An equivalent expression is \(g\oplus(e\mathbin{\&}(f\oplus g))\).
+The majority function is
+\(\operatorname{Maj}(a,b,c)=(a\mathbin{\&}b)\oplus(a\mathbin{\&}c)\oplus(b\mathbin{\&}c)\).
+At a single bit position its result is one when at least two inputs are one.
+The tilde denotes a bitwise complement within a word, and \(\&\) denotes bitwise AND.
+
+After both temporaries are ready, the new working values are
+\[
+(a',b',c',d',e',f',g',h')=
+(T_1+T_2,a,b,c,d+T_1,e,f,g).
+\]
+The primes distinguish the new round's values. With one register per working word,
+move from the end of the list toward the beginning. Copy old \(g\) to \(h\) before
+overwriting \(g\), and old \(f\) to \(g\) before overwriting \(f\). Reversing that
+order can make several registers contain the same old value. The error is then carried
+through every later round.
+
+After all 64 rounds, add each working word to its corresponding incoming state word
+and store the sum. This is the feed-forward step. The working values by themselves
+are not the next compression state. Preserve the incoming words in memory until this
+addition; loading them only after overwriting the state would lose the values needed.
