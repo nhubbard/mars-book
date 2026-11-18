@@ -272,3 +272,16 @@ checked independently. The package exports guided observations and seven public
 completed-interface domains; private cases and quiz feedback remain separate. Actual
 screenshot capture and remote progression remain pending.
 The author's substantial exposition and length rewrite remains deferred.
+
+
+The Binary PPM reading foundation is directly edited at `drafts/binary-ppm.tex`.
+Ten sections explain header/raster boundaries, the local image subset, exact extents,
+RGB bytes versus display words, short I/O, cleanup and independent checks. A numbered,
+described native two-by-two image and byte-offset table support the worked fixture.
+The fixture helper preserves a new output path, and an independent image reader checks
+ten host-generated images. These are not assembly-writer results. The missing grader
+output capability has been implemented upstream with declared paths, binary snapshots,
+short writes and failure injection, preserving read-only defaults. A private transport
+probe passes 54 executions across normal/wide addresses. Full image routines, cumulative
+construction and separate distributions remain next; the main manuscript retains its
+28 packages. Actual IDE captures and the deferred author rewrite remain pending.

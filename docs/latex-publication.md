@@ -235,3 +235,11 @@ text package, with separate student and instructor distributions. Actual IDE fig
 remain subsequent work. Embedded fonts, tagged
 structure and complete single-page listings are checked; independent accessibility
 certification and student usability review remain pending.
+
+
+Build the initial Binary PPM reading with
+`python3 tools/book.py build --entry drafts/binary-ppm.tex`. The directly edited native
+includes use Minion Pro, Noto Sans Math and JetBrains Mono, with a described native
+pixel diagram and a headed byte-offset table. This reading foundation has no assembly
+listings yet; it is not included in main.tex. The transport implementation and grading
+prerequisites are checked separately before the complete image routines are authored.

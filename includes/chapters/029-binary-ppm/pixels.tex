@@ -1,0 +1,25 @@
+\section{Separate a color word from its byte order}
+For this framebuffer, construct the numerical word
+\[
+ c=(R\ll16)\mathbin{\mathrm{OR}}(G\ll8)\mathbin{\mathrm{OR}}B.
+\]
+Load each sample as an unsigned byte. Shift the red and green values, then join the
+nonoverlapping fields. A word store places that numerical color in the display buffer.
+The high byte is zero; this path does not introduce an alpha channel.
+
+A red pixel has RGB bytes \texttt{ff 00 00} and numerical display word
+\texttt{0x00ff0000}. In little-endian memory, that word occupies bytes
+\texttt{00 00 ff 00}. Copying the file's three RGB bytes directly into the framebuffer
+therefore does not produce the required four-byte word representation. Endianness
+explains how the already constructed word is stored; it does not reverse the file's
+specified component order.
+
+For pixel index \(i\), advance the raster cursor by three and the framebuffer cursor
+by four. These strides remain different even though both cursors refer to the same
+logical pixel. For the reverse conversion, load one word and extract bits 23--16,
+15--8 and 7--0 into three consecutive output bytes. Retain the original row order.
+
+First inspect the four words for the small fixture: \texttt{00ff0000},
+\texttt{0000ff00}, \texttt{000000ff} and \texttt{00ffffff}. Then inspect their stored
+bytes. This gives two observations of the same result without confusing the number
+with its memory representation.

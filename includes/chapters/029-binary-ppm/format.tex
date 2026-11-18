@@ -1,0 +1,56 @@
+\section{Locate the first raster byte}
+The raw PPM form starts with the ASCII identifier \texttt{P6}. Its header supplies
+width, height and a maximum sample value. The raster follows one whitespace byte after
+that value. For the one-byte samples used here, each pixel has consecutive red, green
+and blue bytes; rows proceed from top to bottom and pixels within a row from left to
+right. PPM also has other sample widths and a text form; those require different parsing.
+
+For the first fixture, write these eleven header bytes:
+\begin{center}
+\texttt{P6\textbackslash n2 2\textbackslash n255\textbackslash n}
+\end{center}
+Here \texttt{\textbackslash n} denotes one byte with value ten, rather than a backslash
+and the letter n. The raster therefore starts at offset eleven. It has twelve bytes,
+so the complete fixture occupies twenty-three bytes.
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rll}
+Offset & Meaning & Hexadecimal bytes \\
+\hline
+0--2 & Magic and separator & \texttt{50 36 0a} \\
+3--6 & Width, space, height, separator & \texttt{32 20 32 0a} \\
+7--10 & Maxval and final separator & \texttt{32 35 35 0a} \\
+11--13 & Top-left red & \texttt{ff 00 00} \\
+14--16 & Top-right green & \texttt{00 ff 00} \\
+17--19 & Bottom-left blue & \texttt{00 00 ff} \\
+20--22 & Bottom-right white & \texttt{ff ff ff} \\
+\end{tabular}
+\end{center}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={A two-by-two logical image. Pixel zero at the top left is red, with RGB bytes ff 00 00. Pixel one at the top right is green, 00 ff 00. Pixel two at the bottom left is blue, 00 00 ff. Pixel three at the bottom right is white, ff ff ff. Numbered cells show the file's row order independently of color.}]
+\filldraw[fill=red] (0,2) rectangle (2,4);
+\filldraw[fill=green] (2,2) rectangle (4,4);
+\filldraw[fill=blue] (0,0) rectangle (2,2);
+\filldraw[fill=white] (2,0) rectangle (4,2);
+\node at (1,3) {0};
+\node at (3,3) {1};
+\node[text=white] at (1,1) {2};
+\node at (3,1) {3};
+\end{tikzpicture}
+\caption{The logical fixture, numbered in raster order. The colors illustrate the sample codes; this is not an IDE capture or a color-management test.}\label{ppm-logical-fixture}
+\end{figure}
+
+\section{Stop treating bytes as header text}
+A whitespace-skipping routine is useful while searching for a header token. It becomes
+destructive after the final header separator. A red sample can itself have value ten,
+thirty-two or thirty-five: the byte codes for line feed, space and the comment marker.
+Those bytes belong to the pixel. Skipping them changes the starting point of every
+subsequent triplet.
+
+Use a distinct transition after the Maxval token. Confirm the required separator,
+advance across it once, and save that position as the raster offset. From that point,
+read samples by count. Do not call the header whitespace/comment scanner again. In
+particular, do not interpret a zero sample as a string terminator. These are binary
+bytes even when some happen to have familiar character codes.

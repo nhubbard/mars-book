@@ -1,0 +1,22 @@
+\section{Move one image through three representations}
+A file contains a sequence of bytes. The bitmap display reads words from simulator
+memory. A pixel is an interpretation of some of those bytes or words. This project
+connects the three: read a binary PPM image, recover its dimensions and pixel samples,
+place those pixels in the framebuffer, then write an image that another program can open.
+
+Keep the transformations separate while developing them. First identify where the
+header stops. Then check how much raster data must follow. Convert one RGB triplet to
+one display word before introducing a loop over the image. Finally, serialize the
+words back to RGB bytes and put a new header before them. A wrong header offset and a
+wrong component order can both produce a strange image; examining these boundaries
+separately tells you which calculation to repair.
+
+Use a two-by-two image with red and green on the first row, blue and white on the
+second. Its twelve sample bytes are short enough to inspect individually. The colors
+also expose a red/blue reversal and a row-order reversal without relying on a photograph
+whose intended appearance may be unclear.
+
+The helper in \path{drafts/ppm-fixtures} writes this initial file for inspection. Run
+\texttt{python3 fixture.py} with a new output path. It refuses to overwrite an existing
+file. This helper prepares the input; the assembly routines will perform the image
+parsing and writing developed in the subsequent construction.

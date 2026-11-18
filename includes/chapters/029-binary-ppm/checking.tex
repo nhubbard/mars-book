@@ -1,0 +1,23 @@
+\section{Check a saved image independently}
+Build the expected header and raster from host integer values, not from the assembly
+writer's output. Compare every output byte with that independent construction. Decode
+the same file with an independent image reader and compare the pixel values again.
+These checks answer different questions: exact bytes verify the exercise's canonical
+writer, while the independent reader verifies that another implementation understands it.
+
+For a valid noncanonical header, a read--write cycle may change spacing and comments.
+Compare dimensions and raster samples across the cycle; compare writer output with the
+canonical expected file. Requiring preservation of input comments would impose a
+metadata-preservation feature that this exercise does not implement.
+
+Include pixels whose first sample is LF, space, hash, zero and 255. Put these at the
+start of the raster and at later row boundaries. Also test a missing last sample, an
+extra byte, dimensions just outside the bound and an unsupported Maxval. Run file reads
+and writes with short counts, injected errors and descriptors other than three. After
+any successful open, check that all handles have been closed. After a format failure,
+check that the framebuffer still contains its original sentinels.
+
+The first development milestone is the transport boundary. A captured output fixture
+can establish which bytes were written even before a complete image parser exists.
+Subsequent implementation work will connect this to the parser, conversion routines and
+the display, then add the cumulative edits and guided observations.

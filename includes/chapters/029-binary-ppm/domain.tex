@@ -1,0 +1,23 @@
+\section{State the teaching subset before writing a parser}
+The exercise uses one image, \texttt{P6}, a Maxval token of exactly \texttt{255}, and
+width and height from one through sixty-four. These are local bounds chosen for a small
+framebuffer and a bounded input arena. They are not limits of the general PPM format.
+The final Maxval separator is one LF byte in this exercise. The writer emits the
+canonical eleven-byte style illustrated above, with decimal dimensions taking as many
+digits as necessary.
+
+The reader will accept header spacing and comments in its declared header gaps, but
+will not search for comments inside the raster. Width and height use unsigned decimal
+tokens without signs or leading zeros. Reject an empty token, a zero dimension, a digit
+that would exceed the bound, and a nonseparator after a token. Bound the complete header
+to 256 bytes. A comment without a terminating line feed must reach that bound or the
+end of input and fail; it must not scan unrelated simulator memory for a terminator.
+
+Require exactly one complete raster and no trailing bytes. This makes a truncated row,
+an extra byte and a second image explicit failures for this exercise. A more general
+reader could expose a next-image offset; changing that policy requires a new contract
+and tests rather than silently accepting extra input.
+
+The display path preserves sample codes directly. It does not implement a color-management
+conversion or use an image viewer as the numerical oracle. Test the RGB bytes and display
+words first. A viewer is useful as an additional check that the saved file can be opened.
