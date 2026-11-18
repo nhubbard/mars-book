@@ -14,6 +14,7 @@ import com.intellij.testFramework.junit5.TestApplication
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -71,7 +72,8 @@ class BookHighlightExporterTest {
     }
 
     @Test
-    fun `exports requested publication snippets using the installed MARS plugin`() = timeoutRunBlocking {
+    // The full publication corpus highlights hundreds of distinct editor files.
+    fun `exports requested publication snippets using the installed MARS plugin`() = timeoutRunBlocking(timeout = 60.seconds) {
         val input = System.getProperty("highlightInput") ?: return@timeoutRunBlocking
         val output = Path.of(checkNotNull(System.getProperty("highlightOutput")))
         val exports = mutableListOf<BookHighlightExporter.Export>()
