@@ -1,0 +1,34 @@
+\section{Load through EOF before accepting the image}
+Keep the byte count already read independently of capacity. The unused suffix starts
+at buffer base plus that count, and its request length is capacity minus the count.
+A positive read result advances the count. Zero reaches EOF. A negative result goes to
+a path that closes the descriptor and returns I/O status.
+
+When the count reaches capacity, read a separate one-byte private probe. A positive
+result proves excess input; zero proves exact-fit EOF. An error remains an I/O failure.
+Never place the probe after the caller's buffer. Close the input before parsing the
+buffer and publishing metadata. A malformed image must not leak a descriptor.
+
+\section{Validate before truncating an existing destination}
+The saver first parses its supplied memory file. This ordering matters because opening
+a destination in mode one can erase its old contents before a later format check fails.
+Rejecting malformed bytes should perform no file operations. After validation, open the
+declared path and retain the returned descriptor.
+
+For writes, distinguish the total byte count from bytes already accepted. The current
+source address is base plus the accepted count; the next request covers the remaining
+suffix. A positive result increases the accepted count. A nonpositive result for a
+nonempty request reaches the close-and-error path. Neither a negative error nor a
+zero-progress result should retry forever. Test a final short write as well as an
+early one: an incorrect remaining-count calculation can duplicate the file's tail.
+
+The caller chains load, decode, encode and save, testing status after each call. Pass
+the loader's exact byte count to the decoder, the decoder's packed dimensions to the
+encoder, and the encoder's exact byte count to the saver. These are three different
+meanings of \texttt{v1}. Using the whole arena capacity in their place can turn unused
+sentinel bytes into pixels or a file trailer.
+
+A second call must work in the same stopped simulator session. Reopen a previously read
+file and verify that it starts at byte zero. Save a shorter image over an earlier longer
+one and verify that truncation removes the old suffix. Retain these checks in addition
+to cases that begin with a fresh simulator.

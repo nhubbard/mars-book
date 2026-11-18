@@ -1,0 +1,35 @@
+\section{Advance a bounded scanner without losing the delimiter}
+Use an offset into the input object rather than repeatedly searching for a NUL. The
+scanner's limit is the smaller of the file byte count and 256. Before each header load,
+prove that the offset is below that limit. A comment loop has the same check: the
+comment marker changes how bytes are interpreted, not which bytes may be read. A line
+feed ends a comment; other bytes inside it are ignored.
+
+In header gaps, accept the six ASCII whitespace values: space, tab, line feed, carriage
+return, vertical tab and form feed. A hash starts a comment, including immediately after
+the magic or a dimension token. At least one separator or comment must occur in each
+required gap. The final separator after 255 remains exactly one LF. These rules define
+acceptance without relying on a host string-splitting function.
+
+For a decimal token, first require a byte from ASCII one through nine. This rejects
+zero dimensions, signs and leading zeros. Then accumulate digits using \(n'=10n+d\).
+Reject a value above 255 as each digit is consumed, so a long token cannot overflow
+before a later range check. Width and height receive the stricter one-through-sixty-four
+check after their tokens finish.
+
+Leave the first nondigit unconsumed. The next state must see the delimiter itself.
+For width and height, that state is the gap scanner; for Maxval, it is the exact LF
+check. If the digit loop advances across every examined byte, including the first
+nondigit, the next state cannot distinguish a proper separator from an adjacent token.
+A loop invariant should account for the offset as well as the accumulated number.
+
+For a width token \texttt{64}, the first digit produces six and the second produces
+sixty-four. The following space is examined but not consumed by the digit loop. A
+\texttt{65} token still fits the temporary number bound but fails the dimension check.
+A \texttt{9999} token fails during accumulation before its full decimal value is formed.
+
+After the final LF, compare the remaining count with three times the pixel count.
+Publish width, height and raster offset only after equality succeeds. Grouping the
+metadata stores at that boundary prevents an error from leaving a new width beside
+an old height or raster offset. The sixteen-byte result is one logical descriptor,
+even though several store instructions publish its fields.

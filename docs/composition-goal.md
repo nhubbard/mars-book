@@ -285,3 +285,14 @@ short writes and failure injection, preserving read-only defaults. A private tra
 probe passes 54 executions across normal/wide addresses. Full image routines, cumulative
 construction and separate distributions remain next; the main manuscript retains its
 28 packages. Actual IDE captures and the deferred author rewrite remain pending.
+
+
+Binary PPM now has five checked image interfaces and a complete private load/decode/
+encode/save caller, with an equivalent mask/field-insertion/byte-oriented alternative.
+The native reading adds metadata layout, packed dimensions, status precedence, bounded
+scanner invariants, canonical header sizing and file-state explanations. Public prose
+was written directly; instructor implementation bodies were not imported into it.
+The two implementations are verified at ordinary and wide addresses, including actual
+saved-file decoding by an independent reader and deliberate faults. Guided construction,
+public completion checks and separate chapter distributions remain next. The manuscript
+still contains 28 packaged chapters; the full goal remains active.

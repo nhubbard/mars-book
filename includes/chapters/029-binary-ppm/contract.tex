@@ -1,0 +1,55 @@
+\section{Use explicit interfaces at each boundary}
+Keep file bytes, parsed metadata and display words in separate objects. The byte
+interfaces accept unaligned source and serialized-output pointers. Framebuffer words
+require four-byte alignment; the metadata object requires eight-byte alignment.
+Outputs are disjoint from their inputs. Counts, capacities, pointers, saved registers
+and return addresses retain all 64 bits.
+
+The parser \texttt{ppm\_parse} receives a byte pointer in \texttt{a0}, its unsigned
+count in \texttt{a1} and a metadata pointer in \texttt{a2}. On success it writes sixteen
+bytes: a 32-bit width at offset zero, a 32-bit height at offset four, and a 64-bit raster
+offset at offset eight. All fields use little-endian memory order. Its return in
+\texttt{v1} is the number of pixels. No metadata byte changes on failure. The parser
+validates the complete extent, but it need not inspect each sample's numerical value:
+every byte value is a valid sample when Maxval is 255.
+
+The decoder \texttt{ppm\_decode} receives the bytes and count in \texttt{a0,a1}, a
+framebuffer pointer in \texttt{a2} and its capacity in pixels in \texttt{a3}. It returns
+the dimensions in \texttt{v1}: width in bits 31--0, height in bits 63--32. For the
+worked image this is \texttt{0x0000000200000002}. The encoder \texttt{ppm\_encode}
+accepts a framebuffer pointer, that packed dimension value, a serialized-output pointer
+and its capacity in bytes. Its successful \texttt{v1} is the exact file byte count.
+The encoder ignores each input word's high byte and emits only its RGB fields. It
+writes no trailing terminator or guard byte.
+
+\Needspace{7\baselineskip}
+For memory interfaces, \texttt{v0=0} means success, one means malformed input or invalid
+dimensions, and two means a bound or capacity failure. Failures return zero in
+\texttt{v1}. The parser and decoder reject a byte count above 12544 before accessing
+pointers; an empty or otherwise malformed bounded file returns one. The decoder
+validates the file before checking framebuffer capacity. The encoder validates both
+dimensions before checking output capacity, and both checks precede pixel reads or
+output writes. Preserve all bits of \texttt{s0} through \texttt{s7}, \texttt{fp} and
+\texttt{sp}; produce no console output. Temporary registers are volatile.
+
+\section{Give file buffers and files different failure promises}
+The loader \texttt{ppm\_load} receives a path in \texttt{a0}, a byte buffer in
+\texttt{a1}, its capacity in \texttt{a2}, and a metadata pointer in \texttt{a3}.
+Capacity must be from one through 12544. An invalid capacity returns two before opening
+a path or accessing caller objects. The loader reads to EOF, closes the file, then
+validates the complete bytes before publishing metadata. Successful \texttt{v1} is the
+file byte count. A format error returns one; excess input returns two; an open or read
+failure returns three. Its byte buffer may contain a prefix on failure, but metadata
+remains unchanged. This permits buffering while retaining the later display boundary.
+
+The saver \texttt{ppm\_save} receives a path, serialized bytes and their count in
+\texttt{a0,a1,a2}. It validates the file before opening the destination in truncate
+mode. A zero count returns one and an over-limit count returns two before pointer
+access. An open or write failure returns three. Failures return zero in
+\texttt{v1}; successful \texttt{v1} is the saved count. A write failure can leave a
+partial output file. Closing a descriptor does not roll those bytes back.
+
+Both file routines close every successful open on every return path and preserve the
+same saved registers as the memory routines. Paths are NUL-terminated byte strings.
+Supply the extra readable guard byte described in the syscall discussion after any
+serialized file passed to the saver. It is outside the file's declared count.

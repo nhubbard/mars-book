@@ -241,5 +241,7 @@ Build the initial Binary PPM reading with
 `python3 tools/book.py build --entry drafts/binary-ppm.tex`. The directly edited native
 includes use Minion Pro, Noto Sans Math and JetBrains Mono, with a described native
 pixel diagram and a headed byte-offset table. This reading foundation has no assembly
-listings yet; it is not included in main.tex. The transport implementation and grading
-prerequisites are checked separately before the complete image routines are authored.
+listings yet; it is not included in main.tex. The complete private image routines and their file/caller path are now checked at normal
+and wide addresses, including independent decoding of actual saved image files. The
+public reading defines interfaces and explains algorithms without importing instructor
+implementation bodies. Cumulative construction and separate distributions remain next.
