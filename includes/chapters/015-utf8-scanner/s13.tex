@@ -1,0 +1,31 @@
+\section{Step 13 Require the \texttt{f0} lower bound}\label{utf8-s13}
+
+Set need to three for a four-byte lead. If the lead is \texttt{f0}, raise the next-byte minimum to decimal 144, hexadecimal \texttt{90}, and jump to byte acceptance. This prevents encodings below \texttt{U+10000} from using four bytes.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{four\_low} region. Keep the scaffold labels and return stub. Intermediate values do not yet establish the final interface.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t2, 3
+    li $t9, 240
+    bne $t8, $t9, scan_four_high
+    nop
+    li $t3, 144
+    beq $zero, $zero, scan_accept
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+After accepting only \texttt{f0}, the pending range is \texttt{90} through \texttt{bf} in hexadecimal.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does this lower bound apply to all three continuations?
+
+\begin{itemize}
+\item \textbf{A} Yes.
+\item \textbf{B} Only after a final chunk.
+\item \textbf{C} No, only the next byte after the lead.
+\end{itemize}

@@ -1,0 +1,27 @@
+\section{Step 9 Reject values below the first valid multibyte lead}\label{utf8-s09}
+
+Test whether the byte is below decimal 194, hexadecimal \texttt{c2}. ASCII has already been dispatched. The remaining smaller values are standalone continuations or \texttt{c0}/\texttt{c1}, none of which may begin a well-formed sequence. Branch to the error path.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{lead\_min} region. Keep the scaffold labels and return stub. Intermediate values do not yet establish the final interface.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t9, $t8, 194
+    bne $t9, $zero, scan_bad
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+The branch condition rejects hexadecimal \texttt{80} through \texttt{c1} as idle-state leads.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why is \texttt{c0} rejected immediately?
+
+\begin{itemize}
+\item \textbf{A} It begins a six-byte sequence.
+\item \textbf{B} It cannot begin a shortest UTF-8 scalar encoding.
+\item \textbf{C} It is an ASCII byte.
+\end{itemize}

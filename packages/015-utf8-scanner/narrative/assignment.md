@@ -1,0 +1,9 @@
+# Project contract
+
+Implement `scan_utf8` to validate and count complete Unicode scalar values in a stream delivered in chunks. Pass a selected 32-byte state address in `a0`, a chunk address in `a1`, its byte count in `a2`, and a final-chunk flag, zero or one, in `a3`. A chunk has zero through 64 bytes, provided within the supplied 96-byte arena. It may start at a byte-unaligned address. State objects are word aligned, separate from input, and initially contain the specified empty state or a reachable state from earlier calls. Total accepted bytes plus a new active chunk’s size never exceed 4096 in this exercise.
+
+Preserve full saved registers and `sp`; return through the supplied `ra`, with no console output. An active call may write only the selected state object. Input, guards, other state, and caller metadata remain unchanged. Every input read must fit wholly in the current chunk; mapped suffix bytes are not input. Reading ahead within the chunk is permitted if the reported first error, accepted count, and resulting state remain correct.
+
+Return zero for an accepted nonfinal chunk, one for successful final completion, minus one for the first impossible byte, or minus two for an unfinished sequence at final input. Return the number of accepted bytes from this call in `v1`. The offending byte is excluded. A terminal state rejects later calls with minus three and zero, performing no input reads or caller-data writes. The stored terminal status and first diagnostic remain unchanged.
+
+The state counts complete scalar values and retains an unfinished sequence. It reports both that sequence’s first byte and the detecting byte or end position. No replacement decoding, normalization, grapheme segmentation, byte-order-mark stripping, or character-assignment policy is performed. Different branching or lookup-table implementations are accepted when they obey the same state interface.

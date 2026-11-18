@@ -142,3 +142,17 @@ descriptor fields, return values, command states and measured instruction counts
 and eighteen actual IntelliJ-highlighted assembly increments. Run native entries
 sequentially because their auxiliary chapter files are shared. Actual screenshots,
 author review, and independent accessibility validation remain pending.
+
+The UTF-8 scanner can be reviewed independently:
+
+```sh
+python3 tools/book.py build --entry drafts/utf8-scanner.tex
+```
+
+It produces `build/native/utf8-scanner.pdf` using native includes, primary-standard
+links, byte/state tables, a chunk-versus-encoding diagram, and twenty-two actual
+IntelliJ-highlighted assembly increments. The mathematical example derives a scalar
+from bit positions without requiring its glyph in the book font. The measured
+branch/table comparison states both work and input scope. Run entries sequentially
+because they share chapter auxiliary files. Four actual screenshots and final
+author/independent accessibility reviews remain pending.

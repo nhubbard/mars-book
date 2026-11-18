@@ -1,0 +1,43 @@
+\section{Compare classification branches with a table}\label{utf8-measurement}
+The alternative implementation replaces the idle-state multibyte classifier with
+a 256-entry lookup table. Each four-byte entry packs a continuation count and two
+next-byte bounds, or marks an invalid lead. The data occupy 1024 bytes. ASCII still
+takes the direct completion path, and pending continuations still use the retained
+state bounds. A lookup therefore affects lead classification rather than every
+input byte.
+
+\Needspace{13\baselineskip}
+\begin{longtable}{lrrrr}
+\toprule Fixture&Branch instr.&Table instr.&Branch reads&Table reads\\\midrule
+64 ASCII bytes&991&991&71&71\\
+32 two-byte scalars&1567&1791&71&103\\
+16 four-byte scalars&1631&1583&71&87\\
+Bad \texttt{e0 9f}&64&64&9&10\\
+Final \texttt{f0 90}&91&88&9&10\\\bottomrule
+\end{longtable}
+Each measurement starts with an empty active state, supplies a single final chunk,
+and counts completed native instructions through the function return, stopping
+before the continuation. Setup, assembly, session construction, main, and exit are
+excluded. The first three chunks are respectively 64 copies of \texttt{41}, 32
+copies of \texttt{c3 a9}, and 16 copies of \texttt{f0 9f 99 82}. The last two
+workloads exercise a detected byte error and a possible prefix truncated at final
+input. Both implementations return the same full state and accepted count.
+
+Reads count simulator data-access notices in the observed data region: seven state
+word reads, input byte reads, and any metadata-table word reads. They exclude
+instruction fetches and external inspection. They are neither a byte total nor a
+cache-miss count. The table implementation adds 32 word reads for the two-byte
+workload and sixteen for the four-byte workload; it adds none for ASCII.
+
+The table reduces this implementation's instruction count for the four-byte class,
+but increases it for the two-byte class. Its address calculation, load, and packed
+field extraction cost more than the short two-byte branch path. The four-byte
+branch path has additional distinctions for \texttt{f0} and \texttt{f4}, where the
+table instead returns the prepared bounds. The examples identify a workload-dependent
+tradeoff rather than a universal table-lookup speedup.
+
+A later optimization might scan a bounded ASCII span or use a smaller classification
+table. Preserve pending-state handling, stop at the first impossible byte, and keep
+full access widths inside each chunk. Native instruction counts alone do not
+establish host elapsed time or physical processor cycles. Measure the relevant
+quantity separately after the complete behavioral checks still pass.

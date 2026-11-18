@@ -1,0 +1,30 @@
+\section{Step 17 Limit the \texttt{ed} upper bound}\label{utf8-s17}
+
+For \texttt{ed}, restrict the next maximum to decimal 159, hexadecimal \texttt{9f}. Other three-byte leads retain the ordinary maximum. This prevents the partial encoding from entering the surrogate range.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{three\_high} region. Keep the scaffold labels and return stub. Intermediate values do not yet establish the final interface.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t9, 237
+    bne $t8, $t9, scan_accept
+    nop
+    li $t4, 159
+    beq $zero, $zero, scan_accept
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+An \texttt{ed} \texttt{a0} prefix fails on \texttt{a0}. A later \texttt{bf} is still allowed after a valid \texttt{ed} \texttt{9f} prefix.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What becomes invalid at \texttt{ed} \texttt{a0}?
+
+\begin{itemize}
+\item \textbf{A} Every completion maps into the surrogate range.
+\item \textbf{B} The length field exceeds 64.
+\item \textbf{C} The source pointer is unaligned.
+\end{itemize}

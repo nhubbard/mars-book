@@ -426,3 +426,56 @@ pixels or IDE interactions were captured. Native table headings, extractable ass
 mathematics, fonts, and the explanatory diagram are inspected separately. Full
 reading-order/screen-reader review, independent accessibility validation and author
 review remain outstanding.
+
+## UTF-8 scanner
+
+Package 015-utf8-scanner has thirty-four steps, sixty-eight staged hints, twenty-two
+code increments, versioned primary standards references, and separate streaming/main
+checks. Unicode 17 Table 3-7 supplies the byte grammar; the state protocol and error
+positions are this exercise's specified interface. It counts complete scalar values,
+accepts well-formed noncharacters and unassigned values, and performs no normalization,
+grapheme segmentation, replacement output, recovery, or U+FEFF stripping.
+
+Public streaming grading has 426 cases, with multiple calls per case in one session.
+It covers every one-byte input, selected scalar boundaries at every split, empty
+chunks, pending prefixes, terminal reuse and counter positions at the stream limit.
+Scratch and saved-register canaries, selected state/pointer variations, input-read
+bounds, state-write ownership and after-return preservation are checked. Fifteen main
+cases inspect each supplied checkpoint with valid input, an impossible F0 second byte,
+or empty final input that diagnoses truncation.
+
+A necessary upstream grader addition, `callFunction`, is pinned in commit
+`f1ddaef8`: it uses native stopped-session ownership, sets entry/return as external
+setup with a new undo baseline, retains memory/observations/instruction budget, and
+refuses pending delayed transfers and forbidden slots. All 91 CLI Jupiter tests
+pass, including packaged-JAR use and a shared-budget rejection. `startAt` retains
+its initial-entry-only contract. No core instruction semantics were changed.
+
+The private oracle tests prefix-value intervals against scalar bounds and the
+surrogate exclusion, independently of the assembly branch tree and metadata table.
+The transition suite has 4522 cases, including all next bytes for sixteen selected
+reachable prefixes. Every two-byte input is tested (65,536 cases), supplied nonfinal
+then followed by empty final input. Every scalar's canonical host encoding is tested:
+1,112,064 values in 17,376 blocks, delivered in chunks of at most 64 bytes. This is
+not all partitions of all scalars or all possible longer byte streams.
+
+The branch reference and table alternative pass all domains, with additional wide
+transition/main and restored-stack runs. Twenty-two partial programs pass twenty-nine
+intermediate observations. Their complete reconstruction is byte-identical to the
+exhaustively tested reference and also runs both public scripts. Twenty-five valid,
+warning-free faulty scanners and the incomplete starter are rejected. The verifier
+records 72 grading runs and 189,831 positive case executions; repeated executions
+across variants are not unique inputs.
+
+Complete-call instruction counts for ASCII/two-byte/four-byte 64-byte chunks are
+991/1567/1631 for the branch reference and 991/1791/1583 for the table alternative.
+The table adds one word read per multibyte lead and occupies 1024 bytes. Counts
+exclude setup, assembly, session creation, main and exit. They illustrate the cost
+of address/load/extraction work relative to different branch paths, without claiming
+universal elapsed-time gains or imposing exact-count requirements on students.
+
+Four capture recipes have verified full numerical state and return values, but no
+IDE screenshot pixels have been captured. Native fonts, mathematical structure,
+headed tables, diagram alternative text, assembly extraction, and actual color spans
+are checked separately. Final author review, full reading-order/screen-reader work,
+and independent accessibility validation remain outstanding.

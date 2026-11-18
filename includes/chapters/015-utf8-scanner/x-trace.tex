@@ -1,0 +1,31 @@
+\section{Work the four-call state trace}\label{utf8-x-trace}
+At each \texttt{chunk\_ready} marker, main has published the call result and the
+scanner's state is coherent. The table uses decimal counts and offsets, with the
+next-byte range written in hexadecimal. Need zero means that no continuation is
+pending; the stored ordinary bounds then provide the canonical idle values.
+
+\Needspace{12\baselineskip}
+\begin{longtable}{rrrrrlr}
+\toprule Call&New bytes&Total&Count&Need&Next hex&Start\\\midrule
+0&2&2&1&2&\texttt{80--bf}&1\\
+1&3&5&2&3&\texttt{90--bf}&4\\
+2&2&7&2&1&\texttt{80--bf}&4\\
+3&4&11&5&0&\texttt{80--bf}&\(-1\)\\\bottomrule
+\end{longtable}
+The first three statuses are zero. The fourth is one because its final flag is
+set and no sequence remains pending. Every error word is minus one. Count does not
+change in call two, although that call accepts two bytes. The lead start four is
+retained until the last byte of that encoding arrives in call three.
+
+\begin{MARSWorkedExample}{A byte error and an end error}
+Change input byte five from \texttt{9f} to \texttt{8f}. The third call begins with a
+byte below the retained \texttt{f0} minimum \texttt{90}. It returns minus one and
+zero accepted bytes. Stored total is five, count two, need three, start four, and
+error five. The fourth call returns minus three without consuming anything, while
+the stored minus-one status and first diagnostic remain unchanged.
+
+Restore the input and instead make the fourth chunk empty while retaining its
+final flag. That call returns minus two and zero accepted bytes. Total remains
+seven, count two, need one, start four, and error seven. The mapped \texttt{82} at
+the supplied input pointer is outside this zero-byte chunk and must not be read.
+\end{MARSWorkedExample}

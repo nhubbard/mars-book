@@ -1,0 +1,20 @@
+# Retain a prefix between calls
+
+A chunk boundary belongs to the input-delivery mechanism, not to UTF-8. After accepting `f0`, the scanner needs three continuation bytes. They may arrive in three later calls. Retain the remaining count, the permitted next-byte range, and the absolute position of the lead. No source pointer needs to survive: the next chunk can occupy another location in the arena.
+
+| Offset | Word   | Meaning                                                  |
+|-------:|:-------|:---------------------------------------------------------|
+|      0 | Total  | Accepted bytes across this stream                        |
+|      4 | Count  | Complete scalar values                                   |
+|      8 | Need   | Remaining continuations, zero through three              |
+|     12 | Low    | Minimum permitted next continuation                      |
+|     16 | High   | Maximum permitted next continuation                      |
+|     20 | Start  | Pending lead’s absolute offset, or minus one             |
+|     24 | Status | Active 0, finished 1, malformed $`-1`$, truncated $`-2`$ |
+|     28 | Error  | Detecting byte/end offset, or minus one                  |
+
+The empty state is `0,0,0,128,191,-1,0,-1`, using decimal word values. In an active idle state, need is zero, bounds are 128 and 191, and start is minus one. A pending state has a positive need and a start below total. After accepting its first continuation, reset the bounds to 128 and 191. Completing its last continuation increments count and restores the idle start sentinel.
+
+On an invalid standalone lead, terminal start records that byte’s offset even though need remains zero. On an invalid continuation, start still identifies the earlier accepted lead. The error word records where the sequence first became impossible. It can differ from start and can lie in a later input chunk. Every error position is an absolute stream offset, while the returned accepted-byte count applies only to the current call.
+
+The counters fit signed 32-bit words under the 4096-byte exercise bound. Input addresses remain full 64-bit pointers. The branch implementation loads state into temporaries, processes a chunk, and commits a coherent snapshot before returning. Free-writing implementations may update fields in another order while active, but must preserve input and other caller-owned objects.

@@ -1,0 +1,11 @@
+# Derive the special second-byte bounds
+
+The extra bounds prevent three distinct problems: an encoding longer than the shortest one for a value, a surrogate value, or a value beyond U+10FFFF. They apply to the next byte after the lead, not to every remaining continuation.
+
+For lead `e0`, the high scalar bits are zero. A second byte below `a0` would leave the completed value below hexadecimal 0800, where a shorter encoding is required. With second byte `a0` and final byte `80`, the payload bits instead produce exactly 2048, the first value requiring three bytes.
+
+For lead `ed`, a second byte `a0` would put even the lowest possible completion at hexadecimal d800. Restricting it through `9f` keeps the result below the surrogate range. The following continuation again uses `80--bf`. An accepted `ed 9f` prefix must therefore allow a final `bf`; retaining `9f` as a permanent upper bound would wrongly reject that valid sequence.
+
+For lead `f0`, the next byte must begin at `90`. Its low six bits are then at least 16, contributing $`16\cdot4096=65536`$, the first four-byte scalar. For lead `f4`, the second byte may reach only `8f`. The greatest completion, `f4 8f bf bf`, represents U+10FFFF. Increasing that second byte to `90` would already make every completion exceed the scalar limit.
+
+These are encoding rules. The scanner accepts well-formed encodings of unassigned scalar values and noncharacters as well as ordinary text values. It counts an encoded U+FEFF instead of silently removing it. Applications may impose separate content policies; those policies are not part of this validator’s byte grammar.

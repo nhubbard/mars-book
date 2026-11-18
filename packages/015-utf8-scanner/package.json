@@ -1,0 +1,1497 @@
+{
+  "formatVersion": 1,
+  "id": "015-utf8-scanner",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Validate UTF-8 across input chunks",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "expectReadsWithin",
+      "traceExecution",
+      "setRegisterToDataAddress",
+      "readDataAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Byte-oriented records and logical input bounds",
+    "Persistent state and saved-register calling conventions",
+    "Unsigned byte interpretation and bit fields"
+  ],
+  "learningObjectives": [
+    "Validate shortest UTF-8 scalar encodings",
+    "Preserve continuation bounds across chunk boundaries",
+    "Separate sequence start from detecting offset",
+    "Distinguish nonfinal prefix from final truncation",
+    "Latch terminal states without later input access",
+    "Compare branch and lookup classification without changing behavior"
+  ],
+  "inputDomain": {
+    "type": "streaming-utf8",
+    "chunkMaximumBytes": 64,
+    "inputArenaBytes": 96,
+    "streamMaximumBytes": 4096,
+    "stateBytes": 32,
+    "encodingDefinition": "Unicode 17.0.0 Table 3-7"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose and worked traces, incremental assembly edits, and callable CLI streaming checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Choose a scalar count",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does the scanner count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Complete scalar encodings."
+          },
+          {
+            "id": "b",
+            "text": "Visible glyphs."
+          },
+          {
+            "id": "c",
+            "text": "Leading bytes before validating their tails."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "A scalar is counted when its whole encoding is accepted."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The complete fixture has eleven bytes and five scalar values."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Locate the chunk boundaries",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What does a new chunk imply?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The previous scalar must be complete."
+          },
+          {
+            "id": "b",
+            "text": "The next bytes have arrived."
+          },
+          {
+            "id": "c",
+            "text": "The stream has ended."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Finality is a separate explicit flag."
+        },
+        {
+          "id": "s02-h2",
+          "text": "A chunk boundary can divide one scalar encoding; it does not reset the scanner."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Read the persistent state",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which count applies only to the current call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The stored total."
+          },
+          {
+            "id": "b",
+            "text": "The stored scalar count."
+          },
+          {
+            "id": "c",
+            "text": "The returned v1 accepted-byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The state survives the call; the return value describes this chunk."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The empty state is 0,0,0,128,191,-1,0,-1 in decimal."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Reject a terminal stream",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Should terminal rejection overwrite the stored status with -3?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only after an empty chunk."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The call result and retained first terminal status have distinct roles."
+        },
+        {
+          "id": "s04-h2",
+          "text": "A previously finished state remains finished even when the new input is invalid."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "gate"
+    },
+    {
+      "id": "s05",
+      "title": "Load the active stream into temporaries",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which temporary holds a full address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "t6."
+          },
+          {
+            "id": "b",
+            "text": "t7."
+          },
+          {
+            "id": "c",
+            "text": "t2."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Small byte counts do not narrow the source pointer."
+        },
+        {
+          "id": "s05-h2",
+          "text": "A pending state restores its remaining count, next-byte bounds, and original lead position."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "load"
+    },
+    {
+      "id": "s06",
+      "title": "Test the chunk bound before loading",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "May mapped bytes after the chunk be used as continuations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if a load succeeds."
+          },
+          {
+            "id": "b",
+            "text": "No; they are outside this call input."
+          },
+          {
+            "id": "c",
+            "text": "Only for the final chunk."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Availability is a logical bound, not merely a mapped-memory check."
+        },
+        {
+          "id": "s06-h2",
+          "text": "An empty chunk performs no input loads. A pending prefix uses its retained bounds."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "loop"
+    },
+    {
+      "id": "s07",
+      "title": "Select the ASCII completion path",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "How is an ASCII byte handled while need is positive?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "As a new scalar."
+          },
+          {
+            "id": "b",
+            "text": "As an automatic stream reset."
+          },
+          {
+            "id": "c",
+            "text": "By the pending continuation check, where it fails."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Dispatch on state before interpreting the byte as a lead."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The comparison accepts every byte from hexadecimal 00 through 7f, including zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "ascii"
+    },
+    {
+      "id": "s08",
+      "title": "Record a candidate sequence start",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which position becomes the candidate start?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The absolute total before accepting this byte."
+          },
+          {
+            "id": "b",
+            "text": "The current chunk length."
+          },
+          {
+            "id": "c",
+            "text": "The number of completed scalars."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The detecting byte is not yet included in total."
+        },
+        {
+          "id": "s08-h2",
+          "text": "A rejected standalone continuation still has a diagnostic sequence start at its own offset."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "candidate"
+    },
+    {
+      "id": "s09",
+      "title": "Reject values below the first valid multibyte lead",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why is c0 rejected immediately?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It begins a six-byte sequence."
+          },
+          {
+            "id": "b",
+            "text": "It cannot begin a shortest UTF-8 scalar encoding."
+          },
+          {
+            "id": "c",
+            "text": "It is an ASCII byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Two-byte encodings begin at c2."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The branch condition rejects hexadecimal 80 through c1 as idle-state leads."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "lead_min"
+    },
+    {
+      "id": "s10",
+      "title": "Dispatch a two-byte lead",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "How many continuations does a two-byte lead require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two."
+          },
+          {
+            "id": "b",
+            "text": "Zero."
+          },
+          {
+            "id": "c",
+            "text": "One."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The lead occupies one of the total two bytes."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The two-byte class is c2 through df, not every byte below e0."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "two_dispatch"
+    },
+    {
+      "id": "s11",
+      "title": "Dispatch a three-byte lead",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which three-byte leads need special next-byte bounds?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "e0 and ed."
+          },
+          {
+            "id": "b",
+            "text": "e1 and ef."
+          },
+          {
+            "id": "c",
+            "text": "Every lead uses the same special bound."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "One limit prevents overlong forms and another excludes surrogates."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The number of required bytes and the first-tail bounds are separate decisions."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "three_dispatch"
+    },
+    {
+      "id": "s12",
+      "title": "Reject leads beyond f4",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What is the largest permitted leading byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "ff."
+          },
+          {
+            "id": "b",
+            "text": "f4."
+          },
+          {
+            "id": "c",
+            "text": "f7."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "The scalar space ends at U+10FFFF."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The final valid four-byte lead is f4; f5 through ff branch to error."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "four_limit"
+    },
+    {
+      "id": "s13",
+      "title": "Require the f0 lower bound",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Does this lower bound apply to all three continuations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only after a final chunk."
+          },
+          {
+            "id": "c",
+            "text": "No, only the next byte after the lead."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Reset ordinary bounds after accepting the first continuation."
+        },
+        {
+          "id": "s13-h2",
+          "text": "After accepting only f0, the pending range is 90 through bf in hexadecimal."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "four_low"
+    },
+    {
+      "id": "s14",
+      "title": "Limit the f4 upper bound",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Why reject f4 90 before reading two more bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No completion can stay within the scalar limit."
+          },
+          {
+            "id": "b",
+            "text": "The byte 90 is never a continuation."
+          },
+          {
+            "id": "c",
+            "text": "The sequence must use five bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "The prefix already makes every completion impossible."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The greatest accepted four-byte scalar encoding is f4 8f bf bf."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "four_high"
+    },
+    {
+      "id": "s15",
+      "title": "Start a two-byte encoding",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "When is this scalar counted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At its lead."
+          },
+          {
+            "id": "b",
+            "text": "After its valid continuation."
+          },
+          {
+            "id": "c",
+            "text": "Only after process exit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Completion occurs when need reaches zero."
+        },
+        {
+          "id": "s15-h2",
+          "text": "A lone c2 is an accepted nonfinal prefix, not a completed scalar."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "two_start"
+    },
+    {
+      "id": "s16",
+      "title": "Require the e0 lower bound",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which e0 second byte is permitted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "80."
+          },
+          {
+            "id": "b",
+            "text": "9f."
+          },
+          {
+            "id": "c",
+            "text": "a0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "The first possible three-byte scalar is U+0800."
+        },
+        {
+          "id": "s16-h2",
+          "text": "An e0 9f prefix fails at 9f even though that byte has the general continuation-bit pattern."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "three_low"
+    },
+    {
+      "id": "s17",
+      "title": "Limit the ed upper bound",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "What becomes invalid at ed a0?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every completion maps into the surrogate range."
+          },
+          {
+            "id": "b",
+            "text": "The length field exceeds 64."
+          },
+          {
+            "id": "c",
+            "text": "The source pointer is unaligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "This is an encoding-range restriction, independent of address alignment."
+        },
+        {
+          "id": "s17-h2",
+          "text": "An ed a0 prefix fails on a0. A later bf is still allowed after a valid ed 9f prefix."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "three_high"
+    },
+    {
+      "id": "s18",
+      "title": "Check both continuation bounds",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which byte position is excluded from accepted progress?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The lead."
+          },
+          {
+            "id": "b",
+            "text": "The first impossible continuation."
+          },
+          {
+            "id": "c",
+            "text": "Every byte in the current chunk."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Valid prefix bytes remain accepted even when a later byte fails."
+        },
+        {
+          "id": "s18-h2",
+          "text": "For a pending f0 lead, byte 8f fails the lower bound and reports the earlier lead start."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "tail_bounds"
+    },
+    {
+      "id": "s19",
+      "title": "Advance the pending sequence",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "When should the special next-byte bounds be reset?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the entire stream ends."
+          },
+          {
+            "id": "b",
+            "text": "Never."
+          },
+          {
+            "id": "c",
+            "text": "After the first accepted continuation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "The restriction belongs to a position in one encoding."
+        },
+        {
+          "id": "s19-h2",
+          "text": "A valid ed 9f prefix permits its final byte through bf because the special upper bound has been reset."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "tail_advance"
+    },
+    {
+      "id": "s20",
+      "title": "Count a completed scalar",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "How many scalars does f0 9f 99 82 encode?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Two."
+          },
+          {
+            "id": "c",
+            "text": "Four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "UTF-16 storage length is not this function count."
+        },
+        {
+          "id": "s20-h2",
+          "text": "A completed four-byte encoding contributes one scalar, not four bytes or two UTF-16 code units."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "complete"
+    },
+    {
+      "id": "s21",
+      "title": "Accept one byte and repeat",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Which increments occur for an impossible byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All three byte-progress increments."
+          },
+          {
+            "id": "b",
+            "text": "None of them."
+          },
+          {
+            "id": "c",
+            "text": "Only the absolute total."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "The error path leaves both local and global byte progress before that byte."
+        },
+        {
+          "id": "s21-h2",
+          "text": "For one accepted ASCII byte, total and scalar count are one and the input cursor has advanced one byte."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "accept"
+    },
+    {
+      "id": "s22",
+      "title": "Retain an accepted nonfinal prefix",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Is a pending nonfinal prefix already a truncation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only when the chunk is empty."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "The caller has not yet declared that no further bytes will arrive."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A nonfinal chunk may end with positive need and still return active status."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "end_active"
+    },
+    {
+      "id": "s23",
+      "title": "Finalize or diagnose truncation",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Where is a truncation detected?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At the absolute end position."
+          },
+          {
+            "id": "b",
+            "text": "At a nonexistent byte with value zero."
+          },
+          {
+            "id": "c",
+            "text": "At the beginning of every chunk."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "There is no offending byte at end of input."
+        },
+        {
+          "id": "s23-h2",
+          "text": "An empty final chunk can diagnose a prefix retained by an earlier call."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "end_final"
+    },
+    {
+      "id": "s24",
+      "title": "Prepare the malformed-byte result",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which error wins when a final chunk contains an impossible byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Truncation."
+          },
+          {
+            "id": "b",
+            "text": "Malformed-byte error."
+          },
+          {
+            "id": "c",
+            "text": "Successful final completion."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "The byte failure is known before end handling."
+        },
+        {
+          "id": "s24-h2",
+          "text": "For a lead at offset four and an impossible next byte at five, start is four and error is five."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "bad"
+    },
+    {
+      "id": "s25",
+      "title": "Publish state and the per-call result",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What is returned in v1 after publication?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The absolute detecting offset."
+          },
+          {
+            "id": "b",
+            "text": "The complete scalar count."
+          },
+          {
+            "id": "c",
+            "text": "Accepted bytes from this call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The error word and the return count are stored separately."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The first default call publishes total two, count one, need two, start one, active status, and no error."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      },
+      "editTarget": "publish"
+    },
+    {
+      "id": "s26",
+      "title": "Trace all four default calls",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Does the fourth call count only newly started scalars?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it also completes the earlier pending scalar."
+          },
+          {
+            "id": "b",
+            "text": "Yes."
+          },
+          {
+            "id": "c",
+            "text": "Only ASCII is counted."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A scalar can begin in one call and complete in another."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The final state is 11,5,0,128,191,-1,1,-1."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Move the split through an encoding",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Can a chunk end immediately after a lead?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if finality is handled explicitly."
+          },
+          {
+            "id": "c",
+            "text": "Only for ASCII."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "The pending fields exist to retain that prefix."
+        },
+        {
+          "id": "s27-h2",
+          "text": "A complete valid stream has the same final scalar count for every split."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Separate sequence start from detecting byte",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which position identifies the malformed sequence beginning?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The detecting byte five in every case."
+          },
+          {
+            "id": "b",
+            "text": "The current chunk index."
+          },
+          {
+            "id": "c",
+            "text": "Start four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "A diagnostic can point backward across a chunk boundary."
+        },
+        {
+          "id": "s28-h2",
+          "text": "The third call reports start four, error five, total five, count two, and zero newly accepted bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Finalize with no replacement byte",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q29",
+        "prompt": "May the scanner complete from the next mapped byte when n is zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if it looks like a continuation."
+          },
+          {
+            "id": "c",
+            "text": "Only after f0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Mapped storage does not enlarge the supplied chunk."
+        },
+        {
+          "id": "s29-h2",
+          "text": "The truncation records start four, error seven, total seven, count two, and zero newly accepted bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Preserve the first terminal diagnostic",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q30",
+        "prompt": "How is a new independent stream begun?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "By changing only final to zero."
+          },
+          {
+            "id": "b",
+            "text": "By initializing a new complete state object."
+          },
+          {
+            "id": "c",
+            "text": "By ignoring the old error word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Reset every field to the specified empty state, or select another initialized object."
+        },
+        {
+          "id": "s30-h2",
+          "text": "A later valid chunk cannot clear an earlier failure or add to its count."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s31",
+      "title": "Keep text policy outside the scanner",
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Does this validator normalize accented text?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only in a final chunk."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Validation, normalization, and segmentation are distinct interfaces."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Valid noncharacters count, a byte-order mark is not stripped, and grapheme counts are not produced."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s32",
+      "title": "Vary state, offsets, and full addresses",
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Which operation advances the source pointer without losing high bits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Full-width pointer addition."
+          },
+          {
+            "id": "b",
+            "text": "A word increment because n is small."
+          },
+          {
+            "id": "c",
+            "text": "A byte mask."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "The small length does not bound the base address."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Only the selected state changes; input, guards, other state, and caller metadata remain unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s33",
+      "title": "Run the streaming and standards checks",
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q33",
+        "prompt": "May a lookup table replace the shown classifier?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if all state, bounds, errors, and calling behavior agree."
+          },
+          {
+            "id": "c",
+            "text": "Only if instruction counts match."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "The interface describes behavior rather than the internal branch tree."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Equivalent branching and lookup-table implementations are accepted. Private checks also cover every scalar encoding and two-byte input pairs."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s34",
+      "title": "Compare classification work",
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What must remain unchanged after an optimization?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The scratch register allocation."
+          },
+          {
+            "id": "b",
+            "text": "The number of labels."
+          },
+          {
+            "id": "c",
+            "text": "The specified accepted prefix and complete observable state."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Accuracy includes diagnostics and partial progress as well as final counts."
+        },
+        {
+          "id": "s34-h2",
+          "text": "A smaller branch tree is a hypothesis to measure, not proof of a lower elapsed time."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author verification checks native cumulative code and final streaming contracts; interactive recognition and IDE capture remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/stream.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json"
+  ]
+}
