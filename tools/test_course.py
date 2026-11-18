@@ -20,6 +20,14 @@ class PackageTests(unittest.TestCase):
         _, data = course.validate(PACKAGE)
         self.assertEqual(22, len(data['steps']))
 
+    def test_registry_covers_package_manifests_and_roadmap(self):
+        registry = course.read_json(course.ROOT / 'course.json')
+        available = sorted(p.parent.name for p in (course.ROOT / 'packages').glob('*/package.json'))
+        self.assertEqual(available, registry['packages'])
+        entries = [entry for entry in registry['roadmap'] if entry['package'] is not None]
+        self.assertEqual(registry['packages'], [entry['package'] for entry in entries])
+        self.assertTrue(all(entry['status'] == 'text-package-draft' for entry in entries))
+
     def test_markdown_quizzes_match_structured_choices(self):
         for package in course.read_json(course.ROOT / 'course.json')['packages']:
             root, data = course.validate(package)
