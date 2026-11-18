@@ -1,0 +1,18 @@
+\section{Keep arithmetic failures in the guest contract}\label{vm-arithmetic}
+Guest arithmetic uses signed 32-bit values and checks every intermediate result.
+Use wide candidates for sum, difference, product and quotient, then test whether the
+candidate is representable as a signed word. A product of two signed words fits in
+a signed doubleword, including $-2^{31}$ multiplied by itself. Preserve the original
+operands until the range test succeeds.
+
+Check the divisor for zero before signed division. For a nonzero divisor, the quotient
+truncates toward zero: minus seven divided by three yields minus two. Dividing the
+minimum signed word by minus one produces positive $2^{31}$, so it reports guest
+overflow. These failures are returned as VM status and descriptor data, rather than
+being left to terminate the native interpreter with an exception.
+
+\texttt{PUSH32} itself accepts the full signed-word domain because its payload is an
+encoded bit pattern. The bytes \texttt{ff ff ff 7f} represent 2,147,483,647, while
+\texttt{00 00 00 80} represent minus 2,147,483,648. There is no excessive positive
+decimal token in either instruction. The arithmetic check applies when an operation
+combines those values, not when an otherwise complete constant record is loaded.

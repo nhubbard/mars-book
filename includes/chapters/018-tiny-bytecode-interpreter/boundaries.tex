@@ -1,0 +1,31 @@
+\section{Mark instruction starts without marking operands}\label{vm-boundaries}
+The default image has eighteen bytes but only thirteen encoded instructions.
+Its immediate operands occupy positions one, three, six, twelve and fifteen. A target
+inside that set is invalid even though the byte is mapped and belongs to the image.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={Eighteen bytes are shown in two rows. Their hexadecimal values are 01 00 01 03 20 31 10 22 23 10 22 01 01 11 30 04 21 00. Instruction starts are offsets zero, two, four, five, seven, eight, nine, ten, eleven, thirteen, fourteen, sixteen and seventeen. Payload bytes are offsets one, three, six, twelve and fifteen. The conditional branch at five contains target hexadecimal ten, decimal sixteen, in its payload at six.},x=11mm,y=10mm]
+\foreach \i/\value/\role in {0/01/B,1/00/P,2/01/B,3/03/P,4/20/B,5/31/B,6/10/P,7/22/B,8/23/B,9/10/B,10/22/B,11/01/B,12/01/P,13/11/B,14/30/B,15/04/P,16/21/B,17/00/B} {
+ \pgfmathtruncatemacro{\col}{mod(\i,9)}
+ \pgfmathtruncatemacro{\row}{int(\i/9)}
+ \draw (\col,-2*\row) rectangle +(1,1);
+ \node[font=\small\ttfamily] at (\col+0.5,0.5-2*\row) {\value};
+ \node[above,font=\scriptsize] at (\col+0.5,1-2*\row) {\i};
+ \node[below,font=\scriptsize] at (\col+0.5,-2*\row) {\role};
+}
+\end{tikzpicture}
+\caption{Default encoded image. Cell values are hexadecimal; offsets are decimal. B marks an instruction beginning and P marks payload.}
+\end{figure}
+
+At byte six, hexadecimal \texttt{10} is a branch target operand meaning decimal
+sixteen. At byte nine, the same byte value is the \texttt{ADD} opcode. The decode
+position determines its role. Scanning every byte as a potential opcode would reject
+legal constants and invent instruction starts inside operands.
+
+The reference records starts in one 64-bit bitmap. Bit position equals byte offset,
+so offset 63 uses the high bit. Check a target against the program length before
+forming its bit mask. Native variable shifts use only their supported shift-count
+bits; shifting by 64 cannot serve as an out-of-range test. The equivalent alternative
+uses one private byte per possible offset, initially zero, marking starts with one.
+Both representations answer the same membership question after complete decoding.

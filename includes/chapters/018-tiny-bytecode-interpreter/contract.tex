@@ -1,0 +1,34 @@
+\section*{Project contract}
+Implement \texttt{run\_vm} for the instruction set defined in this chapter. Pass
+the full program-byte address in \texttt{a0}, its length in \texttt{a1}, a state
+descriptor address in \texttt{a2}, and a virtual-instruction budget in \texttt{a3}.
+The program has zero through 64 bytes inside a supplied 96-byte arena and may start
+at an unaligned byte address. The budget is zero through 64. The descriptor is
+eight-byte aligned and names a word-aligned operand-stack subview with capacity zero
+through eight words. Program, descriptor and stack allocations are disjoint.
+
+Each call starts at program byte zero with an empty logical operand stack and zero
+retired guest instructions. Descriptor output fields from a previous call are ignored.
+The call validates the complete encoded image, validates every encoded branch target,
+and then executes until \texttt{HALT}, a runtime fault, or budget exhaustion. A
+budget counts successfully retired guest instructions; it excludes validation work
+and does not count native MIPS instructions. Exhaustion is checked before the next
+fetch. A zero budget still performs both validation phases.
+
+Return the status in \texttt{v0} and the retired guest count in \texttt{v1}. Publish
+PC, depth, retired count, status and fault offset in the selected descriptor. The PC
+is a byte offset. Status zero means budget exhaustion and status one means halt.
+Negative statuses identify the failures specified below. A successful halt advances
+PC past its opcode and counts as one retired instruction. A failing instruction does
+not retire; retain its PC and the live operand values from before that instruction.
+Validation failures report PC, depth and retired count zero, with the offending
+instruction's offset in the separate fault field.
+
+The program is the only bytecode input. Descriptor fields and the selected stack
+capacity may be read. Caller bytes outside descriptor output fields and stack capacity
+are preserved, including temporary writes. Program bytes, other arenas, capacity,
+stack pointer and guards are read-only. Inactive stack cells within capacity are
+unspecified workspace; live values occupy the first depth words. Submission-owned
+constants and private MIPS stack storage are permitted. Preserve full \texttt{s0} through \texttt{s7}, \texttt{fp} and \texttt{sp};
+return through \texttt{ra} with no console output. Equivalent decoding and dispatch
+implementations are accepted.

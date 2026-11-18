@@ -99,3 +99,12 @@ Repeated calls verify fresh parser state in one session. The 76 grading runs rec
 Nineteen faulty variants and the unfinished starter are rejected. Four actual IDE
 captures, human review and independent accessibility validation remain pending. The
 full 35-project book and capture objective remains active.
+
+Tiny bytecode interpreter is in progress. Its native foundation excerpt at
+`drafts/tiny-bytecode-interpreter.tex` defines thirteen variable-length guest opcodes,
+whole-image/target validation, checked word arithmetic, stack capacity, instruction
+retirement and budget behavior. It includes a descriptor layout, instruction-boundary
+diagram and concrete countdown trace. Verified implementation prototypes and development
+checks remain private while the instructional increments, student package, quizzes/hints
+and capture plans are composed. It is not yet included in main.tex or counted as a
+completed text package. The full 35-project objective remains active.

@@ -1,0 +1,42 @@
+\section{Define the encoded instructions}\label{vm-opcodes}
+Opcode bytes and encoded byte sequences in this chapter are hexadecimal. Byte offsets,
+lengths, depths and instruction counts are decimal unless a prefix says otherwise.
+There are thirteen legal opcodes. Each instruction consists of one opcode followed
+by its fixed number of operand bytes.
+
+\begin{table}[htbp]
+\centering
+\caption{The exercise's guest instruction set. Stack effects use the earlier live value as the left arithmetic operand.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{llrp{80mm}}
+\toprule
+Opcode & Name & Bytes & Effect\\
+\midrule
+\texttt{00} & \texttt{HALT} & 1 & Stop successfully; retain live operands.\\
+\texttt{01} & \texttt{PUSH8} & 2 & Push the following signed byte.\\
+\texttt{02} & \texttt{PUSH32} & 5 & Push the following signed little-endian word.\\
+\texttt{10} & \texttt{ADD} & 1 & Replace left and right with their checked sum.\\
+\texttt{11} & \texttt{SUB} & 1 & Replace them with checked left minus right.\\
+\texttt{12} & \texttt{MUL} & 1 & Replace them with their checked product.\\
+\texttt{13} & \texttt{DIV} & 1 & Replace them with the checked signed quotient.\\
+\texttt{20} & \texttt{DUP} & 1 & Copy the top live value onto the stack.\\
+\texttt{21} & \texttt{DROP} & 1 & Remove the top live value.\\
+\texttt{22} & \texttt{SWAP} & 1 & Exchange the two top live values.\\
+\texttt{23} & \texttt{OVER} & 1 & Copy the second live value from the top.\\
+\texttt{30} & \texttt{JMP} & 2 & Branch to the following unsigned byte offset.\\
+\texttt{31} & \texttt{JZ} & 2 & Pop a test value; branch if it is zero.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A branch operand is an absolute offset from the program base. The byte after
+\texttt{JMP} is neither a signed displacement nor an address. \texttt{JZ} consumes
+its test value on both outcomes: zero selects the encoded target, while a nonzero
+value selects the byte after the two-byte branch instruction.
+
+\texttt{PUSH8} sign extends its operand: \texttt{80} pushes minus 128 and
+\texttt{ff} pushes minus one. \texttt{PUSH32} reads four bytes in least-significant
+first order. Bytes \texttt{00 00 00 80} encode the minimum signed word directly.
+All 32-bit patterns are valid constants. This format has no decimal-literal parser
+or separate unary-sign token. The image's starting address need not be word aligned,
+so the guided interpreter assembles that word from individual bytes.

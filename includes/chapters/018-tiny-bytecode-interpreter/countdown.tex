@@ -1,0 +1,38 @@
+\section{Trace the countdown program}\label{vm-countdown}
+The default program maintains a sum below a counter. It begins by pushing zero and
+three. At the loop head, duplicate the counter and let the conditional branch pop
+that duplicate. A zero counter selects cleanup; a nonzero counter continues to the
+body while leaving the original counter available.
+
+The body swaps the counter below the sum, copies that counter with \texttt{OVER},
+and adds the copy to the sum. Another swap restores sum below counter. Pushing one
+and subtracting decrements the counter, then an unconditional branch selects the
+loop head. At cleanup, drop the zero counter and halt with the sum live.
+
+\begin{table}[htbp]
+\centering
+\caption{Execution prefixes of the default image with capacity eight. Lists show bottom-to-top live values. A budget is an upper bound; halt can stop earlier.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrl}
+\toprule
+Budget & Retired & PC & Live stack\\
+\midrule
+0 & 0 & 0 & Empty\\
+2 & 2 & 4 & $[0,3]$\\
+4 & 4 & 7 & $[0,3]$\\
+11 & 11 & 4 & $[3,2]$\\
+20 & 20 & 4 & $[5,1]$\\
+29 & 29 & 4 & $[6,0]$\\
+31 & 31 & 16 & $[6,0]$\\
+32 & 32 & 17 & $[6]$\\
+33 & 33 & 18 & $[6]$\\
+64 & 33 & 18 & $[6]$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The last two rows halt with status one. Earlier rows return status zero because the
+budget was exhausted first. The image has eighteen bytes and thirteen encoded
+instructions, but the default run retires thirty-three instructions because of its
+loop. Native MIPS instruction count is a fourth, separate quantity that includes the
+interpreter's validation and dispatch work.

@@ -1,0 +1,43 @@
+\section{Describe the state in memory}\label{vm-state}
+The descriptor occupies 32 bytes. Its capacity and full stack address are inputs;
+its other fields are outputs. Each call overwrites all five output fields even when
+validation fails or the instruction budget is zero. Do not treat a previous output
+PC as a request to resume. To inspect a later execution prefix in this exercise,
+rerun from the beginning with a larger budget.
+
+\begin{table}[htbp]
+\centering
+\caption{Descriptor layout. Offsets and widths are in bytes. Output PC and fault values are offsets into the program, not host addresses.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrll}
+\toprule
+Offset & Width & Field & Role\\
+\midrule
+0 & 4 & PC & Next instruction, or failing runtime instruction\\
+4 & 4 & Depth & Number of live operand words\\
+8 & 4 & Retired & Successful guest instruction count\\
+12 & 4 & Status & Budget, halt or failure code\\
+16 & 4 & Capacity & Input, zero through eight words\\
+20 & 4 & Fault & Failing instruction offset, or minus one\\
+24 & 8 & Stack address & Full input pointer\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The fault field has a different purpose from PC. A branch-target validation failure
+can identify an instruction at byte five while PC remains zero because execution has
+not started. A runtime overflow at byte seven instead leaves both PC and fault at
+seven. On budget exhaustion or halt, fault is minus one.
+
+The return registers repeat two descriptor fields: \texttt{v0} is status and
+\texttt{v1} is retired count. The caller pauses at \texttt{vm\_ready} immediately
+after the function returns. Its separate \texttt{last\_status} and
+\texttt{last\_steps} words still contain 99 at that point; the following caller
+instructions copy the registers into them. Descriptor outputs have already been
+published by the function.
+
+The guided implementation publishes descriptor outputs once, as it returns. While
+inside its native code, the decode cursor and execution progress live in registers.
+Use the returned descriptor at \texttt{vm\_ready} for the public state comparison.
+An equivalent implementation may update its output fields at other points during the
+call as long as the specified returned state and ownership bounds hold.

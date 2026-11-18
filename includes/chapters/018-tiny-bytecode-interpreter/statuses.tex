@@ -1,0 +1,39 @@
+\section{Interpret the status with its stopping point}\label{vm-statuses}
+Validation failures precede execution. Once execution begins, stack requirements
+precede capacity checks for copying operations; arithmetic requires two operands,
+then checks a zero divisor when relevant, then checks result range. A successful
+halt may have any live depth, including zero.
+
+\begin{table}[htbp]
+\centering
+\caption{Status values. Runtime faults retain the failing instruction's PC and pre-instruction live prefix. Image errors have PC, depth and retired count zero.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rlp{83mm}}
+\toprule
+Status & Meaning & Fault field\\
+\midrule
+0 & Budget exhausted & Minus one; no failed instruction.\\
+1 & Halted & Minus one; halt has retired.\\
+$-1$ & Invalid opcode & First malformed instruction start.\\
+$-2$ & Truncated instruction & Known opcode missing operand bytes.\\
+$-3$ & Invalid jump target & First invalid branch instruction start.\\
+$-4$ & Fetch at image end & Current PC, equal to image length.\\
+$-5$ & Stack underflow & Current instruction start.\\
+$-6$ & Stack overflow & Current instruction start.\\
+$-7$ & Arithmetic overflow & Current instruction start.\\
+$-8$ & Division by zero & Current instruction start.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Changing the branch target in the default program from sixteen to six makes it point
+at the branch's own operand. That image reports status minus three, fault five and
+zero retired instructions even with a zero budget. Reducing stack capacity to two
+leaves the image valid, but execution reports status minus six at PC four after two
+pushes. These are failures from different phases with different retained state.
+
+For a separate arithmetic example, encode \texttt{PUSH32} of the maximum signed word,
+then \texttt{PUSH8} of one, then \texttt{ADD} and \texttt{HALT}. The addition begins
+at byte seven. It reports minus seven with PC and fault seven, retired count two,
+and both original values still live. With budget two, execution stops before that
+addition and returns status zero with the same PC and live values.
