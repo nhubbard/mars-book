@@ -201,6 +201,15 @@ receipts. The chapter is included in main.tex as the twenty-fourth text package.
 Actual IDE captures, enforced progression, the deferred rewrite and independent
 accessibility validation remain unfinished.
 
+The SHA-256 foundation is directly edited at `drafts/sha256.tex`. Its connected
+exposition follows byte order, word widths, block padding, schedule expansion, the
+first compression round, streaming state and file result publication. It includes a
+native padding diagram, headed tables and measured instruction-work comparisons for
+two equivalent implementations. Private tests cover arbitrary-state compression,
+split messages, independent contexts, full length fields, real files and deliberate
+faults. Cumulative steps, public/instructor packages and main-manuscript integration
+remain pending; the integrated package count is still twenty-four.
+
 ## Author feedback and deferred revision
 
 On 18 November 2026, the author reviewed excerpts and judged the draft too long and

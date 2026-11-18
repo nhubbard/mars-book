@@ -1,0 +1,44 @@
+\section{Retain an incomplete block between updates}
+The streaming context stores the information that must survive a return to the caller.
+Its eight state words describe all complete message blocks processed so far. Its byte
+count includes every original message byte supplied so far. Its buffer contains the
+remaining bytes, which are fewer than 64 after an update returns.
+
+\begin{table}[htbp]
+\centering\caption{The project's context layout. Offsets and sizes are decimal bytes.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrl}
+\toprule Offset & Size & Meaning\\\midrule
+0 & 32 & Eight numeric state words\\
+32 & 8 & Original message byte count\\
+40 & 4 & Number of occupied buffer bytes, zero through 63\\
+44 & 4 & Reserved context storage\\
+48 & 64 & Incomplete block buffer\\
+112 & 256 & Schedule workspace\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Initialization copies the eight initial state words, sets the byte count to zero and
+sets the used count to zero. Old buffer and workspace contents do not need to be
+cleared: their contents have no meaning until the program writes the bytes or words it
+will use. This saves initialization work, but it also makes the used count essential.
+A zero-filled allocation must not conceal a missing buffer write.
+
+On update, add the incoming length to the 64-bit byte count. Copy source bytes to the
+buffer beginning at the used count. When it reaches 64, compress that buffer and set
+the used count back to zero. Continue copying until the selected source interval is
+exhausted. Store the remaining used count before returning. The implementation here
+copies all input through the buffer; processing aligned full blocks directly from the
+source is a possible later optimization.
+
+Consider a 65-byte message supplied as calls of 55 and 10 bytes. After the first call,
+no full block has been processed, the total is 55 and the used count is 55. The next
+nine bytes complete the block. Compress it, clear the used count, then copy the last
+byte to buffer position zero. On return, the total is 65 and the used count is one.
+A single 65-byte update must leave the same meaningful context state.
+
+This observation provides a test before finalization exists. Compare the eight state
+words after the complete block, the total, the used count and the remaining buffer
+prefix. Bytes beyond that prefix are unspecified workspace. Requiring them to match
+would reject correct implementations for an irrelevant storage choice.

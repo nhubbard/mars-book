@@ -1,0 +1,51 @@
+\section*{Project interfaces}
+The project exposes the entries below. Each pointer is a full MIPS64 address. The input
+stack is eight-byte aligned. Every entry preserves all bits of \texttt{s0} through
+\texttt{s7}, \texttt{fp} and \texttt{sp}, returns through the supplied \texttt{ra},
+and produces no console output. Submission-owned read-only constants and private stack
+storage are allowed. Caller objects named below are disjoint.
+
+\begin{longtable}{p{0.32\linewidth}p{0.61\linewidth}}
+\caption{Function inputs and writable caller storage.}\\
+\toprule
+Entry & Arguments and effect\\
+\midrule
+\endfirsthead
+\toprule Entry & Arguments and effect\\\midrule
+\endhead
+\texttt{sha256\_schedule} & \texttt{a0}: 64 source bytes; \texttt{a1}: 256-byte,
+word-aligned schedule. Write its 64 words. Preserve the source. Return zero in \texttt{v0}.\\
+\texttt{sha256\_compress} & \texttt{a0}: eight word-aligned state words;
+\texttt{a1}: 64 source bytes; \texttt{a2}: 256-byte, word-aligned workspace.
+Replace the state with its compressed result. Only state and workspace are writable.
+Return zero in \texttt{v0}.\\
+\texttt{sha256\_init} & \texttt{a0}: an eight-byte-aligned 368-byte context.
+Initialize its state, byte count and used count independently of old contents.
+Return zero in \texttt{v0}.\\
+\texttt{sha256\_update} & \texttt{a0}: initialized context; \texttt{a1}: source;
+\texttt{a2}: byte count, zero through 4096. Consume those bytes, writing only the
+context. Zero count reads no source bytes. Return zero in \texttt{v0}.\\
+\texttt{sha256\_final} & \texttt{a0}: context; \texttt{a1}: 32 output bytes.
+Finalize and write the digest in big-endian byte order. Only context and output are
+writable. Return zero in \texttt{v0}.\\
+\texttt{sha256\_file} & \texttt{a0}: terminated path; \texttt{a1}: scratch bytes;
+\texttt{a2}: capacity, one through 256; \texttt{a3}: 32 output bytes. Open read-only,
+hash through successful EOF and close. Return status zero, one for open failure, or
+two for read failure in \texttt{v0}. Preserve output on failure.\\
+\bottomrule
+\end{longtable}
+
+Source blocks, update inputs, output bytes and scratch buffers may be unaligned.
+Access only the selected intervals of caller storage. A finalizer may change any bytes
+inside its context, but it must preserve other caller objects. A file routine uses a
+private context and may change only the selected scratch interval and, on success,
+the 32-byte output interval. Close a descriptor after a read error; an unsuccessful
+open creates no descriptor to close.
+
+An update length is limited to 4096 bytes per call for this teaching interface. Several
+calls may form a longer message. The accumulated byte count must remain below
+\(2^{61}\), so its bit count fits in the standard's 64-bit length field. Inputs outside
+the stated domain are not part of this contract. Finalization consumes the context:
+initialize it again before starting another message. Repeated finalization is not
+specified. Two distinct initialized contexts must remain independent when calls are
+interleaved.

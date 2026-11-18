@@ -30,6 +30,34 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
         self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
         self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
+        self.assertEqual(1, len(book.validate('drafts/sha256.tex')))
+
+    def test_sha_worked_digest_padding_and_measured_rows(self):
+        native = book.ROOT / 'includes/chapters/025-sha256'
+        worked = (native / 'worked.tex').read_text()
+        digest = hashlib.sha256(b'abc').hexdigest()
+        for index in range(0, 64, 8):
+            self.assertIn(digest[index:index + 8], worked)
+        padding = (native / 'padding.tex').read_text()
+        for length in [0, 3, 55, 56, 63, 64, 65, 120]:
+            used = length % 64
+            final_blocks = (used + 1 + 8 + 63) // 64
+            self.assertIn(f'{length} & {length // 64} & {used} & {final_blocks}', padding)
+        receipt = json.loads((book.ROOT / 'book/measurements/025-sha256.json').read_text())
+        primary, alternative = receipt['implementations']
+        work = (native / 'work.tex').read_text()
+        labels = ['Empty', 'ASCII abc', '55 bytes', '56 bytes', '64 bytes', '65 bytes', '4096 bytes']
+        for label, a, b in zip(labels, primary['rows'], alternative['rows']):
+            self.assertEqual((a['dataset'], a['bytes'], a['digest']),
+                             (b['dataset'], b['bytes'], b['digest']))
+            row = f"{label} & {a['updateInstructions']} & {b['updateInstructions']} & {a['finalizationInstructions']} & {b['finalizationInstructions']}"
+            self.assertIn(row, work)
+        for implementation in [primary, alternative]:
+            for row in implementation['rows']:
+                length = row['bytes']
+                message = b'abc' if row['dataset'] == 'abc' else bytes(
+                    (i * 73 + 128) % 256 if length == 4096 else i % 256 for i in range(length))
+                self.assertEqual(hashlib.sha256(message).hexdigest(), row['digest'])
 
     def test_crc_construction_transcript_and_native_order(self):
         folder = book.ROOT / 'drafts/crc-construction'

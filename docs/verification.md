@@ -629,3 +629,23 @@ recipe. The caller checks also verify pre-store count words, exact scratch/lane 
 output prefixes and unchanged original input. Public recipes name the step, source
 RGB values, count, focused function and checkpoint. Native instructions explain how
 to replace only the initializer prefix while preserving arena size and guards.
+
+
+## SHA-256 foundation
+
+The independent native entry drafts/sha256.tex is checked separately from main.tex.
+Two private implementations pass 878 main cases, 15 repeated/synthetic-context cases
+and 9 measured cases each, plus 31 focused cases each with both code and data above 4 GiB.
+The 35-run verifier records 1866 positive executions and 27 rejected fault controls.
+Two separate register-allocation checks verify the first abc compression round.
+Sixteen ordinary CLI runs use real files and compare output bytes with hashlib;
+controlled short reads and errors are exercised through explicit fixtures separately.
+A Python arithmetic oracle agrees with hashlib on 16 selected messages and supplies
+worked schedule/round values. No enormous file is claimed from synthetic count tests.
+
+The public measured-work receipt separates initialization, update and finalization;
+one schedule call and one compression call are also measured. Each boundary starts
+at function entry and stops at the supplied return, excluding preparation, sessions,
+assembly and IO. Counts are simulated instructions, not host latency or grading limits.
+The cumulative exercise distribution is unfinished. PDF tagging and embedded-font
+checks do not certify PDF/UA or establish student usability.

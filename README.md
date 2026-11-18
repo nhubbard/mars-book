@@ -131,6 +131,12 @@ excerpts, 34 quizzes, 68 hints and 52 exact recipes. It is included in the
 main manuscript as chapter 24, with public guided/final checks and separate archives.
 Actual IDE figures remain pending.
 
+The next independent native foundation is [SHA-256](drafts/sha256.tex). It explains
+word widths, byte order, a worked compression round, streaming state, padding and file
+publication. Verified instruction-work tables accompany the exposition. Cumulative
+student steps and the twenty-fifth distribution are still in development; this draft
+has not been added to the main manuscript.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
