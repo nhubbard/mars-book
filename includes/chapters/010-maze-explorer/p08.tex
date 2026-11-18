@@ -1,0 +1,7 @@
+\section{Publish only after a complete logical step}\label{maze-p08}
+
+The search performs several stores while processing a cell. During that interval, a memory-backed tool can show a mixture of old and new information. The program does not make the framebuffer update an atomic hardware operation. Instead, it defines a stable observation boundary after the search stores, metadata stores, and full redraw have completed.
+
+\texttt{maze\_ready} is the instruction label reached after rendering and before returning to the caller. A breakpoint there stops before the instruction at that label executes. Phase zero identifies the initial state, phase one identifies a completed dequeue, and phase two identifies the final route or exhausted search. The checks step beyond one boundary before waiting for the next occurrence.
+
+For an ordinary cell, phase one follows all four neighbor decisions. For the goal cell, it follows the goal test without adding further neighbors. In both cases the current cell has been removed from the frontier and marked processed. This convention makes the termination policy visible and testable.

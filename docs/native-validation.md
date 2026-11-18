@@ -57,3 +57,32 @@ conformance. Full-book visual and reading-order review, independent accessibilit
 validation, screen-reader testing, and author review remain. Actual light-theme IDE
 screenshot capture and the interactive trainer are still pending. The current separate
 plugin supplies highlighting export; it does not yet supply those capabilities.
+
+## Maze chapter and layout revision
+
+The native-first tenth chapter adds thirty microsteps, fourteen connective passages,
+twelve teaching fixtures including two native diagrams, and seventeen assembly fragments.
+The manuscript now has 279 pages; the maze chapter occupies physical pages 241–279.
+All of those chapter pages were rendered and reviewed, with enlarged checks for the
+repaired running headers and code starts. Short chapter marks keep running headers
+inside the page. Code labels reserve space for their opening lines.
+
+The current structure inspection finds 191 table header cells, thirteen figures with
+alternatives, 274 mathematical structures, and 147 code/output structures. The book
+has 138 highlighted assembly blocks, plus the specimen's separate block. All 116
+previously exported distinct code sources remain unchanged; seventeen new sources
+bring the highlighting receipt to 133. Selected fonts and Unicode mappings remain
+embedded. No font substitutions, missing glyphs, overflow, or minted placeholders
+remain in the compiled outputs.
+
+Both maze implementations pass the public transitions, independent renderer cases,
+416 private cases each, and measured workloads. Seventeen cumulative authoring programs
+reconstruct the verified implementation. Seventeen warning-free faulty variants are
+rejected, including a saved-register corruption after the observation label. The
+renderer check inspects preservation at the observation boundary and again immediately
+after the actual return, before executing the continuation. Student instructions use
+public materials and source edits; the JSON fixture is not described as an implemented
+IDE import feature. The final instructor report and archives pin the committed sources.
+
+These checks do not replace the remaining full-book accessibility and author review,
+and they do not claim that pending IDE screenshots have been captured.

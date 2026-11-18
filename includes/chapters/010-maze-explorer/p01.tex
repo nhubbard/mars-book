@@ -1,0 +1,7 @@
+\section{Give geometry an explicit representation}\label{maze-p01}
+
+A byte index is a compact name for a cell. In row-major order, the index is eight times the row plus the column. The quotient on division by eight recovers the row, and the remainder recovers the column. With nonnegative IDs below 64, a right shift by three and a mask with seven implement those operations directly.
+
+Index arithmetic must still respect geometry. Moving east from column seven produces column eight, which is outside the grid. Simply adding one to the flattened ID would instead name column zero of the next row. That ID may be mapped memory and may contain an open byte, so neither address validity nor a wall test would detect the mistake. Bound the coordinates before constructing the candidate ID.
+
+The framebuffer is another row-major array, but its entries are words. Cell ID nine selects byte nine in \texttt{walls} and the word beginning 36 bytes after \texttt{frame}. Keeping the two strides explicit avoids scaling the graph index twice or forgetting to scale the pixel address.

@@ -60,10 +60,11 @@ white. Other exported colors already meet that threshold and remain unchanged. O
 IDE values remain in the receipt; token roles and font styles are preserved. Literal output remains a
 plain native text block. A changed assembly listing requires a fresh IntelliJ export.
 
-The initial migration has 121 chapter assembly listings and one specimen listing, with
-116 distinct sources. Preserve source bytes and indentation. Do not enable math escapes,
+The initial nine-chapter migration covered 121 assembly listings and one specimen listing.
+The native-first maze chapter adds seventeen assembly listings. Preserve source bytes and indentation. Do not enable math escapes,
 TeX escapes, or code ligatures that change the meaning of a listing. Code must remain
-extractable text rather than an image.
+extractable text rather than an image. Short chapter marks keep running headers within
+the page; code labels reserve room for the opening lines of their listings.
 
 ## Native figures and accessibility
 

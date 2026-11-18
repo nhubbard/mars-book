@@ -1,0 +1,40 @@
+\section{Step 5 Initialize every per-cell field}\label{maze-s05}
+
+Old memory is not a reliable search state. A stale discovered mark can prevent a reachable cell from entering the queue, while a stale path bit can display a route that was never found.
+
+\subsection{Write or inspect}
+
+Append the clear loop. It writes all 64 entries of each work array, including queue bytes outside the active prefix.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}{mars-idea}
+clear_cell:
+    daddu $t3, $s1, $t0
+    sb $zero, 0($t3)
+    daddu $t3, $s2, $t0
+    sb $t1, 0($t3)
+    daddu $t3, $s3, $t0
+    sb $t1, 0($t3)
+    daddu $t3, $s4, $t0
+    sb $zero, 0($t3)
+    daddu $t3, $t2, $t0
+    sb $zero, 0($t3)
+    addiu $t0, $t0, 1
+    sltiu $t3, $t0, 64
+    bne $t3, $zero, clear_cell
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+
+States, queue, and path bytes are zero. Parents and distances are 255. A byte store writes exactly one entry.
+
+\subsection{Check your understanding}
+
+What would a stale nonzero state do?
+
+\begin{itemize}
+\item \textbf{A} It would convert a wall into an open cell.
+\item \textbf{B} It could suppress a necessary discovery.
+\item \textbf{C} It would increase the framebuffer width.
+\end{itemize}

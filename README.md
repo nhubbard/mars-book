@@ -39,7 +39,12 @@ ten fixtures, and four planned IDE figures.
 The ninth composition, [Visualize insertion and selection sort](packages/009-sorting-visualizer/assignment.md),
 explains sorted-prefix invariants, permutations, duplicate identities, a tested leaf
 renderer, and native instruction/branch measurements. It has twenty-seven steps, thirteen
-prose sections, ten fixtures, and four planned IDE figures. The full [35-project roadmap](docs/roadmap.md) preserves the progression
+prose sections, ten fixtures, and four planned IDE figures.
+The tenth composition, [Explore a maze with a breadth-first frontier](packages/010-maze-explorer/assignment.md),
+teaches coordinate bounds, discovery-time marking, a bounded FIFO queue, predecessor
+chains, and shortest-path reasoning. It has thirty microsteps, fourteen connective
+passages, twelve teaching fixtures, two native diagrams, and four planned IDE captures.
+Its checks accept different neighbor orders and shortest routes. The full [35-project roadmap](docs/roadmap.md) preserves the progression
 from console programs to algorithms, bounded assignments, vector kernels, and codecs.
 
 ## Use the materials
@@ -65,7 +70,7 @@ See [verification](docs/verification.md) for the tested package behavior.
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first nine chapters are now composed through ordinary LaTeX input/include files.
+The first ten chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -80,7 +85,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first nine text packages, starters, public checks, deterministic student archive builder,
+The first ten text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

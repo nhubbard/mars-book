@@ -1,0 +1,41 @@
+\section{Step 13 Reject coordinates outside the grid}\label{maze-s13}
+
+Adding a direction to a row or column can produce minus one or eight. A valid byte address alone cannot prove that the cell is a geometric neighbor.
+
+\subsection{Write or inspect}
+
+Append the direction loads and coordinate bounds. The direction table uses signed byte loads because minus one is meaningful.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}{mars-idea}
+    la $t0, dx
+    daddu $t0, $t0, $a0
+    lb $t1, 0($t0)
+    addu $t1, $t1, $a1
+    sltiu $t2, $t1, 8
+    beq $t2, $zero, next_neighbor
+    nop
+    la $t0, dy
+    daddu $t0, $t0, $a0
+    lb $t2, 0($t0)
+    addu $t2, $t2, $a2
+    sltiu $t3, $t2, 8
+    beq $t3, $zero, next_neighbor
+    nop
+    sll $t3, $t2, 3
+    addu $t3, $t3, $t1
+\end{minted}
+
+\subsection{Expected observation}
+
+The north neighbor of cell zero is rejected before any maze array load. Only in-range coordinates are converted back into a cell ID.
+
+\subsection{Check your understanding}
+
+Why load a direction byte with a signed load?
+
+\begin{itemize}
+\item \textbf{A} The table contains negative displacements.
+\item \textbf{B} All cell IDs are negative.
+\item \textbf{C} Byte loads must always sign extend.
+\end{itemize}

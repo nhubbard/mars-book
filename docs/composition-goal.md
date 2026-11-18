@@ -45,7 +45,7 @@ any needed prerequisite lessons before changing its progression. Prefer completi
 substantive, verified composition to producing many skeletal chapter packages. Review
 instruction semantics and the explanatory text together before committing each increment.
 
-The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter, MarsBot-square, Bresenham-line, Life, and sorting-visualizer chapters
+The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter, MarsBot-square, Bresenham-line, Life, sorting-visualizer, and maze-explorer chapters
 are composed text drafts with verified companion programs. They still need author review and actual
 IDE figures. The remaining projects are planned until their text and companions are
-written and checked. The maze explorer is next in the roadmap.
+written and checked. Matrix transpose is next in the roadmap.

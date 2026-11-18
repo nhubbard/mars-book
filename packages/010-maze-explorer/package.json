@@ -1,0 +1,1334 @@
+{
+  "formatVersion": 1,
+  "id": "010-maze-explorer",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Explore a maze with a breadth-first frontier",
+  "audience": "Students with basic programming knowledge who are learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "93980408b279daac10a2abba3ee430a986aadd0c",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "readWord",
+      "readBytes",
+      "expectCondition",
+      "runUntil",
+      "traceMemoryStores",
+      "traceExecution",
+      "setRegisterToTextAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Row-major addressing and bounds",
+    "Word and byte memory operations",
+    "Leaf function calls and publication checkpoints"
+  ],
+  "learningObjectives": [
+    "Prove unit-cost BFS shortest distances",
+    "Bound a monotone byte queue with discovery-time marking",
+    "Validate geometry before flattening cell IDs",
+    "Reconstruct and verify a shortest predecessor chain",
+    "Publish frontier, processed cells, and final route consistently"
+  ],
+  "inputDomain": {
+    "type": "unit-cost-maze",
+    "width": 8,
+    "height": 8,
+    "wallValues": [
+      0,
+      1
+    ],
+    "cellIdMinimum": 0,
+    "cellIdMaximum": 63,
+    "endpoints": "open cells",
+    "neighbors": "orthogonal",
+    "byteArrayAlignment": 4
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Text guides and complete-program CLI checks"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Define a shortest route",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does this task minimize?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of cells stored in the maze."
+          },
+          {
+            "id": "b",
+            "text": "The number of orthogonal moves from start to goal."
+          },
+          {
+            "id": "c",
+            "text": "The number of different colors."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Count moves between cells."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The start contributes a cell but no move."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Map the small room to byte indices",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Are cell seven and cell eight horizontal neighbors?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the row boundary lies between them."
+          },
+          {
+            "id": "b",
+            "text": "Yes; their indices differ by one."
+          },
+          {
+            "id": "c",
+            "text": "Only when the goal is eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Recover both coordinates."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Use quotient and remainder by eight."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Read the memory contract",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why can 255 serve as the parent sentinel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is the goal in every fixture."
+          },
+          {
+            "id": "b",
+            "text": "It is a valid row number."
+          },
+          {
+            "id": "c",
+            "text": "It cannot name any cell in this grid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Compare the sentinel with the capacity."
+        },
+        {
+          "id": "s03-h2",
+          "text": "A byte can represent 255 even though the grid uses only 64 IDs."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Keep search state across renderer calls",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why keep queue counters in saved registers?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The renderer may overwrite temporary registers."
+          },
+          {
+            "id": "b",
+            "text": "Saved registers automatically increment."
+          },
+          {
+            "id": "c",
+            "text": "The queue resides in registers only."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Review the previous renderer contract."
+        },
+        {
+          "id": "s04-h2",
+          "text": "A call preserves only the state promised by its interface."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "initialize"
+    },
+    {
+      "id": "s05",
+      "title": "Initialize every per-cell field",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What would a stale nonzero state do?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It would convert a wall into an open cell."
+          },
+          {
+            "id": "b",
+            "text": "It could suppress a necessary discovery."
+          },
+          {
+            "id": "c",
+            "text": "It would increase the framebuffer width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "The discovery test requires state zero."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Initialize on every launch, not just in the source declaration."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "initialize"
+    },
+    {
+      "id": "s06",
+      "title": "Discover the start once",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "How many queue entries are initially active?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-four."
+          },
+          {
+            "id": "c",
+            "text": "One."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Subtract head from tail."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The interval includes head and excludes tail."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "initialize"
+    },
+    {
+      "id": "s07",
+      "title": "Publish the initial state",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Does the renderer stub already prove a correct picture?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it has not written the frame."
+          },
+          {
+            "id": "b",
+            "text": "Yes; a call paints automatically."
+          },
+          {
+            "id": "c",
+            "text": "Yes; the queue is nonempty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "A function label names code; it is not a device operation."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Inspect the actual frame stores."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "initial"
+    },
+    {
+      "id": "s08",
+      "title": "Classify and draw one cell",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which classification wins when a wall byte is one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The path color."
+          },
+          {
+            "id": "b",
+            "text": "The wall color."
+          },
+          {
+            "id": "c",
+            "text": "The frontier color."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Follow the first conditional branch."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The renderer treats its inputs by a defined priority."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s09",
+      "title": "Redraw the entire frame",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why does the frame pointer advance by four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The grid has four neighbors."
+          },
+          {
+            "id": "b",
+            "text": "The queue contains words."
+          },
+          {
+            "id": "c",
+            "text": "Each RGB pixel occupies one 32-bit word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Distinguish a cell ID from a byte address."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Byte work arrays and word pixels have different strides."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "render"
+    },
+    {
+      "id": "s10",
+      "title": "Check the renderer on its own",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q10",
+        "prompt": "What does an independent renderer test remove?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A hidden dependency on main having prepared scratch registers."
+          },
+          {
+            "id": "b",
+            "text": "The need for a return address."
+          },
+          {
+            "id": "c",
+            "text": "All stores to the framebuffer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The interface names memory inputs, not private temporary values."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The caller supplies the continuation."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Interpret the queue as a moving interval",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What does head equal tail mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every maze cell is a wall."
+          },
+          {
+            "id": "b",
+            "text": "No discovered cell remains waiting."
+          },
+          {
+            "id": "c",
+            "text": "The goal must be reachable."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Previously processed entries may remain in memory."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Logical occupancy depends on the interval, not on clearing bytes."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Remove one cell from the frontier",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which queue entry must be removed next?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The most recently appended entry."
+          },
+          {
+            "id": "b",
+            "text": "The largest cell ID."
+          },
+          {
+            "id": "c",
+            "text": "The entry at head."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Follow FIFO order."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Increment head after reading that entry."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "pop"
+    },
+    {
+      "id": "s13",
+      "title": "Reject coordinates outside the grid",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why load a direction byte with a signed load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The table contains negative displacements."
+          },
+          {
+            "id": "b",
+            "text": "All cell IDs are negative."
+          },
+          {
+            "id": "c",
+            "text": "Byte loads must always sign extend."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Separate directions from cell IDs."
+        },
+        {
+          "id": "s13-h2",
+          "text": "A direction of minus one must remain minus one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "neighbor"
+    },
+    {
+      "id": "s14",
+      "title": "Test walls and discovery state",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "When may an open candidate be discovered?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whenever it is not the current cell."
+          },
+          {
+            "id": "b",
+            "text": "Only while its state is zero."
+          },
+          {
+            "id": "c",
+            "text": "Whenever its parent is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "The start can be a valid parent ID zero."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Use the explicit discovery state."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "neighbor"
+    },
+    {
+      "id": "s15",
+      "title": "Record the discovery predecessor and distance",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Why mark the cell before a later dequeue?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It makes all edges cost zero."
+          },
+          {
+            "id": "b",
+            "text": "It removes every wall."
+          },
+          {
+            "id": "c",
+            "text": "It prevents duplicate enqueues through other incoming edges."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "The small room has a cycle."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Two processed cells can share an unseen neighbor."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "discover"
+    },
+    {
+      "id": "s16",
+      "title": "Append the new work item",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What is stored in one queue byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A cell ID from zero through 63."
+          },
+          {
+            "id": "b",
+            "text": "A full memory address."
+          },
+          {
+            "id": "c",
+            "text": "A color word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "The work item can be converted back to row and column."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The array base is kept separately."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "discover"
+    },
+    {
+      "id": "s17",
+      "title": "Examine all four directions",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Should an invalid north neighbor end processing of the cell?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; a boundary blocks every direction."
+          },
+          {
+            "id": "b",
+            "text": "No; the remaining directions still need examination."
+          },
+          {
+            "id": "c",
+            "text": "Only when the start is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "A corner still has two sides inside the grid."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Advance the direction index rather than ending the search."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "next_neighbor"
+    },
+    {
+      "id": "s18",
+      "title": "Publish one completed processing step",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "When is a phase-one snapshot published?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After each individual instruction."
+          },
+          {
+            "id": "b",
+            "text": "Only after the whole search exits."
+          },
+          {
+            "id": "c",
+            "text": "After one dequeued cell and all required discoveries."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "The frame should match one complete algorithm step."
+        },
+        {
+          "id": "s18-h2",
+          "text": "No screenshot should present a half-updated queue."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "expanded"
+    },
+    {
+      "id": "s19",
+      "title": "Explain the layer ordering",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Can a different fixed neighbor order choose another shortest route?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it can choose another predecessor at the same distance."
+          },
+          {
+            "id": "b",
+            "text": "No; cell IDs force one route."
+          },
+          {
+            "id": "c",
+            "text": "Only by changing the goal."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Compare the east-first and south-first routes."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Shortest length does not imply a unique path."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Record a reachable result",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What does length count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of bytes in parents."
+          },
+          {
+            "id": "b",
+            "text": "Edges from start to goal."
+          },
+          {
+            "id": "c",
+            "text": "All discovered cells."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "A route of three cells has two transitions."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The goal distance already has the required value."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "found"
+    },
+    {
+      "id": "s21",
+      "title": "Reconstruct the route backward",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Why mark before the start test?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To add an extra edge."
+          },
+          {
+            "id": "b",
+            "text": "To overwrite the queue."
+          },
+          {
+            "id": "c",
+            "text": "To include the start in the path mask."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "The route contains both endpoints."
+        },
+        {
+          "id": "s21-h2",
+          "text": "The start has no parent, so stop before reading one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "path_loop"
+    },
+    {
+      "id": "s22",
+      "title": "Report an exhausted frontier",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What proves failure in this bounded search?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The queue empties without processing the goal."
+          },
+          {
+            "id": "b",
+            "text": "The first neighbor is a wall."
+          },
+          {
+            "id": "c",
+            "text": "The start has parent 255."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "All discovered waiting work must be exhausted."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The parent sentinel is also correct at the start of a successful search."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "unreachable"
+    },
+    {
+      "id": "s23",
+      "title": "Publish the final route or failure",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What must agree at the final checkpoint?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the current register value."
+          },
+          {
+            "id": "b",
+            "text": "The result, length, path mask, search arrays, and rendered frame."
+          },
+          {
+            "id": "c",
+            "text": "Only the color of the goal."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "A correct distance cannot repair a disconnected path."
+        },
+        {
+          "id": "s23-h2",
+          "text": "A correct path mask cannot repair a stale frame."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      },
+      "editTarget": "finished"
+    },
+    {
+      "id": "s24",
+      "title": "Check zero-edge and edge-boundary cases",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "What is the length when start equals goal?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Minus one."
+          },
+          {
+            "id": "c",
+            "text": "Zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "The path mask still contains an endpoint."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Count transitions rather than marked cells."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Accept a different shortest route",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Which property should the grader require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A valid shortest predecessor chain."
+          },
+          {
+            "id": "b",
+            "text": "The same private loop labels as the reference."
+          },
+          {
+            "id": "c",
+            "text": "The same temporary registers."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Separate the interface from the implementation."
+        },
+        {
+          "id": "s25-h2",
+          "text": "State relations can establish correctness without source matching."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Protect inputs and inspect actual stores",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Why observe stores as well as final bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To force one register allocation."
+          },
+          {
+            "id": "b",
+            "text": "To detect a forbidden write followed by restoration."
+          },
+          {
+            "id": "c",
+            "text": "To choose a unique shortest path."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "An action can violate a contract without changing the final value."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Observe the stated protected regions only."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Separate search work from publication work",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why can rendering dominate this small-grid program?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The queue uses recursion."
+          },
+          {
+            "id": "b",
+            "text": "The search examines every pair of cells."
+          },
+          {
+            "id": "c",
+            "text": "Every checkpoint redraws all 64 pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Count publications as well as dequeues."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Change one measurement scope at a time."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Run the full-grid fixture",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "How many moves separate opposite corners in the open grid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Fourteen."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-three."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Seven row changes and seven column changes are required."
+        },
+        {
+          "id": "s28-h2",
+          "text": "The number of processed cells differs from the path length."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s29",
+      "title": "State where BFS stops applying",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Does ordinary FIFO BFS solve arbitrary weighted shortest paths?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; weights only change colors."
+          },
+          {
+            "id": "b",
+            "text": "No; its layer argument assumes equal edge costs."
+          },
+          {
+            "id": "c",
+            "text": "Yes; a byte array makes every weight equal."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Review why discovery at distance d produces the next layer."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Choosing the next cheapest tentative distance requires a different work policy."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Review the observable invariants",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What remains valid when neighbor order changes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The exact parent of every discovered cell."
+          },
+          {
+            "id": "b",
+            "text": "The exact whole-program instruction count."
+          },
+          {
+            "id": "c",
+            "text": "Queue uniqueness and shortest-path validity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Use relations that the interface actually promises."
+        },
+        {
+          "id": "s30-h2",
+          "text": "A different valid chain can have the same minimum edge count."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "CLI checks verify the published BFS protocol. Interactive progression and actual IDE capture remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/public.kts",
+    "checks/render.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "figures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

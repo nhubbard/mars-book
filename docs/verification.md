@@ -239,3 +239,26 @@ programs are verified. Reference default whole counts are 26,197 and 26,206; the
 six-row measurements are also asserted. Student correctness does not require those totals.
 Both implementations assemble without warnings. Native bar and call figures have inspected
 SVG previews. Four actual light-mode IDE captures and PDF accessibility checks are pending.
+
+## Maze explorer
+
+The tenth package publishes a complete BFS contract for an 8 by 8 unit-cost grid.
+Its eight public graphs check every initialized, processed, and final snapshot, while
+five independent renderer cases seed caller state without running main. The checks
+follow any valid permutation of newly discovered neighbors. Queue history, first
+predecessors, shortest distances, and final masks are verified as relations rather
+than matched to one reference path.
+
+The private companion adds 416 cases per implementation: 256 eligible 3 by 3 wall-mask
+and direction cases, 96 deterministic full-grid layouts, and 64 zero-edge paths. Its
+verifier reconstructs seventeen authoring stages, rejects seventeen warning-free faulty
+variants, and measures both implementations. Reference/alternative whole counts are
+7,286/7,318 for the tiny room and 125,384/126,314 for the full room. Exact counts are
+reference evidence and do not grade equivalent student solutions.
+
+The package pins the upstream grader revision supplying readWord, readBytes, and
+expectCondition. Those operations let the checks inspect student choices without
+publishing simulator accesses or changing undo history. Three new tests brought the
+complete CLI suite to 77 passing tests. The public memory ABI states four-byte array
+alignment; byte entries still have byte stride. Capture recipes remain pending actual
+light-theme IDE automation.

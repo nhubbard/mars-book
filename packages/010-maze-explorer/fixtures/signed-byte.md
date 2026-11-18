@@ -1,0 +1,5 @@
+# Load the sentinel at its intended width
+
+Suppose a parent byte contains hexadecimal FF. In MARS MIPS64, `lb` yields `0xffffffffffffffff`, while `lbu` yields `0x00000000000000ff`. The second value compares equal to unsigned-byte sentinel 255. The first represents minus one as a signed full-width value.
+
+The predecessor walk stops at the start before reading its sentinel parent. For inspection or validation of an arbitrary parent byte, use an unsigned load and test the sentinel before treating the value as an index. A sentinel test does not make a later out-of-range address valid; it prevents that address from being formed.
