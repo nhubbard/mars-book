@@ -1,0 +1,27 @@
+\section{Step 20 Choose the negative endpoint}\label{fir-s20}
+
+Load -32768 into \texttt{t0} for the lower-overflow path. It falls through to \texttt{scalar\_clipped}, sharing the increment with positive overflow. In-range flow already bypasses this path. The exact negative endpoint and a clipped negative result therefore remain distinguishable through their count even though their stored bytes agree.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{lower\_clamp}. Keep surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, -32768
+\end{minted}
+Use recipe \texttt{s20-1} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+A large negative rounded result becomes -32768 with \texttt{v1} still zero at the next unfinished region.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Can the final endpoint bytes alone reveal whether this path executed?
+
+\begin{itemize}
+\item \textbf{A} Only when output is word aligned.
+\item \textbf{B} Yes; negative endpoints are always clipped.
+\item \textbf{C} No.
+\end{itemize}

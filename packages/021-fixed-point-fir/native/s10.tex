@@ -1,0 +1,28 @@
+\section{Step 10 Reconstruct the coefficient code}\label{fir-s10}
+
+Shift \texttt{t6} left by eight and combine it into \texttt{t5}. The stored order is the same little-endian order as the input samples. A Q15 scale does not change byte order or make the raw code unsigned. This edit recovers the numerical pattern; the next edit gives that pattern its signed interpretation.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{coefficient\_join}. Keep surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sll $t6, $t6, 8
+    or $t5, $t5, $t6
+\end{minted}
+Use recipe \texttt{s10-1} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Coefficient bytes 00 c0 reconstruct unsigned pattern 49152 in \texttt{t5}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does the Q15 scale reverse the stored bytes?
+
+\begin{itemize}
+\item \textbf{A} Yes; fractional values use the high byte first.
+\item \textbf{B} Only for negative coefficients.
+\item \textbf{C} No; the contract still stores the low byte first.
+\end{itemize}

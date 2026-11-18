@@ -1,0 +1,29 @@
+\section{Step 16 Use an arithmetic shift for floor division}\label{fir-s16}
+
+Shift \texttt{t0} right arithmetically by fifteen with \texttt{dsra}. Together with the bias, this implements
+\[R=\left\lfloor\frac{S+16384}{32768}\right\rfloor.\]
+A negative biased value must round downward under the division, so truncation toward zero would be wrong. A logical shift would replace the sign with zeros and produce a large positive value.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{round\_scale}. Keep surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsra $t0, $t0, 15
+\end{minted}
+Use recipe \texttt{s16-1}, \texttt{s16-2}, \texttt{s16-3}, \texttt{s16-4} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+The three tie-adjacent recipes produce rounded codes one, zero and -1. The maximum eight-product sum produces 262144 before saturation.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does biased value -1 produce after this shift?
+
+\begin{itemize}
+\item \textbf{A} Zero.
+\item \textbf{B} 32767.
+\item \textbf{C} -1.
+\end{itemize}

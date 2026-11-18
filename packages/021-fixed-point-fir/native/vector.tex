@@ -1,0 +1,39 @@
+\section{Widen signed lanes before the vector dot product}
+Load the sixteen coefficient bytes once for a nonempty call. A signed comparison
+with zero makes a halfword mask: ffff for a negative coefficient and zero otherwise.
+Interleave a coefficient halfword with its corresponding mask halfword. In little-endian
+word interpretation, the coefficient supplies low bits and the mask supplies the
+sign-extension bits. The low and high interleaves make two vectors of four signed words.
+
+Repeat the widening for each input window. For sample -32768, the word must be
+hexadecimal ffff8000, not 00008000. Both contain the same low halfword, but only the
+first is the intended signed word. The coefficient word has the same requirement.
+The illustration uses \texttt{clti\_s.h}, \texttt{ilvr.h} and \texttt{ilvl.h}; their
+operand order determines which halfword becomes the low part of each word.
+
+Apply \texttt{dotp\_s.d} to each pair of four-word vectors. Its destination contains
+two doubleword sums of adjacent signed word products. In this bounded input domain,
+each pair is exact. Add the low-half and high-half result vectors with \texttt{addv.d},
+then copy the two resulting doublewords to integer registers and add them. Only after
+that reduction should the common rounding and saturation path run.
+
+\begin{table}[htbp]
+\centering
+\caption{Tap contributions in the widened reduction. Each index names one product \(u_{i+j}c_j\).}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\toprule
+Stage & Low doubleword & High doubleword\\
+\midrule
+First dot product & 0, 1 & 2, 3\\
+Second dot product & 4, 5 & 6, 7\\
+Vector addition & 0, 1, 4, 5 & 2, 3, 6, 7\\
+Scalar addition & All eight products & ---\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Coefficient vectors remain available across output windows. They are read-only working
+values after setup. Input widening, partial sums and the scalar accumulator are rebuilt
+for each output. Even a one-output call can use this vector path; zero outputs must
+return before the initial coefficient load.

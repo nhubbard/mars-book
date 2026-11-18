@@ -1,8 +1,9 @@
 # FIR construction draft
 
-This companion supports the directly edited native chapter at drafts/fixed-point-fir.tex.
-The full student package and interactive runner remain in development. It is outside
-the main book's twenty complete text packages. No IDE screenshots have been captured.
+This retained draft records the original construction work. Use
+packages/021-fixed-point-fir for the current student distribution, public checks and
+listening renderer. The native chapter is now included in main.tex. This draft is
+not the released ZIP. Actual captures and the interactive runner remain pending.
 
 Begin with main.asm and retain labels and region markers. The first twenty-one edits
 complete fir_scalar, reached through the initial public tail transfer. The later entry

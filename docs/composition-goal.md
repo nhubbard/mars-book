@@ -135,15 +135,15 @@ captures, interactive progression controls, author review and independent access
 validation remain pending. Twenty text packages do not complete the full 35-project
 composition and capture objective, which remains active.
 
-Fixed-point FIR has a forty-seven-step native construction draft at
-`drafts/fixed-point-fir.tex`, with thirty-six cumulative edits, seven supplied assembly
-excerpts and sixty-six input observations. The initial public transfer reaches the
-scalar routine; a later entry edit starts vector construction while retaining the
-completed scalar comparison. Both scalar and vector stages share exact wide sums,
-one final rounding, post-round saturation and explicit history. Observations run
-through unaligned isolated calls and the actual program caller. Forty-seven quizzes
-and ninety-four available hints accompany the editable text. Six verified listening
-files and complete-call measurements remain included. Full student packaging, interactive
-progression controls, actual IDE figures and independent accessibility validation are
-unfinished. Chapter twenty-one remains outside main.tex and the twenty completed text
-packages. The full 35-project objective remains active.
+Fixed-point FIR is a full native text draft at `drafts/fixed-point-fir.tex`, included
+in main.tex as chapter twenty-one. Forty-seven steps and thirty-six edits retain a
+scalar comparison before developing widened MSA dot products. Seven supplied excerpts,
+forty-seven quizzes, ninety-four hints, sixty-six reproducible observations, public
+per-step checks and separate student/instructor distributions accompany the text.
+The completed scalar and vector stages share the behavior and chunk-continuity checks.
+Six listening fixtures can be reproduced with a separately authored public renderer;
+private algorithms and hidden grading domains remain in the instructor repository.
+Five numerical capture models are verified, but actual IDE figures, the interactive
+runner, enforced progression, author review and independent accessibility validation
+remain pending. Twenty-one text packages do not complete the full 35-project and
+capture objective, which remains active. Blocked matrix multiplication is next.

@@ -1,0 +1,2053 @@
+{
+  "formatVersion": 1,
+  "id": "021-fixed-point-fir",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Filter samples with Q15 coefficients",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6 with MSA",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "f1ddaef87f5840644a7853065f1cf5a2f49249c7",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "traceExecution",
+      "readDataAddress",
+      "expectVectorLane"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Signed sample decoding and saturation",
+    "Full-width interfaces and logical slices",
+    "Scalar loops and MSA lane operations"
+  ],
+  "learningObjectives": [
+    "Define Q15 scale and chronological order",
+    "Preserve exact wide partial sums",
+    "Round once with signed ties",
+    "Separate rounding from saturation counts",
+    "Carry explicit history between chunks",
+    "Widen before vector dot products and compare work"
+  ],
+  "inputDomain": {
+    "type": "eight-tap-q15-fir",
+    "maximumOutputs": 64,
+    "historySamples": 7,
+    "tapCount": 8,
+    "sourceArenaBytes": 192,
+    "coefficientArenaBytes": 64,
+    "outputArenaBytes": 192,
+    "pairwiseDisjointSlices": true,
+    "rounding": "nearest, ties toward positive infinity, once after exact accumulation"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose and public CLI checks; interactive runner and actual capture pending"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Identify the current sample in the supplied input",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which array position is current for output zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "Seven."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Read the input as seven chronological history samples followed by the new samples."
+        },
+        {
+          "id": "s01-h2",
+          "text": "One output requires eight input halfwords, two output bytes and the same sixteen coefficient bytes used by every output."
+        }
+      ],
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Predict an asymmetric impulse response",
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which stored coefficient determines the first impulse output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The last coefficient, position seven."
+          },
+          {
+            "id": "b",
+            "text": "The first coefficient, position zero."
+          },
+          {
+            "id": "c",
+            "text": "The sum of every coefficient regardless of impulse position."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "First use the default impulse 16000 with all coefficients 4096: eight outputs are 2000 and later outputs zero."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The unequal-coefficient response is 4096,3584,3072,2560,2048,1536,1024,512, then zeros."
+        }
+      ],
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Inspect the two entries and provisional exits",
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Does the initial transfer require a nested-call return address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only for count zero."
+          },
+          {
+            "id": "b",
+            "text": "Yes; every label transition changes ra."
+          },
+          {
+            "id": "c",
+            "text": "No; the branch preserves the original caller continuation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The starter\u2019s public fir_q15 entry tail-transfers to fir_scalar with an ordinary branch, preserving the caller\u2019s ra."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The untouched starter assembles and exits but fails final filtering. A provisional return reports only the construction reached so far."
+        }
+      ],
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Guard the output count before reading history",
+      "kind": "author",
+      "editTarget": "scalar_bound",
+      "quiz": {
+        "id": "q04",
+        "prompt": "May an empty call load the coefficients merely because their sixteen bytes exist?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the zero-output contract forbids caller-data access."
+          },
+          {
+            "id": "b",
+            "text": "Yes; coefficients are always read-only."
+          },
+          {
+            "id": "c",
+            "text": "Only when the history is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The public entry initially transfers directly to fir_scalar without changing ra."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The zero-output recipe returns v0=0 and v1=0 without a caller-data read or write."
+        }
+      ],
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s04.kts"
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Start one complete eight-tap window",
+      "kind": "author",
+      "editTarget": "scalar_window",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which address should advance only once per output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The coefficient base after every output."
+          },
+          {
+            "id": "b",
+            "text": "The caller\u2019s return address."
+          },
+          {
+            "id": "c",
+            "text": "The outer window base a0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Clear t0 for the exact sum, copy the outer input address into t1 and the coefficient address into t2, then set the tap count in t3 to eight."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Before the first tap, t0=0 and t3=8. The two walkers identify the selected input and coefficient starts."
+        }
+      ],
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s05.kts"
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Load the oldest sample in this window",
+      "kind": "author",
+      "editTarget": "sample_load",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which sample does tap zero multiply?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The oldest sample of the selected window."
+          },
+          {
+            "id": "b",
+            "text": "The sample after the window."
+          },
+          {
+            "id": "c",
+            "text": "The first new sample regardless of window position."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Use two unsigned byte loads from t1."
+        },
+        {
+          "id": "s06-h2",
+          "text": "For sample -1000, t4=24 and t5=252, the stored hexadecimal bytes 18 fc."
+        }
+      ],
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s06.kts"
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Join the sample\u2019s low and high bytes",
+      "kind": "author",
+      "editTarget": "sample_join",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What has the OR produced?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An input address advanced by eight."
+          },
+          {
+            "id": "b",
+            "text": "The unsigned sixteen-bit sample pattern."
+          },
+          {
+            "id": "c",
+            "text": "A complete weighted product."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Shift the high byte left by eight and OR it into the low byte."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The worked negative sample has unsigned halfword pattern 64536 in t4."
+        }
+      ],
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s07.kts"
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Extend the sample before multiplication",
+      "kind": "author",
+      "editTarget": "sample_sign",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which bit supplies the extension?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bit fifteen of the reconstructed sample."
+          },
+          {
+            "id": "b",
+            "text": "The sign bit of the input address."
+          },
+          {
+            "id": "c",
+            "text": "Bit seven of the low byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Use seh so the halfword sign bit determines the complete signed register value."
+        },
+        {
+          "id": "s08-h2",
+          "text": "t4 is -1000 for the negative recipe and 32767 for the positive boundary recipe."
+        }
+      ],
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s08.kts"
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Load the matching Q15 coefficient",
+      "kind": "author",
+      "editTarget": "coefficient_load",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why may t5 be reused here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All coefficients are positive."
+          },
+          {
+            "id": "b",
+            "text": "Loading a coefficient stores the sample automatically."
+          },
+          {
+            "id": "c",
+            "text": "The signed sample no longer depends on its former high-byte temporary."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Read two bytes from t2 into t5 and t6."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Coefficient -16384 has low byte zero and high byte 192. The signed sample -1000 remains in t4."
+        }
+      ],
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s09.kts"
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Reconstruct the coefficient code",
+      "kind": "author",
+      "editTarget": "coefficient_join",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Does the Q15 scale reverse the stored bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; fractional values use the high byte first."
+          },
+          {
+            "id": "b",
+            "text": "Only for negative coefficients."
+          },
+          {
+            "id": "c",
+            "text": "No; the contract still stores the low byte first."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Shift t6 left by eight and combine it into t5."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Coefficient bytes 00 c0 reconstruct unsigned pattern 49152 in t5."
+        }
+      ],
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s10.kts"
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Give the coefficient its signed value",
+      "kind": "author",
+      "editTarget": "coefficient_sign",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why not divide the coefficient by 32768 at this point?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That would discard the fractional weight before the product."
+          },
+          {
+            "id": "b",
+            "text": "The coefficient is already a full address."
+          },
+          {
+            "id": "c",
+            "text": "Every coefficient represents an integer greater than one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Sign-extend the coefficient halfword with seh."
+        },
+        {
+          "id": "s11-h2",
+          "text": "t5 is -16384 in the negative-coefficient recipe and 16384 in the positive recipe."
+        }
+      ],
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s11.kts"
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Form the exact signed product",
+      "kind": "author",
+      "editTarget": "scalar_product",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which value still contains the pre-add accumulator?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "t0."
+          },
+          {
+            "id": "b",
+            "text": "a2."
+          },
+          {
+            "id": "c",
+            "text": "t7."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Multiply the two sign-extended values with dmul and retain the product in t7."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The worked product is 16384000. Two minimum codes produce 1073741824 for one product. The accumulator is still zero."
+        }
+      ],
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s12.kts"
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Add the product without narrowing the sum",
+      "kind": "author",
+      "editTarget": "scalar_accumulate",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why use a doubleword addition even though one product fits a word?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It makes rounding unnecessary."
+          },
+          {
+            "id": "b",
+            "text": "It permits reading beyond the input window."
+          },
+          {
+            "id": "c",
+            "text": "The complete and partial sums may exceed signed word range."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Add t7 into t0 using daddu."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The first worked contribution leaves t0=16384000 and t3=8."
+        }
+      ],
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s13.kts"
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Consume exactly eight matched pairs",
+      "kind": "author",
+      "editTarget": "next_tap",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Where does the coefficient walker begin for the next output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At the unchanged coefficient base."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen bytes beyond the coefficient array."
+          },
+          {
+            "id": "c",
+            "text": "At the destination byte after the last store."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Advance both private walkers by two, decrement t3 and repeat scalar_tap while a pair remains."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Eight minimum/minimum products leave exact t0=8589934592 and t3=0. Eight sample-one, half-weight products leave t0=131072. Both walkers advance sixteen bytes."
+        }
+      ],
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s14.kts"
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Add half a scale unit once",
+      "kind": "author",
+      "editTarget": "round_bias",
+      "quiz": {
+        "id": "q15",
+        "prompt": "How many times is this bias added per output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Once for the entire multi-output call."
+          },
+          {
+            "id": "b",
+            "text": "Once, after the full exact sum."
+          },
+          {
+            "id": "c",
+            "text": "Once per tap."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Add 16384 to the complete accumulator with daddiu."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Accumulators 16384, -16384 and -16385 become 32768, zero and -1 before shifting."
+        }
+      ],
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s15.kts"
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Use an arithmetic shift for floor division",
+      "kind": "author",
+      "editTarget": "round_scale",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What does biased value -1 produce after this shift?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "32767."
+          },
+          {
+            "id": "c",
+            "text": "-1."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Shift t0 right arithmetically by fifteen with dsra."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The three tie-adjacent recipes produce rounded codes one, zero and -1. The maximum eight-product sum produces 262144 before saturation."
+        }
+      ],
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s16.kts"
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Test the rounded upper endpoint strictly",
+      "kind": "author",
+      "editTarget": "upper_bound",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Does an exact rounded endpoint count as clipped?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, whenever it equals 32767."
+          },
+          {
+            "id": "b",
+            "text": "No."
+          },
+          {
+            "id": "c",
+            "text": "Only when the coefficients sum to one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Compare rounded t0 with 32767 using a strict signed test."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Rounded 262144 takes the high path with t9=1. Constant maximum input under the moving average gives 32767 with t9=0."
+        }
+      ],
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s17.kts"
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Keep rounded in-range values on the store path",
+      "kind": "author",
+      "editTarget": "lower_bound",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which quantity determines clipping in this exercise?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The sign of the first product."
+          },
+          {
+            "id": "b",
+            "text": "The number of negative coefficients."
+          },
+          {
+            "id": "c",
+            "text": "The complete rounded sample code."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Test whether the rounded result is smaller than -32768."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Rounded -262136 takes the low path. Rounded -32768 and zero go to storage without increasing the count."
+        }
+      ],
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s18.kts"
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Choose the positive endpoint",
+      "kind": "author",
+      "editTarget": "upper_clamp",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why skip the following negative replacement?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The return count is stored in the next label."
+          },
+          {
+            "id": "b",
+            "text": "The two overflow directions need different endpoint values."
+          },
+          {
+            "id": "c",
+            "text": "Both replacements must always execute."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Load 32767 into t0, then transfer to the shared scalar_clipped label."
+        },
+        {
+          "id": "s19-h2",
+          "text": "A large positive result becomes 32767 while v1 remains zero until the next count edit."
+        }
+      ],
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s19.kts"
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Choose the negative endpoint",
+      "kind": "author",
+      "editTarget": "lower_clamp",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Can the final endpoint bytes alone reveal whether this path executed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only when output is word aligned."
+          },
+          {
+            "id": "b",
+            "text": "Yes; negative endpoints are always clipped."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Load -32768 into t0 for the lower-overflow path."
+        },
+        {
+          "id": "s20-h2",
+          "text": "A large negative rounded result becomes -32768 with v1 still zero at the next unfinished region."
+        }
+      ],
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s20.kts"
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Count one replacement per output",
+      "kind": "author",
+      "editTarget": "count_clip",
+      "quiz": {
+        "id": "q21",
+        "prompt": "What unit does v1 count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Products outside halfword range."
+          },
+          {
+            "id": "b",
+            "text": "Bytes written to the output."
+          },
+          {
+            "id": "c",
+            "text": "Outputs whose rounded result needed saturation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Increment v1 at scalar_clipped."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Large positive and negative results each contribute one; exact rounded endpoints contribute zero."
+        }
+      ],
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s21.kts"
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Write the first output byte only",
+      "kind": "author",
+      "editTarget": "store_low",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Why would a word store violate this operation\u2019s ownership?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It reads the coefficient backwards."
+          },
+          {
+            "id": "b",
+            "text": "It cannot represent a positive endpoint."
+          },
+          {
+            "id": "c",
+            "text": "It changes bytes beyond the two-byte sample."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Store the result\u2019s low byte at a2 with sb."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Positive saturation writes ff as its first byte; negative saturation writes 00. The second byte remains a5."
+        }
+      ],
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s22.kts"
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Complete the low-byte-first halfword",
+      "kind": "author",
+      "editTarget": "store_high",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Why can this byte-extraction shift be logical?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It replaces the earlier rounding operation."
+          },
+          {
+            "id": "b",
+            "text": "Only the next selected byte is stored."
+          },
+          {
+            "id": "c",
+            "text": "Negative output codes have no high bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Shift the result right by eight into t1 and store that register\u2019s low byte at a2+1."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Positive saturation stores ff 7f; negative saturation stores 00 80. Each overflow contributes one event."
+        }
+      ],
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s23.kts"
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Advance the outer input by one sample",
+      "kind": "author",
+      "editTarget": "next_window",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Why advance the input by two rather than sixteen bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each next output slides the eight-tap window by one sample."
+          },
+          {
+            "id": "b",
+            "text": "The window has only one input byte."
+          },
+          {
+            "id": "c",
+            "text": "The coefficients advance automatically with a0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Advance a0 and a2 by two, consume one output and repeat scalar_window while count remains."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The default sixteen-output impulse returns eight samples of 2000 then zeros. The asymmetric two-output fixture yields 4096 then 3584. Sixty-four maximum positive sums return sixty-four clipping events."
+        }
+      ],
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s24.kts"
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Inspect the provided vector quantizer before switching",
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What must the vector reduction supply to the provided postprocessing?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One exact complete accumulator in t0."
+          },
+          {
+            "id": "b",
+            "text": "Only the low word of a pair sum."
+          },
+          {
+            "id": "c",
+            "text": "Eight separately rounded halfwords."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The vector path already contains the rounding, bounds, endpoint replacement, counting and byte stores just developed in the scalar path."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The vector postprocessing advances a0 by two, keeps the coefficient base, and repeats fir_window. It applies one bias and arithmetic shift after each complete sum."
+        }
+      ],
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Switch the public entry to the vector path",
+      "kind": "author",
+      "editTarget": "vector_entry",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Does switching the public entry remove the scalar comparison function?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it remains available under fir_scalar."
+          },
+          {
+            "id": "b",
+            "text": "Yes; its completed code must be discarded."
+          },
+          {
+            "id": "c",
+            "text": "Only when the input history is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Replace the provisional tail transfer to fir_scalar with the real fir_q15 entry: retain count, clear v1 and return at zero before coefficient setup."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Zero count returns without caller-data access. A one-output call reaches the unfinished coefficient load with v0=1, v1=0 and no output written."
+        }
+      ],
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s26.kts"
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Load the coefficient window once",
+      "kind": "author",
+      "editTarget": "vector_coefficients",
+      "quiz": {
+        "id": "q27",
+        "prompt": "How many coefficient bytes does this load transfer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two."
+          },
+          {
+            "id": "b",
+            "text": "Eight."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Load all sixteen coefficient bytes into w1 before the output loop."
+        },
+        {
+          "id": "s27-h2",
+          "text": "w1 contains all eight coefficient codes in stored oldest-first order."
+        }
+      ],
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s27.kts"
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Build the coefficient sign-extension mask",
+      "kind": "author",
+      "editTarget": "coefficient_mask",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which halfwords must have an all-one high extension?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The negative coefficients."
+          },
+          {
+            "id": "b",
+            "text": "Only the coefficient at index seven."
+          },
+          {
+            "id": "c",
+            "text": "Every coefficient with a nonzero low byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Compare each signed halfword in w1 with zero."
+        },
+        {
+          "id": "s28-h2",
+          "text": "For the mixed-sign recipe, mask lanes are ffff,0000,ffff,0000,ffff,0000,0000,0000."
+        }
+      ],
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s28.kts"
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Widen the first four coefficient lanes",
+      "kind": "author",
+      "editTarget": "coefficient_low_words",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Which word represents coefficient -32768 correctly?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "ffff8000."
+          },
+          {
+            "id": "b",
+            "text": "00008000."
+          },
+          {
+            "id": "c",
+            "text": "80000000."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Interleave w1\u2019s low halfwords with their corresponding mask halfwords into w3."
+        },
+        {
+          "id": "s29-h2",
+          "text": "w3\u2019s words represent -32768,32767,-16384,16384; their raw hexadecimal patterns retain full signed extensions."
+        }
+      ],
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s29.kts"
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Retain the other four widened coefficients",
+      "kind": "author",
+      "editTarget": "coefficient_high_words",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which coefficient positions belong to this vector?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero through three again."
+          },
+          {
+            "id": "b",
+            "text": "Four through seven."
+          },
+          {
+            "id": "c",
+            "text": "Eight through eleven."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Use the high interleave to place coefficient positions four through seven in w4."
+        },
+        {
+          "id": "s30-h2",
+          "text": "w4\u2019s signed words are -1,1,0,4096."
+        }
+      ],
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s30.kts"
+      }
+    },
+    {
+      "id": "s31",
+      "title": "Load one complete eight-tap input window",
+      "kind": "author",
+      "editTarget": "vector_input",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Does count one authorize this sixteen-byte load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if the destination is also the source."
+          },
+          {
+            "id": "b",
+            "text": "No; eight outputs are required."
+          },
+          {
+            "id": "c",
+            "text": "Yes; its input includes seven history samples and one current sample."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Load sixteen bytes from a0 into w0 for this output."
+        },
+        {
+          "id": "s31-h2",
+          "text": "w0 holds the eight supplied sample codes, including history, in chronological order."
+        }
+      ],
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s31.kts"
+      }
+    },
+    {
+      "id": "s32",
+      "title": "Derive a fresh sign mask for the window",
+      "kind": "author",
+      "editTarget": "input_mask",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Why recompute this mask each output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The coefficient scale changes each call."
+          },
+          {
+            "id": "b",
+            "text": "The input window changes."
+          },
+          {
+            "id": "c",
+            "text": "A mask must always contain the clipping count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Compare each signed sample halfword with zero into w2."
+        },
+        {
+          "id": "s32-h2",
+          "text": "The mixed-sign input mask is ffff,0000,ffff,0000,ffff,0000,0000,0000."
+        }
+      ],
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s32.kts"
+      }
+    },
+    {
+      "id": "s33",
+      "title": "Widen the first four input samples",
+      "kind": "author",
+      "editTarget": "input_low_words",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Does widening multiply a sample by 65536?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every new word shifts the code left."
+          },
+          {
+            "id": "b",
+            "text": "Only for a negative sample."
+          },
+          {
+            "id": "c",
+            "text": "No; correct sign extension preserves its numerical value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Interleave the low input halfwords with their sign masks into w5."
+        },
+        {
+          "id": "s33-h2",
+          "text": "w5\u2019s signed words are -32768,32767,-1000,1000."
+        }
+      ],
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s33.kts"
+      }
+    },
+    {
+      "id": "s34",
+      "title": "Widen the final four input samples",
+      "kind": "author",
+      "editTarget": "input_high_words",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Where is the current sample in this window?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Outside the loaded sixteen bytes."
+          },
+          {
+            "id": "b",
+            "text": "At position seven, the last widened input word."
+          },
+          {
+            "id": "c",
+            "text": "At position zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Use the high interleave for sample positions four through seven, producing w6."
+        },
+        {
+          "id": "s34-h2",
+          "text": "w6\u2019s signed words are -1,1,0,16000."
+        }
+      ],
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s34.kts"
+      }
+    },
+    {
+      "id": "s35",
+      "title": "Form two exact doubleword pair sums",
+      "kind": "author",
+      "editTarget": "dot_low",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Why not use dotp_s.w directly on the original halfwords?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An allowed two-product sum can overflow its signed word result."
+          },
+          {
+            "id": "b",
+            "text": "It would process no products."
+          },
+          {
+            "id": "c",
+            "text": "It requires aligned output but otherwise gives the same exact sum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Apply dotp_s.d to the first four widened sample/coefficient words."
+        },
+        {
+          "id": "s35-h2",
+          "text": "The mixed-sign fixture gives 2147418113 and 32768000 in w7. Minimum/minimum pairs give 2147483648 in each doubleword."
+        }
+      ],
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s35.kts"
+      }
+    },
+    {
+      "id": "s36",
+      "title": "Include the last four tap products",
+      "kind": "author",
+      "editTarget": "dot_high",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which pair includes the current sample?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Positions zero and one."
+          },
+          {
+            "id": "b",
+            "text": "No pair; history alone determines output."
+          },
+          {
+            "id": "c",
+            "text": "Positions six and seven."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Apply dotp_s.d to w6 and w4, retaining pair sums for positions four/five and six/seven in w8."
+        },
+        {
+          "id": "s36-h2",
+          "text": "The mixed-sign fixture gives 2 and 65536000 in w8. The extreme fixture again gives two positive 2147483648 sums."
+        }
+      ],
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s36.kts"
+      }
+    },
+    {
+      "id": "s37",
+      "title": "Combine the two halves without narrowing",
+      "kind": "author",
+      "editTarget": "add_pair_vectors",
+      "quiz": {
+        "id": "q37",
+        "prompt": "How many partial sums remain after this vector addition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight halfword products."
+          },
+          {
+            "id": "b",
+            "text": "One final rounded sample."
+          },
+          {
+            "id": "c",
+            "text": "Two doubleword sums."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Add w8 into w7 with addv.d."
+        },
+        {
+          "id": "s37-h2",
+          "text": "The mixed-sign partial totals are 2147418115 and 98304000. The extreme fixture produces 4294967296 in each lane."
+        }
+      ],
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s37.kts"
+      }
+    },
+    {
+      "id": "s38",
+      "title": "Transfer the first doubleword partial sum",
+      "kind": "author",
+      "editTarget": "copy_low_sum",
+      "quiz": {
+        "id": "q38",
+        "prompt": "What would a word-sized copy lose in the extreme fixture?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The bit above the low thirty-two positions."
+          },
+          {
+            "id": "b",
+            "text": "The coefficient array address."
+          },
+          {
+            "id": "c",
+            "text": "Only redundant sign bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Copy w7[0] into t0 with copy_s.d."
+        },
+        {
+          "id": "s38-h2",
+          "text": "t0 is 2147418115 for the mixed-sign fixture and 4294967296 for the extreme fixture."
+        }
+      ],
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s38.kts"
+      }
+    },
+    {
+      "id": "s39",
+      "title": "Transfer the second doubleword partial sum",
+      "kind": "author",
+      "editTarget": "copy_high_sum",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Which products would be omitted if t1 were ignored?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two,three,six,seven."
+          },
+          {
+            "id": "b",
+            "text": "Only product seven."
+          },
+          {
+            "id": "c",
+            "text": "All products from the first input half."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Copy w7[1] into t1 while retaining the first sum in t0."
+        },
+        {
+          "id": "s39-h2",
+          "text": "The mixed-sign fixture has t0=2147418115 and t1=98304000."
+        }
+      ],
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s39.kts"
+      }
+    },
+    {
+      "id": "s40",
+      "title": "Enter the proven quantizer with one exact sum",
+      "kind": "author",
+      "editTarget": "finish_sum",
+      "quiz": {
+        "id": "q40",
+        "prompt": "When is rounding allowed in this path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the final exact scalar addition."
+          },
+          {
+            "id": "b",
+            "text": "Before sign-extending the input words."
+          },
+          {
+            "id": "c",
+            "text": "After each vector pair sum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Add t1 into t0 with daddu."
+        },
+        {
+          "id": "s40-h2",
+          "text": "The mixed-sign total is 2245722115 before the provided quantizer and clips positively. The maximum total is 8589934592. Default and sixty-four-output fixtures now finish with correct samples and counts."
+        }
+      ],
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s40.kts"
+      }
+    },
+    {
+      "id": "s41",
+      "title": "Read the caller\u2019s completed results at their boundary",
+      "kind": "observe",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Which state still contains 99 at filter_ready?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The returned output count."
+          },
+          {
+            "id": "b",
+            "text": "The two caller result words."
+          },
+          {
+            "id": "c",
+            "text": "Every output sample."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Restore the default input and count sixteen after construction."
+        },
+        {
+          "id": "s41-h2",
+          "text": "At results_ready, processed=16 and clipped=0; output is eight halfwords 2000 followed by eight zeros."
+        }
+      ],
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s42",
+      "title": "Distinguish rounding from a clipping event",
+      "kind": "observe",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Should raw value -32768.5 count as clipped under this contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; its rounded code is -32768."
+          },
+          {
+            "id": "b",
+            "text": "Only when a vector register holds it."
+          },
+          {
+            "id": "c",
+            "text": "Yes; any raw value below -32768 must clip."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Use the documented negative halfway accumulator -1073758208."
+        },
+        {
+          "id": "s42-h2",
+          "text": "The halfway case returns the negative endpoint with zero clips; the rounded -32769 case returns the same endpoint with one clip."
+        }
+      ],
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s42.kts"
+      }
+    },
+    {
+      "id": "s43",
+      "title": "Repeat a stream with explicit chunk history",
+      "kind": "observe",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Why does the second input begin at original sample position twenty-four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That starts the next window with its seven required history samples."
+          },
+          {
+            "id": "b",
+            "text": "Every output consumes eight new input samples."
+          },
+          {
+            "id": "c",
+            "text": "The next call discards history automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Split a sixty-four-output input after output twenty-three."
+        },
+        {
+          "id": "s43-h2",
+          "text": "The concatenated result equals a complete call. The checks verify all sixty-five cuts, including an empty first or second call, in one session."
+        }
+      ],
+      "content": "steps/43.md",
+      "prerequisites": [
+        "s42"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s44",
+      "title": "Grade behavior separately from the illustrated temporaries",
+      "kind": "observe",
+      "quiz": {
+        "id": "q44",
+        "prompt": "May a free-writing submission omit fir_scalar?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if it reproduces the example\u2019s instruction count."
+          },
+          {
+            "id": "b",
+            "text": "Yes; only the public fir_q15 entry and supplied harness are required."
+          },
+          {
+            "id": "c",
+            "text": "No; every private comparison label is part of the interface."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Construction observations name registers so this particular sequence can be explained and checked."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Both a scalar implementation and the widened-vector implementation satisfy the same final contract. Correct argument-register changes after last use are accepted."
+        }
+      ],
+      "content": "steps/44.md",
+      "prerequisites": [
+        "s43"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s45",
+      "title": "Compare the stored input and filtered audio",
+      "kind": "observe",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Does this prove the low input passed through unchanged?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; removing a high component cannot affect any other sample."
+          },
+          {
+            "id": "b",
+            "text": "Only because the sample rate is sixteen thousand."
+          },
+          {
+            "id": "c",
+            "text": "No; the comparison is with the filtered low component."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Use the low, high and mixed listening scenes with their explicit periodic histories."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Both implementations produce identical six-file audio sets. High-only output is zero PCM; the filtered mixed and low files are byte-identical."
+        }
+      ],
+      "content": "steps/45.md",
+      "prerequisites": [
+        "s44"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s46",
+      "title": "Compare complete-call work rather than a dot instruction alone",
+      "kind": "observe",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What work remains in the vector input path?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Repeated reads of the seven shared samples in adjacent windows."
+          },
+          {
+            "id": "b",
+            "text": "No input reads after the first window."
+          },
+          {
+            "id": "c",
+            "text": "A mandatory reload of all coefficients per output."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Read the table for quiet inputs."
+        },
+        {
+          "id": "s46-h2",
+          "text": "The measurements describe these implementations and inputs. They do not establish host elapsed time or an instruction-count grading requirement."
+        }
+      ],
+      "content": "steps/46.md",
+      "prerequisites": [
+        "s45"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    },
+    {
+      "id": "s47",
+      "title": "Explore another strategy under the same arithmetic rule",
+      "kind": "observe",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Which change requires a new arithmetic specification?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Retaining read-only coefficients in registers."
+          },
+          {
+            "id": "b",
+            "text": "Choosing another temporary register."
+          },
+          {
+            "id": "c",
+            "text": "Changing the coefficient scale or tap count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Try caching coefficients in a scalar implementation or retaining part of the vector window between outputs."
+        },
+        {
+          "id": "s47-h2",
+          "text": "An optimization is accepted when it preserves the public behavior, including negative ties, large sums, clipping counts and chunk continuity."
+        }
+      ],
+      "content": "steps/47.md",
+      "prerequisites": [
+        "s46"
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Reasoning and IDE interaction require review; interactive runner pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/program.kts",
+    "checks/splits.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json",
+    "inputs.json",
+    "steps.json",
+    "prepare.py",
+    "render-listening.py",
+    "media",
+    "native"
+  ]
+}

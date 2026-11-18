@@ -105,10 +105,15 @@ construction checks, exact in-place aliases, scalar and MSA behavior, reproducib
 input recipes, native mask/waveform diagrams and twelve verified listening files.
 Four light-theme IDE captures remain planned.
 
+The [fixed-point FIR chapter](packages/021-fixed-point-fir/assignment.md) develops
+exact eight-tap filtering through 47 steps and 36 edits. It includes explicit history,
+wide partial sums, signed rounding, public construction/final checks, six reproducible
+listening files and five planned light-theme capture models.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-one chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -123,7 +128,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty text packages, starters, public checks, deterministic student archive builder,
+The first twenty-one text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

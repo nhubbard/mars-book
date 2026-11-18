@@ -1,0 +1,19 @@
+\section{Use an impulse to expose order and scale}
+The supplied caller has seven zero history samples and an impulse code 16000 at the
+first new sample. Its eight coefficients are 4096. For the first eight outputs,
+exactly one tap sees the impulse, so each output is 2000. Later windows contain only
+zeros. With default count sixteen, the result is eight samples of 2000 followed by
+eight zeros, with no clipping.
+
+Equal coefficients cannot reveal reversed order. For a second impulse test, use
+code 16384 and oldest-first coefficients
+\(1024,2048,3072,4096,5120,6144,7168,8192\). The first current sample meets the last
+stored coefficient. The output sequence is therefore
+\(4096,3584,3072,2560,2048,1536,1024,512\), followed by zeros. These products need
+no rounding approximation. Reversing this response indicates a coefficient-order error.
+
+An impulse test checks more than whether the output eventually becomes zero. Check
+which output receives each coefficient, the scale of every nonzero value, the seven
+history positions and the point where the impulse leaves the window. It does not by
+itself establish behavior for negative values, large sums or rounding ties; those
+require separate examples.

@@ -1,0 +1,34 @@
+\section{Attach the binary scale to the value}
+A stored Q15 coefficient \(c\) represents \(c/2^{15}\). For signed halfword codes,
+its range is \(-1\) through \(32767/32768\). Positive one has no single signed
+halfword encoding at this scale. Two coefficients 16384 each represent a total
+weight of one; eight coefficients 4096 each do too.
+
+Input PCM codes remain signed integers for the kernel. Multiplying code \(u\) by
+coefficient code \(c\) gives \(uc\), whose conversion back to sample-code units
+requires division by 32768. If input codes are also viewed as normalized values
+\(u/32768\), products have thirty fractional bits. These are two descriptions of
+the same integer calculation, not different instructions or stored types.
+
+The supplied moving average uses eight coefficients 4096. Each output is therefore
+\(\sum u/8\), with the specified final rounding. Although every individual weight
+is small, the general interface permits every signed halfword coefficient. Correctness
+cannot depend on the default coefficients or a presumed gain no greater than one.
+
+\begin{table}[htbp]
+\centering
+\caption{Stored coefficient codes and their exact weights.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rr}
+\toprule
+Code & Weight\\
+\midrule
+-32768 & \(-1\)\\
+-16384 & \(-1/2\)\\
+0 & \(0\)\\
+4096 & \(1/8\)\\
+16384 & \(1/2\)\\
+32767 & \(1-1/32768\)\\
+\bottomrule
+\end{tabular}
+\end{table}

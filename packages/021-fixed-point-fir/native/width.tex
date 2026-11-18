@@ -1,0 +1,35 @@
+\section{Prove the accumulator width before choosing an instruction}
+One signed halfword product can equal
+\((-32768)(-32768)=1073741824=2^{30}\). That fits a signed word. Two such products
+sum to \(2^{31}\), which does not. Eight sum to \(2^{33}\). The most negative
+possible eight-product sum is \(-8589672448\), obtained with opposite-sign extrema.
+The positive endpoint alone requires thirty-five signed bits; a signed thirty-four-bit
+integer stops at \(2^{33}-1\).
+
+Use an exact 64-bit accumulator. In the scalar path, sign-extend both halfwords,
+form each exact product and add with \texttt{daddu}. Reset the accumulator for each
+output. The native doubleword operations keep all relevant bits. Their wraparound
+semantics do not lose information here because the proven complete and partial sums
+fit a signed doubleword.
+
+A signed halfword dot product widened to words still has the two-product problem.
+For two minimum input samples and two minimum coefficients, a word result can wrap
+from positive \(2^{31}\) to negative \(-2^{31}\). Copying that already-overflowed
+word into a 64-bit register cannot recover the lost distinction. Widen before the
+partial sum is formed.
+
+\begin{table}[htbp]
+\centering
+\caption{Positive boundary sums from minimum signed sample and coefficient codes.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrl}
+\toprule
+Products & Exact sum & Signed storage sufficient for this value\\
+\midrule
+1 & 1073741824 & 32 bits\\
+2 & 2147483648 & 33 bits\\
+4 & 4294967296 & 34 bits\\
+8 & 8589934592 & 35 bits\\
+\bottomrule
+\end{tabular}
+\end{table}

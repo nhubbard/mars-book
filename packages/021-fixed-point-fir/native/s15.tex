@@ -1,0 +1,27 @@
+\section{Step 15 Add half a scale unit once}\label{fir-s15}
+
+Add 16384 to the complete accumulator with \texttt{daddiu}. This is half of 32768 in accumulator units. It prepares one final nearest rounding with ties toward positive infinity. Adding the bias once per product would change the filter; the completed eight-tap loop must reach this region only after all products have accumulated.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{round\_bias}. Keep surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $t0, $t0, 16384
+\end{minted}
+Use recipe \texttt{s15-1}, \texttt{s15-2}, \texttt{s15-3} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Accumulators 16384, -16384 and -16385 become 32768, zero and -1 before shifting.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+How many times is this bias added per output?
+
+\begin{itemize}
+\item \textbf{A} Once for the entire multi-output call.
+\item \textbf{B} Once, after the full exact sum.
+\item \textbf{C} Once per tap.
+\end{itemize}

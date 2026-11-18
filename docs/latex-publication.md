@@ -170,3 +170,15 @@ student archive includes an exact native chapter snapshot alongside companion ta
 transcripts; the editable publication remains main.tex and includes. Run entries
 sequentially because they share auxiliary chapter files. Four actual light-theme
 captures, author review and independent accessibility validation remain pending.
+
+The fixed-point FIR text can be reviewed separately:
+
+```sh
+python3 tools/book.py build --entry drafts/fixed-point-fir.tex
+```
+
+It is also included in main.tex. Forty-seven steps, thirty-six cumulative edits and
+seven supplied excerpts use actual IntelliJ-derived minted highlighting. Native math,
+window and waveform diagrams, exact impulse/rounding examples and whole-call tables
+accompany the student package. Entries share auxiliary files and must build sequentially.
+Five actual light-theme captures and independent accessibility validation remain pending.

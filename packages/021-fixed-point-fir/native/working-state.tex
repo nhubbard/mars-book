@@ -1,0 +1,41 @@
+\section{Separate the tap walker from the output window}
+The scalar path uses \texttt{t0} for its exact accumulator, \texttt{t1} and
+\texttt{t2} for private input/coefficient walkers, and \texttt{t3} for remaining taps.
+\texttt{a0} identifies the outer output's input-window base; \texttt{a2} identifies
+its destination sample; \texttt{a3} counts remaining outputs. Both private walkers
+restart each output. \texttt{v0} retains the original count and \texttt{v1} accumulates
+clipped outputs. A word-sized sample does not justify a word-sized address operation.
+
+The vector path retains widened coefficient words in \texttt{w3} and \texttt{w4}.
+It reconstructs input words in \texttt{w5} and \texttt{w6} for every window. Dot
+products and their reduction use \texttt{w7}, \texttt{w8}, \texttt{t0} and \texttt{t1}.
+These roles explain this sequence; final free-writing grading does not require them.
+The separately retained \texttt{fir\_scalar} is a guided comparison routine, not an
+additional public entry required of an equivalent submission.
+
+\section{Prepare a fresh construction observation}
+The companion \texttt{packages/021-fixed-point-fir/starter/main.asm} supplies both function bodies
+with marked regions. The \texttt{input} array in each recipe includes all seven
+history samples and the requested new samples. Thus output count is its length minus
+seven. The \texttt{taps} array always has eight signed coefficient codes in oldest-first
+order. Preserve the 192-byte input and output arenas and 64-byte coefficient arena.
+The preparation helper fills the output arena with hexadecimal a5, uses the listed
+arrays and zero padding, and preserves guards and caller metadata.
+
+Start a fresh Debug execution and stop before \texttt{filter\_ready}. The caller has
+not yet stored the result words. The expected output prefix is followed by a5 bytes
+where a partial program has not stored output. Vector lanes in the recipes are raw
+unsigned bit patterns at the stated width; signed scalar expectations use full signed
+register values. The recipe guide supplies the exact source-preparation command.
+
+Private construction checks repeat each recipe through this caller and through an
+isolated call with input, coefficient and destination byte offsets three, five and
+seven. These are separate observation contexts. A provisional return from unfinished
+code is construction evidence, not a completed filtering result. Numerical checks do
+not stand in for the actual light-theme IDE captures that remain to be automated.
+
+The student package includes public construction scripts in
+\texttt{checks/construction}. Run the named script against the cumulative program
+before proceeding. Step forty-two also has a completed-program check for its two
+rounded-clipping recipes. These guided scripts may name the illustrated temporaries;
+final free-writing checks enforce the public interface and ownership instead.

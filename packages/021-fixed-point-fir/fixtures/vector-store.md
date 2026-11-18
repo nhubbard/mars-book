@@ -1,0 +1,13 @@
+# Vector store
+
+```asm
+fir_store:
+    sb $t0, 0($a2)
+    dsrl $t1, $t0, 8
+    sb $t1, 1($a2)
+    daddiu $a0, $a0, 2
+    daddiu $a2, $a2, 2
+    addiu $a3, $a3, -1
+    bne $a3, $zero, fir_window
+    nop
+```

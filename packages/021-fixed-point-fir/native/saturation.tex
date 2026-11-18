@@ -1,0 +1,19 @@
+\section{Saturate the rounded result and report that decision}
+After scaling and rounding, the possible results lie between -262136 and 262144.
+Compare this signed result with the two output endpoints. Replace a value outside
+the interval and increment \texttt{v1} once. Values equal to either endpoint remain
+unchanged and do not increase the count. Store the final halfword with two byte
+stores in low-byte-first order.
+
+The clipping rule applies after rounding. For example, accumulator
+\(-1073758208\) represents sample-code value \(-32768.5\). The specified tie rule
+rounds it to -32768, so it produces no clipping event. Clamping or counting against
+the unrounded accumulator would implement a different public rule. Positive exact
+sample-code value 32767 plus a small fraction can likewise round to 32767 without
+clipping.
+
+Eight equal coefficients 4096 have total weight one. A constant input of 32767
+therefore produces exact endpoint 32767, and a constant input of -32768 produces
+exact endpoint -32768. Neither clips. The same cannot be assumed for arbitrary
+coefficients. Eight coefficients -32768 applied to eight samples -32768 produce
+rounded value 262144 and one clipped output 32767.

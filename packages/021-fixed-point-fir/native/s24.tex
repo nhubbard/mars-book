@@ -1,0 +1,31 @@
+\section{Step 24 Advance the outer input by one sample}\label{fir-s24}
+
+Advance \texttt{a0} and \texttt{a2} by two, consume one output and repeat \texttt{scalar\_window} while count remains. The new input window overlaps seven samples of the previous window. Its private walkers and accumulator restart, while \texttt{v1} keeps the call’s accumulated clipping count. The scalar path now implements every supported count, including asymmetric impulse responses and maximum sums.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{next\_window}. Keep surrounding labels and region markers.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $a0, $a0, 2
+    daddiu $a2, $a2, 2
+    addiu $a3, $a3, -1
+    bne $a3, $zero, scalar_window
+    nop
+\end{minted}
+Use recipe \texttt{s24-1}, \texttt{s24-2}, \texttt{s24-3} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+The default sixteen-output impulse returns eight samples of 2000 then zeros. The asymmetric two-output fixture yields 4096 then 3584. Sixty-four maximum positive sums return sixty-four clipping events.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why advance the input by two rather than sixteen bytes?
+
+\begin{itemize}
+\item \textbf{A} Each next output slides the eight-tap window by one sample.
+\item \textbf{B} The window has only one input byte.
+\item \textbf{C} The coefficients advance automatically with \texttt{a0}.
+\end{itemize}
