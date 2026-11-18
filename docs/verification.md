@@ -850,3 +850,43 @@ The manuscript still contains26 packaged chapters. RSA cumulative construction, 
 starter and public checks, private package exports, quizzes and future capture recipes
 remain next. Actual automated light-theme IDE pixels, remote progression, student
 usability review and the author's deferred substantial rewrite remain unfinished.
+
+
+## RSA cumulative construction, 18 November 2026
+
+The native chapter now interleaves 42 steps with its retained exposition. It contains
+35 authored regions, 42 quizzes, 84 progressive hints, 43 exact recipes, supplied frame
+and restore excerpts, and four planned light-theme IDE figures. Recipe metadata names
+both direct-function and supplied-caller checkpoints. Preparation changes declared data
+arenas and mode while preserving authored source and existing output files.
+
+The independent cumulative verifier assembles each intermediate program, checks every
+prepared image, and checks its caller and offset-function views. It verifies intermediate
+registers, private values, complete output bytes, sentinel ownership and full saved state.
+Exact reconstruction is checked against the private reference. Both completed scan
+variants pass 423 cases at ordinary addresses and again above 4 GiB. Seven starter
+entries return safely. These 54 runs contain 1,842 positive case executions. A separate
+10-run control suite adds 20 executions, testing zero-access starter paths and nested
+unfinished-work propagation at wide addresses. The current total is 1,862 positive
+executions across 64 runs. Earlier prototype mutation tests remain separate evidence;
+no current mutation coverage is inferred from them.
+
+The instruction-work table now uses the cumulative implementations and includes nested
+status guards, normal frames and returns. For base 65, exponent 17, modulus 3233, the
+right-to-left implementation executes 12,560 simulated instructions and the fixed
+left-to-right implementation 47,153. These are neither host timings nor acceptance
+thresholds. Completed-interface checks accept both implementations.
+
+All 37 book-tooling tests, seven renderer tests and three actual IntelliJ highlighter
+Jupiter tests pass. The previous 671 highlight records are exact; 41 records were
+appended, with two of the new listings reusing existing exports. All 26 existing student
+packages validate and rebuild without changing the previous ChaCha archive digest.
+The RSA draft builds to 62 pages with 51 complete literal assembly fragments, each on
+one page. All 62 rendered pages were reviewed. Embedded Minion Pro, Noto Sans Math and
+JetBrains Mono, table headers, formulas and the native limb figure alternative are
+present. Accessibility certification and student usability review remain outstanding.
+
+The manuscript still contains 26 packaged chapters. RSA public guided and free-writing
+exports, separate instructor distribution and main.tex integration remain next. Actual
+IDE captures and annotation coordinates, remote progression and the author's deferred
+substantial prose rewrite remain unfinished. Existing chapters were not rewritten.

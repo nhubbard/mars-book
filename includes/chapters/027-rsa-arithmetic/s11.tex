@@ -1,0 +1,33 @@
+\section{Step 11 Initialize every product column}\label{rsa-s11}
+
+Clear all eight output limbs before accumulating a row. A caller can reuse a buffer containing any byte pattern, including a previous larger product. The clear loop uses a byte offset and stops after 32 bytes; its pointer arithmetic retains full addresses.
+
+Replace only the body of region \texttt{product\_clear}, retaining its BEGIN and END comments.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $t0, $zero
+mul_clear:
+    daddu $t1, $a2, $t0
+    sw $zero, 0($t1)
+    daddiu $t0, $t0, 4
+    sltiu $t1, $t0, 32
+    bnez $t1, mul_clear
+    nop
+\end{minted}
+
+Use recipe \texttt{s11-1} with the cumulative source through this edit. Stop at \texttt{after\_product\_clear} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+All eight product words are zero, with the byte after them still a sentinel.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why clear the high four words too?
+
+\begin{itemize}
+\item \textbf{A} The high half is outside the result contract.
+\item \textbf{B} Clearing only one byte resets an entire word.
+\item \textbf{C} Later partial products add into those columns.
+\end{itemize}

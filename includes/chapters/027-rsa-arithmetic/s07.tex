@@ -1,0 +1,33 @@
+\section{Step 7 Multiply for a selected exponent bit}\label{rsa-s07}
+
+Inspect the low bit without changing the remaining exponent. An even value skips the result multiply; an odd value multiplies the current result by the current base. The complete 64-bit product must reach unsigned remainder before another operation can narrow it.
+
+Replace only the body of region \texttt{word\_select}, retaining its BEGIN and END comments.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+pow32_loop:
+    beqz $t2, pow32_done
+    nop
+    andi $t3, $t2, 1
+    beqz $t3, pow32_shift
+    nop
+    dmulu $t1, $t1, $t0
+    dmodu $t1, $t1, $a2
+\end{minted}
+
+Use recipe \texttt{s07-1} with the cumulative source through this edit. Stop at \texttt{pow32\_shift} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first selected multiply changes result 1 to 65, while exponent 17 remains intact.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What selects this multiplication?
+
+\begin{itemize}
+\item \textbf{A} The number of bytes in the output object.
+\item \textbf{B} The current exponent's low bit.
+\item \textbf{C} The sign of the modulus address.
+\end{itemize}

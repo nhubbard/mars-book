@@ -1,0 +1,36 @@
+\section{Step 18 Establish a valid modular-addition entry}\label{rsa-s18}
+
+Combine all four modulus limbs to test for zero. Do not test only the low word: a positive modulus can have that word zero. Once the modulus is known nonzero, initialize the result offset and carry. The caller remains responsible for supplying two residues below that modulus.
+
+Replace only the body of region \texttt{add\_guard}, retaining its BEGIN and END comments.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 0($a2)
+    lwu $t1, 4($a2)
+    lwu $t2, 8($a2)
+    lwu $t3, 12($a2)
+    or $t0, $t0, $t1
+    or $t0, $t0, $t2
+    or $t0, $t0, $t3
+    beqz $t0, rsa_invalid
+    nop
+    move $t0, $zero
+    move $t1, $zero
+\end{minted}
+
+Use recipe \texttt{s18-1} with the cumulative source through this edit. Stop at \texttt{addmod\_sum} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+A positive multiword modulus reaches the sum boundary; zero returns status one without output access.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which test recognizes the all-zero modulus?
+
+\begin{itemize}
+\item \textbf{A} OR all four limbs and test the combined value.
+\item \textbf{B} Test the lowest limb alone.
+\item \textbf{C} Interpret the output pointer as the modulus.
+\end{itemize}

@@ -1,0 +1,39 @@
+\section{Step 19 Keep the final sum carry}\label{rsa-s19}
+
+Walk from low limb to high limb. Add two zero-extended inputs and the incoming carry in a doubleword register. Load both input limbs before storing, which permits the exact in-place aliases in the contract. Preserve the final carry after the fourth store; it represents bit 128 of the mathematical sum.
+
+Replace only the body of region \texttt{add\_limbs}, retaining its BEGIN and END comments.
+
+\Needspace{19\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+addmod_sum:
+    daddu $t2, $a0, $t0
+    lwu $t3, 0($t2)
+    daddu $t2, $a1, $t0
+    lwu $t4, 0($t2)
+    daddu $t3, $t3, $t4
+    daddu $t3, $t3, $t1
+    daddu $t2, $a3, $t0
+    sw $t3, 0($t2)
+    dsrl $t1, $t3, 32
+    daddiu $t0, $t0, 4
+    sltiu $t2, $t0, 16
+    bnez $t2, addmod_sum
+    nop
+\end{minted}
+
+Use recipe \texttt{s19-1} with the cumulative source through this edit. Stop at \texttt{after\_add\_limbs} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+For the near-maximum modulus example, the stored low sum is \(2^{128}\) minus 320 and carry is one.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What does the final carry represent?
+
+\begin{itemize}
+\item \textbf{A} The sign of either input pointer.
+\item \textbf{B} The bit above the stored 128-bit sum.
+\item \textbf{C} An output byte that should be ignored.
+\end{itemize}

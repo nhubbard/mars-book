@@ -1,0 +1,39 @@
+\section{Step 40 Prepare the next base and repeat}\label{rsa-s40}
+
+Square the current base modulo N into a separate temporary, check status and copy it back. Return to the exponent test. By the final boundary the private result is complete, even though the public output has not yet been written. This boundary checks the arithmetic independently of the last copy.
+
+Replace only the body of region \texttt{power\_square}, retaining its BEGIN and END comments.
+
+\Needspace{19\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $sp
+    move $a1, $sp
+    move $a2, $s0
+    daddiu $a3, $sp, 48
+    jal rsa_mulmod128
+    nop
+    bnez $v0, pow128_development
+    nop
+    ld $t0, 48($sp)
+    ld $t1, 56($sp)
+    sd $t0, 0($sp)
+    sd $t1, 8($sp)
+    b pow128_loop
+    nop
+\end{minted}
+
+Use recipe \texttt{s40-1} with the cumulative source through this edit. Stop at \texttt{pow128\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The private result is 2790, exponent zero and current base 789 before publication.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which value is squared in this right-to-left variant?
+
+\begin{itemize}
+\item \textbf{A} The original exponent.
+\item \textbf{B} The current base.
+\item \textbf{C} The accumulated result on every iteration.
+\end{itemize}

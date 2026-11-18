@@ -1,0 +1,45 @@
+\section{Step 21 Propagate the subtraction borrow}\label{rsa-s21}
+
+Subtract the modulus limb and incoming borrow from each zero-extended result limb. Keep the signed 64-bit temporary until extracting its borrow bit. Its bounded range justifies that extraction. Store the low word and move upward, then return success after either the subtracting or no-subtraction path.
+
+Replace only the body of region \texttt{add\_borrow}, retaining its BEGIN and END comments.
+
+\Needspace{25\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+addmod_subtract:
+    move $t0, $zero
+    move $t1, $zero
+addmod_borrow:
+    daddu $t2, $a3, $t0
+    lwu $t3, 0($t2)
+    daddu $t4, $a2, $t0
+    lwu $t4, 0($t4)
+    dsubu $t3, $t3, $t4
+    dsubu $t3, $t3, $t1
+    dsrl $t1, $t3, 63
+    sw $t3, 0($t2)
+    daddiu $t0, $t0, 4
+    sltiu $t2, $t0, 16
+    bnez $t2, addmod_borrow
+    nop
+addmod_done:
+    move $v0, $zero
+    jr $ra
+    nop
+\end{minted}
+
+Use recipe \texttt{s21-1} with the cumulative source through this edit. Stop at \texttt{function\_return} before continuing to the temporary or normal return. With the supplied caller, use \texttt{addmod128\_return} as that return breakpoint.
+
+\subsection{Expected observation}
+The carried example returns N minus 2, rather than the misleading low sum.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why is the temporary's sign useful in this subtraction?
+
+\begin{itemize}
+\item \textbf{A} The limb difference lies in a signed 64-bit range with no ambiguity.
+\item \textbf{B} All unsigned 64-bit differences use their sign as borrow.
+\item \textbf{C} A negative address automatically carries into the next limb.
+\end{itemize}

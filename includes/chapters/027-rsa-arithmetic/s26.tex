@@ -1,0 +1,39 @@
+\section{Step 26 Append each input bit to the remainder}\label{rsa-s26}
+
+If the extracted bit is one, add the private integer one modulo N. Then decrease the bit index and repeat while it is nonnegative. Each nested call can overwrite temporary registers, so the bit index and retained pointers must survive in saved state. After bit zero, the private remainder is the answer.
+
+Replace only the body of region \texttt{reduce\_accumulate}, retaining its BEGIN and END comments.
+
+\Needspace{19\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beqz $t1, reduce_next
+    nop
+    move $a0, $sp
+    daddiu $a1, $sp, 16
+    move $a2, $s1
+    move $a3, $sp
+    jal rsa_addmod128
+    nop
+    bnez $v0, reduce_development
+    nop
+reduce_next:
+    addiu $s3, $s3, -1
+    bgez $s3, reduce_bit
+    nop
+\end{minted}
+
+Use recipe \texttt{s26-1} with the cumulative source through this edit. Stop at \texttt{after\_reduce\_accumulate} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The complete 128-bit input \(2^{127}\) plus 13 reduces to one modulo five.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which value must survive a nested call across iterations?
+
+\begin{itemize}
+\item \textbf{A} Only a discarded product byte.
+\item \textbf{B} The old contents of every volatile temporary.
+\item \textbf{C} The retained input-bit index.
+\end{itemize}

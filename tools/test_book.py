@@ -35,7 +35,76 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(31, len(book.validate('drafts/crc32.tex')))
         self.assertEqual(51, len(book.validate('drafts/sha256.tex')))
         self.assertEqual(53, len(book.validate('drafts/chacha20.tex')))
-        self.assertEqual(8, len(book.validate('drafts/rsa-arithmetic.tex')))
+        self.assertEqual(51, len(book.validate('drafts/rsa-arithmetic.tex')))
+
+    def test_rsa_cumulative_order_and_observation_protocol(self):
+        folder = book.ROOT / 'drafts/rsa-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        figures = json.loads((folder / 'captures/plan.json').read_text())['figures']
+        self.assertEqual(42, len(steps))
+        self.assertEqual(35, sum(step['kind'] == 'author' for step in steps))
+        self.assertEqual(43, len(recipes))
+        order = [path.stem for path, _ in book.sources('drafts/rsa-arithmetic.tex')
+                 if path.parent.name == '027-rsa-arithmetic' and re.fullmatch(r's[0-9]{2}', path.stem)]
+        self.assertEqual([step['id'] for step in steps], order)
+        starter = (folder / 'main.asm').read_text()
+        self.assertEqual(35, len(re.findall(r'^# BEGIN ', starter, re.M)))
+        self.assertEqual(len(recipes), len({recipe['id'] for recipe in recipes}))
+        for recipe in recipes:
+            self.assertEqual(recipe['checkpoint'], recipe['functionCheckpoint'])
+            self.assertEqual(recipe['target'] + '_return' if recipe['checkpoint'] == 'function_return'
+                             else recipe['checkpoint'], recipe['callerCheckpoint'])
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            self.assertNotIn('correctChoice', step['quiz'])
+            self.assertNotIn('answer', step['quiz'])
+            if step['kind'] == 'author':
+                name = step['region']
+                self.assertEqual(1, starter.count('# BEGIN ' + name + '\n'))
+                selected = [recipe for recipe in recipes if recipe['step'] == step['id']]
+                self.assertTrue(selected)
+                self.assertTrue(all(recipe['target'] == step['target'] and
+                                    recipe['phase'] == step['phase'] for recipe in selected))
+                native = (book.ROOT / 'includes/chapters/027-rsa-arithmetic' / (step['id'] + '.tex')).read_text()
+                self.assertEqual(1, len(book.CODE.findall(native)))
+                self.assertIn(r'\texttt{' + step['checkpoint'].replace('_', r'\_') + '}', native)
+        self.assertEqual(4, len(figures))
+        by_id = {recipe['id']: recipe for recipe in recipes}
+        for figure in figures:
+            recipe = by_id[figure['recipe']]
+            self.assertEqual(figure['step'], recipe['step'])
+            self.assertEqual(figure['checkpoint'], recipe['checkpoint'])
+            self.assertEqual('IntelliJ Light', figure['theme'])
+            self.assertIn('no IDE capture', figure['status'])
+
+    def test_rsa_preparation_preserves_authored_work_and_rejects_bad_values(self):
+        folder = book.ROOT / 'drafts/rsa-construction'
+        spec = importlib.util.spec_from_file_location('rsa_prepare_tests', folder / 'prepare.py')
+        prep = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(prep)
+        source = (folder / 'main.asm').read_text()
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        bodies = lambda text: re.findall(r'^# BEGIN .*?^# END .*?$', text, re.M | re.S)
+        for recipe in recipes:
+            prepared = prep.prepare(source, recipe)
+            self.assertEqual(bodies(source), bodies(prepared))
+            self.assertEqual(256, len(prep.arenas(recipe)['output']))
+            self.assertIn('mode: .word ' + str(prep.TARGETS.index(recipe['target'])) + '\n', prepared)
+        sample = next(recipe for recipe in recipes if recipe['target'] == 'addmod128')
+        for changes in [{'left': '-1'}, {'left': str(2**128)}, {'left': '01'},
+                        {'modulus': '2', 'left': '2'}, {'target': 'unknown'}]:
+            with self.assertRaises(ValueError):
+                prep.prepare(source, {**sample, **changes})
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'kept.asm'
+            output.write_text('student work')
+            result = subprocess.run([sys.executable, str(folder / 'prepare.py'), recipes[0]['id'],
+                                     '--output', str(output)], capture_output=True, text=True)
+            self.assertNotEqual(0, result.returncode)
+            self.assertEqual('student work', output.read_text())
+        with self.assertRaises(ValueError):
+            prep.prepare(source.replace('left_end:', 'missing_boundary:'), sample)
 
     def test_chacha_cumulative_native_order_and_preparation(self):
         folder = book.ROOT / 'drafts/chacha-construction'

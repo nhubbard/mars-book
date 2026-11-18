@@ -1,0 +1,31 @@
+\section{Step 6 Initialize a residue identity}\label{rsa-s06}
+
+Reject modulus zero before any output access. Reduce the base, then reduce the initial result one by the same modulus. The second reduction handles modulus one before the loop. Retain a copy of the exponent as the loop's remaining work.
+
+Replace only the body of region \texttt{word\_identity}, retaining its BEGIN and END comments.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beqz $a2, rsa_invalid
+    nop
+    dmodu $t0, $a0, $a2
+    li $t1, 1
+    dmodu $t1, $t1, $a2
+    move $t2, $a1
+\end{minted}
+
+Use recipe \texttt{s06-1} with the cumulative source through this edit. Stop at \texttt{pow32\_loop} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Before the loop, base 65, result 1 and exponent 17 are separate numerical values.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why reduce the initial one?
+
+\begin{itemize}
+\item \textbf{A} Its residue is zero when the modulus is one.
+\item \textbf{B} Every exponent is initially one.
+\item \textbf{C} A remainder operation increases the exponent width.
+\end{itemize}

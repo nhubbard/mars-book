@@ -1,0 +1,41 @@
+\section{Step 23 Use the unsigned direct-copy path}\label{rsa-s23}
+
+Compare input and modulus from high limb to low limb. An input strictly below the modulus can be copied without bitwise reduction. Equality must enter the reducing path. The large recipe reaches the slow label before its supplied frame is allocated, so inspect the caller stack pointer there.
+
+Replace only the body of region \texttt{reduce\_compare}, retaining its BEGIN and END comments.
+
+\Needspace{21\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+reduce_begin_compare:
+    li $t0, 12
+reduce_compare:
+    daddu $t1, $a0, $t0
+    lwu $t2, 0($t1)
+    daddu $t1, $a1, $t0
+    lwu $t3, 0($t1)
+    sltu $t4, $t2, $t3
+    bnez $t4, reduce_copy_input
+    nop
+    sltu $t4, $t3, $t2
+    bnez $t4, reduce_slow
+    nop
+    addiu $t0, $t0, -4
+    bgez $t0, reduce_compare
+    nop
+\end{minted}
+
+Use recipe \texttt{s23-1} with the cumulative source through this edit. Stop at \texttt{reduce\_slow} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The high-bit input exceeds five and reaches the slow path without yet changing the output.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which comparison permits the direct copy?
+
+\begin{itemize}
+\item \textbf{A} Input less than or equal to modulus.
+\item \textbf{B} Input address lower than modulus address.
+\item \textbf{C} Input strictly less than modulus.
+\end{itemize}

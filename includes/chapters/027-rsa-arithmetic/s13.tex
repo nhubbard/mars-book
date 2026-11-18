@@ -1,0 +1,36 @@
+\section{Step 13 Split one widened partial sum}\label{rsa-s13}
+
+Form a 64-bit product, add the existing output limb and the previous carry, then split the temporary at bit 32. Store its low word before using a logical shift to recover the high carry. The earlier bound explains why this entire sum fits unsigned 64-bit arithmetic.
+
+Replace only the body of region \texttt{product\_partial}, retaining its BEGIN and END comments.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+mul_inner:
+    daddu $t4, $a1, $t2
+    lwu $t4, 0($t4)
+    dmulu $t4, $t4, $t1
+    daddu $t5, $t0, $t2
+    daddu $t5, $a2, $t5
+    lwu $t6, 0($t5)
+    daddu $t4, $t4, $t6
+    daddu $t4, $t4, $t3
+    sw $t4, 0($t5)
+    dsrl $t3, $t4, 32
+\end{minted}
+
+Use recipe \texttt{s13-1} with the cumulative source through this edit. Stop at \texttt{after\_product\_partial} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first low limb becomes 1 and its outgoing carry is hexadecimal fffffffe.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which temporary must retain the whole partial sum?
+
+\begin{itemize}
+\item \textbf{A} The four-byte output slot after its store.
+\item \textbf{B} The 64-bit accumulator before splitting.
+\item \textbf{C} Only the byte pointer.
+\end{itemize}

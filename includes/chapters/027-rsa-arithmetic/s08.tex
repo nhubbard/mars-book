@@ -1,0 +1,33 @@
+\section{Step 8 Advance to the next power of two}\label{rsa-s08}
+
+Shift the exponent logically so the next unprocessed bit reaches bit zero. If none remain, go to the output boundary. Otherwise square the current base and reduce it before revisiting the selection. The result and base now have different roles: only one accumulates selected factors.
+
+Replace only the body of region \texttt{word\_shift}, retaining its BEGIN and END comments.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+pow32_shift:
+    dsrl $t2, $t2, 1
+    beqz $t2, pow32_done
+    nop
+    dmulu $t0, $t0, $t0
+    dmodu $t0, $t0, $a2
+    b pow32_loop
+    nop
+\end{minted}
+
+Use recipe \texttt{s08-1} with the cumulative source through this edit. Stop at \texttt{pow32\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The completed loop has exponent zero and result 2790.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why can the last square be skipped?
+
+\begin{itemize}
+\item \textbf{A} The modulus changes after every multiply.
+\item \textbf{B} A square of the base must always be zero.
+\item \textbf{C} No remaining exponent bit can select its result.
+\end{itemize}

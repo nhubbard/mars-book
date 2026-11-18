@@ -1,0 +1,43 @@
+\section{Step 30 Retain a private multiplier and reduced addend}\label{rsa-s30}
+
+Keep the modulus and output pointers, copy all four multiplier limbs into private storage and initialize the private result to zero. Reduce the first operand into the private addend. Check the nested status before proceeding. Caller inputs remain unchanged throughout the later destructive shifts.
+
+Replace only the body of region \texttt{modproduct\_copy}, retaining its BEGIN and END comments.
+
+\Needspace{23\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $s0, $a2
+    move $s1, $a3
+    lwu $t0, 0($a1)
+    sw $t0, 16($sp)
+    lwu $t0, 4($a1)
+    sw $t0, 20($sp)
+    lwu $t0, 8($a1)
+    sw $t0, 24($sp)
+    lwu $t0, 12($a1)
+    sw $t0, 28($sp)
+    sd $zero, 32($sp)
+    sd $zero, 40($sp)
+    move $a1, $s0
+    move $a2, $sp
+    jal rsa_reduce128
+    nop
+    bnez $v0, mulmod_development
+    nop
+\end{minted}
+
+Use recipe \texttt{s30-1} with the cumulative source through this edit. Stop at \texttt{mulmod\_loop} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The private addend is 13, multiplier 11 and accumulated result zero.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which object is shifted destructively?
+
+\begin{itemize}
+\item \textbf{A} The private multiplier copy.
+\item \textbf{B} The caller's read-only multiplier.
+\item \textbf{C} The modulus itself.
+\end{itemize}
