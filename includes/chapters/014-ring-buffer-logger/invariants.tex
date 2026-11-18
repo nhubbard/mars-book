@@ -1,0 +1,35 @@
+\section{Distinguish a full queue from an empty one}
+Let \(H\) be head, \(T\) tail, \(U\) occupied bytes, and \(C\) capacity. A valid
+state satisfies
+\[
+ 0\leq H<C,\qquad0\leq T<C,\qquad0\leq U\leq C,
+ \qquad T=(H+U)\bmod C.
+\]
+Starting at head, the encoded records occupy exactly \(U\) consecutive circular
+bytes. Their prefix lengths delimit the records. The caller guarantees that each
+record fits the capacity and that the occupied sequence ends at tail.
+
+When \(U=0\), no record is queued. When \(U=C\), every byte is occupied. In both
+cases head equals tail. Comparing the two indices alone therefore cannot select
+empty versus full under this representation. Some ring designs reserve one slot to
+make the distinction another way. This contract instead retains an occupied-byte
+count and allows all \(C\) bytes to be used.
+
+For a push of encoded size \(N\), free space is \(C-U\). Success requires
+\(N\leq C-U\). The new state is
+\[
+ H'=H,\qquad T'=(T+N)\bmod C,\qquad U'=U+N.
+\]
+The free region begins at tail and continues circularly to head. It can appear as
+two physical spans while remaining one logical region. A record need not fit wholly
+between tail and the physical array end.
+
+For a successful pop of the oldest record, its prefix gives \(L\) and hence
+\(N=L+1\). The new state is
+\[
+ H'=(H+N)\bmod C,\qquad T'=T,\qquad U'=U-N.
+\]
+Pop changes which bytes are occupied. It does not erase them. Old bytes in free
+space have no current record meaning; later pushes may overwrite them. Treating a
+stale prefix as a queued record when \(U=0\) would manufacture input that does not
+exist.

@@ -1,0 +1,25 @@
+\section{Separate record bytes from state publication}
+A successful push copies the payload into free ring slots. Once it returns, the
+queue owns its own copy; the caller can reuse the source buffer. A successful pop
+copies the oldest payload into the destination. The destination is independent of
+future ring reuse. This differs from the previous parser's returned slice, which
+continued to alias its input.
+
+The demonstration writes the new record before publishing its new tail and used
+count. It leaves head unchanged. Pop checks destination capacity before copying,
+then publishes its advanced head and reduced used count. It leaves tail unchanged.
+Tentative work remains in caller-clobbered registers until the checks pass.
+No memory edits are needed for a failed operation.
+
+The descriptor's three state words may be rewritten on success, including a state
+word whose value remains unchanged. Their final values must satisfy the operation's
+contract. Capacity and the stored buffer pointer must never be written by either
+function. A different copy direction or successful state-store order is accepted.
+Writes to unrelated slots, even if later restored, are not accepted.
+
+These routines are leaf functions and use temporary registers without altering
+saved registers or the stack pointer. A correct stack-using implementation is also
+valid if it restores the full calling state. The return boundary supplies the
+coherent state observation used by the exercise. Multiple stores do not become a
+hardware-atomic transaction, and the example supplies no locks or memory-ordering
+protocol for concurrent producers and consumers.

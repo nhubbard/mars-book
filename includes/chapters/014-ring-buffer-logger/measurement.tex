@@ -1,0 +1,45 @@
+\section{Measure wrap work on a fixed operation}\label{ring-measurement}
+The verified forward and reverse copy implementations satisfy the same contract.
+They use different per-byte address calculations. Compare complete successful calls
+with capacity eight, rather than timing an entire IDE launch or including assembly.
+For push, the starting index is tail in an empty queue. For pop, it is head in a
+queue containing one record. Each row below describes that initial state.
+
+\Needspace{15\baselineskip}
+\begin{longtable}{lrrrr}
+\toprule Call&Payload bytes&Start index&Forward instr.&Reverse instr.\\\midrule
+Push&0&7&32&32\\
+Push&3&0&61&73\\
+Push&3&7&62&77\\
+Push&7&4&102&134\\
+Pop&0&7&30&30\\
+Pop&3&0&59&71\\
+Pop&3&7&60&75\\
+Pop&7&4&100&132\\\bottomrule
+\end{longtable}
+The counter observes native completed forward instructions from the function's first
+instruction through its return, stopping before the supplied continuation. Caller
+argument setup, session creation, assembly, main, and exit are excluded. The inputs
+are valid and the destination is large enough for each successful pop. These are
+counts for the two measured implementations, not requirements for student source.
+
+The forward loop retains a wrapped index between bytes. Moving the three-byte
+record start from zero to seven adds one executed reset instruction. The reverse
+loop computes each byte's circular index from its logical offset, then reduces it.
+All three payload indices cross the boundary in the latter example, and its final
+state calculation also needs a subtraction. Its count rises by four instructions.
+The reverse implementation is useful evidence that grading accepts another legal
+copy order; it is not an optimization over this forward loop.
+
+For these successful forward paths, each payload byte adds ten instructions, and
+the complete record crosses the physical end at most once. Counting the fixed work
+and the optional reset explains \(31+10L+W\) for push and \(29+10L+W\) for pop,
+where \(W\) is one if the record advance reaches or crosses the end and zero
+otherwise. A zero-length record at the last slot still has \(W=1\), because its
+prefix advances the cursor.
+
+A two-span copy can move wrap decisions outside an inner byte loop. Before claiming
+a saving, derive the span sizes, handle empty payloads, and test a prefix at the
+last slot. The exercise checks permit that implementation. Instruction counts alone
+do not establish host elapsed time or cycles on a physical MIPS processor. Measure
+the relevant quantity separately and retain the same memory and failure contract.

@@ -1,0 +1,31 @@
+\section{Step 5 Compare required and free space}\label{ring-s05}
+
+Load occupied bytes, subtract them from capacity, and form the encoded size as payload length plus one. Return full if the free count is smaller. Equality is an accepted exact fit. Select the full status only after the earlier record-size check passes.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{push\_space} region. Keep the scaffold labels and return stubs.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lw $t2, 8($a0)
+    subu $t9, $t3, $t2
+    addiu $t5, $a2, 1
+    li $v0, -1
+    sltu $t9, $t9, $t5
+    bne $t9, $zero, push_return
+    nop
+\end{minted}
+
+\subsection{Expected observation}
+An eight-byte ring with three used bytes can accept a four-byte encoded record and retain one free byte.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Is an exact fit accepted?
+
+\begin{itemize}
+\item \textbf{A} Yes.
+\item \textbf{B} No, because a sentinel slot is reserved.
+\item \textbf{C} Only for a nonempty payload.
+\end{itemize}

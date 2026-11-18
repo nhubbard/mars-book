@@ -384,3 +384,45 @@ The chapter states the actual generated payload pattern and measurement scope.
 Three capture recipes have checked numerical model states; no IDE pixels have been
 captured. The light-theme capture plugin runner, visual assertions, independent
 accessibility review, and final author review remain outstanding.
+
+## Ring-buffer logger
+
+Package 014-ring-buffer-logger contains thirty microsteps, sixty staged hints, and
+eighteen cumulative native assembly increments. Its descriptor tracks explicit
+occupied bytes, permits capacities 1..32 without a power-of-two assumption, and
+represents a zero-length payload with its own one-byte record prefix. Push and pop
+have separate failure priorities and auxiliary results. Failed calls make no
+caller-data writes, including writes restored later. Capacity and the stored full
+buffer pointer remain read-only configuration; pop preserves ring bytes.
+
+Public function grading runs 520 independent calls varying capacity, positions,
+queue shape, request size, descriptors, rings, pointer offsets, return continuations
+and full saved-register canaries. Twelve main-prefix cases inspect every completed
+operation in the supplied fourteen-command FIFO demonstration. Main histories
+check each operation's permitted stores separately, then reject caller-data writes
+after the final marker. Native notices retain full read/store widths; source and
+ring logical boundaries apply even when adjacent bytes are mapped padding.
+
+The private domain has 37,477 cases. It includes every bounded capacity, head and
+occupancy in simple queue states with derived requests, every fitting empty-queue
+push length at every head, and additional multiple-record states. This is not an
+exhaustive Cartesian product of payloads, requests or record partitions. The forward
+reference and reverse-copy alternative pass the public/private scripts, including
+the full private domain with data above 4 GiB. A legitimate restored stack frame
+is also accepted. Eighteen partial programs have their intermediate bytes and
+state words checked; the reconstructed complete source matches the reference and
+passes all final scripts. Twenty-one warning-free faulty programs and the
+unmodified starter are rejected. The complete verifier records sixty grading runs
+and 226,520 positive case executions, including repeated inputs across variants.
+
+Function-only native counts for a three-byte push are 61 forward/73 reverse without
+wrap and 62/77 with a prefix at the last slot. The chapter also reports empty-record,
+exact-fit, and pop counts, with the initial states and counting boundary specified.
+The reverse copy is an accepted equivalent, not a claimed speed improvement. Counts
+are not elapsed time, target cycles, or exact-count grading requirements.
+
+Three planned light-theme capture recipes have verified model states. No screenshot
+pixels or IDE interactions were captured. Native table headings, extractable assembly,
+mathematics, fonts, and the explanatory diagram are inspected separately. Full
+reading-order/screen-reader review, independent accessibility validation and author
+review remain outstanding.

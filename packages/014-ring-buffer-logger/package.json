@@ -1,0 +1,1328 @@
+{
+  "formatVersion": 1,
+  "id": "014-ring-buffer-logger",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Queue variable-length records in a ring",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "401d4fed76424179c28f4d414af4c8040acf3d1b",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "traceMemoryAccesses",
+      "expectReadsWithin",
+      "traceExecution",
+      "readDataAddress",
+      "setRegisterToDataAddress",
+      "setRegisterToTextAddress"
+    ]
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "reading": "reading.json",
+  "prerequisites": [
+    "Full-width pointers and saved-register call interfaces",
+    "Logical memory-access bounds",
+    "Binary record fields and failure preservation"
+  ],
+  "learningObjectives": [
+    "Maintain circular FIFO state with explicit occupancy",
+    "Distinguish empty records from empty queues",
+    "Handle independent head/tail wraps and exact fits",
+    "Preserve state on failure and allow a larger-destination retry",
+    "Compare equivalent copy orders and bounded wrap calculations"
+  ],
+  "inputDomain": {
+    "type": "ring-record-queue",
+    "capacityMinimum": 1,
+    "capacityMaximum": 32,
+    "payloadMaximum": 31,
+    "descriptorBytes": 24,
+    "sourceAndOutputBytes": 64,
+    "queueState": "well formed; no corruption recovery promised"
+  },
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose and worked states, incremental assembly edits, and callable final-program grading"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the descriptor before the bytes",
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which instruction width loads the stored buffer pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A byte."
+          },
+          {
+            "id": "b",
+            "text": "A word."
+          },
+          {
+            "id": "c",
+            "text": "A doubleword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Keep the pointer field distinct from the descriptor address."
+        },
+        {
+          "id": "s01-h2",
+          "text": "The word at offset twelve is capacity. The eight bytes at offset sixteen hold a full pointer."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Count encoded bytes",
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q02",
+        "prompt": "How much queue space does an empty record need?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero bytes."
+          },
+          {
+            "id": "b",
+            "text": "One byte."
+          },
+          {
+            "id": "c",
+            "text": "A full word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "The length prefix exists even when no body bytes follow it."
+        },
+        {
+          "id": "s02-h2",
+          "text": "A three-byte payload occupies four queue bytes. A zero-length payload still occupies one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Check the state invariant",
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What makes equal cursors mean full here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Used equals capacity."
+          },
+          {
+            "id": "b",
+            "text": "Head is zero."
+          },
+          {
+            "id": "c",
+            "text": "The first ring byte is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Stale data does not determine occupancy."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Equal cursors alone cannot select full or empty under this representation."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Reject a record that can never fit",
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which condition allows a record to fit an empty ring?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "L is at most C."
+          },
+          {
+            "id": "b",
+            "text": "L is less than C."
+          },
+          {
+            "id": "c",
+            "text": "L equals C plus one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Include the one-byte prefix in the capacity argument."
+        },
+        {
+          "id": "s04-h2",
+          "text": "With capacity eight, payload length eight reports -2 before inspecting current free space."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_fit"
+    },
+    {
+      "id": "s05",
+      "title": "Compare required and free space",
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Is an exact fit accepted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "No, because a sentinel slot is reserved."
+          },
+          {
+            "id": "c",
+            "text": "Only for a nonempty payload."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "This representation has an explicit occupied count and reserves no sentinel slot."
+        },
+        {
+          "id": "s05-h2",
+          "text": "An eight-byte ring with three used bytes can accept a four-byte encoded record and retain one free byte."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_space"
+    },
+    {
+      "id": "s06",
+      "title": "Write the prefix through the supplied buffer",
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Where does the stored prefix value come from?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first source byte."
+          },
+          {
+            "id": "b",
+            "text": "The used count."
+          },
+          {
+            "id": "c",
+            "text": "The supplied payload length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "The prefix is metadata created by push."
+        },
+        {
+          "id": "s06-h2",
+          "text": "For a three-byte payload beginning at tail seven, ring byte seven becomes three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_prefix"
+    },
+    {
+      "id": "s07",
+      "title": "Advance beyond the prefix",
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "When should a one-byte index advance reset to zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "When it equals capacity."
+          },
+          {
+            "id": "b",
+            "text": "When it equals capacity minus one."
+          },
+          {
+            "id": "c",
+            "text": "Whenever it is nonzero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "The last valid byte must be visited before wrapping."
+        },
+        {
+          "id": "s07-h2",
+          "text": "A prefix written at index seven in an eight-byte ring leaves the next index zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_advance"
+    },
+    {
+      "id": "s08",
+      "title": "Skip the copy for an empty payload",
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What does the zero-length path still publish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A payload terminator."
+          },
+          {
+            "id": "b",
+            "text": "One newly occupied byte."
+          },
+          {
+            "id": "c",
+            "text": "An unchanged used count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The empty record is still queued."
+        },
+        {
+          "id": "s08-h2",
+          "text": "A zero-length push stores one prefix byte and performs no source reads."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_init"
+    },
+    {
+      "id": "s09",
+      "title": "Copy one payload byte",
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Does a zero payload byte stop the copy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, as in a string."
+          },
+          {
+            "id": "b",
+            "text": "Only at the physical ring end."
+          },
+          {
+            "id": "c",
+            "text": "No; the supplied length controls the loop."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "This interface copies binary records, not terminated strings."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The high-bit source bytes 80 and ff retain their stored eight-bit patterns."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_bytes"
+    },
+    {
+      "id": "s10",
+      "title": "Wrap the payload write index",
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Which cursor wraps at C?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The caller source pointer."
+          },
+          {
+            "id": "b",
+            "text": "The ring index."
+          },
+          {
+            "id": "c",
+            "text": "The descriptor address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The source and circular destination have different layouts."
+        },
+        {
+          "id": "s10-h2",
+          "text": "A body byte at index seven is followed by the next body byte at index zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_wrap"
+    },
+    {
+      "id": "s11",
+      "title": "Count each completed byte",
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which count reaches zero here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The payload bytes still to copy."
+          },
+          {
+            "id": "b",
+            "text": "The total ring capacity."
+          },
+          {
+            "id": "c",
+            "text": "The occupied-byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Keep temporary loop progress separate from published queue state."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Exactly L payload bytes are copied after the single prefix byte."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_count"
+    },
+    {
+      "id": "s12",
+      "title": "Publish the successful push",
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which logical cursor does push preserve?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Tail."
+          },
+          {
+            "id": "b",
+            "text": "Both cursors always."
+          },
+          {
+            "id": "c",
+            "text": "Head."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Push appends after the existing records."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The first default push changes state from 0/0/0 to head zero, tail four, used four."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "push_publish"
+    },
+    {
+      "id": "s13",
+      "title": "Inspect independent write and read progress",
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which record will the next pop return?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The most recently pushed record."
+          },
+          {
+            "id": "b",
+            "text": "The older two-byte record at head four."
+          },
+          {
+            "id": "c",
+            "text": "The physically lowest-addressed record."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "FIFO order follows head, not address sorting."
+        },
+        {
+          "id": "s13-h2",
+          "text": "At operation three, head is four, tail is three, and used is seven."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Detect empty before decoding a prefix",
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What establishes that a record exists?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A nonzero occupied-byte count in a valid descriptor."
+          },
+          {
+            "id": "b",
+            "text": "A nonzero first ring byte."
+          },
+          {
+            "id": "c",
+            "text": "Head and tail being unequal in all representations."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Occupancy is explicit in this contract."
+        },
+        {
+          "id": "s14-h2",
+          "text": "An empty queue returns -1 and zero without changing any caller data."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_empty"
+    },
+    {
+      "id": "s15",
+      "title": "Read the oldest length prefix",
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Does this exercise validate arbitrarily corrupted ring metadata?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, by scanning all slots."
+          },
+          {
+            "id": "b",
+            "text": "Only with capacity eight."
+          },
+          {
+            "id": "c",
+            "text": "No; well-formed queue state is a caller precondition."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Separate an interface precondition from a checked failure."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The decoded length excludes its own prefix and selects the payload copy size."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_prefix"
+    },
+    {
+      "id": "s16",
+      "title": "Reject a destination that is too small",
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "What does v1 report on this failure?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The encoded size including the prefix."
+          },
+          {
+            "id": "b",
+            "text": "The required payload bytes."
+          },
+          {
+            "id": "c",
+            "text": "Zero for every error in both functions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Push and pop have distinct auxiliary-result rules."
+        },
+        {
+          "id": "s16-h2",
+          "text": "A seven-byte payload and capacity six return -2 and seven; a retry with capacity seven can still pop that record."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_fit"
+    },
+    {
+      "id": "s17",
+      "title": "Step beyond the stored prefix",
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Is the prefix copied to the output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only for an empty record."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "The output interface returns body bytes only."
+        },
+        {
+          "id": "s17-h2",
+          "text": "A prefix at the last ring byte places its first possible payload byte at index zero."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_advance"
+    },
+    {
+      "id": "s18",
+      "title": "Prepare the destination copy",
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which is a successful empty-record result?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "v0=0, v1=1."
+          },
+          {
+            "id": "b",
+            "text": "v0=-1, v1=0."
+          },
+          {
+            "id": "c",
+            "text": "v0=1, v1=0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Distinguish an empty payload from an empty queue."
+        },
+        {
+          "id": "s18-h2",
+          "text": "An empty record succeeds with status zero and eventually consumes one queue byte."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_init"
+    },
+    {
+      "id": "s19",
+      "title": "Copy a payload byte out",
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Must pop erase a byte after reading it?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, to make it free."
+          },
+          {
+            "id": "b",
+            "text": "No; occupancy changes through descriptor state."
+          },
+          {
+            "id": "c",
+            "text": "Only when its value is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Free space may retain stale bytes."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The destination receives the oldest record bytes in their original order."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_bytes"
+    },
+    {
+      "id": "s20",
+      "title": "Wrap the payload read index",
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Which output layout is required?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A circular output using the ring capacity."
+          },
+          {
+            "id": "b",
+            "text": "A copy of every occupied byte."
+          },
+          {
+            "id": "c",
+            "text": "Exactly L contiguous payload bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The destination is independent of the ring representation."
+        },
+        {
+          "id": "s20-h2",
+          "text": "A payload split across the ring end becomes a contiguous output sequence."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_wrap"
+    },
+    {
+      "id": "s21",
+      "title": "Finish the payload countdown",
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "What controls the successful copy length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The oldest prefix length."
+          },
+          {
+            "id": "b",
+            "text": "The entire destination capacity."
+          },
+          {
+            "id": "c",
+            "text": "The total occupied-byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "There may be later records in the queue."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Bytes after the returned payload remain untouched even when the destination has extra capacity."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_count"
+    },
+    {
+      "id": "s22",
+      "title": "Publish the successful pop",
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "How much does used decrease?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only L."
+          },
+          {
+            "id": "b",
+            "text": "L plus one."
+          },
+          {
+            "id": "c",
+            "text": "The destination capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Removing a record also frees its prefix."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Popping the first three-byte record changes 0/7/7 to head four, tail seven, used three."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      },
+      "editTarget": "pop_publish"
+    },
+    {
+      "id": "s23",
+      "title": "Trace the complete FIFO demonstration",
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q23",
+        "prompt": "At a completed marker, which state should be coherent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the return registers."
+          },
+          {
+            "id": "b",
+            "text": "Only the command table."
+          },
+          {
+            "id": "c",
+            "text": "The descriptor, affected bytes, and published call results together."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The observation boundary follows the call return."
+        },
+        {
+          "id": "s23-h2",
+          "text": "The fourteen commands include separate head and tail wraps, an empty record, an exact fit, a full failure, and a successful retry."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Compare full and empty equal-cursor states",
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which quantity resolves this ambiguity?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Used."
+          },
+          {
+            "id": "b",
+            "text": "The last byte value."
+          },
+          {
+            "id": "c",
+            "text": "The absolute ring address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Equal cursors have two meanings without the count."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The full queue rejects another empty record; the empty queue accepts one."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Check a retry and its write history",
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Which failed call is acceptable?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One that clears and restores the output."
+          },
+          {
+            "id": "b",
+            "text": "One that writes no caller data."
+          },
+          {
+            "id": "c",
+            "text": "One that advances and restores head."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The no-write rule is stronger than a final-value comparison."
+        },
+        {
+          "id": "s25-h2",
+          "text": "A temporary cursor update restored before the failure still violates the contract."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Move the ring and the byte pointers",
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which address selects the ring allocation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The descriptor_a label in the source."
+          },
+          {
+            "id": "b",
+            "text": "The destination pointer."
+          },
+          {
+            "id": "c",
+            "text": "The full buffer pointer stored in the selected descriptor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A descriptor decouples state from allocation placement."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Unaligned byte pointers work, and unrelated descriptors, buffers, and guard words remain unchanged."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Test capacities without a bit-mask shortcut",
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q27",
+        "prompt": "When is AND with C minus one a valid modulo shortcut?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "For every positive C."
+          },
+          {
+            "id": "b",
+            "text": "When C is a power of two."
+          },
+          {
+            "id": "c",
+            "text": "When C is odd."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "A low-bit mask represents a power-of-two boundary."
+        },
+        {
+          "id": "s27-h2",
+          "text": "For capacity seven, incrementing index six must produce zero, not six."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Relocate the allocation above four GiB",
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which arithmetic belongs on an effective address?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Full-width address addition."
+          },
+          {
+            "id": "b",
+            "text": "A word-sized increment chosen because L is small."
+          },
+          {
+            "id": "c",
+            "text": "An eight-bit mask."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Small offsets do not make the base address small."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Both payload copies and returned state remain correct; full saved-register canaries and sp survive."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Run the behavioral checks",
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Must a correct implementation use the shown scratch registers?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only for private grading."
+          },
+          {
+            "id": "c",
+            "text": "No."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "The function contract determines equivalent behavior."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Equivalent implementations may reverse copy order or use safe wider operations while producing the same FIFO behavior."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Measure copies and plan a variation",
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "kind": "observe",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What justifies accepting a faster copy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A lower count alone."
+          },
+          {
+            "id": "b",
+            "text": "Lower work together with preserved interface behavior."
+          },
+          {
+            "id": "c",
+            "text": "Using fewer branch labels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Measure a defined workload and verify the same contract."
+        },
+        {
+          "id": "s30-h2",
+          "text": "A performance change must preserve failed-call histories, exact-fit behavior, byte order, and full pointers."
+        }
+      ],
+      "completion": {
+        "type": "learner-confirmation",
+        "reason": "Author checks verify cumulative sources and final callable contracts. Interactive recognition, lesson runner, and actual IDE capture remain pending."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernels.kts",
+    "checks/program.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures"
+  ]
+}

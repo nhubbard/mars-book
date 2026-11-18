@@ -1,0 +1,33 @@
+\section{Read a wrapped queue in FIFO order}\label{ring-x-wrapped}
+After operation three in the supplied demonstration, the ring contains seven
+occupied bytes and one free byte. The older two-byte record begins at head four.
+The newer three-byte record has its prefix at seven and its payload at zero through
+two. Tail three names the remaining free slot, whose old byte is irrelevant.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={Eight physical ring slots after operation three show hexadecimal bytes 7f, 80, ff, 43, 02, 78, 79, 03 at indices zero through seven. Head four points at prefix two for payload 78 79. The next record has prefix three at seven and wraps to payload 7f 80 ff at zero through two. Tail three points at the only free slot, which retains stale byte 43. Used is seven.},x=14mm,y=11mm]
+\foreach \i/\value in {0/7f,1/80,2/ff,3/43,4/02,5/78,6/79,7/03} {
+ \ifnum\i=3\relax
+  \draw[dashed] (\i,0) rectangle +(1,1);
+ \else
+  \draw (\i,0) rectangle +(1,1);
+ \fi
+ \node[font=\small\ttfamily] at (\i+0.5,0.5) {\value};
+ \node[below,font=\small] at (\i+0.5,-0.1) {\i};
+}
+\draw[very thick] (4,0) rectangle +(1,1);
+\draw[very thick] (7,0) rectangle +(1,1);
+\draw[->] (4.5,1.7)--(4.5,1.05);
+\node[above] at (4.5,1.7) {Head};
+\draw[->] (3.5,-1)--(3.5,-0.5);
+\node[below] at (3.5,-1) {Tail: one free slot};
+\draw[->] (7.5,1.15)--(7.5,2.8)--(0.5,2.8)--(0.5,1.15);
+\node[above] at (4,2.8) {Newer record wraps after its prefix};
+\end{tikzpicture}
+\caption{Physical order differs from record order. Thick boxes identify prefixes; the dashed box marks free space. All byte values are hexadecimal.}
+\end{figure}
+Pop first returns \texttt{78 79}, advances head to seven, and leaves the physical
+bytes unchanged. The following pop returns \texttt{7f 80 ff} and advances head to
+three. Both cursors then equal three, with used zero. The old prefixes remain in
+memory but no longer identify queued records.

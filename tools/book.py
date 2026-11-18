@@ -144,7 +144,7 @@ def build(entry):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['validate', 'export-input', 'build'])
-    parser.add_argument('--entry', choices=['main.tex', 'specimen.tex', 'drafts/matrix-transpose.tex', 'drafts/fixed-point-ball.tex', 'drafts/binary-packet-parser.tex'], default='main.tex')
+    parser.add_argument('--entry', choices=['main.tex', 'specimen.tex', 'drafts/matrix-transpose.tex', 'drafts/fixed-point-ball.tex', 'drafts/binary-packet-parser.tex', 'drafts/ring-buffer-logger.tex'], default='main.tex')
     args = parser.parse_args()
     try:
         if args.action == 'validate':

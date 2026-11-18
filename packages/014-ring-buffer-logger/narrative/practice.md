@@ -1,0 +1,23 @@
+# Extend the caller before changing the queue format
+
+A logger often needs a policy for a full queue. This implementation reports the failure without discarding older records. A caller can drop the new record, retry later, or report lost messages. Overwriting the oldest record would be a different contract: it would need to advance head across whole encoded records and explain what happens if several must be discarded. Do not silently add that behavior to this assignment.
+
+<div class="MARSExercise">
+
+Retry a short destination Queue a seven-byte payload in the default ring. Attempt a pop with destination capacity six, record both return values, and compare the descriptor and destination with their earlier state. Retry with capacity seven. Explain why the successful second call returns the same oldest record rather than a later record or a partial suffix. The supplied demonstration includes this sequence for direct inspection.
+
+</div>
+
+<div class="MARSExercise">
+
+Stress a non-power-of-two ring Use capacity thirteen and start an empty queue at head and tail twelve. Choose payload lengths whose encoded sizes first leave one free byte, then fill that byte with an empty record. Pop both records into separate destinations. Trace the physical prefix and payload slots as well as head, tail, and used. Every state must satisfy the descriptor invariant, including the two states with equal cursors.
+
+</div>
+
+<div class="MARSExercise">
+
+Compare contiguous spans Replace per-byte wrap tests with two bounded copy spans: the suffix from the current index to the physical end and, when needed, a prefix beginning at index zero. Derive each span length before coding. Keep prefix placement separate from payload placement, preserve zero-length behavior, and compare native counts on wrapped and unwrapped records. Rerun the complete behavioral checks; a lower count does not justify writing an adjacent occupied slot.
+
+</div>
+
+A queue persisted in a file would need validation for damaged lengths and metadata, a defined byte order, and a recovery policy. A queue used by concurrent threads would need synchronization and a publication protocol. Those are separate designs. The present exercise establishes a bounded sequential FIFO whose state and byte copies can be checked at each call boundary.

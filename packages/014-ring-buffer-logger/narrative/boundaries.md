@@ -1,0 +1,9 @@
+# Check access histories as well as results
+
+The physical ring is 32 bytes long, but only the first $`C`$ bytes belong to a selected descriptor. A word load crossing from index $`C-1`$ into mapped padding is outside its logical allocation. The source pointer similarly authorizes only its requested payload length for push. A zero-length push reads no source bytes, even though it still stores a length prefix in the ring.
+
+The checks inspect native addresses and full access widths. They do not require each input operation to be a byte load. A safely aligned wider operation can be valid if its entire width respects the relevant interval and every written byte belongs to that successful operation’s permitted destination. Reading or writing mapped padding is not justified by a correct final queue.
+
+Failure checks also retain store histories. An implementation that decrements used before checking destination capacity and later restores it has the same final state as the input, but violates the no-write failure rule. Pop must not clear old ring bytes after copying them, because this contract explicitly preserves ring contents. On success, bytes beyond the returned payload in the destination remain unchanged and receive no stores.
+
+Each independent call test changes descriptor selection, ring selection, source and destination offsets, full saved-register canaries. Queue states cover empty and full cases, exact fits, zero-length records, and wrapped data. No test requires the example’s scratch registers, payload store order, or instruction count. The cumulative lesson checks separately inspect particular intermediate registers to verify what the text illustrates.

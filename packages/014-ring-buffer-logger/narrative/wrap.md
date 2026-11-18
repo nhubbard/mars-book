@@ -1,0 +1,13 @@
+# Wrap an index while retaining a full address
+
+For an index $`i`$ known to satisfy $`0\leq i<C`$, a one-byte advance can use
+``` math
+i'=\begin{cases}i+1,&i+1<C,\\0,&i+1=C.\end{cases}
+```
+The temporary result is at most $`C`$, so equality with capacity is enough to detect its single wrap. Comparing with the last valid index instead would reset one byte too early. Apply this rule after the prefix and after every payload byte. The prefix can occupy the last physical byte while its first payload byte belongs at index zero.
+
+An integer index is not a full pointer. The index fits a positive 32-bit word, but the buffer address may lie above four GiB. Form an effective address with `daddu` applied to the full base pointer and the bounded index. Likewise, use a full-width increment on the source or destination cursor. A word arithmetic result used as a pointer can silently discard high address bits in a relocated program.
+
+The expression $`i\mathbin{\mathrm{AND}}(C-1)`$ implements reduction modulo capacity only when capacity is a power of two. For $`C=7`$, index seven should wrap to zero, but $`7\mathbin{\mathrm{AND}}6=6`$. The default demonstration uses capacity eight; that example alone cannot reveal the mistake. Test non-power-of-two capacities such as three, seven, and thirteen.
+
+The alternative implementation copies payload bytes in reverse order and reduces each computed logical index. Because an accepted record occupies at most $`C`$ bytes and the starting index is less than $`C`$, a start-plus-size calculation is less than $`2C`$. At most one subtraction of capacity is needed. This bound is the reason that single subtraction works; it would not handle an arbitrary large index without a stronger precondition or repeated reduction.

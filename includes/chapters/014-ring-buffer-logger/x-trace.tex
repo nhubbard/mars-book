@@ -1,0 +1,31 @@
+\section{Work the supplied command sequence}\label{ring-x-trace}
+Main uses capacity eight and a table of fourteen commands. The first three payloads
+are \texttt{41 42 43}, \texttt{78 79}, and \texttt{7f 80 ff}, written here in
+hexadecimal. The later seven-byte payload is \texttt{00 01 02 7f 80 fe ff}.
+Each completed call publishes its status and auxiliary result before the
+\texttt{operation\_ready} marker. The following table uses decimal counts and indices.
+
+\Needspace{22\baselineskip}
+\begin{longtable}{rlrrrrr}
+\toprule Op.&Call&Head&Tail&Used&\texttt{v0}&\texttt{v1}\\\midrule
+0&Push three bytes&0&4&4&0&4\\
+1&Push two bytes&0&7&7&0&3\\
+2&Pop with room for 31&4&7&3&3&4\\
+3&Push three bytes&4&3&7&0&4\\
+4&Pop with room for 31&7&3&4&2&3\\
+5&Pop with room for 31&3&3&0&3&4\\
+6&Push an empty record&3&4&1&0&1\\
+7&Pop with room for zero&4&4&0&0&1\\
+8&Push seven bytes&4&4&8&0&8\\
+9&Push an empty record&4&4&8&\(-1\)&0\\
+10&Pop with room for six&4&4&8&\(-2\)&7\\
+11&Pop with room for seven&4&4&0&7&8\\
+12&Pop an empty queue&4&4&0&\(-1\)&0\\
+13&Push eight bytes&4&4&0&\(-2\)&0\\\bottomrule
+\end{longtable}
+Operation nine fails despite its zero-length payload: the full queue has no room
+for another prefix. Operation ten reports the required payload length and leaves
+the seven-byte record queued. Operation eleven then succeeds without requiring
+another push. Operation thirteen can never fit this capacity, even while empty.
+The returned status word and auxiliary word preserve these results after main later
+reuses \texttt{v0} for the exit syscall.

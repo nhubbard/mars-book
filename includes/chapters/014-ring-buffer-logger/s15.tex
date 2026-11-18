@@ -1,0 +1,29 @@
+\section{Step 15 Read the oldest length prefix}\label{ring-s15}
+
+Load head, capacity, and the full buffer pointer from the selected descriptor. Address the byte at head and load its length unsigned. The caller guarantees a well-formed occupied sequence, so this prefix describes a complete oldest record.
+
+\subsection{Write or inspect}
+Append these instructions in the \texttt{pop\_prefix} region. Keep the scaffold labels and return stubs.
+
+\Needspace{8\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lw $t0, 0($a0)
+    lw $t3, 12($a0)
+    ld $t4, 16($a0)
+    daddu $t6, $t4, $t0
+    lbu $t5, 0($t6)
+\end{minted}
+
+\subsection{Expected observation}
+The decoded length excludes its own prefix and selects the payload copy size.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does this exercise validate arbitrarily corrupted ring metadata?
+
+\begin{itemize}
+\item \textbf{A} Yes, by scanning all slots.
+\item \textbf{B} Only with capacity eight.
+\item \textbf{C} No; well-formed queue state is a caller precondition.
+\end{itemize}

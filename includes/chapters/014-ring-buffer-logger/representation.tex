@@ -1,0 +1,32 @@
+\section{Store records in a circular byte sequence}
+A ring buffer reuses a fixed allocation by returning to its first byte after its
+last byte. The physical addresses still form an ordinary contiguous array. Circular
+behavior comes from the program's index calculation. No memory address wraps
+implicitly when an instruction advances a pointer beyond the allocation.
+
+This logger stores a record of length \(L\) as one prefix byte containing \(L\),
+followed by \(L\) payload bytes. Its encoded size is \(N=L+1\). There is no terminator,
+alignment padding, or unused sentinel byte between records. A zero-length record
+still occupies its prefix byte. Its payload is empty, but the record exists and
+can be removed from a nonempty queue.
+
+\Needspace{14\baselineskip}
+\begin{longtable}{rll}
+\toprule Offset&Storage&Meaning\\\midrule
+0&Word&Head: index of the oldest record's prefix\\
+4&Word&Tail: index where the next record will begin\\
+8&Word&Used: occupied bytes, including all prefixes\\
+12&Word&Capacity \(C\), one through 32 bytes\\
+16&Doubleword&Full address of the ring's first byte\\\bottomrule
+\end{longtable}
+The first three words are mutable queue state. Capacity and buffer address describe
+the allocation and remain unchanged. The provided physical ring arrays have 32
+bytes, but a descriptor can expose a smaller initial span. Bytes beyond its capacity
+are mapped padding, not part of that queue. All ring reads and writes must fit
+within the exposed span. A pointer to the descriptor is distinct from the buffer
+pointer stored inside it; load the latter with \texttt{ld} before addressing bytes.
+
+The descriptor is a native in-memory object in MARS's default little-endian layout.
+It is not a network packet or portable file format. Its fields are naturally aligned
+by the supplied scaffold. Individual record bytes can cross the ring's physical end.
+Read and write them using byte operations and explicitly wrapped indices.

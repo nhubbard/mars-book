@@ -129,3 +129,16 @@ sequence used by the main manuscript. Its diagrams, headed tables, mathematics,
 and measured comparison are native LaTeX. Run document builds sequentially: the
 entries share chapter auxiliary files under `build/native`. Actual IDE screenshots
 and independent accessibility certification remain pending.
+
+The ring-buffer logger has a focused native entry:
+
+```sh
+python3 tools/book.py build --entry drafts/ring-buffer-logger.tex
+```
+
+It produces `build/native/ring-buffer-logger.pdf` using the same includes as the main
+manuscript. The chapter supplies a native circular-slot diagram, headed tables for
+descriptor fields, return values, command states and measured instruction counts,
+and eighteen actual IntelliJ-highlighted assembly increments. Run native entries
+sequentially because their auxiliary chapter files are shared. Actual screenshots,
+author review, and independent accessibility validation remain pending.
