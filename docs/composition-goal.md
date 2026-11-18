@@ -48,4 +48,10 @@ instruction semantics and the explanatory text together before committing each i
 The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-counter, MarsBot-square, Bresenham-line, Life, sorting-visualizer, and maze-explorer chapters
 are composed text drafts with verified companion programs. They still need author review and actual
 IDE figures. The remaining projects are planned until their text and companions are
-written and checked. Matrix transpose is next in the roadmap.
+written and checked. Matrix transpose is in progress. Its first native explanatory passages are in
+`includes/chapters/011-matrix-transpose/`; compile the separate
+`drafts/matrix-transpose.tex` entry for review. They cover row-major representation,
+ordinary and clipped tiled traversal, calling contracts, and actual cache measurements.
+The guided assembly increments, quizzes, student package, and IDE figures remain
+outstanding. This draft is not yet included in `main.tex` or counted as a completed
+package. Verified companion prototypes and adversarial checks are private.

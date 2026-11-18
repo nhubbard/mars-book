@@ -1,0 +1,58 @@
+\section{Complete a small rectangle before moving on}
+A tiled transpose divides the source into small rectangles and finishes one
+rectangle at a time. This exercise uses a tile side of four. The tile whose
+upper-left coordinate is \((i_0,j_0)\) contains
+\[
+ i_0\leq i<\min(i_0+4,R),\qquad
+ j_0\leq j<\min(j_0+4,C).
+\]
+Its first column is \(j_0\), not zero. Its first row is \(i_0\), not zero.
+The tile origin advances in steps of four; the cells inside a tile advance in
+steps of one.
+
+The minimum operations clip a tile at the matrix edges. In a three-by-five
+matrix, the tile at \((0,0)\) contains three rows and four columns. The tile
+at \((0,4)\) contains three rows and one column. Both are smaller than a full
+four-by-four tile. Neither may read padding as if it were part of the matrix.
+
+\begin{MARSWorkedExample}{Two tiles cover fifteen cells}
+The first tile visits source indices
+\(0,1,2,3,5,6,7,8,10,11,12,13\) when its internal traversal is row-major.
+The second visits \(4,9,14\). Compare this with the ordinary source order,
+which visits \(0,1,2,3,4,5,\ldots,14\). Both cover the same cells, and both
+apply the same destination formula. Their order differs before the fifth load.
+That point makes the small rectangular example useful for checking that tiling
+has actually been implemented.
+\end{MARSWorkedExample}
+
+For a tile row starting at source row \(i\), initialize its source pointer to
+\(\operatorname{input}+4(iC+j_0)\), and its destination pointer to
+\(\operatorname{output}+4(j_0R+i)\). The inner cell loop then uses the same
+four-byte source advance and \(4R\)-byte destination advance as the ordinary
+version. Recompute the starting pointers at the next tile row. This is a useful
+first implementation because the formulas remain visible at each row boundary.
+Later, pointer recurrences can reduce those multiplications if measurement
+justifies the added state.
+
+Every valid source coordinate belongs to exactly one tile. Integer division of
+its row and column by four gives the tile's row and column numbers. Those
+quotients are unique, and the clipped bounds retain every coordinate that lies
+inside the matrix. Finishing every tile therefore retains the ordinary
+version's coverage and one-to-one destination mapping.
+
+Tiles may be visited in different orders. One implementation finishes all tile
+columns in the first tile row before starting the next tile row. Another finishes
+all tile rows in the first tile column before moving right. Both satisfy this
+exercise's tiled contract. Register choices and address recomputation strategies
+can differ as well. The observable requirement is to complete all reads and
+writes for one clipped tile before accessing another tile, with one aligned
+word read and one aligned word write for each matrix cell. A read must precede
+its corresponding write. This permits buffering several words in registers
+within the tile.
+
+The ordinary contract instead requires the source reads and corresponding output
+writes to each follow source row-major order. It does not require the load and
+store for a cell to be adjacent instructions. These traversal contracts make
+the comparison an exercise in two memory access patterns. Equal final output
+alone would accept two copies of the ordinary algorithm and would not establish
+the tiled objective.

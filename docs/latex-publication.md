@@ -86,3 +86,19 @@ a figure alternative, mathematical structure, native code structure, and literal
 text extraction. These checks are evidence about specific features, **not PDF/UA
 certification**. Full-book reading order, repeated table headers, links, visual layout,
 screen-reader behavior, and an independent accessibility checker still require review.
+
+## Reviewing an unfinished native chapter
+
+The matrix-transpose composition has its own native entry while the student package
+and guided increments are being completed:
+
+```sh
+python3 tools/book.py build --entry drafts/matrix-transpose.tex
+```
+
+It produces `build/native/matrix-transpose.pdf` with the same fonts, tagging,
+layout checks, and ordinary includes as the main book. It does not add that unfinished
+chapter to the main publication or change the completed-package count. Its initial
+measured table uses the shared core/IDE cache model from upstream commit
+`1f2de4ff48d5e70a76763edf489000fd6ca7fa3c`. Counts describe the measured private
+reference and are not exact-count requirements for equivalent student solutions.
