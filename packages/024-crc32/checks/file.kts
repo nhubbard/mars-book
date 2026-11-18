@@ -25,7 +25,7 @@ fun AssemblyCase.checkUpdate(input:List<Int>,seed:Long,method:Int,caller:Boolean
  for(index in 0 until 272)setWord("crc_table",if(method==1 && index-tableOffset/4 in crcWords.indices)crcWords[index-tableOffset/4].toInt() else 0x6a6b6c6d,offset=4*index)
  setWord("exercise",if(method==0)0 else 2);setWord("input_count",input.size);setWord("initial_state",seed.toInt());setWord("raw_result",-1)
  val saved=preserveSetup()
- if(caller)runUntil("kernel_call") else {setRegisterToDataAddress("a0","data",offset.toLong());setRegister("a1",input.size);setRegister("a2",seed);setRegisterToDataAddress("a3","crc_table",tableOffset.toLong())}
+ if(caller){startAt("main");runUntil("kernel_call")} else {setRegisterToDataAddress("a0","data",offset.toLong());setRegister("a1",input.size);setRegister("a2",seed);setRegisterToDataAddress("a3","crc_table",tableOffset.toLong())}
  val base=readDataAddress("data");val size=(readDataAddress("file_status")+4-base).toInt();val before=readBytes("data",size);val source=readDataAddress("data",offset.toLong());val table=readDataAddress("crc_table",tableOffset.toLong());val owned=callerRegions();val accesses=traceMemoryAccesses(base,size,maxAccesses=100000)
  if(caller)runUntil("kernel_done") else callFunction(if(method==0)"crc32_bit_update" else "crc32_table_update",continuation)
  accesses.close();val expected=expectedUpdate(input,seed);expectRegister("v0",expected);checkPreserved(saved)
@@ -61,7 +61,7 @@ fun AssemblyCase.checkFile(input:List<Int>,capacity:Int,method:Int,maxRead:Int=I
  for(index in 0 until 272)setWord("crc_table",0x6a6b6c6d,offset=4*index)
  setWord("exercise",3);setWord("method",method);setWord("buffer_capacity",capacity);setWord("file_crc",-1);setWord("file_status",-1)
  val saved=preserveSetup()
- if(caller)runUntil("file_call") else {setRegisterToDataAddress("a0","path");setRegisterToDataAddress("a1","scratch",offset.toLong());setRegister("a2",capacity);setRegister("a3",method)}
+ if(caller){startAt("main");runUntil("file_call")} else {setRegisterToDataAddress("a0","path");setRegisterToDataAddress("a1","scratch",offset.toLong());setRegister("a2",capacity);setRegister("a3",method)}
  val base=readDataAddress("data");val size=(readDataAddress("file_status")+4-base).toInt();val before=readBytes("data",size);val scratch=readDataAddress("scratch",offset.toLong());val table=readDataAddress("crc_table");val path=readDataAddress("path");val owned=callerRegions();val accesses=traceMemoryAccesses(base,size,maxAccesses=100000)
  if(caller)runUntil("file_done") else callFunction("crc32_file","function_return")
  accesses.close();expectRegister("v0",expected);expectRegister("v1",status);checkPreserved(saved);files.expectAllClosed()
