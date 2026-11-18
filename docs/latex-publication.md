@@ -192,3 +192,9 @@ The matrix entry now includes fifty native teaching steps, forty-two cumulative 
 and two provided excerpts, for forty-four actual IntelliJ-highlighted listings. Keep
 native prose as the composition authority. Structured draft recipes support verification
 and future guided exercises; they do not regenerate the chapter.
+
+
+Build the independent codec foundation with
+`python3 tools/book.py build --entry drafts/delta-varint.tex`. It uses native equations,
+tables and a described bit diagram. It is not yet a cumulative student package or part
+of main.tex; new assembly listings will require actual IntelliJ highlighting exports.

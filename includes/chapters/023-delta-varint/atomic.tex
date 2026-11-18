@@ -1,0 +1,33 @@
+\section{Preflight capacity before publishing a value}
+The encoder can count the candidate's groups in registers before writing any byte.
+Copy the mapped value, repeatedly shift that copy logically by seven, and count until
+it becomes zero. Initialize the count to one so mapped zero retains its required byte.
+Compare this length with remaining capacity, computed as capacity minus committed bytes.
+A candidate either fits completely or contributes no stores and no committed input.
+
+With the default sequence and byte capacity seven, the first four readings commit to
+five bytes. The last reading requires three more bytes and only two remain. Return
+\texttt{v0}=4, \texttt{v1}=5 and \texttt{a3}=1. Bytes five and six remain unchanged,
+even though they fall inside the destination's capacity. They do not belong to the
+committed output prefix. Writing two bytes and then restoring them would still violate
+the contract's item-level publication rule.
+
+The decoder needs one free word before beginning another candidate. Test output
+capacity before reading that candidate, then collect and validate its wire value in
+private registers. Reconstruct the exact signed reading and check its range before
+storing a word. Only after the store should the committed byte index advance past that
+candidate. The scan position and committed position therefore need separate state.
+
+\begin{MARSWorkedExample}{The counters stop before a failed candidate}
+For bytes \texttt{02 80}, the first value reconstructs reading one. The next candidate
+is truncated. Return one consumed byte, one output reading and malformed status two.
+With output capacity one, the same input returns capacity status one instead, without
+examining the next candidate. With capacity zero, it returns zero counts and status
+one without any input access. Empty input with zero capacity succeeds with zero counts.
+\end{MARSWorkedExample}
+
+\begin{MARSExercise}{Keep private scanning distinct from commitment}
+A candidate starts at byte five and is rejected after reading byte eight. What consumed
+index should be returned? Which registers can hold the scan index, group count and
+unsigned accumulator without changing that public index prematurely?
+\end{MARSExercise}

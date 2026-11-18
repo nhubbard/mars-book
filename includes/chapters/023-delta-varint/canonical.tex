@@ -1,0 +1,43 @@
+\section{Define one accepted representation for each mapped value}
+Use the shortest byte sequence. For more than one byte, the final payload must be
+nonzero. Thus \texttt{01} encodes one, while \texttt{81 00} is rejected even though
+its base-128 arithmetic also yields one. Canonicality is a format policy here; do not
+assume that every protocol using LEB128 rejects longer equivalent encodings.
+
+A 33-bit unsigned value needs at most five bytes. Four groups account for 28 bits,
+leaving five usable payload bits in the last possible byte. At byte five, require
+continuation zero and payload less than 32. Payload bits five and six must be zero.
+Check this before reconstructing a reading. A fifth payload of 32 is a malformed
+wire value, even if a later range check would also reject the resulting number.
+
+\begin{table}[htbp]
+\centering
+\caption{Wire validity is distinct from the reconstructed reading range.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{ll}
+\toprule
+Bytes & Interpretation at previous reading zero\\
+\midrule
+\texttt{00} & Valid delta zero\\
+\texttt{80} & Malformed: missing terminating byte\\
+\texttt{80 00} & Malformed: nonminimal zero\\
+\texttt{80 80 80 80 20} & Malformed: fifth payload exceeds five bits\\
+\texttt{80 80 80 80 80 01} & Malformed: byte five still continues\\
+\texttt{ff ff ff ff 1f} & Canonical 33-bit value; reconstructed reading out of range\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The first five-byte encoder examples expose the width requirement:
+\texttt{ff ff ff ff 0f} represents an initial minimum reading, and
+\texttt{fe ff ff ff 0f} represents an initial maximum reading.
+The upward endpoint jump uses \texttt{fe ff ff ff 1f}; the downward jump uses
+\texttt{fd ff ff ff 1f}. A parser that permits only four useful bits in byte five
+would incorrectly reject legitimate endpoint transitions.
+
+\begin{MARSExercise}{Locate each rejection}
+For every malformed row in the table, identify the earliest byte at which the parser
+can decide it is invalid. For the truncated single-byte row, identify the input-length
+comparison that supplies the missing evidence. Do not read a sixth byte to reject
+continuation in the fifth.
+\end{MARSExercise}

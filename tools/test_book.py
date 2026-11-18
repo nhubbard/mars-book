@@ -27,6 +27,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(32, len(book.validate('drafts/pcm-mixing.tex')))
         self.assertEqual(43, len(book.validate('drafts/fixed-point-fir.tex')))
         self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
+        self.assertEqual(0, len(book.validate('drafts/delta-varint.tex')))
 
     def test_pcm_construction_transcript_matches_editable_native_code(self):
         folder = book.ROOT / 'drafts/pcm-construction'

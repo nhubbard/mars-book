@@ -1,0 +1,27 @@
+\section{State where the stream begins and ends}
+This codec receives its byte extent from the caller. Continuation bits locate value
+boundaries inside that extent, but they do not identify the expected number of readings.
+If a stream is cut immediately after a complete value, the prefix is another valid
+shorter stream. Detecting a missing complete suffix requires framing information such
+as an expected count or an external record length.
+
+A call also resets the predecessor to zero. Encoding the second half of a sequence in
+a fresh call produces a new first delta relative to zero. Concatenating independently
+encoded calls is therefore not generally equivalent to encoding their combined input.
+A larger file format can define separate frames with reset points, or a future interface
+can pass the predecessor explicitly. Do not silently carry state between calls to make
+one example resume.
+
+Compression provides no integrity check. A changed payload can remain canonical and
+reconstruct a different in-range reading. A checksum can detect some accidental changes
+when specified by an enclosing format; authenticity needs a separate design. The next
+project develops a file checksum, while this chapter keeps its own representation and
+error contract explicit.
+
+\Needspace{10\baselineskip}
+\begin{MARSExercise}{Define a resumable extension}
+The encoder stopped because the last complete value did not fit. Design an additional
+argument or result for resuming from the unconsumed reading in a fresh call. State
+which predecessor must be transferred and whether the decoder needs matching frame
+metadata. Keep this proposed extension separate from the current interface.
+\end{MARSExercise}
