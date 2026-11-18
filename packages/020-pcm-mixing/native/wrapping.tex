@@ -1,0 +1,28 @@
+\section{Follow the different result of narrowing early}\label{pcm-wrapping}
+Storing only the low sixteen bits of an out-of-range sum gives modular arithmetic.
+For this input domain, signed wrapping can be written as
+\[
+ \operatorname{wrap}_{16}(s)=
+ \begin{cases}
+ s+65536 & s<-32768,\\
+ s & -32768\leq s\leq32767,\\
+ s-65536 & s>32767.
+ \end{cases}
+\]
+A positive sum of 40000 then becomes minus 25536. A negative sum of minus 40000
+becomes positive 25536. These changes can cross almost the full signed range as
+an input passes the limit. Saturation instead stays at the corresponding endpoint.
+The supplied comparison routine keeps this wrapping behavior so its output can be
+examined and heard alongside the required mixer.
+
+Saturation itself changes the signal. It bounds the stored codes by flattening
+out-of-range peaks; it cannot preserve an excessive exact amplitude. Lowering input
+gains before adding can avoid that clipping, but it is a different operation from
+this function's prescribed sum. A gain adjustment after clipping cannot recover
+the discarded peak values.
+
+Saturating addition is also not associative. With inputs 30000, 10000 and minus
+10000, clipping the first pair and then adding the third yields 22767. Clipping
+the second pair first and then adding the first yields 30000. A multi-input mixer
+needs an explicit accumulation and clipping policy. This chapter's two-input
+contract fixes the point at which clipping occurs.

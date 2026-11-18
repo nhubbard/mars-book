@@ -1,0 +1,30 @@
+\section*{Project contract}
+Implement \texttt{mix\_pcm16}. Pass full addresses of the two input sample slices
+in \texttt{a0} and \texttt{a1}, a full output address in \texttt{a2}, and a sample
+count from zero through 64 in \texttt{a3}. Each sample is a signed sixteen-bit
+integer stored low byte first. All three slices have two times count logical
+bytes and may begin at any byte alignment. Return the original sample count in
+\texttt{v0} and the number of clipped samples in \texttt{v1}.
+
+For each index, form the exact sum of its two signed inputs. Values above 32767
+produce 32767; values below minus 32768 produce minus 32768. Otherwise preserve
+the exact sum. Count a sample as clipped only when its exact sum lies strictly
+outside that range. Reaching an endpoint exactly does not count as clipping. Every
+call starts its counters from the new inputs; there is no retained stream state.
+
+The two source slices are either disjoint or exactly identical. The destination
+is disjoint from both sources or exactly equals one source, with the same start
+and length. Shifted partial overlaps are outside the contract. These permitted
+aliases allow the result to replace either input in place. Read both values before
+replacing a destination value that might also be an input. All source/output loads
+must fit within the selected logical slices. Reads from the logical destination
+are permitted; only that destination may change, including temporary writes.
+Other arrays, guards and caller metadata are immutable. Zero count performs no
+caller-data access. Private native stack and submission-owned constants are allowed.
+
+Preserve all bits of \texttt{s0} through \texttt{s7}, \texttt{fp} and \texttt{sp};
+return through the supplied \texttt{ra} with no console output. Argument, temporary,
+vector and overlapping floating-point register storage may change. Equivalent scalar
+and vector implementations are accepted. The supplied \texttt{mix\_wrap16} routine
+provides a deliberately different wrapping comparison for the listening exercise.
+Keep its caller-visible behavior and the supplied caller/data harness.

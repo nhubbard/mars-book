@@ -1,0 +1,35 @@
+\section{Count mask bits at doubleword width}\label{pcm-counting}
+Each clipped halfword contributes sixteen set bits. Count set bits in each
+sixty-four-bit half of the mask with \texttt{pcnt.d}. Each half contains four
+halfword lanes, so its population count is zero, sixteen, thirty-two, forty-eight
+or sixty-four. Copy both counts to integer registers, add them, then divide by
+sixteen with a right shift of four. The result is the number of clipped lanes in
+this group, from zero through eight.
+
+The change from halfword comparison to doubleword population count reinterprets
+the same 128 bits. It does not widen each mask value or create additional lanes.
+\texttt{copy\_s.d} transfers a doubleword element's bits to a general register;
+these population counts are small nonnegative integers, so their signed transfer
+does not change their values. This is integer bit processing, not floating-point
+conversion.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={The first default group has eight clipping-mask halfwords. Lanes zero, one, two, five and six are zero. Lanes three, four and seven are hexadecimal ffff. The lower four lanes contain sixteen set bits and the upper four contain thirty-two. Their sum is forty-eight; dividing by sixteen counts three clipped samples.},x=12mm,y=9mm]
+\foreach \i/\value in {0/0000,1/0000,2/0000,3/ffff,4/ffff,5/0000,6/0000,7/ffff} {
+ \draw (\i,0) rectangle +(1,1);
+ \node[font=\small\ttfamily] at (\i+0.5,0.5) {\value};
+ \node[above,font=\small] at (\i+0.5,1) {\i};
+}
+\draw[very thick] (4,0)--(4,1);
+\node[below,font=\small] at (2,-0.2) {Low: 16 set bits};
+\node[below,font=\small] at (6,-0.2) {High: 32 set bits};
+\end{tikzpicture}
+\caption{Default group's clipping mask. The sixteen-bit masks are shown in lane order; doubleword grouping supplies two population counts.}
+\end{figure}
+
+Add this group's count to the call's \texttt{v1} tally. The next group must derive
+its mask from its own inputs. On entry initialize the tally to zero even if the
+caller left another value in that register. The caller can reuse the same function
+for successive audio chunks; the interface reports each new chunk rather than
+accumulating an implicit stream total.

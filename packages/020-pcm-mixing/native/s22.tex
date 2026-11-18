@@ -1,0 +1,28 @@
+\section{Step 22 Retain both complete input groups}\label{pcm-s22}
+
+Load sixteen bytes from each source into \texttt{w0} and \texttt{w1} before writing the output. Byte loads impose no halfword alignment requirement in this pinned MARS implementation. Subsequent halfword arithmetic interprets adjacent low/high bytes as signed sixteen-bit lanes in little-endian order. Loading both groups first extends the scalar alias argument to eight samples.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{vector\_load}. Keep the surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ld.b $w0, 0($a0)
+    ld.b $w1, 0($a1)
+\end{minted}
+Use recipe \texttt{s22-1} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+The first eight default samples appear in \texttt{w0} and \texttt{w1} as their raw halfword bit patterns.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does \texttt{ld.b} transfer here?
+
+\begin{itemize}
+\item \textbf{A} One sample.
+\item \textbf{B} Eight bytes.
+\item \textbf{C} All sixteen bytes of a vector register.
+\end{itemize}

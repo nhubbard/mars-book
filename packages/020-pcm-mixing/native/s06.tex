@@ -1,0 +1,28 @@
+\section{Step 6 Reconstruct A as an unsigned halfword}\label{pcm-s06}
+
+Shift the high byte left by eight and OR it into the low byte. Their set-bit positions are disjoint, so OR reconstructs low+256*high exactly. The result still has an unsigned interpretation in the register. A value whose halfword sign bit is set needs another operation before signed arithmetic. The source pointer has not moved.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{join\_a}. Keep the surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sll $t1, $t1, 8
+    or $t0, $t0, $t1
+\end{minted}
+Use recipe \texttt{s06-1} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Bytes 18 fc reconstruct 64536 in \texttt{t0}. The value is not yet -1000 as a full signed register.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does shifting the high byte accomplish?
+
+\begin{itemize}
+\item \textbf{A} It changes the sample rate.
+\item \textbf{B} It extends the sign through the register.
+\item \textbf{C} It positions that byte at bits fifteen through eight.
+\end{itemize}

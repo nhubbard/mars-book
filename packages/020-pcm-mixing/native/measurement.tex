@@ -1,0 +1,45 @@
+\section{Measure complete mixing calls}\label{pcm-measurement}
+Each measurement includes function entry, clipping-count initialization, complete
+groups, scalar tail and return. It excludes caller preparation, assembly, session
+creation, WAV writing and program exit. Both implementations return the same samples
+and clipping counts. The scalar version uses explicit bounds; the MSA version adds
+eight-sample groups with a population-count reduction.
+
+\begin{table}[htbp]
+\centering
+\caption{Native instructions for quiet and positive-clipping inputs. Samples count mono component values in one function call.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrr}
+\toprule
+Samples & Scalar quiet & MSA quiet & Scalar clipped & MSA clipped\\
+\midrule
+0 & 6 & 9 & 6 & 9\\
+1 & 36 & 39 & 34 & 37\\
+7 & 216 & 219 & 202 & 205\\
+8 & 246 & 29 & 230 & 29\\
+9 & 276 & 59 & 258 & 57\\
+16 & 486 & 49 & 454 & 49\\
+63 & 1896 & 359 & 1770 & 345\\
+64 & 1926 & 169 & 1798 & 169\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The quiet inputs have small opposite-signed values with no clipping. The positive
+clipping inputs pair 32767 with one at every position. Scalar branch paths differ
+between these families. Full vector groups execute the same instruction sequence
+for either family, while a scalar tail retains the data-dependent branch cost.
+Short calls pay for the vector eligibility test without executing a full group.
+
+A 63-sample call uses seven groups and seven scalar samples. A 64-sample call uses
+eight complete groups. This explains why the extra sample can reduce native work.
+At 64 samples, a mixed positive/negative clipping pattern uses 1894 scalar or 169
+MSA instructions. Replacing either input exactly in place gives the same counts
+for these implementations because both input groups are loaded before each store.
+
+Both paths observe four source bytes read and two destination bytes written per
+sample. Vector loads and stores publish per-byte memory notices in the pinned core;
+they do not identify host bus transactions. Unlike the previous chapter's overlapping
+windows, these groups introduce no repeated transfer bytes. The work counts describe
+these native implementations and inputs, not host elapsed time, and they are not
+exact grading requirements for an equivalent solution.

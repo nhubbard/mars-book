@@ -1,0 +1,150 @@
+case("s19-1 unaligned",instructionLimit=100000){
+ fun put(label:String,values:IntArray){for(i in 0 until 48){var w=0;for(j in 0..3)w=w or(values[i*4+j] shl(j*8));setWord(label,w,offset=i*4)}}
+ val left=IntArray(192);val right=IntArray(192);val l=listOf<Int>(48,117,208,138);val r=listOf<Int>(16,39,240,216)
+ for(j in l.indices)left[j+3]=l[j];for(j in r.indices)right[j+5]=r[j]
+ put("pcm_a",left);put("pcm_b",right);put("pcm_c",IntArray(192){165});setWord("count",2)
+ val root=readDataAddress("pcm_a_guard");val size=(readDataAddress("caller_end")+4-root).toInt();val before=readBytes("pcm_a_guard",size)
+ val first=readDataAddress("pcm_a")+3;val second=readDataAddress("pcm_b")+5;val output=readDataAddress("pcm_c")+7
+ for(i in 0..7)setRegister("s$i",0x3456789000000000L+i*1009)
+ setRegister("sp",0x7fff0000L);setRegister("fp",0x2345678900000033L);setRegister("v0",123);setRegister("v1",91)
+ for(i in 0..9)setRegister("t$i",0x456789ab00000000L+i*17)
+ setRegisterToDataAddress("a0","pcm_a",3);setRegisterToDataAddress("a1","pcm_b",5);setRegisterToDataAddress("a2","pcm_c",7);setRegister("a3",2)
+ val history=traceMemoryAccesses("pcm_a_guard",size,maxAccesses=20000)
+ callFunction("mix_pcm16","function_return")
+ expectRegister("v0",2);expectRegister("sp",0x7fff0000L);expectRegister("fp",0x2345678900000033L)
+ for(i in 0..7)expectRegister("s$i",0x3456789000000000L+i*1009)
+ expectRegister("a3",0L)
+ expectRegister("v1",2L)
+ expectRegister("a0",first+4)
+ expectRegister("a1",second+4)
+ expectRegister("a2",output+4)
+ val expected=listOf<Int>(255,127,0,128);for(j in 0 until 4)expectBytes("pcm_c",if(j<expected.size)expected[j] else 165,offset=7+j)
+ val after=readBytes("pcm_a_guard",size);for(j in before.indices)if(root+j !in output until output+4)expectCondition(before[j]==after[j],"Other caller bytes preserved")
+ for(access in history.snapshot())expectCondition((0 until access.length).all{val b=access.address+it;if(access.write)b in output until output+4 else b in first until first+4 || b in second until second+4 || b in output until output+4},"Each access byte fits its logical slice")
+ history.close();runToExit();expectOutput("")
+}
+case("s19-1 caller",instructionLimit=100000){
+ fun put(label:String,values:IntArray){for(i in 0 until 48){var w=0;for(j in 0..3)w=w or(values[i*4+j] shl(j*8));setWord(label,w,offset=i*4)}}
+ val left=IntArray(192);val right=IntArray(192);val l=listOf<Int>(48,117,208,138);val r=listOf<Int>(16,39,240,216)
+ for(j in l.indices)left[j+0]=l[j];for(j in r.indices)right[j+0]=r[j]
+ put("pcm_a",left);put("pcm_b",right);put("pcm_c",IntArray(192){165});setWord("count",2)
+ val root=readDataAddress("pcm_a_guard");val size=(readDataAddress("caller_end")+4-root).toInt();val before=readBytes("pcm_a_guard",size)
+ val first=readDataAddress("pcm_a")+0;val second=readDataAddress("pcm_b")+0;val output=readDataAddress("pcm_c")+0
+ for(i in 0..7)setRegister("s$i",0x3456789000000000L+i*1009)
+ setRegister("sp",0x7fff0000L);setRegister("fp",0x2345678900000033L);setRegister("v0",123);setRegister("v1",91)
+ for(i in 0..9)setRegister("t$i",0x456789ab00000000L+i*17)
+ runUntil("mix_call")
+ val history=traceMemoryAccesses("pcm_a_guard",size,maxAccesses=20000)
+ runUntil("mix_ready")
+ expectRegister("v0",2);expectRegister("sp",0x7fff0000L);expectRegister("fp",0x2345678900000033L)
+ for(i in 0..7)expectRegister("s$i",0x3456789000000000L+i*1009)
+ expectRegister("a3",0L)
+ expectRegister("v1",2L)
+ expectRegister("a0",first+4)
+ expectRegister("a1",second+4)
+ expectRegister("a2",output+4)
+ val expected=listOf<Int>(255,127,0,128);for(j in 0 until 4)expectBytes("pcm_c",if(j<expected.size)expected[j] else 165,offset=0+j)
+ val after=readBytes("pcm_a_guard",size);for(j in before.indices)if(root+j !in output until output+4)expectCondition(before[j]==after[j],"Other caller bytes preserved")
+ for(access in history.snapshot())expectCondition((0 until access.length).all{val b=access.address+it;if(access.write)b in output until output+4 else b in first until first+4 || b in second until second+4 || b in output until output+4},"Each access byte fits its logical slice")
+ history.close();runToExit();expectOutput("")
+}
+case("s19-2 unaligned",instructionLimit=100000){
+ fun put(label:String,values:IntArray){for(i in 0 until 48){var w=0;for(j in 0..3)w=w or(values[i*4+j] shl(j*8));setWord(label,w,offset=i*4)}}
+ val left=IntArray(192);val right=IntArray(192);val l=listOf<Int>(0,0,232,3,24,252,48,117,208,138,255,127,0,128);val r=listOf<Int>(0,0,208,7,48,248,16,39,240,216,0,0,0,0)
+ for(j in l.indices)left[j+3]=l[j];for(j in r.indices)right[j+5]=r[j]
+ put("pcm_a",left);put("pcm_b",right);put("pcm_c",IntArray(192){165});setWord("count",7)
+ val root=readDataAddress("pcm_a_guard");val size=(readDataAddress("caller_end")+4-root).toInt();val before=readBytes("pcm_a_guard",size)
+ val first=readDataAddress("pcm_a")+3;val second=readDataAddress("pcm_b")+5;val output=readDataAddress("pcm_c")+7
+ for(i in 0..7)setRegister("s$i",0x3456789000000000L+i*1009)
+ setRegister("sp",0x7fff0000L);setRegister("fp",0x2345678900000033L);setRegister("v0",123);setRegister("v1",91)
+ for(i in 0..9)setRegister("t$i",0x456789ab00000000L+i*17)
+ setRegisterToDataAddress("a0","pcm_a",3);setRegisterToDataAddress("a1","pcm_b",5);setRegisterToDataAddress("a2","pcm_c",7);setRegister("a3",7)
+ val history=traceMemoryAccesses("pcm_a_guard",size,maxAccesses=20000)
+ callFunction("mix_pcm16","function_return")
+ expectRegister("v0",7);expectRegister("sp",0x7fff0000L);expectRegister("fp",0x2345678900000033L)
+ for(i in 0..7)expectRegister("s$i",0x3456789000000000L+i*1009)
+ expectRegister("a3",0L)
+ expectRegister("v1",2L)
+ expectRegister("a0",first+14)
+ expectRegister("a1",second+14)
+ expectRegister("a2",output+14)
+ val expected=listOf<Int>(0,0,184,11,72,244,255,127,0,128,255,127,0,128);for(j in 0 until 14)expectBytes("pcm_c",if(j<expected.size)expected[j] else 165,offset=7+j)
+ val after=readBytes("pcm_a_guard",size);for(j in before.indices)if(root+j !in output until output+14)expectCondition(before[j]==after[j],"Other caller bytes preserved")
+ for(access in history.snapshot())expectCondition((0 until access.length).all{val b=access.address+it;if(access.write)b in output until output+14 else b in first until first+14 || b in second until second+14 || b in output until output+14},"Each access byte fits its logical slice")
+ history.close();runToExit();expectOutput("")
+}
+case("s19-2 caller",instructionLimit=100000){
+ fun put(label:String,values:IntArray){for(i in 0 until 48){var w=0;for(j in 0..3)w=w or(values[i*4+j] shl(j*8));setWord(label,w,offset=i*4)}}
+ val left=IntArray(192);val right=IntArray(192);val l=listOf<Int>(0,0,232,3,24,252,48,117,208,138,255,127,0,128);val r=listOf<Int>(0,0,208,7,48,248,16,39,240,216,0,0,0,0)
+ for(j in l.indices)left[j+0]=l[j];for(j in r.indices)right[j+0]=r[j]
+ put("pcm_a",left);put("pcm_b",right);put("pcm_c",IntArray(192){165});setWord("count",7)
+ val root=readDataAddress("pcm_a_guard");val size=(readDataAddress("caller_end")+4-root).toInt();val before=readBytes("pcm_a_guard",size)
+ val first=readDataAddress("pcm_a")+0;val second=readDataAddress("pcm_b")+0;val output=readDataAddress("pcm_c")+0
+ for(i in 0..7)setRegister("s$i",0x3456789000000000L+i*1009)
+ setRegister("sp",0x7fff0000L);setRegister("fp",0x2345678900000033L);setRegister("v0",123);setRegister("v1",91)
+ for(i in 0..9)setRegister("t$i",0x456789ab00000000L+i*17)
+ runUntil("mix_call")
+ val history=traceMemoryAccesses("pcm_a_guard",size,maxAccesses=20000)
+ runUntil("mix_ready")
+ expectRegister("v0",7);expectRegister("sp",0x7fff0000L);expectRegister("fp",0x2345678900000033L)
+ for(i in 0..7)expectRegister("s$i",0x3456789000000000L+i*1009)
+ expectRegister("a3",0L)
+ expectRegister("v1",2L)
+ expectRegister("a0",first+14)
+ expectRegister("a1",second+14)
+ expectRegister("a2",output+14)
+ val expected=listOf<Int>(0,0,184,11,72,244,255,127,0,128,255,127,0,128);for(j in 0 until 14)expectBytes("pcm_c",if(j<expected.size)expected[j] else 165,offset=0+j)
+ val after=readBytes("pcm_a_guard",size);for(j in before.indices)if(root+j !in output until output+14)expectCondition(before[j]==after[j],"Other caller bytes preserved")
+ for(access in history.snapshot())expectCondition((0 until access.length).all{val b=access.address+it;if(access.write)b in output until output+14 else b in first until first+14 || b in second until second+14 || b in output until output+14},"Each access byte fits its logical slice")
+ history.close();runToExit();expectOutput("")
+}
+case("s19-3 unaligned",instructionLimit=100000){
+ fun put(label:String,values:IntArray){for(i in 0 until 48){var w=0;for(j in 0..3)w=w or(values[i*4+j] shl(j*8));setWord(label,w,offset=i*4)}}
+ val left=IntArray(192);val right=IntArray(192);val l=listOf<Int>(0,0,232,3,24,252,48,117,208,138,255,127,0,128,32,78,224,177,255,127,0,128,57,48,199,207,1,0,255,255,0,0);val r=listOf<Int>(0,0,208,7,48,248,16,39,240,216,0,0,0,0,32,78,224,177,1,0,255,255,199,207,57,48,255,255,1,0,255,127)
+ for(j in l.indices)left[j+3]=l[j];for(j in r.indices)right[j+5]=r[j]
+ put("pcm_a",left);put("pcm_b",right);put("pcm_c",IntArray(192){165});setWord("count",16)
+ val root=readDataAddress("pcm_a_guard");val size=(readDataAddress("caller_end")+4-root).toInt();val before=readBytes("pcm_a_guard",size)
+ val first=readDataAddress("pcm_a")+3;val second=readDataAddress("pcm_b")+5;val output=readDataAddress("pcm_c")+7
+ for(i in 0..7)setRegister("s$i",0x3456789000000000L+i*1009)
+ setRegister("sp",0x7fff0000L);setRegister("fp",0x2345678900000033L);setRegister("v0",123);setRegister("v1",91)
+ for(i in 0..9)setRegister("t$i",0x456789ab00000000L+i*17)
+ setRegisterToDataAddress("a0","pcm_a",3);setRegisterToDataAddress("a1","pcm_b",5);setRegisterToDataAddress("a2","pcm_c",7);setRegister("a3",16)
+ val history=traceMemoryAccesses("pcm_a_guard",size,maxAccesses=20000)
+ callFunction("mix_pcm16","function_return")
+ expectRegister("v0",16);expectRegister("sp",0x7fff0000L);expectRegister("fp",0x2345678900000033L)
+ for(i in 0..7)expectRegister("s$i",0x3456789000000000L+i*1009)
+ expectRegister("a3",0L)
+ expectRegister("v1",6L)
+ expectRegister("a0",first+32)
+ expectRegister("a1",second+32)
+ expectRegister("a2",output+32)
+ val expected=listOf<Int>(0,0,184,11,72,244,255,127,0,128,255,127,0,128,255,127,0,128,255,127,0,128,0,0,0,0,0,0,0,0,255,127);for(j in 0 until 32)expectBytes("pcm_c",if(j<expected.size)expected[j] else 165,offset=7+j)
+ val after=readBytes("pcm_a_guard",size);for(j in before.indices)if(root+j !in output until output+32)expectCondition(before[j]==after[j],"Other caller bytes preserved")
+ for(access in history.snapshot())expectCondition((0 until access.length).all{val b=access.address+it;if(access.write)b in output until output+32 else b in first until first+32 || b in second until second+32 || b in output until output+32},"Each access byte fits its logical slice")
+ history.close();runToExit();expectOutput("")
+}
+case("s19-3 caller",instructionLimit=100000){
+ fun put(label:String,values:IntArray){for(i in 0 until 48){var w=0;for(j in 0..3)w=w or(values[i*4+j] shl(j*8));setWord(label,w,offset=i*4)}}
+ val left=IntArray(192);val right=IntArray(192);val l=listOf<Int>(0,0,232,3,24,252,48,117,208,138,255,127,0,128,32,78,224,177,255,127,0,128,57,48,199,207,1,0,255,255,0,0);val r=listOf<Int>(0,0,208,7,48,248,16,39,240,216,0,0,0,0,32,78,224,177,1,0,255,255,199,207,57,48,255,255,1,0,255,127)
+ for(j in l.indices)left[j+0]=l[j];for(j in r.indices)right[j+0]=r[j]
+ put("pcm_a",left);put("pcm_b",right);put("pcm_c",IntArray(192){165});setWord("count",16)
+ val root=readDataAddress("pcm_a_guard");val size=(readDataAddress("caller_end")+4-root).toInt();val before=readBytes("pcm_a_guard",size)
+ val first=readDataAddress("pcm_a")+0;val second=readDataAddress("pcm_b")+0;val output=readDataAddress("pcm_c")+0
+ for(i in 0..7)setRegister("s$i",0x3456789000000000L+i*1009)
+ setRegister("sp",0x7fff0000L);setRegister("fp",0x2345678900000033L);setRegister("v0",123);setRegister("v1",91)
+ for(i in 0..9)setRegister("t$i",0x456789ab00000000L+i*17)
+ runUntil("mix_call")
+ val history=traceMemoryAccesses("pcm_a_guard",size,maxAccesses=20000)
+ runUntil("mix_ready")
+ expectRegister("v0",16);expectRegister("sp",0x7fff0000L);expectRegister("fp",0x2345678900000033L)
+ for(i in 0..7)expectRegister("s$i",0x3456789000000000L+i*1009)
+ expectRegister("a3",0L)
+ expectRegister("v1",6L)
+ expectRegister("a0",first+32)
+ expectRegister("a1",second+32)
+ expectRegister("a2",output+32)
+ val expected=listOf<Int>(0,0,184,11,72,244,255,127,0,128,255,127,0,128,255,127,0,128,255,127,0,128,0,0,0,0,0,0,0,0,255,127);for(j in 0 until 32)expectBytes("pcm_c",if(j<expected.size)expected[j] else 165,offset=0+j)
+ val after=readBytes("pcm_a_guard",size);for(j in before.indices)if(root+j !in output until output+32)expectCondition(before[j]==after[j],"Other caller bytes preserved")
+ for(access in history.snapshot())expectCondition((0 until access.length).all{val b=access.address+it;if(access.write)b in output until output+32 else b in first until first+32 || b in second until second+32 || b in output until output+32},"Each access byte fits its logical slice")
+ history.close();runToExit();expectOutput("")
+}

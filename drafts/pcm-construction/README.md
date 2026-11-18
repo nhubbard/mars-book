@@ -1,9 +1,10 @@
 # PCM construction draft
 
-This companion supports the directly editable native chapter at drafts/pcm-mixing.tex.
-The complete student package and interactive lesson runner are still in development.
-The main book still counts nineteen complete text packages. No IDE screenshots have
-been captured for this chapter.
+This retained construction draft records the original forty-step development. The
+current student package is packages/020-pcm-mixing, including per-step checks and
+listening fixtures. The directly edited native chapter is included in main.tex as
+chapter twenty. Use the package for distributions; this draft is not a released archive.
+Actual IDE captures and the interactive runner remain pending.
 
 Start with main.asm. Replace one marked region at a time using the native text. Keep
 the markers and labels. The provided entry initializes both result registers and the

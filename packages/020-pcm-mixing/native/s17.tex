@@ -1,0 +1,27 @@
+\section{Step 17 Store only the low output byte}\label{pcm-s17}
+
+Write \texttt{t0}’s low byte at output offset zero with \texttt{sb}. This publishes just one byte; the high byte remains unchanged until the next edit. Both inputs have already been fully loaded, so exact in-place output is safe for the current sample. A word store would write beyond the two-byte sample and can damage a neighbor or a guard even when later stores repair it.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{store\_low}. Keep the surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sb $t0, 0($a2)
+\end{minted}
+Use recipe \texttt{s17-1}, \texttt{s17-2}, \texttt{s17-3} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Clamped +32767 writes low byte ff; clamped -32768 writes 00. The second output byte still has its poison value.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+How much memory does this store change?
+
+\begin{itemize}
+\item \textbf{A} Four bytes.
+\item \textbf{B} One byte.
+\item \textbf{C} The whole output slice.
+\end{itemize}

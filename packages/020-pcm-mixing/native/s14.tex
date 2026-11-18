@@ -1,0 +1,29 @@
+\section{Step 14 Replace a positive overflow with the endpoint}\label{pcm-s14}
+
+The high path replaces the still-exact sum with 32767, then transfers to the shared \texttt{mix\_clipped} label. It must jump past the negative replacement. A clamp chooses one representable endpoint; it cannot retain the overflow magnitude. Keeping the count in a separate register preserves the distinction between an ordinary endpoint and a clipped result.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{upper\_value}. Keep the surrounding labels and region markers.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 32767
+    beq $zero, $zero, mix_clipped
+    nop
+\end{minted}
+Use recipe \texttt{s14-1} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+The positive-overflow fixture reaches the next unfinished region with \texttt{t0}=32767 and \texttt{v1} still zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why jump to \texttt{mix\_clipped} after this replacement?
+
+\begin{itemize}
+\item \textbf{A} To reload both inputs.
+\item \textbf{B} To bypass the negative endpoint replacement and share the increment.
+\item \textbf{C} To return the exact sum in \texttt{v0}.
+\end{itemize}

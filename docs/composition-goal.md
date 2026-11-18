@@ -49,7 +49,7 @@ The console, single-pixel, eight-byte-sprite, bit-inspector, seven-segment-count
 MarsBot-square, Bresenham-line, Life, sorting-visualizer, maze-explorer, matrix-transpose,
 fixed-point ball, binary packet parser, ring-buffer logger, UTF-8 scanner, clipped sprite blitter, and expression evaluator chapters are composed text drafts with verified companion programs.
 They still need author review and actual IDE figures. The remaining projects stay
-planned until their text and companions are written and checked. Tiny bytecode interpreter is next in the roadmap.
+planned until their text and companions are written and checked. The next uncomposed project is the Q15 FIR filter.
 
 Matrix transpose and fixed-point ball are composed through ordinary includes in the
 main manuscript. Their independent entries, `drafts/matrix-transpose.tex` and
@@ -122,14 +122,15 @@ accepts an equivalent scalar implementation. Four actual light-theme captures,
 author review and independent accessibility validation remain pending. Nineteen
 text drafts do not complete the full 35-project and capture objective, which remains active.
 
-PCM mixing has a forty-step native construction draft at `drafts/pcm-mixing.tex`,
-with thirty cumulative edits and forty-eight reproducible observations. The text
-explains signed sample decoding, exact word sums, strict saturation bounds, byte stores,
-exact in-place aliases, eight-lane saturation, clipping masks and doubleword population
-counts. Its companion at `drafts/pcm-construction` contains the marked starter, input
-preparation helper, quiz/hint transcript and recipes. The private construction checks
-repeat observations through unaligned isolated calls and the actual program caller.
-A native alias diagram, mask diagram and simulator-derived waveform accompany twelve
-verified WAV listening files. Full student packaging, interactive progression controls
-and actual IDE captures remain in development. Chapter twenty is outside main.tex and
-the nineteen completed text packages. The full 35-project objective remains active.
+PCM mixing is a full native text draft at `drafts/pcm-mixing.tex`, included in main.tex
+as chapter twenty. Forty steps and thirty cumulative edits develop signed decoding,
+exact sums, strict saturation bounds, byte stores, exact in-place aliases, eight-lane
+saturation, clipping masks and doubleword populations. Forty-eight reproducible
+observations are checked in unaligned calls and through the actual program caller;
+the completed scalar stage and final MSA stage share the behavioral contract.
+Public per-step construction checks, final checks, twelve listening files and a
+reproduction renderer accompany separate student/instructor distributions. Three native
+diagrams and four verified numerical capture models support the text. Actual IDE
+captures, interactive progression controls, author review and independent accessibility
+validation remain pending. Twenty text packages do not complete the full 35-project
+composition and capture objective, which remains active.

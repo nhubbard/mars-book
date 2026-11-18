@@ -1,0 +1,27 @@
+\section{Step 16 Count each out-of-range sample once}\label{pcm-s16}
+
+Increment \texttt{v1} at the shared \texttt{mix\_clipped} label. Either overflow path reaches this label exactly once per sample, while the in-range path reaches \texttt{mix\_store} directly. Initialize \texttt{v1} only at function entry: clearing it here would lose earlier clipping events. The count measures samples that needed replacement, not the number of changed output bytes.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{count\_clip}. Keep the surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $v1, $v1, 1
+\end{minted}
+Use recipe \texttt{s16-1}, \texttt{s16-2}, \texttt{s16-3} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Positive and negative overflow each produce \texttt{v1}=1 for one sample. Exact endpoint sums keep \texttt{v1}=0.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Where does a new call’s count begin?
+
+\begin{itemize}
+\item \textbf{A} At zero in the provided entry.
+\item \textbf{B} At the last call’s result.
+\item \textbf{C} At the number of endpoint output samples.
+\end{itemize}

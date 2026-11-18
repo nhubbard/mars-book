@@ -1,0 +1,29 @@
+\section{Step 21 Require eight complete samples before a vector load}\label{pcm-s21}
+
+Replace the provisional direct transfer to the tail with \texttt{sltiu} and a branch. Fewer than eight remaining samples still use the verified scalar path. Eight samples occupy sixteen bytes in each input and output. This gate makes a whole vector access legal; allocation padding cannot authorize reading a partial group. Eligible calls will temporarily return at the next unfinished vector region.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{vector\_gate}. Keep the surrounding labels and region markers.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $a3, 8
+    bne $t0, $zero, mix_tail
+    nop
+\end{minted}
+Use recipe \texttt{s21-1}, \texttt{s21-2} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Seven samples still finish through the scalar loop. Eight reach the vector body with \texttt{a3}=8 and no output written.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+How many logical source bytes authorize one group?
+
+\begin{itemize}
+\item \textbf{A} Eight.
+\item \textbf{B} Sixteen in each source.
+\item \textbf{C} Thirty-two in each source.
+\end{itemize}

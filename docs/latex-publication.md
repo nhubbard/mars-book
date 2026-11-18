@@ -156,3 +156,17 @@ from bit positions without requiring its glyph in the book font. The measured
 branch/table comparison states both work and input scope. Run entries sequentially
 because they share chapter auxiliary files. Four actual screenshots and final
 author/independent accessibility reviews remain pending.
+
+The PCM mixing chapter has a focused native entry:
+
+```sh
+python3 tools/book.py build --entry drafts/pcm-mixing.tex
+```
+
+It is also included in the main manuscript. Forty steps, thirty cumulative assembly
+edits and two supplied excerpts use actual IntelliJ-derived minted highlighting.
+The alias and mask diagrams, waveform, equations and tables are native LaTeX. The
+student archive includes an exact native chapter snapshot alongside companion task
+transcripts; the editable publication remains main.tex and includes. Run entries
+sequentially because they share auxiliary chapter files. Four actual light-theme
+captures, author review and independent accessibility validation remain pending.

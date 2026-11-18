@@ -1,0 +1,38 @@
+\section{Keep sample values separate from full addresses}
+The construction uses \texttt{a0}, \texttt{a1} and \texttt{a2} as advancing addresses;
+\texttt{a3} is the remaining sample count. \texttt{v0} retains the initial count and
+\texttt{v1} accumulates clipping events for this call. Temporary values in the scalar
+path are \texttt{t0} through \texttt{t2}. The vector path retains its two inputs in
+\texttt{w0} and \texttt{w1}, its wrapped sum in \texttt{w2}, saturated output in
+\texttt{w3} and mask or populations in \texttt{w4}. These roles explain the illustrated
+sequence; equivalent implementations may use other caller-saved registers.
+
+The two-byte samples fit signed halfwords, their exact sums fit signed words, and
+addresses use all available address bits. Pointer advances therefore use
+\texttt{daddiu}. A correct halfword result does not excuse a truncated address.
+Saved registers, frame and stack pointers remain unchanged. The leaf mixer needs no
+native stack frame because it makes no nested call and uses only permitted temporaries.
+
+\section{Prepare a fresh observation}
+The companion \texttt{packages/020-pcm-mixing/starter/main.asm} contains the marked regions.
+For a recipe in \texttt{packages/020-pcm-mixing/inputs.json}, replace the contents of
+\texttt{pcm\_a} and \texttt{pcm\_b} with its complete signed-sample arrays and keep
+each arena at 192 bytes by adjusting trailing space to \(192-2n\) bytes. Set
+\texttt{count} to the number of samples in either array. Fill all 192 bytes of
+\texttt{pcm\_c} with byte hexadecimal a5 (signed byte initializer minus 91).
+The recipe README supplies exact source-preparation rules and a copyable command.
+Keep guards and metadata unchanged, then begin a fresh Debug execution and stop
+before the \texttt{mix\_ready} instruction. Output suffix bytes should still be a5.
+
+At an unfinished region, the provisional return bypasses later work. An observed
+exact sum or mask is a construction state, not the completed public result. The
+private construction checks run each recipe both through this caller and through
+an isolated call with input offsets three and five and output offset seven. The
+unaligned call tests address handling; it is separate from the illustrated aligned
+caller. Actual IDE screenshots remain to be captured.
+
+The coding steps also provide public construction checks in
+\texttt{checks/construction}. Run the named check against the cumulative program
+before proceeding. These checks verify the illustrated temporary state. For a different
+algorithm in free-writing mode, use the final behavioral checks instead; intermediate
+register roles are not part of the public function contract.

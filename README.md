@@ -99,10 +99,16 @@ loops and adding bounded MSA groups. Three native diagrams explain fields, overl
 windows and reconstructed colors. Lane observations, measured whole-call work and four
 planned capture models accompany the guided and free-writing package.
 
+The [PCM mixing chapter](packages/020-pcm-mixing/assignment.md) develops signed
+sixteen-bit saturation through 40 steps and 30 cumulative edits. It includes per-step
+construction checks, exact in-place aliases, scalar and MSA behavior, reproducible
+input recipes, native mask/waveform diagrams and twelve verified listening files.
+Four light-theme IDE captures remain planned.
+
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first nineteen chapters are now composed through ordinary LaTeX input/include files.
+The first twenty chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -117,7 +123,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first nineteen text packages, starters, public checks, deterministic student archive builder,
+The first twenty text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

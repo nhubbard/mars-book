@@ -1,0 +1,30 @@
+\section{Step 12 Detect sums strictly above the positive endpoint}\label{pcm-s12}
+
+Load 32767 and ask whether that endpoint is less than the exact sum. Branch to \texttt{mix\_high} only when \texttt{slt} produces one. Equality is allowed: 30000+2767 is representable and must not increase the clipping count. The branch’s following nop is retained as explicit source padding; this Release 6 lesson does not depend on a delay slot.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{upper\_test}. Keep the surrounding labels and region markers.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t1, 32767
+    slt $t2, $t1, $t0
+    bne $t2, $zero, mix_high
+    nop
+\end{minted}
+Use recipe \texttt{s12-1}, \texttt{s12-2} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Sum 40000 takes the high path with \texttt{t2}=1. Sum 32767 leaves \texttt{t2}=0 and continues toward the lower test.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Should exact sum 32767 count as clipped?
+
+\begin{itemize}
+\item \textbf{A} Yes, because the stored result is an endpoint.
+\item \textbf{B} Only when A is positive.
+\item \textbf{C} No, because it is representable.
+\end{itemize}
