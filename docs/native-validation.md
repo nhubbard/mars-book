@@ -91,8 +91,8 @@ and they do not claim that pending IDE screenshots have been captured.
 
 The sixteenth text chapter has 25 microsteps, sixteen authored assembly increments,
 two provided stack listings, a native clipping diagram, headed geometry/count/work
-tables, and an independent 29-page entry at `drafts/clipped-sprite-blitter.tex`.
-The complete native manuscript is now 485 pages. Its include graph contains 786 files
+tables, and an independent 27-page entry at `drafts/clipped-sprite-blitter.tex`.
+The complete native manuscript is now 483 pages. Its include graph contains 786 files
 and 240 highlighted assembly blocks; the exporter receipt contains 235 distinct
 sources. All 217 previous distinct exports remain byte-for-byte unchanged.
 
