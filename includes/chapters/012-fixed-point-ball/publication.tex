@@ -1,0 +1,60 @@
+\section{Publish the state and frame at one boundary}
+A simulation step updates both axes, then renders the resulting position. The
+walkthrough also renders the initial state before taking any steps. For a request
+of \(N\) steps, the observable sequence therefore has \(N+1\) frames, numbered
+zero through \(N\). A request of zero still publishes the initial frame.
+
+At each stopped \texttt{frame\_ready} boundary, publish the four raw state words,
+the tick number, the selected pixel ID, and the complete frame. A debugger may
+stop there before the supplied marker instruction executes. This gives the
+numeric and visual observations one meaning: every word belongs to the same
+simulation state.
+
+The initial inputs, requested step count, and rounding mode are read-only. Guards
+and a spare caller-owned frame remain untouched by the main animation. The main
+frame starts at the configured Bitmap Display base. An independently called
+renderer instead receives its destination pointer as an argument, so it can
+render into the spare frame or a relocated allocation as well.
+
+The frame represents the current state, not a trail. Clearing the previous white
+cell is part of producing the next complete frame. The reference can clear all
+64 words and then draw the new point; an alternative can classify every cell in
+one pass. Correctness at the boundary does not prescribe either implementation
+or an exact instruction count. Preserve the calling convention when the main
+loop calls the axis updater and renderer: full saved-register contents and the
+stack pointer survive each call.
+
+The supplied single-instruction marker between \texttt{frame\_ready} and
+\texttt{frame\_continue} also provides a countable publication boundary. Observing
+that region distinguishes the expected initial-and-step sequence from an extra
+or omitted frame. The marker remains part of the teaching harness. It is not a
+delay instruction for real time, and it does not make a simulator step last a
+specified number of milliseconds.
+
+\section{Measure implementations at the same simulation scope}
+The two verified prototypes publish the same nine states for the default
+request of eight steps. The reference clears the frame and then draws the point;
+the alternative classifies each cell in one pass. Their axis-update code also
+uses different branch arrangements. Whole-run native instruction counts are
+\Needspace{8\baselineskip}
+\tagpdfsetup{table/header-rows={1}}
+\begin{longtable}{lrr}
+\toprule
+Implementation&Floor mode&Nearest mode\\
+\midrule
+Reference&3901&3919\\
+Alternative&6165&6165\\
+\bottomrule
+\end{longtable}
+These counts include initialization, nine publications, eight paired axis updates,
+and normal exit. They do not estimate cycles or host elapsed time. The reference
+executes two extra coordinate adjustments per rendered frame in nearest mode,
+accounting for its eighteen-instruction difference. The alternative uses a
+mode-derived adjustment without that conditional path, so its two modes have
+equal instruction counts for this workload.
+
+Writing each frame cell once does not by itself minimize instructions. A
+per-cell classification can add work that a simple clear loop avoids. Any
+optimization experiment must retain the same raw trajectory, publication sequence,
+rounding result, and protected memory before comparing its count. Exact prototype
+counts explain this workload; they are not requirements for equivalent submissions.

@@ -56,3 +56,12 @@ The separate `drafts/matrix-transpose.tex` entry remains useful for reviewing th
 chapter without rebuilding the full book. Its 28 microsteps, thirteen code increments,
 public checks, private exhaustive fixtures, alternative implementations, and four
 planned light-theme figures have matching student and instructor distributions.
+
+The fixed-point ball chapter has initial native passages in
+`includes/chapters/012-fixed-point-ball/`, reviewed with the separate
+`drafts/fixed-point-ball.tex` entry. They establish signed scaled integers, bounded
+overshoot-preserving reflection, exact contacts, two rendering quantizers, publication
+boundaries, and a word-overflow experiment. Two companion prototypes and their independent
+oracles are private. Guided code increments, questions/keys, the student package, and
+actual IDE figures remain outstanding. It is not included in the main manuscript or
+counted as a completed text package yet.

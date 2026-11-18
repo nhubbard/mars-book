@@ -104,3 +104,13 @@ Short new assembly increments use minted's native `samepage` option with space r
 for their label and complete listing. Quizzes reserve space for their choices. These
 are editable LaTeX layout decisions, independent of exercise metadata. Actual IDE
 captures and full publication accessibility review remain outstanding.
+
+The initial fixed-point ball composition can likewise be reviewed independently:
+
+```sh
+python3 tools/book.py build --entry drafts/fixed-point-ball.tex
+```
+
+This produces `build/native/fixed-point-ball.pdf`. Its current native prose, equations,
+trace tables, and reflection diagram are work in progress; the chapter is not yet in
+the main manuscript. The entry uses the same selected fonts and tagging setup.
