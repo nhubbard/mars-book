@@ -1,0 +1,26 @@
+\section{Step 40 Extend the retained output sum}\label{matmul-s40}
+
+Add the product to \texttt{t4} with \texttt{daddu}. For a later reduction tile this addition extends the sum reloaded from C. The completed value will be stored only after the clipped segment ends.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_accumulate}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddu $t4, $t4, $t8
+\end{minted}
+Use \texttt{s40-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+After the first default pair, the private sum \texttt{t4}=7 while output remains zero.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+When does this new private sum become visible in C?
+
+\begin{itemize}
+\item \textbf{A} When the segment store executes.
+\item \textbf{B} As soon as \texttt{dmul} executes.
+\item \textbf{C} When the tile bound is calculated.
+\end{itemize}

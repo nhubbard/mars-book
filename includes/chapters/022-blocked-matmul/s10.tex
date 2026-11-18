@@ -1,0 +1,27 @@
+\section{Step 10 Skip the scalar reduction when K is zero}\label{matmul-s10}
+
+Test K before entering \texttt{naive\_dot}. A zero reduction has a valid zero sum and still needs output stores for every selected cell. Branch to \texttt{naive\_store}, retaining the cleared accumulator. The input walkers may have been computed, but computing an address is not a memory access.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{n\_zero\_k}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s1, $zero, naive_store
+    nop
+\end{minted}
+Use \texttt{s10-1}, \texttt{s10-2} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+With K=0, the provisional sum is zero and neither matrix is read.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+What is the output of a nonempty zero-reduction product?
+
+\begin{itemize}
+\item \textbf{A} The previous output values.
+\item \textbf{B} A zero matrix.
+\item \textbf{C} An absent output allocation.
+\end{itemize}

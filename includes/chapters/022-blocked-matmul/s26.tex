@@ -1,0 +1,30 @@
+\section{Step 26 Clip the row-tile exclusive end}\label{matmul-s26}
+
+At \texttt{block\_row}, form I+T in \texttt{a0}. Compare it with M and retain the smaller value. Keep the start in \texttt{s7} separate from the exclusive end. This test must work for a short matrix as well as for the final row tile of a larger matrix.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_row\_bound}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $a0, $s7, $s3
+    sltu $t9, $s0, $a0
+    beq $t9, $zero, row_bound
+    nop
+    move $a0, $s0
+\end{minted}
+Use \texttt{s26-1}, \texttt{s26-2} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+For M=2,T=2, \texttt{a0}=2. For M=1,T=3, the clipped end is one.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Which row index is excluded from this tile?
+
+\begin{itemize}
+\item \textbf{A} I.
+\item \textbf{B} Every index below I.
+\item \textbf{C} The exclusive end min(I+T,M).
+\end{itemize}

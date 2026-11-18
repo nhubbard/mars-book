@@ -1,0 +1,30 @@
+\section{Step 5 Guard empty scalar output and start row zero}\label{matmul-s05}
+
+Test the two output dimensions before any matrix operation. A zero row or column count means there are no destination cells. K may still be nonzero, but that does not authorize an input load. For a nonempty output, initialize the row index \texttt{t0} to zero. Keep the descriptor loads and frame supplied by the starter.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{n\_empty}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s0, $zero, naive_return
+    nop
+    beq $s2, $zero, naive_return
+    nop
+    move $t0, $zero
+\end{minted}
+Use \texttt{s05-1}, \texttt{s05-2}, \texttt{s05-3} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+Default construction returns with \texttt{t0}=0 and unchanged output. Empty M or N performs no matrix access.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Which shape needs no output store?
+
+\begin{itemize}
+\item \textbf{A} M=0, K=3, N=2.
+\item \textbf{B} M=3, K=0, N=2.
+\item \textbf{C} M=3, K=2, N=2.
+\end{itemize}

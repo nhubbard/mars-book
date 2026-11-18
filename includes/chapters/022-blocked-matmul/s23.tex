@@ -1,0 +1,26 @@
+\section{Step 23 Initialize one full output cell}\label{matmul-s23}
+
+At \texttt{zero\_product}, write a doubleword zero. This establishes the first partial sum without reading the previous output. The next edit will repeat it for every selected cell. All eight bytes matter because a later \texttt{ld} consumes the full partial sum.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_zero\_store}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sd $zero, 0($t1)
+\end{minted}
+Use \texttt{s23-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+Only the first default output cell is zero; the rest remain sentinel.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Why initialize before reading a partial sum?
+
+\begin{itemize}
+\item \textbf{A} A previous call always produced the same answer.
+\item \textbf{B} Only zero inputs require initialization.
+\item \textbf{C} The caller grants arbitrary initial output contents.
+\end{itemize}

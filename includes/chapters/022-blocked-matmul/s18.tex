@@ -1,0 +1,28 @@
+\section{Step 18 Advance the scalar column and restart its reduction}\label{matmul-s18}
+
+Increment \texttt{t1} and branch to \texttt{naive\_column} while another column remains. That target resets both the reduction index and the accumulator, then reconstructs both input walkers for the new column. A completed row ends with \texttt{t1}=N.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{n\_next\_column}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $t1, $t1, 1
+    bne $t1, $s2, naive_column
+    nop
+\end{minted}
+Use \texttt{s18-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first default output row is now 58,64; the second row is still sentinel.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Which state must restart for the next output column?
+
+\begin{itemize}
+\item \textbf{A} Only the result pointer.
+\item \textbf{B} The reduction index, accumulator and input walkers.
+\item \textbf{C} The matrix descriptor.
+\end{itemize}

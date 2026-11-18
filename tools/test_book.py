@@ -26,6 +26,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(43, len(book.validate('drafts/rgb-formats.tex')))
         self.assertEqual(32, len(book.validate('drafts/pcm-mixing.tex')))
         self.assertEqual(43, len(book.validate('drafts/fixed-point-fir.tex')))
+        self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
 
     def test_pcm_construction_transcript_matches_editable_native_code(self):
         folder = book.ROOT / 'drafts/pcm-construction'
@@ -99,6 +100,29 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(66, len({r['id'] for r in recipes}))
         self.assertEqual({s['id'] for s in steps if s['kind'] == 'author'} | {'s42'},
                          {r['step'] for r in recipes})
+
+    def test_matmul_construction_transcript_matches_native_edits(self):
+        folder = book.ROOT / 'drafts/matmul-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        self.assertEqual(50, len(steps))
+        native_order = [path.stem for path, _ in book.sources('drafts/blocked-matmul.tex')
+                        if path.parent.name == '022-blocked-matmul' and re.fullmatch(r's[0-9]{2}', path.stem)]
+        self.assertEqual([step['id'] for step in steps], native_order)
+        self.assertEqual(42, sum(s['kind'] == 'author' for s in steps))
+        self.assertEqual(50, len({s['quiz']['id'] for s in steps}))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            native = (book.ROOT / 'includes/chapters/022-blocked-matmul' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [match[1] for match in book.CODE.finditer(native)])
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(58, len(recipes))
+        self.assertEqual(58, len({r['id'] for r in recipes}))
+        self.assertEqual({s['id'] for s in steps if s['kind'] == 'author'} | {'s48'},
+                         {r['step'] for r in recipes})
+        self.assertEqual(('block_reduction', 2),
+                         next((r['checkpoint'], r['visit']) for r in recipes if r['step'] == 's48'))
 
     def test_fir_listening_samples_and_native_plot_agree(self):
         folder = book.ROOT / 'book/media/021-fixed-point-fir'

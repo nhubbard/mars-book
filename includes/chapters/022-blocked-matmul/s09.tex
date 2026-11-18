@@ -1,0 +1,28 @@
+\section{Step 9 Form the right-column address and row stride}\label{matmul-s09}
+
+The first pair in column j is B[0,j], so multiply \texttt{t1} by four and add it to the right base. Keep the resulting walker in \texttt{t5}. Compute 4N in \texttt{t6} once for this dot product; that stride moves from one right-input row to the next without changing the selected column.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{n\_right}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsll $t5, $t1, 2
+    daddu $t5, $s5, $t5
+    dsll $t6, $s2, 2
+\end{minted}
+Use \texttt{s09-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first right walker addresses right[0], and \texttt{t6} is eight bytes for N=2.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+What stays fixed as the right walker advances?
+
+\begin{itemize}
+\item \textbf{A} Its row number.
+\item \textbf{B} Its address.
+\item \textbf{C} Its selected column.
+\end{itemize}

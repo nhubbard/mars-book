@@ -184,6 +184,11 @@ accompany the student package. Entries share auxiliary files and must build sequ
 Five actual light-theme captures and independent accessibility validation remain pending.
 
 
-The independent blocked-matrix foundation can be built with
+The independent blocked-matrix chapter can be built with
 `python3 tools/book.py build --entry drafts/blocked-matmul.tex`. It is directly edited
 native LaTeX and has not yet joined the main manuscript's completed text-package sequence.
+
+The matrix entry now includes fifty native teaching steps, forty-two cumulative edits
+and two provided excerpts, for forty-four actual IntelliJ-highlighted listings. Keep
+native prose as the composition authority. Structured draft recipes support verification
+and future guided exercises; they do not regenerate the chapter.

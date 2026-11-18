@@ -1,0 +1,30 @@
+\section{Step 41 Consume exactly the clipped reduction segment}\label{matmul-s41}
+
+Advance the walkers, increment \texttt{t3} and continue at \texttt{blocked\_dot} until \texttt{a2}. The bound is an exclusive original reduction index, not a number of products remaining. The initial \texttt{t3}=L ensures this loop consumes only the current segment.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_reduce}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $t5, $t5, 4
+    daddu $t6, $t6, $a3
+    addiu $t3, $t3, 1
+    bne $t3, $a2, blocked_dot
+    nop
+\end{minted}
+Use \texttt{s41-1}, \texttt{s41-2} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+The first default segment consumes k=0 and k=1, leaving \texttt{t4}=25 and \texttt{t3}=2.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+What does \texttt{a2} hold in this loop?
+
+\begin{itemize}
+\item \textbf{A} The output-cell count.
+\item \textbf{B} The clipped exclusive reduction end.
+\item \textbf{C} The right matrix base.
+\end{itemize}

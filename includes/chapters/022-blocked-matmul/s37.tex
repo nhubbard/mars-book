@@ -1,0 +1,27 @@
+\section{Step 37 Retain the right stride and current reduction index}\label{matmul-s37}
+
+Compute 4N in \texttt{a3} and copy L to \texttt{t3}. The descriptor pointer originally arrived in \texttt{a3}, but all four fields have already been loaded into saved working registers. Reusing \texttt{a3} here is safe under the interface and avoids another private slot.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_dot\_setup}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsll $a3, $s2, 2
+    move $t3, $t0
+\end{minted}
+Use \texttt{s37-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+For the default first segment, \texttt{a3}=8 and \texttt{t3}=0.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Why can \texttt{a3} hold a stride now?
+
+\begin{itemize}
+\item \textbf{A} The descriptor fields are already retained elsewhere.
+\item \textbf{B} The descriptor has been overwritten.
+\item \textbf{C} Arguments are never needed by a function.
+\end{itemize}

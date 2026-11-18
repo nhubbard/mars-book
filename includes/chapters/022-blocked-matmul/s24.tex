@@ -1,0 +1,29 @@
+\section{Step 24 Initialize the complete product interval}\label{matmul-s24}
+
+Advance the zeroing pointer by eight, decrement the remaining cell count and repeat while nonzero. The preceding empty-output guard ensures the first iteration exists. At completion, every selected product byte is initialized, with no prefix or suffix writes.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{t\_zero\_next}. Keep its surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $t1, $t1, 8
+    addiu $t0, $t0, -1
+    bne $t0, $zero, zero_product
+    nop
+\end{minted}
+Use \texttt{s24-1} from the companion construction inputs. Pause at \texttt{matmul\_done} before the caller stores the returned count.
+
+\subsection{Expected observation}
+All four default cells are zero, \texttt{t0}=0, and \texttt{t1} is 32 bytes beyond the selected output start.
+
+\Needspace{10\baselineskip}
+\subsection{Check your understanding}
+Which bytes may this loop clear?
+
+\begin{itemize}
+\item \textbf{A} Exactly the selected output interval.
+\item \textbf{B} The complete backing allocation.
+\item \textbf{C} Both input matrices.
+\end{itemize}

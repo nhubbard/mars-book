@@ -1,0 +1,37 @@
+\section{Prepare a cumulative observation}
+Use \texttt{drafts/matmul-construction/main.asm} as the fresh starter. The scalar
+entry is selected initially. Each marked region contains a temporary branch and a
+\texttt{nop} that return through the supplied restoring exit. Replace both lines
+with the corresponding increment; keep surrounding labels and markers. Later code
+is present as safe regions, so each cumulative program assembles before it is a
+complete multiplication function.
+
+The starter uses \texttt{.word 0x5a5aa5a5:544} to initialize 544 words with the same sentinel pattern. The repetition count describes the backing arena, not the active matrix size.
+
+The input recipes accompany every edit. Use \texttt{prepare.py} with a recipe ID,
+your current cumulative source and a separate output path. The preparation changes
+only the input words, shape and caller method. It refuses to overwrite an existing
+observation file or the source being prepared. Start from a program that retains
+the default shape and method lines; the recipe selects the function for that run.
+
+The caller initializes an aligned stack and loads the three matrix pointers and
+the descriptor pointer. It stops at \texttt{matmul\_done} immediately after the
+selected function returns. The result count is still in \texttt{v0}; the caller's
+\texttt{completed} word is still \(-1\). Continue to \texttt{results\_ready} to
+see that word updated. The function's supplied exit has already restored saved
+registers. Inspect the documented temporary registers for partial construction
+state, and inspect memory for any stored partial sums.
+
+The verification runs each observation through this caller and through a direct
+function call with independent nonzero offsets in the input and output arenas.
+It checks the full pointer values, exact stored bytes, preservation requirements,
+logical access intervals and initialized partial-sum reads. An unfinished program
+can return the correct cell count while its product remains incomplete. Final
+behavioral checks are a separate requirement from these construction observations.
+
+The code uses \texttt{s0}, \texttt{s1}, \texttt{s2}, \texttt{s3} for \(M,K,N,T\),
+\texttt{s4}, \texttt{s5}, \texttt{s6} for the full matrix bases, \texttt{s7} for
+row-tile start \(I\), and \texttt{fp} for column-tile start \(J\).
+The tiled reduction start \(L\) is in \texttt{t0}; current indices \(i,j,k\)
+are in \texttt{t1}, \texttt{t2}, \texttt{t3}. This is the illustrated allocation.
+An equivalent free-writing solution may use different internal state.

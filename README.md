@@ -111,10 +111,11 @@ wide partial sums, signed rounding, public construction/final checks, six reprod
 listening files and five planned light-theme capture models.
 
 The next chapter has an independent [blocked-matrix foundation](drafts/blocked-matmul.tex).
-It develops rectangular products, exact accumulator bounds, clipped reduction tiles,
-a native index diagram and measured instruction/cache tradeoffs. It is not yet a
-complete student package or part of the main manuscript; cumulative steps and captures
-remain in progress.
+It develops rectangular products through 50 steps and 42 cumulative edits, with exact
+accumulator bounds, clipped reduction tiles, a native index diagram and measured
+instruction/cache tradeoffs. Fifty-eight input recipes, two supplied excerpts, quizzes
+and progressive hints accompany the text. Student/instructor archives and actual IDE
+captures remain pending; it has not yet joined the main manuscript.
 
 ## Author the book
 
