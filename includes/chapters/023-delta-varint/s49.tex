@@ -1,0 +1,27 @@
+\section{Step 49 Recover the exact signed delta}\label{delta-s49}
+
+Shift \texttt{t1} logically right by one and XOR with the inverse mask. This implements both parity branches without narrowing the candidate. A five-byte mapped value may need bits above a word before this transformation is complete.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{d\_inverse}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsrl $t6, $t1, 1
+    xor $t6, $t6, $t5
+\end{minted}
+Use \texttt{s49-1}, \texttt{s49-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+The default candidate gives delta 1000; mapped one gives -1.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Should the unsigned magnitude be narrowed before this shift?
+
+\begin{itemize}
+\item \textbf{A} No; its fifth-byte bits are still relevant.
+\item \textbf{B} Yes; the final reading is a word.
+\item \textbf{C} Only if the mapped value is odd.
+\end{itemize}

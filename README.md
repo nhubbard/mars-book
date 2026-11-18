@@ -116,10 +116,11 @@ accumulator bounds, clipped reduction tiles, 58 observation recipes, public
 construction/final checks and four planned light-theme capture models. Its whole-call
 measurements distinguish simulated instructions, data notices and cache misses.
 
-The next chapter has an independent [delta/variable-length foundation](drafts/delta-varint.tex).
+The next chapter has an independent [delta/variable-length chapter](drafts/delta-varint.tex).
 It explains exact 33-bit deltas, signed mapping, canonical seven-bit groups, item-atomic
-capacity handling, malformed-input priorities and measured size/work tradeoffs. Cumulative
-steps, student/instructor packages and actual IDE figures remain in progress.
+capacity handling, malformed-input priorities and measured size/work tradeoffs. Its 60 steps
+contain 50 cumulative edits, five supplied excerpts, 60 quizzes, 120 hints and 84 observation
+recipes. Student/instructor packaging and actual IDE figures remain in progress.
 
 ## Author the book
 

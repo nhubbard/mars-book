@@ -194,7 +194,9 @@ native prose as the composition authority. Structured draft recipes support veri
 and future guided exercises; they do not regenerate the chapter.
 
 
-Build the independent codec foundation with
+Build the independent cumulative codec chapter with
 `python3 tools/book.py build --entry drafts/delta-varint.tex`. It uses native equations,
-tables and a described bit diagram. It is not yet a cumulative student package or part
-of main.tex; new assembly listings will require actual IntelliJ highlighting exports.
+tables, a described bit diagram and 55 listings exported through the actual IntelliJ
+highlighter. Sixty steps interleave fifty edits with explanations, observations, quizzes
+and hints. The chapter is not yet an archived student package or part of main.tex.
+The four capture slots are plans; no screenshot is claimed for them.

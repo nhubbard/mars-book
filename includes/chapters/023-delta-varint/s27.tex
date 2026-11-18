@@ -1,0 +1,28 @@
+\section{Step 27 Publish the byte count and repeat the complete encoder}\label{delta-s27}
+
+Add the candidate length \texttt{t4} into committed bytes \texttt{s6} and return to \texttt{enc\_next}. The whole encoder now processes each value atomically: preflight, complete byte emission, both counts, then the next candidate. Validate the completed entry with all capacity boundaries before starting the decoder.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{e\_next\_value}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addu $s6, $s6, $t4
+    beq $zero, $zero, enc_next
+    nop
+\end{minted}
+Use \texttt{s27-1}, \texttt{s27-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+Default input returns five readings and eight bytes with status zero. Capacity seven returns four readings and five bytes with status one.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+When are both result counters ready to describe a completed candidate?
+
+\begin{itemize}
+\item \textbf{A} After all bytes and both commitment edits.
+\item \textbf{B} After only the first continuation byte.
+\item \textbf{C} Before length preflight.
+\end{itemize}

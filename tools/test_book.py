@@ -27,7 +27,28 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(32, len(book.validate('drafts/pcm-mixing.tex')))
         self.assertEqual(43, len(book.validate('drafts/fixed-point-fir.tex')))
         self.assertEqual(44, len(book.validate('drafts/blocked-matmul.tex')))
-        self.assertEqual(0, len(book.validate('drafts/delta-varint.tex')))
+        self.assertEqual(55, len(book.validate('drafts/delta-varint.tex')))
+
+    def test_delta_construction_transcript_matches_native_edits(self):
+        folder = book.ROOT / 'drafts/delta-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        self.assertEqual(60, len(steps))
+        native_order = [path.stem for path, _ in book.sources('drafts/delta-varint.tex')
+                        if path.parent.name == '023-delta-varint' and re.fullmatch(r's[0-9]{2}', path.stem)]
+        self.assertEqual([step['id'] for step in steps], native_order)
+        self.assertEqual(50, sum(s['kind'] == 'author' for s in steps))
+        self.assertEqual(60, len({s['quiz']['id'] for s in steps}))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            native = (book.ROOT / 'includes/chapters/023-delta-varint' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [match[1] for match in book.CODE.finditer(native)])
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(84, len(recipes))
+        self.assertEqual(84, len({r['id'] for r in recipes}))
+        self.assertEqual({s['id'] for s in steps if s['kind'] == 'author'} | {'s28', 's57', 's58'},
+                         {r['step'] for r in recipes})
 
     def test_pcm_construction_transcript_matches_editable_native_code(self):
         folder = book.ROOT / 'drafts/pcm-construction'

@@ -1,0 +1,27 @@
+\section{Step 6 Stop a full encoder before reading another word}\label{delta-s06}
+
+Compare committed output bytes \texttt{s6} with byte capacity \texttt{s3}. If equal, use the supplied \texttt{enc\_full} path, which returns capacity status one. Do not load a new reading when no byte can fit, because even zero needs one byte.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{e\_capacity}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s6, $s3, enc_full
+    nop
+\end{minted}
+Use \texttt{s06-1}, \texttt{s06-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+A nonempty zero-capacity call returns zero counts and status one without a source read.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Can mapped source memory be read when output capacity is zero?
+
+\begin{itemize}
+\item \textbf{A} Only if the first value is zero.
+\item \textbf{B} Only if it is word aligned.
+\item \textbf{C} No; this interface requires the capacity stop before that read.
+\end{itemize}

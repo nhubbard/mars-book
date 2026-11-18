@@ -1,0 +1,39 @@
+\section{Prepare a cumulative observation}
+Start from \texttt{drafts/delta-construction/main.asm}. Replace the named region's
+temporary two lines with the corresponding increment, keeping labels and markers.
+The frames and status exits are supplied. One special initial width gate branches
+forward to \texttt{dec\_accumulate}; it deliberately bypasses fifth-byte validation
+until the payload loop is installed. Use only the specified known-valid recipes at
+that stage. Replace that gate when its instruction step arrives.
+
+Keep the cumulative source's count, capacity and method declarations at their defaults.
+Use \texttt{prepare.py} with a recipe ID, your cumulative source path and a separate
+output path. It writes the exact logical input and selects the proper function for
+that observation without overwriting your source or an existing file. Input octets
+are listed unsigned in the recipes; the prepared assembly spells high byte values
+as negative byte initializers with the same low eight bits. The decoder recipes fill
+the word destination with a sentinel and the encoder recipes fill the byte destination
+with \texttt{a5}.
+
+Most observations stop at \texttt{codec\_done}, after the supplied restoring exit
+and before caller result stores. The recipe gives returned counts as input units,
+output units and status. Temporary registers retain the illustrated partial state;
+saved registers have already been restored. Recipe \texttt{s57-1} instead stops at
+\texttt{dec\_terminal} inside the completed decoder and inspects current working
+\texttt{s5}, \texttt{s6} before restoration. Continue to \texttt{results\_ready} to
+see the caller's three result words populated.
+
+A temporary exit is a construction aid. Some emission/store steps precede their
+counter updates, so a partial program can contain pending output bytes while returning
+zero or mismatched counters. Those observations describe only that named stage.
+They do not authorize partial publication by the completed codec. Final behavioral
+checks independently verify item-atomic stores, counts, status priorities and all
+preservation requirements.
+
+The illustrated allocation uses \texttt{s0} for the full source base, \texttt{s1} for
+input units, \texttt{s2} for the full destination base, \texttt{s3} for output capacity,
+\texttt{s4} for the committed predecessor, \texttt{s5} for committed input and
+\texttt{s6} for committed output. Encoder \texttt{t0} retains the candidate reading;
+decoder \texttt{t0} is its private byte scan, \texttt{t1} the unsigned accumulator,
+\texttt{t2} the payload shift and \texttt{t3} its candidate length. Equivalent completed
+solutions can use other internal labels and register allocations.

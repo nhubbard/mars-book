@@ -166,13 +166,16 @@ remain unfinished. Twenty-two text packages do not complete the full 35-project 
 and capture objective, which remains active. Delta and variable-length encoding is next.
 
 
-Delta and variable-length encoding has a directly edited native foundation at
+Delta and variable-length encoding has a directly edited native chapter at
 `drafts/delta-varint.tex`. It defines signed-32-bit readings with exact 33-bit differences,
 ZigZag mapping, minimal unsigned base-128 groups, a bounded fifth byte and item-atomic
 capacity/error results. Worked bytes, a native payload diagram, malformed/range priorities,
 framing limits, exercises and deterministic size/instruction tables accompany independent
 encoder/decoder prototypes. Both pass independent-model checks; actual same-session
 composition, zero-capacity priorities, wide pointers and meaningful fault rejection are
-verified separately. The full cumulative instruction sequence, quizzes, observation
-fixtures, packages and actual IDE captures are still unfinished. This foundation has not
-yet joined main.tex, which contains twenty-two text packages. The full objective remains active.
+verified separately. The cumulative chapter now has 60 steps, 50 edits, five supplied
+excerpts, 60 quizzes, 120 hints and 84 recipes. Its 58 grading runs cover 19,675 positive
+case executions, including both offset isolated calls and the actual caller. Four native
+capture slots remain explicitly planned. Packages and actual IDE captures are unfinished.
+This chapter has not joined main.tex, which contains twenty-two text packages. The full
+objective remains active.

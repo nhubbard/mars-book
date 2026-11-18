@@ -1,0 +1,29 @@
+\section{Step 52 Reject a reconstructed value above the signed maximum}\label{delta-s52}
+
+Load the signed maximum into \texttt{t8} and test whether it is below the exact candidate \texttt{t6}. Equality is representable and must succeed. Keeping this addition full-width prevents an excessive positive value from wrapping into a plausible negative reading.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{d\_maximum}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t8, 2147483647
+    slt $t9, $t8, $t6
+    bne $t9, $zero, dec_range
+    nop
+\end{minted}
+Use \texttt{s52-1}, \texttt{s52-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+An initial mapped value 4294967296 reconstructs 2147483648 and returns range status three.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Should a candidate equal to 2147483647 be rejected?
+
+\begin{itemize}
+\item \textbf{A} Yes; it has a high sign bit in another width.
+\item \textbf{B} Only when it uses five bytes.
+\item \textbf{C} No; the upper endpoint is included.
+\end{itemize}

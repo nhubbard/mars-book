@@ -1,0 +1,29 @@
+\section{Step 51 Reject a reconstructed value below the signed minimum}\label{delta-s51}
+
+Load the full signed minimum into \texttt{t7} and compare \texttt{t6} with it. Use \texttt{dec\_range} when the candidate is smaller. The canonical 33-bit mapped maximum decodes to a delta too negative for any allowed predecessor and is a useful test of this distinction.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{d\_minimum}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dli $t7, -2147483648
+    slt $t9, $t6, $t7
+    bne $t9, $zero, dec_range
+    nop
+\end{minted}
+Use \texttt{s51-1}, \texttt{s51-2} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+Canonical ff ff ff ff 1f returns range status three rather than malformed status two.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why is that five-byte sequence not malformed?
+
+\begin{itemize}
+\item \textbf{A} Its width, continuation and minimality are valid.
+\item \textbf{B} Every five-byte sequence is valid.
+\item \textbf{C} The output capacity is large.
+\end{itemize}

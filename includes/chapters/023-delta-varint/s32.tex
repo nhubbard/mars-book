@@ -1,0 +1,26 @@
+\section{Step 32 Separate private scanning from committed input}\label{delta-s32}
+
+Copy \texttt{s5} into \texttt{t0} for the candidate scan position. Later byte loads advance \texttt{t0}, while \texttt{s5} remains at the last complete value boundary. This distinction lets malformed or out-of-range candidates return without consuming any of their input bytes.
+
+\Needspace{10\baselineskip}
+\subsection{Write and inspect}
+Replace the supplied temporary branch and nop in \texttt{d\_scan}. Keep surrounding labels and region markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $t0, $s5
+\end{minted}
+Use \texttt{s32-1} from the companion construction inputs. Pause at \texttt{codec\_done} before caller result storage.
+
+\subsection{Expected observation}
+The first candidate scan begins at byte zero with no committed input.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which index may advance before validation finishes?
+
+\begin{itemize}
+\item \textbf{A} The private scan position \texttt{t0}.
+\item \textbf{B} The public committed position \texttt{s5}.
+\item \textbf{C} The output-reading count \texttt{s6}.
+\end{itemize}
