@@ -1,0 +1,33 @@
+\section{Retain state across helper calls}
+The whole-buffer decoder calls validation, which itself calls the classifier. Each
+\texttt{jal} replaces \texttt{ra}, so a nonleaf function must save its caller's return
+address before making the next call. The original source, destination, count and capacity
+also need stable homes. Argument and temporary registers may be overwritten by a helper.
+
+After validation returns, check status before interpreting its output count. Then
+compare the original unsigned capacity with that count. In the illustrated frame,
+\texttt{s3} retains capacity until this comparison; it becomes the fixed total output
+count only after the comparison succeeds.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{Use a helper result only after its status and capacity checks.}
+\begin{minted}[samepage=true]{mars-idea}
+    jal b64_validate
+    nop
+    bnez $v0, decode_failed
+    nop
+    sltu $t0, $s3, $v1
+    bnez $t0, decode_capacity
+    nop
+    move $s3, $v1
+\end{minted}
+
+The error return sets the produced count to zero and restores the same full-width
+saved state as the successful return. An early count error or empty request has no
+allocated frame and returns directly. Keep those paths distinct; restoring an
+unallocated frame would change the caller's stack pointer.
+
+Set nonzero high bits in preserved registers while testing, and place code and data
+above 4 GiB. A word restore can leave plausible low bits while losing a saved value
+or address. The width of the encoded characters does not determine the width of the
+return address, stack pointer or buffer pointers.

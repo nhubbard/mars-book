@@ -1,0 +1,33 @@
+\section{Translate sixteen sextets with comparison masks}
+The vector encoder can apply the alphabet's piecewise offsets without sixteen table
+lookups. Start from the sextets and accumulate corrections: add six above 25, subtract
+75 above 51, subtract fifteen above 61, add three when equal to 63, then add 65 to every
+lane. This gives the five alphabet cases in the earlier table.
+
+A true vector comparison produces an all-one byte, hexadecimal \texttt{ff}; false
+produces zero. AND with six changes a true mask into the correction six. Adding the
+raw comparison mask would add 255 modulo 256, which is not the required correction.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Convert a comparison mask into an arithmetic correction.}
+\begin{minted}[samepage=true]{mars-idea}
+    ldi.b $w2, 25
+    clt_u.b $w3, $w2, $w1
+    andi.b $w3, $w3, 6
+    addv.b $w4, $w1, $w3
+\end{minted}
+
+Retain the original sextets in \texttt{w1} for every threshold test while accumulating
+the corrected values in \texttt{w4}. Comparing a partly translated character with a
+sextet threshold would mix the two representations.
+
+The byte additions and subtractions wrap modulo 256. Intermediate \texttt{w4} lanes
+need not yet be ASCII. For sextet 52, the sequence before the final addition is
+\(52+6=58\), then \(58-75\equiv239\pmod{256}\); adding 65 finally produces 48,
+ASCII \texttt{0}. For sextet 63, the successive byte values are 69, 250, 235, 238 and
+47, ending at \texttt{/}. Inspect the result after all corrections before treating it
+as text.
+
+The final \texttt{st.b} writes exactly sixteen bytes to the kernel's destination.
+The input contract supplies twelve bytes and the output contract supplies sixteen;
+those footprints are separate from the register's fixed width.

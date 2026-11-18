@@ -36,6 +36,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(51, len(book.validate('drafts/sha256.tex')))
         self.assertEqual(53, len(book.validate('drafts/chacha20.tex')))
         self.assertEqual(51, len(book.validate('drafts/rsa-arithmetic.tex')))
+        self.assertEqual(13, len(book.validate('drafts/base64.tex')))
 
     def test_rsa_cumulative_order_and_observation_protocol(self):
         folder = book.ROOT / 'drafts/rsa-construction'

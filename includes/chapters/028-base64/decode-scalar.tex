@@ -1,0 +1,43 @@
+\section{Assemble three output bytes from four sextets}
+For a complete quartet, recovering bytes from sextets \(q_0,q_1,q_2,q_3\) gives
+\[
+\begin{aligned}
+b_0&=(q_0\ll2)\mathbin{\mathrm{OR}}(q_1\gg4),\\
+b_1&=((q_1\ll4)\mathbin{\mathrm{OR}}(q_2\gg2))\bmod256,\\
+b_2&=((q_2\ll6)\mathbin{\mathrm{OR}}q_3)\bmod256.
+\end{aligned}
+\]
+The byte stores keep the intended low eight bits. In the final padded quartet, use
+zero for padding positions during this calculation, but publish only the output byte
+count already established by validation. A pad does not authorize an extra zero byte.
+
+Load and classify all four characters before writing the first output byte. This is
+necessary for exact in-place decoding. Overwriting an early character while later
+characters of that quartet are still unread can corrupt the values needed for its
+second or third output byte.
+
+The illustrated scalar loop retains four sextets in sixteen private frame bytes.
+Its ordinary saved registers and return address occupy offsets zero through 63; the
+sextet words occupy offsets 64, 68, 72 and 76 in an 80-byte frame. Once the quartet is
+loaded, the first byte and the remaining-output check are:
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{Stop publication at the validated output count.}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 64($sp)
+    lwu $t1, 68($sp)
+    lwu $t2, 72($sp)
+    lwu $t3, 76($sp)
+    sll $t4, $t0, 2
+    srl $t5, $t1, 4
+    or $t4, $t4, $t5
+    sb $t4, 0($s2)
+    daddiu $s6, $s6, -1
+    beqz $s6, decode_done
+    nop
+\end{minted}
+
+Repeat the remaining-byte check after the second store. A one-byte decoded tail stops
+there before either later store; a two-byte tail stops before the third. For ordinary
+complete quartets, advance source by four and destination by three. The destination
+therefore never overtakes unread input during exact in-place decoding.

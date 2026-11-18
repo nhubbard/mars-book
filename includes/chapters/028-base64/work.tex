@@ -1,0 +1,38 @@
+\section{Measure the complete conversion boundary}
+Count simulated instructions from function entry to its return boundary, including
+preflight, frame handling, validation and any kernel calls. Exclude caller setup,
+assembly and session creation. The following measurements use ordinary code/data addresses and the same binary pattern
+\((73i+129)\bmod256\) for both paths. Decoder input is the canonical encoding of that
+binary pattern, so its input count differs from the raw count in the first column.
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrrrr}
+Raw bytes & Encode scalar & Encode MSA & Decode scalar & Decode MSA \\
+\hline
+12 & 244 & 176 & 998 & 625 \\
+48 & 820 & 554 & 3876 & 2310 \\
+192 & 3124 & 2066 & 15216 & 8964 \\
+4096 & 65598 & 43096 & 322560 & 189475 \\
+\end{tabular}
+\end{center}
+
+The direct encoder kernel executes 108 instructions; the direct decoder kernel executes
+132. Those kernel counts exclude whole-buffer validation. Comparing only a kernel with
+a complete scalar decoder would therefore use different boundaries. The alternative
+scalar implementation also changes character classification from branches to a table,
+which changes the cost of both decoder passes independently of vector packing.
+For 5464 text bytes, its scalar path takes 330576 instructions, compared with 322560
+for the branch-based path on this pattern. A table lookup requires address formation
+and a byte load; count actual instructions rather than assuming a lookup is faster.
+
+These counts describe current simulated work. They do not measure host latency or
+hardware cycles, and no exact count is a grading rule. Data can affect the branch-based
+classifier's path. Record the actual input pattern and whether the last quartet was
+padded when making another comparison.
+
+As an optimization exercise, investigate replacing two vector range comparisons with
+a subtraction followed by one unsigned width test. Prove the byte interval and wraparound
+behavior, and test all 256 byte values before using the new masks. Also investigate
+an aligned three-word copy fast path. Check the low two address bits before word loads,
+and retain byte copies for unaligned input. Both paths must consume exactly twelve
+source bytes.

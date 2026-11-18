@@ -221,3 +221,11 @@ native equations, headed tables and a described limb-layout figure support it.
 The four IDE figure slots are plans without captured pixels. The chapter is also
 included in main.tex as its twenty-seventh text package, with separate public/student
 and private/instructor distributions.
+
+
+Build the independent Base64 foundation with
+`python3 tools/book.py build --entry drafts/base64.tex`. Its directly edited native
+includes cover scalar and MSA encoding/decoding with canonical padding and exact byte
+footprints. Thirteen assembly fragments use actual IntelliJ highlighting. Native
+equations, headed tables and a described 24-bit regrouping diagram remain editable.
+This foundation is not yet included in main.tex; actual IDE figures are subsequent work.

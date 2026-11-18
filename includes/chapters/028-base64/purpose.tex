@@ -1,0 +1,25 @@
+\section{Represent arbitrary bytes with a restricted alphabet}
+Base64 represents binary data using a small set of printable characters. Three input
+bytes contain twenty-four bits; four output characters each represent six of those
+bits. The transformation preserves the bytes, including zero bytes that would terminate
+a C-style string. Its output usually occupies more space than its input. A recipient
+can recover the original bytes from the alphabet and the encoded text without a secret.
+
+Begin with three bytes you can trace on paper. Write a scalar encoder that separates
+four six-bit values and uses them to select characters. Extend it to the final one or
+two input bytes. Then reverse that calculation, checking the text before writing any
+decoded output. Once the scalar interfaces agree with independent results, place four
+complete groups in MSA byte lanes. Keep short final groups on a scalar path, where their
+padding and exact stores remain explicit.
+
+This project uses the standard alphabet with \texttt{+} and \texttt{/}, required final
+padding, and no line wrapping. Its decoder accepts the canonical form: only alphabet
+characters and correctly placed padding, with all unused bits zero. These choices fix
+what counts as a valid input. Other protocols can choose different alphabets or handling
+of whitespace; a decoder needs a named policy before its error cases can be tested.
+
+The first complete observation is decimal bytes 77, 97 and 110 becoming the four
+characters \texttt{TWFu}. Keep the numerical sextets visible before looking up the
+characters. If those values are wrong, changing the alphabet table cannot repair the
+bit split. If they agree but the characters do not, inspect the lookup or vector
+translation rather than shifting the original bytes again.

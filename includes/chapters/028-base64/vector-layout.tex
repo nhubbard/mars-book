@@ -1,0 +1,32 @@
+\section{Place four complete groups in byte lanes}
+An MSA register contains sixteen bytes. Four input groups of three bytes occupy twelve
+of them, and their sixteen sextets fill the output register. Keep the group arithmetic
+identical to the scalar calculation; only the selected lane positions change.
+
+The encoder kernel first copies exactly twelve source bytes into sixteen private bytes,
+with the remaining four initialized to zero. This avoids a sixteen-byte caller load
+for an input contract that promises only twelve bytes. A larger mapped arena does not
+extend the selected readable interval. The subsequent \texttt{ld.b} reads all sixteen
+private bytes. Byte-form MSA transfers do not require a sixteen-byte-aligned caller
+address, but they still transfer sixteen bytes.
+
+Two gathers provide the source bytes for the two contributions to each sextet. For the
+first three-byte group, their selector and shift patterns are:
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{lrrrr}
+Output sextet position & 0 & 1 & 2 & 3 \\
+\hline
+Left source index & 0 & 0 & 1 & 2 \\
+Left shift & 0 & 4 & 2 & 0 \\
+Then logical right shift & 2 & 0 & 0 & 0 \\
+Right source index & 0 & 1 & 2 & 0 \\
+Right logical shift & 0 & 4 & 6 & 0 \\
+Right mask & 0 & 15 & 3 & 0 \\
+\end{tabular}
+\end{center}
+
+The next groups add three, six and nine to the useful source indices. A masked-out
+contribution can select an ordinary existing byte because its mask makes that value
+irrelevant. After shifting, combine the two contributions and mask every byte with 63.
+Byte shifts truncate each lane independently, so bits cannot carry into the next sextet.

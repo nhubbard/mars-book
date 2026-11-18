@@ -254,3 +254,14 @@ and safe nested development returns are verified. The student package now includ
 with separate private cases, solutions and quiz feedback. It is included in main.tex
 as the twenty-seventh text package. The existing
 chapters have not been rewritten; the author's substantial edit remains deferred.
+
+
+The Base64 foundation is directly edited at `drafts/base64.tex`. Nineteen connected
+sections explain byte/sextet regrouping, canonical padding, count/capacity preflight,
+ASCII classification, transactional validation, exact in-place decoding, MSA gathers,
+masked alphabet translation, compaction and scalar tails. A native described bit diagram,
+headed tables and measured instruction-work comparisons support thirteen selected
+assembly fragments. Two equivalent private implementations pass normal/wide checks and
+24 deliberate faults. The manuscript keeps its 27 packaged chapters while this
+twenty-eighth foundation receives cumulative steps and separate distributions.
+The author's substantial exposition and length rewrite remains deferred.

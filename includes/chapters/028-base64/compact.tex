@@ -1,0 +1,38 @@
+\section{Pack three bytes per quartet without an oversized store}
+The decoder's gather and shift patterns create three useful bytes and one zero byte
+inside each four-byte group. For the first quartet, the left gather selects sextets
+zero, one and two and shifts by two, four and six. The right gather selects one, two
+and three and shifts right by four, two and zero. Mask the fourth position of both
+contributions to zero before OR.
+
+After all four groups, useful bytes occupy vector positions
+\[
+[0,1,2,4,5,6,8,9,10,12,13,14].
+\]
+A final gather moves them into the first twelve positions. Its remaining four positions
+select a known zero padding byte. The zero positions describe private register layout;
+they are not extra caller output.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Compact useful bytes, then store the full vector only to private storage.}
+\begin{minted}[samepage=true]{mars-idea}
+    or.v $w6, $w6, $w7
+    dla $t1, dec_compact
+    ld.b $w7, 0($t1)
+    vshf.b $w7, $w6, $w6
+    daddiu $sp, $sp, -16
+    st.b $w7, 0($sp)
+\end{minted}
+
+Copy exactly twelve bytes from that private vector to the caller. A sixteen-byte store
+to the caller would overwrite four bytes outside the declared result, even if they
+happen to become zero. Reading the entire input vector before the output copy also
+permits exact in-place decoding.
+
+For the alphabet prefix \texttt{ABCDEFGHIJKLMNOP}, the twelve decoded decimal bytes
+are
+\[
+[0,16,131,16,81,135,32,146,139,48,211,143].
+\]
+Check every byte and the four following sentinels. This distinguishes a correct compacted
+prefix from a store that silently publishes private padding.

@@ -1,0 +1,33 @@
+\section{Map sixteen validated characters back to sextets}
+The decoder kernel receives sixteen alphabet characters with no pads. The outer
+validation pass established that precondition before any output was written. The kernel
+therefore needs to recover values, not decide a new syntax policy midway through a store.
+
+Build a mask for each ASCII interval using two unsigned comparisons and AND. For the
+uppercase range, test that a character is above 64 and below 91, calculate its value
+minus 65, then retain that value only where the interval mask is true. OR the disjoint
+uppercase, lowercase, digit and symbol results into a sextet vector.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{Select only the uppercase range contribution.}
+\begin{minted}[samepage=true]{mars-idea}
+    ldi.b $w1, 64
+    clt_u.b $w2, $w1, $w0
+    ldi.b $w1, 91
+    clt_u.b $w3, $w0, $w1
+    and.v $w2, $w2, $w3
+    ldi.b $w1, 65
+    subv.b $w4, $w0, $w1
+    and.v $w4, $w4, $w2
+    or.v $w5, $w5, $w4
+\end{minted}
+
+The other ranges use their corresponding offsets. Equality masks contribute 62 for
+\texttt{+} and 63 for \texttt{/}. With a valid input, exactly one alphabet case applies
+to each lane. An invalid character could otherwise contribute zero, indistinguishable
+from \texttt{A}; the separate validation precondition is what makes this kernel safe
+to use as an internal conversion step.
+
+For \texttt{ABCDEFGHIJKLMNOP}, the sextets are zero through fifteen. Keep them visible
+before packing. This observation checks character translation without yet involving
+compaction or the output copy.

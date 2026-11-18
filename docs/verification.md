@@ -931,3 +931,46 @@ steps. Tagging, table headers, formulas and figure alternatives are present; ind
 accessibility validation and PDF/UA certification remain outstanding. Four RSA IDE
 figures are still plans, and remote progression, student usability review and the
 author's substantial deferred rewrite remain unfinished.
+
+
+## Base64 native foundation, 18 November 2026
+
+The directly edited standalone entry is drafts/base64.tex. Nineteen connected sections
+explain scalar bit regrouping, canonical padding, full-width count/capacity checks,
+transactional validation, exact in-place decoding, MSA gathers and masked ASCII
+translation, vector compaction and scalar tails. Thirteen selected assembly fragments,
+headed tables and a native described24-bit diagram support the worked calculations.
+The manuscript remains at27 packaged chapters; the Base64 cumulative exercise and
+separate distributions are next. Earlier chapters were not rewritten.
+
+The six interfaces include four scalar/vector whole-buffer entries and two exact
+12-to16/16-to12 kernels. Two complete implementations pass1124 cases each at ordinary
+addresses and again with code/data above4GiB:4496 positive executions. Twenty-four
+faulty variants are rejected by focused controls. Independent JDK encode/decode with
+canonical re-encoding checks, plus Python integer/vector models, verify the outputs.
+The domain includes all256 text octets, all64 alphabet symbols, exact and short output
+capacity, high-bit unsigned capacity/counts, byte-unaligned buffers, exact in-place
+operation, preserved high bits, actual same-session round trips and error-then-success.
+Read/write tracing detects oversized vector footprints and same-value input stores.
+No upstream checking function was missing.
+
+Instruction-work observations include full validation and ordinary frames. For4096
+raw bytes, scalar/MSA encoding uses65598/43096 simulated instructions; decoding the
+5464-character canonical result uses322560/189475. The direct vector kernels use
+108/132 instructions. The table-classifier alternative's scalar decoder takes330576
+instructions for that text, showing why a lookup is not assumed faster for this
+fixture. Counts are neither host timings nor grading thresholds. The chapter describes
+biased range tests and an aligned exact-word-copy path as further experiments; those
+optimizations are not claimed as implemented.
+
+All38 book-tooling tests, seven renderer tests and three actual IntelliJ highlighter
+Jupiter tests pass. All27 existing student packages validate and rebuild. The previous
+712 highlighter records are exact and13 new exports were appended. The standalone PDF
+has16 pages and all13 literal assembly fragments remain on single pages. All16 rendered
+pages were reviewed; the final bounded prose edit changed only pages15 and16, which
+were reviewed individually. The interface table, bit diagram and vector-mask explanation
+were also inspected at1200px. Embedded fonts remain Minion Pro, Noto Sans Math and
+JetBrains Mono. Tags, headed tables, formulas and the figure alternative are present;
+independent accessibility validation and PDF/UA certification remain outstanding.
+Cumulative packages, actual automated light-theme IDE figures, remote progression,
+student-usability review and the author's deferred substantial rewrite remain unfinished.
