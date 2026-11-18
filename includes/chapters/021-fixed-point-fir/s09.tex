@@ -1,0 +1,28 @@
+\section{Step 9 Load the matching Q15 coefficient}\label{fir-s09}
+
+Read two bytes from \texttt{t2} into \texttt{t5} and \texttt{t6}. Reusing \texttt{t5} is safe because the complete signed sample is retained in \texttt{t4}. This first coefficient multiplies the oldest sample. Its stored code supplies a weight only after the binary scale is applied to the complete dot product; the two loaded bytes are not separate weights.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{coefficient\_load}. Keep surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t5, 0($t2)
+    lbu $t6, 1($t2)
+\end{minted}
+Use recipe \texttt{s09-1} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Coefficient -16384 has low byte zero and high byte 192. The signed sample -1000 remains in \texttt{t4}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why may \texttt{t5} be reused here?
+
+\begin{itemize}
+\item \textbf{A} All coefficients are positive.
+\item \textbf{B} Loading a coefficient stores the sample automatically.
+\item \textbf{C} The signed sample no longer depends on its former high-byte temporary.
+\end{itemize}

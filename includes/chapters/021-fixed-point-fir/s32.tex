@@ -1,0 +1,27 @@
+\section{Step 32 Derive a fresh sign mask for the window}\label{fir-s32}
+
+Compare each signed sample halfword with zero into \texttt{w2}. The coefficient mask is no longer needed because its widened words are already retained. Reusing \texttt{w2} is safe, but retaining the preceding output’s sample mask would not be: the new window can contain different signs at each position.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{input\_mask}. Keep surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    clti_s.h $w2, $w0, 0
+\end{minted}
+Use recipe \texttt{s32-1} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+The mixed-sign input mask is ffff,0000,ffff,0000,ffff,0000,0000,0000.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why recompute this mask each output?
+
+\begin{itemize}
+\item \textbf{A} The coefficient scale changes each call.
+\item \textbf{B} The input window changes.
+\item \textbf{C} A mask must always contain the clipping count.
+\end{itemize}

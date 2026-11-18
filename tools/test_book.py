@@ -25,7 +25,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(46, len(book.validate('drafts/tiny-bytecode-interpreter.tex')))
         self.assertEqual(43, len(book.validate('drafts/rgb-formats.tex')))
         self.assertEqual(32, len(book.validate('drafts/pcm-mixing.tex')))
-        self.assertEqual(0, len(book.validate('drafts/fixed-point-fir.tex')))
+        self.assertEqual(43, len(book.validate('drafts/fixed-point-fir.tex')))
 
     def test_pcm_construction_transcript_matches_editable_native_code(self):
         folder = book.ROOT / 'drafts/pcm-construction'
@@ -81,6 +81,24 @@ class NativeCompositionTests(unittest.TestCase):
         for coordinates, label in plotted:
             points = [(int(x), int(y)) for x, y in re.findall(r'\((\d+),(-?\d+)\)', coordinates)]
             self.assertEqual(list(enumerate(expected[label])), points)
+
+    def test_fir_construction_transcript_matches_native_edits(self):
+        folder = book.ROOT / 'drafts/fir-construction'
+        steps = json.loads((folder / 'steps.json').read_text())['steps']
+        self.assertEqual(47, len(steps))
+        self.assertEqual(36, sum(s['kind'] == 'author' for s in steps))
+        self.assertEqual(47, len({s['quiz']['id'] for s in steps}))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            native = (book.ROOT / 'includes/chapters/021-fixed-point-fir' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [match[1] for match in book.CODE.finditer(native)])
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(66, len(recipes))
+        self.assertEqual(66, len({r['id'] for r in recipes}))
+        self.assertEqual({s['id'] for s in steps if s['kind'] == 'author'} | {'s42'},
+                         {r['step'] for r in recipes})
 
     def test_fir_listening_samples_and_native_plot_agree(self):
         folder = book.ROOT / 'book/media/021-fixed-point-fir'

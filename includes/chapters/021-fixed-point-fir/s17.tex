@@ -1,0 +1,30 @@
+\section{Step 17 Test the rounded upper endpoint strictly}\label{fir-s17}
+
+Compare rounded \texttt{t0} with 32767 using a strict signed test. The filter’s clipping count concerns the rounded result, not the raw accumulator. Equality is representable and must pass to the lower test. A result larger than the endpoint goes to \texttt{scalar\_high}, whose replacement is still unfinished.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{upper\_bound}. Keep surrounding labels and region markers.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t8, 32767
+    slt $t9, $t8, $t0
+    bne $t9, $zero, scalar_high
+    nop
+\end{minted}
+Use recipe \texttt{s17-1}, \texttt{s17-2} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Rounded 262144 takes the high path with \texttt{t9}=1. Constant maximum input under the moving average gives 32767 with \texttt{t9}=0.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does an exact rounded endpoint count as clipped?
+
+\begin{itemize}
+\item \textbf{A} Yes, whenever it equals 32767.
+\item \textbf{B} No.
+\item \textbf{C} Only when the coefficients sum to one.
+\end{itemize}

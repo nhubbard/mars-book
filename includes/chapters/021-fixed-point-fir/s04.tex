@@ -1,0 +1,28 @@
+\section{Step 4 Guard the output count before reading history}\label{fir-s04}
+
+The public entry initially transfers directly to \texttt{fir\_scalar} without changing \texttt{ra}. The scalar entry retains the requested count in \texttt{v0} and clears \texttt{v1}. Test \texttt{a3} before setting up any input or coefficient load. Seven history samples describe the input layout; they do not authorize an empty-output call to inspect caller data. Return through \texttt{scalar\_return} when count is zero.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{scalar\_bound}. Keep surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $a3, $zero, scalar_return
+    nop
+\end{minted}
+Use recipe \texttt{s04-1} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+The zero-output recipe returns \texttt{v0}=0 and \texttt{v1}=0 without a caller-data read or write.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+May an empty call load the coefficients merely because their sixteen bytes exist?
+
+\begin{itemize}
+\item \textbf{A} No; the zero-output contract forbids caller-data access.
+\item \textbf{B} Yes; coefficients are always read-only.
+\item \textbf{C} Only when the history is zero.
+\end{itemize}

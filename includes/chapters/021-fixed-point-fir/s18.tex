@@ -1,0 +1,32 @@
+\section{Step 18 Keep rounded in-range values on the store path}\label{fir-s18}
+
+Test whether the rounded result is smaller than -32768. Branch to \texttt{scalar\_low} when it is; otherwise transfer directly to \texttt{scalar\_store}. This bypasses both endpoint replacement and the clipping increment. An accumulator representing -32768.5 rounds to -32768 under this contract, so its clipping decision must use that rounded value.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{lower\_bound}. Keep surrounding labels and region markers.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t8, -32768
+    slt $t9, $t0, $t8
+    bne $t9, $zero, scalar_low
+    nop
+    beq $zero, $zero, scalar_store
+    nop
+\end{minted}
+Use recipe \texttt{s18-1}, \texttt{s18-2}, \texttt{s18-3} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Rounded -262136 takes the low path. Rounded -32768 and zero go to storage without increasing the count.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which quantity determines clipping in this exercise?
+
+\begin{itemize}
+\item \textbf{A} The sign of the first product.
+\item \textbf{B} The number of negative coefficients.
+\item \textbf{C} The complete rounded sample code.
+\end{itemize}

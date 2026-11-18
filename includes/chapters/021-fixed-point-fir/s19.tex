@@ -1,0 +1,29 @@
+\section{Step 19 Choose the positive endpoint}\label{fir-s19}
+
+Load 32767 into \texttt{t0}, then transfer to the shared \texttt{scalar\_clipped} label. The branch skips the negative endpoint replacement. Keep the clipping count separate from the stored endpoint: an ordinary in-range endpoint produces the same two bytes. At this partial stage, the replacement has happened but the counter region is still unfinished.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{upper\_clamp}. Keep surrounding labels and region markers.
+
+\Needspace{6\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 32767
+    beq $zero, $zero, scalar_clipped
+    nop
+\end{minted}
+Use recipe \texttt{s19-1} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+A large positive result becomes 32767 while \texttt{v1} remains zero until the next count edit.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why skip the following negative replacement?
+
+\begin{itemize}
+\item \textbf{A} The return count is stored in the next label.
+\item \textbf{B} The two overflow directions need different endpoint values.
+\item \textbf{C} Both replacements must always execute.
+\end{itemize}

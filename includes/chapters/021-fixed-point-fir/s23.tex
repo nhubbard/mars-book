@@ -1,0 +1,28 @@
+\section{Step 23 Complete the low-byte-first halfword}\label{fir-s23}
+
+Shift the result right by eight into \texttt{t1} and store that register’s low byte at \texttt{a2}+1. For a negative result, a logical shift is sufficient here because \texttt{sb} selects just the original bits fifteen through eight. This differs from the arithmetic shift used for signed rounding. The input/output window advance is still a separate operation.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{store\_high}. Keep surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dsrl $t1, $t0, 8
+    sb $t1, 1($a2)
+\end{minted}
+Use recipe \texttt{s23-1}, \texttt{s23-2} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Positive saturation stores ff 7f; negative saturation stores 00 80. Each overflow contributes one event.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why can this byte-extraction shift be logical?
+
+\begin{itemize}
+\item \textbf{A} It replaces the earlier rounding operation.
+\item \textbf{B} Only the next selected byte is stored.
+\item \textbf{C} Negative output codes have no high bits.
+\end{itemize}

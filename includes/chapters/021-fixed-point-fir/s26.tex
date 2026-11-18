@@ -1,0 +1,30 @@
+\section{Step 26 Switch the public entry to the vector path}\label{fir-s26}
+
+Replace the provisional tail transfer to \texttt{fir\_scalar} with the real \texttt{fir\_q15} entry: retain count, clear \texttt{v1} and return at zero before coefficient setup. The completed scalar routine remains available as a comparison. Positive calls now reach unfinished vector regions and return provisionally; that temporary state is not a correct filtered result yet.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{vector\_entry}. Keep surrounding labels and region markers.
+
+\Needspace{7\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $v0, $a3
+    move $v1, $zero
+    beq $a3, $zero, fir_return
+    nop
+\end{minted}
+Use recipe \texttt{s26-1}, \texttt{s26-2} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Zero count returns without caller-data access. A one-output call reaches the unfinished coefficient load with \texttt{v0}=1, \texttt{v1}=0 and no output written.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Does switching the public entry remove the scalar comparison function?
+
+\begin{itemize}
+\item \textbf{A} No; it remains available under \texttt{fir\_scalar}.
+\item \textbf{B} Yes; its completed code must be discarded.
+\item \textbf{C} Only when the input history is zero.
+\end{itemize}

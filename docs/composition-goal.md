@@ -135,12 +135,15 @@ captures, interactive progression controls, author review and independent access
 validation remain pending. Twenty text packages do not complete the full 35-project
 composition and capture objective, which remains active.
 
-Fixed-point FIR is in progress at `drafts/fixed-point-fir.tex`. Its native foundation
-specifies eight oldest-first Q15 coefficients, seven supplied history samples, exact
-64-bit accumulation, one nearest rounding with ties toward positive infinity, and
-post-round saturation. It explains widening before dot products, asymmetric impulse
-response, explicit chunk history and complete-call measurements. Six simulator-derived
-listening files demonstrate exact cancellation of a supplied period-four component.
-Both implementations and every chunk cut are checked. Full incremental edits, student
-packaging and actual IDE captures remain unfinished. Chapter twenty-one is outside
-main.tex and the twenty completed text packages; the full goal remains active.
+Fixed-point FIR has a forty-seven-step native construction draft at
+`drafts/fixed-point-fir.tex`, with thirty-six cumulative edits, seven supplied assembly
+excerpts and sixty-six input observations. The initial public transfer reaches the
+scalar routine; a later entry edit starts vector construction while retaining the
+completed scalar comparison. Both scalar and vector stages share exact wide sums,
+one final rounding, post-round saturation and explicit history. Observations run
+through unaligned isolated calls and the actual program caller. Forty-seven quizzes
+and ninety-four available hints accompany the editable text. Six verified listening
+files and complete-call measurements remain included. Full student packaging, interactive
+progression controls, actual IDE figures and independent accessibility validation are
+unfinished. Chapter twenty-one remains outside main.tex and the twenty completed text
+packages. The full 35-project objective remains active.

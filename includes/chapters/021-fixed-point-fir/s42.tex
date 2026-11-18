@@ -1,0 +1,30 @@
+\section{Step 42 Distinguish rounding from a clipping event}\label{fir-s42}
+
+Use the documented negative halfway accumulator -1073758208. It represents -32768.5 sample-code units but rounds toward positive infinity to -32768, which is representable. Compare it with a result that rounds to -32769. The clipping decision belongs after quantization, even when a raw accumulator lies beyond a scaled endpoint.
+
+Use recipes \texttt{s42-1} and \texttt{s42-2} with the completed program.
+Their complete chronological input arrays are
+\[
+ u^{(1)}=(-32768,3,0,0,0,0,0,0),
+\]
+\[
+ u^{(2)}=(-32768,4,0,0,0,0,0,0).
+\]
+Both use oldest-first coefficients
+\[
+ c=(32767,-16384,0,0,0,0,0,0).
+\]
+Each requests one output.
+
+\subsection{Expected observation}
+The halfway case returns the negative endpoint with zero clips; the rounded -32769 case returns the same endpoint with one clip.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Should raw value -32768.5 count as clipped under this contract?
+
+\begin{itemize}
+\item \textbf{A} No; its rounded code is -32768.
+\item \textbf{B} Only when a vector register holds it.
+\item \textbf{C} Yes; any raw value below -32768 must clip.
+\end{itemize}

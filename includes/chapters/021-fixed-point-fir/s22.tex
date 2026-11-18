@@ -1,0 +1,27 @@
+\section{Step 22 Write the first output byte only}\label{fir-s22}
+
+Store the result’s low byte at \texttt{a2} with \texttt{sb}. A halfword result occupies exactly two permitted bytes, even at an odd address. This first store publishes one byte and leaves the second poisoned byte untouched. Input and coefficients are immutable under this FIR contract, so no in-place assumption from the mixer may justify storing into either source.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{store\_low}. Keep surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sb $t0, 0($a2)
+\end{minted}
+Use recipe \texttt{s22-1}, \texttt{s22-2} from the companion construction inputs. Pause at \texttt{filter\_ready} before comparing the partial state.
+
+\subsection{Expected observation}
+Positive saturation writes ff as its first byte; negative saturation writes 00. The second byte remains \texttt{a5}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why would a word store violate this operation’s ownership?
+
+\begin{itemize}
+\item \textbf{A} It reads the coefficient backwards.
+\item \textbf{B} It cannot represent a positive endpoint.
+\item \textbf{C} It changes bytes beyond the two-byte sample.
+\end{itemize}
