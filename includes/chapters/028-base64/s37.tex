@@ -1,0 +1,34 @@
+\section{Step 37 Form the first packed byte contribution}\label{base64-s37}
+
+Gather the first sextets needed for three output bytes per quartet. Shift each byte lane by its assigned amount, and zero the fourth position in each group. Those fourth positions are private layout padding, not additional decoded bytes.
+
+Replace the body of region \texttt{dec16\_left}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dla $t1, dec_left
+    ld.b $w6, 0($t1)
+    vshf.b $w6, $w5, $w5
+    dla $t1, dec_left_shift
+    ld.b $w1, 0($t1)
+    sll.b $w6, $w6, $w1
+    dla $t1, dec_left_mask
+    ld.b $w1, 0($t1)
+    and.v $w6, $w6, $w1
+\end{minted}
+
+Use recipe \texttt{s37-1} with the cumulative source through this edit. Stop at \texttt{after\_dec16\_left} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Each four-byte group has its shifted left contribution and a zero fourth byte.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What does the fourth position represent?
+
+\begin{itemize}
+\item \textbf{A} Private packing space to be removed.
+\item \textbf{B} A caller output zero that must be stored.
+\item \textbf{C} An extra encoded character.
+\end{itemize}

@@ -223,9 +223,14 @@ included in main.tex as its twenty-seventh text package, with separate public/st
 and private/instructor distributions.
 
 
-Build the independent Base64 foundation with
+Build the independent Base64 cumulative draft with
 `python3 tools/book.py build --entry drafts/base64.tex`. Its directly edited native
 includes cover scalar and MSA encoding/decoding with canonical padding and exact byte
-footprints. Thirteen assembly fragments use actual IntelliJ highlighting. Native
-equations, headed tables and a described 24-bit regrouping diagram remain editable.
-This foundation is not yet included in main.tex; actual IDE figures are subsequent work.
+footprints, woven through 43 steps and 37 authored regions. Fifty-seven assembly
+fragments use actual IntelliJ highlighting, including supplied frames and restores.
+Native equations, headed tables and a described 24-bit regrouping diagram remain editable.
+The 65-page draft has 52 exact observation recipes, 43 quizzes, 86 progressive hints
+and four explicitly planned IDE figures. It is not yet included in main.tex; separate
+distributions and actual IDE figures remain subsequent work. Embedded fonts, tagged
+structure and complete single-page listings are checked; independent accessibility
+certification and student usability review remain pending.

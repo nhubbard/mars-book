@@ -9,21 +9,25 @@ binary pattern, so its input count differs from the raw count in the first colum
 \begin{tabular}{rrrrr}
 Raw bytes & Encode scalar & Encode MSA & Decode scalar & Decode MSA \\
 \hline
-12 & 244 & 176 & 998 & 625 \\
-48 & 820 & 554 & 3876 & 2310 \\
-192 & 3124 & 2066 & 15216 & 8964 \\
-4096 & 65598 & 43096 & 322560 & 189475 \\
+12 & 244 & 178 & 1078 & 675 \\
+48 & 820 & 562 & 4196 & 2510 \\
+192 & 3124 & 2098 & 16496 & 9764 \\
+4096 & 65598 & 43778 & 349870 & 206555 \\
 \end{tabular}
 \end{center}
 
-The direct encoder kernel executes 108 instructions; the direct decoder kernel executes
-132. Those kernel counts exclude whole-buffer validation. Comparing only a kernel with
+The direct encoder kernel executes 110 instructions; the direct decoder kernel executes
+134. Those kernel counts exclude whole-buffer validation. Comparing only a kernel with
 a complete scalar decoder would therefore use different boundaries. The alternative
 scalar implementation also changes character classification from branches to a table,
 which changes the cost of both decoder passes independently of vector packing.
-For 5464 text bytes, its scalar path takes 330576 instructions, compared with 322560
+For 5464 text bytes, its scalar path takes 357886 instructions, compared with 349870
 for the branch-based path on this pattern. A table lookup requires address formation
 and a byte load; count actual instructions rather than assuming a lookup is faster.
+
+These measurements include the cumulative starter’s unfinished-call guards and shared
+restore branches, even after every region has been completed. The guards preserve a
+useful development boundary but still execute in the completed program.
 
 These counts describe current simulated work. They do not measure host latency or
 hardware cycles, and no exact count is a grading rule. Data can affect the branch-based

@@ -1,0 +1,35 @@
+\section{Step 27 Gather the left contribution to each sextet}\label{base64-s27}
+
+Load the private vector, then load selectors into the gather destination. The gather overwrites those selectors with source bytes. Apply per-byte left and logical right shifts for the left contribution, retaining the independent group structure.
+
+Replace the body of region \texttt{enc12\_left}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{15\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ld.b $w0, 0($sp)
+    dla $t1, enc_left
+    ld.b $w1, 0($t1)
+    vshf.b $w1, $w0, $w0
+    dla $t1, enc_left_shift
+    ld.b $w2, 0($t1)
+    sll.b $w1, $w1, $w2
+    dla $t1, enc_left_right
+    ld.b $w2, 0($t1)
+    srl.b $w1, $w1, $w2
+\end{minted}
+
+Use recipe \texttt{s27-1} with the cumulative source through this edit. Stop at \texttt{after\_enc12\_left} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The working vector holds the shifted left contribution for all sixteen sextets.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What did the gather destination hold before vshf?
+
+\begin{itemize}
+\item \textbf{A} A caller return address.
+\item \textbf{B} Selector bytes.
+\item \textbf{C} The final ASCII output.
+\end{itemize}

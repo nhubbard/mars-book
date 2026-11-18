@@ -1,0 +1,38 @@
+\section{Step 15 Validate one final pad}\label{base64-s15}
+
+A pad is permitted only at the very end or as the first of two final pads. For a single final pad, check that the preceding sextet low two bits are zero, then subtract one from the decoded size. Earlier pads and nonzero unused bits reach the supplied bad-text return.
+
+Replace the body of region \texttt{val\_one}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{18\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+validate_padding:
+    li $t0, 2
+    beq $s1, $t0, validate_two
+    nop
+    li $t0, 1
+    bne $s1, $t0, validate_bad
+    nop
+    andi $t0, $s3, 3
+    bnez $t0, validate_bad
+    nop
+    daddiu $s2, $s2, -1
+    b validate_good
+    nop
+\end{minted}
+
+Use recipe \texttt{s15-1} with the cumulative source through this edit. Stop at \texttt{validate\_good} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Zm8= validates to two bytes; the noncanonical recipe fails without output.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which bits are unused before one final pad?
+
+\begin{itemize}
+\item \textbf{A} All bits of the first byte.
+\item \textbf{B} The preceding sextet low two bits.
+\item \textbf{C} The first sextet high two bits.
+\end{itemize}

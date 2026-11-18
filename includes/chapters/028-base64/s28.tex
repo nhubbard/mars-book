@@ -1,0 +1,36 @@
+\section{Step 28 Join the right contribution and mask sextets}\label{base64-s28}
+
+Gather the complementary source bytes, shift them and apply their position-specific masks. OR the two contributions and mask every lane with 63. The original working vector now contains numerical sextets and must remain available for every later alphabet-threshold comparison.
+
+Replace the body of region \texttt{enc12\_right}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    dla $t1, enc_right
+    ld.b $w3, 0($t1)
+    vshf.b $w3, $w0, $w0
+    dla $t1, enc_right_shift
+    ld.b $w2, 0($t1)
+    srl.b $w3, $w3, $w2
+    dla $t1, enc_right_mask
+    ld.b $w2, 0($t1)
+    and.v $w3, $w3, $w2
+    or.v $w1, $w1, $w3
+    andi.b $w1, $w1, 63
+\end{minted}
+
+Use recipe \texttt{s28-1} with the cumulative source through this edit. Stop at \texttt{after\_enc12\_right} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The sixteen byte lanes equal the canonical text sextet values.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which representation is present before alphabet translation?
+
+\begin{itemize}
+\item \textbf{A} Six-bit numerical indices.
+\item \textbf{B} ASCII characters already.
+\item \textbf{C} Four signed machine words.
+\end{itemize}

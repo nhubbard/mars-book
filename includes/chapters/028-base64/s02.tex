@@ -1,0 +1,38 @@
+\section{Step 2 Bound the input before sizing output}\label{base64-s02}
+
+Check the full unsigned input count before adding two or multiplying a group count. Handle empty input without touching pointers. For a nonempty bounded request, compute the required character count and compare it with full-width capacity. This region runs before a frame exists.
+
+Replace the body of region \texttt{enc\_guard}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{18\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, 4096
+    sltu $t0, $t0, $a1
+    bnez $t0, b64_limit
+    nop
+    beqz $a1, b64_empty
+    nop
+    daddiu $t0, $a1, 2
+    li $t1, 3
+    ddivu $t0, $t0, $t1
+    dsll $t0, $t0, 2
+    sltu $t1, $a3, $t0
+    bnez $t1, b64_capacity
+    nop
+\end{minted}
+
+Use recipe \texttt{s02-1} with the cumulative source through this edit. Stop at \texttt{encode\_frame} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+A three-byte request needs four output bytes; insufficient capacity returns before reading source.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+When is adding two to the count safe?
+
+\begin{itemize}
+\item \textbf{A} Before inspecting any count bits.
+\item \textbf{B} Only after storing output.
+\item \textbf{C} After the unsigned bound has been established.
+\end{itemize}

@@ -1,0 +1,44 @@
+\section{Step 14 Classify the ordinary characters without output}\label{base64-s14}
+
+Walk the selected text interval, retaining the previous valid sextet. Check for the unfinished sentinel before treating a negative classifier return as invalid input. A pad branches to the later padding regions. This pass never publishes decoded bytes, including after a long valid prefix.
+
+Replace the body of region \texttt{val\_scan}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{24\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+validate_loop:
+    beqz $s1, validate_good
+    nop
+    lbu $a0, 0($s0)
+    li $t0, 61
+    beq $a0, $t0, validate_padding
+    nop
+    jal b64_digit
+    nop
+    li $t0, -2
+    beq $v0, $t0, validate_development
+    nop
+    bltz $v0, validate_bad
+    nop
+    move $s3, $v0
+    daddiu $s0, $s0, 1
+    daddiu $s1, $s1, -1
+    b validate_loop
+    nop
+\end{minted}
+
+Use recipe \texttt{s14-1} with the cumulative source through this edit. Stop at \texttt{validate\_good} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+TWFu reaches validation success with provisional size three and no destination writes.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why retain the previous sextet?
+
+\begin{itemize}
+\item \textbf{A} It is an output pointer.
+\item \textbf{B} It determines the source length.
+\item \textbf{C} Its unused bits must be checked if a pad follows.
+\end{itemize}

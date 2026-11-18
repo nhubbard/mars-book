@@ -1,0 +1,32 @@
+\section{Step 23 Publish the second decoded byte}\label{base64-s23}
+
+Join the low part of the second sextet with the high part of the third, then store one byte. Check remaining output again. Keeping that check beside its store makes the two-byte padded tail independent of the later third-byte region.
+
+Replace the body of region \texttt{dec\_second}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sll $t4, $t1, 4
+    srl $t5, $t2, 2
+    or $t4, $t4, $t5
+    sb $t4, 1($s2)
+    daddiu $s6, $s6, -1
+    beqz $s6, decode_done
+    nop
+\end{minted}
+
+Use recipe \texttt{s23-1} with the cumulative source through this edit. Stop at \texttt{after\_dec\_second} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The partial output becomes Ma, with one output byte still remaining.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which tail ends after this second store?
+
+\begin{itemize}
+\item \textbf{A} A three-byte full group.
+\item \textbf{B} Every input containing a lowercase letter.
+\item \textbf{C} A decoded two-byte tail.
+\end{itemize}

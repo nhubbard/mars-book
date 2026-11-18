@@ -1,0 +1,39 @@
+\section{Step 40 Integrate full vector groups with the scalar tail}\label{base64-s40}
+
+When vector mode has at least twelve bytes remaining, call its completed kernel and check status before advancing. Source advances twelve bytes while output advances sixteen. Return to the shared loop so a final zero-to-eleven-byte suffix reaches the existing scalar group logic.
+
+Replace the body of region \texttt{enc\_vector}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{19\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t0, $s1, 12
+    bnez $t0, encode_scalar_group
+    nop
+    move $a0, $s0
+    move $a1, $s2
+    jal b64_encode12_msa
+    nop
+    bnez $v0, encode_failed
+    nop
+    daddiu $s0, $s0, 12
+    daddiu $s1, $s1, -12
+    daddiu $s2, $s2, 16
+    b encode_loop
+    nop
+\end{minted}
+
+Use recipe \texttt{s40-1} with the cumulative source through this edit. Stop at \texttt{encode\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The25-byte recipe uses two vector groups and a one-byte padded scalar tail.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+How many raw bytes remain after two kernels consume25 input bytes?
+
+\begin{itemize}
+\item \textbf{A} One.
+\item \textbf{B} Nine.
+\item \textbf{C} Zero.
+\end{itemize}

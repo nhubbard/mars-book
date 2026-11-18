@@ -1,0 +1,37 @@
+\section{Step 7 Complete a triple and advance by different strides}\label{base64-s07}
+
+A two-byte tail goes to its final pad store. A complete triple supplies the fourth sextet. After storing it, advance the source by three and destination by four, decreasing remaining input by three. The supplied loop and success return can now complete unpadded groups.
+
+Replace the body of region \texttt{enc\_advance}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    sltiu $t3, $s1, 3
+    bnez $t3, encode_pad_one
+    nop
+    andi $t3, $t2, 63
+    daddu $t4, $s4, $t3
+    lbu $t4, 0($t4)
+    sb $t4, 3($s2)
+    daddiu $s0, $s0, 3
+    daddiu $s1, $s1, -3
+    daddiu $s2, $s2, 4
+    b encode_loop
+    nop
+\end{minted}
+
+Use recipe \texttt{s07-1} with the cumulative source through this edit. Stop at \texttt{encode\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Man produces TWFu and returns four output bytes.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why are the two pointer strides different?
+
+\begin{itemize}
+\item \textbf{A} The representation expands three bytes into four characters.
+\item \textbf{B} Both pointers must remain word aligned.
+\item \textbf{C} The alphabet address advances with the input.
+\end{itemize}

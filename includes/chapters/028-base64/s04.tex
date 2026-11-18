@@ -1,0 +1,37 @@
+\section{Step 4 Read only the available source bytes}\label{base64-s04}
+
+Start each group by loading its first byte and clearing registers for the other two. Load a second and third byte only when their positions lie inside the remaining interval. A missing byte contributes zero bits without authorizing a read beyond the caller input.
+
+Replace the body of region \texttt{enc\_load}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+encode_scalar_group:
+    lbu $t0, 0($s0)
+    move $t1, $zero
+    move $t2, $zero
+    sltiu $t3, $s1, 2
+    bnez $t3, encode_pack
+    nop
+    lbu $t1, 1($s0)
+    sltiu $t3, $s1, 3
+    bnez $t3, encode_pack
+    nop
+    lbu $t2, 2($s0)
+\end{minted}
+
+Use recipe \texttt{s04-1} with the cumulative source through this edit. Stop at \texttt{encode\_pack} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The Man fixture loads decimal 77, 97, 110 before any output store.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why clear the missing-byte registers?
+
+\begin{itemize}
+\item \textbf{A} Their zero bits form canonical short-tail sextets.
+\item \textbf{B} A byte load always clears every temporary.
+\item \textbf{C} The caller guarantees three readable bytes for every tail.
+\end{itemize}

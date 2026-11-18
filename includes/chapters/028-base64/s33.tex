@@ -1,0 +1,36 @@
+\section{Step 33 Build the uppercase character contribution}\label{base64-s33}
+
+Load all sixteen validated characters before any output. Initialize the sextet accumulator and form a mask for the uppercase interval. Retain the biased value only in matching lanes. An uppercase A contributes zero, which is valid numerical data rather than a failure signal.
+
+Replace the body of region \texttt{dec16\_upper}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ld.b $w0, 0($a0)
+    xor.v $w5, $w5, $w5
+    ldi.b $w1, 64
+    clt_u.b $w2, $w1, $w0
+    ldi.b $w1, 91
+    clt_u.b $w3, $w0, $w1
+    and.v $w2, $w2, $w3
+    ldi.b $w1, 65
+    subv.b $w4, $w0, $w1
+    and.v $w4, $w4, $w2
+    or.v $w5, $w5, $w4
+\end{minted}
+
+Use recipe \texttt{s33-1} with the cumulative source through this edit. Stop at \texttt{after\_dec16\_upper} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The accumulator contains uppercase contributions while other character lanes remain zero.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why can a valid uppercase contribution be zero?
+
+\begin{itemize}
+\item \textbf{A} A is padding.
+\item \textbf{B} A represents sextet zero.
+\item \textbf{C} The source is empty.
+\end{itemize}

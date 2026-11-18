@@ -1,0 +1,33 @@
+\section{Step 31 Distinguish plus and slash at the upper end}\label{base64-s31}
+
+Apply the correction above 61, then the equality correction for 63. Both tests still read the original sextets. This separates the two final symbols from digits without changing the thresholds because of earlier arithmetic.
+
+Replace the body of region \texttt{enc12\_symbols}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    ldi.b $w2, 61
+    clt_u.b $w3, $w2, $w1
+    andi.b $w3, $w3, 15
+    subv.b $w4, $w4, $w3
+    ldi.b $w2, 63
+    ceq.b $w3, $w1, $w2
+    andi.b $w3, $w3, 3
+    addv.b $w4, $w4, $w3
+\end{minted}
+
+Use recipe \texttt{s31-1} with the cumulative source through this edit. Stop at \texttt{after\_enc12\_symbols} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The two symbol lanes now differ by the correction needed for plus and slash.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which vector must the threshold tests read?
+
+\begin{itemize}
+\item \textbf{A} The original sextets.
+\item \textbf{B} The partly translated bytes.
+\item \textbf{C} The output address bits.
+\end{itemize}

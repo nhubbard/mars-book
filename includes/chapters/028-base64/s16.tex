@@ -1,0 +1,34 @@
+\section{Step 16 Validate the final pair of pads}\label{base64-s16}
+
+When two input characters remain, require the next one to be another pad. Check the preceding sextet low four bits, then subtract two from the provisional size. Keep this case separate from merely ignoring equal signs: both position and otherwise-unused bits constrain valid text.
+
+Replace the body of region \texttt{val\_two}, retaining its BEGIN/END markers and the labels in the excerpt.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+validate_two:
+    lbu $t0, 1($s0)
+    li $t1, 61
+    bne $t0, $t1, validate_bad
+    nop
+    andi $t0, $s3, 15
+    bnez $t0, validate_bad
+    nop
+    daddiu $s2, $s2, -2
+\end{minted}
+
+Use recipe \texttt{s16-1} with the cumulative source through this edit. Stop at \texttt{validate\_good} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+Zg== validates to one byte; Zh== is rejected.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What does the second pad check establish?
+
+\begin{itemize}
+\item \textbf{A} That both final positions have the required pad form.
+\item \textbf{B} That source is zero terminated.
+\item \textbf{C} That capacity is large enough.
+\end{itemize}
