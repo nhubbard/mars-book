@@ -1,0 +1,1746 @@
+{
+  "status": "Native cumulative exercise draft; separate distributions and actual capture pending",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Trace the header and raster",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which offset begins the worked raster?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twelve."
+          },
+          {
+            "id": "b",
+            "text": "Ten."
+          },
+          {
+            "id": "c",
+            "text": "Eleven."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Count literal byte codes, not the printed escape characters."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Each displayed backslash-n denotes one LF byte."
+        }
+      ],
+      "prose": "Account for the eleven header bytes and twelve sample bytes in the worked image. Keep the byte offset of the first sample separate from the number of pixels. Before changing instructions, prepare the first parser recipe and inspect the source arena at the caller boundary.",
+      "expectedObservation": "The first raster byte is at offset eleven; four pixels require twelve samples.",
+      "recipes": [],
+      "observationRecipes": [
+        "s02-1"
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Reject impossible byte counts",
+      "kind": "author",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which check comes before a header load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The unsigned byte-count bound."
+          },
+          {
+            "id": "b",
+            "text": "The framebuffer color check."
+          },
+          {
+            "id": "c",
+            "text": "The destination filename."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "A pointer can be unusable even when the count is already enough to reject a request."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Use the full count register; do not truncate it to a word before comparing."
+        }
+      ],
+      "prose": "In the parser entry, compare the full unsigned count with 12544 before loading a caller byte. Reject an over-limit count with status two, then reject counts below three with status one. Use an unsigned comparison so a high count bit cannot bypass the bound as an apparently negative value.",
+      "expectedObservation": "A valid count reaches the next checkpoint without reading source; empty and high-bit counts return their declared errors.",
+      "region": "p_bound",
+      "target": "parse",
+      "checkpoint": "after_p_bound",
+      "recipes": [
+        "s02-1",
+        "s02-empty",
+        "s02-limit"
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "Check the two magic bytes",
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What identifies this raw image subset?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first RGB triplet."
+          },
+          {
+            "id": "b",
+            "text": "The ASCII bytes P and 6."
+          },
+          {
+            "id": "c",
+            "text": "A numerical word containing six."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The magic has two bytes and no endianness-dependent word interpretation."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Compare each loaded byte with its ASCII code."
+        }
+      ],
+      "prose": "Load the first two source bytes as unsigned values and compare them with ASCII P and 6. Keep these checks within the count preflight already established. Do not interpret the first pixel or a NUL as part of recognizing the magic.",
+      "expectedObservation": "The worked source passes both byte comparisons; the P3 variant fails before metadata stores.",
+      "region": "p_magic",
+      "target": "parse",
+      "checkpoint": "after_p_magic",
+      "recipes": [
+        "s03-1",
+        "s03-magic"
+      ]
+    },
+    {
+      "id": "s04",
+      "title": "Bound the header cursor",
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which value limits a header load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The framebuffer byte size."
+          },
+          {
+            "id": "b",
+            "text": "The final output filename length."
+          },
+          {
+            "id": "c",
+            "text": "The smaller of count and 256."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "A complete raster does not permit the header scanner to wander through it."
+        },
+        {
+          "id": "s04-h2",
+          "text": "Keep a separate header limit and test offset below it before loading."
+        }
+      ],
+      "prose": "Set the header limit to the smaller of the input count and 256. Initialize the offset to two, just after the magic, and the field index to zero for width. These variables describe a position and a parser state; neither is a pixel address yet.",
+      "expectedObservation": "The offset is two, the header limit is twenty-three and the next numeric field is width.",
+      "region": "p_state",
+      "target": "parse",
+      "checkpoint": "after_p_state",
+      "recipes": [
+        "s04-1"
+      ]
+    },
+    {
+      "id": "s05",
+      "title": "Classify the next gap byte",
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Does finding a separator also consume it?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every header load advances automatically."
+          },
+          {
+            "id": "b",
+            "text": "Only the whitespace state advances across it."
+          },
+          {
+            "id": "c",
+            "text": "The raster loop consumes it later."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Classification and cursor movement are different operations."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Keep the current byte and offset intact when branching to its handling state."
+        }
+      ],
+      "prose": "Reset the gap-seen flag, then inspect the next byte only while the offset is below the header limit. Recognize hash as a comment and the six ASCII whitespace values as separators. A different byte ends the gap and must remain available for the number state.",
+      "expectedObservation": "The LF after the magic is recognized before the offset advances.",
+      "region": "p_gap",
+      "target": "parse",
+      "checkpoint": "parse_whitespace",
+      "recipes": [
+        "s05-1"
+      ]
+    },
+    {
+      "id": "s06",
+      "title": "Consume one whitespace byte",
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "How far does this state advance?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One pixel row."
+          },
+          {
+            "id": "b",
+            "text": "One complete token."
+          },
+          {
+            "id": "c",
+            "text": "One byte per recognized separator."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Repeated spaces need repeated transitions."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Advance by one, then let the classifier decide whether another separator follows."
+        }
+      ],
+      "prose": "Set the gap-seen flag, advance the offset once and return to the gap classifier. Repeat for additional separators. The first nondelimiter must reach the leading-digit state at its original position.",
+      "expectedObservation": "The width digit is at offset three and the gap-seen flag is one.",
+      "region": "p_space",
+      "target": "parse",
+      "checkpoint": "after_p_gap",
+      "recipes": [
+        "s06-1"
+      ]
+    },
+    {
+      "id": "s07",
+      "title": "Scan a comment within the same limit",
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What terminates this comment?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The next pixel sample."
+          },
+          {
+            "id": "b",
+            "text": "A zero byte anywhere in memory."
+          },
+          {
+            "id": "c",
+            "text": "A line feed within the header limit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "A comment changes interpretation but does not expand the readable object."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Test the bound on every iteration and retain LF for the whitespace transition."
+        }
+      ],
+      "prose": "Treat a hash in a header gap as a comment and mark the gap as present. Advance through comment bytes with the same offset-limit check as other header reads. Stop at LF and let the whitespace path consume that LF; an unterminated comment must fail at the bound.",
+      "expectedObservation": "The commented recipe reaches its width digit; the unterminated variant returns status one.",
+      "region": "p_comment",
+      "target": "parse",
+      "checkpoint": "after_p_gap",
+      "recipes": [
+        "s07-1",
+        "s07-unterminated"
+      ]
+    },
+    {
+      "id": "s08",
+      "title": "Require a nonzero leading digit",
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why exclude ASCII zero here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero cannot occur in binary images."
+          },
+          {
+            "id": "b",
+            "text": "The framebuffer has no black pixels."
+          },
+          {
+            "id": "c",
+            "text": "The local tokens have no leading zeros and dimensions cannot be zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The rule concerns the first digit, not all later digits."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Check the leading byte before entering the general zero-through-nine digit loop."
+        }
+      ],
+      "prose": "Require that a separator or comment occurred in the gap. Then accept only ASCII one through nine as the first digit and initialize the accumulated numerical value to zero. This separates canonical token spelling from later magnitude checks.",
+      "expectedObservation": "The worked width begins at the same digit with accumulated value zero.",
+      "region": "p_leading",
+      "target": "parse",
+      "checkpoint": "parse_digits",
+      "recipes": [
+        "s08-1"
+      ]
+    },
+    {
+      "id": "s09",
+      "title": "Accumulate digits without consuming the delimiter",
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "What does the digit loop leave for the next state?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first nondigit at the current offset."
+          },
+          {
+            "id": "b",
+            "text": "The last digit at the previous offset."
+          },
+          {
+            "id": "c",
+            "text": "The first raster byte regardless of header length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "An examined byte is not necessarily a consumed byte."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Advance only after accepting a digit; branch away before advancing over a nondigit."
+        }
+      ],
+      "prose": "For each digit, subtract ASCII zero and update the numerical value to ten times the old value plus the digit. Reject a value above 255 immediately. Leave the first nondigit unconsumed so the next parser state can check the required gap or final LF.",
+      "expectedObservation": "The width is two; the cursor still names the space after it.",
+      "region": "p_digits",
+      "target": "parse",
+      "checkpoint": "parse_number_done",
+      "recipes": [
+        "s09-1"
+      ]
+    },
+    {
+      "id": "s10",
+      "title": "Retain width and height across tokens",
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why retain both dimensions?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Their product gives the pixel count, and each also belongs in metadata."
+          },
+          {
+            "id": "b",
+            "text": "They are interchangeable byte offsets."
+          },
+          {
+            "id": "c",
+            "text": "Only their sum is needed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The same digit loop serves different fields, but their meanings persist."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Use the field index to choose width, height or the final Maxval state."
+        }
+      ],
+      "prose": "After a dimension token, require its value to be at most sixty-four. Retain width and height separately while advancing the field index and returning to the gap scanner. When the field index reaches Maxval, transfer control to its special final-token check.",
+      "expectedObservation": "Width and height are both two, and the Maxval token has numerical value 255.",
+      "region": "p_dimensions",
+      "target": "parse",
+      "checkpoint": "parse_maxval",
+      "recipes": [
+        "s10-1"
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "Prove the exact raster extent",
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What must equal three times the pixel count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The whole header length."
+          },
+          {
+            "id": "b",
+            "text": "The framebuffer capacity."
+          },
+          {
+            "id": "c",
+            "text": "The file count minus the raster offset."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Perform the extent comparison before the first metadata store."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The validated offset permits subtraction without an unsigned underflow."
+        }
+      ],
+      "prose": "Require Maxval 255 and one final LF, then advance once to the raster offset. Multiply the bounded dimensions to obtain the pixel count and multiply that by three for sample bytes. Compare it with count minus raster offset; a trailer and a missing sample both fail before publication.",
+      "expectedObservation": "The raster offset is eleven, the pixel count is four, and metadata is still untouched.",
+      "region": "p_extent",
+      "target": "parse",
+      "checkpoint": "after_p_extent",
+      "recipes": [
+        "s11-1",
+        "s11-trailer"
+      ]
+    },
+    {
+      "id": "s12",
+      "title": "Publish the metadata descriptor",
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "When may metadata change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After all header and extent checks succeed."
+          },
+          {
+            "id": "b",
+            "text": "Before knowing whether the last sample exists."
+          },
+          {
+            "id": "c",
+            "text": "As soon as the magic matches."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Several stores publish one logical result."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Use offsets zero, four and eight, with an eight-byte raster-offset field."
+        }
+      ],
+      "prose": "Store width and height as two words and the raster offset as a doubleword in the supplied metadata object. Return status zero and the pixel count only after all checks have passed. Keep the field widths and offsets consistent with the public interface.",
+      "expectedObservation": "The sixteen-byte descriptor contains width two, height two and raster offset eleven.",
+      "region": "p_publish",
+      "target": "parse",
+      "checkpoint": "function_return",
+      "recipes": [
+        "s12-1",
+        "s12-binary"
+      ]
+    },
+    {
+      "id": "s13",
+      "title": "Observe a failed parser publication",
+      "kind": "observe",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Does a plausible width certify the file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if the destination is large."
+          },
+          {
+            "id": "b",
+            "text": "No; the full declared extent must also be valid."
+          },
+          {
+            "id": "c",
+            "text": "Yes, if Maxval appears anywhere later."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Inspect the whole result object, not only its first word."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Use the parser recipes that fail after recognizing some header fields."
+        }
+      ],
+      "prose": "Repeat the trailer and unterminated-comment recipes with the completed parser. Compare the complete metadata object with its initial sentinels. A plausible width and height are not a successful result when the remaining file has the wrong extent.",
+      "expectedObservation": "Format failures return one with zero count and unchanged metadata.",
+      "recipes": [],
+      "observationRecipes": [
+        "s11-trailer",
+        "s07-unterminated"
+      ]
+    },
+    {
+      "id": "s14",
+      "title": "Call the parser from a private frame",
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Why save the return address in a nested routine?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It enlarges the framebuffer."
+          },
+          {
+            "id": "b",
+            "text": "A nested call replaces the current return address."
+          },
+          {
+            "id": "c",
+            "text": "It changes the image byte order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Argument and temporary registers do not preserve the caller state by themselves."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Use the supplied full-width frame and its shared restore path."
+        }
+      ],
+      "prose": "Retain the decoder input pointer, framebuffer pointer and pixel capacity in saved registers. Pass the private descriptor at frame offset eighty to the parser. If parsing returns any nonzero status, restore the frame and propagate it, including development status four.",
+      "expectedObservation": "The private descriptor is valid while the caller framebuffer remains unchanged.",
+      "region": "d_call",
+      "target": "decode",
+      "checkpoint": "after_d_call",
+      "recipes": [
+        "s14-1"
+      ]
+    },
+    {
+      "id": "s15",
+      "title": "Check capacity in pixels",
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What unit does this capacity use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Header characters."
+          },
+          {
+            "id": "b",
+            "text": "RGB bytes."
+          },
+          {
+            "id": "c",
+            "text": "Pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "The result count and capacity must use the same unit."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Keep the comparison unsigned and retain the parser result until the decision is complete."
+        }
+      ],
+      "prose": "Compare the parser pixel count with the caller capacity using unsigned arithmetic. A short capacity returns status two without a pixel store. A capacity with its high bit set is large rather than negative.",
+      "expectedObservation": "Capacity four accepts the worked image; capacity three returns two without framebuffer writes.",
+      "region": "d_capacity",
+      "target": "decode",
+      "checkpoint": "after_d_capacity",
+      "recipes": [
+        "s15-1",
+        "s15-short"
+      ]
+    },
+    {
+      "id": "s16",
+      "title": "Initialize independent raster and word cursors",
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which address begins RGB data?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Input base plus the pixel count."
+          },
+          {
+            "id": "b",
+            "text": "Input base plus the validated raster offset."
+          },
+          {
+            "id": "c",
+            "text": "Framebuffer base plus the header length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "An offset becomes an address only after adding the appropriate base."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The descriptor offset is at frame byte eighty-eight in the supplied layout."
+        }
+      ],
+      "prose": "Load the saved raster offset from the private descriptor and add it to the original input base. Initialize the output cursor to the retained framebuffer pointer and the remaining count to the pixel count. The next region will read the first triplet.",
+      "expectedObservation": "The input cursor points eleven bytes into the file, while output points to the first word.",
+      "region": "d_cursor",
+      "target": "decode",
+      "checkpoint": "decode_pixel",
+      "recipes": [
+        "s16-1"
+      ]
+    },
+    {
+      "id": "s17",
+      "title": "Load three unsigned samples",
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Which load preserves a sample as zero through 255?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An aligned doubleword load."
+          },
+          {
+            "id": "b",
+            "text": "A signed byte load."
+          },
+          {
+            "id": "c",
+            "text": "An unsigned byte load."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "A sample is one byte even though its temporary register is wider."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Keep the three positions zero, one and two relative to the current raster cursor."
+        }
+      ],
+      "prose": "Load red, green and blue from consecutive byte positions at the raster cursor. Use unsigned loads so sample codes 128 through 255 remain nonnegative numerical byte values. Do not advance either cursor until the later publication region.",
+      "expectedObservation": "The first worked triplet is decimal 255, zero, zero; no word has been stored.",
+      "region": "d_load",
+      "target": "decode",
+      "checkpoint": "after_d_load",
+      "recipes": [
+        "s17-1"
+      ]
+    },
+    {
+      "id": "s18",
+      "title": "Form the numerical color word",
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why does joining fields need no carry?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Their set-bit positions do not overlap."
+          },
+          {
+            "id": "b",
+            "text": "All three samples are equal."
+          },
+          {
+            "id": "c",
+            "text": "The memory is little-endian."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Byte order and numerical field positions are separate questions."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Shift red left by sixteen positions and green by eight; blue already occupies the low byte."
+        }
+      ],
+      "prose": "Shift red into bits twenty-three through sixteen and green into fifteen through eight, then join those fields with blue. Their nonoverlapping fields can be combined without arithmetic carries. The high byte must remain zero.",
+      "expectedObservation": "The red triplet forms numerical word 0x00ff0000 before publication.",
+      "region": "d_pack",
+      "target": "decode",
+      "checkpoint": "after_d_pack",
+      "recipes": [
+        "s18-1"
+      ]
+    },
+    {
+      "id": "s19",
+      "title": "Store a word and advance the two strides",
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Which strides belong to the two objects?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Three input bytes and four output bytes per pixel."
+          },
+          {
+            "id": "b",
+            "text": "One identical stride for both."
+          },
+          {
+            "id": "c",
+            "text": "Four input bytes and three output bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "The same logical pixel occupies different byte counts."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Test the remaining pixel count after decrementing it exactly once per store."
+        }
+      ],
+      "prose": "Store the color word, advance the raster cursor by three and the output cursor by four, then decrement the remaining pixel count. Loop to the sample loads while pixels remain. The later return region is still unfinished after all four words have been produced.",
+      "expectedObservation": "The four output words are correct, but the temporary return still reports development status four.",
+      "region": "d_store",
+      "target": "decode",
+      "checkpoint": "after_d_store",
+      "recipes": [
+        "s19-1"
+      ]
+    },
+    {
+      "id": "s20",
+      "title": "Return dimensions after conversion",
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What does decoder v1 contain on success?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The framebuffer byte count."
+          },
+          {
+            "id": "b",
+            "text": "Packed width and height."
+          },
+          {
+            "id": "c",
+            "text": "The header offset alone."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The next encoder accepts this dimension representation directly."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Shift height by thirty-two bits and retain width in the low word."
+        }
+      ],
+      "prose": "Reload width and height from the private descriptor and pack height into the high word of the return register, width into the low word. Continue through the supplied restore. This successful value is a dimension pair, not the number of output bytes.",
+      "expectedObservation": "The return value is 0x0000000200000002 and the full saved state is restored.",
+      "region": "d_return",
+      "target": "decode",
+      "checkpoint": "function_return",
+      "recipes": [
+        "s20-1",
+        "s20-binary"
+      ]
+    },
+    {
+      "id": "s21",
+      "title": "Inspect color words and their stored bytes",
+      "kind": "observe",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Does little-endian storage reverse the PPM component order?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it describes the stored word representation."
+          },
+          {
+            "id": "b",
+            "text": "Only for zero samples."
+          },
+          {
+            "id": "c",
+            "text": "Yes, it changes the file to BGR."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Inspect the word value and its four stored bytes separately."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Follow the RGB-to-word field equation before applying memory byte order."
+        }
+      ],
+      "prose": "Use the completed decoder to compare numerical words with their little-endian byte representation. Then use the first-sample-LF variant. That sample must survive unchanged because header scanning ended at the declared boundary.",
+      "expectedObservation": "Red is a numerical 0x00ff0000 word even though its stored low bytes are 00 00 ff 00.",
+      "recipes": [],
+      "observationRecipes": [
+        "s20-1",
+        "s20-binary"
+      ]
+    },
+    {
+      "id": "s22",
+      "title": "Validate the packed dimensions",
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Where is width in the packed value?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The low thirty-two bits."
+          },
+          {
+            "id": "b",
+            "text": "The high thirty-two bits."
+          },
+          {
+            "id": "c",
+            "text": "The last input sample."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "The two fields are fixed-width quantities."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Use full-width shifts to isolate the low word without signed extension."
+        }
+      ],
+      "prose": "Extract width from the low word and height from the high word of the dimension argument. Require each to be from one through sixty-four before accessing either pixel input or output memory. Treat the extracted fields as unsigned values.",
+      "expectedObservation": "Both worked dimensions are two; invalid fields fail before any caller data access.",
+      "region": "e_dimensions",
+      "target": "encode",
+      "checkpoint": "after_e_dimensions",
+      "recipes": [
+        "s22-1"
+      ]
+    },
+    {
+      "id": "s23",
+      "title": "Calculate the complete canonical length",
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Why does width ten change the header length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It changes LF into CRLF."
+          },
+          {
+            "id": "b",
+            "text": "It adds an alpha channel."
+          },
+          {
+            "id": "c",
+            "text": "It needs a second decimal digit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Only the decimal tokens vary in this canonical header."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Each dimension contributes either one or two ASCII digits under the exercise bound."
+        }
+      ],
+      "prose": "Compute the bounded pixel count and its three-byte raster length. Add eleven for a header with two single-digit dimensions, then one extra byte for each dimension at least ten. This is the same digit-count formula derived in the reading, expressed with the local bounds.",
+      "expectedObservation": "The worked image needs twenty-three bytes; a two-digit width adds one header byte.",
+      "region": "e_length",
+      "target": "encode",
+      "checkpoint": "after_e_length",
+      "recipes": [
+        "s23-1",
+        "s23-two-digits"
+      ]
+    },
+    {
+      "id": "s24",
+      "title": "Preflight output capacity",
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which work follows capacity acceptance?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Rejecting an over-limit dimension."
+          },
+          {
+            "id": "b",
+            "text": "Pixel reads and header stores."
+          },
+          {
+            "id": "c",
+            "text": "Dimension validation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "A partially written header is still a caller-visible change."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Make the full-length decision before initializing the output cursor or storing the magic."
+        }
+      ],
+      "prose": "Compare the complete required length with the unsigned destination capacity. Reject a short destination before loading pixels or storing any header byte. Retain the exact successful output count for the final return.",
+      "expectedObservation": "A short capacity leaves both caller objects unchanged; accepted capacity retains length twenty-three.",
+      "region": "e_capacity",
+      "target": "encode",
+      "checkpoint": "after_e_capacity",
+      "recipes": [
+        "s24-1"
+      ]
+    },
+    {
+      "id": "s25",
+      "title": "Write the magic and first LF",
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "How many bytes does this prefix occupy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Three."
+          },
+          {
+            "id": "b",
+            "text": "Two."
+          },
+          {
+            "id": "c",
+            "text": "Four including a NUL."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Printed escape notation does not add bytes."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Use the ASCII byte codes and store no terminator."
+        }
+      ],
+      "prose": "Initialize the serialization cursor from the output pointer. Write ASCII P, ASCII 6 and one LF byte, then advance by three positions. These bytes identify a text header prefix; they are not pixel samples or a numerical word.",
+      "expectedObservation": "Only the first three destination bytes contain P6 and LF.",
+      "region": "e_magic",
+      "target": "encode",
+      "checkpoint": "after_e_magic",
+      "recipes": [
+        "s25-1"
+      ]
+    },
+    {
+      "id": "s26",
+      "title": "Write width and its separating space",
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "What supplies the units digit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The header offset."
+          },
+          {
+            "id": "b",
+            "text": "The remainder after division by ten."
+          },
+          {
+            "id": "c",
+            "text": "The pixel count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A zero quotient means no tens character, not an ASCII zero prefix."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Emit the quotient only when nonzero, then always emit the units digit and space."
+        }
+      ],
+      "prose": "Divide the validated width by ten for an optional tens digit and take its remainder for the units digit. Add ASCII zero to each emitted numerical digit. Omit a zero quotient, then write one space and retain the advanced output cursor.",
+      "expectedObservation": "The worked prefix is P6, LF, 2 and space, with no leading zero.",
+      "region": "e_width",
+      "target": "encode",
+      "checkpoint": "after_e_width",
+      "recipes": [
+        "s26-1"
+      ]
+    },
+    {
+      "id": "s27",
+      "title": "Write height and its LF",
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why test heights nine and ten?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They change the sample width."
+          },
+          {
+            "id": "b",
+            "text": "They exercise one-digit and two-digit token lengths."
+          },
+          {
+            "id": "c",
+            "text": "They change the file magic."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "The header cursor is a byte address, not a token index."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Account for any optional tens store before placing the units digit and LF."
+        }
+      ],
+      "prose": "Apply the same quotient/remainder method to height, then store LF after its last digit. Keep track of where the height token began: the next region writes Maxval relative to that point before advancing the cursor across the whole suffix.",
+      "expectedObservation": "The height and following LF are present; Maxval positions remain sentinel bytes.",
+      "region": "e_height",
+      "target": "encode",
+      "checkpoint": "after_e_height",
+      "recipes": [
+        "s27-1"
+      ]
+    },
+    {
+      "id": "s28",
+      "title": "Finish Maxval and enter raster output",
+      "kind": "author",
+      "quiz": {
+        "id": "q28",
+        "prompt": "How is Maxval 255 represented in the header?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One binary byte 255."
+          },
+          {
+            "id": "b",
+            "text": "Three ASCII digits."
+          },
+          {
+            "id": "c",
+            "text": "A four-byte color word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Header numbers and sample bytes use different representations."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Emit 2, 5, 5 and one LF, counting each byte once."
+        }
+      ],
+      "prose": "Store the three ASCII digits of 255 and its LF separator. Advance the cursor to the first raster position only after those four bytes are present. Do not add an extra whitespace byte to make the raster visually separate.",
+      "expectedObservation": "The complete worked header has eleven bytes, and the next destination byte is its first sample position.",
+      "region": "e_maxval",
+      "target": "encode",
+      "checkpoint": "after_e_maxval",
+      "recipes": [
+        "s28-1"
+      ]
+    },
+    {
+      "id": "s29",
+      "title": "Serialize the first RGB triplet",
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Does the input word high byte enter this file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only when it is nonzero."
+          },
+          {
+            "id": "b",
+            "text": "Yes, as alpha."
+          },
+          {
+            "id": "c",
+            "text": "No; only RGB fields are serialized."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "The serialized pixel has exactly three positions."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Inspect bits twenty-three through sixteen, fifteen through eight and seven through zero."
+        }
+      ],
+      "prose": "Initialize the pixel-word cursor and extract the first word red, green and blue fields into three byte stores. Ignore the high byte. Leave pointer advancement to the next region so this observation isolates field extraction from loop progress.",
+      "expectedObservation": "The header and first red triplet are present; the remaining raster bytes are still sentinels.",
+      "region": "e_rgb",
+      "target": "encode",
+      "checkpoint": "after_e_rgb",
+      "recipes": [
+        "s29-1"
+      ]
+    },
+    {
+      "id": "s30",
+      "title": "Complete serialization and return its exact length",
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which count survives for the successful return?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining pixel count, which is zero."
+          },
+          {
+            "id": "b",
+            "text": "The complete header-plus-raster length."
+          },
+          {
+            "id": "c",
+            "text": "The destination capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "A loop counter and a result length have different lifetimes."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Keep the promised file length intact while another register counts pixels down."
+        }
+      ],
+      "prose": "Advance the word cursor by four and the serialized cursor by three, decrement the remaining pixel count and repeat extraction while needed. Return status zero only after the complete raster is present. Preserve the previously calculated total file length rather than returning the final pixel-loop remainder.",
+      "expectedObservation": "The output is the canonical twenty-three-byte worked image with no trailing NUL.",
+      "region": "e_advance",
+      "target": "encode",
+      "checkpoint": "function_return",
+      "recipes": [
+        "s30-1",
+        "s30-width-nine",
+        "s30-width-ten"
+      ]
+    },
+    {
+      "id": "s31",
+      "title": "Compare adjacent decimal-width boundaries",
+      "kind": "observe",
+      "quiz": {
+        "id": "q31",
+        "prompt": "What changes when a dimension gains a decimal digit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The header gains one byte."
+          },
+          {
+            "id": "b",
+            "text": "Every pixel gains one byte."
+          },
+          {
+            "id": "c",
+            "text": "The pixel word changes endianness."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Compare headers before comparing raster data."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Locate the final LF and count the prefix independently in each case."
+        }
+      ],
+      "prose": "Repeat the encoder with widths nine and ten. Identify the added ASCII digit and follow the first raster offset in each result. The extra header byte changes the raster position without changing the three-byte-per-pixel rule.",
+      "expectedObservation": "Each output length follows nine plus both digit counts plus three times the pixel count.",
+      "recipes": [],
+      "observationRecipes": [
+        "s30-width-nine",
+        "s30-width-ten"
+      ]
+    },
+    {
+      "id": "s32",
+      "title": "Bound a file buffer before opening",
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "When is the input path first needed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before rejecting zero capacity."
+          },
+          {
+            "id": "b",
+            "text": "Only after decoding pixels."
+          },
+          {
+            "id": "c",
+            "text": "After capacity has passed preflight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "A capacity error needs no file-system decision."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Retain all capacity bits and reject both zero and values above the local bound."
+        }
+      ],
+      "prose": "Require the unsigned loader capacity to be from one through 12544 before allocating a file descriptor or touching caller pointers. This bound defines the maximum buffered file for the exercise. The supplied frame is entered only after this preflight succeeds.",
+      "expectedObservation": "Valid capacity reaches the framed routine; zero and high-bit capacities fail without file operations.",
+      "region": "l_bound",
+      "target": "load",
+      "checkpoint": "after_l_bound",
+      "recipes": [
+        "s32-1",
+        "s32-zero",
+        "s32-limit"
+      ]
+    },
+    {
+      "id": "s33",
+      "title": "Open and retain the input descriptor",
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Which descriptor should later reads use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The byte count."
+          },
+          {
+            "id": "b",
+            "text": "The one returned by open."
+          },
+          {
+            "id": "c",
+            "text": "Always three."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Descriptors belong to successful opens, not source-code constants."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Save the returned value before selecting another syscall in v0."
+        }
+      ],
+      "prose": "Retain the byte buffer, capacity and metadata pointers, then open the supplied path read-only. A negative result returns I/O status three. Otherwise retain the actual descriptor and initialize the number of loaded bytes to zero. The supplied development exit closes this descriptor while later regions remain unfinished.",
+      "expectedObservation": "The valid fixture is open at the checkpoint and is closed on the temporary development return.",
+      "region": "l_open",
+      "target": "load",
+      "checkpoint": "after_l_open",
+      "recipes": [
+        "s33-1",
+        "s33-missing"
+      ]
+    },
+    {
+      "id": "s34",
+      "title": "Accumulate short reads",
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What does a short positive read mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The header is malformed."
+          },
+          {
+            "id": "b",
+            "text": "Some bytes arrived; continue until EOF or capacity."
+          },
+          {
+            "id": "c",
+            "text": "The file has ended."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "The requested count and returned count can differ."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Add the returned count to accumulated bytes and use the unused suffix for the next request."
+        }
+      ],
+      "prose": "Read into the unused suffix of the buffer and request only its remaining capacity. Distinguish a negative error, zero EOF and a positive byte count. Advance by the positive result and continue; a short positive result does not establish EOF.",
+      "expectedObservation": "The full worked file is buffered at EOF, but metadata is still unchanged before finalization.",
+      "region": "l_read",
+      "target": "load",
+      "checkpoint": "load_eof",
+      "recipes": [
+        "s34-1",
+        "s34-error"
+      ]
+    },
+    {
+      "id": "s35",
+      "title": "Probe an exactly full buffer privately",
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Where does the extra probe byte belong?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In private frame storage."
+          },
+          {
+            "id": "b",
+            "text": "In the first metadata word."
+          },
+          {
+            "id": "c",
+            "text": "After the caller buffer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "The probe decides file length, not pixel content."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Use the separate one-byte slot and distinguish positive, zero and negative results."
+        }
+      ],
+      "prose": "When accumulated bytes equal capacity, request one additional byte into the supplied private probe at frame offset ninety-six. Zero proves exact-fit EOF. A positive byte proves excess input and a negative result is an I/O error. Close the descriptor on both failures without publishing metadata.",
+      "expectedObservation": "An exact fit reaches EOF; a twenty-two-byte capacity rejects the twenty-three-byte input without writing beyond the buffer.",
+      "region": "l_probe",
+      "target": "load",
+      "checkpoint": "load_eof",
+      "recipes": [
+        "s35-1",
+        "s35-excess",
+        "s35-probe-error"
+      ]
+    },
+    {
+      "id": "s36",
+      "title": "Close, parse and publish loaded metadata",
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which value does loader v1 return on success?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The parser pixel count."
+          },
+          {
+            "id": "b",
+            "text": "The file byte count."
+          },
+          {
+            "id": "c",
+            "text": "The buffer capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "A nested call may return a different quantity from its caller."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Retain the accumulated file count while parsing, then select it for the successful return."
+        }
+      ],
+      "prose": "Close the input after EOF, then parse the complete buffered byte count into the supplied metadata object. Propagate any parser failure. On success return the exact loaded file count, not the parser pixel count.",
+      "expectedObservation": "The loader returns twenty-three bytes and the completed metadata; malformed input leaves metadata unchanged.",
+      "region": "l_finish",
+      "target": "load",
+      "checkpoint": "function_return",
+      "recipes": [
+        "s36-1",
+        "s36-malformed"
+      ]
+    },
+    {
+      "id": "s37",
+      "title": "Preflight a save byte count",
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "What can reject a zero save request?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Opening the output first."
+          },
+          {
+            "id": "b",
+            "text": "Its count alone."
+          },
+          {
+            "id": "c",
+            "text": "Inspecting a pixel word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "An empty object cannot be a valid local PPM image."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Check the full count before dereferencing either argument pointer."
+        }
+      ],
+      "prose": "Reject a zero serialized count with format status one and an unsigned over-limit count with status two. Both decisions precede any source or path access. Enter the supplied frame only after the count is within the parser domain.",
+      "expectedObservation": "A valid count reaches validation; zero and over-limit counts perform no file operations.",
+      "region": "sv_bound",
+      "target": "save",
+      "checkpoint": "after_sv_bound",
+      "recipes": [
+        "s37-1",
+        "s37-empty",
+        "s37-limit"
+      ]
+    },
+    {
+      "id": "s38",
+      "title": "Validate before opening output",
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Why parse before mode-one open?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Mode one can truncate existing output."
+          },
+          {
+            "id": "b",
+            "text": "Parsing requires a writable descriptor."
+          },
+          {
+            "id": "c",
+            "text": "The path contains the raster length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Opening output can itself change external state."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Use the private metadata slot and delay the first file operation until parse succeeds."
+        }
+      ],
+      "prose": "Retain the path, serialized source and count while the parser uses the private descriptor. Propagate a nonzero parser status. Do not open the destination yet: a valid filename must not let malformed image bytes erase an existing file.",
+      "expectedObservation": "The private descriptor is valid and the old output file remains untouched.",
+      "region": "sv_validate",
+      "target": "save",
+      "checkpoint": "after_sv_validate",
+      "recipes": [
+        "s38-1",
+        "s38-malformed"
+      ]
+    },
+    {
+      "id": "s39",
+      "title": "Open the destination for replacement",
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Does a successful truncate open preserve old bytes until the first write?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, until the final close."
+          },
+          {
+            "id": "b",
+            "text": "No; the old file may already be empty."
+          },
+          {
+            "id": "c",
+            "text": "Yes, unless the header changes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Descriptor cleanup does not undo truncation."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Observe the file immediately after open as well as after the later stores."
+        }
+      ],
+      "prose": "Open the validated output path in mode one and retain the returned descriptor. A negative result returns I/O status three. A successful open may already have truncated the file; the development exit closes it even while the write region remains unfinished.",
+      "expectedObservation": "The output fixture is empty at the checkpoint and its descriptor is closed on the development return.",
+      "region": "sv_open",
+      "target": "save",
+      "checkpoint": "after_sv_open",
+      "recipes": [
+        "s39-1",
+        "s39-denied"
+      ]
+    },
+    {
+      "id": "s40",
+      "title": "Advance by bytes actually written",
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "How far does a short write advance progress?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "By the original request."
+          },
+          {
+            "id": "b",
+            "text": "By one pixel regardless of count."
+          },
+          {
+            "id": "c",
+            "text": "By its returned count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "A short write is not completion and is not a request to repeat the same prefix."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Recompute pointer and remaining length from the accumulated accepted count."
+        }
+      ],
+      "prose": "Track accepted bytes separately from the total. Request the unaccepted suffix and add each positive result to the accepted count. A negative or zero-progress result for a nonempty request takes the close-and-error path. Keep the complete source readable, including its guard byte for the current syscall.",
+      "expectedObservation": "All serialized bytes may be present while the temporary return still reports development status four; injected failures leave the expected prefix.",
+      "region": "sv_write",
+      "target": "save",
+      "checkpoint": "save_done",
+      "recipes": [
+        "s40-1",
+        "s40-error"
+      ]
+    },
+    {
+      "id": "s41",
+      "title": "Close and return saved length",
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "What must every successful open eventually receive?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A close on every return path."
+          },
+          {
+            "id": "b",
+            "text": "A new parser invocation."
+          },
+          {
+            "id": "c",
+            "text": "A fixed descriptor value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "The result bytes do not establish resource cleanup by themselves."
+        },
+        {
+          "id": "s41-h2",
+          "text": "Observe open handles on success and on the injected-error recipes."
+        }
+      ],
+      "prose": "Close the output after all bytes have been accepted, then return success with the complete count. Continue through the supplied restore and inspect the full saved register values. An earlier write failure returns three and zero count even though the file can contain a partial prefix.",
+      "expectedObservation": "The completed save has exact bytes, exact count and no open descriptor.",
+      "region": "sv_finish",
+      "target": "save",
+      "checkpoint": "function_return",
+      "recipes": [
+        "s41-1",
+        "s41-commented"
+      ]
+    },
+    {
+      "id": "s42",
+      "title": "Run the connected program and reuse the session",
+      "kind": "observe",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Why retain same-session checks?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They remove the need for error checks."
+          },
+          {
+            "id": "b",
+            "text": "A fresh machine can hide stale private state and descriptor-position bugs."
+          },
+          {
+            "id": "c",
+            "text": "They permit different RGB byte order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Keep each quantity tied to its interface unit."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Verify a reopened input starts at byte zero and a shorter replacement has no old suffix."
+        }
+      ],
+      "prose": "Select the connected caller after all regions are complete. Follow loaded byte count into decoding, packed dimensions into encoding and encoded byte count into saving. Repeat after an error and after a longer earlier output so stale state, descriptor positions and old file suffixes cannot hide behind a fresh simulator.",
+      "expectedObservation": "The saved canonical image agrees with independent checks; failure leaves the promised caller objects unchanged.",
+      "recipes": [
+        "s42-1"
+      ],
+      "observationRecipes": [
+        "s42-1"
+      ]
+    }
+  ]
+}

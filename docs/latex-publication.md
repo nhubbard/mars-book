@@ -245,3 +245,11 @@ listings yet; it is not included in main.tex. The complete private image routine
 and wide addresses, including independent decoding of actual saved image files. The
 public reading defines interfaces and explains algorithms without importing instructor
 implementation bodies. Cumulative construction and separate distributions remain next.
+
+
+The same PPM entry now composes42 cumulative steps around the retained explanations.
+Three actual-highlighted listings quote only the public starter’s supplied ABI and cleanup
+scaffolding; complete instructor algorithm bodies remain private. Frames, checkpoint
+recipes, quizzes and four unfulfilled capture plans are native includes. The current
+standalone composition has 41 pages. Separate distributions and main.tex integration
+remain pending.

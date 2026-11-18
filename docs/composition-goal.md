@@ -296,3 +296,14 @@ The two implementations are verified at ordinary and wide addresses, including a
 saved-file decoding by an independent reader and deliberate faults. Guided construction,
 public completion checks and separate chapter distributions remain next. The manuscript
 still contains 28 packaged chapters; the full goal remains active.
+
+
+The PPM cumulative draft now has 42 native steps, 37 authored regions, 62 exact recipes,
+42 quizzes,84 progressive hints and four explicitly planned light-theme figures.
+The safe starter was authored independently of instructor algorithm bodies. Its generic
+128-byte save/restore and descriptor cleanup are illustrated with actual IntelliJ
+highlighting. The caller stores full 64-bit results. Independent checkpoint models cover
+partial metadata, packed pixels, header prefixes and file state; complete variants retain
+the interface checks. Step and recipe metadata does not regenerate native prose.
+Separate distributions and main-manuscript integration remain next. The earlier prose
+remains intact, with split includes preserving its publication order around the edits.
