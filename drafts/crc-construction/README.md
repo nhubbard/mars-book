@@ -1,3 +1,6 @@
+The current distribution is in `packages/024-crc32`. This earlier draft is retained
+for provenance; use the package starter, public checks and prepare.py for current work.
+
 # CRC construction draft
 
 The directly edited native chapter is the composition authority. This folder contains

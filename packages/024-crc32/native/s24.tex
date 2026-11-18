@@ -1,0 +1,36 @@
+\section{Step 24 Select a kernel and prepare the table once}\label{crc-s24}
+
+Choose the bit routine for method zero. For method one, construct the table before selecting the table routine. Retain the selected entry address in saved register \texttt{s6}, since reads reuse caller-saved argument and result registers. Table construction belongs outside the repeated read loop.
+
+\Needspace{17\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{f\_select}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $s3, $zero, file_bit_method
+    nop
+    dla $a0, crc_table
+    jal crc32_table_init
+    nop
+    dla $s6, crc32_table_update
+    beq $zero, $zero, file_read
+    nop
+file_bit_method:
+    dla $s6, crc32_bit_update
+\end{minted}
+
+Use \texttt{s24-1}, \texttt{s24-2}. The CLI checks install explicit in-memory files and read/error controls. Ordinary IDE files do not force these short-read or failure conditions.
+
+\subsection{Expected observation}
+Table mode initializes exactly 1024 workspace bytes before any read; bit mode leaves the table alone. Both provisional paths close the file.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Where should table construction occur?
+
+\begin{itemize}
+\item \textbf{A} Before each bit step.
+\item \textbf{B} Once before the file read loop.
+\item \textbf{C} After the final checksum is returned.
+\end{itemize}

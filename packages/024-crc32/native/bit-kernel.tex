@@ -1,0 +1,30 @@
+\section{Translate the state transition into an array update}
+The bit update has an outer byte loop and an inner loop of eight steps. At the outer
+loop boundary, the state represents exactly the bytes already consumed. Check the
+remaining length before loading another byte. With a zero length, return the incoming
+state without dereferencing the pointer. Otherwise load one octet, XOR it into the
+state, and reset the bit counter to eight.
+
+In the inner loop, retain the old low bit before shifting. The branch decision must
+refer to that retained bit; testing after the shift would select a different feedback
+sequence. After eight steps, advance the full pointer by one and decrease the remaining
+byte count. Return to the outer boundary. The counter cannot underflow on a valid
+input because the zero test precedes every load and decrement.
+
+The illustrated MIPS64 implementation keeps addresses in full registers and uses
+\texttt{daddiu} to advance its byte walker. It uses \texttt{lbu} so the input
+value is between zero and 255. An unmasked \texttt{lb} can introduce ones above the
+low byte when bit seven is set, changing the state before its first shift.
+The state uses logical doubleword shifts with an explicitly zero-extended feedback
+constant. This keeps the 32-bit invariant visible in a 64-bit machine.
+
+An implementation may use word instructions instead, but it must account for their
+extension rules and return a zero-extended state. In particular, an arithmetic right
+shift of a negative word fills high positions with ones. The unsigned CRC transition
+requires zeroes. A correct low word with incorrect upper bits still violates this
+project's return interface.
+
+\subsection*{Exercise: Find a width error}
+Use an input byte with bit seven set and an initial state with bit 31 set. Predict
+which error a signed byte load can introduce and which error a signed word shift can
+introduce. Choose observations before the feedback XOR that distinguish the two faults.

@@ -1,0 +1,38 @@
+\section{Trace the first byte before processing the whole message}
+The ASCII byte for the character 1 is hexadecimal \texttt{31}. Starting from
+\texttt{ffffffff}, XOR produces \texttt{ffffffce}. Its low bit is zero, so the
+first shift produces \texttt{7fffffe7} without feedback. The new low bit is one:
+the next shift gives \texttt{3ffffff3}, and XOR with the feedback mask gives
+\texttt{d2477cd3}. Continue inspecting the \emph{current} low bit at each step.
+
+\begin{table}[htbp]
+\centering
+\caption{Eight reflected steps after XORing the first byte, \texttt{31}.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rl}
+\toprule
+Completed bit steps & Raw state\\
+\midrule
+0 & \texttt{ffffffce}\\
+1 & \texttt{7fffffe7}\\
+2 & \texttt{d2477cd3}\\
+3 & \texttt{849b3d49}\\
+4 & \texttt{aff51d84}\\
+5 & \texttt{57fa8ec2}\\
+6 & \texttt{2bfd4761}\\
+7 & \texttt{f8462090}\\
+8 & \texttt{7c231048}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the complete nine-byte ASCII sequence \texttt{123456789}, the raw result is
+\texttt{340bc6d9}; complementing it produces \texttt{cbf43926}. These values are
+separate observations at the update and message boundaries. If a program reports the
+raw result as its final checksum, it can have a correct inner loop and an incorrect
+file result.
+
+The input contains nine bytes, without a trailing newline or terminating zero. Adding
+either byte changes the message being checked. When comparing a result with another
+program, first make sure the byte sequences agree, then check the CRC parameters.
+A matching filename or visible text does not establish equal file contents.

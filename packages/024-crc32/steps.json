@@ -1,0 +1,1243 @@
+{
+  "status": "Native cumulative draft; distributions and runner pending",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Choose a raw-state boundary",
+      "kind": "observe",
+      "prose": "The update entries return a running state. The complete-file entry returns a complemented checksum and a separate status. Before editing, follow the same nine bytes through those two interfaces. A register can contain a correct value for one boundary and the wrong value for the other.",
+      "expectedObservation": "The check message ends at raw state `340bc6d9` and finalized checksum `cbf43926`.",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Which value continues the raw update?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The last returned raw state."
+          },
+          {
+            "id": "b",
+            "text": "The complemented display value."
+          },
+          {
+            "id": "c",
+            "text": "The byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Identify whether the message continues."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Complement only when the complete message ends."
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Inspect the caller and safe temporary exits",
+      "kind": "observe",
+      "prose": "The starter selects a bit update, table construction, table update, or complete file operation. Marked regions initially branch to temporary exits. The first bit/table stubs copy the incoming raw state before returning; the initializer returns provisional zero. The file frame supplies a descriptor marker and a temporary cleanup path so an unfinished file step still closes any successfully opened handle.",
+      "expectedObservation": "The default starter returns the incoming state without processing data. File provisional returns use status three, which is a construction marker outside the completed file contract.",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Does a provisional return establish a completed checksum?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, when `v0` is zero."
+          },
+          {
+            "id": "b",
+            "text": "No; unfinished regions deliberately bypass work."
+          },
+          {
+            "id": "c",
+            "text": "Only when the table is mapped."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Locate the next temporary branch."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Read the file status before interpreting `v0`."
+        }
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "Retain the incoming state and feedback mask",
+      "kind": "author",
+      "prose": "Keep the raw state in `v0` and load the reflected feedback mask in `t3`. The constant must represent a nonnegative 32-bit value in this 64-bit register. Loading it once outside the byte loop avoids repeating constant construction for every byte.",
+      "expectedObservation": "The default raw state is `ffffffff`; `t3` is the zero-extended `edb88320`.",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why load the mask outside the byte loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its value changes at every bit."
+          },
+          {
+            "id": "b",
+            "text": "The same mask serves every byte."
+          },
+          {
+            "id": "c",
+            "text": "The pointer must equal the mask."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Distinguish the mask from the current remainder."
+        },
+        {
+          "id": "s03-h2",
+          "text": "No input byte is read at this stage."
+        }
+      ],
+      "editTarget": "b_setup",
+      "code": "    move $v0, $a2\n    dli $t3, 0xedb88320\n"
+    },
+    {
+      "id": "s04",
+      "title": "Return before loading an empty interval",
+      "kind": "author",
+      "prose": "At the byte-loop boundary, test the remaining length before using the source pointer. Zero length is a valid identity update: the incoming state is already the result. This guard also becomes the loop exit after the final byte has been consumed.",
+      "expectedObservation": "An empty update preserves its arbitrary seed and reads no caller input.",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What may an empty update read?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One mapped padding byte."
+          },
+          {
+            "id": "b",
+            "text": "The entire table."
+          },
+          {
+            "id": "c",
+            "text": "Neither source nor table."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "A mapped address is not permission to read an empty slice."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The state already exists in `v0`."
+        }
+      ],
+      "editTarget": "b_gate",
+      "code": "    beq $a1, $zero, bit_return\n    nop\n"
+    },
+    {
+      "id": "s05",
+      "title": "Mix one octet and start eight bit steps",
+      "kind": "author",
+      "prose": "Load an unsigned octet, XOR it into the low byte of the raw state, and initialize the bit counter. These three operations prepare one byte; they do not yet advance the source. The first default byte is hexadecimal 31, so the mixed state is `ffffffce`.",
+      "expectedObservation": "The first check byte leaves `v0`=`ffffffce` and `t1`=8.",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why use an unsigned byte value here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It prevents source sign extension from changing higher state bits."
+          },
+          {
+            "id": "b",
+            "text": "All files contain text."
+          },
+          {
+            "id": "c",
+            "text": "It selects a larger buffer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "The octet range is zero through 255."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Bits above the low byte belong to the state."
+        }
+      ],
+      "editTarget": "b_byte",
+      "code": "    lbu $t0, 0($a0)\n    xor $v0, $v0, $t0\n    li $t1, 8\n"
+    },
+    {
+      "id": "s06",
+      "title": "Apply feedback from the old low bit",
+      "kind": "author",
+      "prose": "Retain the old low bit in `t2`, shift the state right with zero fill, then apply feedback only when that retained bit is one. The branch targets the common path after feedback. Testing the shifted low bit instead would change which polynomial terms are cancelled.",
+      "expectedObservation": "The first default step gives `7fffffe7`. A zero seed with byte 01 instead gives `edb88320` after one step.",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which low bit chooses feedback?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The low bit after the shift."
+          },
+          {
+            "id": "b",
+            "text": "The low bit before the shift."
+          },
+          {
+            "id": "c",
+            "text": "The input length low bit."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Save the decision before modifying the state."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The outgoing bit determines the correction."
+        }
+      ],
+      "editTarget": "b_step",
+      "code": "    andi $t2, $v0, 1\n    dsrl $v0, $v0, 1\n    beq $t2, $zero, bit_no_feedback\n    nop\n    xor $v0, $v0, $t3\n"
+    },
+    {
+      "id": "s07",
+      "title": "Finish all eight steps for this byte",
+      "kind": "author",
+      "prose": "Decrease the bit counter after each completed transition and repeat while it is nonzero. The loop returns to the feedback decision rather than loading the byte again. When it stops, the state represents one complete octet, but the outer pointer and byte count still refer to that octet.",
+      "expectedObservation": "The first default byte completes at raw state `7c231048` with `t1`=0.",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What repeats inside this loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The state transition for the same byte."
+          },
+          {
+            "id": "b",
+            "text": "The source load and XOR."
+          },
+          {
+            "id": "c",
+            "text": "File opening."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Keep the outer and inner loop boundaries distinct."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Reloading and mixing the byte would consume it repeatedly."
+        }
+      ],
+      "editTarget": "b_bits",
+      "code": "    addiu $t1, $t1, -1\n    bne $t1, $zero, bit_next_bit\n    nop\n"
+    },
+    {
+      "id": "s08",
+      "title": "Advance the byte interval and complete the update",
+      "kind": "author",
+      "prose": "After eight steps, advance the full source address and reduce the remaining byte count. The next outer guard decides whether another byte exists. Together, the two loops now consume every supplied byte exactly once and return the raw state without finalizing it.",
+      "expectedObservation": "The nine-byte default returns `340bc6d9`; the remaining count is zero and the pointer is at its exclusive end.",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which operation belongs after the eight steps?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Resetting the message state."
+          },
+          {
+            "id": "b",
+            "text": "Advancing the source by one byte."
+          },
+          {
+            "id": "c",
+            "text": "Complementing after every byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The data pointer has byte units."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The next byte continues the same raw state."
+        }
+      ],
+      "editTarget": "b_bytes",
+      "code": "    daddiu $a0, $a0, 1\n    addiu $a1, $a1, -1\n    beq $zero, $zero, bit_next_byte\n    nop\n"
+    },
+    {
+      "id": "s09",
+      "title": "Compare a changed input bit",
+      "kind": "observe",
+      "prose": "Run the complete bit update on the original check bytes and on a copy whose first byte is 30 instead of 31. Compare the first mixed state before investigating later input. A difference begins at that first byte, and subsequent steps propagate it through the remainder.",
+      "expectedObservation": "The finalized results are `cbf43926` and `dc8f2d65`.",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Where does this one-bit change first alter the computation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At table initialization."
+          },
+          {
+            "id": "b",
+            "text": "At EOF."
+          },
+          {
+            "id": "c",
+            "text": "At the first byte XOR."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Compare the inputs in hexadecimal."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The later bytes are unchanged."
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "title": "Start a table walker and an entry index",
+      "kind": "author",
+      "prose": "Retain the full destination in `t4`, begin with index zero in `t5`, and load the same feedback mask used by the bit update. The walker addresses words; the index identifies the byte value whose eight-step effect will be stored. Keeping both roles explicit prevents a byte index from being mistaken for an address.",
+      "expectedObservation": "No table word changes yet; `t4` points to the selected table and `t5`=0.",
+      "quiz": {
+        "id": "q10",
+        "prompt": "How far apart are adjacent table words?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One byte."
+          },
+          {
+            "id": "b",
+            "text": "Four bytes."
+          },
+          {
+            "id": "c",
+            "text": "256 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Each entry stores a 32-bit value."
+        },
+        {
+          "id": "s10-h2",
+          "text": "An index and its byte offset have different units."
+        }
+      ],
+      "editTarget": "i_setup",
+      "code": "    move $t4, $a0\n    move $t5, $zero\n    dli $t3, 0xedb88320\n"
+    },
+    {
+      "id": "s11",
+      "title": "Build each entry from its index",
+      "kind": "author",
+      "prose": "Copy the current index into the temporary remainder and reset the bit counter. The previous entry remainder is not an input to the next entry. Each of the 256 words must be computed independently from the corresponding value zero through 255.",
+      "expectedObservation": "The initial entry starts from `t0`=0 with eight steps remaining.",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What seeds entry i?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The old destination word."
+          },
+          {
+            "id": "b",
+            "text": "The preceding table entry."
+          },
+          {
+            "id": "c",
+            "text": "The integer i."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Table contents may be arbitrary before initialization."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Only the index defines this entry."
+        }
+      ],
+      "editTarget": "i_entry",
+      "code": "    move $t0, $t5\n    li $t1, 8\n"
+    },
+    {
+      "id": "s12",
+      "title": "Use the reflected transition for table construction",
+      "kind": "author",
+      "prose": "Apply the same bit transition to the entry remainder in `t0`. This is the operation being precomputed, so its polynomial and shift direction must agree with the byte kernel. A separately specified table oracle will check the initializer rather than trusting agreement between two student routines.",
+      "expectedObservation": "Entry zero remains zero after this first transition.",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Why check table words independently?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A matching wrong initializer and updater can conceal a shared error."
+          },
+          {
+            "id": "b",
+            "text": "Only the first table word matters."
+          },
+          {
+            "id": "c",
+            "text": "A table makes the polynomial irrelevant."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Two equal results can share the same mistake."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Use the definition of T[i], not the other routine, as the oracle."
+        }
+      ],
+      "editTarget": "i_step",
+      "code": "    andi $t2, $t0, 1\n    dsrl $t0, $t0, 1\n    beq $t2, $zero, init_no_feedback\n    nop\n    xor $t0, $t0, $t3\n"
+    },
+    {
+      "id": "s13",
+      "title": "Complete the entry before storing it",
+      "kind": "author",
+      "prose": "Repeat the entry transition eight times before advancing to the store. This loop changes `t0` and `t1` while retaining the destination walker and entry index. An incomplete entry must not become the starting state for a later entry.",
+      "expectedObservation": "Entry zero reaches its store path with `t0`=0 and `t1`=0.",
+      "quiz": {
+        "id": "q13",
+        "prompt": "When is a table word ready to store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the first outgoing one bit."
+          },
+          {
+            "id": "b",
+            "text": "After eight transitions from its index."
+          },
+          {
+            "id": "c",
+            "text": "After the source file closes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Count transitions rather than feedback XORs."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Some transitions need no XOR, but still count."
+        }
+      ],
+      "editTarget": "i_bits",
+      "code": "    addiu $t1, $t1, -1\n    bne $t1, $zero, init_bit\n    nop\n"
+    },
+    {
+      "id": "s14",
+      "title": "Publish one full table word",
+      "kind": "author",
+      "prose": "Store the completed low word and advance the full table walker by four bytes. The index will advance in the next edit. This intermediate program has written its first entry even though its provisional return still says zero; that value is not yet the completed initializer count.",
+      "expectedObservation": "Only table word zero has changed to zero; `t4` addresses the next word.",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What does the provisional zero return prove?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That no store occurred."
+          },
+          {
+            "id": "b",
+            "text": "That all 256 words are complete."
+          },
+          {
+            "id": "c",
+            "text": "Only that construction has not reached its final return."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Inspect memory as well as the result register."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The next region still bypasses the rest of initialization."
+        }
+      ],
+      "editTarget": "i_store",
+      "code": "    sw $t0, 0($t4)\n    daddiu $t4, $t4, 4\n"
+    },
+    {
+      "id": "s15",
+      "title": "Generate all 256 entries",
+      "kind": "author",
+      "prose": "Advance the entry index, compare it with the exclusive bound 256, and repeat the entry preparation while it remains smaller. The prepared return follows the final word and reports 256. The destination walker then points immediately beyond the logical 1024-byte table.",
+      "expectedObservation": "All 256 words match the independent table, including index 255=`2d02ef8d`; `v0`=256.",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Why use 256 as the exclusive index bound?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Index 255 still needs an entry."
+          },
+          {
+            "id": "b",
+            "text": "The table has 255 words."
+          },
+          {
+            "id": "c",
+            "text": "Each index occupies 256 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "List the first and last legal indices."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Do not confuse entry count with highest index."
+        }
+      ],
+      "editTarget": "i_next",
+      "code": "    addiu $t5, $t5, 1\n    sltiu $t6, $t5, 256\n    bne $t6, $zero, init_entry\n    nop\n"
+    },
+    {
+      "id": "s16",
+      "title": "Inspect the first and last table entries",
+      "kind": "observe",
+      "prose": "Check selected words and the guard after the logical table. The table updater will receive independently prepared table data during guided observations. That isolates its lookup behavior from initialization and avoids treating two matching mistakes as proof of correctness.",
+      "expectedObservation": "Indices 0,1,128,255 contain `00000000`,`77073096`,`edb88320`,`2d02ef8d`.",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which word tests the unsigned-load requirement particularly clearly?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Entry zero."
+          },
+          {
+            "id": "b",
+            "text": "Entry 128, whose bit 31 is set."
+          },
+          {
+            "id": "c",
+            "text": "Only the guard word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Choose a word that looks negative under signed interpretation."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The full returned state must still be zero-extended."
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "title": "Begin the table update with the caller state",
+      "kind": "author",
+      "prose": "The table routine uses the same raw-state convention as the bit routine. Copy the incoming state into `v0`; do not initialize or complement it here. This makes either routine usable for any segment of the same message.",
+      "expectedObservation": "The default incoming state is retained without reading data.",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Must every table update begin at `ffffffff`?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, including suffix calls."
+          },
+          {
+            "id": "b",
+            "text": "Only when the source is aligned."
+          },
+          {
+            "id": "c",
+            "text": "No; a suffix continues its explicit incoming state."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "A function call is not necessarily a message boundary."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The state argument may represent an earlier prefix."
+        }
+      ],
+      "editTarget": "t_setup",
+      "code": "    move $v0, $a2\n"
+    },
+    {
+      "id": "s18",
+      "title": "Keep empty table updates independent of memory",
+      "kind": "author",
+      "prose": "Test remaining length before the source load or table lookup. An empty suffix must preserve its incoming state without consulting a table entry. This allows the identity update to work even when no data byte exists to form an index.",
+      "expectedObservation": "An empty table update returns an arbitrary seed unchanged and reads neither interval.",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which lookup index exists for empty input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "None."
+          },
+          {
+            "id": "c",
+            "text": "The current state low byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "A table index is formed from a real byte."
+        },
+        {
+          "id": "s18-h2",
+          "text": "No byte is consumed by an identity update."
+        }
+      ],
+      "editTarget": "t_gate",
+      "code": "    beq $a1, $zero, table_return\n    nop\n"
+    },
+    {
+      "id": "s19",
+      "title": "Map a mixed low byte to a full table address",
+      "kind": "author",
+      "prose": "XOR the source octet with the state, retain only its low byte, scale the index by four, and add it to the full table base. Then load the selected word without sign extension. These operations keep the logical byte index, byte offset, address and loaded value distinct even though the temporary register is reused.",
+      "expectedObservation": "The default first index is 206. A zero seed and input 80 select entry 128, yielding unsigned `edb88320`.",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What must be masked before scaling the index?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire source pointer."
+          },
+          {
+            "id": "b",
+            "text": "The low byte of state XOR input."
+          },
+          {
+            "id": "c",
+            "text": "The table word after loading."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "The unmasked state can contain 32 significant bits."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Only 256 table entries exist."
+        }
+      ],
+      "editTarget": "t_lookup",
+      "code": "    lbu $t0, 0($a0)\n    xor $t0, $t0, $v0\n    andi $t0, $t0, 255\n    dsll $t0, $t0, 2\n    daddu $t0, $a3, $t0\n    lwu $t1, 0($t0)\n"
+    },
+    {
+      "id": "s20",
+      "title": "Combine the shifted state and table feedback",
+      "kind": "author",
+      "prose": "Shift the old raw state down by eight and XOR in the loaded feedback value. The table has already accounted for the low-byte transition, so the remaining contribution is the old upper 24 bits in their new positions. This completes one byte without changing the pointer yet.",
+      "expectedObservation": "The first default byte reaches the same raw state `7c231048` as eight bit transitions.",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What has the lookup replaced?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire file reader."
+          },
+          {
+            "id": "b",
+            "text": "Initialization and finalization."
+          },
+          {
+            "id": "c",
+            "text": "Eight reflected state steps for one byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The byte count has not advanced yet."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The upper state still contributes after shifting."
+        }
+      ],
+      "editTarget": "t_fold",
+      "code": "    dsrl $v0, $v0, 8\n    xor $v0, $v0, $t1\n"
+    },
+    {
+      "id": "s21",
+      "title": "Continue through the complete byte interval",
+      "kind": "author",
+      "prose": "Advance one byte, reduce the remaining length, and return to the table guard. The whole update now shares the bit routine interface. It can receive a raw state produced by either method and must preserve the same caller memory and saved-register contract.",
+      "expectedObservation": "The default table update returns raw `340bc6d9`, with no source or table stores.",
+      "quiz": {
+        "id": "q21",
+        "prompt": "May final correctness require the illustrated temporaries?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; the public state, memory and ABI contract is what matters."
+          },
+          {
+            "id": "b",
+            "text": "Yes, because `t0` is the checksum format."
+          },
+          {
+            "id": "c",
+            "text": "Only for a zero checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Internal register names are an implementation choice."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Guided observations and final interface checks have different purposes."
+        }
+      ],
+      "editTarget": "t_next",
+      "code": "    daddiu $a0, $a0, 1\n    addiu $a1, $a1, -1\n    beq $zero, $zero, table_next_byte\n    nop\n"
+    },
+    {
+      "id": "s22",
+      "title": "Carry an actual returned state across methods",
+      "kind": "observe",
+      "prose": "Process a prefix with one method, retain its actual returned raw state, and continue the suffix with the other. Test every split of the nine check bytes, including empty prefix and empty suffix. Follow with a new message initialized independently to expose hidden state.",
+      "expectedObservation": "Every split completes at raw `340bc6d9`; a new message does not inherit that state.",
+      "quiz": {
+        "id": "q22",
+        "prompt": "When should the second call reinitialize?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "For every read boundary."
+          },
+          {
+            "id": "b",
+            "text": "When it begins a new message."
+          },
+          {
+            "id": "c",
+            "text": "Whenever the method changes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Changing the implementation does not change the message boundary."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The explicit state argument defines continuation."
+        }
+      ]
+    },
+    {
+      "id": "s23",
+      "title": "Open the path and retain a valid descriptor",
+      "kind": "author",
+      "prose": "Open read-only and branch to the supplied open-error result when the descriptor is negative. Retain a successful descriptor in `s4` and start this file state at `ffffffff`. Until later regions exist, the supplied temporary cleanup closes that descriptor and returns development status three.",
+      "expectedObservation": "A present fixture is opened and then closed by temporary cleanup; a missing fixture returns checksum zero/status one without a close.",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What may be closed after an unsuccessful open?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The negative result."
+          },
+          {
+            "id": "b",
+            "text": "Descriptor zero."
+          },
+          {
+            "id": "c",
+            "text": "No descriptor was acquired."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "A returned error is not a resource handle."
+        },
+        {
+          "id": "s23-h2",
+          "text": "The error path must preserve the original frame too."
+        }
+      ],
+      "editTarget": "f_open",
+      "code": "    li $a1, 0\n    li $v0, 13\n    syscall\n    bltz $v0, file_open_error\n    nop\n    move $s4, $v0\n    dli $s5, 0xffffffff\n"
+    },
+    {
+      "id": "s24",
+      "title": "Select a kernel and prepare the table once",
+      "kind": "author",
+      "prose": "Choose the bit routine for method zero. For method one, construct the table before selecting the table routine. Retain the selected entry address in saved register `s6`, since reads reuse caller-saved argument and result registers. Table construction belongs outside the repeated read loop.",
+      "expectedObservation": "Table mode initializes exactly 1024 workspace bytes before any read; bit mode leaves the table alone. Both provisional paths close the file.",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Where should table construction occur?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before each bit step."
+          },
+          {
+            "id": "b",
+            "text": "Once before the file read loop."
+          },
+          {
+            "id": "c",
+            "text": "After the final checksum is returned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "The table is unchanged by an update."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Small buffers must not multiply setup unnecessarily."
+        }
+      ],
+      "editTarget": "f_select",
+      "code": "    beq $s3, $zero, file_bit_method\n    nop\n    dla $a0, crc_table\n    jal crc32_table_init\n    nop\n    dla $s6, crc32_table_update\n    beq $zero, $zero, file_read\n    nop\nfile_bit_method:\n    dla $s6, crc32_bit_update\n"
+    },
+    {
+      "id": "s25",
+      "title": "Request a bounded block into scratch storage",
+      "kind": "author",
+      "prose": "Pass the retained descriptor, scratch pointer and capacity to read syscall 14. A fixture can return fewer bytes than requested. This stage performs one read, then reaches temporary cleanup; it has not classified the result or updated the raw state yet.",
+      "expectedObservation": "With capacity seven and a fixture limit of three, only the first three scratch bytes are replaced. The returned raw state is still `ffffffff` with development status three.",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What does a positive result three mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Exactly three input bytes are valid for this update."
+          },
+          {
+            "id": "b",
+            "text": "The file is complete."
+          },
+          {
+            "id": "c",
+            "text": "The capacity became three permanently."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Distinguish capacity from the count returned by this read."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The rest of scratch can contain older data."
+        }
+      ],
+      "editTarget": "f_read",
+      "code": "    move $a0, $s4\n    move $a1, $s1\n    move $a2, $s2\n    li $v0, 14\n    syscall\n"
+    },
+    {
+      "id": "s26",
+      "title": "Distinguish errors, EOF and positive data",
+      "kind": "author",
+      "prose": "Check negative results before testing EOF. An error follows the supplied close-and-error path. Zero selects finalization, while a positive count falls through toward an update. Finalization is still temporary at this stage, so an EOF observation returns development status three until the success block is written.",
+      "expectedObservation": "An immediate injected error returns zero/status two and closes the descriptor; positive reads have not yet changed the raw state.",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Does a positive short read select EOF?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, whenever it is smaller than capacity."
+          },
+          {
+            "id": "b",
+            "text": "Only for text files."
+          },
+          {
+            "id": "c",
+            "text": "No; EOF is a zero result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "There are three result categories."
+        },
+        {
+          "id": "s26-h2",
+          "text": "A negative value must not become an unsigned length."
+        }
+      ],
+      "editTarget": "f_classify",
+      "code": "    bltz $v0, file_read_error\n    nop\n    beq $v0, $zero, file_finish\n    nop\n"
+    },
+    {
+      "id": "s27",
+      "title": "Pass the returned byte count to the selected kernel",
+      "kind": "author",
+      "prose": "Move the actual positive result into the length argument, pass the scratch address and retained raw state, and call the selected routine. The table argument is meaningful to the table method and harmless to the bit method. Retain the returned raw state in `s5` before another syscall overwrites `v0`.",
+      "expectedObservation": "A three-byte first read of the check message updates the raw state to `77b79c2d` before temporary cleanup.",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Which count must be passed to the update?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original file size."
+          },
+          {
+            "id": "b",
+            "text": "The positive result of this read."
+          },
+          {
+            "id": "c",
+            "text": "The full buffer capacity every time."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Only the returned prefix is new input."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Saved state must survive the next syscall."
+        }
+      ],
+      "editTarget": "f_update",
+      "code": "    move $a1, $v0\n    move $a0, $s1\n    move $a2, $s5\n    dla $a3, crc_table\n    jalr $s6\n    nop\n    move $s5, $v0\n"
+    },
+    {
+      "id": "s28",
+      "title": "Continue until an explicit EOF or error",
+      "kind": "author",
+      "prose": "Return to read setup after each update. No initialization or complement occurs on this edge. The file now consumes every positive block, then selects EOF finalization or a read error. Successful EOF still reaches the provisional result until the next edit completes that boundary.",
+      "expectedObservation": "Three-byte fixture reads finish the check message at raw `340bc6d9`, with reads 3,3,3,0 and development status three.",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which state continues after a positive block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The raw state just returned by the kernel."
+          },
+          {
+            "id": "b",
+            "text": "A newly initialized state."
+          },
+          {
+            "id": "c",
+            "text": "The complemented display value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "The read boundary is inside one message."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Retain the state, descriptor and scratch arguments for the next iteration."
+        }
+      ],
+      "editTarget": "f_repeat",
+      "code": "    beq $zero, $zero, file_read\n    nop\n"
+    },
+    {
+      "id": "s29",
+      "title": "Finalize once and preserve the result across close",
+      "kind": "author",
+      "prose": "At successful EOF, complement the retained raw state, close the descriptor, then place the checksum and success status in their result registers. Keep the checksum in a saved register during close because `v0` is also the syscall selector. The final branch goes directly to restoration, bypassing temporary cleanup.",
+      "expectedObservation": "The complete check file returns unsigned `cbf43926`/status zero and no open descriptor; the empty file returns zero/status zero.",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Why retain the checksum outside `v0` while closing?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The close service needs `v0` as its selector."
+          },
+          {
+            "id": "b",
+            "text": "The polynomial is wider than the register."
+          },
+          {
+            "id": "c",
+            "text": "Closing appends a checksum byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "A service selector can overwrite a computed return value."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Only successful EOF performs final complement."
+        }
+      ],
+      "editTarget": "f_finish",
+      "code": "    dli $t0, 0xffffffff\n    xor $s5, $s5, $t0\n    move $a0, $s4\n    li $v0, 16\n    syscall\n    move $v0, $s5\n    move $v1, $zero\n    beq $zero, $zero, file_return\n    nop\n"
+    },
+    {
+      "id": "s30",
+      "title": "Pause between the first update and the next read",
+      "kind": "observe",
+      "prose": "Stop on the second visit to `file_read`, before it starts another read. With the three-byte fixture, `s5` holds raw `77b79c2d` and the descriptor is still open. Then continue to the return boundary and check the finalized result and descriptor cleanup. Saved registers are restored on return, so this working state must be inspected inside the function.",
+      "expectedObservation": "A positive short read advances the raw state but does not finalize or close the file.",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Why inspect `s5` before restoration?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is the caller result register."
+          },
+          {
+            "id": "b",
+            "text": "The restoring exit reinstates the caller saved value."
+          },
+          {
+            "id": "c",
+            "text": "The state is stored in the filename."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Separate working saved registers from the caller values restored later."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Continue the same execution after the internal observation."
+        }
+      ]
+    },
+    {
+      "id": "s31",
+      "title": "Check open and read failures separately",
+      "kind": "observe",
+      "prose": "Run a missing-file fixture, then an existing file with a read failure after four bytes. A valid descriptor exists only in the second case. The read-error result discards the partial checksum as a public result while still releasing the descriptor.",
+      "expectedObservation": "Missing input returns status one with no read/close; an error after a valid prefix returns status two and closes the opened handle.",
+      "quiz": {
+        "id": "q31",
+        "prompt": "May a partial raw state be reported as a successful file checksum?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; a read failure has its own status and zero checksum."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if at least one byte was read."
+          },
+          {
+            "id": "c",
+            "text": "Only when the buffer is full."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Check status before interpreting the checksum."
+        },
+        {
+          "id": "s31-h2",
+          "text": "A useful internal prefix is not the requested complete-file result."
+        }
+      ]
+    },
+    {
+      "id": "s32",
+      "title": "Run through the actual caller result stores",
+      "kind": "observe",
+      "prose": "Let the complete file routine return to `file_done`, inspect `v0` and `v1`, then continue to `results_ready`. The caller stores the low checksum word and status for inspection. High checksum bit 31 is data, not a negative-error test; file status is separate.",
+      "expectedObservation": "Before caller stores, file_crc/file_status retain sentinels; afterward they contain `cbf43926` and zero.",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Which result identifies a file error?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The sign of the checksum word."
+          },
+          {
+            "id": "b",
+            "text": "The low bit of the checksum."
+          },
+          {
+            "id": "c",
+            "text": "The separate status result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "A valid unsigned checksum can have bit 31 set."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Inspect `v1` for the completed file interface."
+        }
+      ]
+    },
+    {
+      "id": "s33",
+      "title": "Charge table setup to the work that uses it",
+      "kind": "observe",
+      "prose": "Compare the measured update columns with the separately recorded initializer. The prepared-table routine has less update work in these examples, but a short file may not repay table construction. State the measurement boundary before adding costs or discussing reuse across chunks.",
+      "expectedObservation": "One newly built table plus the 256-byte update costs 21009 instructions, compared with 17709 for the bit update.",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Does a smaller update column prove every complete file operation is faster?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because reads are free."
+          },
+          {
+            "id": "b",
+            "text": "No; setup and unmeasured costs have separate boundaries."
+          },
+          {
+            "id": "c",
+            "text": "Only for empty files."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Include setup when it occurs in the operation being compared."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Instruction counts are not elapsed-time measurements."
+        }
+      ]
+    },
+    {
+      "id": "s34",
+      "title": "Reuse the update for a PNG chunk interval",
+      "kind": "observe",
+      "prose": "For IEND, check only the four type bytes, initialize once and complement once. Exclude the chunk length and stored checksum field. Interpret the stored result in PNG byte order when comparing it with a numeric register value.",
+      "expectedObservation": "The four bytes 49 45 4e 44 produce finalized `ae426082`, stored as ae 42 60 82.",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Which bytes does an empty-data IEND CRC include?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No bytes."
+          },
+          {
+            "id": "b",
+            "text": "Its length and stored CRC."
+          },
+          {
+            "id": "c",
+            "text": "The four type bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "An empty data field is not an empty checked interval."
+        },
+        {
+          "id": "s34-h2",
+          "text": "The format defines byte coverage independently of buffering."
+        }
+      ]
+    }
+  ]
+}

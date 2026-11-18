@@ -1,0 +1,30 @@
+\section{Step 15 Generate all 256 entries}\label{crc-s15}
+
+Advance the entry index, compare it with the exclusive bound 256, and repeat the entry preparation while it remains smaller. The prepared return follows the final word and reports 256. The destination walker then points immediately beyond the logical 1024-byte table.
+
+\Needspace{11\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{i\_next}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addiu $t5, $t5, 1
+    sltiu $t6, $t5, 256
+    bne $t6, $zero, init_entry
+    nop
+\end{minted}
+
+Use \texttt{s15-1}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+All 256 words match the independent table, including index 255=\texttt{2d02ef8d}; \texttt{v0}=256.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why use 256 as the exclusive index bound?
+
+\begin{itemize}
+\item \textbf{A} Index 255 still needs an entry.
+\item \textbf{B} The table has 255 words.
+\item \textbf{C} Each index occupies 256 bytes.
+\end{itemize}

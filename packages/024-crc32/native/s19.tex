@@ -1,0 +1,32 @@
+\section{Step 19 Map a mixed low byte to a full table address}\label{crc-s19}
+
+XOR the source octet with the state, retain only its low byte, scale the index by four, and add it to the full table base. Then load the selected word without sign extension. These operations keep the logical byte index, byte offset, address and loaded value distinct even though the temporary register is reused.
+
+\Needspace{13\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{t\_lookup}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t0, 0($a0)
+    xor $t0, $t0, $v0
+    andi $t0, $t0, 255
+    dsll $t0, $t0, 2
+    daddu $t0, $a3, $t0
+    lwu $t1, 0($t0)
+\end{minted}
+
+Use \texttt{s19-1}, \texttt{s19-2}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+The default first index is 206. A zero seed and input 80 select entry 128, yielding unsigned \texttt{edb88320}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What must be masked before scaling the index?
+
+\begin{itemize}
+\item \textbf{A} The entire source pointer.
+\item \textbf{B} The low byte of state XOR input.
+\item \textbf{C} The table word after loading.
+\end{itemize}

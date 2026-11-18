@@ -1,0 +1,31 @@
+\section{Step 6 Apply feedback from the old low bit}\label{crc-s06}
+
+Retain the old low bit in \texttt{t2}, shift the state right with zero fill, then apply feedback only when that retained bit is one. The branch targets the common path after feedback. Testing the shifted low bit instead would change which polynomial terms are cancelled.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{b\_step}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    andi $t2, $v0, 1
+    dsrl $v0, $v0, 1
+    beq $t2, $zero, bit_no_feedback
+    nop
+    xor $v0, $v0, $t3
+\end{minted}
+
+Use \texttt{s06-1}, \texttt{s06-2}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+The first default step gives \texttt{7fffffe7}. A zero seed with byte 01 instead gives \texttt{edb88320} after one step.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which low bit chooses feedback?
+
+\begin{itemize}
+\item \textbf{A} The low bit after the shift.
+\item \textbf{B} The low bit before the shift.
+\item \textbf{C} The input length low bit.
+\end{itemize}

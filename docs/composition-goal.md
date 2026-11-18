@@ -195,8 +195,11 @@ The cumulative expansion contains 34 steps and 24 edits, with seven supplied exc
 34 quizzes, 68 hints and 52 recipes. It retains cleanup for incomplete file code and
 checks the actual caller as well as isolated offset functions. Thirty-one native
 assembly listings use exported IntelliJ colors. Four capture slots remain plans.
-Distributions, public check exports and actual IDE captures are unfinished. This draft
-does not increase the main manuscript's twenty-three text packages.
+The student package and separate instructor distribution include native snapshots,
+public guided/final checks, equivalent solutions, private domains and exact archive
+receipts. The chapter is included in main.tex as the twenty-fourth text package.
+Actual IDE captures, enforced progression, the deferred rewrite and independent
+accessibility validation remain unfinished.
 
 ## Author feedback and deferred revision
 

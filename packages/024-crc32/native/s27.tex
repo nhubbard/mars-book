@@ -1,0 +1,33 @@
+\section{Step 27 Pass the returned byte count to the selected kernel}\label{crc-s27}
+
+Move the actual positive result into the length argument, pass the scratch address and retained raw state, and call the selected routine. The table argument is meaningful to the table method and harmless to the bit method. Retain the returned raw state in \texttt{s5} before another syscall overwrites \texttt{v0}.
+
+\Needspace{14\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{f\_update}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a1, $v0
+    move $a0, $s1
+    move $a2, $s5
+    dla $a3, crc_table
+    jalr $s6
+    nop
+    move $s5, $v0
+\end{minted}
+
+Use \texttt{s27-1}, \texttt{s27-2}. The CLI checks install explicit in-memory files and read/error controls. Ordinary IDE files do not force these short-read or failure conditions.
+
+\subsection{Expected observation}
+A three-byte first read of the check message updates the raw state to \texttt{77b79c2d} before temporary cleanup.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which count must be passed to the update?
+
+\begin{itemize}
+\item \textbf{A} The original file size.
+\item \textbf{B} The positive result of this read.
+\item \textbf{C} The full buffer capacity every time.
+\end{itemize}

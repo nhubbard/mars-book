@@ -208,5 +208,6 @@ a PNG chunk-coverage figure and measured instruction comparisons. The two-row wo
 table identifies both header rows for tagging. Its file-grading controls require MARS
 revision d41d95ec or later for explicit read-only fixture files; no IDE capture is
 claimed. The native sequence now includes 34 steps, 24 edits and 31 actual
-IntelliJ-highlighted listings. It remains a working draft pending distribution
-packaging, the author's deferred rewrite and independent accessibility validation.
+IntelliJ-highlighted listings. It is included in main.tex as the twenty-fourth text package, with separate student
+and instructor archives. It remains a working draft pending actual IDE captures,
+the author's deferred rewrite and independent accessibility validation.

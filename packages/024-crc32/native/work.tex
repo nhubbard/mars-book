@@ -1,0 +1,43 @@
+\section{Compare a second correct instruction strategy}
+The alternative bit implementation converts the retained low bit into a zero-or-all-ones
+mask, ANDs it with the polynomial, and XORs the result after the shift. It performs the
+feedback XOR even when that masked value is zero. This removes the per-bit conditional
+branch from the illustrated update. The alternative table path uses a signed word load
+followed by explicit zero extension instead of an unsigned word load.
+
+\begin{table}[htbp]
+\centering
+\caption{Retired instructions for two independently checked strategies.}
+\tagpdfsetup{table/header-rows={1,2}}
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Bit update} & \multicolumn{2}{c}{Prepared table}\\
+Dataset & Branch & Mask & Unsigned load & Load then extend\\
+\midrule
+Empty & 12 & 12 & 5 & 5\\
+One byte & 84 & 85 & 19 & 20\\
+Check message & 631 & 669 & 131 & 140\\
+Zero bytes & 4415 & 4684 & 901 & 965\\
+All octets & 17709 & 18700 & 3589 & 3845\\
+Strided octets & 282498 & 299020 & 57349 & 61445\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The alternative initializer retires 18444 instructions. Both implementations produce
+the same table words, raw states and finalized checksums under the tested contract.
+The additional zero-extension instruction accounts for one extra instruction per byte
+in the alternative table path. The mask bit loop executes a fixed feedback sequence,
+while the branch path skips the XOR when feedback is zero.
+
+These results measure simulator instruction work. They establish neither elapsed-time
+ratios nor hardware cycle counts. A branch, a table load and a syscall need not have
+the same cost in a host implementation or a physical processor. File open/read/close
+latency is outside the kernel measurements. If elapsed time matters, measure the complete
+file operation separately and record input size, buffer size, environment and repetitions.
+
+\subsection*{Exercise: Charge setup to the work that uses it}
+For the six datasets, add one table-construction cost to the prepared-table update.
+Then consider one table reused across ten messages. State which setup boundary you
+chose and which conclusions depend on data, rather than reporting an unconditional
+speedup for every file.

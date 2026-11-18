@@ -1,0 +1,42 @@
+\section{Measure updates with the same inputs and boundaries}
+The following counts run from a function's entry through its return to the supplied
+continuation. They include its setup and restoring instructions, if any, and exclude
+assembly, session creation, caller stores and console output. Pseudoinstructions count
+as the instructions actually executed after assembly. The table update receives an
+independently prepared table, so its column does not include table construction.
+
+\begin{table}[htbp]
+\centering
+\caption{Retired simulated instructions for the illustrated branch-feedback implementation.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrr}
+\toprule
+Dataset & Bytes & Bit update & Prepared-table update\\
+\midrule
+Empty & 0 & 12 & 5\\
+One byte \texttt{80} & 1 & 84 & 19\\
+ASCII check message & 9 & 631 & 131\\
+Zero bytes & 64 & 4415 & 901\\
+Octets zero through 255 & 256 & 17709 & 3589\\
+Strided octets & 4096 & 282498 & 57349\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The last dataset has byte \(b_i=(37i+11)\bmod256\) at zero-based index \(i\).
+These definitions specify the data, not just their sizes. The bit loop's conditional
+feedback means equal-length messages can retire different instruction counts. The
+prepared-table loop executes the same instruction sequence for each byte, but accesses
+content-dependent table positions.
+
+The separately measured table initializer retires 17420 instructions and writes
+1024 table bytes. For one 256-byte message with a newly built table, construction plus
+update costs \(17420+3589=21009\) instructions, exceeding the bit update's 17709.
+For the 4096-byte dataset, the sum is \(17420+57349=74769\), below 282498.
+The smaller update column alone does not decide whether building a table pays for a
+particular amount of work.
+
+A table can serve many updates of one file: build it once before the read loop,
+then reuse it for every chunk. Rebuilding it after each read would make the buffer
+size change setup cost even though the checksum remains the same. A stored constant
+table is another design, with image-size and initialization tradeoffs to document.

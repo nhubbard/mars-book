@@ -1,0 +1,31 @@
+\section{Step 25 Request a bounded block into scratch storage}\label{crc-s25}
+
+Pass the retained descriptor, scratch pointer and capacity to read syscall 14. A fixture can return fewer bytes than requested. This stage performs one read, then reaches temporary cleanup; it has not classified the result or updated the raw state yet.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{f\_read}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $a0, $s4
+    move $a1, $s1
+    move $a2, $s2
+    li $v0, 14
+    syscall
+\end{minted}
+
+Use \texttt{s25-1}, \texttt{s25-2}. The CLI checks install explicit in-memory files and read/error controls. Ordinary IDE files do not force these short-read or failure conditions.
+
+\subsection{Expected observation}
+With capacity seven and a fixture limit of three, only the first three scratch bytes are replaced. The returned raw state is still \texttt{ffffffff} with development status three.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What does a positive result three mean?
+
+\begin{itemize}
+\item \textbf{A} Exactly three input bytes are valid for this update.
+\item \textbf{B} The file is complete.
+\item \textbf{C} The capacity became three permanently.
+\end{itemize}

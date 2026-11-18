@@ -123,17 +123,18 @@ contain 50 cumulative edits, five supplied excerpts, 60 quizzes, 120 hints and 8
 recipes, public intermediate/final checks and separate student/instructor distributions.
 Actual IDE figures remain in progress.
 
-The next independent draft, [CRC-32 file checking](drafts/crc32.tex), explains raw
+The [CRC-32 chapter](packages/024-crc32/assignment.md) explains raw
 state, reflected bit updates, lookup construction, chunk composition, file cleanup
 and PNG chunk reuse. Its prototype checks use explicit in-memory files, short reads
 and read failures. Its cumulative lesson has 34 steps, 24 edits, seven supplied
-excerpts, 34 quizzes, 68 hints and 52 exact recipes. It has not yet joined the
-package sequence; public check exports and actual IDE figures remain pending.
+excerpts, 34 quizzes, 68 hints and 52 exact recipes. It is included in the
+main manuscript as chapter 24, with public guided/final checks and separate archives.
+Actual IDE figures remain pending.
 
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-three chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-four chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -148,7 +149,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-three text packages, starters, public checks, deterministic student archive builder,
+The first twenty-four text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.

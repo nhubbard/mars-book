@@ -1,0 +1,30 @@
+\section{Step 21 Continue through the complete byte interval}\label{crc-s21}
+
+Advance one byte, reduce the remaining length, and return to the table guard. The whole update now shares the bit routine interface. It can receive a raw state produced by either method and must preserve the same caller memory and saved-register contract.
+
+\Needspace{11\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{t\_next}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $a0, $a0, 1
+    addiu $a1, $a1, -1
+    beq $zero, $zero, table_next_byte
+    nop
+\end{minted}
+
+Use \texttt{s21-1}, \texttt{s21-2}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+The default table update returns raw \texttt{340bc6d9}, with no source or table stores.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+May final correctness require the illustrated temporaries?
+
+\begin{itemize}
+\item \textbf{A} No; the public state, memory and ABI contract is what matters.
+\item \textbf{B} Yes, because \texttt{t0} is the checksum format.
+\item \textbf{C} Only for a zero checksum.
+\end{itemize}

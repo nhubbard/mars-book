@@ -1,0 +1,28 @@
+\section{Step 3 Retain the incoming state and feedback mask}\label{crc-s03}
+
+Keep the raw state in \texttt{v0} and load the reflected feedback mask in \texttt{t3}. The constant must represent a nonnegative 32-bit value in this 64-bit register. Loading it once outside the byte loop avoids repeating constant construction for every byte.
+
+\Needspace{9\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{b\_setup}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    move $v0, $a2
+    dli $t3, 0xedb88320
+\end{minted}
+
+Use \texttt{s03-1}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+The default raw state is \texttt{ffffffff}; \texttt{t3} is the zero-extended \texttt{edb88320}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why load the mask outside the byte loop?
+
+\begin{itemize}
+\item \textbf{A} Its value changes at every bit.
+\item \textbf{B} The same mask serves every byte.
+\item \textbf{C} The pointer must equal the mask.
+\end{itemize}

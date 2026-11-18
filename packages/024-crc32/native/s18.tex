@@ -1,0 +1,28 @@
+\section{Step 18 Keep empty table updates independent of memory}\label{crc-s18}
+
+Test remaining length before the source load or table lookup. An empty suffix must preserve its incoming state without consulting a table entry. This allows the identity update to work even when no data byte exists to form an index.
+
+\Needspace{9\baselineskip}
+\subsection{Write and inspect}
+Replace the marked temporary instructions in \texttt{t\_gate}. Retain surrounding labels and markers.
+
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    beq $a1, $zero, table_return
+    nop
+\end{minted}
+
+Use \texttt{s18-1}, \texttt{s18-2}. Prepare the exact memory inputs in a separate source file and pause at \texttt{kernel\_done}, before the caller stores the result.
+
+\subsection{Expected observation}
+An empty table update returns an arbitrary seed unchanged and reads neither interval.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which lookup index exists for empty input?
+
+\begin{itemize}
+\item \textbf{A} Zero.
+\item \textbf{B} None.
+\item \textbf{C} The current state low byte.
+\end{itemize}
