@@ -1,0 +1,23 @@
+\section{Choose a lane width for the arithmetic}\label{rgb-lanes}
+An MSA register holds 128 bits. The suffix on an instruction selects how those bits
+are divided into elements: sixteen bytes, eight halfwords, four words or two
+doublewords. The register does not acquire a permanent type when loaded. A byte
+shuffle can arrange bytes so that a later halfword shift sees the intended values.
+
+For packing, construct eight halfwords containing one channel each. Every halfword
+must have a component byte in its low position and zero in its high position. A
+halfword right shift can then discard the component's low bits without borrowing
+bits from a neighboring pixel. Red and green left shifts place the fields within
+each halfword; OR combines the three vectors lane by lane.
+
+\texttt{ld.b} and \texttt{st.b} transfer sixteen bytes each. The suffix describes
+byte elements, not a transfer of one byte. In the pinned little-endian environment,
+loading byte elements places the first memory byte in byte lane zero. Two adjacent
+byte lanes then form a little-endian halfword when the same bits are used by a
+halfword operation. Keep that relationship separate from the host machine's own
+byte order.
+
+The scalar tail handles fewer than eight remaining pixels. For counts eight or more,
+the vector loop handles one complete eight-pixel block at a time and updates count
+by eight. Zero and short counts reach the scalar bound check before any source load.
+The vector and scalar paths share the same original-count return convention.

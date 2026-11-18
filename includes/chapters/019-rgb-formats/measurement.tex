@@ -1,0 +1,43 @@
+\section{Measure full conversion calls}\label{rgb-measurement}
+Both tested implementations use the same scalar pixel operations. The MSA version
+adds an eight-pixel block path and a guard before the scalar tail. Measurements
+include entry, block setup, conversion, tail and return. Caller preparation,
+assembly, session creation, preview rendering and program exit are excluded.
+
+\begin{table}[htbp]
+\centering
+\caption{Native instructions for the verified scalar and MSA implementations. Pixel count describes the same work for each pair of columns.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrr}
+\toprule
+Pixels & Scalar pack & MSA pack & Scalar expand & MSA expand\\
+\midrule
+0 & 5 & 8 & 5 & 8\\
+1 & 23 & 26 & 30 & 33\\
+7 & 131 & 134 & 180 & 183\\
+8 & 149 & 54 & 205 & 55\\
+9 & 167 & 72 & 230 & 80\\
+16 & 293 & 76 & 405 & 86\\
+31 & 563 & 224 & 780 & 292\\
+32 & 581 & 120 & 805 & 148\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Short calls pay for the MSA eligibility guard without executing a vector block.
+A 31-pixel call needs three full blocks and seven scalar pixels; a 32-pixel call
+needs four full blocks. The extra pixel can therefore reduce native work for these
+implementations. State count and tail length when reporting such a comparison.
+
+The vector path also repeats some byte accesses. For an eight-pixel pack, scalar
+input reads cover 24 bytes once; the two vector loads produce 32 observed byte
+reads while still remaining inside the same 24-byte slice. For expansion, scalar
+output stores cover 24 bytes once and the two vector stores produce 32 observed
+byte writes. Overlap makes the block fit; it does not make the extra accesses free.
+
+In the pinned core, these vector transfers publish one memory notice per byte.
+Observed bytes and notices therefore agree in this measurement, but neither counts
+host memory-bus transactions. Native instruction reductions do not by themselves
+establish elapsed-time speedups on the simulator's host. Exact counts are also not
+free-writing grading requirements. Correct output, ownership and the public return
+interface remain the comparison's starting conditions.

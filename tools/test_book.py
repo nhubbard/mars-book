@@ -18,6 +18,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(18, len(book.validate('drafts/clipped-sprite-blitter.tex')))
         self.assertEqual(43, len(book.validate('drafts/expression-evaluator.tex')))
         self.assertEqual(46, len(book.validate('drafts/tiny-bytecode-interpreter.tex')))
+        self.assertEqual(0, len(book.validate('drafts/rgb-formats.tex')))
 
     def test_author_can_include_prose_between_any_two_segments(self):
         with tempfile.TemporaryDirectory() as folder:

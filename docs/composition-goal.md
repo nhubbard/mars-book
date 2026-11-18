@@ -110,3 +110,13 @@ implementations and guided/free-writing packages accompany the prose. All forty 
 programs have fifty-eight executable observations. Four actual light-theme captures,
 human review and independent accessibility validation remain pending. Eighteen text
 packages do not complete the full 35-project and capture objective, which remains active.
+
+RGB888/RGB565 is in progress. The native foundation at `drafts/rgb-formats.tex`
+explains the complete two-function interface, packed byte order, quantization and
+bit repetition, channel error bounds, vector lanes, overlapping bounded transfers,
+shuffle controls, the scalar tail and the Bitmap Display adapter. Native field,
+footprint and component-chart diagrams accompany it. Private scalar/MSA development
+checks and measured complete-call counts support the contract while the full
+instructional edits and public student package are developed. Chapter nineteen is
+not yet included in main.tex or counted as a completed text package. The full
+35-project composition and capture objective remains active.

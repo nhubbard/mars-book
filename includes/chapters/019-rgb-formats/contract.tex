@@ -1,0 +1,26 @@
+\section*{Project contract}
+Implement \texttt{pack\_rgb565} and \texttt{unpack\_rgb565}. Each receives a full
+source address in \texttt{a0}, a full destination address in \texttt{a1}, and a
+pixel count from zero through 32 in \texttt{a2}. The source and destination
+allocations are disjoint. Both slices may start at any byte alignment. Return the
+original pixel count in \texttt{v0}, preserve every bit of \texttt{s0} through
+\texttt{s7}, \texttt{fp} and \texttt{sp}, and return through the supplied
+\texttt{ra} without console output. Argument and temporary registers may change;
+vector registers and their overlapping floating-point register storage may change.
+
+Packed RGB888 uses consecutive unsigned red, green and blue bytes, three per pixel.
+RGB565 uses a sixteen-bit value with red in bits 15 through 11, green in bits 10
+through 5 and blue in bits 4 through 0. Store its low byte first. Packing retains
+the high five red bits, high six green bits and high five blue bits, discarding
+the remaining bits. Expansion uses the bit-repetition rule defined below. There
+is no alpha component, row padding, color-space conversion or overlap handling.
+
+Packing has a logical source slice of three times count bytes and a destination
+slice of two times count bytes. Expansion exchanges those sizes. Repeated accesses
+inside a permitted slice are allowed; no exact read or write count is required. Reads may also inspect bytes inside the selected logical destination.
+No access may cross a logical slice boundary, even when the surrounding allocation
+is mapped. Zero count performs no caller-data access. Only the logical destination
+may change, including temporary writes. Guards, input, other buffers and caller
+metadata remain unchanged. Submission-owned constants and private native stack
+storage are permitted. Equivalent scalar and vector implementations are accepted
+when they preserve this complete interface.
