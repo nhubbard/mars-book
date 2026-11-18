@@ -24,7 +24,26 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(43, len(book.validate('drafts/expression-evaluator.tex')))
         self.assertEqual(46, len(book.validate('drafts/tiny-bytecode-interpreter.tex')))
         self.assertEqual(43, len(book.validate('drafts/rgb-formats.tex')))
-        self.assertEqual(0, len(book.validate('drafts/pcm-mixing.tex')))
+        self.assertEqual(32, len(book.validate('drafts/pcm-mixing.tex')))
+
+    def test_pcm_construction_transcript_matches_editable_native_code(self):
+        folder = book.ROOT / 'drafts/pcm-construction'
+        transcript = json.loads((folder / 'steps.json').read_text())
+        steps = transcript['steps']
+        self.assertEqual(40, len(steps))
+        self.assertEqual(30, sum(s['kind'] == 'author' for s in steps))
+        self.assertEqual(40, len({s['quiz']['id'] for s in steps}))
+        self.assertNotIn('correctChoice', (folder / 'steps.json').read_text())
+        for step in steps:
+            self.assertEqual(2, len(step['hints']))
+            native = (book.ROOT / 'includes/chapters/020-pcm-mixing' / (step['id'] + '.tex')).read_text()
+            self.assertEqual([step['code']] if step['kind'] == 'author' else [],
+                             [match[1] for match in book.CODE.finditer(native)])
+        recipes = json.loads((folder / 'inputs.json').read_text())['recipes']
+        self.assertEqual(48, len(recipes))
+        self.assertEqual(48, len({r['id'] for r in recipes}))
+        self.assertEqual({s['id'] for s in steps if s['kind'] == 'author'},
+                         {r['step'] for r in recipes})
 
     def test_pcm_listening_assets_and_native_waveform_agree(self):
         folder = book.ROOT / 'book/media/020-pcm-mixing'

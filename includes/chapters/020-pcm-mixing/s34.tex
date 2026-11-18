@@ -1,0 +1,33 @@
+\section{Step 34 Repeat complete groups and retain the scalar tail}\label{pcm-s34}
+
+Advance all three full pointers by sixteen, consume eight samples and repeat only when another complete group remains. Otherwise fall through to \texttt{mix\_tail}, which returns immediately at zero or processes the final one through seven samples. The scalar tail adds into the same \texttt{v1}. Neither path resets \texttt{v0}. The completed routine now covers short calls, exact blocks and mixed calls under one interface.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{vector\_next}. Keep the surrounding labels and region markers.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $a0, $a0, 16
+    daddiu $a1, $a1, 16
+    daddiu $a2, $a2, 16
+    addiu $a3, $a3, -8
+    sltiu $t0, $a3, 8
+    beq $t0, $zero, mix_block
+    nop
+\end{minted}
+Use recipe \texttt{s34-1}, \texttt{s34-2}, \texttt{s34-3}, \texttt{s34-4} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Eight default samples return three clips; nine return four; sixteen return six. A sixty-four-sample call exercises repeated groups without a scalar tail.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What happens after one group in a nine-sample call?
+
+\begin{itemize}
+\item \textbf{A} The ninth sample is ignored.
+\item \textbf{B} Another sixteen-byte group is read.
+\item \textbf{C} The scalar tail processes one sample.
+\end{itemize}

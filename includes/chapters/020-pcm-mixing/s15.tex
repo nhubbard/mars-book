@@ -1,0 +1,27 @@
+\section{Step 15 Replace a negative overflow with the endpoint}\label{pcm-s15}
+
+The low path loads -32768. It falls directly into the shared clipping-count region. The two overflow signs therefore choose different stored values but share one increment. In-range control flow already bypasses this label, so merely storing -32768 does not prove that the count was increased.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{lower\_value}. Keep the surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t0, -32768
+\end{minted}
+Use recipe \texttt{s15-1} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+The negative-overflow fixture now has \texttt{t0}=-32768 with \texttt{v1} still zero.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which state distinguishes an exact endpoint from a clipped endpoint?
+
+\begin{itemize}
+\item \textbf{A} The address alignment.
+\item \textbf{B} The low output byte alone.
+\item \textbf{C} The path decision and separate clipping count.
+\end{itemize}

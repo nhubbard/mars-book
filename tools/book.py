@@ -70,7 +70,7 @@ def export_input():
     folder.mkdir(parents=True, exist_ok=True)
     for path in folder.glob('*.asm'):
         path.unlink()
-    for source in snippets() + snippets('specimen.tex'):
+    for source in snippets() + snippets('specimen.tex') + snippets('drafts/pcm-mixing.tex'):
         digest = hashlib.sha256(source.encode()).hexdigest()
         (folder / (digest + '.asm')).write_text(source, encoding='utf-8')
     print(folder)

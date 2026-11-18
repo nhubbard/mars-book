@@ -1,0 +1,27 @@
+\section{Step 23 Compute the ordinary lane sums for comparison}\label{pcm-s23}
+
+Apply \texttt{addv.h} to obtain the low sixteen bits of each lane sum in \texttt{w2}. This is the deliberately wrapping result, not the required output. It is kept because comparing it with a saturated sum reveals exactly which lanes needed clipping. Neighboring samples do not contribute to one another’s carry.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{vector\_wrap}. Keep the surrounding labels and region markers.
+
+\Needspace{4\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    addv.h $w2, $w0, $w1
+\end{minted}
+Use recipe \texttt{s23-1} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+The first group’s wrapped sums are 0, 3000, -3000, -25536, 25536, 32767, -32768 and -25536.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What happens to an out-of-range sum in this instruction?
+
+\begin{itemize}
+\item \textbf{A} It retains its low sixteen bits.
+\item \textbf{B} It automatically updates \texttt{v1}.
+\item \textbf{C} It clamps to a signed endpoint.
+\end{itemize}

@@ -1,0 +1,1465 @@
+{
+  "status": "Construction draft; guided runner and packaged distribution unfinished",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Read the sample-level interface",
+      "kind": "observe",
+      "prose": "The function receives two full input addresses, a full output address and a sample count. One sample consumes two bytes from each source and produces two output bytes. v0 returns how many samples were requested; v1 counts exact sums outside the signed halfword range. Byte counts, sample counts and clipping counts have different units even when held in ordinary integer registers.",
+      "expectedObservation": "For count sixteen, each selected slice has thirty-two bytes. The output has sixteen samples, not thirty-two samples.",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does v1 report?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of source bytes."
+          },
+          {
+            "id": "b",
+            "text": "The number of exact sums that needed clipping."
+          },
+          {
+            "id": "c",
+            "text": "The largest output magnitude."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "The function receives two full input addresses, a full output address and a sample count."
+        },
+        {
+          "id": "s01-h2",
+          "text": "For count sixteen, each selected slice has thirty-two bytes. The output has sixteen samples, not thirty-two samples."
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Trace the default sums before writing code",
+      "kind": "observe",
+      "prose": "Use the supplied sixteen-sample inputs. Trace indices three, five and nine: 30000+10000 clips to 32767; 32767+0 reaches that endpoint without clipping; 32767+1 clips to the same stored endpoint. This distinguishes what memory can show from what the routine must report. The default outputs contain six clipping events.",
+      "expectedObservation": "The required saturated outputs are 0, 3000, -3000, 32767, -32768, 32767, -32768, 32767, -32768, 32767, -32768, 0, 0, 0, 0 and 32767.",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Can scanning only endpoint outputs recover the clipping count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; representable sums can also equal an endpoint."
+          },
+          {
+            "id": "b",
+            "text": "Yes; every endpoint is clipped."
+          },
+          {
+            "id": "c",
+            "text": "Only when count is even."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Use the supplied sixteen-sample inputs."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The required saturated outputs are 0, 3000, -3000, 32767, -32768, 32767, -32768, 32767, -32768, 32767, -32768, 0, 0, 0, 0 and 32767."
+        }
+      ]
+    },
+    {
+      "id": "s03",
+      "title": "Inspect the supplied entry, return and comparison",
+      "kind": "observe",
+      "prose": "Open the construction starter. The entry copies a3 into v0 and clears v1; the return uses ra. The marked regions contain temporary branches that return through that exit. The initial vector gate instead goes to the scalar tail. Keep labels and markers while replacing one region at a time. The supplied mix_wrap16 is a complete comparison routine with another arithmetic rule; leave it in place.",
+      "expectedObservation": "The starter assembles and exits. It intentionally fails the complete mixer contract. An unfinished path\u2019s provisional return is not evidence of a correct result.",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which supplied routine is a correct alternative to saturation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The wrapping comparison."
+          },
+          {
+            "id": "b",
+            "text": "The unfinished mixer."
+          },
+          {
+            "id": "c",
+            "text": "Neither; the comparison deliberately implements another rule."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Open the construction starter."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The starter assembles and exits. It intentionally fails the complete mixer contract. An unfinished path\u2019s provisional return is not evidence of a correct result."
+        }
+      ]
+    },
+    {
+      "id": "s04",
+      "title": "Test the logical sample count before loading",
+      "kind": "author",
+      "editTarget": "scalar_bound",
+      "code": "    beq $a3, $zero, mix_return\n    nop\n",
+      "prose": "The entry has already retained the original count in v0 and cleared v1. The provisional vector gate goes directly to mix_tail. Test a3 before entering the scalar body: the arena size says where storage exists, while a3 says which samples belong to this call. An empty slice permits no input or output access. Keep the supplied return so ra remains the caller\u2019s continuation.",
+      "expectedObservation": "An empty call returns v0=0 and v1=0 without reading or writing caller data.",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which value permits the first sample load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining sample count."
+          },
+          {
+            "id": "b",
+            "text": "The total arena capacity."
+          },
+          {
+            "id": "c",
+            "text": "The previous clipping count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The entry has already retained the original count in v0 and cleared v1."
+        },
+        {
+          "id": "s04-h2",
+          "text": "An empty call returns v0=0 and v1=0 without reading or writing caller data."
+        }
+      ]
+    },
+    {
+      "id": "s05",
+      "title": "Read the two bytes of input A",
+      "kind": "author",
+      "editTarget": "load_a",
+      "code": "    lbu $t0, 0($a0)\n    lbu $t1, 1($a0)\n",
+      "prose": "Load offsets zero and one from a0 with lbu. Each load yields an unsigned byte. Two separate byte operations permit a sample to begin at an odd address and make the logical two-byte boundary explicit. Do not interpret the high byte as a signed sample by itself: its sign bit belongs to the complete halfword.",
+      "expectedObservation": "For A=-1000, the bytes are hexadecimal 18 fc: t0=24 and t1=252.",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Why do the two bytes not each represent a separate sample?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every byte is a complete sixteen-bit value."
+          },
+          {
+            "id": "b",
+            "text": "Together they encode one signed halfword."
+          },
+          {
+            "id": "c",
+            "text": "The loads advance the pointer automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Load offsets zero and one from a0 with lbu."
+        },
+        {
+          "id": "s05-h2",
+          "text": "For A=-1000, the bytes are hexadecimal 18 fc: t0=24 and t1=252."
+        }
+      ]
+    },
+    {
+      "id": "s06",
+      "title": "Reconstruct A as an unsigned halfword",
+      "kind": "author",
+      "editTarget": "join_a",
+      "code": "    sll $t1, $t1, 8\n    or $t0, $t0, $t1\n",
+      "prose": "Shift the high byte left by eight and OR it into the low byte. Their set-bit positions are disjoint, so OR reconstructs low+256*high exactly. The result still has an unsigned interpretation in the register. A value whose halfword sign bit is set needs another operation before signed arithmetic. The source pointer has not moved.",
+      "expectedObservation": "Bytes 18 fc reconstruct 64536 in t0. The value is not yet -1000 as a full signed register.",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What does shifting the high byte accomplish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It changes the sample rate."
+          },
+          {
+            "id": "b",
+            "text": "It extends the sign through the register."
+          },
+          {
+            "id": "c",
+            "text": "It positions that byte at bits fifteen through eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Shift the high byte left by eight and OR it into the low byte."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Bytes 18 fc reconstruct 64536 in t0. The value is not yet -1000 as a full signed register."
+        }
+      ]
+    },
+    {
+      "id": "s07",
+      "title": "Extend A from its halfword sign bit",
+      "kind": "author",
+      "editTarget": "sign_a",
+      "code": "    seh $t0, $t0\n",
+      "prose": "Apply seh to the reconstructed halfword. It copies bit fifteen into the higher register bits, making the numerical signed value agree with the sixteen-bit sample. For the worked negative sample the register changes from positive 64536 to -1000. The stored input bytes do not change. The instruction is needed even though both loads used lbu.",
+      "expectedObservation": "t0 now holds -1000. The same operation preserves a positive halfword.",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Which bit determines the extension?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bit fifteen of the reconstructed sample."
+          },
+          {
+            "id": "b",
+            "text": "Bit seven of its low byte."
+          },
+          {
+            "id": "c",
+            "text": "Bit sixty-three of its address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Apply seh to the reconstructed halfword."
+        },
+        {
+          "id": "s07-h2",
+          "text": "t0 now holds -1000. The same operation preserves a positive halfword."
+        }
+      ]
+    },
+    {
+      "id": "s08",
+      "title": "Read B before making any output store",
+      "kind": "author",
+      "editTarget": "load_b",
+      "code": "    lbu $t1, 0($a1)\n    lbu $t2, 1($a1)\n",
+      "prose": "Load B\u2019s two bytes at offsets zero and one from a1 into t1 and t2. Reusing t1 is safe because A\u2019s combined signed value is already in t0. Both complete inputs must be retained before output is stored: when output is exactly input B, an early store could otherwise replace a byte that this same sample still needs.",
+      "expectedObservation": "For A=-1000 and B=2000, t0 stays -1000 while t1=208 and t2=7.",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What must survive reuse of t1?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The previous high-byte temporary forever."
+          },
+          {
+            "id": "b",
+            "text": "A\u2019s complete signed value in t0."
+          },
+          {
+            "id": "c",
+            "text": "The last output sample in a0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Load B\u2019s two bytes at offsets zero and one from a1 into t1 and t2."
+        },
+        {
+          "id": "s08-h2",
+          "text": "For A=-1000 and B=2000, t0 stays -1000 while t1=208 and t2=7."
+        }
+      ]
+    },
+    {
+      "id": "s09",
+      "title": "Assemble B without changing A",
+      "kind": "author",
+      "editTarget": "join_b",
+      "code": "    sll $t2, $t2, 8\n    or $t1, $t1, $t2\n",
+      "prose": "Shift B\u2019s high byte in t2 and combine it with its low byte in t1. The same byte-order rule applies to both inputs. Registers have working roles rather than permanent types; t1 now contains a numerical halfword instead of one byte. A remains in t0 and both pointers still refer to this sample.",
+      "expectedObservation": "B=2000 reconstructs as 2000 in t1; A remains -1000 in t0.",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which register now contains the complete B halfword?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "t2."
+          },
+          {
+            "id": "b",
+            "text": "a1."
+          },
+          {
+            "id": "c",
+            "text": "t1."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Shift B\u2019s high byte in t2 and combine it with its low byte in t1."
+        },
+        {
+          "id": "s09-h2",
+          "text": "B=2000 reconstructs as 2000 in t1; A remains -1000 in t0."
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "title": "Interpret B as a signed halfword",
+      "kind": "author",
+      "editTarget": "sign_b",
+      "code": "    seh $t1, $t1\n",
+      "prose": "Sign-extend B just as for A. Correctly decoding only one input would make the result depend on which side supplied a negative sample, violating the symmetric arithmetic contract. The next addition can now treat both registers as signed values in the range -32768 through 32767.",
+      "expectedObservation": "With A=1000 and B=-2000, the registers contain 1000 and -2000.",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Can sign extension be omitted because A was already extended?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; B has its own independent sign bit."
+          },
+          {
+            "id": "b",
+            "text": "Yes; one extension affects both registers."
+          },
+          {
+            "id": "c",
+            "text": "Only if output aliases A."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Sign-extend B just as for A."
+        },
+        {
+          "id": "s10-h2",
+          "text": "With A=1000 and B=-2000, the registers contain 1000 and -2000."
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "Add before narrowing the result",
+      "kind": "author",
+      "editTarget": "exact_sum",
+      "code": "    addu $t0, $t0, $t1\n",
+      "prose": "Use addu to form the exact sum in t0. Its word operation is sufficient here because the two signed halfwords sum to a value between -65536 and 65534, within signed thirty-two-bit range. The u suffix suppresses an overflow exception; it does not reinterpret the inputs as unsigned mathematical samples. Do not store or discard high sum bits yet.",
+      "expectedObservation": "A=30000 and B=10000 produce exact sum 40000. A=-30000 and B=-10000 produce -40000.",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why does this word addition preserve the exact sum?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Halfword inputs can never clip."
+          },
+          {
+            "id": "b",
+            "text": "Their complete sum fits signed thirty-two bits."
+          },
+          {
+            "id": "c",
+            "text": "addu automatically saturates at 32767."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Use addu to form the exact sum in t0."
+        },
+        {
+          "id": "s11-h2",
+          "text": "A=30000 and B=10000 produce exact sum 40000. A=-30000 and B=-10000 produce -40000."
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "title": "Detect sums strictly above the positive endpoint",
+      "kind": "author",
+      "editTarget": "upper_test",
+      "code": "    li $t1, 32767\n    slt $t2, $t1, $t0\n    bne $t2, $zero, mix_high\n    nop\n",
+      "prose": "Load 32767 and ask whether that endpoint is less than the exact sum. Branch to mix_high only when slt produces one. Equality is allowed: 30000+2767 is representable and must not increase the clipping count. The branch\u2019s following nop is retained as explicit source padding; this Release 6 lesson does not depend on a delay slot.",
+      "expectedObservation": "Sum 40000 takes the high path with t2=1. Sum 32767 leaves t2=0 and continues toward the lower test.",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Should exact sum 32767 count as clipped?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because the stored result is an endpoint."
+          },
+          {
+            "id": "b",
+            "text": "Only when A is positive."
+          },
+          {
+            "id": "c",
+            "text": "No, because it is representable."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Load 32767 and ask whether that endpoint is less than the exact sum."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Sum 40000 takes the high path with t2=1. Sum 32767 leaves t2=0 and continues toward the lower test."
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "title": "Keep in-range sums out of the clipping path",
+      "kind": "author",
+      "editTarget": "lower_test",
+      "code": "    li $t1, -32768\n    slt $t2, $t0, $t1\n    bne $t2, $zero, mix_low\n    nop\n    beq $zero, $zero, mix_store\n    nop\n",
+      "prose": "Test whether the exact sum is less than -32768. On success branch to mix_low. Otherwise transfer directly to mix_store, bypassing both endpoint replacement and count increment. This second test uses the opposite comparison order from the positive bound. A negative input does not itself imply clipping; only the exact sum matters.",
+      "expectedObservation": "Sum -40000 takes mix_low. Sums -32768, 0 and 32767 go to storage without increasing v1.",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which value should take the lower clipping branch?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "-32769."
+          },
+          {
+            "id": "b",
+            "text": "-32768."
+          },
+          {
+            "id": "c",
+            "text": "-1."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Test whether the exact sum is less than -32768."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Sum -40000 takes mix_low. Sums -32768, 0 and 32767 go to storage without increasing v1."
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "title": "Replace a positive overflow with the endpoint",
+      "kind": "author",
+      "editTarget": "upper_value",
+      "code": "    li $t0, 32767\n    beq $zero, $zero, mix_clipped\n    nop\n",
+      "prose": "The high path replaces the still-exact sum with 32767, then transfers to the shared mix_clipped label. It must jump past the negative replacement. A clamp chooses one representable endpoint; it cannot retain the overflow magnitude. Keeping the count in a separate register preserves the distinction between an ordinary endpoint and a clipped result.",
+      "expectedObservation": "The positive-overflow fixture reaches the next unfinished region with t0=32767 and v1 still zero.",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Why jump to mix_clipped after this replacement?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To reload both inputs."
+          },
+          {
+            "id": "b",
+            "text": "To bypass the negative endpoint replacement and share the increment."
+          },
+          {
+            "id": "c",
+            "text": "To return the exact sum in v0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "The high path replaces the still-exact sum with 32767, then transfers to the shared mix_clipped label."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The positive-overflow fixture reaches the next unfinished region with t0=32767 and v1 still zero."
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "title": "Replace a negative overflow with the endpoint",
+      "kind": "author",
+      "editTarget": "lower_value",
+      "code": "    li $t0, -32768\n",
+      "prose": "The low path loads -32768. It falls directly into the shared clipping-count region. The two overflow signs therefore choose different stored values but share one increment. In-range control flow already bypasses this label, so merely storing -32768 does not prove that the count was increased.",
+      "expectedObservation": "The negative-overflow fixture now has t0=-32768 with v1 still zero.",
+      "quiz": {
+        "id": "q15",
+        "prompt": "Which state distinguishes an exact endpoint from a clipped endpoint?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address alignment."
+          },
+          {
+            "id": "b",
+            "text": "The low output byte alone."
+          },
+          {
+            "id": "c",
+            "text": "The path decision and separate clipping count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "The low path loads -32768."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The negative-overflow fixture now has t0=-32768 with v1 still zero."
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "title": "Count each out-of-range sample once",
+      "kind": "author",
+      "editTarget": "count_clip",
+      "code": "    addiu $v1, $v1, 1\n",
+      "prose": "Increment v1 at the shared mix_clipped label. Either overflow path reaches this label exactly once per sample, while the in-range path reaches mix_store directly. Initialize v1 only at function entry: clearing it here would lose earlier clipping events. The count measures samples that needed replacement, not the number of changed output bytes.",
+      "expectedObservation": "Positive and negative overflow each produce v1=1 for one sample. Exact endpoint sums keep v1=0.",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Where does a new call\u2019s count begin?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At zero in the provided entry."
+          },
+          {
+            "id": "b",
+            "text": "At the last call\u2019s result."
+          },
+          {
+            "id": "c",
+            "text": "At the number of endpoint output samples."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "Increment v1 at the shared mix_clipped label."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Positive and negative overflow each produce v1=1 for one sample. Exact endpoint sums keep v1=0."
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "title": "Store only the low output byte",
+      "kind": "author",
+      "editTarget": "store_low",
+      "code": "    sb $t0, 0($a2)\n",
+      "prose": "Write t0\u2019s low byte at output offset zero with sb. This publishes just one byte; the high byte remains unchanged until the next edit. Both inputs have already been fully loaded, so exact in-place output is safe for the current sample. A word store would write beyond the two-byte sample and can damage a neighbor or a guard even when later stores repair it.",
+      "expectedObservation": "Clamped +32767 writes low byte ff; clamped -32768 writes 00. The second output byte still has its poison value.",
+      "quiz": {
+        "id": "q17",
+        "prompt": "How much memory does this store change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four bytes."
+          },
+          {
+            "id": "b",
+            "text": "One byte."
+          },
+          {
+            "id": "c",
+            "text": "The whole output slice."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Write t0\u2019s low byte at output offset zero with sb."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Clamped +32767 writes low byte ff; clamped -32768 writes 00. The second output byte still has its poison value."
+        }
+      ]
+    },
+    {
+      "id": "s18",
+      "title": "Finish the little-endian output sample",
+      "kind": "author",
+      "editTarget": "store_high",
+      "code": "    srl $t1, $t0, 8\n    sb $t1, 1($a2)\n",
+      "prose": "Shift the result logically right by eight into t1, then store its low byte at output offset one. For a negative result, the shifted register has other set bits; sb selects precisely bits fifteen through eight of the original halfword. The output is now complete in the requested byte order, but the pointers and remaining count still describe this sample.",
+      "expectedObservation": "Positive saturation stores ff 7f. Negative saturation stores 00 80. Both have one clipping event.",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why is the logical shift sufficient for a negative result?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It converts saturation into wrapping."
+          },
+          {
+            "id": "b",
+            "text": "It removes the need to count clips."
+          },
+          {
+            "id": "c",
+            "text": "Only the selected next byte is stored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Shift the result logically right by eight into t1, then store its low byte at output offset one."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Positive saturation stores ff 7f. Negative saturation stores 00 80. Both have one clipping event."
+        }
+      ]
+    },
+    {
+      "id": "s19",
+      "title": "Advance all three full pointers together",
+      "kind": "author",
+      "editTarget": "next_sample",
+      "code": "    daddiu $a0, $a0, 2\n    daddiu $a1, $a1, 2\n    daddiu $a2, $a2, 2\n    addiu $a3, $a3, -1\n    bne $a3, $zero, mix_sample\n    nop\n",
+      "prose": "Advance a0, a1 and a2 by two with daddiu, consume one sample, and repeat while a3 is nonzero. Addresses need the full-width operation even though sample arithmetic fits a word. Consuming count after the complete store makes the loop invariant direct: pointers identify the next sample and a3 counts samples still to process. v0 keeps the original count.",
+      "expectedObservation": "The scalar mixer now handles every allowed count. Two opposite clipping events return v0=2 and v1=2, with all pointers advanced four bytes.",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why must a1 advance as well as a0?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each iteration needs the corresponding next sample from both inputs."
+          },
+          {
+            "id": "b",
+            "text": "Advancing a0 changes a1 automatically."
+          },
+          {
+            "id": "c",
+            "text": "The second input is a constant stream by contract."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Advance a0, a1 and a2 by two with daddiu, consume one sample, and repeat while a3 is nonzero."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The scalar mixer now handles every allowed count. Two opposite clipping events return v0=2 and v1=2, with all pointers advanced four bytes."
+        }
+      ]
+    },
+    {
+      "id": "s20",
+      "title": "Test the exact in-place cases",
+      "kind": "observe",
+      "prose": "After completing the scalar loop, use fresh executions to make the output address equal input A, then input B. Keep the inputs otherwise disjoint. Finally use the same source address for both inputs and output. The complete input values must be read before each store. This safety argument supports exact aliases; it does not authorize a destination shifted into a source.",
+      "expectedObservation": "All three alias arrangements produce the same clamped sums and clipping counts as their separate mathematical inputs. A shifted overlap is outside the assignment contract.",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Does an output two bytes after A satisfy the exact-alias contract?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, if the arena is large."
+          },
+          {
+            "id": "b",
+            "text": "No."
+          },
+          {
+            "id": "c",
+            "text": "Only for negative samples."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "After completing the scalar loop, use fresh executions to make the output address equal input A, then input B."
+        },
+        {
+          "id": "s20-h2",
+          "text": "All three alias arrangements produce the same clamped sums and clipping counts as their separate mathematical inputs. A shifted overlap is outside the assignment contract."
+        }
+      ]
+    },
+    {
+      "id": "s21",
+      "title": "Require eight complete samples before a vector load",
+      "kind": "author",
+      "editTarget": "vector_gate",
+      "code": "    sltiu $t0, $a3, 8\n    bne $t0, $zero, mix_tail\n    nop\n",
+      "prose": "Replace the provisional direct transfer to the tail with sltiu and a branch. Fewer than eight remaining samples still use the verified scalar path. Eight samples occupy sixteen bytes in each input and output. This gate makes a whole vector access legal; allocation padding cannot authorize reading a partial group. Eligible calls will temporarily return at the next unfinished vector region.",
+      "expectedObservation": "Seven samples still finish through the scalar loop. Eight reach the vector body with a3=8 and no output written.",
+      "quiz": {
+        "id": "q21",
+        "prompt": "How many logical source bytes authorize one group?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen in each source."
+          },
+          {
+            "id": "c",
+            "text": "Thirty-two in each source."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Replace the provisional direct transfer to the tail with sltiu and a branch."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Seven samples still finish through the scalar loop. Eight reach the vector body with a3=8 and no output written."
+        }
+      ]
+    },
+    {
+      "id": "s22",
+      "title": "Retain both complete input groups",
+      "kind": "author",
+      "editTarget": "vector_load",
+      "code": "    ld.b $w0, 0($a0)\n    ld.b $w1, 0($a1)\n",
+      "prose": "Load sixteen bytes from each source into w0 and w1 before writing the output. Byte loads impose no halfword alignment requirement in this pinned MARS implementation. Subsequent halfword arithmetic interprets adjacent low/high bytes as signed sixteen-bit lanes in little-endian order. Loading both groups first extends the scalar alias argument to eight samples.",
+      "expectedObservation": "The first eight default samples appear in w0 and w1 as their raw halfword bit patterns.",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What does ld.b transfer here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One sample."
+          },
+          {
+            "id": "b",
+            "text": "Eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "All sixteen bytes of a vector register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Load sixteen bytes from each source into w0 and w1 before writing the output."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The first eight default samples appear in w0 and w1 as their raw halfword bit patterns."
+        }
+      ]
+    },
+    {
+      "id": "s23",
+      "title": "Compute the ordinary lane sums for comparison",
+      "kind": "author",
+      "editTarget": "vector_wrap",
+      "code": "    addv.h $w2, $w0, $w1\n",
+      "prose": "Apply addv.h to obtain the low sixteen bits of each lane sum in w2. This is the deliberately wrapping result, not the required output. It is kept because comparing it with a saturated sum reveals exactly which lanes needed clipping. Neighboring samples do not contribute to one another\u2019s carry.",
+      "expectedObservation": "The first group\u2019s wrapped sums are 0, 3000, -3000, -25536, 25536, 32767, -32768 and -25536.",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What happens to an out-of-range sum in this instruction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It retains its low sixteen bits."
+          },
+          {
+            "id": "b",
+            "text": "It automatically updates v1."
+          },
+          {
+            "id": "c",
+            "text": "It clamps to a signed endpoint."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Apply addv.h to obtain the low sixteen bits of each lane sum in w2."
+        },
+        {
+          "id": "s23-h2",
+          "text": "The first group\u2019s wrapped sums are 0, 3000, -3000, -25536, 25536, 32767, -32768 and -25536."
+        }
+      ]
+    },
+    {
+      "id": "s24",
+      "title": "Compute signed saturated lane sums",
+      "kind": "author",
+      "editTarget": "vector_saturate",
+      "code": "    adds_s.h $w3, $w0, $w1\n",
+      "prose": "Apply adds_s.h to the original inputs and retain the result in w3. Its signed halfword operation replaces positive and negative overflow with the corresponding endpoints, independently for each lane. w2 is still available for the comparison. The register does not carry a permanent halfword type; the instruction\u2019s h suffix selects the lane interpretation.",
+      "expectedObservation": "The first group\u2019s saturated sums are 0, 3000, -3000, 32767, -32768, 32767, -32768 and 32767.",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which operation matches signed PCM clipping?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Unsigned saturation."
+          },
+          {
+            "id": "b",
+            "text": "Signed halfword saturation."
+          },
+          {
+            "id": "c",
+            "text": "A whole-register bit shift."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Apply adds_s.h to the original inputs and retain the result in w3."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The first group\u2019s saturated sums are 0, 3000, -3000, 32767, -32768, 32767, -32768 and 32767."
+        }
+      ]
+    },
+    {
+      "id": "s25",
+      "title": "Mark lanes whose two sums agree",
+      "kind": "author",
+      "editTarget": "vector_equal",
+      "code": "    ceq.h $w4, $w2, $w3\n",
+      "prose": "Compare w2 and w3 with ceq.h. Equal halfwords become all one bits, hexadecimal ffff; unequal halfwords become zero. A representable sum is unchanged by either operation. An overflowing signed sum wraps to the opposite sign and cannot equal its saturated endpoint, so equality is a complete test in this two-input domain.",
+      "expectedObservation": "Equality lanes are ffff, ffff, ffff, 0000, 0000, ffff, ffff and 0000.",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What is stored for a true halfword comparison?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One numerical bit."
+          },
+          {
+            "id": "b",
+            "text": "The original input halfword."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen one bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Compare w2 and w3 with ceq.h."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Equality lanes are ffff, ffff, ffff, 0000, 0000, ffff, ffff and 0000."
+        }
+      ]
+    },
+    {
+      "id": "s26",
+      "title": "Turn equality into a clipping mask",
+      "kind": "author",
+      "editTarget": "vector_invert",
+      "code": "    nor.v $w4, $w4, $w4\n",
+      "prose": "Use nor.v with the equality vector as both operands. This computes its bitwise complement, changing unclipped lanes to zero and clipped lanes to ffff. The operation is whole-register logic, but it preserves the established halfword boundaries because it complements each bit independently. A comparison alone had the opposite meaning from the count we need.",
+      "expectedObservation": "The default clipping mask is 0000, 0000, 0000, ffff, ffff, 0000, 0000 and ffff: three clipped lanes.",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which lanes are now all ones?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The clipped lanes."
+          },
+          {
+            "id": "b",
+            "text": "The exact endpoint lanes."
+          },
+          {
+            "id": "c",
+            "text": "Every negative input lane."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Use nor.v with the equality vector as both operands."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The default clipping mask is 0000, 0000, 0000, ffff, ffff, 0000, 0000 and ffff: three clipped lanes."
+        }
+      ]
+    },
+    {
+      "id": "s27",
+      "title": "Count mask bits in two doublewords",
+      "kind": "author",
+      "editTarget": "vector_popcount",
+      "code": "    pcnt.d $w4, $w4\n",
+      "prose": "Use pcnt.d to count one bits separately in each sixty-four-bit half of the register. Four halfword masks fit each doubleword. The default low half has one clipped lane, contributing sixteen bits; the high half has two, contributing thirty-two. These are bit counts rather than sample counts. pcnt.h would leave eight separate counts and would require a different reduction.",
+      "expectedObservation": "w4\u2019s doublewords hold 16 and 32.",
+      "quiz": {
+        "id": "q27",
+        "prompt": "How many set bits does one clipped halfword contribute?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Use pcnt.d to count one bits separately in each sixty-four-bit half of the register."
+        },
+        {
+          "id": "s27-h2",
+          "text": "w4\u2019s doublewords hold 16 and 32."
+        }
+      ]
+    },
+    {
+      "id": "s28",
+      "title": "Copy the low population count to a scalar register",
+      "kind": "author",
+      "editTarget": "vector_low_count",
+      "code": "    copy_s.d $t2, $w4[0]\n",
+      "prose": "Use copy_s.d to transfer w4[0] into t2. It copies the numerical doubleword count; it does not count again or move the vector\u2019s bytes in memory. Although the operation uses signed transfer, this count is in 0..64, so its interpretation is unambiguous. The second count remains in w4[1].",
+      "expectedObservation": "t2 contains 16 for the default group.",
+      "quiz": {
+        "id": "q28",
+        "prompt": "What does lane index zero identify with the d suffix?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first halfword."
+          },
+          {
+            "id": "b",
+            "text": "The clipping total for both halves."
+          },
+          {
+            "id": "c",
+            "text": "The low sixty-four-bit lane."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Use copy_s.d to transfer w4[0] into t2."
+        },
+        {
+          "id": "s28-h2",
+          "text": "t2 contains 16 for the default group."
+        }
+      ]
+    },
+    {
+      "id": "s29",
+      "title": "Retain the high population count too",
+      "kind": "author",
+      "editTarget": "vector_high_count",
+      "code": "    copy_s.d $t3, $w4[1]\n",
+      "prose": "Copy w4[1] into t3. Ignoring this half would miss clipping in samples four through seven. The default fixture deliberately places two clipping events there, so the missing-high-half error cannot pass by accident. Both copied counts now fit small nonnegative scalar values.",
+      "expectedObservation": "t2=16 and t3=32.",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Which sample positions contribute to this second count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four through seven of the group."
+          },
+          {
+            "id": "b",
+            "text": "Only sample seven."
+          },
+          {
+            "id": "c",
+            "text": "Eight through fifteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Copy w4[1] into t3."
+        },
+        {
+          "id": "s29-h2",
+          "text": "t2=16 and t3=32."
+        }
+      ]
+    },
+    {
+      "id": "s30",
+      "title": "Add the two populations",
+      "kind": "author",
+      "editTarget": "vector_sum_count",
+      "code": "    addu $t2, $t2, $t3\n",
+      "prose": "Add t3 into t2. At most 128 mask bits can be set, so word addition preserves the whole count without overflow. This reduction combines the two halves but still measures bits. Keep the original sample count in v0 and accumulated clipping count in v1 unchanged until the units are converted.",
+      "expectedObservation": "The default group gives 48 set mask bits.",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What unit does 48 describe at this point?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Output bytes."
+          },
+          {
+            "id": "b",
+            "text": "Set bits in the clipping mask."
+          },
+          {
+            "id": "c",
+            "text": "Clipped samples."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Add t3 into t2."
+        },
+        {
+          "id": "s30-h2",
+          "text": "The default group gives 48 set mask bits."
+        }
+      ]
+    },
+    {
+      "id": "s31",
+      "title": "Convert mask bits back to clipped samples",
+      "kind": "author",
+      "editTarget": "vector_lane_count",
+      "code": "    srl $t2, $t2, 4\n",
+      "prose": "Shift the total bit count right by four, dividing by sixteen. Every halfword mask is either all zeros or all ones, so the total is an exact multiple of sixteen. This is a consequence of the comparison representation. It would be wrong for an arbitrary bit mask or for a comparison that represented true as numerical one.",
+      "expectedObservation": "t2 becomes three clipped samples for the default group.",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Why is division by sixteen exact here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The sample rate is a multiple of sixteen."
+          },
+          {
+            "id": "b",
+            "text": "All samples are positive."
+          },
+          {
+            "id": "c",
+            "text": "Each clipped lane contributes exactly sixteen one bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Shift the total bit count right by four, dividing by sixteen."
+        },
+        {
+          "id": "s31-h2",
+          "text": "t2 becomes three clipped samples for the default group."
+        }
+      ]
+    },
+    {
+      "id": "s32",
+      "title": "Add this group\u2019s events to the call total",
+      "kind": "author",
+      "editTarget": "vector_accumulate",
+      "code": "    addu $v1, $v1, $t2\n",
+      "prose": "Add the group\u2019s sample count into v1. The entry initialized v1 once; later groups and a scalar tail must accumulate into it. A block-local count cannot replace the total. The maximum public count is sixty-four, so the result is representable by this word operation. No output store has occurred in the vector body yet.",
+      "expectedObservation": "The first default group contributes three, leaving v1=3.",
+      "quiz": {
+        "id": "q32",
+        "prompt": "What must the next group do with v1?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Add its own clipping events."
+          },
+          {
+            "id": "b",
+            "text": "Clear it before counting."
+          },
+          {
+            "id": "c",
+            "text": "Copy the last output sample into it."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Add the group\u2019s sample count into v1."
+        },
+        {
+          "id": "s32-h2",
+          "text": "The first default group contributes three, leaving v1=3."
+        }
+      ]
+    },
+    {
+      "id": "s33",
+      "title": "Publish exactly eight saturated samples",
+      "kind": "author",
+      "editTarget": "vector_store",
+      "code": "    st.b $w3, 0($a2)\n",
+      "prose": "Store w3 with st.b at a2. The store writes sixteen bytes: eight complete little-endian output halfwords. It uses the saturated result, leaving the wrapping comparison available only as an explanatory temporary. Both source groups were already loaded. This ordering permits exact output aliases of either input while avoiding any store outside the logical group.",
+      "expectedObservation": "The first default group writes sixteen output bytes and returns provisionally with v1=3 and a3 still eight.",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Which register contains the required output group?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "w2, the wrapping sum."
+          },
+          {
+            "id": "b",
+            "text": "w3, the signed saturated sum."
+          },
+          {
+            "id": "c",
+            "text": "w4, the population counts."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Store w3 with st.b at a2."
+        },
+        {
+          "id": "s33-h2",
+          "text": "The first default group writes sixteen output bytes and returns provisionally with v1=3 and a3 still eight."
+        }
+      ]
+    },
+    {
+      "id": "s34",
+      "title": "Repeat complete groups and retain the scalar tail",
+      "kind": "author",
+      "editTarget": "vector_next",
+      "code": "    daddiu $a0, $a0, 16\n    daddiu $a1, $a1, 16\n    daddiu $a2, $a2, 16\n    addiu $a3, $a3, -8\n    sltiu $t0, $a3, 8\n    beq $t0, $zero, mix_block\n    nop\n",
+      "prose": "Advance all three full pointers by sixteen, consume eight samples and repeat only when another complete group remains. Otherwise fall through to mix_tail, which returns immediately at zero or processes the final one through seven samples. The scalar tail adds into the same v1. Neither path resets v0. The completed routine now covers short calls, exact blocks and mixed calls under one interface.",
+      "expectedObservation": "Eight default samples return three clips; nine return four; sixteen return six. A sixty-four-sample call exercises repeated groups without a scalar tail.",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What happens after one group in a nine-sample call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The ninth sample is ignored."
+          },
+          {
+            "id": "b",
+            "text": "Another sixteen-byte group is read."
+          },
+          {
+            "id": "c",
+            "text": "The scalar tail processes one sample."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Advance all three full pointers by sixteen, consume eight samples and repeat only when another complete group remains."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Eight default samples return three clips; nine return four; sixteen return six. A sixty-four-sample call exercises repeated groups without a scalar tail."
+        }
+      ]
+    },
+    {
+      "id": "s35",
+      "title": "Observe the caller before it stores the results",
+      "kind": "observe",
+      "prose": "Restore the default caller and count sixteen. Pause at mix_ready, before its result stores. The mixer has already written pcm_c, while processed and clipped still contain 99. Continue to wrap_ready: the saved saturated counts are now sixteen and six, but the current v1 belongs to the wrapping comparison and is zero. Read the result at the boundary where it is valid.",
+      "expectedObservation": "At comparison_ready the three words processed, clipped and wrapped_count contain sixteen, six and sixteen. The last live result registers belong to the wrapping call.",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Which state holds the saved saturation count at wrap_ready?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The live v1, which is zero."
+          },
+          {
+            "id": "b",
+            "text": "The first output halfword."
+          },
+          {
+            "id": "c",
+            "text": "The clipped word, which is six."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Restore the default caller and count sixteen."
+        },
+        {
+          "id": "s35-h2",
+          "text": "At comparison_ready the three words processed, clipped and wrapped_count contain sixteen, six and sixteen. The last live result registers belong to the wrapping call."
+        }
+      ]
+    },
+    {
+      "id": "s36",
+      "title": "Separate endpoint equality from overflow",
+      "kind": "observe",
+      "prose": "Run fresh one-sample calls for 30000+2767, 32767+1, -30000+-2768 and -32768+-1. The first and second store the same positive endpoint but return clipping counts zero and one. The third and fourth do the same at the negative endpoint. Changing the input data is part of each fresh call; continuing an already completed call would not repeat the entry initialization.",
+      "expectedObservation": "The four clipping results are zero, one, zero and one. Every call returns v0=1.",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which pair actually clips?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "32767+1."
+          },
+          {
+            "id": "b",
+            "text": "30000+2767."
+          },
+          {
+            "id": "c",
+            "text": "-30000+-2768."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Run fresh one-sample calls for 30000+2767, 32767+1, -30000+-2768 and -32768+-1."
+        },
+        {
+          "id": "s36-h2",
+          "text": "The four clipping results are zero, one, zero and one. Every call returns v0=1."
+        }
+      ]
+    },
+    {
+      "id": "s37",
+      "title": "Grade the public behavior independently of the illustration",
+      "kind": "observe",
+      "prose": "The construction observations name temporary registers because they explain this particular sequence. Complete behavioral grading instead checks the callable interface, exact results, preserved state and every caller-data access. It must reject an out-of-slice store even if a later store restores the byte. In free writing, choose different temporaries, helper labels or a scalar implementation while retaining the public contract.",
+      "expectedObservation": "The completed scalar and MSA implementations pass the same behavioral cases. The untouched starter is rejected. Exact instruction counts are measurements of the examples, not grading requirements.",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Can a correct alternative use different temporary registers?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No, because the observation table names them."
+          },
+          {
+            "id": "b",
+            "text": "Yes, if the public contract still holds."
+          },
+          {
+            "id": "c",
+            "text": "Only if it also copies the example\u2019s instruction count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "The construction observations name temporary registers because they explain this particular sequence."
+        },
+        {
+          "id": "s37-h2",
+          "text": "The completed scalar and MSA implementations pass the same behavioral cases. The untouched starter is rejected. Exact instruction counts are measurements of the examples, not grading requirements."
+        }
+      ]
+    },
+    {
+      "id": "s38",
+      "title": "Compare stored audio and numerical waveforms",
+      "kind": "observe",
+      "prose": "Use the three supplied listening scenes. Each track is a separate mono stream; a and b are inputs, saturated and wrapped are output rules. The renderer writes samples actually produced by MARS and checks them independently. Listening is optional: the numerical examples, plot and sample formula convey the same clipping distinction. Do not infer clip counts solely from perceived loudness.",
+      "expectedObservation": "Quiet saturated and wrapping files are identical. Both louder scenes have 11000 clipped samples but different waveforms. The files have two seconds of audio at 16000 mono frames per second.",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Do the two input streams make each file stereo?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because two values are added."
+          },
+          {
+            "id": "b",
+            "text": "Only in the phase-offset scene."
+          },
+          {
+            "id": "c",
+            "text": "No; each stored output frame contains one mixed sample."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Use the three supplied listening scenes."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Quiet saturated and wrapping files are identical. Both louder scenes have 11000 clipped samples but different waveforms. The files have two seconds of audio at 16000 mono frames per second."
+        }
+      ]
+    },
+    {
+      "id": "s39",
+      "title": "Explain a block boundary in the measured work",
+      "kind": "observe",
+      "prose": "Compare complete calls rather than only the addition instructions. At sixty-three samples, the MSA path executes seven full groups and seven scalar samples. At sixty-four it executes eight groups. The additional sample can therefore reduce executed work. Include dispatch and tail costs when explaining this result, and keep simulated instruction counts distinct from host time.",
+      "expectedObservation": "Quiet sixty-three-sample calls use 359 MSA-path instructions; sixty-four use 169. The corresponding scalar counts are 1896 and 1926.",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Why can the sixty-four-sample MSA call execute fewer instructions?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A full group replaces the seven-sample scalar tail."
+          },
+          {
+            "id": "b",
+            "text": "The last sample is skipped."
+          },
+          {
+            "id": "c",
+            "text": "The elapsed time is defined by sample count alone."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Compare complete calls rather than only the addition instructions."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Quiet sixty-three-sample calls use 359 MSA-path instructions; sixty-four use 169. The corresponding scalar counts are 1896 and 1926."
+        }
+      ]
+    },
+    {
+      "id": "s40",
+      "title": "Change the implementation while keeping the arithmetic contract",
+      "kind": "observe",
+      "prose": "For a free-writing variation, retain the supplied harness and mix_pcm16 entry while replacing private internals. Try a different mask reduction or a complete scalar implementation. For another assignment, define three-input mixing separately: saturating after each pair can make grouping change the result. Do not silently use that new arithmetic as a substitute for the two-input contract.",
+      "expectedObservation": "For three inputs 30000, 10000 and -10000, clipping the first pair before adding the third gives 22767; adding the last pair first gives 30000.",
+      "quiz": {
+        "id": "q40",
+        "prompt": "What must remain equivalent when replacing this mixer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Private scratch registers."
+          },
+          {
+            "id": "b",
+            "text": "The exact two-input result, counts and ownership behavior."
+          },
+          {
+            "id": "c",
+            "text": "The number of instructions in each block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "For a free-writing variation, retain the supplied harness and mix_pcm16 entry while replacing private internals."
+        },
+        {
+          "id": "s40-h2",
+          "text": "For three inputs 30000, 10000 and -10000, clipping the first pair before adding the third gives 22767; adding the last pair first gives 30000."
+        }
+      ]
+    }
+  ]
+}

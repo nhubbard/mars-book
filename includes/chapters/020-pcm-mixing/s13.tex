@@ -1,0 +1,32 @@
+\section{Step 13 Keep in-range sums out of the clipping path}\label{pcm-s13}
+
+Test whether the exact sum is less than -32768. On success branch to \texttt{mix\_low}. Otherwise transfer directly to \texttt{mix\_store}, bypassing both endpoint replacement and count increment. This second test uses the opposite comparison order from the positive bound. A negative input does not itself imply clipping; only the exact sum matters.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{lower\_test}. Keep the surrounding labels and region markers.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    li $t1, -32768
+    slt $t2, $t0, $t1
+    bne $t2, $zero, mix_low
+    nop
+    beq $zero, $zero, mix_store
+    nop
+\end{minted}
+Use recipe \texttt{s13-1}, \texttt{s13-2}, \texttt{s13-3}, \texttt{s13-4} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+Sum -40000 takes \texttt{mix\_low}. Sums -32768, 0 and 32767 go to storage without increasing \texttt{v1}.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Which value should take the lower clipping branch?
+
+\begin{itemize}
+\item \textbf{A} -32769.
+\item \textbf{B} -32768.
+\item \textbf{C} -1.
+\end{itemize}

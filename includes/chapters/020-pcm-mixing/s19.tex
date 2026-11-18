@@ -1,0 +1,32 @@
+\section{Step 19 Advance all three full pointers together}\label{pcm-s19}
+
+Advance \texttt{a0}, \texttt{a1} and \texttt{a2} by two with \texttt{daddiu}, consume one sample, and repeat while \texttt{a3} is nonzero. Addresses need the full-width operation even though sample arithmetic fits a word. Consuming count after the complete store makes the loop invariant direct: pointers identify the next sample and \texttt{a3} counts samples still to process. \texttt{v0} keeps the original count.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{next\_sample}. Keep the surrounding labels and region markers.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $a0, $a0, 2
+    daddiu $a1, $a1, 2
+    daddiu $a2, $a2, 2
+    addiu $a3, $a3, -1
+    bne $a3, $zero, mix_sample
+    nop
+\end{minted}
+Use recipe \texttt{s19-1}, \texttt{s19-2}, \texttt{s19-3} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+The scalar mixer now handles every allowed count. Two opposite clipping events return \texttt{v0}=2 and \texttt{v1}=2, with all pointers advanced four bytes.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+Why must \texttt{a1} advance as well as \texttt{a0}?
+
+\begin{itemize}
+\item \textbf{A} Each iteration needs the corresponding next sample from both inputs.
+\item \textbf{B} Advancing \texttt{a0} changes \texttt{a1} automatically.
+\item \textbf{C} The second input is a constant stream by contract.
+\end{itemize}

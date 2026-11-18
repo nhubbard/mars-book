@@ -122,13 +122,14 @@ accepts an equivalent scalar implementation. Four actual light-theme captures,
 author review and independent accessibility validation remain pending. Nineteen
 text drafts do not complete the full 35-project and capture objective, which remains active.
 
-PCM mixing is in progress. Its independent native foundation at
-`drafts/pcm-mixing.tex` defines signed sixteen-bit little-endian sums, exact clipping
-counts, unaligned slices, exact in-place aliases and fresh-call results. It explains
-scalar sign extension, MSA saturation, comparison masks, population counts and measured
-whole-call work. A native alias diagram, mask diagram and simulator-derived waveform
-accompany twelve verified WAV listening files in book/media/020-pcm-mixing. Scalar
-and MSA implementations produce byte-identical listening files. Full incremental
-steps, student packaging and actual IDE captures remain to be developed. Chapter
-twenty is outside main.tex and the completed text-package count. The full 35-project
-composition and capture objective remains active.
+PCM mixing has a forty-step native construction draft at `drafts/pcm-mixing.tex`,
+with thirty cumulative edits and forty-eight reproducible observations. The text
+explains signed sample decoding, exact word sums, strict saturation bounds, byte stores,
+exact in-place aliases, eight-lane saturation, clipping masks and doubleword population
+counts. Its companion at `drafts/pcm-construction` contains the marked starter, input
+preparation helper, quiz/hint transcript and recipes. The private construction checks
+repeat observations through unaligned isolated calls and the actual program caller.
+A native alias diagram, mask diagram and simulator-derived waveform accompany twelve
+verified WAV listening files. Full student packaging, interactive progression controls
+and actual IDE captures remain in development. Chapter twenty is outside main.tex and
+the nineteen completed text packages. The full 35-project objective remains active.

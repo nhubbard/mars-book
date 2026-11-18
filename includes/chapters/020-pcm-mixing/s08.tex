@@ -1,0 +1,28 @@
+\section{Step 8 Read B before making any output store}\label{pcm-s08}
+
+Load B’s two bytes at offsets zero and one from \texttt{a1} into \texttt{t1} and \texttt{t2}. Reusing \texttt{t1} is safe because A’s combined signed value is already in \texttt{t0}. Both complete inputs must be retained before output is stored: when output is exactly input B, an early store could otherwise replace a byte that this same sample still needs.
+
+\Needspace{12\baselineskip}
+\subsection{Write and inspect}
+Replace the temporary branch and nop in \texttt{load\_b}. Keep the surrounding labels and region markers.
+
+\Needspace{5\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lbu $t1, 0($a1)
+    lbu $t2, 1($a1)
+\end{minted}
+Use recipe \texttt{s08-1} from the companion construction inputs. Pause at \texttt{mix\_ready} before comparing this partial state.
+
+\subsection{Expected observation}
+For A=-1000 and B=2000, \texttt{t0} stays -1000 while \texttt{t1}=208 and \texttt{t2}=7.
+
+\Needspace{11\baselineskip}
+\subsection{Check your understanding}
+What must survive reuse of \texttt{t1}?
+
+\begin{itemize}
+\item \textbf{A} The previous high-byte temporary forever.
+\item \textbf{B} A’s complete signed value in \texttt{t0}.
+\item \textbf{C} The last output sample in \texttt{a0}.
+\end{itemize}
