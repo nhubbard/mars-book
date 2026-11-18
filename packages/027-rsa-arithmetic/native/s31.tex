@@ -1,0 +1,42 @@
+\section{Step 31 Add for the current multiplier bit}\label{rsa-s31}
+
+If the whole private multiplier is zero, go to publication. Otherwise test its low bit. For a one bit, add the private addend to the result modulo N and check status. The in-place addition is permitted here even though this public multiplier's output must be disjoint from its inputs.
+
+Replace only the body of region \texttt{modproduct\_select}, retaining its BEGIN and END comments.
+
+\Needspace{22\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+mulmod_loop:
+    ld $t0, 16($sp)
+    ld $t1, 24($sp)
+    or $t2, $t0, $t1
+    beqz $t2, mulmod_done
+    nop
+    andi $t2, $t0, 1
+    beqz $t2, mulmod_shift
+    nop
+    daddiu $a0, $sp, 32
+    move $a1, $sp
+    move $a2, $s0
+    daddiu $a3, $sp, 32
+    jal rsa_addmod128
+    nop
+    bnez $v0, mulmod_development
+    nop
+\end{minted}
+
+Use recipe \texttt{s31-1} with the cumulative source through this edit. Stop at \texttt{mulmod\_shift} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first selected addition produces 13 while retaining multiplier 11.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why is the nested result update allowed in place?
+
+\begin{itemize}
+\item \textbf{A} The stack pointer makes all overlap harmless.
+\item \textbf{B} The modular-addition contract explicitly permits that exact alias.
+\item \textbf{C} Every public arithmetic output may overlap any input.
+\end{itemize}

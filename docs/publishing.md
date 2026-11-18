@@ -21,8 +21,8 @@ same public ZIP, records its digest, and produces a separate instructor ZIP with
 files and verification metadata. Keep instructor build outputs private and ignored by
 Git. Never attach an instructor ZIP to a public release or workflow artifact.
 
-The first publication is a source draft, not a final course release: captures, reader
-review, final licensing, and MacTeX composition remain pending. Choose a book-content
+The first publication is a source draft, not a final course release: actual captures, reader
+review and final licensing remain pending. Native MacTeX composition is implemented. Choose a book-content
 license and code-example license explicitly before soliciting downstream reuse.
 
 ## Release sequence

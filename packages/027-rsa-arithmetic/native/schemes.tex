@@ -1,0 +1,26 @@
+\section{Distinguish RSA primitives from RSA schemes}
+The calculation \(m^e\bmod n\) is an RSA arithmetic primitive when its representative
+and key satisfy the relevant bounds. It does not define how an arbitrary message is
+encoded, how randomness is used, or how errors are reported. The toy calculation in
+this chapter deliberately exposes the integer operation so its carries and exponent
+bits can be checked.
+
+RFC 8017 specifies RSA encryption and signature schemes around these primitives.
+RSAES-OAEP encodes a message for encryption using a hash function and mask generation;
+RSASSA-PSS specifies an encoding for signatures with its own parameters and verification
+rules. Their encodings belong to their respective schemes. Adding an informal padding
+byte to the toy integer would not implement either scheme. See the RFC's sections 5,
+7.1 and 8.1 for the precise boundaries.
+
+The current routines also branch on operand and exponent bits. They have not been
+designed or evaluated for resistance to timing or other side channels. The fixed
+128-bit teaching range, toy primes and visible intermediate states support arithmetic
+experiments. They do not justify using this code with private keys or real messages.
+A production application needs a reviewed cryptographic implementation of its chosen
+scheme and key-handling requirements.
+
+Before leaving the chapter, explain where each width enters: a 32-bit limb, a 64-bit
+partial-product accumulator, a 129-bit sum represented by four words plus carry, a
+256-bit full product, and a 128-bit exponent scan. For each, identify which bits would
+be lost by substituting a word operation. That explanation is a useful test of whether
+an optimization preserves the calculation.

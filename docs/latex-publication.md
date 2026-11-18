@@ -213,9 +213,11 @@ and instructor archives. It remains a working draft pending actual IDE captures,
 the author's deferred rewrite and independent accessibility validation.
 
 
-Build the independent RSA arithmetic foundation with
+Build the independent RSA arithmetic chapter with
 `python3 tools/book.py build --entry drafts/rsa-arithmetic.tex`. Its native includes
 remain directly editable. Its 51 assembly fragments use the actual IntelliJ light highlighter. The 42-step
 cumulative sequence interleaves 35 edits with explanations, observations and quizzes;
 native equations, headed tables and a described limb-layout figure support it.
-The four IDE figure slots are plans without captured pixels. It is not yet included in main.tex.
+The four IDE figure slots are plans without captured pixels. The chapter is also
+included in main.tex as its twenty-seventh text package, with separate public/student
+and private/instructor distributions.

@@ -890,3 +890,44 @@ The manuscript still contains 26 packaged chapters. RSA public guided and free-w
 exports, separate instructor distribution and main.tex integration remain next. Actual
 IDE captures and annotation coordinates, remote progression and the author's deferred
 substantial prose rewrite remain unfinished. Existing chapters were not rewritten.
+
+
+## RSA student and instructor packages, 18 November 2026
+
+Chapter 27 is included in main.tex and registered as 027-rsa-arithmetic. Separate public
+and private distributions retain exact native snapshots, the safe cumulative starter,
+42 quizzes with 84 hints, 43 observation recipes, 35 guided checks, nine public
+completed-interface scripts and explanatory private quiz feedback. Private grading adds
+312 cases combining seeded values and modulus edges. Public checks use independent
+BigInteger results, explicit caller-object ownership, shifted arguments, preserved high
+bits, error preflight, caller paths and repeated calls. Candidate-owned constants and
+workspace in gaps between supplied objects remain permitted.
+
+The package verifier records 163 runs and 3,912 expected passing case executions. This
+includes 118 isolated-call controls for a deliberately stateful faulty variant; repeated
+calls reject that variant. Twenty-five faulty variants and the unfinished starter are
+rejected. Both complete algorithms pass public and private domains. Wide code/data,
+different temporary and saved registers, larger frames, an owned constant and owned
+scratch also pass all 122 public cases. Same-value input stores fail ownership traces,
+while candidate-owned scratch writes pass. Guided construction remains specific to its
+illustrated intermediate allocation and never defines completed free-writing correctness.
+
+The deterministic student ZIP contains 190 files; a second export is byte-identical.
+Its SHA-256 is 043637942a75e053c312a888a50b4de04dfe50dadfa91cb349ca8445f7c40524.
+The private instructor ZIP embeds that exact student ZIP and verification.json. The
+extracted student checks and default/explicit-source preparation paths pass; existing
+student work remains intact. Private checks, completed assembly and quiz keys are absent
+from the student archive. All 38 book-tooling tests and seven renderer tests pass.
+The existing 712-record actual IntelliJ export is unchanged; no assembly listing changed
+in this packaging step. All 27 package distributions validate and rebuild.
+
+The standalone RSA chapter has 62 pages and 51 single-page literal assembly fragments.
+The full manuscript has 1,131 physical pages, 732 literal assembly fragments and 36
+described native figures. Embedded fonts remain Minion Pro, Noto Sans Math and JetBrains
+Mono. Sixty chapter pages are pixel-identical to the reviewed cumulative draft. Changed
+pages 2 and 62 were reviewed at 1200px; the manuscript contents entry, chapter opening
+and final page were reviewed at 1500px. Previous chapters were reviewed in earlier
+steps. Tagging, table headers, formulas and figure alternatives are present; independent
+accessibility validation and PDF/UA certification remain outstanding. Four RSA IDE
+figures are still plans, and remote progression, student usability review and the
+author's substantial deferred rewrite remain unfinished.

@@ -1,0 +1,1848 @@
+{
+  "formatVersion": 1,
+  "version": "0.1.0",
+  "status": "draft",
+  "audience": "Students with basic programming knowledge learning assembly",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "3f69e76756b45f13ba692235ca945dc941e4f4b4",
+    "memoryLayout": "Default",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "traceMemoryAccesses",
+      "readDataAddress",
+      "readBytes(address,length)",
+      "runUntil"
+    ]
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native prose and public intermediate/final CLI checks; remote delivery and enforced instructor policies remain pending"
+  },
+  "id": "027-rsa-arithmetic",
+  "title": "Build RSA arithmetic",
+  "entry": "starter/main.asm",
+  "assignment": "assignment.md",
+  "reading": "reading.json",
+  "prerequisites": [
+    "Unsigned arithmetic, loop invariants and full-width pointers",
+    "Preserved registers, nested calls and stack frames",
+    "Little-endian word objects and exact memory ownership"
+  ],
+  "learningObjectives": [
+    "Trace Euclidean remainders and a modular inverse",
+    "Use square-and-multiply without discarding product bits",
+    "Represent unsigned128-bit inputs with four limbs",
+    "Propagate full-product carries and a129th sum bit",
+    "Build reduction and modular multiplication with residue invariants",
+    "Use every exponent bit and compare with BigInteger.modPow",
+    "Distinguish modular arithmetic from RSA encoding schemes"
+  ],
+  "inputDomain": {
+    "type": "bounded-unsigned-rsa-arithmetic",
+    "limbBits": 32,
+    "inputLimbs": 4,
+    "productLimbs": 8,
+    "exponentBits": 128,
+    "scalarPowerBits": 32,
+    "gcdBits": 64,
+    "byteOrder": "little-endian",
+    "modularAddition": "Residues below nonzero modulus",
+    "pointerAlignmentBytes": 4,
+    "stackAlignmentBytes": 8
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Trace a stopped starter",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Does development status three certify an arithmetic answer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only for a zero exponent."
+          },
+          {
+            "id": "b",
+            "text": "No; it marks unfinished work."
+          },
+          {
+            "id": "c",
+            "text": "Yes, if the low byte happens to match."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s01-h2",
+          "text": "An unfinished return is observable without claiming a completed arithmetic value."
+        }
+      ],
+      "content": "steps/01.md",
+      "prerequisites": [],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s02",
+      "title": "Retain the pair before dividing",
+      "kind": "author",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which register pair names the changing Euclidean inputs?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output pointer and stack pointer."
+          },
+          {
+            "id": "b",
+            "text": "The two low bytes of the original values."
+          },
+          {
+            "id": "c",
+            "text": "The working copies in t0 and t1."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Separate the original arguments from the changing pair."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Keep the first operand in t0 and the second in t1."
+        }
+      ],
+      "content": "steps/02.md",
+      "prerequisites": [
+        "s01"
+      ],
+      "editTarget": "gcd_pair",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s02.kts"
+      }
+    },
+    {
+      "id": "s03",
+      "title": "Follow the decreasing remainder",
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why compute the remainder before overwriting the pair?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Both old values are still needed by the division."
+          },
+          {
+            "id": "b",
+            "text": "The result must be written to a string."
+          },
+          {
+            "id": "c",
+            "text": "Moving a register changes memory byte order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Check the divisor before taking a remainder."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Compute the remainder in t2 before shifting the old divisor into t0."
+        }
+      ],
+      "content": "steps/03.md",
+      "prerequisites": [
+        "s02"
+      ],
+      "editTarget": "gcd_remainders",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s03.kts"
+      }
+    },
+    {
+      "id": "s04",
+      "title": "Return the full gcd pattern",
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Which value indicates successful gcd completion?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The instruction count."
+          },
+          {
+            "id": "b",
+            "text": "Zero in v1."
+          },
+          {
+            "id": "c",
+            "text": "Zero in the gcd result for every input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "The numerical return and completion indicator have different registers."
+        },
+        {
+          "id": "s04-h2",
+          "text": "Return t0 in v0 and clear v1 without narrowing either saved state or result."
+        }
+      ],
+      "content": "steps/04.md",
+      "prerequisites": [
+        "s03"
+      ],
+      "editTarget": "gcd_return",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s04.kts"
+      }
+    },
+    {
+      "id": "s05",
+      "title": "Check the inverse on paper",
+      "kind": "observe",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What does the gcd alone establish about an inverse?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The complete inverse coefficient automatically."
+          },
+          {
+            "id": "b",
+            "text": "The byte length of an RSA message."
+          },
+          {
+            "id": "c",
+            "text": "Whether the operands are coprime."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s05-h2",
+          "text": "The coefficient of17 is minus367, equivalent to2753 modulo3120."
+        }
+      ],
+      "content": "steps/05.md",
+      "prerequisites": [
+        "s04"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s06",
+      "title": "Initialize a residue identity",
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why reduce the initial one?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its residue is zero when the modulus is one."
+          },
+          {
+            "id": "b",
+            "text": "Every exponent is initially one."
+          },
+          {
+            "id": "c",
+            "text": "A remainder operation increases the exponent width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Handle zero modulus before considering the output."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Reduce both the base and the identity one, then retain the exponent separately."
+        }
+      ],
+      "content": "steps/06.md",
+      "prerequisites": [
+        "s05"
+      ],
+      "editTarget": "word_identity",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s06.kts"
+      }
+    },
+    {
+      "id": "s07",
+      "title": "Multiply for a selected exponent bit",
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What selects this multiplication?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of bytes in the output object."
+          },
+          {
+            "id": "b",
+            "text": "The current exponent's low bit."
+          },
+          {
+            "id": "c",
+            "text": "The sign of the modulus address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Test one bit without shifting away the evidence yet."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Mask exponent bit zero and multiply only on the selected path."
+        }
+      ],
+      "content": "steps/07.md",
+      "prerequisites": [
+        "s06"
+      ],
+      "editTarget": "word_select",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s07.kts"
+      }
+    },
+    {
+      "id": "s08",
+      "title": "Advance to the next power of two",
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Why can the last square be skipped?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The modulus changes after every multiply."
+          },
+          {
+            "id": "b",
+            "text": "A square of the base must always be zero."
+          },
+          {
+            "id": "c",
+            "text": "No remaining exponent bit can select its result."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "The next exponent bit corresponds to a squared base."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Shift the remaining exponent first, and skip a final square when it becomes zero."
+        }
+      ],
+      "content": "steps/08.md",
+      "prerequisites": [
+        "s07"
+      ],
+      "editTarget": "word_shift",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s08.kts"
+      }
+    },
+    {
+      "id": "s09",
+      "title": "Store exactly one scalar result",
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "When is discarding the upper product bits valid here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the complete product has been reduced to the32-bit residue."
+          },
+          {
+            "id": "b",
+            "text": "Before multiplying any two inputs."
+          },
+          {
+            "id": "c",
+            "text": "Whenever the output address is32-bit aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "The remainder fits the declared scalar word."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Use one four-byte store after reduction, followed by a status-zero return."
+        }
+      ],
+      "content": "steps/09.md",
+      "prerequisites": [
+        "s08"
+      ],
+      "editTarget": "word_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s09.kts"
+      }
+    },
+    {
+      "id": "s10",
+      "title": "Exercise a product with its top bit set",
+      "kind": "observe",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Which interpretation does the scalar product require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An address into the output object."
+          },
+          {
+            "id": "b",
+            "text": "Unsigned64-bit magnitude."
+          },
+          {
+            "id": "c",
+            "text": "Signed32-bit value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The scalar output is one; a signed-remainder substitution fails this case."
+        }
+      ],
+      "content": "steps/10.md",
+      "prerequisites": [
+        "s09"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s11",
+      "title": "Initialize every product column",
+      "kind": "author",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Why clear the high four words too?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The high half is outside the result contract."
+          },
+          {
+            "id": "b",
+            "text": "Clearing only one byte resets an entire word."
+          },
+          {
+            "id": "c",
+            "text": "Later partial products add into those columns."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Accumulation needs a known initial value in every column."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Clear32 bytes with a four-byte stride, retaining64-bit pointer arithmetic."
+        }
+      ],
+      "content": "steps/11.md",
+      "prerequisites": [
+        "s10"
+      ],
+      "editTarget": "product_clear",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s11.kts"
+      }
+    },
+    {
+      "id": "s12",
+      "title": "Begin a row with a fresh carry",
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Which value resets between rows?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The incoming carry for the new row."
+          },
+          {
+            "id": "b",
+            "text": "Every accumulated product column."
+          },
+          {
+            "id": "c",
+            "text": "The original input object."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "A row chooses one limb from the first operand."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Load that limb unsigned and reset the inner offset and carry."
+        }
+      ],
+      "content": "steps/12.md",
+      "prerequisites": [
+        "s11"
+      ],
+      "editTarget": "product_row",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s12.kts"
+      }
+    },
+    {
+      "id": "s13",
+      "title": "Split one widened partial sum",
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which temporary must retain the whole partial sum?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The four-byte output slot after its store."
+          },
+          {
+            "id": "b",
+            "text": "The64-bit accumulator before splitting."
+          },
+          {
+            "id": "c",
+            "text": "Only the byte pointer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "The temporary has both a result limb and a carry."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Store its low32 bits and logically shift the same64-bit value by32 for the carry."
+        }
+      ],
+      "content": "steps/13.md",
+      "prerequisites": [
+        "s12"
+      ],
+      "editTarget": "product_partial",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s13.kts"
+      }
+    },
+    {
+      "id": "s14",
+      "title": "Carry through the rest of a row",
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "What determines the destination column?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The XOR of the input addresses."
+          },
+          {
+            "id": "b",
+            "text": "The row index alone for every inner iteration."
+          },
+          {
+            "id": "c",
+            "text": "The sum of the two operand limb indices."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "The inner loop walks the second operand."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Advance by four bytes and retain the carry until the next column consumes it."
+        }
+      ],
+      "content": "steps/14.md",
+      "prerequisites": [
+        "s13"
+      ],
+      "editTarget": "product_columns",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s14.kts"
+      }
+    },
+    {
+      "id": "s15",
+      "title": "Place the row carry and continue",
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What remains when the next row begins?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Previously accumulated output limbs."
+          },
+          {
+            "id": "b",
+            "text": "The old row's incoming carry as the new starting carry."
+          },
+          {
+            "id": "c",
+            "text": "Only the most recently stored byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "The final row carry belongs beyond the four inner columns."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Store at output plus row offset plus16, then advance the outer offset."
+        }
+      ],
+      "content": "steps/15.md",
+      "prerequisites": [
+        "s14"
+      ],
+      "editTarget": "product_rows",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s15.kts"
+      }
+    },
+    {
+      "id": "s16",
+      "title": "Close the full-product interface",
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "How many output bytes must the full-product check compare?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the first nonzero word."
+          },
+          {
+            "id": "b",
+            "text": "Thirty-two."
+          },
+          {
+            "id": "c",
+            "text": "Only the first sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "This interface returns an unreduced product."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Retain all eight words and return zero status."
+        }
+      ],
+      "content": "steps/16.md",
+      "prerequisites": [
+        "s15"
+      ],
+      "editTarget": "product_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s16.kts"
+      }
+    },
+    {
+      "id": "s17",
+      "title": "Audit the full product width",
+      "kind": "observe",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Does a correct low half prove the full product?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because multiplication is commutative."
+          },
+          {
+            "id": "b",
+            "text": "Only if the inputs are aligned."
+          },
+          {
+            "id": "c",
+            "text": "No; the high half must also be checked."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s17-h2",
+          "text": "High product words and full return addresses participate in the check."
+        }
+      ],
+      "content": "steps/17.md",
+      "prerequisites": [
+        "s16"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s18",
+      "title": "Establish a valid modular-addition entry",
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Which test recognizes the all-zero modulus?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "OR all four limbs and test the combined value."
+          },
+          {
+            "id": "b",
+            "text": "Test the lowest limb alone."
+          },
+          {
+            "id": "c",
+            "text": "Interpret the output pointer as the modulus."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "A modulus with low word zero can still be positive."
+        },
+        {
+          "id": "s18-h2",
+          "text": "OR all four modulus limbs before initializing the offset and carry."
+        }
+      ],
+      "content": "steps/18.md",
+      "prerequisites": [
+        "s17"
+      ],
+      "editTarget": "add_guard",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s18.kts"
+      }
+    },
+    {
+      "id": "s19",
+      "title": "Keep the final sum carry",
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What does the final carry represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The sign of either input pointer."
+          },
+          {
+            "id": "b",
+            "text": "The bit above the stored128-bit sum."
+          },
+          {
+            "id": "c",
+            "text": "An output byte that should be ignored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Each per-limb temporary can require33 bits."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Use doubleword additions, store the low word and shift by32 for the next carry."
+        }
+      ],
+      "content": "steps/19.md",
+      "prerequisites": [
+        "s18"
+      ],
+      "editTarget": "add_limbs",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s19.kts"
+      }
+    },
+    {
+      "id": "s20",
+      "title": "Decide whether one subtraction is required",
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "When does equality with the modulus require subtraction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if the modulus is negative."
+          },
+          {
+            "id": "b",
+            "text": "Never, because equality is already a reduced residue."
+          },
+          {
+            "id": "c",
+            "text": "Always, because the residue must be below the modulus."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Carry and unsigned comparison are separate reasons to subtract."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Check final carry first; otherwise compare high limbs, including equality."
+        }
+      ],
+      "content": "steps/20.md",
+      "prerequisites": [
+        "s19"
+      ],
+      "editTarget": "add_compare",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s20.kts"
+      }
+    },
+    {
+      "id": "s21",
+      "title": "Propagate the subtraction borrow",
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Why is the temporary's sign useful in this subtraction?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The limb difference lies in a signed64-bit range with no ambiguity."
+          },
+          {
+            "id": "b",
+            "text": "All unsigned64-bit differences use their sign as borrow."
+          },
+          {
+            "id": "c",
+            "text": "A negative address automatically carries into the next limb."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Borrow must survive the low-word store."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Subtract the incoming borrow in64 bits and extract its outgoing value before advancing."
+        }
+      ],
+      "content": "steps/21.md",
+      "prerequisites": [
+        "s20"
+      ],
+      "editTarget": "add_borrow",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s21.kts"
+      }
+    },
+    {
+      "id": "s22",
+      "title": "Separate zero and unit moduli",
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Why handle modulus one before the bit loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The object has no readable low limb."
+          },
+          {
+            "id": "b",
+            "text": "The private integer one would violate that loop's addition precondition."
+          },
+          {
+            "id": "c",
+            "text": "The exponent becomes negative for modulus one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Zero and one require different public results."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Test all limbs for zero, then recognize one with all three high limbs zero."
+        }
+      ],
+      "content": "steps/22.md",
+      "prerequisites": [
+        "s21"
+      ],
+      "editTarget": "reduce_guard",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s22.kts"
+      }
+    },
+    {
+      "id": "s23",
+      "title": "Use the unsigned direct-copy path",
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Which comparison permits the direct copy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Input less than or equal to modulus."
+          },
+          {
+            "id": "b",
+            "text": "Input address lower than modulus address."
+          },
+          {
+            "id": "c",
+            "text": "Input strictly less than modulus."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Comparison begins at the most significant word."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Copy only on strict input-less-than-modulus; equality follows reduction."
+        }
+      ],
+      "content": "steps/23.md",
+      "prerequisites": [
+        "s22"
+      ],
+      "editTarget": "reduce_compare",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s23.kts"
+      }
+    },
+    {
+      "id": "s24",
+      "title": "Initialize the prefix remainder",
+      "kind": "author",
+      "quiz": {
+        "id": "q24",
+        "prompt": "What does the private remainder describe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The already consumed binary prefix modulo N."
+          },
+          {
+            "id": "b",
+            "text": "The count of nonzero input limbs."
+          },
+          {
+            "id": "c",
+            "text": "The complete256-bit product."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Each private object needs all its high limbs initialized."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Zero the remainder and one object, then set the low word of the latter to one."
+        }
+      ],
+      "content": "steps/24.md",
+      "prerequisites": [
+        "s23"
+      ],
+      "editTarget": "reduce_identity",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s24.kts"
+      }
+    },
+    {
+      "id": "s25",
+      "title": "Double the prefix and extract a bit",
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "How is a bit index converted to its containing word's byte offset?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Use the original bit index as an address."
+          },
+          {
+            "id": "b",
+            "text": "Divide by32, then multiply by four."
+          },
+          {
+            "id": "c",
+            "text": "Multiply directly by32."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Extract the bit from its containing word."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Divide the index by32 for the word number, multiply by four for bytes, then mask the shifted word."
+        }
+      ],
+      "content": "steps/25.md",
+      "prerequisites": [
+        "s24"
+      ],
+      "editTarget": "reduce_bit",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s25.kts"
+      }
+    },
+    {
+      "id": "s26",
+      "title": "Append each input bit to the remainder",
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which value must survive a nested call across iterations?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only a discarded product byte."
+          },
+          {
+            "id": "b",
+            "text": "The old contents of every volatile temporary."
+          },
+          {
+            "id": "c",
+            "text": "The retained input-bit index."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A one bit appends one after doubling the prefix."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Conditionally call modular addition with the private one, then decrement the saved bit index."
+        }
+      ],
+      "content": "steps/26.md",
+      "prerequisites": [
+        "s25"
+      ],
+      "editTarget": "reduce_accumulate",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s26.kts"
+      }
+    },
+    {
+      "id": "s27",
+      "title": "Copy the completed remainder to the caller",
+      "kind": "author",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why does the direct-copy path avoid the slow-path restore?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It never allocated that frame."
+          },
+          {
+            "id": "b",
+            "text": "A smaller input has no return address."
+          },
+          {
+            "id": "c",
+            "text": "Restoring only the low word of sp is sufficient."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Publication follows the complete private calculation."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Copy four words and use the supplied slow-path restore only when that frame exists."
+        }
+      ],
+      "content": "steps/27.md",
+      "prerequisites": [
+        "s26"
+      ],
+      "editTarget": "reduce_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s27.kts"
+      }
+    },
+    {
+      "id": "s28",
+      "title": "Inspect the supplied frame paths",
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which path must restore the reducer's slow frame?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only a path whose result is nonzero."
+          },
+          {
+            "id": "b",
+            "text": "A path that reached reduce_slow and allocated it."
+          },
+          {
+            "id": "c",
+            "text": "Every path including the early zero-modulus error."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Every development path restores exactly the frame it actually allocated."
+        }
+      ],
+      "content": "steps/28.md",
+      "prerequisites": [
+        "s27"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s29",
+      "title": "Guard the public modular multiplier",
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "May this entry assume its first operand is already below N?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because it has four limbs."
+          },
+          {
+            "id": "b",
+            "text": "Yes, whenever its address is aligned."
+          },
+          {
+            "id": "c",
+            "text": "No; it must establish the residue internally."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Do not narrow a multiword zero test."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Combine all four modulus limbs before either operand is read."
+        }
+      ],
+      "content": "steps/29.md",
+      "prerequisites": [
+        "s28"
+      ],
+      "editTarget": "modproduct_guard",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s29.kts"
+      }
+    },
+    {
+      "id": "s30",
+      "title": "Retain a private multiplier and reduced addend",
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which object is shifted destructively?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The private multiplier copy."
+          },
+          {
+            "id": "b",
+            "text": "The caller's read-only multiplier."
+          },
+          {
+            "id": "c",
+            "text": "The modulus itself."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "The multiplier will be shifted; retain caller ownership."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Copy it into the frame, initialize R to zero and reduce A into private X."
+        }
+      ],
+      "content": "steps/30.md",
+      "prerequisites": [
+        "s29"
+      ],
+      "editTarget": "modproduct_copy",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s30.kts"
+      }
+    },
+    {
+      "id": "s31",
+      "title": "Add for the current multiplier bit",
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "Why is the nested result update allowed in place?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The stack pointer makes all overlap harmless."
+          },
+          {
+            "id": "b",
+            "text": "The modular-addition contract explicitly permits that exact alias."
+          },
+          {
+            "id": "c",
+            "text": "Every public arithmetic output may overlap any input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "The low multiplier bit selects the addend."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Update R with addmod(R,X,N,R) only for a one bit, and check nested status."
+        }
+      ],
+      "content": "steps/31.md",
+      "prerequisites": [
+        "s30"
+      ],
+      "editTarget": "modproduct_select",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s31.kts"
+      }
+    },
+    {
+      "id": "s32",
+      "title": "Transfer the multiplier across 64-bit halves",
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Which bit crosses the doubleword boundary?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The high bit of the low half moves upward."
+          },
+          {
+            "id": "b",
+            "text": "The sign bit is copied into both halves."
+          },
+          {
+            "id": "c",
+            "text": "The old low bit of the high half."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "A logical shift needs a transfer between halves."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Move the old high half's bit zero into the low half's bit63."
+        }
+      ],
+      "content": "steps/32.md",
+      "prerequisites": [
+        "s31"
+      ],
+      "editTarget": "modproduct_shift",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s32.kts"
+      }
+    },
+    {
+      "id": "s33",
+      "title": "Double the addend for the next bit",
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "What invariant relates these three values to the original product?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "R plus X times Y is congruent to the original product modulo N."
+          },
+          {
+            "id": "b",
+            "text": "R is always the original first operand."
+          },
+          {
+            "id": "c",
+            "text": "Y is always the modulus."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "The addend must match the next multiplier bit's weight."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Double X modulo N after a nonfinal shift and return to the selection test."
+        }
+      ],
+      "content": "steps/33.md",
+      "prerequisites": [
+        "s32"
+      ],
+      "editTarget": "modproduct_double",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s33.kts"
+      }
+    },
+    {
+      "id": "s34",
+      "title": "Publish a full modular product",
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Which multiplier checks the high-end scan?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only a multiplier whose low byte is odd."
+          },
+          {
+            "id": "b",
+            "text": "One with only bit127 set."
+          },
+          {
+            "id": "c",
+            "text": "Only the integer one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "The private residue and caller object are separate."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Copy exactly sixteen result bytes, then restore the saved frame."
+        }
+      ],
+      "content": "steps/34.md",
+      "prerequisites": [
+        "s33"
+      ],
+      "editTarget": "modproduct_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s34.kts"
+      }
+    },
+    {
+      "id": "s35",
+      "title": "Compare independent numerical results",
+      "kind": "observe",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What should completed free-writing grading require?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The reference's scratch-register choices."
+          },
+          {
+            "id": "b",
+            "text": "An exact reference instruction count."
+          },
+          {
+            "id": "c",
+            "text": "The declared numerical and state contract."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Equivalent completed implementations agree at the interface despite different traces."
+        }
+      ],
+      "content": "steps/35.md",
+      "prerequisites": [
+        "s34"
+      ],
+      "completion": {
+        "type": "learner-confirmation"
+      }
+    },
+    {
+      "id": "s36",
+      "title": "Guard the multiword power entry",
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "How many exponent bits belong to this interface?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All128."
+          },
+          {
+            "id": "b",
+            "text": "Only the lowest32."
+          },
+          {
+            "id": "c",
+            "text": "Only the number of bits in the output address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "An exponent object can have set bits above bit63."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Guard the complete modulus before reading that object or the base."
+        }
+      ],
+      "content": "steps/36.md",
+      "prerequisites": [
+        "s35"
+      ],
+      "editTarget": "power_guard",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s36.kts"
+      }
+    },
+    {
+      "id": "s37",
+      "title": "Retain the exponent and reduce both initial values",
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Why use separate temporary output for these calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The result must share the modulus object."
+          },
+          {
+            "id": "b",
+            "text": "Their output must be disjoint from input objects."
+          },
+          {
+            "id": "c",
+            "text": "A pointer always needs32 extra bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Both initial values need the same residue invariant."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Reduce base and identity separately, with disjoint temporary output for the identity call."
+        }
+      ],
+      "content": "steps/37.md",
+      "prerequisites": [
+        "s36"
+      ],
+      "editTarget": "power_identity",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s37.kts"
+      }
+    },
+    {
+      "id": "s38",
+      "title": "Multiply the result for a one exponent bit",
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Which object changes in this selected multiply?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The modulus."
+          },
+          {
+            "id": "b",
+            "text": "The original caller exponent."
+          },
+          {
+            "id": "c",
+            "text": "The accumulated result after temporary publication."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "The public modular-product output is disjoint."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Multiply R and current base into T, check status, then copy T into R."
+        }
+      ],
+      "content": "steps/38.md",
+      "prerequisites": [
+        "s37"
+      ],
+      "editTarget": "power_select",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s38.kts"
+      }
+    },
+    {
+      "id": "s39",
+      "title": "Consume one full-width exponent bit",
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Why test both halves after shifting?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Remaining one bits may be entirely in the high half."
+          },
+          {
+            "id": "b",
+            "text": "The low half stores the modulus."
+          },
+          {
+            "id": "c",
+            "text": "The address ordering changes after a shift."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "A zero low half is not a zero128-bit exponent."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Transfer the high half's low bit and test both shifted halves."
+        }
+      ],
+      "content": "steps/39.md",
+      "prerequisites": [
+        "s38"
+      ],
+      "editTarget": "power_shift",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s39.kts"
+      }
+    },
+    {
+      "id": "s40",
+      "title": "Prepare the next base and repeat",
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Which value is squared in this right-to-left variant?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original exponent."
+          },
+          {
+            "id": "b",
+            "text": "The current base."
+          },
+          {
+            "id": "c",
+            "text": "The accumulated result on every iteration."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "The two power-loop variants square different state."
+        },
+        {
+          "id": "s40-h2",
+          "text": "For the illustrated right-to-left loop, square the current base into T and copy back."
+        }
+      ],
+      "content": "steps/40.md",
+      "prerequisites": [
+        "s39"
+      ],
+      "editTarget": "power_square",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s40.kts"
+      }
+    },
+    {
+      "id": "s41",
+      "title": "Return the complete multiword power",
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "What must a second call be allowed to reuse safely?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A hidden cached result for every input."
+          },
+          {
+            "id": "b",
+            "text": "Only a freshly created simulator session."
+          },
+          {
+            "id": "c",
+            "text": "Stack and temporary storage with arbitrary previous contents."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "A later invocation may encounter stale private bytes."
+        },
+        {
+          "id": "s41-h2",
+          "text": "Publish all four words and restore every saved64-bit register before returning."
+        }
+      ],
+      "content": "steps/41.md",
+      "prerequisites": [
+        "s40"
+      ],
+      "editTarget": "power_publish",
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s41.kts"
+      }
+    },
+    {
+      "id": "s42",
+      "title": "Interpret schemes after the arithmetic",
+      "kind": "observe",
+      "quiz": {
+        "id": "q42",
+        "prompt": "What remains outside the arithmetic lab?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Standardized scheme encoding and its complete key-handling behavior."
+          },
+          {
+            "id": "b",
+            "text": "The low-limb byte order."
+          },
+          {
+            "id": "c",
+            "text": "The need to retain a carry in multiplication."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Identify the function boundary and which state is numerical data."
+        },
+        {
+          "id": "s42-h2",
+          "text": "A modular power is not itself an encryption or signature scheme."
+        }
+      ],
+      "content": "steps/42.md",
+      "prerequisites": [
+        "s41"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/power.kts"
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/gcd.kts",
+    "checks/word.kts",
+    "checks/product.kts",
+    "checks/add.kts",
+    "checks/reduction.kts",
+    "checks/modproduct.kts",
+    "checks/power.kts",
+    "checks/caller.kts",
+    "checks/reuse.kts"
+  ],
+  "exports": [
+    "package.json",
+    "assignment.md",
+    "starter",
+    "steps",
+    "checks",
+    "captures",
+    "reading.json",
+    "narrative",
+    "fixtures",
+    "references.json",
+    "inputs.json",
+    "steps.json",
+    "prepare.py",
+    "native"
+  ]
+}

@@ -1,3 +1,6 @@
+The current student distribution is `packages/027-rsa-arithmetic`; this draft remains
+construction provenance. Use its packaged starter and helper for current student work.
+
 # RSA arithmetic cumulative construction
 
 This draft supports the directly edited native chapter at drafts/rsa-arithmetic.tex.

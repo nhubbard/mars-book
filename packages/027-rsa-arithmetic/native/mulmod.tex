@@ -1,0 +1,54 @@
+\section{Multiply residues without a 256-bit division}
+The full product routine established how carries work. Reducing its 256-bit output
+would require a wider reducer than the 128-bit interface just built. A different
+multiplication algorithm avoids storing that full product: distribute the multiplier's
+bits over repeated modular additions.
+
+Initialize \(R=0\), \(X=A\bmod N\), and a private copy \(Y=B\). While \(Y\ne0\),
+add \(X\) to \(R\) modulo \(N\) if \(Y\)'s low bit is one. Shift \(Y\) right.
+If more bits remain, double \(X\) modulo \(N\). The invariant is
+\(R+XY\equiv AB\pmod N\), with \(0\leq R,X<N\). Thus every modular-addition call
+receives valid residue operands, including when \(A\) or \(B\) originally exceeded
+\(N\).
+
+For \(13\cdot11\bmod17\), the low-to-high multiplier bits select these transitions.
+The final iteration skips doubling \(X\).
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrrrrr}
+\(R\) before & \(X\) before & \(Y\) before & \(R\) after & \(X\) after & \(Y\) after \\
+\hline
+0 & 13 & 11 & 13 & 9 & 5 \\
+13 & 9 & 5 & 5 & 1 & 2 \\
+5 & 1 & 2 & 5 & 2 & 1 \\
+5 & 2 & 1 & 7 & 2 & 0 \\
+\end{tabular}
+\end{center}
+
+A shift of the whole \(Y\) must transfer bits between words. Shifting each limb
+independently drops those transferred bits. With a private, eight-byte-aligned copy
+at stack offsets sixteen through thirty-one, two doubleword loads provide another
+way to express the transfer. The low bit of the high doubleword becomes bit 63 of
+the low doubleword.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{Shift the private 128-bit multiplier right by one.}
+\begin{minted}[samepage=true]{mars-idea}
+ld $t0, 16($sp)
+    ld $t1, 24($sp)
+    dsrl $t0, $t0, 1
+    dsll $t2, $t1, 63
+    or $t0, $t0, $t2
+    dsrl $t1, $t1, 1
+    sd $t0, 16($sp)
+    sd $t1, 24($sp)
+\end{minted}
+
+The same shift can be written using four word loads and carries between adjacent
+limbs. Both forms must include every input bit through bit 127. Keep the caller's
+multiplier unchanged by shifting only the private copy. An all-zero multiplier returns
+zero; a multiplier with only bit 127 set must still reach its selected addition.
+
+The result buffer is disjoint from caller inputs here. Use private \(R\) and \(X\)
+for nested in-place additions, then copy the final four words to the caller's output.
+This separates the public ownership rule from the internal update strategy.

@@ -1,0 +1,49 @@
+\section{Reduce an arbitrary input a bit at a time}
+Modular addition expects residues. The public multiplication and power interfaces
+accept arbitrary unsigned 128-bit inputs, so they need a reduction operation first.
+One approach is binary long division: consume the input from its highest bit down,
+retaining only the remainder of the prefix already seen.
+
+Start \(R=0\). For each input bit \(b\), replace \(R\) with \((2R+b)\bmod N\).
+The new binary prefix has exactly this value before taking its remainder. Implement
+its double with \texttt{rsa\_addmod128}(\(R,R,N,R\)). If the input bit is one, add
+a private object representing one with a second modular addition. Because the addition
+interface permits exact aliasing, both calls can update the private remainder in place.
+
+For the four bits of decimal 13, reducing modulo 5 gives:
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrrr}
+Next bit & Old remainder & \(2R+b\) & New remainder \\
+\hline
+1 & 0 & 1 & 1 \\
+1 & 1 & 3 & 3 \\
+0 & 3 & 6 & 1 \\
+1 & 1 & 3 & 3 \\
+\end{tabular}
+\end{center}
+Leading zero bits leave the initial remainder zero. The 128-bit implementation can
+therefore use a fixed scan from bit 127 down to zero. An input already below \(N\)
+can instead be copied directly after an unsigned multiword comparison.
+
+To find bit \(k\), select word \(\lfloor k/32\rfloor\), shift it logically by
+\(k\bmod32\), and mask with one. In this fragment \texttt{s0} is the original
+input pointer and \texttt{s3} is \(k\). The pointer addition is doubleword-sized.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{Extract one bit without confusing a bit index with a byte offset.}
+\begin{minted}[samepage=true]{mars-idea}
+dsrl $t0, $s3, 5
+    dsll $t0, $t0, 2
+    daddu $t0, $s0, $t0
+    lwu $t1, 0($t0)
+    andi $t2, $s3, 31
+    dsrlv $t1, $t1, $t2
+    andi $t1, $t1, 1
+\end{minted}
+
+Handle modulus one separately by writing zero. A private object containing one would
+not be a valid residue for the modular-addition precondition when \(N=1\). For \(N>1\),
+both zero and one are valid residues. Handle modulus zero first, before either input
+inspection or output stores. These special cases let the loop use its invariant
+without adding exceptions to each nested call.

@@ -1,0 +1,37 @@
+\section{Step 39 Consume one full-width exponent bit}\label{rsa-s39}
+
+Shift the private exponent with the same cross-half transfer used by modular multiplication. If no bits remain, go to publication. Otherwise leave the result alone while the next region squares the current base. An isolated high exponent bit must eventually reach the selection test.
+
+Replace only the body of region \texttt{power\_shift}, retaining its BEGIN and END comments.
+
+\Needspace{17\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+pow128_shift:
+    ld $t0, 16($sp)
+    ld $t1, 24($sp)
+    dsrl $t0, $t0, 1
+    dsll $t2, $t1, 63
+    or $t0, $t0, $t2
+    dsrl $t1, $t1, 1
+    sd $t0, 16($sp)
+    sd $t1, 24($sp)
+    or $t2, $t0, $t1
+    beqz $t2, pow128_done
+    nop
+\end{minted}
+
+Use recipe \texttt{s39-1} with the cumulative source through this edit. Stop at \texttt{after\_power\_shift} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first shift changes exponent 17 to eight, retaining base 65 and result 65.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why test both halves after shifting?
+
+\begin{itemize}
+\item \textbf{A} Remaining one bits may be entirely in the high half.
+\item \textbf{B} The low half stores the modulus.
+\item \textbf{C} The address ordering changes after a shift.
+\end{itemize}

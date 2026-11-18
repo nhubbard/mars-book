@@ -1,0 +1,30 @@
+\section{Step 9 Store exactly one scalar result}\label{rsa-s09}
+
+Publish the low word only after the loop has finished. The scalar product was wider than this store because the remainder needed its high bits. A successful residue itself fits the interface's output word. Return status zero without changing bytes surrounding that word.
+
+Replace only the body of region \texttt{word\_publish}, retaining its BEGIN and END comments.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+pow32_done:
+    sw $t1, 0($a3)
+    move $v0, $zero
+    jr $ra
+    nop
+\end{minted}
+
+Use recipe \texttt{s09-1} with the cumulative source through this edit. Stop at \texttt{function\_return} before continuing to the temporary or normal return. With the supplied caller, use \texttt{pow32\_return} as that return breakpoint.
+
+\subsection{Expected observation}
+Exactly four output bytes encode 2790; the remaining sentinel bytes are intact.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+When is discarding the upper product bits valid here?
+
+\begin{itemize}
+\item \textbf{A} After the complete product has been reduced to the 32-bit residue.
+\item \textbf{B} Before multiplying any two inputs.
+\item \textbf{C} Whenever the output address is 32-bit aligned.
+\end{itemize}

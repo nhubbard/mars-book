@@ -1,0 +1,45 @@
+\section{Step 22 Separate zero and unit moduli}\label{rsa-s22}
+
+Read the modulus before other caller objects. Reject zero; recognize one across all four limbs and use the supplied zero-result path. For every larger modulus, continue toward comparison. This makes the private integer one a valid residue wherever the bit loop needs it.
+
+Replace only the body of region \texttt{reduce\_guard}, retaining its BEGIN and END comments.
+
+\Needspace{25\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 0($a1)
+    lwu $t1, 4($a1)
+    lwu $t2, 8($a1)
+    lwu $t3, 12($a1)
+    or $t0, $t0, $t1
+    or $t0, $t0, $t2
+    or $t0, $t0, $t3
+    beqz $t0, rsa_invalid
+    nop
+    lwu $t0, 0($a1)
+    li $t1, 1
+    bne $t0, $t1, reduce_begin_compare
+    nop
+    lwu $t0, 4($a1)
+    lwu $t1, 8($a1)
+    lwu $t2, 12($a1)
+    or $t0, $t0, $t1
+    or $t0, $t0, $t2
+    beqz $t0, reduce_modulus_one
+    nop
+\end{minted}
+
+Use recipe \texttt{s22-1} with the cumulative source through this edit. Stop at \texttt{reduce\_begin\_compare} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+A zero modulus returns one; a unit modulus writes zero; larger moduli reach comparison.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why handle modulus one before the bit loop?
+
+\begin{itemize}
+\item \textbf{A} The object has no readable low limb.
+\item \textbf{B} The private integer one would violate that loop's addition precondition.
+\item \textbf{C} The exponent becomes negative for modulus one.
+\end{itemize}

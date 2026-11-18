@@ -1,0 +1,42 @@
+\section{Step 20 Decide whether one subtraction is required}\label{rsa-s20}
+
+A carried sum always needs subtraction. Otherwise compare from the most significant limb downward, stopping at the first unequal pair. Equality also requires subtraction. The small no-subtraction recipe reaches the done label with result two; the next region still owns the normal return.
+
+Replace only the body of region \texttt{add\_compare}, retaining its BEGIN and END comments.
+
+\Needspace{22\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    bnez $t1, addmod_subtract
+    nop
+    li $t0, 12
+addmod_compare:
+    daddu $t2, $a3, $t0
+    lwu $t3, 0($t2)
+    daddu $t2, $a2, $t0
+    lwu $t4, 0($t2)
+    sltu $t5, $t3, $t4
+    bnez $t5, addmod_done
+    nop
+    sltu $t5, $t4, $t3
+    bnez $t5, addmod_subtract
+    nop
+    addiu $t0, $t0, -4
+    bgez $t0, addmod_compare
+    nop
+\end{minted}
+
+Use recipe \texttt{s20-1} with the cumulative source through this edit. Stop at \texttt{addmod\_done} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+For 1 plus 1 modulo 17, the low result remains two at the done boundary.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+When does equality with the modulus require subtraction?
+
+\begin{itemize}
+\item \textbf{A} Only if the modulus is negative.
+\item \textbf{B} Never, because equality is already a reduced residue.
+\item \textbf{C} Always, because the residue must be below the modulus.
+\end{itemize}

@@ -1,0 +1,34 @@
+\section{Step 36 Guard the multiword power entry}\label{rsa-s36}
+
+Test the full modulus before reading the base or exponent. The public interface accepts a full 128-bit exponent, so its eventual termination test will inspect every limb. Preserve the distinction between this exponent object and the zero-extended 32-bit scalar exponent from the earlier routine.
+
+Replace only the body of region \texttt{power\_guard}, retaining its BEGIN and END comments.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 0($a2)
+    lwu $t1, 4($a2)
+    lwu $t2, 8($a2)
+    lwu $t3, 12($a2)
+    or $t0, $t0, $t1
+    or $t0, $t0, $t2
+    or $t0, $t0, $t3
+    beqz $t0, rsa_invalid
+    nop
+\end{minted}
+
+Use recipe \texttt{s36-1} with the cumulative source through this edit. Stop at \texttt{pow128\_frame} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+A zero modulus returns an error before invalid base, exponent or output pointers can be dereferenced.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+How many exponent bits belong to this interface?
+
+\begin{itemize}
+\item \textbf{A} All 128.
+\item \textbf{B} Only the lowest 32.
+\item \textbf{C} Only the number of bits in the output address.
+\end{itemize}

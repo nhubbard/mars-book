@@ -1,0 +1,33 @@
+\section{Step 27 Copy the completed remainder to the caller}\label{rsa-s27}
+
+Copy all four private remainder words to the selected output. The supplied return restores the full saved registers and stack pointer. The supplied direct-copy and modulus-one paths return without restoring this slow-path frame, because neither allocated it. Keep those paths distinct when debugging.
+
+Replace only the body of region \texttt{reduce\_publish}, retaining its BEGIN and END comments.
+
+\Needspace{13\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 0($sp)
+    sw $t0, 0($s2)
+    lwu $t0, 4($sp)
+    sw $t0, 4($s2)
+    lwu $t0, 8($sp)
+    sw $t0, 8($s2)
+    lwu $t0, 12($sp)
+    sw $t0, 12($s2)
+\end{minted}
+
+Use recipe \texttt{s27-1} with the cumulative source through this edit. Stop at \texttt{after\_reduce\_publish} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+All sixteen output bytes encode one for the large reduction recipe, and saved state is restored.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Why does the direct-copy path avoid the slow-path restore?
+
+\begin{itemize}
+\item \textbf{A} It never allocated that frame.
+\item \textbf{B} A smaller input has no return address.
+\item \textbf{C} Restoring only the low word of \texttt{sp} is sufficient.
+\end{itemize}

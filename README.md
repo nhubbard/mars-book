@@ -140,7 +140,7 @@ in the main manuscript as chapter 25. Four IDE figure slots remain plans.
 ## Author the book
 
 The active [composition goal](docs/composition-goal.md) is full instructional chapters.
-The first twenty-six chapters are now composed through ordinary LaTeX input/include files.
+The first twenty-seven chapters are now composed through ordinary LaTeX input/include files.
 Edit them directly and insert author passages wherever they belong. Task metadata
 does not constrain the publication.
 
@@ -155,7 +155,7 @@ does not constrain the publication.
 
 ## Current delivery status
 
-The first twenty-six text packages, starters, public checks, deterministic student archive builder,
+The first twenty-seven text packages, starters, public checks, deterministic student archive builder,
 native LaTeX composition, IntelliJ-derived minted renderer, and annotation renderer are implemented. The private companion
 repository contains reference and alternative implementations, quiz keys, private checks,
 and teaching notes. This public repository has no dependency on private content to build.
@@ -177,3 +177,13 @@ Instructor solutions, hidden domains and quiz feedback remain in the private rep
 The chapter is included in main.tex as the twenty-sixth text package. Four light-theme
 IDE figures remain plans; remote progression, the deferred author rewrite and independent
 accessibility validation are still pending.
+
+
+The [RSA arithmetic chapter](drafts/rsa-arithmetic.tex) now has 42 cumulative steps,
+35 authored regions, 43 exact recipes and 51 IntelliJ-highlighted listings. Its
+[student package](packages/027-rsa-arithmetic/assignment.md) includes public guided
+checks and nine completed-interface scripts. Separate private material supplies two
+complete implementations, 312 additional cases and quiz feedback. The chapter is
+included in main.tex as the twenty-seventh text package. Actual IDE figures, remote
+progression, the deferred substantial author rewrite and independent accessibility
+validation remain pending.

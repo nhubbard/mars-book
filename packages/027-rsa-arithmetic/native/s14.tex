@@ -1,0 +1,29 @@
+\section{Step 14 Carry through the rest of a row}\label{rsa-s14}
+
+Advance the second operand by four bytes and return to the partial-product calculation while its offset is below 16. Each iteration consumes the carry from the previous column. Inspect the end of this first row before advancing the outer index; this separates an inner-loop failure from a row transition.
+
+Replace only the body of region \texttt{product\_columns}, retaining its BEGIN and END comments.
+
+\Needspace{9\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    daddiu $t2, $t2, 4
+    sltiu $t6, $t2, 16
+    bnez $t6, mul_inner
+    nop
+\end{minted}
+
+Use recipe \texttt{s14-1} with the cumulative source through this edit. Stop at \texttt{after\_product\_columns} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first row leaves low-to-high words 1, fffffffd,1,0 in the low half.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+What determines the destination column?
+
+\begin{itemize}
+\item \textbf{A} The XOR of the input addresses.
+\item \textbf{B} The row index alone for every inner iteration.
+\item \textbf{C} The sum of the two operand limb indices.
+\end{itemize}

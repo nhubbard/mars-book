@@ -250,6 +250,7 @@ native described limb diagram and measured instruction-work counts accompany the
 Its cumulative expansion now has 42 steps, 35 authored regions, 42 quizzes, 84 hints
 and 43 exact observations, woven around the retained explanations. Prepared programs,
 intermediate values, caller/offset-function paths, wide-address complete implementations
-and safe nested development returns are verified. The book keeps its 26 packaged chapters
-while this twenty-seventh draft receives guided/free-writing exports and separate distributions. The existing
+and safe nested development returns are verified. The student package now includes guided exports and nine completed-interface scripts,
+with separate private cases, solutions and quiz feedback. It is included in main.tex
+as the twenty-seventh text package. The existing
 chapters have not been rewritten; the author's substantial edit remains deferred.

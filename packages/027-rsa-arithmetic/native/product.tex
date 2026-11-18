@@ -1,0 +1,53 @@
+\section{Accumulate a full eight-limb product}
+Multiplying the two expansions for \(A\) and \(B\) gives partial products
+\(a_i b_j \beta^{i+j}\). Each pair contributes at output limb \(i+j\), then carries
+into the next limb. Initialize all eight output words to zero. For one fixed \(i\),
+start a carry \(c=0\) and visit \(j=0,1,2,3\). At each inner iteration calculate
+\[
+T=a_i b_j+z_{i+j}+c,\qquad
+z_{i+j}=T\bmod\beta,\qquad c=\lfloor T/\beta\rfloor.
+\]
+Even though the final product needs 256 bits, this individual temporary fits in
+64 unsigned bits. Its maximum is
+\((\beta-1)^2+(\beta-1)+(\beta-1)=\beta^2-1\). The bound includes both the existing output limb
+and the incoming carry. A signed-overflow-trapping addition is inappropriate for
+values that can cross \(2^{63}-1\) while remaining inside this bound.
+
+In the following fragment, \texttt{t1} holds \(a_i\), \texttt{t2} is the byte offset
+\(4j\), \texttt{t0} is \(4i\), \texttt{t3} is the carry, \texttt{a1} points to the
+second operand, and \texttt{a2} points to the product. Keep the complete temporary
+in \texttt{t4} until extracting both its low limb and its high carry.
+
+\Needspace{16\baselineskip}
+\MARSCodeLabel{Accumulate one partial product without discarding its high word.}
+\begin{minted}[samepage=true]{mars-idea}
+daddu $t4, $a1, $t2
+    lwu $t4, 0($t4)
+    dmulu $t4, $t4, $t1
+    daddu $t5, $t0, $t2
+    daddu $t5, $a2, $t5
+    lwu $t6, 0($t5)
+    daddu $t4, $t4, $t6
+    daddu $t4, $t4, $t3
+    sw $t4, 0($t5)
+    dsrl $t3, $t4, 32
+\end{minted}
+
+At the end of a row, store the carry in limb \(i+4\). That position has not yet
+received a previous row's final carry; the inner loop has consumed earlier
+contributions through limb \(i+3\). The next row starts with carry zero, while
+retaining the output words already accumulated.
+
+For \(A=B=2\cdot2^{32}-1\), the eight output limbs, listed from low to high in
+hexadecimal, must be
+\[
+[\mathtt{00000001},\mathtt{fffffffc},\mathtt{00000003},0,0,0,0,0].
+\]
+Use this square to inspect a nonzero carry across the first two columns. Then square
+\(2^{128}-1\); its low-to-high result is
+\[
+[1,0,0,0,\mathtt{fffffffe},\mathtt{ffffffff},
+ \mathtt{ffffffff},\mathtt{ffffffff}].
+\]
+Check all eight words. A test that reads only the low four words cannot establish
+that full multiplication works.

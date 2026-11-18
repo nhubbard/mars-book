@@ -1,0 +1,34 @@
+\section{Step 29 Guard the public modular multiplier}\label{rsa-s29}
+
+Test the complete modulus before reading either operand or touching the output. A valid request reaches the supplied frame, while the zero case returns an error directly. This public entry accepts arbitrary 128-bit operands; residue bounds will be established internally.
+
+Replace only the body of region \texttt{modproduct\_guard}, retaining its BEGIN and END comments.
+
+\Needspace{14\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+    lwu $t0, 0($a2)
+    lwu $t1, 4($a2)
+    lwu $t2, 8($a2)
+    lwu $t3, 12($a2)
+    or $t0, $t0, $t1
+    or $t0, $t0, $t2
+    or $t0, $t0, $t3
+    beqz $t0, rsa_invalid
+    nop
+\end{minted}
+
+Use recipe \texttt{s29-1} with the cumulative source through this edit. Stop at \texttt{mulmod\_frame} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The valid 13,11,17 request reaches frame allocation; zero modulus leaves all other objects untouched.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+May this entry assume its first operand is already below N?
+
+\begin{itemize}
+\item \textbf{A} Yes, because it has four limbs.
+\item \textbf{B} Yes, whenever its address is aligned.
+\item \textbf{C} No; it must establish the residue internally.
+\end{itemize}

@@ -1,0 +1,46 @@
+\section{Step 38 Multiply the result for a one exponent bit}\label{rsa-s38}
+
+Test both halves for exponent zero, then inspect its low bit. A selected multiply writes to the private temporary, and only a successful return permits replacing the result object. The private base remains unchanged in this step. Observe before shifting, while the selecting exponent bit is still visible.
+
+Replace only the body of region \texttt{power\_select}, retaining its BEGIN and END comments.
+
+\Needspace{26\baselineskip}
+\MARSCodeLabel{MIPS assembly}
+\begin{minted}[samepage=true]{mars-idea}
+pow128_loop:
+    ld $t0, 16($sp)
+    ld $t1, 24($sp)
+    or $t2, $t0, $t1
+    beqz $t2, pow128_done
+    nop
+    andi $t2, $t0, 1
+    beqz $t2, pow128_shift
+    nop
+    daddiu $a0, $sp, 32
+    move $a1, $sp
+    move $a2, $s0
+    daddiu $a3, $sp, 48
+    jal rsa_mulmod128
+    nop
+    bnez $v0, pow128_development
+    nop
+    ld $t0, 48($sp)
+    ld $t1, 56($sp)
+    sd $t0, 32($sp)
+    sd $t1, 40($sp)
+\end{minted}
+
+Use recipe \texttt{s38-1} with the cumulative source through this edit. Stop at \texttt{pow128\_shift} before continuing to the temporary or normal return.
+
+\subsection{Expected observation}
+The first selected multiply changes result one to 65 with exponent 17 still present.
+
+\Needspace{9\baselineskip}
+\subsection{Check your understanding}
+Which object changes in this selected multiply?
+
+\begin{itemize}
+\item \textbf{A} The modulus.
+\item \textbf{B} The original caller exponent.
+\item \textbf{C} The accumulated result after temporary publication.
+\end{itemize}

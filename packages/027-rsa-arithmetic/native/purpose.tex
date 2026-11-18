@@ -1,0 +1,25 @@
+\section{Build the arithmetic beneath a modular power}
+RSA arithmetic repeatedly raises an integer to a power and takes a remainder. For
+example, \(65^{17}\bmod3233=2790\). Computing the entire power first would produce a
+large intermediate value even in this small example. Reducing after each multiplication
+keeps the stored values below the modulus, but the multiplication itself can still
+need twice as many bits as either input. This chapter follows that width problem from
+one register to a value spread across four words.
+
+Begin with a greatest common divisor and a small modular power. Then represent an
+unsigned 128-bit integer as four 32-bit pieces. Write a full product to understand
+how partial products and carries fit together. Next build addition, reduction and
+multiplication modulo a 128-bit number. Use those operations to raise a 128-bit base
+to a full 128-bit exponent. Compare the results with an independent arbitrary-precision
+calculation rather than with another transcription of the assembly.
+
+The size is a teaching boundary. Four limbs make every carry and byte position
+observable in the debugger; they do not provide a secure RSA key size. The finished
+arithmetic functions are also not a complete encryption or signature implementation.
+After checking their results, we will identify the additional encoding and scheme
+requirements that separate a modular power from those operations.
+
+At each boundary, keep a small failing calculation. If a product is wrong in limb
+three, inspect the carries that reach limb three before debugging exponentiation.
+If products and remainders agree but powers fail, inspect which exponent bit selected
+the next multiply and which register or stack slot retained the current result.

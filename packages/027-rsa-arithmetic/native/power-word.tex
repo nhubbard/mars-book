@@ -1,0 +1,46 @@
+\section{Use exponent bits to select multiplications}
+Write an exponent in binary. Each one bit selects a power of two: \(17=16+1\).
+Rather than multiply the base seventeen times, square it to obtain powers one, two,
+four, eight and sixteen, reducing each result modulo \(N\). Multiply the selected
+powers into an accumulated result.
+
+A right-to-left loop keeps three values: result \(r\), current base \(b\) and remaining
+exponent \(e\). Initialize \(r=1\bmod N\), \(b=\text{base}\bmod N\) and \(e=E\).
+If \(e\)'s low bit is one, replace \(r\) with \(rb\bmod N\). Shift \(e\) right by one.
+If more bits remain, replace \(b\) with \(b^2\bmod N\) and repeat. The loop preserves
+\(r b^e\equiv\text{base}^{E}\pmod N\). At \(e=0\), this leaves the desired result in
+\(r\).
+
+For base 65, exponent 17 and modulus 3233, all numbers in the table are decimal.
+The last row skips an unnecessary square after the exponent becomes zero.
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrrrrr}
+\(r\) before & \(b\) before & \(e\) before & \(r\) after & \(b\) after & \(e\) after \\
+\hline
+1 & 65 & 17 & 65 & 992 & 8 \\
+65 & 992 & 8 & 65 & 1232 & 4 \\
+65 & 1232 & 4 & 65 & 1547 & 2 \\
+65 & 1547 & 2 & 65 & 789 & 1 \\
+65 & 789 & 1 & 2790 & 789 & 0 \\
+\end{tabular}
+\end{center}
+
+With \texttt{t0} holding \(b\), \texttt{t1} holding \(r\) and \texttt{t2} holding \(e\),
+the conditional multiply has a short observation boundary. The modulus remains in
+\texttt{a2}.
+
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Select the current base using the remaining exponent	extquotesingle s low bit.}
+\begin{minted}[samepage=true]{mars-idea}
+andi $t3, $t2, 1
+    beqz $t3, pow32_shift
+    nop
+    dmulu $t1, $t1, $t0
+    dmodu $t1, $t1, $a2
+\end{minted}
+
+After the remainder, \texttt{t1} is again a residue below \(N\). Inspect it at this
+point, before a later call or instruction reuses a temporary register. An exponent
+of zero must reach the output without entering this multiply; initialize the identity
+before testing the loop condition.

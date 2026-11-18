@@ -43,6 +43,27 @@ class PackageTests(unittest.TestCase):
                 self.assertFalse(any('quiz-key' in name or '/private' in name or '/reference/' in name
                                      for name in zipped.namelist()))
 
+    def test_rsa_distribution_retains_native_order_and_guided_exports(self):
+        root, data = course.validate('027-rsa-arithmetic')
+        self.assertEqual(42, len(data['steps']))
+        self.assertEqual(36, sum(step['completion']['type'] == 'cli-grade' for step in data['steps']))
+        native = course.ROOT / 'includes/chapters/027-rsa-arithmetic'
+        for path in native.glob('*.tex'):
+            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+        names = re.findall(r'\\input\{includes/chapters/027-rsa-arithmetic/([^}]+)\}', (native / 'chapter.tex').read_text())
+        reading = json.loads((root / 'reading.json').read_text())['segments']
+        actual = [row['step'] if row['kind'] == 'step' else row['figure'] if row['kind'] == 'figure' else Path(row['typesetting']['nativeLatex']).stem for row in reading]
+        self.assertEqual(names, actual)
+        exported = {path.relative_to(root).as_posix() for path in course.student_files(root, data)}
+        for step in data['steps']:
+            if step['completion']['type'] == 'cli-grade':
+                self.assertIn(step['completion']['check'], exported)
+                self.assertNotIn('case("prepared ', (root / step['completion']['check']).read_text())
+        self.assertFalse(any('quiz-key' in name or '/private' in name or '/reference/' in name for name in exported))
+        self.assertEqual(35, len(list((root / 'checks/construction').glob('*.kts'))))
+        self.assertEqual(9, len(data['publicChecks']))
+        self.assertIn('readBytes(address,length)', data['environment']['graderRequirements'])
+
     def test_chacha_distribution_retains_native_order_and_guided_exports(self):
         root, data = course.validate('026-chacha20')
         self.assertEqual(42, len(data['steps']))
