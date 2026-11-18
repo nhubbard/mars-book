@@ -1,0 +1,32 @@
+\section*{Project contract}
+Implement \texttt{fir\_q15}. Pass a full input-window address in \texttt{a0}, a full
+coefficient address in \texttt{a1}, a full destination address in \texttt{a2} and an
+output count \(0\leq n\leq64\) in \texttt{a3}. Return the original count in
+\texttt{v0} and the number of rounded results that required saturation in \texttt{v1}.
+All stored samples and coefficients are signed sixteen-bit, little endian, at arbitrary
+byte alignment.
+
+The input contains seven history samples followed by \(n\) new samples: \(n+7\)
+halfwords in chronological order. The address points to the oldest history sample,
+not the first new sample. Eight coefficients \(c_0,\ldots,c_7\) are stored in the
+same oldest-to-newest window order. Their numerical weights are \(c_j/32768\).
+For each output index \(i\), first compute the exact integer accumulator
+\[
+ S_i=\sum_{j=0}^{7}u_{i+j}c_j,
+ \qquad R_i=\left\lfloor\frac{S_i+16384}{32768}\right\rfloor.
+\]
+Clamp \(R_i\) to \([-32768,32767]\). Count it as clipped only when \(R_i\) lies
+strictly outside that interval. Round once after the complete exact sum. The rule
+chooses the nearest integer, with halfway cases going toward positive infinity.
+
+Input, coefficient and output slices are pairwise disjoint. Their lengths are
+\(2(n+7)\), 16 and \(2n\) bytes. Only logical output bytes may change, including
+temporary writes. All caller-data reads fit the selected input, coefficients or output.
+Mapped padding does not extend those slices. At zero count, perform no caller-data
+read or write, including no coefficient or history read. Private native stack storage
+and submission-owned constants are allowed.
+
+Preserve all bits of \texttt{s0} through \texttt{s7}, \texttt{fp} and \texttt{sp},
+return through the supplied \texttt{ra}, and produce no console output. Argument,
+temporary and vector registers and overlapping floating-point storage may change.
+Keep the supplied caller/data harness. No kernel history is retained between calls.

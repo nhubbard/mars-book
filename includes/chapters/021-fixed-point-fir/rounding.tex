@@ -1,0 +1,36 @@
+\section{Round once, with an explicit tie rule}
+Add 16384 to the complete accumulator, then shift right arithmetically by fifteen
+with \texttt{dsra}. Arithmetic right shift gives floor division by a power of two.
+The bias is half the divisor, so the combination implements the specified nearest
+rounding rule for both signs. The bias is also safe within the established 64-bit
+bound. A logical shift would turn a negative value into a large positive integer.
+
+\begin{table}[htbp]
+\centering
+\caption{Rounding boundaries in accumulator units, before output saturation.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrr}
+\toprule
+\(S\) & \(S+16384\) & Rounded sample code\\
+\midrule
+-49153 & -32769 & -2\\
+-49152 & -32768 & -1\\
+-16385 & -1 & -1\\
+-16384 & 0 & 0\\
+16383 & 32767 & 0\\
+16384 & 32768 & 1\\
+49152 & 65536 & 2\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Halfway values go toward positive infinity: negative one half becomes zero, and
+negative one and a half becomes negative one. This is not nearest-even rounding or
+rounding every tie away from zero. Ordinary signed integer division that truncates
+toward zero also differs from the required floor operation for negative biased values.
+
+Do not round each product before adding. With eight samples equal to one and eight
+coefficients equal to 16384, each scaled product is one half. Rounding each separately
+would produce eight. Accumulating the exact products first gives four. A fixed-point
+multiply instruction that scales or saturates each lane early therefore needs a separate
+proof; its name alone does not make it suitable for this contract.

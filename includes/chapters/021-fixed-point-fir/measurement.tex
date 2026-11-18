@@ -1,0 +1,46 @@
+\section{Measure the complete filter call}
+These measurements include entry, result initialization, coefficient setup, all windows,
+rounding, saturation and return. They exclude caller preparation, assembly, session
+creation, WAV writing and program exit. The quiet family uses input code
+\(113j-4000\) at each chronological position \(j\) and eight coefficients 4096.
+Both implementations return identical samples and counts.
+
+\begin{table}[htbp]
+\centering
+\caption{Whole-call native instructions and observed caller-data read bytes for quiet inputs.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrr}
+\toprule
+Outputs & Scalar instructions & MSA instructions & Scalar reads & MSA reads\\
+\midrule
+0 & 6 & 6 & 0 & 0\\
+1 & 166 & 40 & 32 & 32\\
+2 & 326 & 70 & 64 & 48\\
+7 & 1126 & 220 & 224 & 128\\
+8 & 1286 & 250 & 256 & 144\\
+9 & 1446 & 280 & 288 & 160\\
+16 & 2566 & 490 & 512 & 272\\
+63 & 10086 & 1900 & 2016 & 1024\\
+64 & 10246 & 1930 & 2048 & 1040\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At sixty-four outputs the scalar loop executes 10246 native instructions and the MSA
+path 1930. With all input and coefficient codes -32768, every output clips positively;
+the corresponding counts are 10118 and 1802. These differences include branch paths
+in the common clamp. Neither count is an exact requirement for another correct solution,
+and native instruction totals do not establish host elapsed-time speedup.
+
+For a nonempty call, the scalar implementation reads sixteen sample bytes and sixteen
+coefficient bytes per output: \(32n\) observed bytes. The vector version reads its
+coefficient window once and sixteen sample bytes per output: \(16+16n\). Both store
+\(2n\) output bytes. These are simulator access lengths, not host bus transactions.
+Each consecutive window shares seven samples, so even the vector path rereads many
+input bytes. The unique input slice has only \(2(n+7)\) bytes. A future sliding-window
+implementation could trade loads for permutations while retaining the exact dot product.
+
+An optimized scalar implementation could also retain coefficients in registers or
+unroll the tap loop. The measured comparison is between the two specific implementations,
+not a proof that every scalar implementation needs these counts. Any change still needs
+the wide-product, tie, memory-boundary and chunk-continuity checks.

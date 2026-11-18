@@ -134,3 +134,13 @@ diagrams and four verified numerical capture models support the text. Actual IDE
 captures, interactive progression controls, author review and independent accessibility
 validation remain pending. Twenty text packages do not complete the full 35-project
 composition and capture objective, which remains active.
+
+Fixed-point FIR is in progress at `drafts/fixed-point-fir.tex`. Its native foundation
+specifies eight oldest-first Q15 coefficients, seven supplied history samples, exact
+64-bit accumulation, one nearest rounding with ties toward positive infinity, and
+post-round saturation. It explains widening before dot products, asymmetric impulse
+response, explicit chunk history and complete-call measurements. Six simulator-derived
+listening files demonstrate exact cancellation of a supplied period-four component.
+Both implementations and every chunk cut are checked. Full incremental edits, student
+packaging and actual IDE captures remain unfinished. Chapter twenty-one is outside
+main.tex and the twenty completed text packages; the full goal remains active.

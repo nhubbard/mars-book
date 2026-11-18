@@ -1,0 +1,54 @@
+\section{Cancel a component with complete periodic windows}
+The listening fixture uses eight coefficients 4096, so each rounded result is the
+mean of eight input samples with the specified tie rule. At 16000 samples per second,
+the high component repeats \(0,12000,0,-12000\). Four samples span one 4 kHz period.
+Every eight-sample window contains two full periods whose integer sum is zero.
+The filtered high-only samples are therefore exactly zero, not merely quieter.
+
+The low component is a period-sixty-four integer triangle with amplitude 6000. For
+phase \(u\) reduced to zero through sixty-three, it is
+\[
+ L(u)=375\begin{cases}
+ u & u<16,\\
+ 32-u & 16\leq u<48,\\
+ u-64 & 48\leq u<64.
+ \end{cases}
+\]
+Its fundamental is 250 Hz at this rate; the triangle is not a pure sine. The mixed
+input adds the high component to this triangle sample by sample. Since the high
+component contributes zero to every complete window, its filtered mix is byte-identical
+to the filtered low-only signal. That is not the original low input: the moving
+average changes that component's waveform and delay too.
+
+The renderer supplies seven samples from before time zero using the same periodic
+formula. Zero history would give a valid but different startup transient. The kernel
+never guesses a missing past. It receives explicit history for each sixty-four-output
+call and is reused for five hundred calls per scene. Three scenes give 1500 calls
+per implementation, with all output samples and ownership checked.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={Sixteen stored samples of the high-only input repeat zero, positive twelve thousand, zero and negative twelve thousand. Every corresponding filtered sample is zero because its supplied eight-sample window contains two complete periods. Lines only connect discrete stored values.}]
+\begin{axis}[width=0.88\linewidth,height=5cm,xmin=0,xmax=15,ymin=-14000,ymax=14000,
+ xlabel={Sample index},ylabel={Sample code},xtick={0,4,8,12,15},ytick={-12000,0,12000},
+ grid=major,scaled y ticks=false,legend style={at={(0.5,-0.3)},anchor=north,legend columns=2,font=\small}]
+\addplot[color=MARSAccent] coordinates {(0,0) (1,12000) (2,0) (3,-12000) (4,0) (5,12000) (6,0) (7,-12000) (8,0) (9,12000) (10,0) (11,-12000) (12,0) (13,12000) (14,0) (15,-12000)};
+\addlegendentry{High input}
+\addplot[dashed,color=black] coordinates {(0,0) (1,0) (2,0) (3,0) (4,0) (5,0) (6,0) (7,0) (8,0) (9,0) (10,0) (11,0) (12,0) (13,0) (14,0) (15,0)};
+\addlegendentry{Filtered}
+\end{axis}
+\end{tikzpicture}
+\caption{Stored high-component samples and their verified filtered output, with complete periodic history.}
+\end{figure}
+
+The companion files contain two seconds each of separate mono input and filtered
+tracks for low, high and mixed scenes. The render process preserves kernel amplitudes
+and applies no normalization. All six files are identical between the scalar and MSA
+implementations. A live playback device has not been tested. Use the integer formulas,
+window trace and waveform as an alternative to audio playback.
+
+The public media set includes
+\href{https://raw.githubusercontent.com/nhubbard/mars-book/main/book/media/021-fixed-point-fir/mixed-input.wav}{the mixed input},
+\href{https://raw.githubusercontent.com/nhubbard/mars-book/main/book/media/021-fixed-point-fir/mixed-filtered.wav}{the filtered mix}, and
+\href{https://raw.githubusercontent.com/nhubbard/mars-book/main/book/media/021-fixed-point-fir/high-filtered.wav}{the zero filtered high control}.
+The remaining low/high tracks and the exact hash receipt accompany them.

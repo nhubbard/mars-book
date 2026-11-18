@@ -25,6 +25,7 @@ class NativeCompositionTests(unittest.TestCase):
         self.assertEqual(46, len(book.validate('drafts/tiny-bytecode-interpreter.tex')))
         self.assertEqual(43, len(book.validate('drafts/rgb-formats.tex')))
         self.assertEqual(32, len(book.validate('drafts/pcm-mixing.tex')))
+        self.assertEqual(0, len(book.validate('drafts/fixed-point-fir.tex')))
 
     def test_pcm_construction_transcript_matches_editable_native_code(self):
         folder = book.ROOT / 'drafts/pcm-construction'
@@ -77,6 +78,42 @@ class NativeCompositionTests(unittest.TestCase):
             'Saturated': samples['clipping-saturated.wav'][:64],
             'Wrapped': samples['clipping-wrapped.wav'][:64],
         }
+        for coordinates, label in plotted:
+            points = [(int(x), int(y)) for x, y in re.findall(r'\((\d+),(-?\d+)\)', coordinates)]
+            self.assertEqual(list(enumerate(expected[label])), points)
+
+    def test_fir_listening_samples_and_native_plot_agree(self):
+        folder = book.ROOT / 'book/media/021-fixed-point-fir'
+        receipt = json.loads((folder / 'receipt.json').read_text())
+        self.assertTrue(receipt['verifiedBothImplementations'])
+        self.assertEqual([4096] * 8, receipt['tapsOldestFirst'])
+        self.assertEqual(6, len(receipt['files']))
+        samples = {}
+        for name, record in receipt['files'].items():
+            path = folder / name
+            self.assertEqual(record['sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
+            with wave.open(str(path), 'rb') as sound:
+                self.assertEqual((1, 2, 16000, 32000),
+                                 (sound.getnchannels(), sound.getsampwidth(), sound.getframerate(), sound.getnframes()))
+                raw = sound.readframes(sound.getnframes())
+            self.assertEqual(record['pcmSha256'], hashlib.sha256(raw).hexdigest())
+            samples[name] = struct.unpack('<' + 'h' * 32000, raw)
+        def low(position):
+            u = position % 64
+            return 375 * (u if u < 16 else 32 - u if u < 48 else u - 64)
+        def signal(scene, position):
+            high = (0, 12000, 0, -12000)[position % 4]
+            return low(position) if scene == 'low' else high if scene == 'high' else low(position) + high
+        for scene in ['low', 'high', 'mixed']:
+            self.assertEqual(tuple(signal(scene, i) for i in range(32000)), samples[scene + '-input.wav'])
+            wanted = tuple((sum(signal(scene, i - j) for j in range(8)) + 4) // 8 for i in range(32000))
+            self.assertEqual(wanted, samples[scene + '-filtered.wav'])
+        self.assertFalse(any(samples['high-filtered.wav']))
+        self.assertEqual(samples['low-filtered.wav'], samples['mixed-filtered.wav'])
+        figure = (book.ROOT / 'includes/chapters/021-fixed-point-fir/listening.tex').read_text()
+        plotted = re.findall(r'\\addplot\[[^\]]*\] coordinates \{([^}]*)\};\s*\\addlegendentry\{([^}]*)\}', figure)
+        self.assertEqual(2, len(plotted))
+        expected = {'High input': samples['high-input.wav'][:16], 'Filtered': samples['high-filtered.wav'][:16]}
         for coordinates, label in plotted:
             points = [(int(x), int(y)) for x, y in re.findall(r'\((\d+),(-?\d+)\)', coordinates)]
             self.assertEqual(list(enumerate(expected[label])), points)

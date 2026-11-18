@@ -1,0 +1,18 @@
+\section{Carry history in the caller's input, not hidden kernel state}
+For a chronological input of \(n+7\) samples, a second call starting at the next
+output's window advances its base by \(2n\) bytes. The last seven samples of the
+first call's input become the history of that next window. Coefficients retain the
+same order. A caller can retain those samples in a larger stream buffer or copy them
+into a new prefix; the kernel needs no persistent history object.
+
+For a split after \(m\) outputs, the first input slice contains positions zero through
+\(m+6\). The second starts at original position \(m\). Its first seven samples
+are exactly those needed before the next new sample. Concatenating the outputs of
+these two calls must match one complete call, including the zero-length split cases.
+The checks exercise every cut from zero through sixty-four in one execution session.
+
+Reset the per-output accumulator and per-call clipping counter at their respective
+boundaries. Neither belongs in retained global state. A prior clipped call must not
+change a later quiet call's count. The input and coefficient arrays remain immutable,
+so this interface excludes in-place output. The exact-alias permission in the preceding
+mixer chapter does not transfer to a new contract automatically.
