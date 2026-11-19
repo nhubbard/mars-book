@@ -1,0 +1,13 @@
+\section{Step 63 Extract RGB from numeric source words}
+Fill \texttt{ef\_payload}. Restart at the first native source word and begin output at offset sixteen. For each of 4096 pixels, load the numeric word, extract red with a sixteen-bit right shift and green with an eight-bit right shift, and store their low bytes followed by the word's low blue byte. Advance the source by four and output by three. The earlier high-byte validation means this pass needs no new color failure path.
+
+Use \texttt{s63-1} and stop before \texttt{ef\_payload\_ready}.
+
+\paragraph{Observe} At \texttt{ef\_payload\_ready}, the output begins \texttt{12 34 56 12 35 57} and ends \texttt{02 3A A9}. All 12\,288 payload bytes exist. Checksum bytes remain at their original values.
+
+\paragraph{Check} Why extract numeric channels instead of copying three memory bytes?
+\begin{enumerate}[label=\Alph*.]
+\item Native word byte order differs from the RGB wire order.
+\item Every color channel is a native doubleword.
+\item All source memory bytes are already in RGB order.
+\end{enumerate}

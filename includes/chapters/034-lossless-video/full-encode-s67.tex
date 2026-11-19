@@ -1,0 +1,13 @@
+\section{Step 67 Commit the source as the next prediction reference}
+Fill \texttt{ef\_previous}. Copy all 16\,384 source bytes to the admitted previous-image window. The illustration uses 1024 byte-element MSA loads and stores; a correct scalar native-word copy is equivalent. Both arrays use the same selected native representation, so this copy needs no channel shuffle. Commit only after the record and checksum are complete. Later delta encoding will compare a new source with this successfully committed image.
+
+Use \texttt{s67-1} and stop before \texttt{ef\_previous\_ready}.
+
+\paragraph{Observe} At \texttt{ef\_previous\_ready}, all 4096 previous-image words equal the source. The original source and both arrays' guards remain intact. Context sequence and output fields still retain their pre-call bytes.
+
+\paragraph{Check} Which image should a later delta use as its predecessor?
+\begin{enumerate}[label=\Alph*.]
+\item The source of the most recent failed attempt.
+\item The source of the last successfully encoded record.
+\item An arbitrary displayed seek target.
+\end{enumerate}

@@ -1,0 +1,13 @@
+\section{Step 60 Validate every high byte before the first output store}
+Fill \texttt{ef\_validate}. Walk the full source with unsigned native word loads. Shift each loaded value right by 24 and require zero; then advance by four bytes. Stop at the exclusive end. A nonzero high byte is a rejected input, including at pixel 4095. Do not combine this pass with output writes: a later invalid color would otherwise leave a partial record despite completed failure one.
+
+Use \texttt{s60-1} and stop before \texttt{ef\_pixels\_valid}.
+
+\paragraph{Observe} At \texttt{ef\_pixels\_valid}, the cursor equals its exclusive end. The final valid word is \texttt{0x00023AA9}. Output, previous image and context are still unchanged.
+
+\paragraph{Check} Why validate the last color before emitting the first triple?
+\begin{enumerate}[label=\Alph*.]
+\item A late invalid color must leave the entire output unchanged.
+\item The CRC cannot process zero bytes.
+\item RGB order depends on the last pixel.
+\end{enumerate}

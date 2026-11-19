@@ -974,3 +974,17 @@ playback construction, final video feedback/archives and manuscript integration,
 actual IDE figures and independent accessibility verification remain unfinished.
 H.263 stays at planning until chapters 33 and 34 are complete. Substantive editing
 remains a separate future goal.
+
+The lossless-video construction now reaches step 68 with a full-record encoder.
+Twelve new native lessons explain complete source admission, numeric RGB extraction,
+fixed wire order, noncontiguous CRC coverage and success-only prediction-state
+publication. Twelve quizzes, twenty-four hints and twenty-four recipes accompany
+unfinished student regions and a caller that decodes the newly encoded bytes again.
+Two gates pass 712 simulator cases, reject twelve assembled faults and verify eleven
+ordinary encode/decode callers. Three implementations run in both native orders and
+normal/high address layouts. Private seeded frames and channel boundaries extend
+the known fixtures. All 183 tooling tests pass. Delta selection, complete-file
+encoding, timed playback, final video feedback/distributions and manuscript integration
+remain unfinished. Actual IDE captures and independent accessibility review remain
+pending; H.263 is still planning only until chapters 33 and 34 are complete. The
+substantive editing pass remains a separate future goal.

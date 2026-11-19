@@ -1,0 +1,13 @@
+\section{Step 64 Seed one CRC across two disjoint stored ranges}
+Fill \texttt{ef\_crc\_state}. Initialize the raw accumulator \texttt{\$t2} to unsigned \texttt{0xFFFFFFFF}, the reflected polynomial \texttt{\$t6} to \texttt{0xEDB88320}, and the range flag \texttt{\$t7} to zero. Set cursor/end \texttt{\$t0}/\texttt{\$t1} to the output beginning and twelve bytes later. The supplied feed loop consumes those twelve header bytes, skips stored CRC offsets twelve through fifteen, then continues through the payload with the same accumulator. It XORs each unsigned byte into the low accumulator bits before the bit loop.
+
+Use \texttt{s64-1} and stop before \texttt{ef\_crc\_state\_ready}.
+
+\paragraph{Observe} At \texttt{ef\_crc\_state\_ready}, no checksum byte has been stored and the raw accumulator is all one bits in its low word. The first range ends just before the CRC field.
+
+\paragraph{Check} Which bytes are excluded from the CRC input?
+\begin{enumerate}[label=\Alph*.]
+\item The payload.
+\item The four bytes reserved for the stored CRC itself.
+\item The sequence field.
+\end{enumerate}

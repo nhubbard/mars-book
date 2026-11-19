@@ -1,0 +1,13 @@
+\section{Step 66 Finalize and store the checksum without feeding it back}
+Fill \texttt{ef\_crc\_store}. XOR the completed raw accumulator with unsigned \texttt{0xFFFFFFFF}, then serialize the result in big-endian order at offsets twelve through fifteen. The accumulator has already seen exactly the header prefix and RGB payload. Do not process the new checksum bytes as another input range. At this boundary the complete record exists, but previous-image and sequence state have not been committed.
+
+Use \texttt{s66-1} and stop before \texttt{ef\_crc\_ready}.
+
+\paragraph{Observe} At \texttt{ef\_crc\_ready}, the gradient's sequence-zero checksum is \texttt{0xF8CD7619}, stored as \texttt{F8 CD 76 19}. The complete header matches the earlier worked header. Output guards remain unchanged.
+
+\paragraph{Check} When should the stored checksum be included in this CRC calculation?
+\begin{enumerate}[label=\Alph*.]
+\item Never; its field is excluded.
+\item Before processing the payload.
+\item After every color word.
+\end{enumerate}
