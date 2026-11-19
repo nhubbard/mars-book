@@ -1,0 +1,2302 @@
+{
+  "status": "Initial native construction draft; untouched-starter verification only; completed checkpoints and public feedback pending",
+  "steps": [
+    {
+      "id": "s01",
+      "kind": "observe",
+      "region": null,
+      "target": "head",
+      "title": "Identify the object passed to the head reader",
+      "prose": "Open a working copy of the supplied source and stop at `head_call`. Follow `a0` into `source`, rather than interpreting the address itself as an item. The first bytes are `b8 04`; the selected count is fifty-two. A head call describes one item head, so the count supplied to it is an available extent, not its promised result.",
+      "expectedObservation": "a0 addresses b8 04 and a1 is fifty-two; no head has executed.",
+      "checkpoint": "head_call",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does fifty-two mean at this call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of map pairs."
+          },
+          {
+            "id": "b",
+            "text": "The expected head width."
+          },
+          {
+            "id": "c",
+            "text": "Available input bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Compare the selected extent with the two bytes that describe the root map."
+        },
+        {
+          "id": "s01-h2",
+          "text": "a0 addresses b8 04 and a1 is fifty-two; no head has executed."
+        }
+      ],
+      "recipes": [
+        "s01-1"
+      ]
+    },
+    {
+      "id": "s02",
+      "kind": "author",
+      "region": "h_prefix",
+      "target": "head",
+      "title": "Establish failure results before reading",
+      "prose": "Clear the head length and both extra results before inspecting input. Reject a zero available count before loading the initial byte; otherwise load that byte unsigned. Leave a format-failure status until a supported complete head has been established. This ordering makes the zero-count path safe even when the supplied pointer cannot be read.",
+      "expectedObservation": "The initial byte is 184 and the cleared head results remain zero.",
+      "checkpoint": "after_h_prefix",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which input permits the first load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A count of at least nine."
+          },
+          {
+            "id": "b",
+            "text": "A pointer with its low bit clear."
+          },
+          {
+            "id": "c",
+            "text": "A nonzero unsigned available count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "The initial byte exists before its eventual argument width is known."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The initial byte is 184 and the cleared head results remain zero."
+        }
+      ],
+      "recipes": [
+        "s02-1"
+      ]
+    },
+    {
+      "id": "s03",
+      "kind": "author",
+      "region": "h_type",
+      "target": "head",
+      "title": "Extract and check the major type",
+      "prose": "Shift the initial byte right by five to obtain its major type. Accept zero, one, two, four and five; reject three, six and seven for this exercise. Keep the decoded type in a temporary register while the lower five bits are interpreted. Do not publish a successful type with a failed head result.",
+      "expectedObservation": "The trace's major type is five, while a2 is still a cleared failure result.",
+      "checkpoint": "after_h_type",
+      "quiz": {
+        "id": "q03",
+        "prompt": "What does major type five describe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A map."
+          },
+          {
+            "id": "b",
+            "text": "Five argument bytes."
+          },
+          {
+            "id": "c",
+            "text": "An array with five elements."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "The bit field identifies a kind, not its length."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The trace's major type is five, while a2 is still a cleared failure result."
+        }
+      ],
+      "recipes": [
+        "s03-1"
+      ]
+    },
+    {
+      "id": "s04",
+      "kind": "author",
+      "region": "h_form",
+      "target": "head",
+      "title": "Separate inline arguments from width selectors",
+      "prose": "Mask the lower five bits. Values below twenty-four are the argument itself and take the inline path. Values twenty-four through twenty-seven select following bytes; twenty-eight through thirty-one fail in this subset. The trace selects twenty-four, which means one following argument byte, not twenty-four map pairs.",
+      "expectedObservation": "The trace takes the extended-argument path with selector twenty-four.",
+      "checkpoint": "after_h_form",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What does additional information twenty-four mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One following argument byte."
+          },
+          {
+            "id": "b",
+            "text": "An inline argument of twenty-four."
+          },
+          {
+            "id": "c",
+            "text": "A complete head of twenty-four bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Distinguish the selector from the argument that follows it."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The trace takes the extended-argument path with selector twenty-four."
+        }
+      ],
+      "recipes": [
+        "s04-1"
+      ]
+    },
+    {
+      "id": "s05",
+      "kind": "author",
+      "region": "h_width",
+      "target": "head",
+      "title": "Prove that the complete head fits",
+      "prose": "Convert selectors twenty-four through twenty-seven to one, two, four and eight argument bytes. Add the initial byte to obtain the complete head width, then compare that width with available input using unsigned arithmetic. Do not start loading argument bytes until this comparison passes; a partial argument must not influence a failed result.",
+      "expectedObservation": "The trace needs two head bytes and fifty-two available bytes suffice.",
+      "checkpoint": "after_h_width",
+      "quiz": {
+        "id": "q05",
+        "prompt": "When may argument-byte loads begin?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the complete head width has passed its extent check."
+          },
+          {
+            "id": "b",
+            "text": "As soon as the initial byte exists."
+          },
+          {
+            "id": "c",
+            "text": "After the first argument byte gives a plausible count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "The width check protects all argument loads together."
+        },
+        {
+          "id": "s05-h2",
+          "text": "The trace needs two head bytes and fifty-two available bytes suffice."
+        }
+      ],
+      "recipes": [
+        "s05-1"
+      ]
+    },
+    {
+      "id": "s06",
+      "kind": "author",
+      "region": "h_bytes",
+      "target": "head",
+      "title": "Accumulate the big-endian argument",
+      "prose": "Start a sixty-four-bit accumulator at zero. For each argument byte, shift the existing value left by eight and insert the newly loaded unsigned byte. Keep the argument-byte loop count separate from the returned complete head width. Retain all bits when the last byte sets the accumulator's high bit; the result is an unsigned bit pattern.",
+      "expectedObservation": "The root argument is four and the complete head width is two.",
+      "checkpoint": "after_h_bytes",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why use a sixty-four-bit shift here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every map contains sixty-four fields."
+          },
+          {
+            "id": "b",
+            "text": "An argument may need all eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "The byte pointer must be aligned to eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "Test the eight-byte counter as well as the one-byte root argument."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The root argument is four and the complete head width is two."
+        }
+      ],
+      "recipes": [
+        "s06-1"
+      ]
+    },
+    {
+      "id": "s07",
+      "kind": "author",
+      "region": "h_inline",
+      "target": "head",
+      "title": "Return an inline argument without a second load",
+      "prose": "On the inline route, use the masked low bits directly and select a complete head width of one. There is no argument-byte loop on this path. Prepare the one-byte item `17` and stop after this region; its argument is decimal twenty-three. Keep payload interpretation outside the head reader.",
+      "expectedObservation": "The inline argument is twenty-three and the head width is one.",
+      "checkpoint": "after_h_inline",
+      "quiz": {
+        "id": "q07",
+        "prompt": "How many bytes does item 17 require for its head?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two."
+          },
+          {
+            "id": "b",
+            "text": "One."
+          },
+          {
+            "id": "c",
+            "text": "Twenty-three."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "No following argument byte is present for a selector below twenty-four."
+        },
+        {
+          "id": "s07-h2",
+          "text": "The inline argument is twenty-three and the head width is one."
+        }
+      ],
+      "recipes": [
+        "s07-1"
+      ]
+    },
+    {
+      "id": "s08",
+      "kind": "author",
+      "region": "h_success",
+      "target": "head",
+      "title": "Publish a successful head",
+      "prose": "After either route has established the full argument, publish its major type, retain its argument bits and clear the status. Return through the incoming return address. Run the trace head again: its map count can now be observed independently of its children. A successful head does not establish that four key/value pairs actually follow.",
+      "expectedObservation": "The head returns status zero, length two, type five and argument four.",
+      "checkpoint": "after_h_success",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What has this successful call proved?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The entire map is valid."
+          },
+          {
+            "id": "b",
+            "text": "The complete supported head exists."
+          },
+          {
+            "id": "c",
+            "text": "The telemetry record contains every required field."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "A head reader does not walk children."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The head returns status zero, length two, type five and argument four."
+        }
+      ],
+      "recipes": [
+        "s08-1"
+      ]
+    },
+    {
+      "id": "s09",
+      "kind": "author",
+      "region": "k_count",
+      "target": "skip",
+      "title": "Check the selected extent before walking",
+      "prose": "For `cbor_skip`, reject an unsigned selected count above 1024 before examining inherited depth or input. Next reject depth above eight and a zero count. Use status two for an excessive selected count and one for the other failures. This step precedes the supplied frame allocation, so an early return must not restore an unallocated frame.",
+      "expectedObservation": "The trace's count fifty-two and inherited depth zero pass without reading source yet.",
+      "checkpoint": "after_k_count",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which failure takes precedence for count 1025 and depth nine?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The depth status one."
+          },
+          {
+            "id": "b",
+            "text": "The first unsupported input byte."
+          },
+          {
+            "id": "c",
+            "text": "The excessive-count status two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Perform the count checks before selecting a byte address."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The trace's count fifty-two and inherited depth zero pass without reading source yet."
+        }
+      ],
+      "recipes": [
+        "s09-1"
+      ]
+    },
+    {
+      "id": "s10",
+      "kind": "author",
+      "region": "k_head",
+      "target": "skip",
+      "title": "Retain the parent cursor across a helper call",
+      "prose": "Inside the supplied frame, retain the current pointer, remaining extent, inherited depth and original pointer in saved registers. Call the completed head reader, propagate unfinished status four during construction, and reject a completed format failure. On success, advance the pointer and reduce the remaining count by the same head width. The original pointer will later turn the final cursor into a consumed count.",
+      "expectedObservation": "After the root head, the cursor is source plus two and fifty bytes remain.",
+      "checkpoint": "after_k_head",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Why retain the original pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To reread every earlier byte."
+          },
+          {
+            "id": "b",
+            "text": "To use its low bits as the inherited depth."
+          },
+          {
+            "id": "c",
+            "text": "To calculate the returned consumed extent."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "A cursor is an address; the result is a difference of addresses."
+        },
+        {
+          "id": "s10-h2",
+          "text": "After the root head, the cursor is source plus two and fifty bytes remain."
+        }
+      ],
+      "recipes": [
+        "s10-1"
+      ]
+    },
+    {
+      "id": "s11",
+      "kind": "author",
+      "region": "k_kind",
+      "target": "skip",
+      "title": "Distinguish immediate completion from payload work",
+      "prose": "Unsigned and negative integers finish after their heads. A byte string needs a checked payload advance. Arrays and maps need container-depth and count checks before child traversal. Test the primitive item `17` and stop at `skip_done`; this path must not open a container or treat the argument as a payload length.",
+      "expectedObservation": "The primitive cursor has advanced by one and reaches skip_done without a child call.",
+      "checkpoint": "skip_done",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which item completes immediately after its head?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A nonempty byte string."
+          },
+          {
+            "id": "b",
+            "text": "A nonempty array."
+          },
+          {
+            "id": "c",
+            "text": "A supported integer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "The major type determines whether the argument counts a value, bytes or children."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The primitive cursor has advanced by one and reaches skip_done without a child call."
+        }
+      ],
+      "recipes": [
+        "s11-1"
+      ]
+    },
+    {
+      "id": "s12",
+      "kind": "author",
+      "region": "k_finish",
+      "target": "skip",
+      "title": "Return the consumed prefix",
+      "prose": "At `skip_done`, subtract the original pointer from the final cursor and return that extent with status zero. Restore the saved registers and original stack pointer using the supplied exit. The integer `17` now provides a complete small walker test. Add a following `ff`: the returned prefix remains one, because the skipper consumes one item rather than the whole selected input.",
+      "expectedObservation": "The item 17 returns one consumed byte even with a following byte.",
+      "checkpoint": "after_k_finish",
+      "quiz": {
+        "id": "q12",
+        "prompt": "Must a successful skipper consume its entire available extent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every call validates a full telemetry record."
+          },
+          {
+            "id": "b",
+            "text": "No; it returns one complete item prefix."
+          },
+          {
+            "id": "c",
+            "text": "Only if the following byte is zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "The decoder, not the generic skipper, imposes exact complete-record ending."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The item 17 returns one consumed byte even with a following byte."
+        }
+      ],
+      "recipes": [
+        "s12-1"
+      ]
+    },
+    {
+      "id": "s13",
+      "kind": "author",
+      "region": "k_string",
+      "target": "skip",
+      "title": "Advance over a bounded byte string",
+      "prose": "For a byte string, reject an unsigned argument above thirty-two or above the remaining selected extent. After both checks, advance by its byte count and reduce the remaining count by that same amount. Its contents need not be loaded. Use `42 80 ff`: the two payload bytes resemble item tokens, but belong to this byte string.",
+      "expectedObservation": "The three-byte item is consumed as one byte string, without interpreting 80 or ff.",
+      "checkpoint": "after_k_string",
+      "quiz": {
+        "id": "q13",
+        "prompt": "What must the walker do with the payload bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Recursively decode each byte as an item."
+          },
+          {
+            "id": "b",
+            "text": "Stop at ff as a container break."
+          },
+          {
+            "id": "c",
+            "text": "Prove their extent and advance over them."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "The head already determines where these raw bytes end."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The three-byte item is consumed as one byte string, without interpreting 80 or ff."
+        }
+      ],
+      "recipes": [
+        "s13-1"
+      ]
+    },
+    {
+      "id": "s14",
+      "kind": "author",
+      "region": "k_depth",
+      "target": "skip",
+      "title": "Open a container only below the limit",
+      "prose": "An inherited depth of eight permits a primitive, but cannot admit another container, even an empty one. For a permitted array or map, increment the open-container depth once before walking its children. Test an array containing an empty array with inherited depth zero. The child inherits depth one rather than restarting from zero.",
+      "expectedObservation": "The outer array opens at depth one; its child must retain that inherited depth.",
+      "checkpoint": "after_k_depth",
+      "quiz": {
+        "id": "q14",
+        "prompt": "When can a container open?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Whenever it contains no children."
+          },
+          {
+            "id": "b",
+            "text": "When inherited depth is below eight."
+          },
+          {
+            "id": "c",
+            "text": "When its byte length is below eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Empty containers still occupy a nesting level."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The outer array opens at depth one; its child must retain that inherited depth."
+        }
+      ],
+      "recipes": [
+        "s14-1"
+      ]
+    },
+    {
+      "id": "s15",
+      "kind": "author",
+      "region": "k_array",
+      "target": "skip",
+      "title": "Bound the array's item counter",
+      "prose": "Require an unsigned array argument from zero through sixty-four. Retain that argument as the number of remaining children, not a byte count. The supplied route then reaches the common child loop. An array with one empty-array child must perform one child traversal even though the child itself has no elements.",
+      "expectedObservation": "The selected outer array has one remaining child.",
+      "checkpoint": "after_k_array",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What does an array argument count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Items."
+          },
+          {
+            "id": "b",
+            "text": "Bytes."
+          },
+          {
+            "id": "c",
+            "text": "Key/value pairs."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "A child can occupy more than one byte or have children of its own."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The selected outer array has one remaining child."
+        }
+      ],
+      "recipes": [
+        "s15-1"
+      ]
+    },
+    {
+      "id": "s16",
+      "kind": "author",
+      "region": "k_map",
+      "target": "skip",
+      "title": "Start fresh state for one map",
+      "prose": "Require at most eight map pairs and initialize this map's seen-key mask to zero. Each loop iteration consumes one unsigned key and one complete value. Retain the container kind so the common loop knows whether a key must be read first. The fixture `a1 00 00` has one pair whose key and value are both zero.",
+      "expectedObservation": "The map begins with one pair and an empty seen-key mask.",
+      "checkpoint": "after_k_map",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Where does a map's duplicate-key mask belong?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In one shared mask for the whole input."
+          },
+          {
+            "id": "b",
+            "text": "In the caller's telemetry record."
+          },
+          {
+            "id": "c",
+            "text": "In that map invocation's retained state."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "A nested map can legitimately reuse a key from its parent."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The map begins with one pair and an empty seen-key mask."
+        }
+      ],
+      "recipes": [
+        "s16-1"
+      ]
+    },
+    {
+      "id": "s17",
+      "kind": "author",
+      "region": "k_key",
+      "target": "skip",
+      "title": "Check key identity before its value",
+      "prose": "At the common loop, finish an exhausted container. For a map, read a key head, require unsigned type zero and a value from zero through seven, then test its bit in this map's seen mask. Reject a set bit; otherwise set it and consume the key head. Compare decoded values, so `00` and `18 00` identify the same key.",
+      "expectedObservation": "For a1 00 00, key zero sets mask bit one and the value remains unread.",
+      "checkpoint": "after_k_key",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Which pair of encodings duplicates a key?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "00 and 01."
+          },
+          {
+            "id": "b",
+            "text": "00 and 18 00."
+          },
+          {
+            "id": "c",
+            "text": "18 00 and 18 01."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Head width is not part of key identity."
+        },
+        {
+          "id": "s17-h2",
+          "text": "For a1 00 00, key zero sets mask bit one and the value remains unread."
+        }
+      ],
+      "recipes": [
+        "s17-1"
+      ]
+    },
+    {
+      "id": "s18",
+      "kind": "author",
+      "region": "k_child",
+      "target": "skip",
+      "title": "Resume a parent after one complete value",
+      "prose": "Call the walker on the selected child with the retained open depth. Propagate unfinished status four while developing, and reject a completed child failure. Advance by the returned prefix, subtract it from the remaining bytes and decrement this parent's child or pair count once. A key does not decrement a map's pair count separately.",
+      "expectedObservation": "The value zero completes the map's one pair; its counter becomes zero.",
+      "checkpoint": "after_k_child",
+      "quiz": {
+        "id": "q18",
+        "prompt": "When should a map pair counter decrease?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the key head alone succeeds."
+          },
+          {
+            "id": "b",
+            "text": "After every byte in the value."
+          },
+          {
+            "id": "c",
+            "text": "After the complete associated value succeeds."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "One iteration represents a key together with its value."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The value zero completes the map's one pair; its counter becomes zero."
+        }
+      ],
+      "recipes": [
+        "s18-1"
+      ]
+    },
+    {
+      "id": "s19",
+      "kind": "author",
+      "region": "d_count",
+      "target": "decode",
+      "title": "Require a complete-record extent",
+      "prose": "Before reading either input or destination, reject an unsigned count above 1024 with two and a count below seven with one. Seven is the smallest complete required-field record in this profile. Unlike the generic skipper, this entry is responsible for the complete selected input. The worked trace passes the count checks without publishing any candidate field.",
+      "expectedObservation": "Count fifty-two passes; all 176 destination bytes remain sentinels.",
+      "checkpoint": "after_d_count",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why reject a count below seven before input access?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A CBOR head always needs seven bytes."
+          },
+          {
+            "id": "b",
+            "text": "No complete required-field record can fit."
+          },
+          {
+            "id": "c",
+            "text": "The local record is seven bytes long."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Use the smallest valid empty record to establish the lower bound."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Count fifty-two passes; all 176 destination bytes remain sentinels."
+        }
+      ],
+      "recipes": [
+        "s19-1"
+      ]
+    },
+    {
+      "id": "s20",
+      "kind": "author",
+      "region": "d_root",
+      "target": "decode",
+      "title": "Retain private decoding state",
+      "prose": "Retain input cursor, remaining count, destination and original selected count in the supplied decoder frame. Start the root seen-key mask at zero. Arrange the first call to `decode_head`, and stop at that helper's entry to inspect its inputs before implementing the helper next. After it succeeds, require a map with three through eight pairs and retain its pair counter.",
+      "expectedObservation": "At decode_head, s0 is the input cursor, s1 is fifty-two and the caller record is untouched.",
+      "checkpoint": "decode_head",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What must remain private during this pass?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the optional fields."
+          },
+          {
+            "id": "b",
+            "text": "Candidate fields and validation state."
+          },
+          {
+            "id": "c",
+            "text": "Only values with wider-than-preferred heads."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The last required field or exact-ending check can still fail."
+        },
+        {
+          "id": "s20-h2",
+          "text": "At decode_head, s0 is the input cursor, s1 is fifty-two and the caller record is untouched."
+        }
+      ],
+      "recipes": [
+        "s20-1"
+      ]
+    },
+    {
+      "id": "s21",
+      "kind": "author",
+      "region": "d_head",
+      "target": "decode",
+      "title": "Consume a head without losing the decoder's return",
+      "prose": "The supplied helper saves its own incoming return address at frame offset eighty-eight. Use the decoder's retained cursor and remaining extent as head-reader inputs. If the call succeeds, advance both quantities by its head width; otherwise retain the failure for the outer routine. Do not confuse the helper's return address with the decoder's saved caller return.",
+      "expectedObservation": "The first root head leaves s0 at source plus two, s1 at fifty and a2 equal to five.",
+      "checkpoint": "after_d_head",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Why keep the helper return separately?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It makes a nested call before returning to the decoder."
+          },
+          {
+            "id": "b",
+            "text": "A CBOR head stores a return address."
+          },
+          {
+            "id": "c",
+            "text": "It must return directly to main."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "Each nested call replaces the live return-address register."
+        },
+        {
+          "id": "s21-h2",
+          "text": "The first root head leaves s0 at source plus two, s1 at fifty and a2 equal to five."
+        }
+      ],
+      "recipes": [
+        "s21-1"
+      ]
+    },
+    {
+      "id": "s22",
+      "kind": "author",
+      "region": "d_key",
+      "target": "decode",
+      "title": "Read each root key once",
+      "prose": "Finish when the retained pair count reaches zero. Otherwise consume one key head, require unsigned type and a value no greater than seven, and reject duplicate decoded keys in the root mask. Retain the current key for dispatch. On the trace, the first key is optional key three, which sets bit eight before its value is visited.",
+      "expectedObservation": "The first root key is three and the root mask is eight.",
+      "checkpoint": "after_d_key",
+      "quiz": {
+        "id": "q22",
+        "prompt": "Which bit represents root key three?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The bit with value eight."
+          },
+          {
+            "id": "b",
+            "text": "The bit with value three."
+          },
+          {
+            "id": "c",
+            "text": "The bit with value four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Use one shifted by the decoded key, rather than the key as a mask."
+        },
+        {
+          "id": "s22-h2",
+          "text": "The first root key is three and the root mask is eight."
+        }
+      ],
+      "recipes": [
+        "s22-1"
+      ]
+    },
+    {
+      "id": "s23",
+      "kind": "author",
+      "region": "d_dispatch",
+      "target": "decode",
+      "title": "Choose validation by the field key",
+      "prose": "Route key zero to the counter, one to the identifier and two to the readings array. Keys three through seven use generic optional-value validation. Keep the key check separate from the value's major type: the identifier is recognized because its key is one, not because every byte string is an identifier. The trace enters the optional route first.",
+      "expectedObservation": "Key three reaches the optional-value route without publishing a field.",
+      "checkpoint": "after_d_dispatch",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What determines which application field is being read?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The value's major type alone."
+          },
+          {
+            "id": "b",
+            "text": "The decoded root key."
+          },
+          {
+            "id": "c",
+            "text": "Its position in the input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Field order may change while key meanings remain fixed."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Key three reaches the optional-value route without publishing a field."
+        }
+      ],
+      "recipes": [
+        "s23-1"
+      ]
+    },
+    {
+      "id": "s24",
+      "kind": "author",
+      "region": "d_optional",
+      "target": "decode",
+      "title": "Validate metadata that will be dropped",
+      "prose": "Call the completed generic walker with inherited depth one, because the telemetry root is already open. Advance by the returned item prefix and decrement the root pair counter after success. Do not copy this value into the flat record. Dropping metadata removes it from the application representation, not from the structural validation workload.",
+      "expectedObservation": "The trace's optional value consumes nine bytes, leaving cursor offset twelve and forty bytes.",
+      "checkpoint": "after_d_optional",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which depth does an optional root value inherit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "The root pair count."
+          },
+          {
+            "id": "c",
+            "text": "One."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "The generic walker must know about the already-open telemetry map."
+        },
+        {
+          "id": "s24-h2",
+          "text": "The trace's optional value consumes nine bytes, leaving cursor offset twelve and forty bytes."
+        }
+      ],
+      "recipes": [
+        "s24-1"
+      ]
+    },
+    {
+      "id": "s25",
+      "kind": "author",
+      "region": "d_counter",
+      "target": "decode",
+      "title": "Retain every counter bit",
+      "prose": "Consume the counter value head and require unsigned major type zero. Store its raw sixty-four-bit argument in the private candidate, without applying a signed range test or floating-point conversion. The trace counter is hexadecimal `0102030405060708`. A counter with its top bit set remains valid even if a signed register display presents it as negative.",
+      "expectedObservation": "The private counter holds 0102030405060708; caller record bytes are still unchanged.",
+      "checkpoint": "after_d_counter",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Does a set top counter bit make the field invalid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; the local record uses eight bytes."
+          },
+          {
+            "id": "b",
+            "text": "No; all unsigned sixty-four-bit patterns are valid."
+          },
+          {
+            "id": "c",
+            "text": "Only when the identifier is empty."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Storage width and signed interpretation are separate decisions."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The private counter holds 0102030405060708; caller record bytes are still unchanged."
+        }
+      ],
+      "recipes": [
+        "s25-1"
+      ]
+    },
+    {
+      "id": "s26",
+      "kind": "author",
+      "region": "d_identifier",
+      "target": "decode",
+      "title": "Validate the counted identifier before copying",
+      "prose": "Require byte-string type, length at most thirty-two and enough remaining bytes for the complete payload. Store the accepted length in the private prefix. Keep the payload cursor available for the following copy loop. The trace's identifier length is three; the zero at its first byte is data, not a terminator.",
+      "expectedObservation": "The candidate identifier length is three and its payload begins at source offset thirty-eight.",
+      "checkpoint": "after_d_identifier",
+      "quiz": {
+        "id": "q26",
+        "prompt": "What ends this identifier?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its accepted byte count."
+          },
+          {
+            "id": "b",
+            "text": "The first zero byte."
+          },
+          {
+            "id": "c",
+            "text": "The next byte that resembles a key."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "The three-byte payload includes a leading zero deliberately."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The candidate identifier length is three and its payload begins at source offset thirty-eight."
+        }
+      ],
+      "recipes": [
+        "s26-1"
+      ]
+    },
+    {
+      "id": "s27",
+      "kind": "author",
+      "region": "d_id_copy",
+      "target": "decode",
+      "title": "Copy only the active identifier",
+      "prose": "Copy exactly the accepted identifier byte count into private candidate storage. Use byte loads and stores because input need not be aligned. Advance the input cursor and subtract the accepted count from the remaining extent. Do not initialize the candidate's unused tail merely to make a later whole-record copy convenient.",
+      "expectedObservation": "The candidate holds 00 ff 41 and the input cursor reaches offset forty-one.",
+      "checkpoint": "after_d_id_copy",
+      "quiz": {
+        "id": "q27",
+        "prompt": "How many identifier bytes should be copied here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Three."
+          },
+          {
+            "id": "b",
+            "text": "Thirty-two."
+          },
+          {
+            "id": "c",
+            "text": "Until a zero byte appears."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "The active length limits both reading and writing."
+        },
+        {
+          "id": "s27-h2",
+          "text": "The candidate holds 00 ff 41 and the input cursor reaches offset forty-one."
+        }
+      ],
+      "recipes": [
+        "s27-1"
+      ]
+    },
+    {
+      "id": "s28",
+      "kind": "author",
+      "region": "d_array",
+      "target": "decode",
+      "title": "Establish the readings count",
+      "prose": "Require array type and an unsigned argument no greater than sixty-four. Store this element count in the private prefix and begin a separate sample index at zero. The ten-element trace array has twenty encoded payload bytes, but the count to retain is ten. Each local reading will occupy two bytes regardless of its encoded width.",
+      "expectedObservation": "The candidate reading count is ten and the first encoded reading begins at offset fifteen.",
+      "checkpoint": "after_d_array",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Which count belongs in the local prefix?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twenty encoded bytes."
+          },
+          {
+            "id": "b",
+            "text": "Ten readings."
+          },
+          {
+            "id": "c",
+            "text": "One hundred twenty-eight reserved bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "An array's cardinality is independent of its wire extent and local capacity."
+        },
+        {
+          "id": "s28-h2",
+          "text": "The candidate reading count is ten and the first encoded reading begins at offset fifteen."
+        }
+      ],
+      "recipes": [
+        "s28-1"
+      ]
+    },
+    {
+      "id": "s29",
+      "kind": "author",
+      "region": "d_sample",
+      "target": "decode",
+      "title": "Validate an integer before narrowing it",
+      "prose": "For each reading, consume a head and accept only unsigned or negative integer types. Its unsigned argument must be at most 32767 for either type. Convert a negative argument with minus one minus argument, then store the result in one two-byte candidate slot. Use a register-held bound for 32768; the immediate in `sltiu` is sign-extended on this target.",
+      "expectedObservation": "The first sample stores zero in the first private two-byte slot and advances the index to one.",
+      "checkpoint": "after_d_sample",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Why check the argument before storing a halfword?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every halfword store checks the application range."
+          },
+          {
+            "id": "b",
+            "text": "Narrowing could hide an out-of-range encoded integer."
+          },
+          {
+            "id": "c",
+            "text": "Negative CBOR integers cannot use halfwords."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Both signed endpoints have an unsigned argument within the same bound."
+        },
+        {
+          "id": "s29-h2",
+          "text": "The first sample stores zero in the first private two-byte slot and advances the index to one."
+        }
+      ],
+      "recipes": [
+        "s29-1"
+      ]
+    },
+    {
+      "id": "s30",
+      "kind": "author",
+      "region": "d_finish",
+      "target": "decode",
+      "title": "Check fields and exact ending together",
+      "prose": "After all root pairs, require the low three bits of the seen mask and require no input bytes left. Optional-key bits may also be set. A valid required-field set does not excuse a trailing byte. Stop here before publishing anything: the trace has a complete mask of fifteen and zero remaining bytes.",
+      "expectedObservation": "The valid trace reaches zero remaining bytes with root mask fifteen; the caller record is untouched.",
+      "checkpoint": "after_d_finish",
+      "quiz": {
+        "id": "q30",
+        "prompt": "What makes a trailing byte unacceptable here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The trailing byte might be nonzero."
+          },
+          {
+            "id": "b",
+            "text": "The generic skipper always consumes the whole input."
+          },
+          {
+            "id": "c",
+            "text": "This call requires exactly one complete telemetry record."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Field completeness and exact extent are separate conditions."
+        },
+        {
+          "id": "s30-h2",
+          "text": "The valid trace reaches zero remaining bytes with root mask fifteen; the caller record is untouched."
+        }
+      ],
+      "recipes": [
+        "s30-1"
+      ]
+    },
+    {
+      "id": "s31",
+      "kind": "author",
+      "region": "d_prefix",
+      "target": "decode",
+      "title": "Publish the validated prefix",
+      "prose": "Only after full validation, copy the eight-byte counter and both four-byte lengths to the caller record. Preserve the prefix's little-endian local representation. At this checkpoint the active payload has not yet been published. An unfinished status after this development point may leave a valid prefix; it must not be mistaken for a completed format-failure return.",
+      "expectedObservation": "The caller prefix contains the trace counter, identifier length three and reading count ten.",
+      "checkpoint": "after_d_prefix",
+      "quiz": {
+        "id": "q31",
+        "prompt": "When may these caller stores begin?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After any required key is seen."
+          },
+          {
+            "id": "b",
+            "text": "As soon as the root map head passes."
+          },
+          {
+            "id": "c",
+            "text": "After complete validation succeeds."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "During completed operation, a later format failure cannot follow publication."
+        },
+        {
+          "id": "s31-h2",
+          "text": "The caller prefix contains the trace counter, identifier length three and reading count ten."
+        }
+      ],
+      "recipes": [
+        "s31-1"
+      ]
+    },
+    {
+      "id": "s32",
+      "kind": "author",
+      "region": "d_payload",
+      "target": "decode",
+      "title": "Publish active payloads and return",
+      "prose": "Copy the accepted identifier bytes and the accepted two-byte sample slots from private storage to the caller's active fields. Retain every unused caller tail byte. Return status zero and the complete original input count, then restore the supplied decoder frame. The trace now produces a complete local record while its unselected storage remains unchanged.",
+      "expectedObservation": "Decode returns zero and fifty-two; only the prefix and active fields changed.",
+      "checkpoint": "after_d_payload",
+      "quiz": {
+        "id": "q32",
+        "prompt": "What should the successful decoder return in v1?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The size of the local record."
+          },
+          {
+            "id": "b",
+            "text": "The deterministic encoded output size."
+          },
+          {
+            "id": "c",
+            "text": "The complete selected input count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Each entry gives its result count a different declared meaning."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Decode returns zero and fifty-two; only the prefix and active fields changed."
+        }
+      ],
+      "recipes": [
+        "s32-1"
+      ]
+    },
+    {
+      "id": "s33",
+      "kind": "author",
+      "region": "z_inline",
+      "target": "size",
+      "title": "Size an inline argument",
+      "prose": "The private `head_size` helper takes an unsigned argument in `a0`. For arguments below twenty-four, select width one and return success without examining any memory. Its result counts the complete head, including the initial byte. This helper supports the illustrated construction; the public free-writing contract does not require this private label or algorithm.",
+      "expectedObservation": "Argument twenty-three needs a one-byte head.",
+      "checkpoint": "after_z_inline",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Does this size include an initial byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes."
+          },
+          {
+            "id": "b",
+            "text": "Only for byte strings."
+          },
+          {
+            "id": "c",
+            "text": "No; it counts following argument bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Use the complete head width throughout the bound calculation."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Argument twenty-three needs a one-byte head."
+        }
+      ],
+      "recipes": [
+        "s33-1"
+      ]
+    },
+    {
+      "id": "s34",
+      "kind": "author",
+      "region": "z_width",
+      "target": "size",
+      "title": "Choose a following-argument width",
+      "prose": "For a non-inline argument, choose one, two, four or eight following bytes according to the unsigned argument's highest nonzero byte. Add one for the initial byte. The threshold method may compare shifts against zero; it must handle a set high bit as an eight-byte unsigned argument rather than a negative short value.",
+      "expectedObservation": "Argument twenty-four needs two head bytes.",
+      "checkpoint": "after_z_width",
+      "quiz": {
+        "id": "q34",
+        "prompt": "How wide is the complete head for argument twenty-four?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two bytes."
+          },
+          {
+            "id": "b",
+            "text": "One byte."
+          },
+          {
+            "id": "c",
+            "text": "Twenty-five bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "The selector consumes the initial byte as well as its argument storage."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Argument twenty-four needs two head bytes."
+        }
+      ],
+      "recipes": [
+        "s34-1"
+      ]
+    },
+    {
+      "id": "s35",
+      "kind": "author",
+      "region": "z_success",
+      "target": "size",
+      "title": "Return a size without changing the argument's value",
+      "prose": "Complete the helper's successful return convention: status zero and the selected complete head width in `v1`. Test the all-ones sixty-four-bit argument. It needs nine head bytes, and no byte of the argument should be lost while deciding that width. An unfinished helper instead returns four and zero for its callers to propagate.",
+      "expectedObservation": "The all-ones argument returns width nine.",
+      "checkpoint": "after_z_success",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What width is needed for an eight-byte argument?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Nine complete head bytes."
+          },
+          {
+            "id": "b",
+            "text": "Eight complete head bytes."
+          },
+          {
+            "id": "c",
+            "text": "One complete head byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Keep the initial byte separate from the following argument width."
+        },
+        {
+          "id": "s35-h2",
+          "text": "The all-ones argument returns width nine."
+        }
+      ],
+      "recipes": [
+        "s35-1"
+      ]
+    },
+    {
+      "id": "s36",
+      "kind": "author",
+      "region": "b_fields",
+      "target": "bound",
+      "title": "Read the flat prefix, not serialized input",
+      "prose": "Retain the flat-record pointer and read its two unsigned thirty-two-bit lengths. The counter occupies the first eight bytes; lengths are at offsets eight and twelve. The helper is not parsing `source`. Keep the record pointer stable across later size-helper calls so an argument loaded into `a0` does not lose the object's address.",
+      "expectedObservation": "The trace prefix supplies identifier length three and ten samples.",
+      "checkpoint": "after_b_fields",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Where does the bound routine get its lengths?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "From the original input head."
+          },
+          {
+            "id": "b",
+            "text": "From the caller's output capacity."
+          },
+          {
+            "id": "c",
+            "text": "From the flat record prefix."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "The record interface is already decoded local storage."
+        },
+        {
+          "id": "s36-h2",
+          "text": "The trace prefix supplies identifier length three and ten samples."
+        }
+      ],
+      "recipes": [
+        "s36-1"
+      ]
+    },
+    {
+      "id": "s37",
+      "kind": "author",
+      "region": "b_lengths",
+      "target": "bound",
+      "title": "Reject invalid lengths before payload access",
+      "prose": "Reject an identifier length above thirty-two or a reading count above sixty-four, using their unsigned values. Return status one and zero size without reading identifier or sample storage on an invalid prefix. All counter bit patterns remain permitted. The fixture retains valid lengths here; invalid-prefix experiments follow after completion.",
+      "expectedObservation": "The trace lengths pass without reading any active sample yet.",
+      "checkpoint": "after_b_lengths",
+      "quiz": {
+        "id": "q37",
+        "prompt": "What may an invalid prefix authorize reading?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first sample as a plausibility check."
+          },
+          {
+            "id": "b",
+            "text": "All reserved identifier storage."
+          },
+          {
+            "id": "c",
+            "text": "Only the prefix."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "A bad length must not select an unsafe payload interval."
+        },
+        {
+          "id": "s37-h2",
+          "text": "The trace lengths pass without reading any active sample yet."
+        }
+      ],
+      "recipes": [
+        "s37-1"
+      ]
+    },
+    {
+      "id": "s38",
+      "kind": "author",
+      "region": "b_heads",
+      "target": "bound",
+      "title": "Add the fixed and variable head costs",
+      "prose": "Start with four bytes for the root map head and three field keys, then add identifier payload length. Add preferred head widths for the counter, identifier length and sample count. Propagate development status from the size helper before using its result. For the trace, this partial size is eighteen, before the ten reading heads.",
+      "expectedObservation": "The running size is eighteen before sample contributions.",
+      "checkpoint": "after_b_heads",
+      "quiz": {
+        "id": "q38",
+        "prompt": "What do the fixed four bytes represent?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The root map head and three one-byte keys."
+          },
+          {
+            "id": "b",
+            "text": "Four bytes for the counter."
+          },
+          {
+            "id": "c",
+            "text": "The optional metadata's key and value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Optional fields have no retained output cost."
+        },
+        {
+          "id": "s38-h2",
+          "text": "The running size is eighteen before sample contributions."
+        }
+      ],
+      "recipes": [
+        "s38-1"
+      ]
+    },
+    {
+      "id": "s39",
+      "kind": "author",
+      "region": "b_samples",
+      "target": "bound",
+      "title": "Measure each sample's encoded argument",
+      "prose": "Load only the selected signed sixteen-bit sample slots. For a nonnegative sample, size its own value; for a negative one, size minus one minus that value. Add each complete head width to the running result. The trace's ten readings contribute nineteen bytes. Do not read identifier contents or unused sample slots while computing this bound.",
+      "expectedObservation": "The trace's running size reaches thirty-seven.",
+      "checkpoint": "after_b_samples",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Why does bound not read identifier contents?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Identifiers are always ASCII."
+          },
+          {
+            "id": "b",
+            "text": "Their byte count alone determines their encoded extent."
+          },
+          {
+            "id": "c",
+            "text": "Zero bytes are omitted during encoding."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Raw byte-string contents have no variable-width escaping here."
+        },
+        {
+          "id": "s39-h2",
+          "text": "The trace's running size reaches thirty-seven."
+        }
+      ],
+      "recipes": [
+        "s39-1"
+      ]
+    },
+    {
+      "id": "s40",
+      "kind": "author",
+      "region": "b_finish",
+      "target": "bound",
+      "title": "Return the exact size",
+      "prose": "Return zero status and the accumulated preferred output length, preserving the original caller state. The trace returns thirty-seven, an empty record seven and the maximum required-field record 241. These are exact values for their records; requiring the maximum for every encode would reject a valid smaller destination unnecessarily.",
+      "expectedObservation": "The trace returns exact output size thirty-seven.",
+      "checkpoint": "after_b_finish",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Must a destination for the trace hold 241 bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every record reserves the maximum."
+          },
+          {
+            "id": "b",
+            "text": "No; thirty-seven is sufficient."
+          },
+          {
+            "id": "c",
+            "text": "Only when its identifier begins with zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Capacity is compared with the selected record's exact result."
+        },
+        {
+          "id": "s40-h2",
+          "text": "The trace returns exact output size thirty-seven."
+        }
+      ],
+      "recipes": [
+        "s40-1"
+      ]
+    },
+    {
+      "id": "s41",
+      "kind": "author",
+      "region": "w_fields",
+      "target": "write",
+      "title": "Retain the type while sizing its argument",
+      "prose": "The private `write_head` helper receives major type, argument and destination in `a0` through `a2`. Retain the type before passing the argument to `head_size`, and propagate an unfinished helper result. Its internal caller has already selected a valid type and sufficient destination extent. Test type zero and argument twenty-four.",
+      "expectedObservation": "The selected complete head width is two; no output byte is needed yet.",
+      "checkpoint": "after_w_fields",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Why retain the major type across the size call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The type is part of the argument's numeric value."
+          },
+          {
+            "id": "b",
+            "text": "The size helper uses a0 for the argument."
+          },
+          {
+            "id": "c",
+            "text": "The destination stores the type for later retrieval."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Argument-register meanings change between these two private helpers."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The selected complete head width is two; no output byte is needed yet."
+        }
+      ],
+      "recipes": [
+        "s41-1"
+      ]
+    },
+    {
+      "id": "s42",
+      "kind": "author",
+      "region": "w_info",
+      "target": "write",
+      "title": "Write the initial byte for an extended head",
+      "prose": "For a width greater than one, derive the additional-information selector from the following-byte width, combine it with the major type shifted left by five, and store the initial byte. Retain the following-byte counter separately from the complete returned width. For unsigned twenty-four, the initial byte is hexadecimal `18`.",
+      "expectedObservation": "The first destination byte is 18; one argument byte remains to write.",
+      "checkpoint": "after_w_info",
+      "quiz": {
+        "id": "q42",
+        "prompt": "What belongs in the initial byte's low field here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The selector for one following byte."
+          },
+          {
+            "id": "b",
+            "text": "The argument twenty-four reduced to five bits."
+          },
+          {
+            "id": "c",
+            "text": "The destination capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "An extended head's low field is a width selector."
+        },
+        {
+          "id": "s42-h2",
+          "text": "The first destination byte is 18; one argument byte remains to write."
+        }
+      ],
+      "recipes": [
+        "s42-1"
+      ]
+    },
+    {
+      "id": "s43",
+      "kind": "author",
+      "region": "w_argument",
+      "target": "write",
+      "title": "Emit argument bytes in wire order",
+      "prose": "Write exactly the selected argument-byte width in big-endian order. A high-to-low shift loop is one option; storing low bytes backwards from the last destination position is another. Keep the complete head width available as the return result. For unsigned twenty-four, the finished two-byte head is `18 18`.",
+      "expectedObservation": "The destination head is 18 18.",
+      "checkpoint": "after_w_argument",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Why can a backwards store loop be correct?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "CBOR arguments are little-endian."
+          },
+          {
+            "id": "b",
+            "text": "The head reader reverses every payload later."
+          },
+          {
+            "id": "c",
+            "text": "It places low argument bytes at higher wire addresses."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Judge the final byte order, not the direction of the store loop."
+        },
+        {
+          "id": "s43-h2",
+          "text": "The destination head is 18 18."
+        }
+      ],
+      "recipes": [
+        "s43-1"
+      ]
+    },
+    {
+      "id": "s44",
+      "kind": "author",
+      "region": "w_inline",
+      "target": "write",
+      "title": "Combine an inline value directly",
+      "prose": "For a one-byte head, combine the shifted type with the argument itself and store that initial byte. Do not reserve or write an argument byte after it. The recipe uses unsigned twenty-three, whose complete head is hexadecimal `17`. The same construction works for a permitted short byte-string or container argument under the helper's internal preconditions.",
+      "expectedObservation": "Exactly one byte, 17, is written.",
+      "checkpoint": "after_w_inline",
+      "quiz": {
+        "id": "q44",
+        "prompt": "What follows an inline integer's initial byte as part of its head?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Nothing."
+          },
+          {
+            "id": "b",
+            "text": "A repeated argument byte."
+          },
+          {
+            "id": "c",
+            "text": "A zero terminator."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "The low field already carries the complete argument."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Exactly one byte, 17, is written."
+        }
+      ],
+      "recipes": [
+        "s44-1"
+      ]
+    },
+    {
+      "id": "s45",
+      "kind": "author",
+      "region": "w_finish",
+      "target": "write",
+      "title": "Return the written head extent",
+      "prose": "Complete the internal writer's zero-status return and keep its complete width in `v1`. Restore its own return address and stack frame before returning to the encoder. Test the two-byte unsigned-twenty-four head again. This helper writes a head only; a byte-string payload and a container's children still belong to its caller.",
+      "expectedObservation": "The helper returns zero and two for 18 18.",
+      "checkpoint": "after_w_finish",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Does writing a byte-string head also write its payload?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; its argument contains every payload byte."
+          },
+          {
+            "id": "b",
+            "text": "Only when its length is below twenty-four."
+          },
+          {
+            "id": "c",
+            "text": "No; the caller handles the payload."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Head generation and payload copying are separate operations."
+        },
+        {
+          "id": "s45-h2",
+          "text": "The helper returns zero and two for 18 18."
+        }
+      ],
+      "recipes": [
+        "s45-1"
+      ]
+    },
+    {
+      "id": "s46",
+      "kind": "author",
+      "region": "e_bound",
+      "target": "encode",
+      "title": "Preflight the record before touching output",
+      "prose": "Retain the record, destination and unsigned capacity, then call the completed bound routine. Propagate an invalid-record or development result without reading identifier bytes or writing destination bytes. A successful bound supplies the exact required extent. Keep that extent across later helper calls instead of treating their head-width results as the whole output length.",
+      "expectedObservation": "The bound result is thirty-seven and destination bytes remain sentinels.",
+      "checkpoint": "after_e_bound",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What can a successful bound establish for the encoder?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "That the caller's capacity is sufficient."
+          },
+          {
+            "id": "b",
+            "text": "That identifier bytes have already been copied."
+          },
+          {
+            "id": "c",
+            "text": "The exact output extent for this record."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Record validity and destination capacity require separate checks."
+        },
+        {
+          "id": "s46-h2",
+          "text": "The bound result is thirty-seven and destination bytes remain sentinels."
+        }
+      ],
+      "recipes": [
+        "s46-1"
+      ]
+    },
+    {
+      "id": "s47",
+      "kind": "author",
+      "region": "e_capacity",
+      "target": "encode",
+      "title": "Compare capacity as an unsigned count",
+      "prose": "Compare the caller's unsigned capacity with the exact bound. Return two and a zero count on shortage, preserving every destination byte. A high-bit-set capacity is a large permitted capacity, not a negative error. Only after this check may the encoder read active identifier bytes or begin output stores.",
+      "expectedObservation": "Capacity thirty-seven passes; thirty-six returns two with no output writes.",
+      "checkpoint": "after_e_capacity",
+      "quiz": {
+        "id": "q47",
+        "prompt": "How should a capacity with its top bit set be interpreted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "As an automatic format failure."
+          },
+          {
+            "id": "b",
+            "text": "As a negative request for truncation."
+          },
+          {
+            "id": "c",
+            "text": "As a large unsigned capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "The capacity contract uses the full unsigned register pattern."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Capacity thirty-seven passes; thirty-six returns two with no output writes."
+        }
+      ],
+      "recipes": [
+        "s47-1"
+      ]
+    },
+    {
+      "id": "s48",
+      "kind": "author",
+      "region": "e_counter",
+      "target": "encode",
+      "title": "Emit the map and complete counter",
+      "prose": "Write the three-pair map head and key zero, then ask the completed writer for the unsigned counter head. Retain all sixty-four counter bits from the flat record. Advance the destination cursor by the helper's complete width, propagating an unfinished result during development. The trace's nine-byte counter head follows two fixed initial bytes.",
+      "expectedObservation": "The first eleven output bytes are a3 00 1b followed by counter bytes 01 through 08.",
+      "checkpoint": "after_e_counter",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Which byte order applies to this counter argument?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The flat record's little-endian order."
+          },
+          {
+            "id": "b",
+            "text": "Big-endian wire order."
+          },
+          {
+            "id": "c",
+            "text": "The debugger's selected display order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "Convert at the interface boundary rather than copying the local counter bytes."
+        },
+        {
+          "id": "s48-h2",
+          "text": "The first eleven output bytes are a3 00 1b followed by counter bytes 01 through 08."
+        }
+      ],
+      "recipes": [
+        "s48-1"
+      ]
+    },
+    {
+      "id": "s49",
+      "kind": "author",
+      "region": "e_identifier_head",
+      "target": "encode",
+      "title": "Write the identifier key and count",
+      "prose": "Write key one and a byte-string head for the accepted identifier length. This head is derived from the local length, not copied from the wider incoming head. For the trace, emit `01 43`, making thirteen output bytes so far. Do not append the identifier's unused local tail or a terminator.",
+      "expectedObservation": "Output offsets eleven and twelve hold 01 43.",
+      "checkpoint": "after_e_identifier_head",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Why does the output use 43 rather than 58 03?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The identifier has changed its type."
+          },
+          {
+            "id": "b",
+            "text": "A zero in the identifier terminates the output head."
+          },
+          {
+            "id": "c",
+            "text": "The writer selects the shortest head for length three."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Equivalent decoded values can have different permitted input heads."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Output offsets eleven and twelve hold 01 43."
+        }
+      ],
+      "recipes": [
+        "s49-1"
+      ]
+    },
+    {
+      "id": "s50",
+      "kind": "author",
+      "region": "e_identifier_copy",
+      "target": "encode",
+      "title": "Copy the selected binary bytes",
+      "prose": "Copy exactly the active identifier bytes from record offset sixteen to the output cursor. Use byte accesses and retain the leading zero. Advance only by the accepted count; the remaining thirty-two-byte local capacity is not output. The trace contributes three bytes and brings the cursor to sixteen.",
+      "expectedObservation": "Output offsets thirteen through fifteen are 00 ff 41.",
+      "checkpoint": "after_e_identifier_copy",
+      "quiz": {
+        "id": "q50",
+        "prompt": "Does the leading zero reduce this copy's length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it ends the identifier."
+          },
+          {
+            "id": "b",
+            "text": "Only in free-writing mode."
+          },
+          {
+            "id": "c",
+            "text": "No; the accepted length remains three."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "This is a counted binary field, not a terminated string."
+        },
+        {
+          "id": "s50-h2",
+          "text": "Output offsets thirteen through fifteen are 00 ff 41."
+        }
+      ],
+      "recipes": [
+        "s50-1"
+      ]
+    },
+    {
+      "id": "s51",
+      "kind": "author",
+      "region": "e_array",
+      "target": "encode",
+      "title": "Emit the readings array head",
+      "prose": "Write key two followed by the preferred array head for the selected sample count. Retain the number of readings and a pointer to the first local signed halfword for the following loop. The trace emits `02 8a`, bringing the cursor to eighteen before the reading items. The array argument counts readings, not their combined encoded bytes.",
+      "expectedObservation": "The array head is 8a for ten readings.",
+      "checkpoint": "after_e_array",
+      "quiz": {
+        "id": "q51",
+        "prompt": "What does the output array argument ten count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Encoded payload bytes."
+          },
+          {
+            "id": "b",
+            "text": "Two-byte local storage slots in the whole capacity."
+          },
+          {
+            "id": "c",
+            "text": "Reading items."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "The active sample count is the same application value before and after encoding."
+        },
+        {
+          "id": "s51-h2",
+          "text": "The array head is 8a for ten readings."
+        }
+      ],
+      "recipes": [
+        "s51-1"
+      ]
+    },
+    {
+      "id": "s52",
+      "kind": "author",
+      "region": "e_samples",
+      "target": "encode",
+      "title": "Convert each signed sample to a head argument",
+      "prose": "Load each selected signed halfword. Use major type zero and its value when nonnegative; otherwise use type one and minus one minus the signed value. Call the head writer, advance by its result and continue until the selected count is exhausted. The trace's ten reading items add nineteen bytes; local unused slots are never read.",
+      "expectedObservation": "The final trace output extent reaches thirty-seven bytes.",
+      "checkpoint": "after_e_samples",
+      "quiz": {
+        "id": "q52",
+        "prompt": "Which argument encodes sample minus twenty-five?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Twenty-five with negative-integer type."
+          },
+          {
+            "id": "b",
+            "text": "Twenty-four with negative-integer type."
+          },
+          {
+            "id": "c",
+            "text": "The halfword bit pattern 65511 with unsigned type."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s52-h1",
+          "text": "CBOR negative integer arguments are one less than the magnitude."
+        },
+        {
+          "id": "s52-h2",
+          "text": "The final trace output extent reaches thirty-seven bytes."
+        }
+      ],
+      "recipes": [
+        "s52-1"
+      ]
+    },
+    {
+      "id": "s53",
+      "kind": "author",
+      "region": "e_finish",
+      "target": "encode",
+      "title": "Return the complete output extent",
+      "prose": "Return zero status and the difference between the final destination cursor and its original start. That extent must agree with preflight's exact bound. Restore the encoder's saved state before returning to the caller. On the trace, the three required fields occupy thirty-seven bytes even though the accepted input occupied fifty-two.",
+      "expectedObservation": "Encode returns zero and thirty-seven, with destination tails unchanged.",
+      "checkpoint": "after_e_finish",
+      "quiz": {
+        "id": "q53",
+        "prompt": "Which count belongs in the encoder's successful v1?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original input length."
+          },
+          {
+            "id": "b",
+            "text": "The local record size."
+          },
+          {
+            "id": "c",
+            "text": "The complete output bytes written."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s53-h1",
+          "text": "The bound and encoder describe the same serialized representation."
+        },
+        {
+          "id": "s53-h2",
+          "text": "Encode returns zero and thirty-seven, with destination tails unchanged."
+        }
+      ],
+      "recipes": [
+        "s53-1"
+      ]
+    },
+    {
+      "id": "s54",
+      "kind": "observe",
+      "region": null,
+      "target": "pipeline",
+      "title": "Run the connected memory pipeline",
+      "prose": "Select the pipeline recipe and stop at each supplied return label before continuing to the next routine. Head reading returns two, generic skipping and complete decoding each return fifty-two, and sizing and encoding each return thirty-seven. The caller stops on any nonzero status. Observe the local record after decode, then the output after encode, rather than attributing every count to the same unit.",
+      "expectedObservation": "The pipeline reaches results_ready with zero status and count thirty-seven.",
+      "checkpoint": "results_ready",
+      "quiz": {
+        "id": "q54",
+        "prompt": "Why are the head and decoder counts different?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "They measure different declared extents."
+          },
+          {
+            "id": "b",
+            "text": "One routine has lost input bytes."
+          },
+          {
+            "id": "c",
+            "text": "The pipeline has changed its source between calls."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s54-h1",
+          "text": "Match each result to that entry's contract before comparing numbers."
+        },
+        {
+          "id": "s54-h2",
+          "text": "The pipeline reaches results_ready with zero status and count thirty-seven."
+        }
+      ],
+      "recipes": [
+        "s54-1"
+      ]
+    },
+    {
+      "id": "s55",
+      "kind": "observe",
+      "region": null,
+      "target": "encode",
+      "title": "Observe capacity and exact-ending failures",
+      "prose": "Prepare the thirty-six-byte encode capacity and confirm status two with zero count and an unchanged destination. Then prepare the separate trailing-byte decode recipe and confirm status one with zero count and an unchanged record. These experiments test different boundaries. A correct result on the valid trace alone does not establish either failure guarantee.",
+      "expectedObservation": "The short encode and trailing-byte decode preserve their respective caller outputs.",
+      "checkpoint": "encode_return",
+      "quiz": {
+        "id": "q55",
+        "prompt": "Which output may a completed failed decode change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only a prefix that looked valid."
+          },
+          {
+            "id": "b",
+            "text": "Every field except the sample tail."
+          },
+          {
+            "id": "c",
+            "text": "None of the caller record."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s55-h1",
+          "text": "Completed failure guarantees apply even after substantial private validation work."
+        },
+        {
+          "id": "s55-h2",
+          "text": "The short encode and trailing-byte decode preserve their respective caller outputs."
+        }
+      ],
+      "recipes": [
+        "s55-1",
+        "s55-2"
+      ]
+    },
+    {
+      "id": "s56",
+      "kind": "observe",
+      "region": null,
+      "target": "pipeline",
+      "title": "Compare a different complete record",
+      "prose": "Prepare the maximum-output record and run the pipeline. It has a thirty-two-byte identifier, sixty-four readings and an all-ones counter; its required-field output occupies 241 bytes. Use the same public interfaces for an independently organized implementation. Guided checkpoints illustrate one private layout, while completed grading must accept other correct register allocations and traversal methods.",
+      "expectedObservation": "The maximum record pipeline returns zero and 241.",
+      "checkpoint": "results_ready",
+      "quiz": {
+        "id": "q56",
+        "prompt": "What may an equivalent completed solution change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The required-field meanings."
+          },
+          {
+            "id": "b",
+            "text": "Its private algorithm and register allocation."
+          },
+          {
+            "id": "c",
+            "text": "The promised failure behavior."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s56-h1",
+          "text": "Keep observable contracts stable while allowing different implementations."
+        },
+        {
+          "id": "s56-h2",
+          "text": "The maximum record pipeline returns zero and 241."
+        }
+      ],
+      "recipes": [
+        "s56-1"
+      ]
+    }
+  ]
+}

@@ -413,3 +413,16 @@ contains six tables with 20 header cells and one described native figure. Minion
 Noto Sans Math and JetBrains Mono remain embedded, with no overfull boxes, missing
 characters or font-substitution warnings. This is structural and visual verification,
 not independent PDF/UA certification. The main manuscript remains 31 packaged chapters.
+
+
+The cumulative CBOR draft has 44 physical pages, interleaving 56 new native step
+includes with the earlier 28 conceptual passages and a construction-convention include.
+All pages were rendered and inspected; the source/scope section is kept together
+after the final exercises. The six native tables retain 20 semantic header cells and
+the native diagram retains its alternative description. Tagged quiz structure has
+56 itemize lists with 168 labeled choices. Minion Pro, Noto Sans Math and JetBrains
+Mono remain embedded, with no overfull boxes, missing characters or font substitution
+warnings. No new minted approximation was introduced. This is structural/layout
+verification, not independent PDF/UA or assistive-technology validation. Actual IDE
+captures and completed cumulative checkpoint verification remain pending.
+The integrated manuscript remains 31 packaged chapters and 1333 physical pages.

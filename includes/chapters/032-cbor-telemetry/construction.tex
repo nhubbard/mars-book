@@ -1,0 +1,51 @@
+\section{Keep one working source through the observations}
+Copy \path{drafts/cbor-construction/main.asm} to a working file. Keep that working
+file as each region is completed. The caller has modes for head reading, generic
+skipping, complete decoding, exact sizing, encoding and the connected pipeline. Two
+additional modes call the illustrated private head-size and head-writing helpers.
+Their labels and register choices support guided construction; an equivalent complete
+solution need only meet the five public entry contracts.
+
+From the construction directory, run
+\texttt{python3 prepare.py s01-1 --source working.asm --output observation.asm}.
+Use the exact recipe named in the step and a fresh output filename. Preparation
+changes fixture bytes and scalar controls, while preserving the entire instruction
+section, including comments and instructions already written. Continue editing the
+working file; the prepared file supplies the selected observation data.
+
+Every region starts with a safe branch to a development return. During construction,
+status four with a zero count means that an unfinished region was reached. It is
+outside the completed statuses zero through two. A later unfinished body may follow
+valid earlier work, including partial encoding or publication after full input
+validation. Keep development status distinct from a completed format or capacity
+failure. When calling another unfinished routine, propagate its status before using
+its missing result.
+
+Stop before the named checkpoint instruction. Each supplied after-label owns a
+\texttt{nop}, so adjacent checkpoints have distinct addresses. A branch taken to a
+handler may bypass an after-label; the recipe names the observation on its intended
+path. A direct \texttt{function\_return} checkpoint corresponds to the selected
+caller's return label. \texttt{results\_ready} is before the caller stores its result
+slots and before the exit syscall replaces the live status register.
+
+\section{Use the supplied frames as private working storage}
+The walker has an eighty-byte frame, with its return address at zero and saved
+\texttt{s0} through \texttt{s6} at offsets eight through fifty-six. The decoder uses
+288 bytes, saving its return address and \texttt{s0} through \texttt{s7} at offsets
+zero through sixty-four. The original input count is retained at eighty and the nested
+head helper's return at eighty-eight. Its candidate starts at ninety-six: counter at
+ninety-six, lengths at 104 and 108, identifier at 112 and sample slots at 144. These
+locations are inside the private frame, not the caller's record.
+
+The bound frame is sixty-four bytes, the private writer frame thirty-two and the
+encoder frame eighty. Their supplied saves and restores retain the registers used
+by this illustrated organization. The head reader and size helper are leaves and
+need no frame for their temporary-register work. Do not restore a frame on an early
+count failure that occurred before its allocation.
+
+Caller data controls are full-width unsigned bit patterns. A decimal value above the
+signed maximum is emitted with the same bits as a negative assembly literal; it is
+still an unsigned count or argument under its declared contract. Bound and encode
+recipes seed a flat record. Decode and pipeline recipes start that record as sentinel
+bytes, so an unchanged output cannot resemble a prepared successful result. Step 55
+uses two separate recipes with different caller modes to compare two failure contracts.

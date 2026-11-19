@@ -513,3 +513,23 @@ counts are not acceptance rules, isolated algorithm costs, elapsed timings or ID
 captures. Cumulative construction, public feedback, separate chapter032 distributions
 and actual captures remain next. The main manuscript still has 31 packaged chapters;
 prior chapter exposition and human writing remain unchanged for the later editing pass.
+
+
+The CBOR reading now interleaves 56 initial native construction steps with the earlier
+28 conceptual passages and a new construction convention include. There are 52 safe
+unfinished regions, 56 multiple-choice quizzes, 112 progressive hints and 57 exact
+recipes. Steps build a complete primitive walker before recursive child handling,
+then candidate decoding, helper sizing, exact bounds, head writing and encoding.
+The pipeline compares each result's own unit. A paired failure step has distinct
+per-recipe encode/decode callers. The preparation helper preserves the entire text
+section and full-width unsigned controls and refuses existing outputs. Native TeX
+remains composition authority; no build regenerates prose from exercise metadata.
+
+All 114 prepared recipe/layout combinations assemble with warnings treated as errors.
+Thirty-two untouched direct-entry/caller cases retain saved state, caller arenas and
+no I/O, including the active-frame head helper. These are starter safety checks only,
+not verified completed cumulative checkpoints. Four new IntelliJ Light capture plans
+are explicitly uncaptured. Private cumulative implementations, checkpoint verification,
+public feedback and separate chapter distributions remain next. The main manuscript
+retains 31 packaged chapters. Earlier prose and human contributions are unchanged;
+the substantial rewriting pass remains deferred as requested.
