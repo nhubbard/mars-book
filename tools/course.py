@@ -70,18 +70,21 @@ def validate_composite_capture(root, figure, receipt):
         panel_ids.add(panel['id'])
         used_parts.add(panel['part'])
         raw = parts[panel['part']]
-        index = panel['callout']
-        if type(index) is not int or not 0 <= index < len(raw['callouts']):
+        indices = [panel['callout'], *panel.get('additionalCallouts', [])]
+        if any(type(index) is not int or not 0 <= index < len(raw['callouts']) for index in indices):
             raise ValueError('Missing composite callout')
+        if len(set(indices)) != len(indices):
+            raise ValueError('Duplicate composite callout')
         crop = panel['crop']
         if len(crop) != 4 or any(type(v) is not int for v in crop):
             raise ValueError('Composite crop must use integer pixels')
         x, y, w, h = crop
         if min(x, y) < 0 or min(w, h) <= 0 or x + w > raw['viewport']['width'] or y + h > raw['viewport']['height']:
             raise ValueError('Composite crop leaves its raw image')
-        box = raw['callouts'][index]['box']
-        if box['x'] < x or box['y'] < y or box['x'] + box['width'] > x + w or box['y'] + box['height'] > y + h:
-            raise ValueError('Composite crop clips its asserted callout')
+        for index in indices:
+            box = raw['callouts'][index]['box']
+            if box['x'] < x or box['y'] < y or box['x'] + box['width'] > x + w or box['y'] + box['height'] > y + h:
+                raise ValueError('Composite crop clips its asserted callout')
     if used_parts != set(parts):
         raise ValueError('Composite contains an unused raw view')
     native = within(root, figure['nativeAnnotations'])

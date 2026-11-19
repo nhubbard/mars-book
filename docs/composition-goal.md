@@ -1122,3 +1122,35 @@ identify chapter 34 correctly. The chapter retains 22 tagged tables and 79 heade
 cells, with two described native figures. The new figure appears at chapter page 11
 (printed manuscript page 1475). Updated source/image and PDF verification receipts
 are retained with the private publication evidence.
+
+## Native index-publication figure
+
+The next integrated IDE plate is figure 34.3 at kernel-independent index step 36.
+It uses three actual Debug launches of the same prepared source/input/checkpoint:
+published directory rows, context rows and return registers. The separate authoring
+plugin selects the existing public run content, navigates the native Memory tab and
+checks complete rendered rows. Native word-cell callouts enlarge the relevant
+values while retaining every asserted cell. The private oracle resolves addresses
+and checks all eight offsets and published fields through the existing grading API.
+No MARS source change was needed.
+
+The native explanation teaches Symbols/address navigation, sixteen-byte table rows
+and low/high 32-bit pairs for this little-endian 64-bit example. The plate precedes
+the quiz and following lesson. Color/grayscale review and exact original-image
+pixel checks pass. The caption and described Figure distinguish the three launches
+and retained surrounding pattern bytes from the eight active entries.
+
+The chapter now has 105 pages and three described native figures. All chapter body
+pages match the 1,573-page manuscript, including the new plate at chapter page 36
+(printed manuscript page 1500). The chapter retains all 122 observations, 22 tagged
+tables and 79 header cells; running headers are checked in both versions. The
+student archive contains 270 files. All 225 public tooling tests, 24 authoring
+Jupiter tests and the 6,264-case three-implementation package gate pass. The exact
+installed authoring plugin is compatible with the pinned IDE, using seven public
+experimental APIs and no internal/override-only APIs. Altered cell assertions and
+substituted raw images are rejected without success receipts.
+
+Two video figures are now verified. For the chapter 33/34 priority, four video and
+five PNG figure plans remain incomplete. Other earlier chapter capture plans and
+independent accessibility review remain outstanding as well. H.263 remains planning
+until the preceding work is completed; substantive editing is still separate.

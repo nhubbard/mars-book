@@ -138,7 +138,7 @@ The paired views now form the native step-five chapter figure in
 `includes/chapters/034-lossless-video/fig-vector-count.tex`. Its original PNGs and
 receipts are retained under `book/captures/034-lossless-video`, alongside the reviewed
 preview and crop metadata. The native figure has been reviewed in color and grayscale.
-Only `video-vector-count` is verified; five other video captures remain planned.
+`video-vector-count` and `video-index-publication` are verified; four other video captures remain planned.
 Completed fixture source remains private. MARS has no dependency on the book or
 authoring plugin.
 
@@ -164,3 +164,12 @@ print crops without weakening the complete-row assertions. The dedicated frame m
 fit its physical display, and the bottom pane is sized through the public native
 splitter before capture. The successful step-36 batch includes directory, context
 and register views; capture success alone does not promote its chapter figure.
+
+
+The step-36 index batch is now composed in the native chapter. Its four numbered
+details use three unchanged raw screenshots. The full-page plate is kept before
+the quiz and following lesson. Panels that span several asserted native cells list
+`additionalCallouts`; validation rejects duplicate indices and a crop excluding
+any of those cells. This enlarges the word values without treating hidden model
+text as visible data. The independent raw-batch, PDF and package checks remain
+separate evidence.

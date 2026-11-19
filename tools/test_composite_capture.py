@@ -62,6 +62,13 @@ class CompositeCaptureTests(unittest.TestCase):
                 if change=='missing-callout':panel['callout']=-1
                 with self.assertRaises(ValueError):self.validate(receipt)
 
+    def test_additional_assertions_cannot_be_clipped_or_duplicated(self):
+        for indices in ([0],[1]):
+            with self.subTest(indices=indices):
+                receipt=copy.deepcopy(self.receipt)
+                receipt['panels'][1]['additionalCallouts']=indices
+                with self.assertRaises(ValueError):self.validate(receipt)
+
     def test_raw_parts_cannot_escape_duplicate_or_disappear(self):
         for change in ('escape','duplicate','missing-part','unused-part'):
             with self.subTest(change=change):

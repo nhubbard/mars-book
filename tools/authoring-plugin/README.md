@@ -193,4 +193,5 @@ visible horizontally and vertically; clipped values cannot pass their assertions
 The native layout and API contracts were inspected in the read-only pinned checkout,
 and the exact installed plugin passed dependency-resolved Plugin Verifier checks.
 The actual index batch captures directory rows, context rows and a return to the
-register tab. Its native book composition and publication are tracked separately.
+register tab. Those views now form the native index-publication figure. Other book captures and
+independent accessibility review remain pending.
