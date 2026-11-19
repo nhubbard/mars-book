@@ -1,0 +1,40 @@
+\section{Trace eight pixels through all six chunk types}
+Use the eight-by-one header shown earlier. The payload below is sixteen bytes, followed
+by the eight-byte end marker. Offsets are measured from the start of the file. All
+bytes and slot numbers in the byte columns are hexadecimal; RGBA components are decimal.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\small
+\begin{tabular}{rllll}
+Offset & Bytes & Command & Reconstructed RGBA & Cache slot \\
+\hline
+14 & \texttt{c0} & RUN one & \((0,0,0,255)\) & \texttt{35} \\
+15 & \texttt{fe ff 00 00} & RGB & \((255,0,0,255)\) & \texttt{32} \\
+19 & \texttt{c0} & RUN one & \((255,0,0,255)\) & \texttt{32} \\
+20 & \texttt{35} & INDEX & \((0,0,0,255)\) & \texttt{35} \\
+21 & \texttt{7f} & DIFF & \((1,1,1,255)\) & \texttt{04} \\
+22 & \texttt{a5 97} & LUMA & \((7,6,5,255)\) & \texttt{0b} \\
+24 & \texttt{ff 07 06 05 80} & RGBA & \((7,6,5,128)\) & \texttt{16} \\
+29 & \texttt{04} & INDEX & \((1,1,1,255)\) & \texttt{04} \\
+\end{tabular}
+\end{center}
+
+The first run installs opaque black in slot fifty-three. That makes the later
+\texttt{35} an opaque-black fetch rather than a fetch of the cache's initial transparent
+black. The RGBA command changes alpha to 128 without changing RGB. The final index
+restores the alpha of its cached \((1,1,1,255)\) pixel; it does not retain 128 from
+the immediately preceding pixel. These two transitions test which state each command
+actually supplies.
+
+The next input offset is thirty after all eight pixels. The marker occupies offsets
+thirty through thirty-seven, so the complete file length is thirty-eight. The final
+word \texttt{0xff010101} is stored as bytes \texttt{01 01 01 ff}. Inspecting only
+its low three bytes would miss an alpha-restoration error.
+
+\begin{MARSExercise}{Predict a state before running}
+Pause after the LUMA command. State the next input offset, completed pixel count,
+previous RGBA value and the cache entry changed by that command. Then predict the
+same four quantities after the RGBA command. Explain why the final INDEX changes
+alpha even though it has no explicit alpha byte.
+\end{MARSExercise}

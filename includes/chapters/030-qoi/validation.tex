@@ -1,0 +1,23 @@
+\section{Choose when pixels become public output}
+For the completed memory interface, validate the entire stream before changing the
+caller's output. Validation reconstructs the previous pixel and cache privately,
+counts the pixels, checks every command extent, and confirms the final marker. It
+publishes a small metadata descriptor only after all those checks succeed.
+
+The decoder calls this validation stage into private metadata, then checks framebuffer
+capacity. Only then does it reset the reconstruction state and make a second pass that
+stores pixels. A malformed stream therefore leaves the framebuffer unchanged, and a
+malformed stream with insufficient capacity reports the format error first. This is
+the same publication principle used in the PPM chapter, applied to a stateful stream.
+
+During the accepted second pass, each word store can update the connected display.
+That observable construction order does not mean the decoder accepted an unvalidated
+prefix. It already checked the complete file before the first public pixel store.
+An IDE may combine repaint requests, so a screenshot need not show a separate rendered
+frame for every store. Debugger state and memory observations identify the individual
+instruction boundaries.
+
+Two passes perform more reconstruction work than one. Record that cost when comparing
+implementations. A future streaming interface could allow a valid prefix on failure,
+but that would be a different published failure promise. An optimization of this
+interface must retain its unchanged-output guarantee.

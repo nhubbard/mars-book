@@ -1,0 +1,25 @@
+\section{Check reconstruction independently of the encoder}
+An encoder and decoder can share a component-order mistake and still round-trip their
+own bytes. Compare decoded RGBA values with a separately constructed pixel array, and
+open encoded results with an independent image decoder. For the sprite, derive that
+array from the original eight row bytes rather than from the candidate's output.
+For the eight-pixel trace, compare every alpha value as well as RGB.
+
+Exercise each command at its boundaries. Include initial transparent-black INDEX,
+wraparound DIFF values, LUMA extremes, collisions that replace an earlier cache entry,
+runs of one and sixty-two, and runs that would exceed the declared image. Truncate
+every multi-byte command at each missing-byte position. Give the last valid pixel a
+wrong marker, an extra payload byte and a trailing byte as separate malformed cases.
+Supply short destination capacities and counts whose high bit is set.
+
+Run a failure and a different valid image in the same session. The valid image must
+not inherit a previous color, a pending run or a cache entry from the failed operation.
+For file routines, add forced short reads and writes, nonstandard descriptor numbers,
+EOF at exact capacity and errors after a partial transfer. The QOI format is different
+from PPM, but the descriptor ownership and accepted-byte-count reasoning still applies.
+
+A permissive external decoder is evidence for successful interoperability, not the
+exercise's malformed-input oracle. It may accept trailing bytes or a damaged marker.
+Use the published strict contract when checking rejection and unchanged output. Keep
+those decisions visible rather than treating another library's behavior as the format
+specification.

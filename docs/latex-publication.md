@@ -263,3 +263,14 @@ completion domains and an archived worked-image helper. File-error fixtures are 
 grading fixtures; normal IDE Run/Debug provisioning and actual annotated captures remain
 unfinished. The next roadmap chapter is QOI. The substantial prose rewrite remains
 intentionally deferred until all35 chapter drafts exist.
+
+
+Build the QOI reading foundation with `python3 tools/book.py build --entry drafts/qoi.tex`.
+Its 20 directly edited native segments produce 12 pages with three headed tables, a
+complete eight-pixel chunk trace and one described native sprite figure. No assembly
+listing is present at this foundation stage; the future cumulative construction will
+receive actual IntelliJ highlighting when its public code fragments are authored.
+The current Minion Pro, Noto Sans Math and JetBrains Mono fonts remain embedded. Tagged
+structure, table headers and figure descriptions are checked, without claiming external
+PDF/UA certification. The main manuscript remains 29 packaged chapters until the QOI
+MIPS companions, steps and distributions are ready for integration.

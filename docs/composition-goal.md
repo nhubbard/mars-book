@@ -323,3 +323,14 @@ the worked-image helper. The private counterpart retains complete solutions, qui
 feedback and additional memory/file domains. Package verification checks exact archive
 membership, safe unfinished bodies, native reading order and extracted-file execution.
 The manuscript now has 29 packaged chapters; six roadmap chapters remain to be drafted.
+
+
+The QOI reading foundation is now directly authored in 20 native include segments,
+with an eight-pixel trace covering all six chunk types and the earlier eight-byte sprite
+as a real QOI fixture. It explains initial/cache alpha, collisions, biased modulo changes,
+runs, strict completion, validation before publication, encoder equivalence and uniform
+compression objectives. Six proposed interfaces retain metadata and full-width state.
+The private host oracle and independent upstream codec checks establish fixture facts;
+they are not evidence of a completed MIPS program. Cumulative construction, complete
+MIPS companions, quizzes/hints, distributions and manuscript integration remain next.
+The main manuscript still has 29 packaged chapters; the full goal remains active.

@@ -1,0 +1,27 @@
+\section{Build an encoder from a correct literal baseline}
+Start with a representation that writes one RGBA chunk for every input pixel. It
+requires no predictor or cache lookup and gives a simple upper bound: five payload
+bytes per pixel. This baseline is useful for checking the header, component order,
+marker and exact written length before introducing compression decisions.
+
+Next keep the previous pixel and accumulate repeated pixels into runs. When a different
+pixel arrives, flush the pending run before describing the new pixel. If the cache
+contains the entire new RGBA value, an INDEX chunk can supply it. Otherwise compare
+alpha with the previous alpha. Changed alpha requires RGBA. Unchanged alpha permits
+DIFF when all its small changes fit, then LUMA when its change and residuals fit, and
+otherwise RGB. This order is a concrete encoder policy to study, not the only legal
+way to represent an image.
+
+Update the encoder cache to agree with the decoder state produced by the bytes already
+emitted. A hash collision is not a match. A run must be emitted at length sixty-two
+or the final pixel, and a pending shorter run must precede a following different color.
+An output count that ignores a flushed run points the next write at the wrong position.
+Keep the pending run length and byte cursor separate.
+
+The completed exercise accepts different valid encodings that recover the exact input
+pixels and preserve the supplied descriptive flags. It also checks compression on
+uniform images. Otherwise an encoder that always emitted RGBA would pass a lossless
+round trip without meeting the run-encoding objective. For initial opaque black, use
+no more than \(22+\lceil n/62\rceil\) bytes. For another uniform pixel, allow
+\(27+\lceil(n-1)/62\rceil\): one at-most-five-byte first pixel followed by runs.
+No exact instruction count or whole-file byte identity is a grading requirement.

@@ -1,0 +1,26 @@
+\section{Use a conservative capacity before reading pixels}
+For valid dimensions with \(n=wh\), define the encoder bound
+\[
+B(n)=22+5n.
+\]
+The completed encoder requires a destination capacity of at least this bound before
+reading input pixels or writing caller data. Return a capacity error for a smaller
+capacity even when a particular image could compress into it. This is a deliberate
+interface choice that makes failure independent of a preliminary scan of the pixels.
+The successful byte count remains the actual encoded length, not the bound.
+
+For the eight-by-eight sprite, the bound is 342 bytes. The worked compressed fixture
+uses sixty-one bytes, while its expanded RGBA words occupy 256 bytes. Its original
+monochrome row representation still occupies only eight bytes. QOI carries a general
+image header and supports many colors; it is not expected to beat a representation
+specialized to one-bit pixels in every small example.
+
+For a sixty-four-by-sixty-four image, the bound is 20502 bytes. Validate width and height
+before multiplication, then perform the arithmetic in registers that retain all the
+required bits. A bound helper can accept packed dimensions directly and return this
+size without touching caller memory. The encoder additionally validates the descriptor's
+channels and colorspace fields before using its pixels.
+
+Do not fill unused destination capacity with zeros. Only the actual header, chunks
+and marker form the returned output interval. A trailing terminator or an extra marker
+byte changes the file and violates the exact-extent contract.
