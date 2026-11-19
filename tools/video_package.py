@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Export the native lossless-video composition and exercise assets, without composing prose."""
-import importlib.util,json,re,shutil
+import hashlib,importlib.util,json,re,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];ID='034-lossless-video';PACKAGE=ROOT/'packages'/ID;NATIVE=ROOT/'includes/chapters'/ID
 STAGES=[('video-construction','kernel',1,6,'kernel'),('video-record-construction','record',7,23,'record'),('video-index-construction','index',24,36,'index'),('video-io-construction','io',37,45,'load'),('video-seek-construction','seek',46,56,'seek'),('video-full-encode-construction','full-encode',57,68,'full'),('video-delta-encode-construction','delta-encode',69,83,'record-encode'),('video-file-encode-construction','file-encode',84,101,'file-encode'),('video-playback-construction','playback',102,122,'playback')]
@@ -33,7 +33,7 @@ def build():
  for path in(ROOT/'drafts/video-feedback/checks').glob('*'):
   if path.is_file():shutil.copyfile(path,PACKAGE/'checks'/path.name)
  for path in NATIVE.glob('*.tex'):
-  text=path.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native');text=re.sub(r'drafts/(video-[a-z-]+)',lambda m:'packages/'+ID+'/construction/'+m[1],text);(PACKAGE/'native'/path.name).write_text(text)
+  text=path.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native').replace('book/captures/'+ID,'packages/'+ID+'/captures');text=re.sub(r'drafts/(video-[a-z-]+)',lambda m:'packages/'+ID+'/construction/'+m[1],text);(PACKAGE/'native'/path.name).write_text(text)
  (PACKAGE/'assignment.tex').write_text('% Native assignment fragment; use the book preamble.\n\\input{packages/'+ID+'/native/assignment}\n')
  steps=[];recipes=[];nativeSteps={}
  for folder,prefix,first,last,domain in STAGES:
@@ -44,6 +44,23 @@ def build():
  figures=[]
  for ident,step,caption,panes in [('video-vector-count','s05','Inspect word lanes and their nonzero count.','registers and memory'),('video-record-publication','s23','Inspect an accepted picture and its next expected sequence.','registers and bitmap'),('video-index-publication','s36','Inspect offsets and metadata after whole-file validation.','memory and registers'),('video-independent-seek','s56','Compare the requested picture and replay start.','bitmap and registers'),('video-record-selection','s83','Inspect a required full record beside its source picture.','memory and registers'),('video-playback-progress','s122','Inspect final playback counters and the last accepted picture.','bitmap and registers')]:
   selected=next(s for s in steps if s['id']==step);figures.append(dict(id=ident,step=step,recipe=selected['recipe'],stage=selected['stage'],checkpoint=selected['checkpoint'],theme='IntelliJ Light',captureStatus='planned',caption=caption,alt='Planned '+panes+' observation at '+selected['checkpoint']+'. No screenshot captured.',nativeAnnotations='Pending actual image coordinates and semantic descriptions'))
+ approved=ROOT/'book/captures'/ID
+ if (approved/'figures.json').exists():
+  captured=json.loads((approved/'figures.json').read_text())['figures'];seen=set()
+  for figure in captured:
+   assert figure['id']not in seen,'Duplicate approved capture';seen.add(figure['id']);canonical=next(f for f in figures if f['id']==figure['id'])
+   assert all(figure[k]==canonical[k]for k in('id','step','recipe','stage','checkpoint','theme')),'Approved figure differs from canonical recipe'
+   for name in('artifact','receipt'):
+    relative=Path(figure[name]);assert not relative.is_absolute()and'..'not in relative.parts,'Unsafe approved asset'
+   folder=Path(figure['receipt']).parent;assert folder==Path(figure['artifact']).parent
+   source=approved/folder;assert source.is_dir()and not source.is_symlink()
+   for path in source.rglob('*'):assert not path.is_symlink(),'Symlink approved asset'
+   dest=PACKAGE/'captures'/folder;shutil.copytree(source,dest,dirs_exist_ok=True)
+   receipt=json.loads((dest/Path(figure['receipt']).name).read_text())
+   native=NATIVE/Path(figure['nativeAnnotations']).name
+   assert hashlib.sha256(native.read_bytes()).hexdigest()==receipt['nativeSourceSha256'],'Native composition changed since review'
+   receipt['nativeExportSha256']=hashlib.sha256((PACKAGE/figure['nativeAnnotations']).read_bytes()).hexdigest();write(dest/Path(figure['receipt']).name,receipt)
+   canonical.update(figure,artifact='captures/'+figure['artifact'],receipt='captures/'+figure['receipt'])
  write(PACKAGE/'captures/plan.json',dict(figures=figures));reading=[]
  for name in re.findall(r'\\input\{includes/chapters/'+ID+r'/([^}]+)\}',(NATIVE/'chapter.tex').read_text()):
   if name in nativeSteps:

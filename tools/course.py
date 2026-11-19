@@ -32,6 +32,66 @@ def package_path(package_id):
     return within(ROOT / 'packages', package_id)
 
 
+
+def validate_composite_capture(root, figure, receipt):
+    """Validate native multi-view figures without treating a rendered preview as a raw capture."""
+    from annotate import validate_capture
+
+    if receipt.get('formatVersion') != 2 or receipt.get('kind') != 'native-composite':
+        raise ValueError('Unsupported native composite receipt')
+    if receipt.get('figure') != figure['id']:
+        raise ValueError('Composite figure identity differs')
+    parent = Path(figure['receipt']).parent
+    parts = {}
+    shared = receipt['sharedState']
+    for part in receipt['parts']:
+        if not re.fullmatch(r'[a-z][a-z0-9-]*', part['id']) or part['id'] in parts:
+            raise ValueError('Invalid or duplicate composite part')
+        raw = read_json(within(root, str(parent / part['receipt'])))
+        validate_capture(within(root, str(parent / part['image'])), raw)
+        if raw.get('visibleAnalysisIndicators') != [] or raw.get('notificationBalloonsVisible') != 0:
+            raise ValueError('Composite capture was not visibly settled')
+        if any(raw.get(key) != value for key, value in shared.items()):
+            raise ValueError('Composite captures differ from their shared state')
+        parts[part['id']] = raw
+    if not 2 <= len(parts) <= 8 or shared.get('checkpoint') != figure['checkpoint']:
+        raise ValueError('Composite needs separate views at the declared checkpoint')
+    identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'publicCommit',
+                  'upstreamCommit', 'upstreamDirtyFiles', 'ideBuild', 'captureDriverSha256',
+                  'marsPluginArchiveSha256', 'locale', 'scale')
+    first = next(iter(parts.values()))
+    if any(any(raw.get(key) != first.get(key) for key in identities) for raw in parts.values()):
+        raise ValueError('Composite views have different source or runtime provenance')
+    panel_ids = set()
+    used_parts = set()
+    for panel in receipt['panels']:
+        if panel['id'] in panel_ids or panel['part'] not in parts:
+            raise ValueError('Invalid composite panel identity')
+        panel_ids.add(panel['id'])
+        used_parts.add(panel['part'])
+        raw = parts[panel['part']]
+        index = panel['callout']
+        if type(index) is not int or not 0 <= index < len(raw['callouts']):
+            raise ValueError('Missing composite callout')
+        crop = panel['crop']
+        if len(crop) != 4 or any(type(v) is not int for v in crop):
+            raise ValueError('Composite crop must use integer pixels')
+        x, y, w, h = crop
+        if min(x, y) < 0 or min(w, h) <= 0 or x + w > raw['viewport']['width'] or y + h > raw['viewport']['height']:
+            raise ValueError('Composite crop leaves its raw image')
+        box = raw['callouts'][index]['box']
+        if box['x'] < x or box['y'] < y or box['x'] + box['width'] > x + w or box['y'] + box['height'] > y + h:
+            raise ValueError('Composite crop clips its asserted callout')
+    if used_parts != set(parts):
+        raise ValueError('Composite contains an unused raw view')
+    native = within(root, figure['nativeAnnotations'])
+    preview = within(root, figure['artifact'])
+    if hashlib.sha256(native.read_bytes()).hexdigest() != receipt['nativeExportSha256']:
+        raise ValueError('Native annotations changed after review')
+    if hashlib.sha256(preview.read_bytes()).hexdigest() != receipt['previewSha256']:
+        raise ValueError('Rendered preview changed after review')
+
+
 def validate(package_id):
     root = package_path(package_id)
     data = read_json(root / 'package.json')
@@ -76,6 +136,8 @@ def validate(package_id):
             receipt = read_json(within(root, figure['receipt']))
             if receipt['theme'] != figure['theme'] or receipt['assertionsPassed'] is not True:
                 raise ValueError('Capture receipt does not attest to required state')
+            if figure.get('captureFormat') == 'native-composite' or receipt.get('formatVersion') == 2 or receipt.get('kind') == 'native-composite':
+                validate_composite_capture(root, figure, receipt)
     for name in data['exports']:
         path = within(root, name)
         candidates = [path, *path.rglob('*')] if path.is_dir() else [path]

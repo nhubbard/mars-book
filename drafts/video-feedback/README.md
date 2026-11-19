@@ -28,7 +28,7 @@ failure contract rather than clearing every output indiscriminately.
 
 Completed checks are expected to reject unfinished status-four bodies. During guided
 work, compare the named native checkpoint first. Instructor quiz/hint/progression
-controls are recorded; automatic remote enforcement remains future work. Six light
-IDE figure plans are uncaptured. Native annotations/receipts, independent accessibility
+controls are recorded; automatic remote enforcement remains future work. One light-theme IDE figure of the word lanes/count is captured and annotated in
+native LaTeX; five video captures remain planned. Independent accessibility
 review and the author's substantive editing are separate remaining work. No completed
 assembly codec or quiz keys are included in this student distribution.

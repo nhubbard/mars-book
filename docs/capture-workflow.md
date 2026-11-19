@@ -134,8 +134,24 @@ The XOR lanes are zero, `0x88`, zero and `0x10000`, with a changed-word count of
 The native renderer supplies the displayed labels used for exact tree selection.
 No simulator state or MARS debugger implementation is changed by the authoring driver.
 
-These raw images establish the missing lane observation. Their final native LaTeX
-composition, grayscale/print review and integration into the chapter remain pending.
-The existing package figure status therefore remains planned. The implementation,
-fixture preparation and capture receipts belong to the separate authoring and private
-instructor workspaces; MARS has no dependency on either.
+The paired views now form the native step-five chapter figure in
+`includes/chapters/034-lossless-video/fig-vector-count.tex`. Its original PNGs and
+receipts are retained under `book/captures/034-lossless-video`, alongside the reviewed
+preview and crop metadata. The native figure has been reviewed in color and grayscale.
+Only `video-vector-count` is verified; five other video captures remain planned.
+Completed fixture source remains private. MARS has no dependency on the book or
+authoring plugin.
+
+
+## Native multi-view receipts
+
+A version-two `native-composite` receipt distinguishes the rendered LaTeX preview
+from its original raw captures. Each part points to an unchanged PNG and its own
+native capture receipt. Panels identify a part, one asserted callout and an integer
+pixel crop that must contain that entire callout. All parts must share source,
+checkpoint, IDE and plugin provenance; their readiness checks must pass. Export
+validation checks raw and preview digests, native annotation bytes, path containment
+and crop bounds. The package exporter relocates image references without composing
+or rewriting native book prose. A changed native composition requires renewed review
+and updated approval metadata. This gate complements visual review; it cannot
+independently establish the truth of an observed UI state or PDF/UA conformance.

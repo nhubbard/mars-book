@@ -1089,3 +1089,36 @@ five PNG and six video light-theme IDE figures remain uncaptured; independent
 accessibility review remains pending. H.263 stays at the documented planning stage
 until the preceding chapter work is complete. Substantive editing remains the
 separate future goal requested by the author.
+
+## First integrated actual video figure
+
+The step-five vector/count figure is now native LaTeX in the chapter, with two
+actual unannotated IntelliJ Light debugger captures retained as source assets.
+The three numbered details show the paused source instruction, four 32-bit XOR
+lanes and the accumulated count. Both launches use the same partial construction;
+the next region remains unfinished. The figure is reviewed in color and grayscale,
+and its tagged alternative explains the actual values. Its two full original PNGs
+remain pixel-identical when embedded in the proof. Book composition is still direct
+LaTeX; capture JSON records evidence and package metadata only.
+
+The relocated student package now has 261 files. It retains all 122 construction
+steps, 244 hints and the same eleven grading domains. The full gate still passes
+6,264 positive cases across three implementations and rejects the five assembled
+faults and both unfinished starters. The public tooling suite now has 224 tests,
+including crop, source/runtime agreement and changed-asset rejection. The chapter's
+running header is explicitly set rather than inherited from the preceding chapter.
+The detailed PDF, visual-review and release receipts remain in the private workspace.
+
+Only one of the six video figure plans is now verified. Five video captures and all
+five PNG captures remain planned. Independent accessibility review is still pending;
+these checks do not certify PDF/UA conformance or student usability. Chapter 35
+remains the documented restricted interoperable H.263 plan until chapters 33 and 34
+are complete. Substantive editing remains the separate future goal.
+
+
+The final reading has 103 pages and the full manuscript has 1,571. All 103 chapter
+body pages match in text and coordinates, and all 102 running headers per document
+identify chapter 34 correctly. The chapter retains 22 tagged tables and 79 header
+cells, with two described native figures. The new figure appears at chapter page 11
+(printed manuscript page 1475). Updated source/image and PDF verification receipts
+are retained with the private publication evidence.

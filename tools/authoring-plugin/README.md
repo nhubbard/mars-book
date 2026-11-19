@@ -94,8 +94,8 @@ The current graphical fixture uses video recipe `s05-1` and fills only the first
 construction regions. The next pointer-advance region remains unfinished. Two normal
 Debug launches stop at `video_group_counted`: one captures the integer count; the other
 expands the actual MSA register group, `$w2` and its 32-bit lane row. Receipts identify
-the common source/checkpoint and the separate views. Final native print composition
-and chapter integration remain necessary before this becomes a verified book figure.
+the common source/checkpoint and the separate views. The native print composition is now integrated as the verified step-five book
+figure, with the original captures retained alongside editable LaTeX annotations.
 No figure plan is marked verified solely because this smoke batch succeeds. Run-only
 console capture, bitmap/memory view selection, stdin handling, full chapter batches and
 interactive quizzes/progression remain later work in this same separate plugin.
@@ -136,8 +136,8 @@ capture instance are hidden through the public notification API without expiring
 notifications. The gate checks for their return before and after capture. The latest
 private proof has a settled checkmark, a white register view and no overlay or balloon.
 Sixteen Jupiter tests and the actual two-view graphical batch cover the current
-implementation. Full chapter capture batches and final print composition remain
-incomplete.
+implementation. Full chapter capture batches remain incomplete. The step-five native composition
+has passed color/grayscale review; independent accessibility review remains pending.
 
 
 ### Native debugger view selection

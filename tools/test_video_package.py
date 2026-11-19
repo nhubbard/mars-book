@@ -12,7 +12,7 @@ class VideoPackageTests(unittest.TestCase):
  def test_native_order_steps_and_all_regions_are_preserved(self):
   root,m=course.validate(ID);native=ROOT/'includes/chapters'/ID;expected=re.findall(r'\\input\{includes/chapters/'+ID+r'/([^}]+)\}',(native/'chapter.tex').read_text());steps={s['id']:Path(s['content']).stem for s in m['steps']};actual=[steps[s['step']]if s['kind']=='step'else Path(s['content']).stem for s in course.reading_segments(root,m)if s['kind']!='figure'];self.assertEqual(expected,actual);self.assertEqual(122,len(m['steps']));self.assertEqual(m['steps'],json.loads((root/'steps.json').read_text())['steps']);self.assertEqual(122,len(re.findall(r'^# BEGIN ',(root/m['entry']).read_text(),re.M)));self.assertEqual(244,sum(len(s['hints'])for s in m['steps']))
   for p in native.glob('*.tex'):
-   text=p.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native');text=re.sub(r'drafts/(video-[a-z-]+)',lambda x:'packages/'+ID+'/construction/'+x[1],text);self.assertEqual(text,(root/'native'/p.name).read_text())
+   text=p.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native').replace('book/captures/'+ID,'packages/'+ID+'/captures');text=re.sub(r'drafts/(video-[a-z-]+)',lambda x:'packages/'+ID+'/construction/'+x[1],text);self.assertEqual(text,(root/'native'/p.name).read_text())
  def test_all_stages_checks_and_recipes_are_exact_exports(self):
   root,m=course.validate(ID);self.assertEqual(11,len(m['publicChecks']))
   for stage,_,_,_,_ in video_package.STAGES:
@@ -39,7 +39,11 @@ class VideoPackageTests(unittest.TestCase):
   for call in run.call_args_list:self.assertEqual(str(root/'checks/harness.asm'),call.args[0][-1]);self.assertTrue(call.kwargs['check'])
  def test_capture_plans_are_honest_and_stage_local(self):
   root,m=course.validate(ID);plans=json.loads((root/m['figures']).read_text())['figures'];self.assertEqual(6,len(plans));recipes={r['id']for r in json.loads((root/'inputs.json').read_text())['recipes']}
-  for f in plans:self.assertEqual('planned',f['captureStatus']);self.assertEqual('IntelliJ Light',f['theme']);self.assertIn(f['recipe'],recipes);self.assertNotIn('artifact',f);self.assertNotIn('receipt',f);self.assertTrue((root/'construction'/f['stage']).is_dir())
+  self.assertEqual(['video-vector-count'],[f['id']for f in plans if f['captureStatus']=='verified'])
+  for f in plans:
+   self.assertEqual('IntelliJ Light',f['theme']);self.assertIn(f['recipe'],recipes);self.assertTrue((root/'construction'/f['stage']).is_dir())
+   if f['captureStatus']=='planned':self.assertNotIn('artifact',f);self.assertNotIn('receipt',f)
+   else:self.assertTrue((root/f['artifact']).is_file());self.assertTrue((root/f['receipt']).is_file());self.assertTrue((root/f['nativeAnnotations']).is_file())
  def test_grading_harness_is_disjoint_and_algorithm_free(self):
   root,m=course.validate(ID);h=(root/m['gradingHarness']).read_text();self.assertIn('.data 0x100000000',h);self.assertIn('videoCheck_stack: .space 32768',h);self.assertEqual(['videoCheck_return'],re.findall(r'^(\w+):',h.split('.text\n')[1],re.M));self.assertNotIn('video_play:',h)
 if __name__=='__main__':unittest.main()
