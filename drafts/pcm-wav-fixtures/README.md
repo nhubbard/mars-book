@@ -17,7 +17,7 @@ seconds. The left integer triangle repeats every 80 frames, the right every 64. 
 alternating high components have opposite signs. The complete file is 128056 bytes,
 with PCM again beginning at 56. No resampling or filtering occurs in the helper.
 
-This is the reading-foundation stage. Full MIPS implementations, cumulative student
+This is the reading-foundation stage. Two private MIPS implementations now pass the interface checks. Cumulative student
 construction, public grading and separate chapter distributions remain to be authored.
 The chapter is not yet registered as a packaged course entry or included in main.tex.
 Actual automated light-theme IDE captures and native annotation coordinates remain

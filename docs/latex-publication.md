@@ -334,3 +334,16 @@ at a larger scale and its frame labels spaced apart. The build reports no overfu
 boxes or missing characters. These checks are not PDF/UA certification or an
 assistive-technology evaluation. The main manuscript remains 1286 pages and 30 packaged
 chapters until the WAV assembly construction and distributions are verified.
+
+
+The WAV prototype observations add one native include to the standalone draft. Its
+reading sequence now has 23 passages. The new table distinguishes whole-program MIPS
+instructions, output bytes and actual destination read traffic, with explicit measurement
+boundaries. Scope text now records verified private companions while leaving student
+construction, distributions, actual IDE capture and accessibility certification pending.
+
+The verified prototype draft has 13 physical pages, five tables with 20 header cells and
+one native figure with a semantic description. All 13 pages were rendered and inspected,
+including the measured-work table at higher resolution. The requested fonts remain
+embedded; no overfull boxes or missing characters are reported. Tagged structure is
+verified, while independent accessibility certification remains pending.

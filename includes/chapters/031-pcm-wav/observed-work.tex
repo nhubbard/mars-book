@@ -1,0 +1,54 @@
+\section{Measure work inside file services as well as instructions}
+Two complete private prototypes now implement the six interfaces. The block version
+gathers each channel into windows of at most sixty-four outputs and reuses the earlier
+FIR kernel. Its file routines limit each request to 4096 bytes. The direct version
+computes each output from the interleaved input and requests the remaining file extent.
+Both produce the same canonical output for the worked and listening inputs.
+
+For the measurements below, the file fixture accepts at most seven read bytes and
+eleven write bytes per call on the short example. On the two-second input it accepts
+at most 2000 bytes per call, which still forces a short transfer from a 4096-byte request.
+The exact returned counts determine progress in both programs. File transfer is a byte
+operation; a short transfer may split a sample or a frame without changing the final
+complete representation.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{llrrr}
+Input & Method & Whole MIPS & File bytes & Destination reads \\
+\hline
+Four frames & Block & 3374 & 60 & 245 \\
+Four frames & Direct & 2551 & 60 & 245 \\
+Two seconds & Block & 13441424 & 128044 & 260193 \\
+Two seconds & Direct & 16577642 & 128044 & 4162969 \\
+\end{tabular}
+\end{center}
+
+Whole MIPS counts completed instructions from \texttt{main} to
+\texttt{results\_ready}, before result publication, using the normal data-address
+layout. Destination reads count actual execution-origin byte accesses to the encoded
+file arena, including reads performed inside a syscall. The comparison validates both
+programs at normal and wide addresses, but these columns are not host elapsed times.
+The two programs also use different filtering algorithms, so the whole-program counts
+do not isolate request size alone.
+
+The current write service copies its requested bytes into a host buffer before asking
+the environment how many it accepts. It also reads the following guard byte. After a
+short write, requesting the entire remainder copies many of those same bytes again.
+The two-second output takes sixty-five writes in either fixture run. The direct
+version requests 4162860 bytes in total; the bounded version requests 260084. Adding
+one guard read per write and forty-four header bytes read during save validation gives
+the two observed destination totals exactly.
+
+For a fixed small accepted count, summing successive whole remainders grows
+quadratically with file length. A request bound limits the copied bytes on each retry.
+Here it reduces destination reads by about a factor of sixteen while preserving every
+output byte and all file-cleanup rules. Bounded read requests also limit the temporary
+buffer requested by the input service. The value 4096 is this prototype's policy, not
+a WAV chunk size, a frame stride or a free-writing correctness requirement.
+
+The sample checks also include a separate full-length stereo case with 110274 clipped
+results. A sixteen-bit total would return 44738 even if its output samples were all
+correct. The averaging input in the table has no clips; do not transfer that observation
+to a different coefficient set. The recorded figures describe actual MARS execution
+and saved-file bytes. They do not establish IntelliJ launch latency or an IDE capture.

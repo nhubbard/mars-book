@@ -398,3 +398,16 @@ zero-length-data/footer interpretation difference is documented separately. This
 host evidence, not MARS implementation or performance evidence. The full manuscript
 remains 30 packaged chapters; assembly construction and packaging for WAV are next.
 Earlier chapter prose remains unchanged for the later substantive editing pass.
+
+
+The PCM WAV prototype step now verifies two complete private MIPS implementations:
+block gathering with the earlier FIR kernel and direct interleaved convolution.
+Independent Kotlin models are audited against 341 Python-derived vectors. Both methods
+pass 477 memory and 209 file cases at normal and wide addresses, for 2744 simulator cases.
+Fifteen assembled regressions are rejected. Twelve actual MIPS output files are decoded
+independently, and four real CLI host-file round trips pass. The new observed-work
+passage explains complete-program instruction counts and native memory traffic.
+Bounded requests preserve output bytes while reducing repeated copy work under forced
+short writes. This is not a wall-time or IntelliJ launch measurement. Student cumulative
+construction, quizzes/hints, public feedback and separate WAV archives remain next.
+The main manuscript is still 30 packaged chapters; prior chapter prose remains retained.
