@@ -1,0 +1,75 @@
+\section{Load bytes before validating an animation}
+The indexer accepts a complete byte window. A file read, however, can return only
+part of what was requested. It can also fail after an earlier successful read.
+The next routine, \texttt{video\_load}, establishes the window by reading a
+nonempty file through observed end of input. It does not decide whether the
+bytes form a valid animation. The caller invokes \texttt{video\_index} only
+after loading succeeds.
+
+Pass a NUL-terminated path in \texttt{\$a0}, a staging-buffer address in
+\texttt{\$a1}, an unsigned byte capacity in \texttt{\$a2}, and a sixteen-byte
+native result context in \texttt{\$a3}. Capacity must be one through
+7\,344\,152. The path and byte buffer need no native alignment; the context
+is eight-byte aligned. The caller supplies readable path storage, writable
+buffer/context storage, and a valid sixteen-byte-aligned stack. These windows
+are disjoint. Retain saved registers, the frame pointer and the entry stack
+pointer.
+
+\begin{table}[htbp]
+\centering
+\caption{Loader result context. It describes loading, not format validity.}
+\label{tab:video-load-context}
+\begin{tabular}{r p{1.5in} p{2.8in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & Loaded byte count & Eight-byte native output, changed only on success. \\
+8 & Retained suffix & Eight bytes left unchanged on either return path. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Success returns zero in \texttt{\$v0}, the exact positive file count in
+\texttt{\$v1}, and that count in context offset zero. Failure returns one and
+zero and retains the entire context. The staging buffer may contain a transferred
+prefix after failure. Its contents are not an earlier committed file merely
+because a previous count remains in the context. If an application must keep an
+old animation usable while opening a new one, give the new load separate staging
+storage and commit its file, directory and metadata together after validation.
+Do not reuse the old animation's backing bytes and then continue using its old
+directory after a failed replacement load.
+
+Use the educational file services already introduced in earlier chapters.
+Service 13 opens with flags zero for reading and returns a descriptor or a
+negative result. Service 14 reads at most its requested byte count, returns a
+positive transferred count, zero at EOF, or a negative error. Its count is a
+32-bit service argument, so this construction requests at most 4096 bytes at a
+time. Addresses and running byte counts remain full-width. Service 16 closes
+the owned descriptor and provides no separate close-status result here. Save
+the logical result before closing; the service number in \texttt{\$v0} is
+not the loader's eventual return status.
+
+When the buffer becomes exactly full, request one byte into private stack storage.
+Zero proves EOF at capacity. A positive byte proves overflow; a negative result
+is a read error. Neither is success. This probe must not use the first byte beyond
+the destination. Every path after a successful open closes its returned descriptor
+once, including development paths in unfinished regions. A failed open owns no
+descriptor and must not close one.
+
+Attach the loader to your index working file with
+\texttt{python3 drafts/video-io-construction/attach.py --source index-work.asm
+--output reader-work.asm}. The previous index example is retained under
+\texttt{index\_example\_main}; the new caller loads and then indexes. Generate
+an actual input with \texttt{python3 drafts/video-io-construction/fixtures.py
+moving --output animation.mlv}. Keep it in the program's working directory or
+prepare a path to it. Preparation changes path/capacity data without replacing
+instructions and refuses an existing output. The default input arena has the
+full conservative capacity; a generated file must still fit the configured
+runtime memory window.
+
+Recipes marked for short reads or injected errors use the grading fixture backend;
+writing a regular host file alone does not force a particular short-read pattern.
+Use ordinary files to check normal loading, missing/empty inputs, exact capacity,
+overflow and malformed video content. A nonempty malformed file can load
+successfully and then fail indexing. Keep the two statuses distinct when finding
+which layer rejected an input.

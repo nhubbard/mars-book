@@ -1,0 +1,23 @@
+\section{Step 37: Admit a loader capacity before opening}
+Require a positive unsigned capacity at most 7\,344\,152 and an eight-byte
+aligned result context. Reject other values through the supplied early return,
+which already has status one and count zero. No file operation should occur
+for invalid admission, even if the path or destination pointer is unusable.
+
+Fill \texttt{io\_admit}. Load the exclusive upper bound 7\,344\,153 into a
+register before comparing. A large value such as \texttt{0x100000000} must not
+pass because its low word is zero. Only admission enters the supplied 96-byte
+frame. This frame saves the caller's state and reserves a private byte at offset
+64 for the eventual EOF probe.
+
+\paragraph{Observe} Prepare \texttt{s37-1} and stop before
+\texttt{io\_admitted}. At \texttt{io\_admitted}, the default capacity is 7\,344\,152
+and the context alignment mask is zero. There have been no file operations.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What should an invalid capacity do?
+\begin{itemize}
+\item[A.] Return before opening the file.
+\item[B.] Open and immediately close it.
+\item[C.] Read one byte to discover its size.
+\end{itemize}

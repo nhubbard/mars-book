@@ -288,3 +288,21 @@ cases preserve earlier public results across failure. All 155 public tests and
 60 existing package validation/build commands pass. The later file loader must
 still establish actual filesystem EOF; file I/O, seek, encoder/playback, final
 video packaging/integration, APNG and real annotated IDE captures remain pending.
+
+The author has replaced the planned APNG chapter with a restricted, interoperable
+H.263 encoder capstone. Its raw digital input will be Python-generated QCIF
+(176 by 144), at most 30 fps and at most 10 seconds, with a shorter/lower-rate default
+chosen after measurement. Students are assumed fluent in MSA. Complete chapters 33
+and 34 before implementing chapter 35; current H.263 work is limited to recorded
+planning. The exact raw layout and bitstream feature set remain to be designed.
+Substantive editing is a separate goal and will not begin automatically here.
+
+The video reader construction now reaches step 45. Nine native lessons cover
+bounded file loading, short reads, private exact-fill EOF probes, descriptor
+ownership and loading-before-indexing. Nine quizzes, eighteen hints and twenty-three
+recipes accompany the regions. Its gate passes 864 simulator cases, rejects ten
+assembled faults and verifies eleven actual-host-file runs. Boundary tests check
+every transferred byte at the full 7344152-byte capacity, including one-byte
+overflow, in both native orders. All 162 public tests pass. Seeking, encoding and
+playback remain unfinished; the final H.263 encoder is planning only until both
+PNG and lossless-video chapters are complete.

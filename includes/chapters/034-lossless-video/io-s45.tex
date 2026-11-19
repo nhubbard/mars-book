@@ -1,0 +1,26 @@
+\section{Step 45: Publish loaded bytes and call the indexer}
+Return the saved status and an initial count of zero. If status is success,
+store the positive accumulated count at result-context offset zero and return it
+in \texttt{\$v1}. Retain the context suffix and every context byte on failure.
+The supplied epilogue restores saved caller state.
+
+Fill \texttt{io\_publish}. The new caller passes the exact loaded window to
+\texttt{video\_index}; it never indexes a failed or unfinished load. For an
+invalid late command or checksum, loading can publish a byte count while indexing
+rejects the format and retains its own directory/context outputs. This separates
+file-transfer evidence from validation evidence. For replacement loading, use
+separate candidate storage if an earlier accepted animation must remain usable.
+
+\paragraph{Observe} Prepare \texttt{s45-1} and stop before
+\texttt{io\_published}. At \texttt{io\_published}, \texttt{\$v0} is zero,
+\texttt{\$v1} and the native count field are 24\,795, and the suffix is
+unchanged. Continuing the default caller validates the file and prints
+\texttt{Video file indexed.}
+
+\Needspace{7\baselineskip}
+\paragraph{Check} When may the caller invoke the indexer?
+\begin{itemize}
+\item[A.] After any nonnegative read.
+\item[B.] Before the EOF probe.
+\item[C.] After successful completed loading.
+\end{itemize}

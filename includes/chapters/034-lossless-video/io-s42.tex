@@ -1,0 +1,24 @@
+\section{Step 42: Probe EOF at exact capacity}
+At this path the destination is full. Read one byte using the owned
+descriptor, but point the service at \texttt{\$sp+64}, inside the private
+frame. The supplied decision accepts only a zero result as EOF and sends any
+nonzero result to closing with failure status.
+
+Fill \texttt{io\_probe}. A returned byte means the file exceeds capacity;
+the caller's staging buffer remains bounded because the byte was stored privately.
+A negative result means the attempt to establish EOF failed. Do not treat either
+case as an exact-fit success. The \texttt{s42-1} recipe sets capacity to the
+moving file's exact 24\,795 bytes so this path is reached.
+
+\paragraph{Observe} Prepare \texttt{s42-1} and stop before
+\texttt{io\_probe\_ready}. At \texttt{io\_probe\_ready}, \texttt{\$s2} equals capacity
+24\,795 and the probe result is zero for the exact file. Its one-byte buffer
+was inside the stack frame, beyond the saved-register slots.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Where is the extra-byte probe stored?
+\begin{itemize}
+\item[A.] At destination plus capacity.
+\item[B.] In the published count field.
+\item[C.] In private stack storage.
+\end{itemize}
