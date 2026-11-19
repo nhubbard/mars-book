@@ -1,0 +1,25 @@
+\section{Step 8: Read the context without publishing results}
+Capacity and sequence describe the caller's current state. Read the capacity
+with a native doubleword load and reject values below 16\,384. Then require the
+expected sequence to be below 256 and the period to be between one and 64. These
+are unsigned bounds. A large value with nonzero high bits must not pass because
+its low word happens to look reasonable.
+
+Fill \texttt{record\_context}. Save the admitted sequence at stack offset 80 and
+the period at offset 88. The later checksum loop will reuse temporary registers;
+these stack slots retain the values it must not destroy. They belong to the
+callee's private frame. No context output is written here. Rejecting an invalid
+context must precede source or image access.
+
+\paragraph{Observe} Prepare \texttt{s08-1} and stop before
+\texttt{record\_context\_ready}. At \texttt{record\_context\_ready}, the eight-byte values at
+\texttt{\$sp+80} and \texttt{\$sp+88} are one and four. All six context
+fields still contain their entry bytes.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Where can this validation step store its temporary sequence?
+\begin{itemize}
+\item[A.] In the published sequence field.
+\item[B.] In the private stack frame.
+\item[C.] In the record checksum field.
+\end{itemize}

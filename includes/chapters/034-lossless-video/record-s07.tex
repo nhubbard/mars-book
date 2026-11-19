@@ -1,0 +1,27 @@
+\section{Step 7: Admit a bounded record window}
+The routine must decide whether the byte count is plausible before reading a
+header. A record needs at least sixteen bytes and may contain at most 28\,672
+payload bytes, so admit counts from 16 through 28\,688 inclusive. Treat this as an
+unsigned 64-bit count. Narrowing it to 32 bits would make some very large counts
+appear small. Check the image's low two address bits and the context's low three
+bits without dereferencing them. The record address needs no alignment test.
+
+Fill \texttt{record\_admit}. Keep the initialized failure return for rejected
+arguments and branch to the supplied early return. An admitted call falls through
+to the supplied 160-byte stack frame, which saves the return address and saved
+registers before giving the four arguments persistent names in
+\texttt{\$s0} through \texttt{\$s3}. A bad count must return even if the context
+address is unusable.
+
+\paragraph{Observe} Prepare \texttt{s07-1} and stop before
+\texttt{record\_admitted}. The worked call has 27 record bytes. At \texttt{record\_admitted},
+\texttt{\$a1} is 27 and the final alignment mask in \texttt{\$t0} is zero.
+No frame or context bytes have changed.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why is the record address allowed to be unaligned?
+\begin{itemize}
+\item[A.] Its fields can be read as individual bytes.
+\item[B.] All records begin at a multiple of sixteen.
+\item[C.] A delta has no header.
+\end{itemize}

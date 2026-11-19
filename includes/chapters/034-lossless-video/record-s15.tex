@@ -1,0 +1,24 @@
+\section{Step 15: Compare the finalized checksum}
+When both input windows are exhausted, complement the low 32 bits by XORing
+with \texttt{0x00000000ffffffff}. Read the stored checksum as an unsigned
+big-endian integer and compare it with the finalized accumulator. Equality
+establishes that these bytes have the expected CRC; it does not establish that
+the payload commands are meaningful.
+
+Fill \texttt{record\_crc\_check}. A mismatch follows the failure path without
+writing the image or context. The public \texttt{late-skip} input has a freshly
+computed, correct CRC despite an invalid command. It will pass this region and
+must still fail during command validation.
+
+\paragraph{Observe} Prepare \texttt{s15-1} and stop before
+\texttt{record\_crc\_checked}. At \texttt{record\_crc\_checked}, both \texttt{\$t2} and
+\texttt{\$t8} are \texttt{0x00000000ba0fd49e} for the worked record.
+The \texttt{bad-crc} recipe returns one before reaching this checkpoint.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Does a matching CRC prove command bounds are valid?
+\begin{itemize}
+\item[A.] Yes, because CRCs check the format.
+\item[B.] Yes, if the record is short.
+\item[C.] No; command bounds need separate checks.
+\end{itemize}

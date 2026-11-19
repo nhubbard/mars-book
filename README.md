@@ -261,3 +261,18 @@ words, these construction sources use 53269 scalar and 29721 MSA instructions; t
 text preserves that isolated boundary and does not claim a whole-codec speedup.
 All 141 public tests pass. Assembly file-codec construction, final feedback and
 distributions, integration and actual IDE captures remain unfinished.
+
+The video construction now continues through step 23 with a scalar exact-record
+validator and applier. Seventeen native lessons, seventeen quizzes, thirty-four
+hints and thirty-seven public recipes explain bounded input windows, native
+context state, bytewise big-endian reads, CRC coverage, complete command validation
+before mutation, RGB word construction, delta application and publication. Public
+scaffolds and fixture controls are in `drafts/video-record-construction`; completed
+algorithms and keys remain private. The private gate passes 1012 simulator cases,
+rejects thirteen assembled faults and verifies eight ordinary caller runs.
+Equivalent CRC and private-frame implementations are checked. On the measured
+records, a mask-based CRC uses about 4–5% more simulated instructions than the
+conditional version; the native text records the complete-call measurement
+boundary. All 148 public tests and the existing package validation/build commands
+pass. The whole-file codec and playback construction, video distributions, actual
+IDE captures, independent accessibility audit and APNG remain unfinished.

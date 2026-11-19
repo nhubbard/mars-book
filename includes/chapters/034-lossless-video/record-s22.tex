@@ -1,0 +1,28 @@
+\section{Step 22: Apply an accepted delta in place}
+Restart at the payload beginning with pixel cursor zero. Read each command
+again, advance the pixel cursor by its skip, and form the image address as the
+base plus four times that cursor. For each changed pixel, pack the next triple
+into a numeric word, load the old image word, XOR them, and store the result.
+Advance source by three and destination by four. A zero changed count needs no
+pixel loads or stores.
+
+Fill \texttt{record\_delta}. Keep the illustrated pixel cursor in
+\texttt{\$s7}. This second pass relies on the completed validation pass and
+on the caller keeping the record immutable throughout the call. It requires no
+rollback image. The existing XOR kernel explains the numeric operation, but the
+record's packed triples first need conversion to native words; this scalar
+construction performs that conversion inside the application loop.
+
+\paragraph{Observe} Prepare \texttt{s22-1} and stop before
+\texttt{record\_delta\_applied}. At \texttt{record\_delta\_applied}, \texttt{\$s7} is 4096.
+The first image word changes from \texttt{0x000061c2} to
+\texttt{0x000161c2}; the remaining 4095 words are unchanged. Publication
+is still unfinished, so continuing returns development status four.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why can this pass write directly into the working image?
+\begin{itemize}
+\item[A.] Every command has already been validated, and the record stays immutable.
+\item[B.] XOR automatically undoes any later failure.
+\item[C.] All delta records contain exactly one changed pixel.
+\end{itemize}

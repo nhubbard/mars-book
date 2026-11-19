@@ -1,0 +1,26 @@
+\section{Step 11: Prove the exact payload extent}
+Read the four-byte payload length at header offset eight by the same
+big-endian method. The admitted total count includes the header. Subtract sixteen
+from that count and require equality with the declared payload length. This
+rejects both missing bytes and an unexplained suffix. The outer count bound
+already limits the payload to 28\,672 bytes.
+
+Fill \texttt{record\_extent}. Save the payload length at stack offset 96. Set
+\texttt{\$s5} to source plus sixteen and \texttt{\$s6} to that address plus the
+length. The latter is an exclusive end address: it names the boundary after the
+last payload byte. Later checks compare a remaining byte count before reading;
+they must not load from the exclusive end itself.
+
+\paragraph{Observe} Prepare \texttt{s11-1} and stop before
+\texttt{record\_extent\_ready}. At \texttt{record\_extent\_ready}, the payload length in
+\texttt{\$t0} is eleven. \texttt{\$s5} and \texttt{\$s6} are source plus
+16 and source plus 27. The source is the address passed in \texttt{\$a0},
+three bytes after \texttt{record\_data}.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What does the payload end pointer name?
+\begin{itemize}
+\item[A.] The last payload byte.
+\item[B.] The checksum byte.
+\item[C.] The first address beyond the payload.
+\end{itemize}

@@ -1,0 +1,64 @@
+\section{Apply one complete record}
+The XOR kernel has no knowledge of a file format. Give the next routine,
+\texttt{video\_apply\_record}, responsibility for one encoded frame record. Its input
+starts at the record's kind byte, includes the sixteen-byte header, and ends at the
+last payload byte. The global file header is outside this window. A later file
+reader will supply that exact window after locating the record.
+
+Pass the record address in \texttt{\$a0}, its byte count in \texttt{\$a1}, the working
+image address in \texttt{\$a2}, and a context address in \texttt{\$a3}. The record
+may start at an unaligned byte address; the image must be aligned to four bytes and
+the context to eight. The caller supplies readable record bytes, writable image
+storage of at least 16\,384 bytes, a writable 48-byte context, and a valid private
+stack. These windows are separate and do not overlap. Capacity is a caller's
+promise about storage; the routine cannot discover whether an arbitrary numeric
+address names a real allocation.
+
+\begin{table}[htbp]
+\centering
+\caption{Native context for a single record call. Each field is eight bytes.}
+\label{tab:video-record-context}
+\begin{tabular}{r p{1.4in} p{2.9in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & Frame capacity & Input, at least 16\,384 bytes. \\
+8 & Expected sequence & Input from 0 through 255; incremented on success. \\
+16 & Full-frame period & Input from 1 through 64. \\
+24 & Last kind & Output, zero for full or one for delta. \\
+32 & Active frame bytes & Output, 16\,384 on success. \\
+40 & Retained suffix & Unused by this routine; leave its bytes unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The context uses the simulator's selected native byte order. Record integers keep
+their specified big-endian order in either simulator setting. For a delta, the
+working image contains the previously accepted frame as 4096 numeric
+\texttt{0x00RRGGBB} words. A full frame replaces that image and does not depend on
+its earlier contents.
+
+Return zero in \texttt{\$v0} and 16\,384 in \texttt{\$v1} on success. Only then
+increment the expected sequence and publish the kind and active byte count. Return
+one and zero on failure, retaining every image and context byte. The source remains
+immutable in both cases. Preserve saved registers, the frame pointer and the
+caller's stack pointer. The final accepted sequence may be 255: publication advances
+the context to 256, and a subsequent call is rejected. File-level frame-count and
+end-of-file checks will belong to the reader, which knows the complete file.
+
+The supplied caller is in \texttt{drafts/video-record-construction/main.asm}. Save
+a working copy and fill only the marked regions. The small
+\texttt{record.asm} file contains the same unfinished routine for inspection;
+\texttt{main.asm} also supplies the data and executable caller. Do not concatenate
+the two routines. Prepare an observation with, for example,
+\texttt{python3 drafts/video-record-construction/prepare.py s07-1 --source work.asm
+--output observe.asm}. The output must be a new file. Preparation replaces fixture
+data while retaining your instruction text.
+
+An unfinished region returns development status four and count zero. This is a
+construction aid. After either application loop has been written, it can change the
+image before the unfinished publication region returns four. A completed routine
+has only success zero or failure one; failure one never permits partial application.
+Stop at the named observation before continuing. Reaching a checkpoint shows what
+has been established at that boundary; it is not a substitute for the complete
+success and failure tests.

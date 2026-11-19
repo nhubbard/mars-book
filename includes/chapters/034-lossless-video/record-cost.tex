@@ -1,0 +1,41 @@
+\section{Measure a checksum alternative before adopting it}
+The conditional CRC recurrence and the mask-based recurrence from step 14 produce
+the same accepted images and the same rejections. They do different amounts of
+simulated work. Table~\ref{tab:video-record-work} records complete scalar record
+calls, from function entry through return, after the caller has supplied the
+record and previous image. Each call includes validation, checksum calculation,
+application, publication, saved-state handling and the construction's observation
+\texttt{nop} instructions. Assembly, fixture preparation, printing, file I/O and
+presentation are outside the interval.
+
+\begin{table}[htbp]
+\centering
+\caption{Simulated instructions for two checked CRC implementations.}
+\label{tab:video-record-work}
+\begin{tabular}{lrr}
+\toprule
+Record input & Conditional CRC & Mask-based CRC \\
+\midrule
+Full frame zero & 1\,000\,606 & 1\,049\,737 \\
+One changed pixel & 2\,090 & 2\,175 \\
+Unchanged frame & 1\,472 & 1\,535 \\
+4096 one-pixel commands & 2\,508\,218 & 2\,622\,594 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mask-based version executes about four to five percent more instructions for
+these inputs. It constructs and combines a polynomial mask on every bit, including
+bits for which the conditional version skips the polynomial XOR. Retain the
+conditional recurrence for this construction. These counts do not measure elapsed
+host time or the host processor's branch prediction. A claim about either would
+need a separate timing experiment. Both byte orders and both normal and
+above-four-GiB address layouts produce the tabulated counts. A correct version
+with a larger private stack frame produces the same conditional counts here.
+
+A table-driven CRC is a possible next experiment. Its table must implement the same
+polynomial, reflection, initialization, final complement and two-window coverage.
+Include any per-call table construction in the measured interval, or state and
+test a shared immutable table's initialization boundary. Keep all malformed-record
+and failure-preservation checks. An optimization that accepts the late invalid
+command has changed the routine's contract, regardless of its count.

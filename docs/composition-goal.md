@@ -839,3 +839,27 @@ Those construction stages, package feedback/distributions, integration and actua
 IDE captures remain open, as does APNG composition. The main manuscript still has
 32 packaged chapters. Earlier prose and source exports remain intact; the requested
 broad editing pass remains deferred.
+
+
+Chapter 34 now reaches scalar record application at step 23. Seventeen additional
+native passages connect early argument checks, retained context, exact source
+windows, checksum recurrence, cursor bounds, validation-before-write, native RGB
+packing and final publication. They add seventeen editable regions, seventeen
+quizzes, thirty-four hints and thirty-seven public recipes. The late-skip input
+has a valid checksum and a valid initial change, so its failure specifically
+requires whole-image and context preservation. Guided checkpoints remain separate
+from behavior-based free-writing checks.
+
+The separate record gate passes 1012 simulator cases, rejects thirteen assembled
+faults and verifies eight ordinary callers. Three valid implementations cover
+conditional CRC, equivalent mask-based CRC and a different private stack size,
+with both byte orders and normal/high addresses. Twelve persistent-call cases
+make 108 calls, including failure between accepted frames. Work measurements show
+the mask-based CRC requires about four to five percent more instructions on the
+measured inputs; the conditional version is retained. The earlier isolated XOR
+kernel measurements are unchanged. All 148 public tests and existing package
+validation/build commands pass. This is a single-record routine; full-file
+reader, index, seek, encoder and playback assembly remain to be constructed.
+The main manuscript still has 32 packaged chapters; video/PNG final packaging,
+APNG, actual annotated IDE captures and independent accessibility verification
+remain unfinished. The author-requested broad rewrite remains deferred.

@@ -1,0 +1,28 @@
+\section{Step 23: Publish the accepted frame}
+Only an accepted, fully applied image may advance the decoder's logical
+state. Read the saved expected sequence, add one, and store it in context offset
+eight. Store the accepted kind at offset 24 and the active image byte count,
+16\,384, at offset 32. Set the success return values. The supplied epilogue
+restores the caller's saved registers and stack pointer.
+
+Fill \texttt{record\_publish}. Keep capacity, period and the suffix unchanged.
+Run full, delta, unchanged, optional-full and invalid controls. Then call the
+routine repeatedly in one execution session. Insert an invalid late record
+between valid records: it must retain the last accepted frame and the next
+expected sequence, allowing a subsequent valid record with that same sequence
+to succeed. The record interface now has useful behavior independently of the
+future file reader, directory and playback loop.
+
+\paragraph{Observe} Prepare \texttt{s23-1} and stop before
+\texttt{record\_published}. At \texttt{record\_published}, \texttt{\$v0} is zero and
+\texttt{\$v1} is 16\,384. The worked context now has next sequence two,
+last kind one and active bytes 16\,384. The caller prints
+\texttt{Record applied.} after returning.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What happens to the expected sequence on failure?
+\begin{itemize}
+\item[A.] It advances to avoid retrying the bad record.
+\item[B.] It remains unchanged.
+\item[C.] It becomes the record payload length.
+\end{itemize}

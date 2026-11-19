@@ -1,0 +1,24 @@
+\section{Step 10: Match sequence and the full-frame schedule}
+The four sequence bytes are serialized big-endian. Read them in order with
+\texttt{lbu}, shifting the accumulated value left eight bits before adding the
+next byte. Use 64-bit shifts so that the unsigned four-byte value remains
+zero-extended. A native \texttt{lw} would depend on native byte order, require
+alignment, and sign-extend some values.
+
+Fill \texttt{record\_sequence}. Compare the result with the saved expected
+sequence. Compute its unsigned remainder by the saved period, which was already
+proved nonzero. A zero remainder requires kind zero. A nonzero remainder permits
+either kind; full frames between scheduled positions remain legal. Sequence four
+with period four therefore cannot be delta, whereas sequence five can be full.
+
+\paragraph{Observe} Prepare \texttt{s10-1} and stop before
+\texttt{record\_sequence\_ready}. At \texttt{record\_sequence\_ready}, \texttt{\$t0} is one
+and the remainder in \texttt{\$t2} is one. The worked record is allowed.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} With period four, which kind is valid at sequence five?
+\begin{itemize}
+\item[A.] Only delta.
+\item[B.] Either full or delta.
+\item[C.] Neither kind.
+\end{itemize}
