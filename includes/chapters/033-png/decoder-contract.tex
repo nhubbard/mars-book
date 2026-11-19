@@ -1,0 +1,38 @@
+\section{Connect validation to publication}
+The complete entry \texttt{png\_decode} takes the PNG address in \texttt{\$a0}, file
+count in \texttt{\$a1}, framebuffer address in \texttt{\$a2}, and a context address
+in \texttt{\$a3}. Its vector counterpart is \texttt{png\_decode\_msa}. The context
+holds six caller inputs and three results, all native doublewords. It is a description
+of caller-provided storage, not an instruction to allocate that storage.
+
+\Needspace{14\baselineskip}
+\begin{longtable}{p{22mm}p{44mm}p{84mm}}
+\toprule Byte offset & Field & Meaning \\\midrule
+0 & Destination stride & Words between framebuffer row starts \\
+8 & Framebuffer capacity & Writable bytes beginning at the framebuffer argument \\
+16 & Compressed workspace & Address for joined IDAT payloads \\
+24 & Compressed capacity & Writable bytes at that address \\
+32 & Row workspace & Address for inflated and reconstructed rows \\
+40 & Row capacity & Writable bytes at that address \\
+48 & Width result & Pixels per row, published on success \\
+56 & Height result & Row count, published on success \\
+64 & Published byte result & Active pixel bytes, $4wh$ \\\bottomrule
+\end{longtable}
+Keep the file, both workspaces, framebuffer, context and private stack storage
+nonoverlapping. Unaligned byte buffers are permitted; the context requires eight-byte
+alignment and the framebuffer requires four-byte alignment. Addresses retain their
+high bits even when every selected count is small. The ordinary display stride is
+512 words, while a tightly packed test buffer may use the image width.
+
+Collect into compressed workspace and retain the returned dimensions privately.
+Compare the predicted inflated count with row capacity before calling the inflater.
+After exact decompression, reconstruct rows in that same workspace. Then pack their
+samples into the framebuffer. Each failed stage returns to the caller without
+publishing context results. Scratch contents may have changed, but a returned format
+or capacity failure leaves the framebuffer and all context bytes unchanged.
+
+On success, write width, height and active byte count to the context, and return zero
+in \texttt{\$v0} with the active count in \texttt{\$v1}. On failure, return one and
+zero. Retain the input file, context inputs, row padding and saved machine state.
+This order makes the final-filter test useful: even with valid outer CRCs and a valid
+Adler checksum, an unsupported filter selector must stop before any pixel publication.

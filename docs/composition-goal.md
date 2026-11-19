@@ -641,3 +641,28 @@ All 94 public tests pass. Row reconstruction/blitting, cumulative student constr
 public/private final feedback, chapter033 archives and actual captures remain next.
 The integrated manuscript retains 32 packaged chapters; the later substantial editing
 pass remains deferred. Independent PDF accessibility validation remains pending.
+
+
+The PNG row and framebuffer stages now have two private complete prototype variants.
+They retain full-width addresses, use a call-private zero row, prevalidate every filter
+selector and preserve filter prefixes. Packing validates exact source bytes, native
+word alignment, stride and the last active row's extent before publishing pixels.
+Scalar/MSA checks cover both memory byte orders and both address layouts: 4400 row
+cases plus 400 complete-PNG cases, including full 512-by-512 output and late failures.
+Ten separately assembled faults are rejected. The upstream grader now accepts the
+standard ByteOrder on each case before assembly (local MARS commit 118b85dc); all 110
+CLI tests pass, including default/explicit endianness, native directives and MSA stores.
+Unrelated MARS edits remain preserved.
+
+Four new native passages define row and complete-call interfaces, derive the RGB
+shuffle and report complete-call instruction counts. A public repeated-gradient helper
+reproduces the tested 2854-byte PNG; independent decoding matches all pixels. On that
+image, the reference scalar/MSA counts are 37870732 and 18167820, or 144.47 and 69.30
+instructions per pixel. Counts include all four stages and exclude file loading,
+assembly and external inspection; they are not elapsed timings or IDE measurements.
+The private receipt pins the file, decoder, CLI and numerical text. The actual IntelliJ
+fixture exporter supplies one new listing while preserving all 766 older exports.
+All 95 public tests and three authoring-plugin exporter tests pass. Native PDF checks
+remain separate from independent accessibility review. Cumulative student construction,
+public/private final feedback, file-loading caller and chapter033 distributions remain
+next. Actual screenshots are uncaptured; the integrated manuscript retains 32 packages.

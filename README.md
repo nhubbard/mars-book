@@ -206,13 +206,15 @@ completed; free-writing checks accept equivalent exact implementations. Instruct
 solutions and keys are separate and private. The four IDE capture plans are uncaptured.
 Substantive prose editing remains deferred until all 35 chapter drafts are complete.
 
-The PNG chapter has an initial native reading at `drafts/png.tex`, with twenty-three
-reading passages, a pipeline figure, five byte-domain and code tables, and reproducible
-RGB8 inputs. Its private collector and inflater prototypes have verified full-width
-calling contracts. The inflater covers stored, fixed and dynamic blocks; worked text
-explains canonical codes, overlapping matches and a checksum collision that cannot
-replace an exact output count. The public suite has 94 tests. This is not yet a
-registered exercise package: row reconstruction, blitting, cumulative construction,
-feedback, measurements and actual IDE captures remain next. The main manuscript
-retains 32 packaged chapters. Substantial prose editing remains deferred until all
-chapter drafts exist.
+The PNG chapter has a native reading foundation at `drafts/png.tex`, with twenty-seven
+passages, a pipeline figure, native tables, an actual IntelliJ-highlighted shuffle
+excerpt and reproducible RGB8 inputs. Two complete private prototypes now decode
+through framebuffer publication. Row checks cover scalar/MSA paths in both byte orders
+and address layouts (4400 cases); complete decoding adds 400 cases, including full
+512-by-512 output and late-failure preservation. Ten assembled faults are rejected.
+Measured complete calls on the repeated-row image fall from 37870732 to 18167820
+simulated instructions in MSA mode; the text records the input and boundary. All 95
+public tests pass. The MARS grader's byte-order option is committed separately with
+110 passing CLI tests. Cumulative student construction, final feedback, file-loading
+caller, PNG distributions and actual IDE captures remain next. The main manuscript
+retains 32 packaged chapters; the substantial author editing pass remains deferred.

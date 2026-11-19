@@ -27,3 +27,12 @@ These are input-generation and reading fixtures. They are not the student assemb
 starter, a decoder implementation, a completed grader, a performance measurement or
 an IDE capture. The native entry is `drafts/png.tex`; chapter 33 is not integrated
 into `main.tex` until its executable teaching package is verified.
+
+
+`python3 drafts/png-fixtures/gradient.py /tmp/full-gradient.png` creates the full-size
+comparison image. Each channel is `(37*x + 97*channel) mod 256`, with channels 0..2.
+The first row uses None; the other 511 identical sample rows use Up with zero
+residuals. `--part filtered` and `--part rgb` reproduce the intermediate bytes. Existing
+destinations are refused. The PNG encoder's zlib version can affect compressed bytes;
+record the file digest with instruction measurements. The mathematical pixels and
+row representation are fixed. This is generated image input, not an IDE screenshot.

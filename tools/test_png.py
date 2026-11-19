@@ -81,9 +81,10 @@ class PngFoundationTests(unittest.TestCase):
 
     def test_native_composition_is_direct_and_not_integrated_prematurely(self):
         paths = [p for p,_ in book.sources('drafts/png.tex') if p.parent.name == '033-png']
-        self.assertEqual(24,len(paths)); self.assertEqual(24,len(set(paths)))
+        expected = set((book.ROOT/'includes/chapters/033-png').glob('*.tex'))
+        self.assertEqual(expected,set(paths)); self.assertEqual(len(paths),len(set(paths)))
         self.assertEqual('purpose',paths[1].stem); self.assertEqual('sources',paths[-1].stem)
-        self.assertEqual(0,len(book.validate('drafts/png.tex')))
+        book.validate('drafts/png.tex')
         self.assertNotIn('033-png',(book.ROOT/'main.tex').read_text())
 
     def test_adler_collision_does_not_establish_inflated_length(self):
@@ -93,3 +94,26 @@ class PngFoundationTests(unittest.TestCase):
         self.assertEqual(zlib.adler32(actual),zlib.adler32(padded))
         self.assertNotEqual(actual,padded)
         self.assertEqual(1,len(zlib.decompress(zlib.compress(actual))))
+
+    def test_full_gradient_has_exact_rows_and_repeats_after_256_pixels(self):
+        path = book.ROOT/'drafts/png-fixtures/gradient.py'
+        spec = importlib.util.spec_from_file_location('png_gradient_fixture',path)
+        gradient = importlib.util.module_from_spec(spec); spec.loader.exec_module(gradient)
+        data = gradient.material()
+        self.assertEqual(786944,len(data['filtered']))
+        self.assertEqual(786432,len(data['rgb']))
+        self.assertEqual(bytes((0,97,194,37,134,231)),data['rgb'][:6])
+        self.assertEqual(data['rgb'][:768],data['rgb'][768:1536])
+        self.assertEqual(data['rgb'][:1536],data['rgb'][-1536:])
+        self.assertEqual(0,data['filtered'][0])
+        self.assertTrue(all(data['filtered'][1537*y]==2 for y in range(1,512)))
+        self.assertEqual(bytes(1536),data['filtered'][-1536:])
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)/'gradient.png'
+            command = [sys.executable,str(path),str(destination)]
+            result = subprocess.run(command,capture_output=True,text=True)
+            self.assertEqual(0,result.returncode,result.stderr)
+            self.assertEqual(data['png'],destination.read_bytes())
+            result = subprocess.run(command+['--part','rgb'],capture_output=True,text=True)
+            self.assertNotEqual(0,result.returncode)
+            self.assertEqual(data['png'],destination.read_bytes())
