@@ -1,0 +1,18 @@
+\section{Initialize the state that the header does not contain}
+Begin with previous pixel \((0,0,0,255)\): opaque black. Separately, initialize all
+sixty-four cache entries to \((0,0,0,0)\): transparent black. These are different
+initial conditions. Filling the cache with the previous pixel would make an early
+index command produce the wrong alpha.
+
+Each cache entry holds one complete RGBA word, so the cache occupies 256 bytes. Keep
+it in storage private to the invocation. A second decode must start from the declared
+initial state, even if the first one failed halfway through a chunk. Reusing a caller
+buffer or a previous invocation's cache without clearing it creates an input-dependent
+error that a single successful decode will not reveal.
+
+Use an input offset, an output pixel index, a previous color and a cache as separate
+state. A run additionally needs the number of repeated output pixels. The input offset
+counts bytes and the output index counts pixels; adding one to both after every tag
+is wrong. RGB and RGBA commands consume several bytes for one pixel. A run consumes
+one byte for several pixels. Their common boundary is the next reconstructed pixel,
+not a common stride through both buffers.

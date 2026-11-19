@@ -1,0 +1,43 @@
+\section{Keep the six completed interfaces explicit}
+\texttt{qoi\_bound} accepts packed dimensions in \texttt{a0}, width in the low
+thirty-two bits and height in the high thirty-two. Valid dimensions return zero in
+\texttt{v0} and \(22+5wh\) in \texttt{v1}; invalid dimensions return one and zero.
+This helper needs no caller pointer.
+
+\texttt{qoi\_validate} accepts file bytes, unsigned count and metadata pointer in
+\texttt{a0,a1,a2}. A valid stream publishes sixteen little-endian metadata bytes:
+u32 width at zero, u32 height at four, u32 channels at eight and u32 colorspace at twelve.
+The metadata pointer is eight-byte aligned. Success returns pixel count in \texttt{v1};
+failure changes no metadata byte.
+
+\texttt{qoi\_decode} accepts file bytes, unsigned count, output word pointer and unsigned
+pixel capacity in \texttt{a0} through \texttt{a3}. Its output is four-byte aligned.
+Success returns packed dimensions. It validates the stream before capacity and writes
+no output on failure. \texttt{qoi\_encode} receives input RGBA words in \texttt{a0},
+a pointer to the same sixteen-byte descriptor in \texttt{a1}, destination bytes in
+\texttt{a2} and unsigned byte capacity in \texttt{a3}. It retains the supplied channels
+and colorspace fields in the header and returns the actual encoded byte length.
+This metadata preservation matters when an input file describes linear components.
+
+For these memory routines, zero status means success, one means malformed data or
+invalid descriptor fields, and two means a count or capacity bound. Failures return
+zero count. Validator and decoder reject counts above 20502 before pointer access;
+counts below twenty-three are malformed before pointer access. Encoder descriptor
+validation precedes capacity, which precedes pixel reads and output writes.
+
+\texttt{qoi\_load} receives a path, byte buffer, unsigned capacity and metadata pointer.
+Require capacity from one through 20502 before pointer or file access. Read through EOF,
+close, then validate and publish metadata. Return the loaded byte count. The byte buffer
+may retain a prefix on failure; metadata must remain unchanged. \texttt{qoi\_save}
+receives a path, bytes and unsigned count. Validate before opening in truncate mode,
+then handle short writes and close on every return. Success returns the saved count.
+Its count guards match the validator: above 20502 returns two and below twenty-three
+returns one, before pointer or path access.
+An open/read/write failure returns three and zero. A failed write may leave a partial file.
+The current syscall's extra readable guard byte remains outside the selected file count.
+
+Retain full-width pointers, counts, capacities, saved registers and return addresses.
+Preserve \texttt{s0} through \texttt{s7}, \texttt{fp} and \texttt{sp}. Produce no console
+I/O. Byte pointers may be unaligned; output objects are disjoint from their inputs.
+Selected input intervals may be read, and only the declared result interval may be
+written among caller objects. Private cache and frame storage belong to the invocation.

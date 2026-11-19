@@ -1,0 +1,34 @@
+\section{Recover the earlier sprite without inventing a new picture}
+Expand the existing row bytes from most significant bit to least significant bit. The
+first row, \texttt{16}, gives black, black, black, white, black, white, white, black.
+Each pixel is opaque. An eight-by-eight output has no per-row padding: the next row
+begins thirty-two bytes after the preceding one in RGBA-word memory.
+
+The supplied sixty-one-byte QOI fixture describes that same image. Its fourteen-byte
+header gives width eight, height eight, channels four and colorspace zero. The first
+payload byte is \texttt{c2}, a run of three initial opaque black pixels. The next,
+\texttt{55}, has three DIFF fields of \texttt{01}; each means minus one, turning
+zero components into 255 modulo 256. The following \texttt{35} fetches the black cache
+entry. These three chunks account for the first five pixels.
+
+Continue by recording output index, input offset, previous pixel and the cache slots
+used for black and white. A run may cross a row boundary; the stream counts pixels,
+not row records. Divide the output index by eight only when explaining its row and
+column. The decoder does not need to insert a new predictor state at each row.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=0.55cm,y=0.55cm,alt={The eight-by-eight monochrome sprite. Rows, from top to bottom, are hexadecimal 16, 3c, 7e, db, ff, 24, 42 and 81. In each row, bit seven is the leftmost square; a set bit is white and a clear bit black. All pixels are opaque.}]
+\foreach \row/\value in {0/22,1/60,2/126,3/219,4/255,5/36,6/66,7/129}{
+  \foreach \col in {0,...,7}{
+    \pgfmathtruncatemacro{\lit}{mod(floor(\value/pow(2,7-\col)),2)}
+    \ifnum\lit=1\relax
+      \filldraw[fill=white,draw=gray] (\col,-\row) rectangle +(1,-1);
+    \else
+      \filldraw[fill=black,draw=gray] (\col,-\row) rectangle +(1,-1);
+    \fi
+  }
+}
+\end{tikzpicture}
+\caption{The logical source sprite from chapter three. The row codes in the description provide a nonvisual specification; this drawing is not an IDE capture.}
+\end{figure}

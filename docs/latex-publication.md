@@ -302,3 +302,17 @@ The subsequent QOI completed-interface feedback passage adds one native include;
 standalone chapter now has 49 physical pages. The seven public checking domains remain
 code assets, not generated book composition. Native prose explains invocation and the
 scope of the observations. Earlier prose is retained for the later substantial edit.
+
+
+QOI is included directly after Binary PPM in main.tex. Its package copies native chapter
+fragments byte-for-byte for distribution; those copies do not control book composition.
+Only working paths in the earlier native prose change to packages/030-qoi. The main
+manuscript now has 30 packaged chapters and 792 highlighted listings. Four QOI IDE figures
+remain planned with explicit pending-capture text. The publication still requires
+independent accessibility review and the later author-requested prose edit.
+
+The integrated build has 1286 physical pages; QOI occupies physical pages 1238..1286.
+The standalone QOI entry remains 49 pages. Both PDFs have tagged structure and the
+requested embedded fonts. All 49 integrated QOI pages were rendered and inspected;
+this build reports no overfull boxes or missing characters. This is structural/layout
+verification, not PDF/UA certification or assistive-technology testing.

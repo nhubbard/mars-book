@@ -1,0 +1,24 @@
+\section{Give the sprite a file representation}
+The eight-byte sprite stored one on-or-off decision per bit. Its eight row bytes were
+\texttt{16 3c 7e db ff 24 42 81}, in hexadecimal, with bit seven at the left edge of
+each row. Keep that image. Expand each set bit into an opaque white pixel and each
+clear bit into an opaque black pixel. There are now sixty-four pixels, each with four
+components: red, green, blue and alpha. Alpha records opacity; 255 is fully opaque and
+zero is fully transparent.
+
+QOI, the Quite OK Image format, describes an image as a succession of commands that
+reconstruct pixels. A command can supply a complete color, change the previous color,
+retrieve a cached color, or repeat it. The decoder has to retain state between commands.
+This differs from PPM, where each RGB triplet describes its pixel without referring to
+an earlier triplet.
+
+The project has three useful boundaries. First recover exact RGBA values in memory.
+Then connect that memory to the display and observe the order in which pixels are
+written. Finally, encode those values into a file that another decoder can open. A
+recognizable sprite tests orientation, but exact component comparisons are still
+needed: a wrong alpha value or a cache collision can escape a visual check.
+
+The fixture helper in \path{packages/030-qoi/fixtures} writes the sprite or a smaller worked
+trace. Run \texttt{python3 fixture.py new-image.qoi} for the sprite. The helper refuses
+an existing output path. Its alternate PPM output is an RGB preview and discards alpha;
+it is not an alpha-preserving conversion.

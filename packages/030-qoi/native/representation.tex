@@ -1,0 +1,21 @@
+\section{Keep RGBA values separate from display behavior}
+Represent a decoded pixel as the numerical word \texttt{0xAARRGGBB}. The high byte is
+alpha; the other three bytes retain the display convention from the earlier chapters.
+In little-endian memory, the bytes of \texttt{0x80070605} are \texttt{05 06 07 80}.
+In a QOI RGBA chunk, the component bytes instead appear as \texttt{07 06 05 80}.
+The word's numerical fields, its memory bytes and the file's component order are three
+different descriptions. Write down which one a particular inspection is showing.
+
+The current MARS Bitmap Display builds an RGB image. It does not blend these words
+against a background according to their high byte. A pixel with zero alpha can still
+show its stored RGB values there. Keep alpha in the decoded words for the encoder;
+do not infer its value from the display. This chapter does not implement compositing
+or convert between linear and gamma-encoded component values.
+
+When loading a complete color word into a 64-bit register, \texttt{lwu} provides the
+zero-extended value. A signed \texttt{lw} can make the register's upper half all ones
+when alpha sets bit thirty-one. That sign extension does not change a subsequent
+word store, but it can break a whole-register comparison with a color assembled as
+an unsigned value. Keep all cached and previous values in the same numerical form.
+Extract individual components with logical shifts and an eight-bit mask. Store one
+pixel with \texttt{sw}; advance its address by four with full-width pointer arithmetic.

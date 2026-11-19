@@ -1,0 +1,23 @@
+\section{Recover signed changes from unsigned bit fields}
+A DIFF tag carries three two-bit fields. Each stored field is the actual component
+change plus two. Extract the field, subtract two, then add the result to the previous
+component. Thus a stored zero means minus two, and stored three means plus one.
+The possible changes are \(-2,-1,0,1\), independently for red, green and blue.
+Alpha remains unchanged.
+
+Component addition wraps modulo 256. From red 255, a change of plus one produces zero.
+From red zero, minus one produces 255. Clamp-to-zero or saturation is not a substitute:
+those operations reconstruct different component codes. Mask the updated components
+to eight bits before combining the color word. Carrying an unmasked negative value
+into the next field can set many unrelated bits.
+
+For the worked tag \texttt{7f}, remove the \texttt{40} class bits and split the low
+six bits into \texttt{11 11 11}. Each field means plus one. Starting with opaque black,
+the result is \((1,1,1,255)\). A decoder need not recognize that this looks nearly black;
+it needs the exact three additions and the retained alpha.
+
+An encoder has the inverse problem. Compute a signed representative of each byte
+change, accounting for wraparound, then test whether all three fit from minus two
+through plus one. A change from zero to 255 can be represented by minus one; using
+only the ordinary integer difference 255 misses that short encoding. Choosing RGB
+instead still reconstructs the same pixel, but uses more bytes.

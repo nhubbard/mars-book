@@ -1,0 +1,18 @@
+\section{Finish the pixels and then validate the end marker}
+The header's pixel count ends reconstruction. At that exact point, require the remaining
+input to be seven zero bytes followed by one byte of value one, with no extra bytes.
+Do not search forward for this pattern to repair an incorrect cursor. A search could
+hide an unconsumed chunk, an overlong run or accidental skipping of sample bytes.
+
+Reserve the final eight bytes when bounding payload reads. If an RGB tag has fewer
+than three payload bytes before that boundary, it is truncated. The end marker does
+not lend its zeros to complete the color. Likewise, a LUMA tag must have its second
+byte in the payload. Subtract a proven offset from a proven limit before testing a
+required byte count; adding the requirement to an arbitrary full-width address first
+would make overflow reasoning harder.
+
+An image can reconstruct exactly the right number of pixels and still be malformed.
+It may have the wrong marker, a trailing byte, or an extra command before the marker.
+Keep these as separate tests from wrong colors. The finite local byte bound is 20502:
+fourteen header bytes, at most five bytes per pixel, and eight marker bytes. It is a
+bound for the sixty-four-by-sixty-four exercise domain, not a general QOI file limit.

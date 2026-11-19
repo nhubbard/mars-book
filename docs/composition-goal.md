@@ -374,3 +374,15 @@ encoding. The host decoder is independently audited against the existing 607 pri
 valid/malformed fixtures. The complete reference and alternative each pass at both
 normal and wide addresses. Guided exports and final chapter distributions remain the
 next step; instructor algorithms and keys remain private.
+
+
+QOI is now the thirtieth registered text package and native manuscript chapter. Its
+student archive carries 65 guided checks (127 cumulative direct/caller executions),
+seven completed-interface domains, 65 quizzes, 130 hints, 57 safe unfinished regions,
+65 observation recipes and the fixed trace/sprite helper. The native reading order
+and all 263 exported student files are checked against the exact ZIP. Private materials
+retain both complete implementations and all 65 answer keys. The private archive embeds
+the exact student ZIP and records its SHA-256 digest. Five representative unfinished
+regions fail their guided check;45 execution cases run from extracted public check files.
+Actual IDE captures, remote instructor controls, accessibility certification and the
+later substantive editing pass remain pending. The next chapter is the PCM WAV filter.

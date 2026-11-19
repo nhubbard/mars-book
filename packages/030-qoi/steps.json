@@ -1,0 +1,2727 @@
+{
+  "status": "Verified cumulative checkpoint observations; actual IDE capture and remote policy remain pending",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Locate the first command before running it",
+      "kind": "observe",
+      "target": "bound",
+      "checkpoint": "bound_call",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What does the first bound call receive?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The address of the first command."
+          },
+          {
+            "id": "b",
+            "text": "An already decoded color."
+          },
+          {
+            "id": "c",
+            "text": "Packed dimensions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Separate the data fixture from the arguments of the selected caller mode."
+        },
+        {
+          "id": "s01-h2",
+          "text": "Stop at bound_call and compare a0 with the dimensions control; source bytes remain independently inspectable."
+        }
+      ],
+      "prose": "The source arena contains the thirty-eight-byte worked file. Inspect its first fourteen bytes before changing a routine. Read the width as four big-endian bytes, then locate the first command at offset fourteen. The initial caller selects the bound helper, so its first argument is packed dimensions rather than a pointer to this arena. Keep the file description and the current call arguments distinct.",
+      "expectedObservation": "The source begins with qoif, width eight, height one, channels four and colorspace zero. Byte fourteen is c0. The caller has not executed a QOI routine yet.",
+      "recipes": [
+        "s01-1"
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Separate the two packed dimensions",
+      "kind": "author",
+      "target": "bound",
+      "checkpoint": "after_b_unpack",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q02",
+        "prompt": "Which operation should recover the upper field?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A word-sized left shift by thirty-two."
+          },
+          {
+            "id": "b",
+            "text": "A logical sixty-four-bit right shift by thirty-two."
+          },
+          {
+            "id": "c",
+            "text": "A signed byte load."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Both fields are unsigned even though the host register API represents raw bits as a signed Long."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Use full-width shifts; isolate the low half without retaining any original high bits."
+        }
+      ],
+      "prose": "Author b_unpack to recover width from the low thirty-two bits of a0 and height from the high thirty-two. Retain both as unsigned numerical fields. An arithmetic right shift would copy a sign bit into the height result. A word-sized shift cannot preserve both halves of the original argument. Put width in t1 and height in t2 for the following bound checks.",
+      "expectedObservation": "For packed 0x0000000100000008, t1 is eight and t2 is one. No caller memory has been accessed.",
+      "recipes": [
+        "s02-1"
+      ],
+      "region": "b_unpack"
+    },
+    {
+      "id": "s03",
+      "title": "Reject dimensions before multiplying them",
+      "kind": "author",
+      "target": "bound",
+      "checkpoint": "after_b_domain",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Why must a high-bit dimension fail?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its unsigned value exceeds the local limit."
+          },
+          {
+            "id": "b",
+            "text": "It describes a negative number of transparent pixels."
+          },
+          {
+            "id": "c",
+            "text": "It is an alternative spelling of zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Establish each field\u2019s domain separately."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Test nonzero and unsigned less-than sixty-five before computing the product."
+        }
+      ],
+      "prose": "Author b_domain to reject zero or a value above sixty-four in either field. These decisions precede the pixel-count multiplication. Branch to the supplied invalid return for a rejected field, leaving v1 zero there. Use unsigned comparisons so that a field with its high bit set cannot pass a signed less-than check as a negative dimension.",
+      "expectedObservation": "The eight-by-one argument reaches the checkpoint unchanged in t1 and t2. Invalid dimensions take the supplied status-one return.",
+      "recipes": [
+        "s03-1"
+      ],
+      "region": "b_domain"
+    },
+    {
+      "id": "s04",
+      "title": "Return a conservative byte bound",
+      "kind": "author",
+      "target": "bound",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q04",
+        "prompt": "What does the returned sixty-two describe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The actual worked file length."
+          },
+          {
+            "id": "b",
+            "text": "The decoded framebuffer byte count."
+          },
+          {
+            "id": "c",
+            "text": "Required conservative capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Count fixed framing and per-pixel maximum separately."
+        },
+        {
+          "id": "s04-h2",
+          "text": "Five times eight plus twenty-two is sixty-two; keep the result in a full-width register."
+        }
+      ],
+      "prose": "Author b_size to form n = width times height, multiply n by five and add twenty-two. That total accounts for the fixed header and marker plus a worst-case RGBA chunk for every pixel. Return status zero and the complete bound in v1 through the supplied return. This helper neither reads pixel data nor predicts how well a particular image compresses.",
+      "expectedObservation": "The eight-pixel bound is sixty-two bytes. All saved registers and the stack pointer retain their incoming values.",
+      "recipes": [
+        "s04-1"
+      ],
+      "region": "b_size"
+    },
+    {
+      "id": "s05",
+      "title": "Guard the byte count before a pointer access",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_v_count",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q05",
+        "prompt": "Which input must be rejected without a header load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An unaligned byte pointer by itself."
+          },
+          {
+            "id": "b",
+            "text": "A count with bit sixty-three set."
+          },
+          {
+            "id": "c",
+            "text": "A valid RGB sample equal to zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Bounds are about the unsigned count, not the signed appearance of a register value."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Compare against 20502 first, then against twenty-three, using the supplied error returns."
+        }
+      ],
+      "prose": "Author v_count to reject an unsigned count above 20502 with status two and a count below twenty-three with status one. Do not read the file or metadata pointers while making these decisions. After a bounded count reaches the checkpoint, the supplied routing enters the shared walker in validation mode. The unfinished walker will still return development status four.",
+      "expectedObservation": "Count thirty-eight reaches the checkpoint without a source load. The later temporary return is four with zero count.",
+      "recipes": [
+        "s05-1"
+      ],
+      "region": "v_count"
+    },
+    {
+      "id": "s06",
+      "title": "Check every magic byte",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_magic",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Why use byte comparisons here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The file\u2019s literal byte order stays explicit."
+          },
+          {
+            "id": "b",
+            "text": "The magic has a signed numerical meaning."
+          },
+          {
+            "id": "c",
+            "text": "A byte pointer must be four-byte aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "The first four bytes are a literal signature."
+        },
+        {
+          "id": "s06-h2",
+          "text": "Check 71, 6f, 69 and 66 in hexadecimal at offsets zero through three."
+        }
+      ],
+      "prose": "Author w_magic in the shared walker. Compare four unsigned source bytes with the ASCII codes for qoif, branching to the supplied walker error path on any mismatch. Do not use a native word comparison that silently assumes a byte order. The walker has saved the metadata destination and its publication flag, but it has not accepted dimensions yet.",
+      "expectedObservation": "The four literal comparisons pass for the fixture. No public metadata or pixel byte has changed.",
+      "recipes": [
+        "s06-1"
+      ],
+      "region": "w_magic"
+    },
+    {
+      "id": "s07",
+      "title": "Assemble and bound big-endian dimensions",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_dimensions",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q07",
+        "prompt": "What would a little-endian native load of 00 00 00 08 produce?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eight."
+          },
+          {
+            "id": "b",
+            "text": "The address of the first pixel."
+          },
+          {
+            "id": "c",
+            "text": "0x08000000."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Byte order belongs to the file field, not to the simulator\u2019s configured word storage."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Use unsigned loads and explicitly positioned shifts, then apply the dimension checks before multiplication."
+        }
+      ],
+      "prose": "Author w_dimensions to combine bytes four through seven into width and bytes eight through eleven into height. Shift the first byte of each field by twenty-four bits, the next by sixteen and the next by eight before combining the final byte. Validate both fields in the local one-through-sixty-four domain. Retain accepted width in t4 and height in t5.",
+      "expectedObservation": "The numerical fields are eight and one. The input cursor has not yet become a command cursor.",
+      "recipes": [
+        "s07-1"
+      ],
+      "region": "w_dimensions"
+    },
+    {
+      "id": "s08",
+      "title": "Validate flags and retain private metadata",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_flags",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Where should these accepted header fields go first?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Into the first four framebuffer pixels."
+          },
+          {
+            "id": "b",
+            "text": "Into the private descriptor."
+          },
+          {
+            "id": "c",
+            "text": "Directly into caller metadata."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "A valid header does not establish a valid command stream."
+        },
+        {
+          "id": "s08-h2",
+          "text": "Use private frame offsets 88, 92, 96 and 100; defer caller stores until marker validation."
+        }
+      ],
+      "prose": "Author w_flags to accept channels three or four and colorspace zero or one. Store the four accepted numerical fields in the private descriptor at frame offsets eighty-eight through one hundred. Each occupies a word. These are preliminary values for the current invocation; publishing them to the caller now would falsely certify a stream whose commands have not been checked.",
+      "expectedObservation": "The private descriptor contains eight, one, four and zero. The caller\u2019s metadata remains its original sentinel bytes.",
+      "recipes": [
+        "s08-1"
+      ],
+      "region": "w_flags"
+    },
+    {
+      "id": "s09",
+      "title": "Give each cursor and predictor its own state",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_state",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Which initial value belongs to the previous pixel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Opaque black."
+          },
+          {
+            "id": "b",
+            "text": "Transparent black."
+          },
+          {
+            "id": "c",
+            "text": "The first cache index."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "The predictor and the cache have different initial conditions."
+        },
+        {
+          "id": "s09-h2",
+          "text": "Set the predictor alpha to 255, retain a separate total, and derive the payload limit by reserving the final eight bytes."
+        }
+      ],
+      "prose": "Author w_state to establish eight remaining pixels, input offset fourteen and payload end at offset thirty. Initialize previous color to opaque black, the previous-index marker to minus one and the cache pointer to frame offset 112. Preserve the total pixel count independently of the remaining count. Do not initialize the cache to opaque black: clearing that separate object is the next edit.",
+      "expectedObservation": "s2 and s7 are eight; s0 points to source plus fourteen; s1 points to source plus thirty. The previous color is 0xff000000.",
+      "recipes": [
+        "s09-1"
+      ],
+      "region": "w_state"
+    },
+    {
+      "id": "s10",
+      "title": "Clear all sixty-four cache entries",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_clear",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q10",
+        "prompt": "How many eight-byte stores clear the cache?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixty-four."
+          },
+          {
+            "id": "b",
+            "text": "Eight."
+          },
+          {
+            "id": "c",
+            "text": "Thirty-two."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "Each entry occupies four bytes, and there are sixty-four entries."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Use a separate advancing pointer so the retained cache base does not move."
+        }
+      ],
+      "prose": "Author w_clear to zero the complete 256-byte private cache before any index can be fetched. The cache base is eight-byte aligned, so the illustrated loop can clear two entries with each doubleword store. Advance its private pointer by eight and count thirty-two stores. On exit, keep s4 at the original cache base for later lookups.",
+      "expectedObservation": "All 256 cache bytes are zero. The predictor remains opaque black and the command cursor remains at offset fourteen.",
+      "recipes": [
+        "s10-1"
+      ],
+      "region": "w_clear"
+    },
+    {
+      "id": "s11",
+      "title": "Load one bounded tag",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_next",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What proves that a tag byte is available?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The remaining output capacity is nonzero."
+          },
+          {
+            "id": "b",
+            "text": "The cursor is strictly before the payload end."
+          },
+          {
+            "id": "c",
+            "text": "The arena has mapped padding."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "The logical payload limit excludes all eight marker bytes."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Test remaining pixels first, then compare the full-width cursor with the payload end before loading."
+        }
+      ],
+      "prose": "Author w_next to distinguish completion from another command. If no pixels remain, transfer to the marker stage. Otherwise require the command cursor to be before the payload end, load one unsigned tag and advance the cursor by one. A missing command must become a format error rather than borrowing a byte from the reserved marker.",
+      "expectedObservation": "The first tag is c0 in t0. The cursor is at offset fifteen and eight pixels remain.",
+      "recipes": [
+        "s11-1"
+      ],
+      "region": "w_next"
+    },
+    {
+      "id": "s12",
+      "title": "Dispatch full-byte tags before classes",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_dispatch",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What goes wrong if fe is first treated as class 11?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It is mistaken for a run of sixty-three pixels."
+          },
+          {
+            "id": "b",
+            "text": "It becomes a one-byte RGB command."
+          },
+          {
+            "id": "c",
+            "text": "It automatically supplies opaque alpha."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Two full-byte tags occupy values that otherwise resemble the run class."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Compare the complete tag with 254 and 255, then shift the remaining tag right by six for its class."
+        }
+      ],
+      "prose": "Author w_dispatch to recognize fe and ff before inspecting the high two tag bits. The other classes select index, difference, luma or run handling. Retain the previous-index marker only for an INDEX comparison; any other chunk ends adjacency with an earlier INDEX. For c0, the selected path reaches the run handler without loading another source byte.",
+      "expectedObservation": "The first tag selects RUN. Previous color is still opaque black; the source cursor remains at offset fifteen.",
+      "recipes": [
+        "s12-1"
+      ],
+      "region": "w_dispatch"
+    },
+    {
+      "id": "s13",
+      "title": "Decode a run and prove its output extent",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_run",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why add one to the stored field?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every run includes an extra marker pixel."
+          },
+          {
+            "id": "b",
+            "text": "The cache uses one-based indices."
+          },
+          {
+            "id": "c",
+            "text": "The field stores run length minus one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Legal run lengths are one through sixty-two."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Mask with 63, add one, then use an unsigned comparison with remaining pixels."
+        }
+      ],
+      "prose": "Author w_run to extract the low six bits, add one and compare that length with remaining pixels. The c0 command means one repetition of the current predictor. Keep the repetition count in t3 for the common update loop. Branch to the supplied format return for an overlong run before any cache or output update for that command.",
+      "expectedObservation": "The first command has repetition count one, while eight output pixels remain. Its accepted color is still opaque black.",
+      "recipes": [
+        "s13-1"
+      ],
+      "region": "w_run"
+    },
+    {
+      "id": "s14",
+      "title": "Insert the reconstructed color into its cache slot",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_hash",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q14",
+        "prompt": "Which value belongs in the cache entry?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "RGB with alpha forced to zero."
+          },
+          {
+            "id": "b",
+            "text": "The complete RGBA pixel."
+          },
+          {
+            "id": "c",
+            "text": "Only the hash number."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "A slot identifies storage; it is not enough information to reconstruct the color."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Use weights 3, 5, 7 and 11, mask the sum to six bits and multiply the slot by four for its address."
+        }
+      ],
+      "prose": "Author w_hash to extract the previous color\u2019s four components, form their weighted sum and select the low six bits. Convert that slot to a byte offset only when addressing its four-byte entry. Store the complete RGBA word. This common stage must run for repeated pixels too, so the first opaque-black run establishes a cache value that did not exist initially.",
+      "expectedObservation": "Cache slot fifty-three contains opaque black. The other entries remain transparent black; the caller\u2019s metadata and framebuffer are untouched.",
+      "recipes": [
+        "s14-1"
+      ],
+      "region": "w_hash"
+    },
+    {
+      "id": "s15",
+      "title": "Make public stores conditional on publication mode",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_emit",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What should validation mode publish at this stage?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No framebuffer word."
+          },
+          {
+            "id": "b",
+            "text": "One opaque-black word."
+          },
+          {
+            "id": "c",
+            "text": "A header word in the framebuffer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Reconstructing a private color does not authorize a caller store."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Use the supplied fp flag; route the disabled path through after_w_emit without touching s5."
+        }
+      ],
+      "prose": "Author w_emit to store the current word and advance the output pointer only when the supplied publication flag is enabled. In this validation call fp is zero, so no caller pixel is written. Both branches must reach the supplied checkpoint and remaining-count stage. The same code will later serve the decoder\u2019s accepted second pass without changing its cursor units.",
+      "expectedObservation": "The validation-mode output pointer has not advanced and the framebuffer remains sentinels. The accepted repetition still needs to reduce the remaining count.",
+      "recipes": [
+        "s15-1"
+      ],
+      "region": "w_emit"
+    },
+    {
+      "id": "s16",
+      "title": "Advance one repeated output pixel at a time",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_advance",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which cursor stays fixed during run expansion?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output pixel index."
+          },
+          {
+            "id": "b",
+            "text": "The remaining-pixel count."
+          },
+          {
+            "id": "c",
+            "text": "The input cursor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "The tag described all repetitions at once."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Reduce s2 and t3 for each pixel; return to the tag loop only when t3 reaches zero."
+        }
+      ],
+      "prose": "Author w_advance to reduce remaining pixels and the current repetition count after an accepted output position. Repeat the common emission stage while repetitions remain, then return to the next-tag stage. Input has already advanced across the run tag, so this loop consumes no further file bytes. For the first c0, exactly one output position is accounted for.",
+      "expectedObservation": "Seven pixels remain, the repetition count is zero and the input cursor is still at offset fifteen.",
+      "recipes": [
+        "s16-1"
+      ],
+      "region": "w_advance"
+    },
+    {
+      "id": "s17",
+      "title": "Observe the first run before adding RGB",
+      "kind": "observe",
+      "target": "validate",
+      "checkpoint": "walk_rgb",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Why does slot fifty-three now differ from its initial value?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The RGB handler has already changed it."
+          },
+          {
+            "id": "b",
+            "text": "The first reconstructed run pixel was inserted."
+          },
+          {
+            "id": "c",
+            "text": "Every cache entry was initialized opaque."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Pause before the unfinished RGB body, after the run and the next tag load."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Compare the private cache word at slot 53 with the initial all-zero word; inspect its alpha byte too."
+        }
+      ],
+      "prose": "Run the current validator to walk_rgb. The shared stages now accept the first run and fetch the following RGB tag, but its body is unfinished. Inspect the cache and predictor before implementing that handler. A later index fetch of slot fifty-three must recover opaque black, not the transparent black that occupied every slot before the first command.",
+      "expectedObservation": "At walk_rgb, the command cursor is at offset sixteen, seven pixels remain and slot fifty-three is opaque black.",
+      "recipes": [
+        "s17-1"
+      ]
+    },
+    {
+      "id": "s18",
+      "title": "Load RGB while retaining previous alpha",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_rgb",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Where does this command obtain alpha?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "From the previous pixel."
+          },
+          {
+            "id": "b",
+            "text": "From a fourth sample byte."
+          },
+          {
+            "id": "c",
+            "text": "From the header\u2019s channels count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "RGB contains only three new component bytes."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Reserve the marker, check three available bytes and retain the predictor\u2019s high byte before packing."
+        }
+      ],
+      "prose": "Author w_rgb to prove that three payload bytes remain before loading them. Put the new red, green and blue values in t4, t5 and t6, and recover alpha from the previous word into t7. Advance the command cursor by three. The supplied route then reaches the shared pack stage, which is still unfinished; no new color should be invented by a native-endian word load.",
+      "expectedObservation": "The component values are 255, zero, zero and 255. The input cursor is nineteen, just after the explicit red samples.",
+      "recipes": [
+        "s18-1"
+      ],
+      "region": "w_rgb"
+    },
+    {
+      "id": "s19",
+      "title": "Pack four unsigned components into one color word",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_pack",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What is the packed red word with opaque alpha?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "0x00ff0000."
+          },
+          {
+            "id": "b",
+            "text": "0xff0000ff."
+          },
+          {
+            "id": "c",
+            "text": "0xffff0000."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "The file supplied RGB order, but the numerical word has blue in its low byte."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Position the four independent eight-bit fields and combine them without sign-extending a partial word."
+        }
+      ],
+      "prose": "Author w_pack to place alpha in bits thirty-one through twenty-four, red in twenty-three through sixteen, green in fifteen through eight and blue in the low byte. Use full-width operations or a consistent zero-extended word representation. Set the ordinary one-pixel repetition count for the common update stage. The first call to this packer follows the explicit RGB command.",
+      "expectedObservation": "The reconstructed numerical word is 0xffff0000 and t3 is one. Its cache update has not happened at this checkpoint.",
+      "recipes": [
+        "s19-1"
+      ],
+      "region": "w_pack"
+    },
+    {
+      "id": "s20",
+      "title": "Fetch an index and check adjacency",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_index",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q20",
+        "prompt": "What does INDEX restore along with RGB?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The channels metadata value."
+          },
+          {
+            "id": "b",
+            "text": "The cached alpha."
+          },
+          {
+            "id": "c",
+            "text": "The preceding pixel\u2019s alpha regardless of cache."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The cache stores complete words, including invisible component differences."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Compare the tag\u2019s slot with s6, load its four-byte entry with a consistent unsigned representation and retain that slot for adjacency."
+        }
+      ],
+      "prose": "Author w_index to reject a consecutive INDEX to the same slot, then fetch that slot\u2019s full word and retain its number as the last-index marker. The worked stream reaches index 35 in hexadecimal after the black run, explicit red and red run. This fetch therefore relies on the first run\u2019s cache insertion. Set a one-pixel repetition count before the common update path.",
+      "expectedObservation": "The fetch restores 0xff000000 from slot fifty-three. The cursor is twenty-one and five pixels remain before this pixel is accounted for.",
+      "recipes": [
+        "s20-1"
+      ],
+      "region": "w_index"
+    },
+    {
+      "id": "s21",
+      "title": "Apply three biased two-bit changes",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_diff",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q21",
+        "prompt": "What operation follows each component addition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Reduction modulo 256."
+          },
+          {
+            "id": "b",
+            "text": "Saturation to the range 0..255."
+          },
+          {
+            "id": "c",
+            "text": "Multiplication by alpha."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "QOI changes wrap; they do not clamp."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Extract fields at shifts 4,2 and 0, subtract the bias and mask the resulting components with 255."
+        }
+      ],
+      "prose": "Author w_diff to split the tag\u2019s three fields, subtract two from each and add them to the previous components. Mask each updated component to eight bits before packing. For tag 7f after opaque black, every stored field is three, so each actual change is plus one. Alpha is retained, and this command has no payload bytes after its tag.",
+      "expectedObservation": "The unpacked components are one, one, one and 255. The input cursor is twenty-two.",
+      "recipes": [
+        "s21-1"
+      ],
+      "region": "w_diff"
+    },
+    {
+      "id": "s22",
+      "title": "Combine green change with its residuals",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_luma",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What does the high nibble of 97 contribute?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An absolute red sample."
+          },
+          {
+            "id": "b",
+            "text": "The new alpha value."
+          },
+          {
+            "id": "c",
+            "text": "Red change minus green change."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "The two nibbles are residuals, not independent absolute changes."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Decode dG=5, dR-dG=1 and dB-dG=-1 before applying any channel addition."
+        }
+      ],
+      "prose": "Author w_luma to require its second payload byte, recover green change from the low six tag bits and split the second byte into two residual nibbles. Subtract biases thirty-two and eight. Add green change to each residual to obtain the red and blue changes, then update modulo 256. For a5 97 after the previous step\u2019s color, the complete changes are six, five and four.",
+      "expectedObservation": "The new components are seven, six, five and 255, with input cursor twenty-four.",
+      "recipes": [
+        "s22-1"
+      ],
+      "region": "w_luma"
+    },
+    {
+      "id": "s23",
+      "title": "Replace all four components for RGBA",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_rgba",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Which component is explicitly replaced here but retained by RGB?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The dimensions."
+          },
+          {
+            "id": "b",
+            "text": "Alpha."
+          },
+          {
+            "id": "c",
+            "text": "Blue."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The full ff tag has four following component bytes."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Load the fourth byte into t7; do not reuse alpha from the preceding color."
+        }
+      ],
+      "prose": "Author w_rgba to require four payload bytes and load every component, including alpha, as an unsigned value. Advance across those four bytes before entering the packer. The worked command keeps RGB at seven, six and five while changing alpha to 128. The already implemented final INDEX then restores an earlier complete pixel, including its opaque alpha.",
+      "expectedObservation": "The loaded components are seven, six, five and 128. The cursor is twenty-nine before the final index tag.",
+      "recipes": [
+        "s23-1"
+      ],
+      "region": "w_rgba"
+    },
+    {
+      "id": "s24",
+      "title": "Inspect the completed private reconstruction",
+      "kind": "observe",
+      "target": "validate",
+      "checkpoint": "walk_marker",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Does reconstructing eight pixels establish full file validity?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; marker and exact extent remain."
+          },
+          {
+            "id": "b",
+            "text": "Yes; the remaining bytes are ignored."
+          },
+          {
+            "id": "c",
+            "text": "Only when the last pixel is opaque."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Pixel completion and stream completion are separate conditions."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Inspect s2, the two input pointers and the final alpha before allowing metadata publication."
+        }
+      ],
+      "prose": "Run to walk_marker before adding its checks. The command handlers now account for all eight pixels. Compare the final predictor with the penultimate RGBA pixel: the final index must have restored opaque alpha. The caller metadata is still unpublished because the reserved marker and exact file extent have not yet been accepted.",
+      "expectedObservation": "No pixels remain; cursor and payload end are both thirty. The last predictor is 0xff 010101 and caller metadata remains sentinels.",
+      "recipes": [
+        "s24-1"
+      ]
+    },
+    {
+      "id": "s25",
+      "title": "Require the exact eight-byte marker",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "after_w_marker",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Why reject a cursor short of the payload end?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It necessarily identifies a smaller valid image."
+          },
+          {
+            "id": "b",
+            "text": "Zero bytes automatically terminate QOI data."
+          },
+          {
+            "id": "c",
+            "text": "It leaves unconsumed payload bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The declared pixel count must meet the framing boundary exactly."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Check cursor equality first, then seven zeros followed by one; do not consume marker bytes as samples."
+        }
+      ],
+      "prose": "Author w_marker to require that the command cursor equals the reserved payload end. Then compare seven zero bytes and the final one byte. Do not scan forward to find a plausible marker after unconsumed commands. A wrong byte or trailing payload must take the format-error path while caller metadata is still untouched.",
+      "expectedObservation": "Cursor thirty equals payload end thirty, and all eight marker bytes pass. Metadata publication is the next unfinished body.",
+      "recipes": [
+        "s25-1"
+      ],
+      "region": "w_marker"
+    },
+    {
+      "id": "s26",
+      "title": "Publish metadata only after complete validation",
+      "kind": "author",
+      "target": "validate",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q26",
+        "prompt": "Which result belongs in v1 for validation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Packed dimensions."
+          },
+          {
+            "id": "b",
+            "text": "Pixel count."
+          },
+          {
+            "id": "c",
+            "text": "Compressed file byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "The validator\u2019s result unit differs from loader and decoder result units."
+        },
+        {
+          "id": "s26-h2",
+          "text": "Copy four words only after the marker stage, then return the retained total rather than the now-zero remaining count."
+        }
+      ],
+      "prose": "Author w_meta to copy the four accepted private fields into the caller\u2019s sixteen-byte metadata object after marker validation succeeds. Return pixel count eight with status zero through the supplied restore. The saved registers and stack pointer must be restored in full. The validator has reconstructed colors privately; it still has not written a framebuffer pixel.",
+      "expectedObservation": "The caller descriptor is eight, one, four and zero. v0 is zero, v1 is eight and the framebuffer is unchanged.",
+      "recipes": [
+        "s26-1"
+      ],
+      "region": "w_meta"
+    },
+    {
+      "id": "s27",
+      "title": "Repeat validation with a trailing byte",
+      "kind": "observe",
+      "target": "validate",
+      "checkpoint": "function_return",
+      "scenario": "trailer",
+      "quiz": {
+        "id": "q27",
+        "prompt": "What should happen to metadata on this late error?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It remains unchanged."
+          },
+          {
+            "id": "b",
+            "text": "It retains fields published before the marker."
+          },
+          {
+            "id": "c",
+            "text": "It is cleared to zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "A late format error has the same metadata promise as an early one."
+        },
+        {
+          "id": "s27-h2",
+          "text": "Use the separate trailer recipe and compare every descriptor byte with its pre-call value."
+        }
+      ],
+      "prose": "Keep the completed validator and change only the observation fixture to include a trailing zero. The image\u2019s original commands still describe eight correct pixels, but the exact-extent check must fail. Inspect the caller descriptor after return. Its sentinel pattern must survive; a recognizable image prefix is not authority to publish metadata for a malformed file.",
+      "expectedObservation": "The validator returns status one and zero count. All caller metadata and framebuffer bytes remain unchanged.",
+      "recipes": [
+        "s27-1"
+      ]
+    },
+    {
+      "id": "s28",
+      "title": "Validate through a private decoder descriptor",
+      "kind": "author",
+      "target": "decode",
+      "checkpoint": "after_d_call",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why pass a private metadata destination?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The validator requires a global scratch object."
+          },
+          {
+            "id": "b",
+            "text": "It changes the file\u2019s channel count."
+          },
+          {
+            "id": "c",
+            "text": "The decoder has no public metadata output argument."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "A nested call needs its own result object and preserved arguments."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Retain bytes/count/output/capacity in s0..s3 and use sp+80 as the descriptor destination."
+        }
+      ],
+      "prose": "Author d_call to retain the four decoder arguments and call qoi_validate with private metadata at frame offset eighty. The supplied nonzero-status guard propagates both completed errors and development status. Reading private dimensions before a successful return would use an unaccepted header. The output framebuffer remains untouched during this call.",
+      "expectedObservation": "The private descriptor is valid, v0 is zero and v1 is eight. The public framebuffer remains sentinels.",
+      "recipes": [
+        "s28-1"
+      ],
+      "region": "d_call"
+    },
+    {
+      "id": "s29",
+      "title": "Compare capacity in pixels with unsigned arithmetic",
+      "kind": "author",
+      "target": "decode",
+      "checkpoint": "after_d_capacity",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q29",
+        "prompt": "Which unit belongs in this comparison?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four-byte words plus header bytes."
+          },
+          {
+            "id": "b",
+            "text": "Pixels."
+          },
+          {
+            "id": "c",
+            "text": "Compressed bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Use the validator\u2019s pixel count directly."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Compare s3 with v1 unsigned; the supplied capacity return leaves the output unchanged."
+        }
+      ],
+      "prose": "Author d_capacity to compare the retained pixel capacity with the validated pixel count. A short capacity returns status two without a framebuffer store. This decision follows complete validation, so malformed input still takes priority. Treat capacity as a full unsigned value; a high-bit capacity is large, not negative.",
+      "expectedObservation": "Capacity 4096 accepts eight pixels. No framebuffer word has been stored yet.",
+      "recipes": [
+        "s29-1"
+      ],
+      "region": "d_capacity"
+    },
+    {
+      "id": "s30",
+      "title": "Run the accepted publishing pass",
+      "kind": "author",
+      "target": "decode",
+      "checkpoint": "after_d_walk",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which state must be reinitialized for the second pass?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Predictor, cache and cursors."
+          },
+          {
+            "id": "b",
+            "text": "Only the display\u2019s repaint state."
+          },
+          {
+            "id": "c",
+            "text": "Only the remaining output capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Validation completed an entire reconstruction already."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Restore the original source/count and pass s2 as the output pointer with t9=1; the shared entry establishes fresh per-invocation state."
+        }
+      ],
+      "prose": "Author d_walk to pass the retained bytes and count, private metadata destination and framebuffer pointer to the shared walker. Set its explicit publication flag to one. It resets reconstruction state for this second pass; it must not inherit the validator\u2019s final predictor or cache. The supplied guard retains any nonzero return before the decoder constructs its own result.",
+      "expectedObservation": "Thirty-two framebuffer bytes contain the eight exact RGBA words. The walker returns eight pixels, but the decoder\u2019s final result body is still unfinished.",
+      "recipes": [
+        "s30-1"
+      ],
+      "region": "d_walk"
+    },
+    {
+      "id": "s31",
+      "title": "Return both decoder dimensions in full",
+      "kind": "author",
+      "target": "decode",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q31",
+        "prompt": "What would truncating this result to a word lose?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The low width bits only."
+          },
+          {
+            "id": "b",
+            "text": "The first pixel\u2019s alpha."
+          },
+          {
+            "id": "c",
+            "text": "Height."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "This result is a pair of dimensions, not a byte count."
+        },
+        {
+          "id": "s31-h2",
+          "text": "Zero-extend width, shift height left by 32 and combine them before the full-width return."
+        }
+      ],
+      "prose": "Author d_return to read the accepted private dimensions and form height in the upper thirty-two bits and width in the lower thirty-two. Return that packed value with status zero through the supplied restore. A word-sized store in the caller\u2019s result field would lose the height, so the supplied count/result slot is a doubleword.",
+      "expectedObservation": "v1 is 0x 0000000100000008, and all saved registers and the stack pointer are restored.",
+      "recipes": [
+        "s31-1"
+      ],
+      "region": "d_return"
+    },
+    {
+      "id": "s32",
+      "title": "Inspect stored alpha separately from displayed RGB",
+      "kind": "observe",
+      "target": "decode",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Which observation proves that alpha was restored by the final INDEX?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The header says four channels."
+          },
+          {
+            "id": "b",
+            "text": "The final stored high byte isff."
+          },
+          {
+            "id": "c",
+            "text": "The displayed pixel is dark."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "The display and the file preserve different observable information."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Read all four little-endian bytes of both words; do not infer alpha from RGB brightness."
+        }
+      ],
+      "prose": "Inspect the completed framebuffer and its little-endian bytes before changing the encoder. The seventh pixel has numerical word 0x 80070605 and stored bytes 05 06 07 80. The final pixel is 0xff 010101. Connect this buffer to the RGB display when the capture runner is available, but use the stored high bytes to establish alpha correctness; the current display does not blend them.",
+      "expectedObservation": "The penultimate alpha is 128 and the final alpha is 255. Both can be established from memory even when their RGB display appearance is similar.",
+      "recipes": [
+        "s32-1"
+      ]
+    },
+    {
+      "id": "s33",
+      "title": "Validate the encoder descriptor before pixels",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_descriptor",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q33",
+        "prompt": "Which error takes priority over capacity?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An invalid descriptor field."
+          },
+          {
+            "id": "b",
+            "text": "The first pixel\u2019s color."
+          },
+          {
+            "id": "c",
+            "text": "A pending run of zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "The descriptor defines what input pixels and output header would mean."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Validate widths/heights in 1..64, channels in 3..4 and colorspace in 0..1 before using pixel data."
+        }
+      ],
+      "prose": "Author e_descriptor to load four unsigned words from the descriptor and validate dimensions, channels and colorspace. The supplied frame retains the pixel pointer and destination cursor. Do not read the pixel pointer or store a header while checking these fields. A bad descriptor takes the supplied status-one path even if its byte capacity is also too small.",
+      "expectedObservation": "The accepted fields are eight, one, four and zero in t4..t7. Both caller pixel input and destination remain unchanged.",
+      "recipes": [
+        "s33-1"
+      ],
+      "region": "e_descriptor"
+    },
+    {
+      "id": "s34",
+      "title": "Preflight the conservative encoder capacity",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_capacity",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Why can capacity thirty-five still be rejected for this image?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A QOI stream must have a multiple-of-four length."
+          },
+          {
+            "id": "b",
+            "text": "The encoder always writes sixty-two bytes."
+          },
+          {
+            "id": "c",
+            "text": "The interface requires the conservative sixty-two-byte bound."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Required capacity and returned length have different roles."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Calculate the bound from validated dimensions and use an unsigned full-width comparison before any pixel load."
+        }
+      ],
+      "prose": "Author e_capacity to calculate the accepted pixel count and the bound twenty-two plus five times that count. Compare this bound with unsigned a3 before reading any pixel or writing the destination. A capacity below the bound returns status two even if a particular encoding could fit. Keep the remaining pixel count independently of the byte cursor.",
+      "expectedObservation": "The eight-pixel bound is sixty-two; the prepared capacity accepts it. No header byte has been stored.",
+      "recipes": [
+        "s34-1"
+      ],
+      "region": "e_capacity"
+    },
+    {
+      "id": "s35",
+      "title": "Retain encoder metadata and locate its private cache",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_state",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q35",
+        "prompt": "Why retain header fields before the pixel loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The cache itself stores the header."
+          },
+          {
+            "id": "b",
+            "text": "Temporary calculations may overwrite their registers."
+          },
+          {
+            "id": "c",
+            "text": "The file requires a new dimension for every pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Cache state and descriptive metadata are separate objects."
+        },
+        {
+          "id": "s35-h2",
+          "text": "Store the four words at 88..100 and retain the cache base at sp+112."
+        }
+      ],
+      "prose": "Author e_state to retain the four accepted fields in private frame words and set the cache base to frame offset 112. Initialize the clear-loop pointer and store count without advancing that retained base. Keeping header fields private lets later work use temporary registers without losing the values that must be serialized in the header.",
+      "expectedObservation": "The private fields remain eight, one, four and zero; the clear pointer names the start of a256-byte cache.",
+      "recipes": [
+        "s35-1"
+      ],
+      "region": "e_state"
+    },
+    {
+      "id": "s36",
+      "title": "Clear the encoder cache for this invocation",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_clear",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q36",
+        "prompt": "What can an uncleared matching cache word cause?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "An INDEX that reconstructs the wrong pixel."
+          },
+          {
+            "id": "b",
+            "text": "A harmless extra header byte."
+          },
+          {
+            "id": "c",
+            "text": "Automatic initialization in every external decoder."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "The decoder starts with a zero cache for every image."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Clear 256 bytes using a separate loop pointer; preserve t4..t7 for the header construction."
+        }
+      ],
+      "prose": "Author e_clear to zero every private cache entry while retaining the accepted header values. A stale word that happens to equal the first input pixel could otherwise cause an INDEX whose decoder entry is still empty. This requirement is about the meaning of emitted bytes, not just tidying memory. The cache must be ready before any pixel lookup.",
+      "expectedObservation": "The complete cache is zero. Header fields and the destination cursor retain their accepted values.",
+      "recipes": [
+        "s36-1"
+      ],
+      "region": "e_clear"
+    },
+    {
+      "id": "s37",
+      "title": "Serialize the fixed header in file order",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_header",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q37",
+        "prompt": "How are dimension bytes ordered in the output?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The simulator\u2019s native word order."
+          },
+          {
+            "id": "b",
+            "text": "Least significant byte first."
+          },
+          {
+            "id": "c",
+            "text": "Most significant byte first."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "The metadata\u2019s in-memory layout is not the file header\u2019s layout."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Emit four positioned bytes per dimension and only one byte per validated descriptive flag."
+        }
+      ],
+      "prose": "Author e_header to write the four magic bytes, width and height in big-endian order, then the retained channels and colorspace bytes. Advance the destination cursor exactly fourteen bytes. The input framebuffer is still unread. This construction is the inverse of the byte-wise header interpretation; a native little-endian metadata copy would not produce the same file.",
+      "expectedObservation": "The destination contains the accepted fourteen-byte header and s2 points just after it. All later destination bytes are sentinels.",
+      "recipes": [
+        "s37-1"
+      ],
+      "region": "e_header"
+    },
+    {
+      "id": "s38",
+      "title": "Initialize a predictor and an empty pending run",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_previous",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Why can this image start with RUN?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The header supplied black as a color sample."
+          },
+          {
+            "id": "b",
+            "text": "Its first pixel equals the prescribed initial predictor."
+          },
+          {
+            "id": "c",
+            "text": "Every image starts by repeating an uninitialized cache entry."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "The initial previous pixel is part of the format."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Set alpha 255 with RGB zero and retain a separate pending count; do not infer the predictor from the cache."
+        }
+      ],
+      "prose": "Author e_previous to establish the encoder\u2019s initial opaque-black predictor and zero pending repetitions. Keep that predictor numerically consistent with the unsigned words loaded from the input. The first pixel of the worked image is already opaque black, so the earliest compressed command can be a run rather than an explicit color.",
+      "expectedObservation": "The predictor is 0xff 000000 and the pending-run count is zero. The destination still contains only the header.",
+      "recipes": [
+        "s38-1"
+      ],
+      "region": "e_previous"
+    },
+    {
+      "id": "s39",
+      "title": "Load one complete input word",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_pixel",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q39",
+        "prompt": "What does the reduced remaining count exclude?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The pixel already loaded into t0."
+          },
+          {
+            "id": "b",
+            "text": "Only pixels that have explicit RGBA chunks."
+          },
+          {
+            "id": "c",
+            "text": "The header and marker."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Loading a pixel and emitting its representation are separate events."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Use a four-byte word load, full-width pointer increment and one-pixel count decrement."
+        }
+      ],
+      "prose": "Author e_pixel to load the current four-byte pixel with a consistent unsigned word representation, advance the input pointer by four and reduce the remaining pixel count. The count now describes pixels after the one currently held in t0. Do not advance the output yet: repeat, cache and difference decisions determine how many bytes this pixel will need.",
+      "expectedObservation": "t0 is opaque black, the input cursor advanced four bytes and seven pixels remain after the loaded pixel.",
+      "recipes": [
+        "s39-1"
+      ],
+      "region": "e_pixel"
+    },
+    {
+      "id": "s40",
+      "title": "Read a cache candidate without replacing it yet",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_hash",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q40",
+        "prompt": "Why must the old cache word be read before replacement?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It determines the image width."
+          },
+          {
+            "id": "b",
+            "text": "It is the next input pixel."
+          },
+          {
+            "id": "c",
+            "text": "It determines whether INDEX is valid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Hash equality is weaker than complete pixel equality."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Retain the entry address and its previous word so the later comparison can inspect all four components."
+        }
+      ],
+      "prose": "Author e_hash to calculate the current pixel\u2019s weighted slot, form its entry address in t8 and load the old cached word into t9. Do not store the new pixel before comparing it with the old entry. Doing so would make every lookup appear to match, including colors the decoder has never cached.",
+      "expectedObservation": "For the first opaque-black pixel, t8 selects slot fifty-three and t9 is still transparent black.",
+      "recipes": [
+        "s40-1"
+      ],
+      "region": "e_hash"
+    },
+    {
+      "id": "s41",
+      "title": "Separate repetition from a new-color decision",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "encode_run",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Which comparison identifies a repetition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Current pixel equals the header\u2019s channels field."
+          },
+          {
+            "id": "b",
+            "text": "Current pixel equals previous pixel."
+          },
+          {
+            "id": "c",
+            "text": "Current hash equals previous hash."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "A run repeats the predictor, independently of whether a cache entry matches."
+        },
+        {
+          "id": "s41-h2",
+          "text": "Handle equality first; on a different pixel, flush pending repetitions before the lookup path."
+        }
+      ],
+      "prose": "Author e_repeat to route a pixel equal to the predictor to run accumulation. For a different pixel, emit any already pending run before making the new color\u2019s cache decision. The first worked pixel takes the repeated-color branch immediately. Its cache candidate differs from it because a newly initialized cache contains transparent black, but repetition depends on the predictor instead.",
+      "expectedObservation": "Execution reaches encode_run with current and previous opaque black, seven later pixels and no emitted payload byte.",
+      "recipes": [
+        "s41-1"
+      ],
+      "region": "e_repeat"
+    },
+    {
+      "id": "s42",
+      "title": "Accumulate a run until a flush is required",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "encode_finish_pixel",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q42",
+        "prompt": "When must a pending run be emitted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At length sixty-two or the final pixel."
+          },
+          {
+            "id": "b",
+            "text": "Only when the entire input is black."
+          },
+          {
+            "id": "c",
+            "text": "After every accepted repeated pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "The format limits one run chunk to sixty-two pixels."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Check both the pending count and the already reduced remaining-pixel count."
+        }
+      ],
+      "prose": "Author e_run to increment the pending count. Flush when it reaches sixty-two or when the loaded pixel was the last one. Otherwise retain it and proceed to the common per-pixel finish. The first black pixel leaves one pending repetition because seven later pixels remain. No run tag has to be written at that point.",
+      "expectedObservation": "The pending count is one and the byte cursor remains at the end of the header.",
+      "recipes": [
+        "s42-1"
+      ],
+      "region": "e_run"
+    },
+    {
+      "id": "s43",
+      "title": "Flush the biased run field",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_flush",
+      "scenario": "one_black",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Which byte encodes one repetition?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "c1."
+          },
+          {
+            "id": "b",
+            "text": "fe."
+          },
+          {
+            "id": "c",
+            "text": "c0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "The stored field is one less than the repetition count."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Combine the biased low six bits with 192, store a byte and reset s5 only after writing it."
+        }
+      ],
+      "prose": "Use the one-pixel opaque-black recipe so the first loaded pixel is also the last. Author e_flush to encode pending count minus one under the RUN class bits, write one byte and clear the pending count. Advancing the output by one is independent of how many pixels the tag describes. The common per-pixel finish remains unfinished for now.",
+      "expectedObservation": "The header is followed by c0, s2 points to offset fifteen and pending count is zero. The temporary function result is still development status four.",
+      "recipes": [
+        "s43-1"
+      ],
+      "region": "e_flush"
+    },
+    {
+      "id": "s44",
+      "title": "Commit one encoder pixel\u2019s state",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_finish",
+      "scenario": "one_black",
+      "quiz": {
+        "id": "q44",
+        "prompt": "Why update cache state for a repeated pixel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It changes the repeat count\u2019s bias."
+          },
+          {
+            "id": "b",
+            "text": "A later index can depend on that value."
+          },
+          {
+            "id": "c",
+            "text": "It adds a mandatory extra command byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "The emitted stream and the encoder\u2019s cache must describe the same history."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Store t0 through the retained t8 entry pointer, update s3 and inspect s1 before looping."
+        }
+      ],
+      "prose": "Author e_finish to insert the accepted current pixel into its cache entry, update the predictor and loop when more input pixels remain. Use the same one-pixel recipe to observe the non-looping boundary before marker writing. Updating the cache here also makes an initial run\u2019s opaque black available for a later index in a larger image.",
+      "expectedObservation": "Slot fifty-three and the predictor contain opaque black; no pixels remain. The current output is header plus c0, without a marker yet.",
+      "recipes": [
+        "s44-1"
+      ],
+      "region": "e_finish"
+    },
+    {
+      "id": "s45",
+      "title": "Finish a working uniform-image subset",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "function_return",
+      "scenario": "one_black",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Which length belongs in the successful return?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The actual emitted byte count."
+          },
+          {
+            "id": "b",
+            "text": "The conservative twenty-seven-byte capacity bound."
+          },
+          {
+            "id": "c",
+            "text": "One pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "A successful subset can exercise framing before every command path exists."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Append exactly eight marker bytes, subtract the original destination pointer and write no extra terminator."
+        }
+      ],
+      "prose": "Author e_marker to append seven zero bytes and a final one after the last represented pixel. Return the byte cursor minus its original destination, not the conservative bound. This creates a complete one-pixel file even while other color paths remain unfinished. That limited success is useful evidence for framing and run handling, not proof that the entire encoder is complete.",
+      "expectedObservation": "The one-pixel black file has twenty-three bytes and status zero. The destination after the returned interval remains unchanged.",
+      "recipes": [
+        "s45-1"
+      ],
+      "region": "e_marker"
+    },
+    {
+      "id": "s46",
+      "title": "Check complete cache equality and alpha",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_lookup",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q46",
+        "prompt": "What must match to justify INDEX?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the slot number."
+          },
+          {
+            "id": "b",
+            "text": "Only RGB while alpha is retained separately."
+          },
+          {
+            "id": "c",
+            "text": "The entire RGBA word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "A cache collision is not a complete color match."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Compare t0 with the old word in t9; on a miss, inspect the current-versus-previous high byte before using RGB differences."
+        }
+      ],
+      "prose": "Return to the eight-pixel recipe. Author e_lookup to select INDEX for a complete cached-word match. Otherwise compare alpha with the predictor and route a changed alpha to RGBA. Only unchanged alpha reaches difference calculations. The first red pixel misses the cache and has unchanged alpha; the preceding pending black run has already been flushed.",
+      "expectedObservation": "The byte cursor is fifteen after the black run. Current red and previous black have equal alpha, and the old red-slot entry is not a match.",
+      "recipes": [
+        "s46-1"
+      ],
+      "region": "e_lookup"
+    },
+    {
+      "id": "s47",
+      "title": "Form signed representatives of byte differences",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_delta",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Why is minus one useful for zero-to 255 red?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It changes the byte order."
+          },
+          {
+            "id": "b",
+            "text": "It describes the same modulo 256 change in a smaller field."
+          },
+          {
+            "id": "c",
+            "text": "It instructs the decoder to clamp red."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "QOI additions wrap independently within each channel."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Normalize each difference modulo 256 into a signed-byte range before testing DIFF or LUMA."
+        }
+      ],
+      "prose": "Author e_delta to compute red, green and blue changes from the predictor, reducing each to a signed representative in minus 128 through 127. The red change from zero to 255 can then be minus one. Keep these numerical changes in t1, t2 and t3 for the range tests; they are not already biased fields.",
+      "expectedObservation": "The first red pixel\u2019s changes are minus one, zero and zero. No color command has been written for it yet.",
+      "recipes": [
+        "s47-1"
+      ],
+      "region": "e_delta"
+    },
+    {
+      "id": "s48",
+      "title": "Emit a fitting DIFF command",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_diff",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q48",
+        "prompt": "What happens to a change of plus two?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It fails the DIFF range test."
+          },
+          {
+            "id": "b",
+            "text": "It is stored as field 00."
+          },
+          {
+            "id": "c",
+            "text": "It is always clamped to plus one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "A field must be proven representable before masking or placement."
+        },
+        {
+          "id": "s48-h2",
+          "text": "Test each change plus two as unsigned less-than four; then place the three two-bit fields."
+        }
+      ],
+      "prose": "Author e_diff to test whether all three changes fit minus two through plus one. Add two only when constructing the unsigned fields, position them and combine the class bits. The worked red pixel fits with fields 01,10,10 and emits 5a. A non-fitting triple must continue to LUMA rather than truncating fields that cannot represent it.",
+      "expectedObservation": "The prefix is the fourteen-byte header followed by c0 and 5a. The output cursor is sixteen.",
+      "recipes": [
+        "s48-1"
+      ],
+      "region": "e_diff"
+    },
+    {
+      "id": "s49",
+      "title": "Emit a verified cache index",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_index",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q49",
+        "prompt": "How do entry byte offsets become slot numbers?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Multiply the absolute address by four."
+          },
+          {
+            "id": "b",
+            "text": "Keep the low six address bits directly."
+          },
+          {
+            "id": "c",
+            "text": "Divide the offset from cache base by four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Each cache entry is one four-byte word."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Subtract s4 from t8, shift the difference right by two and emit only the resulting slot number."
+        }
+      ],
+      "prose": "Author e_index to recover the slot number from its retained cache-entry address, write that six-bit index byte and advance the output by one. The first index in the worked trace retrieves opaque black after the red run. The shared finish stage then updates the predictor for subsequent difference calculations. Do not serialize the byte offset within the cache as though it were the slot.",
+      "expectedObservation": "The first index byte is 35 in hexadecimal. The output prefix has eighteen bytes and four later input pixels remain.",
+      "recipes": [
+        "s49-1"
+      ],
+      "region": "e_index"
+    },
+    {
+      "id": "s50",
+      "title": "Emit green and two fitting residuals",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_luma",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q50",
+        "prompt": "What ranges must the residuals satisfy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero through 255 without a bias."
+          },
+          {
+            "id": "b",
+            "text": "Minus eight through seven."
+          },
+          {
+            "id": "c",
+            "text": "Minus thirty-two through thirty-one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "Green and residual fields have different widths."
+        },
+        {
+          "id": "s50-h2",
+          "text": "Subtract dG from dR and dB, test the biased residuals below sixteen and emit exactly two bytes on success."
+        }
+      ],
+      "prose": "Author e_luma to check the signed green range and the two red/blue residual ranges. A fitting command stores green plus thirty-two and each residual plus eight. The worked transition from 1,1,1 to 7,6,5 produces a5 97. A failed range test routes to the literal RGB body; emitting low bits of an out-of-range residual would silently change the pixel.",
+      "expectedObservation": "The output prefix has twenty-one bytes, including a5 97, and two later pixels remain.",
+      "recipes": [
+        "s50-1"
+      ],
+      "region": "e_luma"
+    },
+    {
+      "id": "s51",
+      "title": "Use RGB when differences cannot represent the color",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "after_e_rgb",
+      "scenario": "one_rgb",
+      "quiz": {
+        "id": "q51",
+        "prompt": "Why is no alpha byte needed for this literal?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Alpha is unchanged from the predictor."
+          },
+          {
+            "id": "b",
+            "text": "The input has no stored alpha."
+          },
+          {
+            "id": "c",
+            "text": "RGB always forces alpha to 255."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "This path is selected only after alpha equality and failed difference ranges."
+        },
+        {
+          "id": "s51-h2",
+          "text": "Write the full fe tag and three component bytes in file order, advancing by four."
+        }
+      ],
+      "prose": "Use the one-pixel red 100 recipe to reach a literal path. Its unchanged alpha permits RGB, but red change 100 does not fit the chosen DIFF or LUMA fields. Author e_rgb to emit fe followed by red, green and blue, retaining alpha implicitly. The already completed finish and marker stages then return a complete file for this subset.",
+      "expectedObservation": "The prefix is a fourteen-byte header and fe 64 00 00; the complete returned file has twenty-six bytes.",
+      "recipes": [
+        "s51-1"
+      ],
+      "region": "e_rgb"
+    },
+    {
+      "id": "s52",
+      "title": "Emit explicit alpha with RGBA",
+      "kind": "author",
+      "target": "encode",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q52",
+        "prompt": "Which byte order follows ff?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Blue, green, red, alpha."
+          },
+          {
+            "id": "b",
+            "text": "Alpha, red, green, blue."
+          },
+          {
+            "id": "c",
+            "text": "Red, green, blue, alpha."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s52-h1",
+          "text": "The file\u2019s RGBA order differs from the little-endian color word\u2019s memory order."
+        },
+        {
+          "id": "s52-h2",
+          "text": "Extract the fields from t0 in shifts 16,8,0,24 and emit four bytes after the full tag."
+        }
+      ],
+      "prose": "Author e_rgba to emit ff followed by all four current components. In the worked trace this represents 7,6,5 with alpha 128. Its RGB values alone do not reveal the alpha change. The remaining index, common finish and marker paths are already present, so this edit connects the full eight-pixel encoding. Check the returned count independently of the conservative capacity.",
+      "expectedObservation": "The complete encoder returns status zero and thirty-five bytes for the worked trace, preserving every RGBA value and both descriptive flags.",
+      "recipes": [
+        "s52-1"
+      ],
+      "region": "e_rgba"
+    },
+    {
+      "id": "s53",
+      "title": "Verify an equivalent stream independently",
+      "kind": "observe",
+      "target": "encode",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q53",
+        "prompt": "Which comparison is the completed encoder\u2019s primary content check?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only a smaller file length."
+          },
+          {
+            "id": "b",
+            "text": "Exact decoded pixels and metadata."
+          },
+          {
+            "id": "c",
+            "text": "Identical bytes to the worked file."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s53-h1",
+          "text": "A smaller file can still contain wrong colors, and a different file can still be correct."
+        },
+        {
+          "id": "s53-h2",
+          "text": "Decode the exact returned bytes with an independent implementation and compare every component and header flag."
+        }
+      ],
+      "prose": "Compare the thirty-five-byte result with the thirty-eight-byte worked input by decoding both. The reference policy replaced explicit red with 5a, but the recovered pixels and flags must agree. Inspect the returned interval only; unused destination capacity is not part of the file. Repeat this check with another valid encoding rather than making byte identity an acceptance rule.",
+      "expectedObservation": "The two file lengths differ by three, but their decoded eight RGBA pixels and descriptive flags match.",
+      "recipes": [
+        "s53-1"
+      ]
+    },
+    {
+      "id": "s54",
+      "title": "Bound a file buffer before opening its path",
+      "kind": "author",
+      "target": "load",
+      "checkpoint": "after_l_bound",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q54",
+        "prompt": "Which capacity is valid for the loader?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Thirty-eight bytes for this thirty-eight-byte file."
+          },
+          {
+            "id": "b",
+            "text": "Zero bytes because EOF can be probed privately."
+          },
+          {
+            "id": "c",
+            "text": "An unsigned value above 20502."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s54-h1",
+          "text": "The private EOF probe does not enlarge the caller\u2019s declared buffer."
+        },
+        {
+          "id": "s54-h2",
+          "text": "Reject zero and unsigned values above 20502 before the supplied load frame."
+        }
+      ],
+      "prose": "Author l_bound to accept unsigned byte capacities from one through 20502. A zero, over-limit or high-bit capacity returns status two before pointer access or a file operation. The supplied frame is entered only after this guard. The buffer\u2019s capacity concerns complete input bytes, not pixel count or private marker storage.",
+      "expectedObservation": "The prepared capacity reaches the checkpoint without reading a path or opening a descriptor.",
+      "recipes": [
+        "s54-1"
+      ],
+      "region": "l_bound"
+    },
+    {
+      "id": "s55",
+      "title": "Open input and retain the actual descriptor",
+      "kind": "author",
+      "target": "load",
+      "checkpoint": "after_l_open",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q55",
+        "prompt": "Which descriptor should the next read use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Three by convention."
+          },
+          {
+            "id": "b",
+            "text": "The file byte count."
+          },
+          {
+            "id": "c",
+            "text": "The value returned by open."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s55-h1",
+          "text": "A descriptor identifies this successful open, not a syscall number."
+        },
+        {
+          "id": "s55-h2",
+          "text": "Preserve the returned handle in s3; the supplied cleanup marker starts at minus one."
+        }
+      ],
+      "prose": "Author l_open to retain the caller buffer, capacity and metadata destination, then open the supplied path for reading. Keep the actual nonnegative result in s3 and initialize accepted bytes to zero. An open failure takes the supplied I/O-error return. The guided fixture deliberately returns descriptor nineteen, so a constant descriptor three will fail.",
+      "expectedObservation": "At the checkpoint s3 is nineteen and s4 is zero. The supplied development exit closes that live descriptor when the next body is unfinished.",
+      "recipes": [
+        "s55-1"
+      ],
+      "region": "l_open"
+    },
+    {
+      "id": "s56",
+      "title": "Accumulate only bytes actually read",
+      "kind": "author",
+      "target": "load",
+      "checkpoint": "after_l_read",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q56",
+        "prompt": "What does a positive short read mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The file is necessarily malformed."
+          },
+          {
+            "id": "b",
+            "text": "Some bytes were accepted and another read is needed."
+          },
+          {
+            "id": "c",
+            "text": "EOF has already been established."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s56-h1",
+          "text": "Request size and returned count are different values."
+        },
+        {
+          "id": "s56-h2",
+          "text": "Use buffer+accepted and capacity-accepted as the request, then add only the positive result to s4."
+        }
+      ],
+      "prose": "Author l_read to request the unused suffix of the caller\u2019s buffer. A negative result is an I/O error, zero selects EOF processing, and a positive result advances the accepted count by that result. The fixture limits each read to three bytes. Do not treat such a short positive result as EOF, and do not advance by the original request size.",
+      "expectedObservation": "After the first read, s4 is three and the buffer begins with 71 6f 69. Continuing the loop eventually reaches the unfinished EOF stage with all thirty-eight bytes buffered.",
+      "recipes": [
+        "s56-1"
+      ],
+      "region": "l_read"
+    },
+    {
+      "id": "s57",
+      "title": "Probe EOF outside an exactly full caller buffer",
+      "kind": "author",
+      "target": "load",
+      "checkpoint": "load_eof",
+      "scenario": "trace_exact",
+      "quiz": {
+        "id": "q57",
+        "prompt": "Where should the extra probe byte go?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Private storage outside the caller buffer."
+          },
+          {
+            "id": "b",
+            "text": "Immediately after its declared capacity."
+          },
+          {
+            "id": "c",
+            "text": "Into the metadata width field."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s57-h1",
+          "text": "A full buffer does not distinguish exact EOF from excess input."
+        },
+        {
+          "id": "s57-h2",
+          "text": "Use sp+96 for the one-byte request and retain the caller\u2019s accepted count unchanged."
+        }
+      ],
+      "prose": "Use capacity thirty-eight to make the worked file fill the caller buffer exactly. Author l_probe to request one more byte into the supplied private probe at frame offset 96. Zero confirms EOF; a positive result means excess input and status two; a negative result is an I/O error. None of these results authorizes a thirty-ninth caller-buffer store.",
+      "expectedObservation": "The exact file reaches load_eof after a zero-byte probe. The caller buffer has thirty-eight bytes, metadata is untouched and the descriptor is still live.",
+      "recipes": [
+        "s57-1"
+      ],
+      "region": "l_probe"
+    },
+    {
+      "id": "s58",
+      "title": "Close before validating loaded bytes",
+      "kind": "author",
+      "target": "load",
+      "checkpoint": "function_return",
+      "scenario": "trace_exact",
+      "quiz": {
+        "id": "q58",
+        "prompt": "Why replace the validator\u2019s successful count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The open call returned an unreliable descriptor."
+          },
+          {
+            "id": "b",
+            "text": "The decoder has already produced the framebuffer."
+          },
+          {
+            "id": "c",
+            "text": "The loader returns bytes, while validation returns pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s58-h1",
+          "text": "Nested interfaces can use the same return register for different units."
+        },
+        {
+          "id": "s58-h2",
+          "text": "Close first, call validation with s4 accepted bytes and return s4 after a zero status."
+        }
+      ],
+      "prose": "Author l_finish to close the input descriptor at EOF, validate the accepted bytes into caller metadata and return the loaded byte count only on success. The validator\u2019s successful v1 is pixels, so replace it with the retained byte count for the loader interface. A nonzero validator result propagates after the file is already closed.",
+      "expectedObservation": "The loader returns status zero and thirty-eight bytes. Metadata contains 8,1,4,0 and no fixture descriptor remains open.",
+      "recipes": [
+        "s58-1"
+      ],
+      "region": "l_finish"
+    },
+    {
+      "id": "s59",
+      "title": "Reject an impossible selected save count",
+      "kind": "author",
+      "target": "save",
+      "checkpoint": "after_sv_bound",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q59",
+        "prompt": "Which value defines the bytes selected for saving?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The previous input file\u2019s length automatically."
+          },
+          {
+            "id": "b",
+            "text": "The caller\u2019s unsigned count."
+          },
+          {
+            "id": "c",
+            "text": "The physical arena size."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s59-h1",
+          "text": "A pointer alone has no file-length information."
+        },
+        {
+          "id": "s59-h2",
+          "text": "Check both count bounds before the supplied frame or any path access."
+        }
+      ],
+      "prose": "Author sv_bound to apply the saver\u2019s count guards before reading either path or byte pointer. Counts above 20502 return two, and counts below twenty-three return one. A selected count is not inferred from mapped padding or a remembered earlier encode. The supplied save frame is entered only after this guard passes.",
+      "expectedObservation": "Thirty-eight selected bytes reach the checkpoint without any file operation or source read.",
+      "recipes": [
+        "s59-1"
+      ],
+      "region": "sv_bound"
+    },
+    {
+      "id": "s60",
+      "title": "Validate before truncating an existing file",
+      "kind": "author",
+      "target": "save",
+      "checkpoint": "after_sv_validate",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q60",
+        "prompt": "Which event must precede truncate-mode open?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Complete stream validation."
+          },
+          {
+            "id": "b",
+            "text": "The first write request."
+          },
+          {
+            "id": "c",
+            "text": "Publishing a new caller framebuffer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s60-h1",
+          "text": "Opening in write mode can destroy the old file immediately."
+        },
+        {
+          "id": "s60-h2",
+          "text": "Use sp+80 for metadata and retain the supplied nonzero-status guard before the open body."
+        }
+      ],
+      "prose": "Author sv_validate to retain path, bytes and selected count and call qoi_validate into private metadata at frame offset eighty. The supplied status guard returns on any nonzero result before open. Validation needs no caller metadata publication here. A malformed stream must leave an existing destination intact rather than opening first and discovering the error afterward.",
+      "expectedObservation": "Validation succeeds in private metadata while the output file still contains its old bytes. No writable descriptor has been opened.",
+      "recipes": [
+        "s60-1"
+      ],
+      "region": "sv_validate"
+    },
+    {
+      "id": "s61",
+      "title": "Open output and observe truncation separately",
+      "kind": "author",
+      "target": "save",
+      "checkpoint": "after_sv_open",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q61",
+        "prompt": "What has successful truncate-mode open already changed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The source byte array."
+          },
+          {
+            "id": "b",
+            "text": "The validated image dimensions."
+          },
+          {
+            "id": "c",
+            "text": "The previous file contents."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s61-h1",
+          "text": "File lifecycle and byte-transfer completion are distinct boundaries."
+        },
+        {
+          "id": "s61-h2",
+          "text": "Retain the returned s3 descriptor and initialize s4 without assuming any bytes have been written."
+        }
+      ],
+      "prose": "Author sv_open to open the validated path in truncate mode, retain its returned descriptor and start the accepted-byte count at zero. The fixture contains an old file, making the open\u2019s effect visible before a write. If the following body remains unfinished, supplied development cleanup closes the descriptor but does not restore the truncated contents.",
+      "expectedObservation": "The output is empty and descriptor nineteen is live at the checkpoint. The later temporary development result is four with zero count.",
+      "recipes": [
+        "s61-1"
+      ],
+      "region": "sv_open"
+    },
+    {
+      "id": "s62",
+      "title": "Advance writes by the accepted count",
+      "kind": "author",
+      "target": "save",
+      "checkpoint": "after_sv_write",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q62",
+        "prompt": "Which count advances the source pointer?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The descriptor number."
+          },
+          {
+            "id": "b",
+            "text": "The positive syscall result."
+          },
+          {
+            "id": "c",
+            "text": "The original requested count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s62-h1",
+          "text": "A short write has made progress but has not completed the request."
+        },
+        {
+          "id": "s62-h2",
+          "text": "Pass bytes+accepted and selected-accepted, then add only the returned positive value."
+        }
+      ],
+      "prose": "Author sv_write to request the remaining selected suffix, add only a positive accepted count and repeat. Zero or a negative result takes the supplied close-and-error path. The fixture accepts at most three bytes per write. Preserve the existing extra-readable-byte guard outside the file count; never include that guard in the serialized output.",
+      "expectedObservation": "After the first write, s4 is three and the output contains 71 6f 69. Continuing reaches the unfinished final-close stage with all thirty-eight selected bytes accepted.",
+      "recipes": [
+        "s62-1"
+      ],
+      "region": "sv_write"
+    },
+    {
+      "id": "s63",
+      "title": "Close and return the full saved length",
+      "kind": "author",
+      "target": "save",
+      "checkpoint": "function_return",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q63",
+        "prompt": "Why can this save return thirty-eight rather than thirty-five?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its input is the original serialized fixture."
+          },
+          {
+            "id": "b",
+            "text": "It added three padding bytes."
+          },
+          {
+            "id": "c",
+            "text": "It counted pixels as bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s63-h1",
+          "text": "The saver\u2019s job is validated transport, not representation selection."
+        },
+        {
+          "id": "s63-h2",
+          "text": "Return the retained selected count after closing and use the supplied frame restore."
+        }
+      ],
+      "prose": "Author sv_finish to close after all selected bytes have been accepted, return status zero and restore the selected count in v1. Saving the supplied worked stream writes thirty-eight bytes, while saving the encoder\u2019s compacted output can write thirty-five. The saver preserves whichever valid byte representation its caller selected; it does not re-encode the image.",
+      "expectedObservation": "The output file exactly matches the selected thirty-eight bytes and every descriptor is closed. Saved registers and the full stack pointer are restored.",
+      "recipes": [
+        "s63-1"
+      ],
+      "region": "sv_finish"
+    },
+    {
+      "id": "s64",
+      "title": "Connect loading, reconstruction, encoding and saving",
+      "kind": "observe",
+      "target": "pipeline",
+      "checkpoint": "results_ready",
+      "scenario": "trace",
+      "quiz": {
+        "id": "q64",
+        "prompt": "Which length should the caller pass from encoder to saver?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original loaded length."
+          },
+          {
+            "id": "b",
+            "text": "The conservative capacity bound."
+          },
+          {
+            "id": "c",
+            "text": "The encoder\u2019s complete returned byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s64-h1",
+          "text": "The input file and encoded result need not have equal lengths."
+        },
+        {
+          "id": "s64-h2",
+          "text": "At save_call compare a2 with the encoder result, then verify the saved file independently before the caller publishes status."
+        }
+      ],
+      "prose": "Select the connected caller and run to results_ready. It loads the original thirty-eight-byte file, decodes eight words, passes accepted metadata to the encoder and saves the encoder\u2019s returned byte count. Check each boundary independently as well as the final round trip. The compact output must preserve header flags and alpha even though its bytes differ from the input.",
+      "expectedObservation": "The caller returns status zero and thirty-five saved bytes, with eight correct framebuffer words and no open descriptors.",
+      "recipes": [
+        "s64-1"
+      ]
+    },
+    {
+      "id": "s65",
+      "title": "Reuse the pipeline for the earlier sprite",
+      "kind": "observe",
+      "target": "pipeline",
+      "checkpoint": "results_ready",
+      "scenario": "sprite",
+      "quiz": {
+        "id": "q65",
+        "prompt": "What supplies an independent expected sprite image?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The previous eight-pixel trace\u2019s dimensions."
+          },
+          {
+            "id": "b",
+            "text": "The original eight row-byte decisions."
+          },
+          {
+            "id": "c",
+            "text": "The candidate encoder\u2019s own output alone."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s65-h1",
+          "text": "A recognizable picture is useful but does not prove every byte or alpha value."
+        },
+        {
+          "id": "s65-h2",
+          "text": "Expand the original rows from bit seven to bit zero and compare all sixty-four RGBA words."
+        }
+      ],
+      "prose": "Prepare the sprite fixture and repeat the complete pipeline. The image is now eight by eight, so decoded word memory spans 256 bytes and the metadata height must change. Compare the reconstructed cells with the original eight row bytes from chapter three, not with an image generated by the candidate encoder. Exact samples establish orientation and component order independently of a recognizable display.",
+      "expectedObservation": "The valid sprite file occupies sixty-one bytes, the framebuffer contains sixty-four opaque pixels and metadata describes 8,8,4,0.",
+      "recipes": [
+        "s65-1"
+      ]
+    }
+  ]
+}

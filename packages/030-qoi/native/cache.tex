@@ -1,0 +1,27 @@
+\section{Use a direct-mapped cache, not a palette}
+After reconstructing a pixel, place its complete RGBA value into slot
+\[
+h=(3r+5g+7b+11a)\bmod64.
+\]
+The largest weighted sum is 6630, so the local computation needs no wide multiplication
+result. Since the divisor is a power of two, the low six bits select the slot. Multiply
+the slot number by four only when forming the byte address of its word. The slot number
+itself remains from zero through sixty-three.
+
+An INDEX command uses its low six bits as the slot to fetch. It restores alpha along
+with RGB. It does not recompute the original color from that number. Two different
+pixels can have the same hash; storing the later one replaces the earlier entry.
+A matching hash is therefore insufficient for an encoder. Compare all four components
+before selecting INDEX.
+
+For opaque black, the hash is \(11\cdot255\bmod64=53\). Opaque red hashes to fifty.
+The cache begins with transparent black even in slot fifty-three; it becomes opaque
+black there only after that pixel has been reconstructed. Reassigning the same entry
+while expanding a run changes no values, but the cache must have the right state by
+the time the following command is decoded.
+
+The specification forbids consecutive INDEX chunks selecting the same slot; RUN is
+the representation for that repetition. The strict validator in this exercise checks
+that rule. Remember whether the immediately preceding chunk was INDEX and its slot.
+A different intervening chunk ends that adjacency. Do not prohibit a later reuse of
+the same slot after intervening pixels.

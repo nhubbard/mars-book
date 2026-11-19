@@ -1,0 +1,21 @@
+\section{Count repeated pixels independently of input bytes}
+For RUN, the low six bits store the run length minus one. \texttt{c0} therefore repeats
+the previous pixel once, and \texttt{fd} repeats it sixty-two times. The two remaining
+full-byte values belong to RGB and RGBA. There is no sixty-three- or sixty-four-pixel
+single run tag.
+
+Compare the decoded length with the number of output pixels still required before
+writing the run. A run that crosses that bound is malformed even if the destination
+arena has spare mapped storage. For an accepted run, write the same color once per
+pixel, advance the output pointer by four each time, and reduce the remaining pixel
+count. Consume no additional input bytes for those repeats.
+
+A long sequence needs several run chunks. Sixty-three opaque black pixels at the
+start of an image can use a run of sixty-two and a run of one. The previous pixel
+already supplies opaque black, so no initial color command is required. A nonblack
+uniform image first establishes its color, then repeats it. At end of image, flush
+any pending encoder run even when its length is less than sixty-two.
+
+An input cursor stopped after the run tag and an output cursor partway through its
+expansion are consistent states. When observing the display, count accepted output
+stores rather than expecting each input byte to correspond to one visible pixel.

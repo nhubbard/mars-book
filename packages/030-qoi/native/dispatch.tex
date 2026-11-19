@@ -1,0 +1,28 @@
+\section{Give the full-byte tags priority}
+At a command boundary, read one tag byte after proving it is inside the payload. Compare
+the complete byte with \texttt{fe} and \texttt{ff} first. They select RGB and RGBA
+commands. Only after excluding them should the decoder examine the high two bits.
+Those bits select INDEX, DIFF, LUMA or RUN for the remaining bytes.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{lll}
+Tag & Additional bytes & Reconstruction \\
+\hline
+\texttt{fe} & Three & Replace RGB, retain alpha \\
+\texttt{ff} & Four & Replace RGBA \\
+\texttt{00xxxxxx} & None & Fetch one cache entry \\
+\texttt{01xxxxxx} & None & Apply three small differences \\
+\texttt{10xxxxxx} & One & Apply green and two residuals \\
+\texttt{11xxxxxx}, excluding \texttt{fe,ff} & None & Repeat one through 62 pixels \\
+\end{tabular}
+\end{center}
+
+Masking \texttt{fe} with \texttt{c0} would classify it as a run. That error invents
+sixty-three output pixels and leaves its three actual samples to be parsed as tags.
+The resulting fault is larger than one wrong color: it destroys both cursors' meanings.
+A full-byte comparison before the two-bit dispatch prevents the ambiguity.
+
+For RGB, prove that three payload bytes remain, then replace red, green and blue while
+retaining the previous alpha. For RGBA, require four and replace every component.
+Neither command performs a colorspace transform or premultiplies RGB by alpha.

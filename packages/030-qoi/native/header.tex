@@ -1,0 +1,32 @@
+\section{Read a fixed header before interpreting chunks}
+The first fourteen bytes are a header. The magic is the four ASCII bytes for
+\texttt{qoif}. Width and height are unsigned 32-bit integers in big-endian order.
+The channels byte is three or four. The colorspace byte is zero or one. Zero denotes
+sRGB color components with linear alpha; one denotes linear components. These two
+fields describe the image; they do not select a different chunk grammar. In particular,
+do not use channels equal to three as a reason to misclassify an RGBA chunk.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rll}
+Offset & Bytes & Meaning \\
+\hline
+0 & \texttt{71 6f 69 66} & Magic \\
+4 & \texttt{00 00 00 08} & Width eight \\
+8 & \texttt{00 00 00 01} & Height one \\
+12 & \texttt{04} & Four-channel description \\
+13 & \texttt{00} & sRGB with linear alpha \\
+\end{tabular}
+\end{center}
+
+A byte load is independent of the pointer's alignment. Read the four dimension bytes
+as unsigned values and assemble the numerical integer with shifts of twenty-four,
+sixteen and eight bits. Do not load a native little-endian word and treat its value
+as the file's dimension. Validate the dimension before multiplying it by the other
+one. The local teaching domain is width and height from one through sixty-four, so
+the product is at most 4096 pixels. Those limits are exercise limits, not limits of
+the QOI format.
+
+After the header, the next input offset is fourteen and the next output index is zero.
+The dimensions determine how many pixels must be reconstructed. Neither a zero byte
+nor the first occurrence of the eventual end-marker pattern determines that count.

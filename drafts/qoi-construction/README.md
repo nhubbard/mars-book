@@ -37,8 +37,9 @@ published contracts and uniform-image size promises. Complete solutions and quiz
 remain private. Seven public completed-interface check files are in checks/: bound, validate, decode,
 encode, format, files and caller. Run each with the CLI grade command against the
 working source; each file is standalone. These use the supplied data/caller labels and
-function_return only. Intermediate checkpoint-check exports and separate distributions
-remain next;
+function_return only. The 65 guided check files are now exported in checks/construction, and the matching
+student distribution is packages/030-qoi in the public repository. Separate instructor
+materials remain private;
 remote instructor progression/hint enforcement and actual automated IDE capture are
 also subsequent work. The substantial prose rewrite remains deferred until all 35 drafts.
 

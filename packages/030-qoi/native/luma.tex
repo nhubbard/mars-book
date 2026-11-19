@@ -1,0 +1,25 @@
+\section{Reconstruct green and the two residuals}
+LUMA is a two-byte command. Its first byte has six bits for the green change with a
+bias of thirty-two. The high and low nibbles of the second byte contain red-minus-green
+and blue-minus-green changes, each biased by eight. The name does not mean that the
+decoder computes an approximate luminance or discards chroma. The representation is
+lossless because both residuals are retained.
+
+Let \(d_g\) be the first field minus thirty-two, \(u\) the high nibble minus eight,
+and \(v\) the low nibble minus eight. Then
+\[
+d_r=d_g+u,\qquad d_b=d_g+v.
+\]
+Apply these changes to the previous red, green and blue values modulo 256, retaining
+alpha. The green change ranges from minus thirty-two through thirty-one. Each residual
+ranges from minus eight through seven. Those ranges differ; do not use the same mask
+or bias for all three fields.
+
+The bytes \texttt{a5 97} give green change five, red residual one and blue residual
+minus one. Their complete changes are therefore six, five and four. From
+\((1,1,1,255)\), reconstruct \((7,6,5,255)\). Reading the second byte as a signed
+integer would obscure the two independent nibbles. Load it unsigned, then split it.
+
+An encoder tests these ranges only when alpha is unchanged. If any required change
+does not fit, RGB can still represent the three new components. If alpha changes,
+use RGBA unless an already cached complete pixel provides an INDEX representation.
