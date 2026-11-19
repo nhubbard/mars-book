@@ -1,5 +1,5 @@
 {
-  "status": "Initial native construction draft; untouched-starter verification only; completed checkpoints and public feedback pending",
+  "status": "Private cumulative checkpoint/continuation and complete-entry verification passed; public feedback, distributions and actual IDE captures pending",
   "steps": [
     {
       "id": "s01",
@@ -991,7 +991,7 @@
       "region": "d_counter",
       "target": "decode",
       "title": "Retain every counter bit",
-      "prose": "Consume the counter value head and require unsigned major type zero. Store its raw sixty-four-bit argument in the private candidate, without applying a signed range test or floating-point conversion. The trace counter is hexadecimal `0102030405060708`. A counter with its top bit set remains valid even if a signed register display presents it as negative.",
+      "prose": "Consume the counter value head and require unsigned major type zero. Store its raw sixty-four-bit argument in the private candidate, without applying a signed range test or floating-point conversion. The trace counter is hexadecimal `0102030405060708`. A counter with its top bit set remains valid even if a signed register display presents it as negative. This observation recipe moves the counter pair first, so it can be checked before the later field bodies are complete.",
       "expectedObservation": "The private counter holds 0102030405060708; caller record bytes are still unchanged.",
       "checkpoint": "after_d_counter",
       "quiz": {
@@ -1032,8 +1032,8 @@
       "region": "d_identifier",
       "target": "decode",
       "title": "Validate the counted identifier before copying",
-      "prose": "Require byte-string type, length at most thirty-two and enough remaining bytes for the complete payload. Store the accepted length in the private prefix. Keep the payload cursor available for the following copy loop. The trace's identifier length is three; the zero at its first byte is data, not a terminator.",
-      "expectedObservation": "The candidate identifier length is three and its payload begins at source offset thirty-eight.",
+      "prose": "Require byte-string type, length at most thirty-two and enough remaining bytes for the complete payload. Store the accepted length in the private prefix. Keep the payload cursor available for the following copy loop. The trace's identifier length is three; the zero at its first byte is data, not a terminator. This recipe moves the identifier pair first, keeping its bytes unchanged; its payload begins at offset five rather than the original trace offset thirty-eight.",
+      "expectedObservation": "The candidate identifier length is three and its payload begins at source offset five.",
       "checkpoint": "after_d_identifier",
       "quiz": {
         "id": "q26",
@@ -1060,7 +1060,7 @@
         },
         {
           "id": "s26-h2",
-          "text": "The candidate identifier length is three and its payload begins at source offset thirty-eight."
+          "text": "The candidate identifier length is three and its payload begins at source offset five."
         }
       ],
       "recipes": [
@@ -1074,7 +1074,7 @@
       "target": "decode",
       "title": "Copy only the active identifier",
       "prose": "Copy exactly the accepted identifier byte count into private candidate storage. Use byte loads and stores because input need not be aligned. Advance the input cursor and subtract the accepted count from the remaining extent. Do not initialize the candidate's unused tail merely to make a later whole-record copy convenient.",
-      "expectedObservation": "The candidate holds 00 ff 41 and the input cursor reaches offset forty-one.",
+      "expectedObservation": "The candidate holds 00 ff 41 and the reordered input cursor reaches offset eight.",
       "checkpoint": "after_d_id_copy",
       "quiz": {
         "id": "q27",
@@ -1101,7 +1101,7 @@
         },
         {
           "id": "s27-h2",
-          "text": "The candidate holds 00 ff 41 and the input cursor reaches offset forty-one."
+          "text": "The candidate holds 00 ff 41 and the reordered input cursor reaches offset eight."
         }
       ],
       "recipes": [
@@ -1321,7 +1321,7 @@
       "title": "Size an inline argument",
       "prose": "The private `head_size` helper takes an unsigned argument in `a0`. For arguments below twenty-four, select width one and return success without examining any memory. Its result counts the complete head, including the initial byte. This helper supports the illustrated construction; the public free-writing contract does not require this private label or algorithm.",
       "expectedObservation": "Argument twenty-three needs a one-byte head.",
-      "checkpoint": "after_z_inline",
+      "checkpoint": "size_exit",
       "quiz": {
         "id": "q33",
         "prompt": "Does this size include an initial byte?",

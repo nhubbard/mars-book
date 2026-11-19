@@ -34,8 +34,7 @@ active 288-byte frame and retained cursor/extent; it is not a standalone public 
 Step 55 has two recipes: short encode capacity and trailing-byte decode. Its per-recipe
 mode and return checkpoint are authoritative for the observation, even though the step
 introduces both in one passage. The second recipe does not reuse an already-decoded
-record. Capture plans are explicitly uncaptured. Completed cumulative checkpoints,
-public feedback exports, separate chapter distributions and actual IDE captures remain
+record. Capture plans are explicitly uncaptured. Public feedback exports, separate chapter distributions and actual IDE captures remain
 pending. Earlier prototype evidence proves those earlier sources, not these unfilled
 or partly filled construction files. The substantial rewrite remains deferred until
 all 35 chapter drafts exist.
@@ -44,5 +43,17 @@ All 57 recipes assemble at normal and above-4-GiB addresses, for 114 prepared as
 checks with warnings treated as errors. The untouched source passes 32 direct-entry
 and caller safety cases at those layouts, including the frame-dependent consume-head
 helper. They preserve full saved state and input/output arenas and perform no I/O.
-This is initial unfinished-source evidence only; completed checkpoint expectations
-remain unverified. Four light-theme capture plans have no captured pixels or receipts.
+This is initial unfinished-source evidence only; the completed checkpoint evidence below is a separate audit. Four light-theme capture plans have no captured pixels or receipts.
+
+Private cumulative execution now verifies all 57 recipes at both layouts: 218 direct
+and caller checkpoint/continuation observations. The counter and identifier recipes
+move their pairs first so they can run before later field bodies exist; their native
+passages state the changed offsets. The inline-size observation uses its successful
+exit rather than an after-label bypassed by its branch. Exact intermediate fields,
+private candidate bytes, output prefixes, saved state and subsequent development or
+success results are checked. Both construction-compatible complete variants also pass
+16336 entry-contract cases. Twelve assembled regressions are rejected, 24 nested
+development cases pass and twelve actual outputs decode independently. These checks
+do not certify every possible input or complete the pending public feedback, chapter
+distributions, actual captures or accessibility review. Earlier prototype measurements
+retain their original sources and boundaries.

@@ -533,3 +533,24 @@ are explicitly uncaptured. Private cumulative implementations, checkpoint verifi
 public feedback and separate chapter distributions remain next. The main manuscript
 retains 31 packaged chapters. Earlier prose and human contributions are unchanged;
 the substantial rewriting pass remains deferred as requested.
+
+
+Private cumulative CBOR execution now verifies 218 direct/caller checkpoint and
+continuation observations across all 57 recipes at both address layouts. Checks cover
+illustrated registers, private candidates, exact source/record/destination bytes,
+retained full-width caller state and subsequent development or success returns. The
+counter and identifier recipes now move those pairs first, making their observations
+reachable before later field bodies are complete; native text gives the changed offsets.
+The inline-size recipe names the successful exit that its branch actually reaches.
+
+Both construction-compatible completed variants also pass all 16336 head/walker/telemetry
+entry cases at both layouts. Twelve assembled wide-address accuracy/ownership faults
+are rejected; six nested-development variants pass direct and caller checks at both
+layouts (24 cases). Twelve actual construction output encodings decode independently
+and match canonical host output. All private builders reproduce source, expected-byte
+and checking artifacts byte-for-byte. Bounded groups keep the checker within the
+existing assembly-work limit without changing simulator/grader semantics. Original
+prototype performance figures retain their earlier sources and measurement boundaries.
+Public feedback export and separate chapter032 distributions remain next. Actual IDE
+captures, remote progression/hint enforcement and independent accessibility validation
+remain pending; prior prose is retained for the later substantial edit.

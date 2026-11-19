@@ -98,6 +98,18 @@ class CborConstructionTests(unittest.TestCase):
             self.assertNotEqual(0, result.returncode)
             self.assertEqual(original, output.read_bytes())
 
+    def test_typed_field_observations_reorder_without_changing_values(self):
+        trace = bytes.fromhex(self.recipes[0]['inputHex'])
+        root, optional, readings, identifier, counter = trace[:2], trace[2:12], trace[12:35], trace[35:41], trace[41:]
+        selected = {r['step']: bytes.fromhex(r['inputHex']) for r in self.recipes if r['step'] in ('s25', 's26', 's27')}
+        self.assertEqual(root+counter+optional+readings+identifier, selected['s25'])
+        self.assertEqual(root+identifier+optional+readings+counter, selected['s26'])
+        self.assertEqual(selected['s26'], selected['s27'])
+        self.assertEqual(bytes.fromhex('00ff41'), selected['s26'][5:8])
+        self.assertEqual({52}, {len(raw) for raw in selected.values()})
+        inline = next(r for r in self.recipes if r['id'] == 's33-1')
+        self.assertEqual('size_exit', inline['callerCheckpoint'])
+
     def test_capture_plans_have_no_claimed_pixels(self):
         plans = json.loads((self.folder/'captures/plan.json').read_text())['figures']
         self.assertEqual(4, len(plans))
