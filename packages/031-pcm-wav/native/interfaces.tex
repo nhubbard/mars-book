@@ -1,0 +1,26 @@
+\section{Keep the six calls and their result units explicit}
+\texttt{wav\_parse} takes a byte pointer in \texttt{a0}, an unsigned complete byte count
+in \texttt{a1} and a descriptor destination in \texttt{a2}. It returns the frame count
+in \texttt{v1} after successful publication. \texttt{wav\_bound} takes a pointer to the
+sixteen-byte description prefix in \texttt{a0}; its successful \texttt{v1} is the
+canonical file size, $44+2CN$. It validates rate, channels and frame count before using
+them in that expression.
+
+\texttt{wav\_filter} takes interleaved PCM, a description prefix, a disjoint PCM
+output and eight signed Q15 coefficient codes in \texttt{a0} through \texttt{a3}.
+Its successful \texttt{v1} counts clipped sample results across all channels.
+\texttt{wav\_encode} takes PCM, a description prefix, a disjoint byte destination
+and unsigned byte capacity in the same four argument registers. Its successful
+\texttt{v1} is the complete encoded file length.
+
+\texttt{wav\_load} takes a path, byte buffer, unsigned buffer capacity and descriptor
+in \texttt{a0} through \texttt{a3}; \texttt{wav\_save} takes a path, complete bytes
+and their unsigned count in \texttt{a0} through \texttt{a2}. Both return complete file
+bytes in \texttt{v1}. None of those byte counts can be substituted for a filter frame
+count or a clipped-sample count merely because the values share a result register.
+
+Every completed call returns status zero in \texttt{v0} on success. Format or
+unsupported-description failures return one; excessive complete byte counts or invalid
+file/output capacities return two; file I/O failures return three. Every failure clears
+\texttt{v1}. A valid zero-frame parse and a successful filter with no clips both have
+zero \texttt{v1}; inspect status and the call's unit before interpreting that zero.

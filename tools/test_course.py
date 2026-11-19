@@ -143,14 +143,23 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(registry['packages'], [entry['package'] for entry in entries])
         self.assertTrue(all(entry['status'] == 'text-package-draft' for entry in entries))
 
-    def test_markdown_quizzes_match_structured_choices(self):
+    def test_reading_quizzes_match_structured_choices(self):
+        escapes = {'\\': r'\textbackslash{}', '_': r'\_', '&': r'\&', '%': r'\%',
+                   '#': r'\#', '$': r'\$', '{': r'\{', '}': r'\}'}
+        def latex(text):
+            return ''.join(escapes.get(char, char) for char in text)
         for package in course.read_json(course.ROOT / 'course.json')['packages']:
             root, data = course.validate(package)
             for step in data['steps']:
                 text = (root / step['content']).read_text()
-                self.assertIn(step['quiz']['prompt'], text)
+                native = Path(step['content']).suffix == '.tex'
+                prompt = step['quiz']['prompt']
+                self.assertIn(latex(prompt) if native else prompt, text)
                 for choice in step['quiz']['choices']:
-                    self.assertIn(f"**{choice['id'].upper()}** {choice['text']}", text)
+                    if native:
+                        self.assertIn(r'\item['+choice['id'].upper()+'.] '+latex(choice['text']), text)
+                    else:
+                        self.assertIn(f"**{choice['id'].upper()}** {choice['text']}", text)
 
     def test_rejects_escape_and_symlink(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -44,7 +44,11 @@ independently; four real host-file round trips pass and malformed input preserve
 outputs. The earlier prototype performance figures retain their original source and
 measurement boundaries; the new construction contains additional routes and guards.
 
-Public feedback exports and chapter distributions remain pending. The four capture
+Public feedback is now exported in checks/: seven completed-interface domains and 64
+guided scripts with 127 checkpoint cases. Guided checks stop at the checkpoint and
+can be rerun after later regions are completed. The student package is packages/031-pcm-wav;
+it retains native LaTeX text and excludes all instructor keys and solutions. Separate
+instructor materials remain private. The four capture
 plans have no actual IDE pixels or coordinate receipts. Remote progression/hint
 enforcement and independent accessibility validation are also pending. The substantial
 prose rewrite remains deferred until all 35 chapter drafts exist.

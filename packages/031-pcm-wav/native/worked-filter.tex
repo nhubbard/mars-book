@@ -1,0 +1,27 @@
+\section{Trace four frames through the averaging coefficients}
+Set all eight coefficient codes to 4096. Each represents one eighth, so the exact
+sum followed by the single prescribed rounding computes an eight-position moving
+average with zero beginning history. The first four frames never fill the window;
+its missing older values remain zeros, rather than reducing the divisor.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrrrr}
+Frame & Input left & Input right & Output left & Output right \\
+\hline
+0 & 12000 & $-12000$ & 1500 & $-1500$ \\
+1 & 0 & 16000 & 1500 & 500 \\
+2 & $-8000$ & 0 & 500 & 500 \\
+3 & 32767 & $-32768$ & 4596 & $-3596$ \\
+\end{tabular}
+\end{center}
+
+At frame three, the left window's four nonzero-time inputs sum to 36767. Dividing
+by eight gives 4595.875, which rounds to 4596. The right sum is minus 28768, giving
+minus 3596 exactly. No result clips. In interleaved little-endian storage the sixteen
+result bytes are \texttt{dc 05 24 fa dc 05 f4 01 f4 01 f4 01 f4 11 f4 f1}.
+
+These results establish the beginning condition, channel separation, rounding and
+stored byte order together. They do not establish clipping behavior: other coefficient
+sets can amplify a window far beyond either endpoint. Keep saturation and tie cases
+as separate tests, even though an averaging example sounds and looks well behaved.

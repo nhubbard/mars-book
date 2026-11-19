@@ -1,0 +1,19 @@
+\section{State the supported profile before writing the parser}
+This exercise accepts one RIFF WAVE image with one format chunk and one data chunk.
+The format must precede data. Other identifiers are skipped as opaque bounded chunks,
+including before the format, between format and data, or after data. Reject duplicate
+required chunks. These are explicit local decisions; the parser is not a general
+reader for every WAV variant or every possible ordering of RIFF chunks.
+
+Accept one or two channels, sixteen-bit integer PCM, rates from 8000 through 48000,
+and zero through 65536 frames. Require complete frames, so the data length is divisible
+by $2C$. Require at most 4096 bytes outside that data payload. The complete file bound
+is therefore $4096+65536\cdot4=266240$ bytes. A file can be below that overall bound and
+still fail its more specific frame or overhead limit.
+
+An empty data chunk is allowed. It describes zero frames while retaining a valid rate
+and channel layout; it is not an empty file. A minimal canonical representation is
+still forty-four bytes. Unsupported format tags, bit widths, channel counts, extensions
+and container variants receive a format/profile failure. Do not report them as if the
+underlying format universally prohibited them. Require the supplied bytes to match the
+outer extent exactly, with no trailing fragment or second image.

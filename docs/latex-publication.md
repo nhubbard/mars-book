@@ -368,3 +368,20 @@ Rendered pages 1..45 match the previously reviewed pixels exactly; the final sco
 was rendered and inspected again. Tagged structure still contains six tables, 23 header
 cells, one described native figure and 64 quiz lists. This remains structural verification,
 not independent accessibility certification.
+
+
+The packaged WAV chapter adds a native feedback explanation and semantic table. The
+standalone chapter has 47 physical pages, seven tables with 26 header cells, one native
+figure with an alternative description and 64 quiz lists. Its first 44 rendered pages
+are pixel-identical to the prior reviewed draft; the remaining pages were inspected.
+All 47 integrated chapter page bodies match the standalone rendering after masking
+page numbers and running heads. Eight sampled pages across the earlier 30 chapters also
+match the previous manuscript pixels exactly; their source prose is unchanged.
+
+The integrated main.pdf has 1333 physical pages and retains 792 IntelliJ-derived minted
+listings. The separately built native assignment has three physical pages and one table
+with three header cells. All assignment pages were rendered and inspected. All three
+PDFs retain tagged PDF 2.0 structure and embedded Minion Pro, Noto Sans Math and JetBrains
+Mono, with no overfull boxes, missing characters or font-substitution warnings. These
+are structural/layout checks, not independent PDF/UA or assistive-technology validation.
+Build the assignment with `python3 tools/book.py build --entry drafts/pcm-wav-assignment.tex`.

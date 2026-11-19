@@ -196,3 +196,12 @@ text, exact capacities and footprints, caller boundaries and same-session reuse.
 solutions, seeded cases and quiz feedback remain in the instructor repository. The four
 light-theme figure plans are unfulfilled; actual IDE captures, remote progression,
 independent accessibility review and the author’s substantial prose edit remain pending.
+
+
+The PCM WAV filter is now the thirty-first native chapter and draft exercise package.
+`packages/031-pcm-wav` keeps its assignment and reading text in LaTeX, with JSON used
+only to index exercises and planned assets. It provides 64 checkpoint checks and seven
+completed-interface domains. Guided checks remain usable after later regions are
+completed; free-writing checks accept equivalent exact implementations. Instructor
+solutions and keys are separate and private. The four IDE capture plans are uncaptured.
+Substantive prose editing remains deferred until all 35 chapter drafts are complete.

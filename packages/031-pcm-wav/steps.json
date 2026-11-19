@@ -1,0 +1,2876 @@
+{
+  "formatVersion": 1,
+  "authority": "Native LaTeX; metadata indexes exercises only",
+  "steps": [
+    {
+      "id": "s01",
+      "title": "Distinguish the file from its description",
+      "kind": "observe",
+      "quiz": {
+        "id": "q01",
+        "prompt": "What must the bound helper inspect?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first forty-four source bytes."
+          },
+          {
+            "id": "b",
+            "text": "The file named by input_path."
+          },
+          {
+            "id": "c",
+            "text": "The description prefix addressed by a0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Treat a pointer as an address of a particular object, not as the value stored there."
+        },
+        {
+          "id": "s01-h2",
+          "text": "At the call, a0 points to metadata: rate 16000, channels two and four frames. The eighty-two-byte source remains a separate object."
+        }
+      ],
+      "content": "native/s01.tex",
+      "prerequisites": [],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s01.kts"
+      },
+      "recipes": [
+        "s01-1"
+      ]
+    },
+    {
+      "id": "s02",
+      "title": "Bring forward the tested FIR entry",
+      "kind": "author",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What does the raw FIR return value four mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four clipped samples."
+          },
+          {
+            "id": "b",
+            "text": "Four output samples were processed."
+          },
+          {
+            "id": "c",
+            "text": "The WAV development status."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Read the earlier kernel contract before assigning a meaning to v0."
+        },
+        {
+          "id": "s02-h2",
+          "text": "The raw kernel returns four processed samples and zero clips. Its four output codes are 1500, 1500, 500 and 4596."
+        }
+      ],
+      "content": "native/s02.tex",
+      "prerequisites": [
+        "s01"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s02.kts"
+      },
+      "recipes": [
+        "s02-1"
+      ],
+      "editTarget": "kernel_import"
+    },
+    {
+      "id": "s03",
+      "title": "Read the prefix at its declared widths",
+      "kind": "author",
+      "quiz": {
+        "id": "q03",
+        "prompt": "How wide is the frame-count field?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixty-four bits."
+          },
+          {
+            "id": "b",
+            "text": "Sixteen bits."
+          },
+          {
+            "id": "c",
+            "text": "Thirty-two bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "Field width is part of the call contract even when the example value is small."
+        },
+        {
+          "id": "s03-h2",
+          "text": "The three working values are 16000, two and four; no file or sample bytes have been accessed."
+        }
+      ],
+      "content": "native/s03.tex",
+      "prerequisites": [
+        "s02"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s03.kts"
+      },
+      "recipes": [
+        "s03-1"
+      ],
+      "editTarget": "b_fields"
+    },
+    {
+      "id": "s04",
+      "title": "Validate before multiplying",
+      "kind": "author",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why check the frame count as unsigned?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Negative frame counts mean silence."
+          },
+          {
+            "id": "b",
+            "text": "The helper accepts all register bit patterns."
+          },
+          {
+            "id": "c",
+            "text": "A top-bit-set count is outside the supported domain."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Use the documented upper bound before deriving any byte count."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The worked prefix passes. A prefix with 65537 frames must fail with status one and zero count."
+        }
+      ],
+      "content": "native/s04.tex",
+      "prerequisites": [
+        "s03"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s04.kts"
+      },
+      "recipes": [
+        "s04-1"
+      ],
+      "editTarget": "b_domain"
+    },
+    {
+      "id": "s05",
+      "title": "Return the canonical file extent",
+      "kind": "author",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What accounts for the difference between eighty-two and sixty bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Stereo becomes mono."
+          },
+          {
+            "id": "b",
+            "text": "The canonical result omits ancillary chunks."
+          },
+          {
+            "id": "c",
+            "text": "Filtering removes six frames."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "Count header bytes and PCM bytes separately before adding them."
+        },
+        {
+          "id": "s05-h2",
+          "text": "The completed helper returns status zero and sixty bytes. A valid zero-frame prefix returns forty-four bytes."
+        }
+      ],
+      "content": "native/s05.tex",
+      "prerequisites": [
+        "s04"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s05.kts"
+      },
+      "recipes": [
+        "s05-1"
+      ],
+      "editTarget": "b_size"
+    },
+    {
+      "id": "s06",
+      "title": "Reject impossible extents before reading pointers",
+      "kind": "author",
+      "quiz": {
+        "id": "q06",
+        "prompt": "Which check comes before reading the RIFF identifier?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The supplied count bounds."
+          },
+          {
+            "id": "b",
+            "text": "Publishing the sample rate."
+          },
+          {
+            "id": "c",
+            "text": "Opening the output file."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "An input extent is not established merely because a pointer register has a value."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The worked count eighty-two reaches the parser frame. Early count failures clear v1 and do not access either caller object."
+        }
+      ],
+      "content": "native/s06.tex",
+      "prerequisites": [
+        "s05"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s06.kts"
+      },
+      "recipes": [
+        "s06-1"
+      ],
+      "editTarget": "p_count"
+    },
+    {
+      "id": "s07",
+      "title": "Recognize the outer identifiers",
+      "kind": "author",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Does WAVE alone establish sixteen-bit PCM?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; every WAV has the same sample encoding."
+          },
+          {
+            "id": "b",
+            "text": "Yes, when the filename ends in wav."
+          },
+          {
+            "id": "c",
+            "text": "No; the format chunk must establish that."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Container identification and audio representation are separate checks."
+        },
+        {
+          "id": "s07-h2",
+          "text": "Both identifiers match. Caller metadata is still unchanged."
+        }
+      ],
+      "content": "native/s07.tex",
+      "prerequisites": [
+        "s06"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s07.kts"
+      },
+      "recipes": [
+        "s07-1"
+      ],
+      "editTarget": "p_magic"
+    },
+    {
+      "id": "s08",
+      "title": "Check the exact outer extent",
+      "kind": "author",
+      "quiz": {
+        "id": "q08",
+        "prompt": "What does the RIFF size omit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "All pad bytes."
+          },
+          {
+            "id": "b",
+            "text": "The first eight bytes of the file."
+          },
+          {
+            "id": "c",
+            "text": "The data chunk only."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Compare the on-disk convention with the complete byte count received by the function."
+        },
+        {
+          "id": "s08-h2",
+          "text": "The stored RIFF size is seventy-four, its complete extent is eighty-two, and the first chunk offset is twelve."
+        }
+      ],
+      "content": "native/s08.tex",
+      "prerequisites": [
+        "s07"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s08.kts"
+      },
+      "recipes": [
+        "s08-1"
+      ],
+      "editTarget": "p_outer"
+    },
+    {
+      "id": "s09",
+      "title": "Establish the next complete chunk span",
+      "kind": "author",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Where does an odd payload length place the next chunk?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After one additional pad byte."
+          },
+          {
+            "id": "b",
+            "text": "Immediately after the last payload byte."
+          },
+          {
+            "id": "c",
+            "text": "At the next sixteen-byte boundary."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "Compute a bounded span before examining the chunk-specific fields."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The first chunk has payload length three, payload offset twenty and next chunk offset twenty-four."
+        }
+      ],
+      "content": "native/s09.tex",
+      "prerequisites": [
+        "s08"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s09.kts"
+      },
+      "recipes": [
+        "s09-1"
+      ],
+      "editTarget": "p_chunk"
+    },
+    {
+      "id": "s10",
+      "title": "Dispatch recognized chunks and skip opaque ones",
+      "kind": "author",
+      "quiz": {
+        "id": "q10",
+        "prompt": "How should an unknown chunk be skipped?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Search its payload for fmt."
+          },
+          {
+            "id": "b",
+            "text": "Assume it has no payload."
+          },
+          {
+            "id": "c",
+            "text": "Use its validated complete span."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The next offset was established by the chunk-span check."
+        },
+        {
+          "id": "s10-h2",
+          "text": "The first visit to parse_format describes the chunk at offset twenty-four, with a sixteen-byte payload at thirty-two."
+        }
+      ],
+      "content": "native/s10.tex",
+      "prerequisites": [
+        "s09"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s10.kts"
+      },
+      "recipes": [
+        "s10-1"
+      ],
+      "editTarget": "p_dispatch"
+    },
+    {
+      "id": "s11",
+      "title": "Observe the first skipped chunk",
+      "kind": "observe",
+      "quiz": {
+        "id": "q11",
+        "prompt": "What determines whether the JUNK pad is valid?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its matching the next identifier."
+          },
+          {
+            "id": "b",
+            "text": "Its required presence within the chunk span."
+          },
+          {
+            "id": "c",
+            "text": "Its byte value being zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Count three payload bytes and then one pad from the JUNK payload start."
+        },
+        {
+          "id": "s11-h2",
+          "text": "The current header starts at twenty-four. The nonzero pad was consumed by its position, not interpreted as audio or as a new identifier."
+        }
+      ],
+      "content": "native/s11.tex",
+      "prerequisites": [
+        "s10"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s11.kts"
+      },
+      "recipes": [
+        "s11-1"
+      ]
+    },
+    {
+      "id": "s12",
+      "title": "Accept only the two format payload sizes",
+      "kind": "author",
+      "quiz": {
+        "id": "q12",
+        "prompt": "When should the format-seen flag be committed?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After all supported format fields pass."
+          },
+          {
+            "id": "b",
+            "text": "As soon as the identifier matches."
+          },
+          {
+            "id": "c",
+            "text": "Before checking for a duplicate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "An identified chunk can still contain an unsupported format."
+        },
+        {
+          "id": "s12-h2",
+          "text": "The worked sixteen-byte format reaches parse_format_size. Its format-seen flag remains clear until all fields pass."
+        }
+      ],
+      "content": "native/s12.tex",
+      "prerequisites": [
+        "s11"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s12.kts"
+      },
+      "recipes": [
+        "s12-1"
+      ],
+      "editTarget": "p_fmt_size"
+    },
+    {
+      "id": "s13",
+      "title": "Check the PCM encoding tag",
+      "kind": "author",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Which value identifies the supported PCM encoding?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The channel count two."
+          },
+          {
+            "id": "b",
+            "text": "The ASCII identifier WAVE."
+          },
+          {
+            "id": "c",
+            "text": "Tag one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "The encoding tag occupies two bytes at the beginning of the format payload."
+        },
+        {
+          "id": "s13-h2",
+          "text": "The format tag is one. Unsupported encoding tags take the format-failure route."
+        }
+      ],
+      "content": "native/s13.tex",
+      "prerequisites": [
+        "s12"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s13.kts"
+      },
+      "recipes": [
+        "s13-1"
+      ],
+      "editTarget": "p_codec"
+    },
+    {
+      "id": "s14",
+      "title": "Read and retain the channel count",
+      "kind": "author",
+      "quiz": {
+        "id": "q14",
+        "prompt": "How many sixteen-bit sample codes are in one stereo frame?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four."
+          },
+          {
+            "id": "b",
+            "text": "Two."
+          },
+          {
+            "id": "c",
+            "text": "One."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Bits per sample describes each channel sample, not a complete frame."
+        },
+        {
+          "id": "s14-h2",
+          "text": "The retained channel count is two, so each frame contains four PCM bytes."
+        }
+      ],
+      "content": "native/s14.tex",
+      "prerequisites": [
+        "s13"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s14.kts"
+      },
+      "recipes": [
+        "s14-1"
+      ],
+      "editTarget": "p_channels"
+    },
+    {
+      "id": "s15",
+      "title": "Read the sample rate as an unsigned field",
+      "kind": "author",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What does the sample-rate field count for stereo audio?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Frames per second."
+          },
+          {
+            "id": "b",
+            "text": "The sum of both channels' sample counts per second."
+          },
+          {
+            "id": "c",
+            "text": "Bytes per second."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Assemble the byte representation before interpreting the unit."
+        },
+        {
+          "id": "s15-h2",
+          "text": "The bytes 80 3e 00 00 describe 16000 frames per second."
+        }
+      ],
+      "content": "native/s15.tex",
+      "prerequisites": [
+        "s14"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s15.kts"
+      },
+      "recipes": [
+        "s15-1"
+      ],
+      "editTarget": "p_rate"
+    },
+    {
+      "id": "s16",
+      "title": "Verify the redundant byte rate",
+      "kind": "author",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which expression gives the supported byte rate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sample rate divided by channels."
+          },
+          {
+            "id": "b",
+            "text": "Four times frame count."
+          },
+          {
+            "id": "c",
+            "text": "Two times channels times sample rate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "One frame holds two bytes for each channel."
+        },
+        {
+          "id": "s16-h2",
+          "text": "The stored and computed rates are both 64000 bytes per second."
+        }
+      ],
+      "content": "native/s16.tex",
+      "prerequisites": [
+        "s15"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s16.kts"
+      },
+      "recipes": [
+        "s16-1"
+      ],
+      "editTarget": "p_byte_rate"
+    },
+    {
+      "id": "s17",
+      "title": "Verify the frame byte width",
+      "kind": "author",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Does block alignment make the caller's input pointer aligned?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; four-byte frames imply an aligned file base."
+          },
+          {
+            "id": "b",
+            "text": "No; the byte-pointer contract still permits an unaligned address."
+          },
+          {
+            "id": "c",
+            "text": "Yes; all file fields are halfword aligned in memory."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "Distinguish a format field from an address precondition."
+        },
+        {
+          "id": "s17-h2",
+          "text": "The block alignment is four for stereo and would be two for mono."
+        }
+      ],
+      "content": "native/s17.tex",
+      "prerequisites": [
+        "s16"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s17.kts"
+      },
+      "recipes": [
+        "s17-1"
+      ],
+      "editTarget": "p_align"
+    },
+    {
+      "id": "s18",
+      "title": "Require the supported sample width",
+      "kind": "author",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why reject a twenty-four-bit PCM description?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The published processing interface supports sixteen-bit samples only."
+          },
+          {
+            "id": "b",
+            "text": "RIFF can never contain that representation."
+          },
+          {
+            "id": "c",
+            "text": "Stereo requires eight-bit samples."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "Apply the local supported profile without making a claim about every WAV file."
+        },
+        {
+          "id": "s18-h2",
+          "text": "The accepted field is sixteen. Neither output bytes nor caller metadata have changed."
+        }
+      ],
+      "content": "native/s18.tex",
+      "prerequisites": [
+        "s17"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s18.kts"
+      },
+      "recipes": [
+        "s18-1"
+      ],
+      "editTarget": "p_bits"
+    },
+    {
+      "id": "s19",
+      "title": "Check the optional empty extension",
+      "kind": "author",
+      "quiz": {
+        "id": "q19",
+        "prompt": "What changes when the empty extension adds two bytes?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of audio frames."
+          },
+          {
+            "id": "b",
+            "text": "The filter coefficients."
+          },
+          {
+            "id": "c",
+            "text": "The later chunk and PCM offsets."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "The chunk length controls layout even when the added field is zero."
+        },
+        {
+          "id": "s19-h2",
+          "text": "The eighteen-byte format has a zero extension count and an eighty-four-byte complete file. The later PCM offset will be fifty-eight."
+        }
+      ],
+      "content": "native/s19.tex",
+      "prerequisites": [
+        "s18"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s19.kts"
+      },
+      "recipes": [
+        "s19-1"
+      ],
+      "editTarget": "p_extension"
+    },
+    {
+      "id": "s20",
+      "title": "Commit the private format state",
+      "kind": "author",
+      "quiz": {
+        "id": "q20",
+        "prompt": "Where should the accepted rate live before the full walk succeeds?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "In the input file header."
+          },
+          {
+            "id": "b",
+            "text": "In private parser state."
+          },
+          {
+            "id": "c",
+            "text": "Immediately in caller metadata."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "The input is read-only and the public descriptor is a success-only publication."
+        },
+        {
+          "id": "s20-h2",
+          "text": "The private format flag is set and the next header begins at forty-eight for the ordinary trace. Caller metadata remains a sentinel."
+        }
+      ],
+      "content": "native/s20.tex",
+      "prerequisites": [
+        "s19"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s20.kts"
+      },
+      "recipes": [
+        "s20-1"
+      ],
+      "editTarget": "p_fmt_accept"
+    },
+    {
+      "id": "s21",
+      "title": "Require format before a unique data chunk",
+      "kind": "author",
+      "quiz": {
+        "id": "q21",
+        "prompt": "Why retain the original file base?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Later chunks are still addressed relative to it."
+          },
+          {
+            "id": "b",
+            "text": "The filter writes its history into the header."
+          },
+          {
+            "id": "c",
+            "text": "The data offset is an absolute address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "A file-relative offset becomes a pointer only when added to this particular buffer base."
+        },
+        {
+          "id": "s21-h2",
+          "text": "The candidate PCM region begins at offset fifty-six and contains sixteen bytes."
+        }
+      ],
+      "content": "native/s21.tex",
+      "prerequisites": [
+        "s20"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s21.kts"
+      },
+      "recipes": [
+        "s21-1"
+      ],
+      "editTarget": "p_data"
+    },
+    {
+      "id": "s22",
+      "title": "Convert a byte length to complete frames",
+      "kind": "author",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What does a two-byte stereo data payload contain?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One complete stereo frame."
+          },
+          {
+            "id": "b",
+            "text": "A valid zero-frame file."
+          },
+          {
+            "id": "c",
+            "text": "An incomplete frame, which must fail."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Test the remainder before using the quotient as an accepted frame count."
+        },
+        {
+          "id": "s22-h2",
+          "text": "Sixteen PCM bytes divided by four bytes per frame gives four frames with no remainder."
+        }
+      ],
+      "content": "native/s22.tex",
+      "prerequisites": [
+        "s21"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s22.kts"
+      },
+      "recipes": [
+        "s22-1"
+      ],
+      "editTarget": "p_frames"
+    },
+    {
+      "id": "s23",
+      "title": "Continue beyond accepted sample bytes",
+      "kind": "author",
+      "quiz": {
+        "id": "q23",
+        "prompt": "Does accepting data finish the parser?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if the frame count is nonzero."
+          },
+          {
+            "id": "b",
+            "text": "No; all trailing chunks must also pass."
+          },
+          {
+            "id": "c",
+            "text": "Yes; bytes after audio are ignored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "The complete input count belongs to the container, not just the selected sample slice."
+        },
+        {
+          "id": "s23-h2",
+          "text": "The next offset is seventy-two. The walker validates the final note chunk and then reaches the complete count eighty-two."
+        }
+      ],
+      "content": "native/s23.tex",
+      "prerequisites": [
+        "s22"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s23.kts"
+      },
+      "recipes": [
+        "s23-1"
+      ],
+      "editTarget": "p_record"
+    },
+    {
+      "id": "s24",
+      "title": "Inspect the candidate before publication",
+      "kind": "observe",
+      "quiz": {
+        "id": "q24",
+        "prompt": "Which object is still unchanged at parse_finish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The caller descriptor."
+          },
+          {
+            "id": "b",
+            "text": "The parser stack frame."
+          },
+          {
+            "id": "c",
+            "text": "Every temporary register."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Compare the descriptor sentinel with the candidate values in the parser frame."
+        },
+        {
+          "id": "s24-h2",
+          "text": "Private state describes 16000 Hz, two channels, four frames, offset fifty-six and sixteen bytes; the caller descriptor is unchanged."
+        }
+      ],
+      "content": "native/s24.tex",
+      "prerequisites": [
+        "s23"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s24.kts"
+      },
+      "recipes": [
+        "s24-1"
+      ]
+    },
+    {
+      "id": "s25",
+      "title": "Check completion and the overhead budget",
+      "kind": "author",
+      "quiz": {
+        "id": "q25",
+        "prompt": "Which bytes count toward outside-data overhead?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only unknown chunk payloads."
+          },
+          {
+            "id": "b",
+            "text": "Only the first forty-four bytes."
+          },
+          {
+            "id": "c",
+            "text": "Every complete-file byte outside the selected PCM payload."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "Include headers, format bytes and pads when subtracting the PCM payload length."
+        },
+        {
+          "id": "s25-h2",
+          "text": "The trace has sixty-six overhead bytes, within the 4096-byte allowance."
+        }
+      ],
+      "content": "native/s25.tex",
+      "prerequisites": [
+        "s24"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s25.kts"
+      },
+      "recipes": [
+        "s25-1"
+      ],
+      "editTarget": "p_finish"
+    },
+    {
+      "id": "s26",
+      "title": "Publish the descriptor once",
+      "kind": "author",
+      "quiz": {
+        "id": "q26",
+        "prompt": "What is the parser's successful v1 unit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Clipped samples."
+          },
+          {
+            "id": "b",
+            "text": "Frames."
+          },
+          {
+            "id": "c",
+            "text": "Complete file bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "Use the parser contract even though the loader later returns a different count."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The published descriptor is (16000, two, four, fifty-six, sixteen), and the successful return count is four frames."
+        }
+      ],
+      "content": "native/s26.tex",
+      "prerequisites": [
+        "s25"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s26.kts"
+      },
+      "recipes": [
+        "s26-1"
+      ],
+      "editTarget": "p_publish"
+    },
+    {
+      "id": "s27",
+      "title": "Reject a malformed trailer without publication",
+      "kind": "observe",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why adjust RIFF size in this malformed example?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "To reach the chunk-span failure rather than the outer-size failure."
+          },
+          {
+            "id": "b",
+            "text": "To make the file valid."
+          },
+          {
+            "id": "c",
+            "text": "To change the channel count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "A useful negative test makes the intended invalid condition reachable."
+        },
+        {
+          "id": "s27-h2",
+          "text": "The missing final pad produces status one and zero count; all descriptor bytes remain unchanged."
+        }
+      ],
+      "content": "native/s27.tex",
+      "prerequisites": [
+        "s26"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s27.kts"
+      },
+      "recipes": [
+        "s27-1"
+      ]
+    },
+    {
+      "id": "s28",
+      "title": "Accept an empty stream with a real container",
+      "kind": "observe",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Is a zero-byte file a valid empty-audio input?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; zero frames require no description."
+          },
+          {
+            "id": "b",
+            "text": "Only when its extension is wav."
+          },
+          {
+            "id": "c",
+            "text": "No; empty audio still needs a valid container."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Distinguish zero samples from zero supplied file bytes."
+        },
+        {
+          "id": "s28-h2",
+          "text": "The fifty-eight-byte container passes with zero frames, PCM offset forty-six and PCM length zero."
+        }
+      ],
+      "content": "native/s28.tex",
+      "prerequisites": [
+        "s27"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s28.kts"
+      },
+      "recipes": [
+        "s28-1"
+      ]
+    },
+    {
+      "id": "s29",
+      "title": "Validate the prefix through the shared helper",
+      "kind": "author",
+      "quiz": {
+        "id": "q29",
+        "prompt": "What must the filter do with a failed bound call?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Write a silent output."
+          },
+          {
+            "id": "b",
+            "text": "Propagate the failure before processing samples."
+          },
+          {
+            "id": "c",
+            "text": "Treat v1 as a valid frame count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "A nested success result has its own unit; it does not replace the outer interface."
+        },
+        {
+          "id": "s29-h2",
+          "text": "The nested helper returns success and sixty bytes for the worked prefix; filter output is still untouched."
+        }
+      ],
+      "content": "native/s29.tex",
+      "prerequisites": [
+        "s28"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s29.kts"
+      },
+      "recipes": [
+        "s29-1"
+      ],
+      "editTarget": "f_call"
+    },
+    {
+      "id": "s30",
+      "title": "Initialize per-call progress",
+      "kind": "author",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Which input may be read for a valid zero-frame filter?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The description prefix only."
+          },
+          {
+            "id": "b",
+            "text": "All sixteen coefficient bytes."
+          },
+          {
+            "id": "c",
+            "text": "One PCM sample to detect silence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Zero work is a specified access boundary, not just a loop that happens to stop."
+        },
+        {
+          "id": "s30-h2",
+          "text": "The trace starts with four frames, two channels, channel index zero and zero clips."
+        }
+      ],
+      "content": "native/s30.tex",
+      "prerequisites": [
+        "s29"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s30.kts"
+      },
+      "recipes": [
+        "s30-1"
+      ],
+      "editTarget": "f_state"
+    },
+    {
+      "id": "s31",
+      "title": "Start a channel with zero history",
+      "kind": "author",
+      "quiz": {
+        "id": "q31",
+        "prompt": "When must the illustrated wrapper clear history?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only once when the program first starts."
+          },
+          {
+            "id": "b",
+            "text": "After every sample."
+          },
+          {
+            "id": "c",
+            "text": "At the start of each channel of each invocation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "The mathematical beginning condition applies independently to each channel."
+        },
+        {
+          "id": "s31-h2",
+          "text": "The seven history samples are zero and the selected channel begins at frame zero."
+        }
+      ],
+      "content": "native/s31.tex",
+      "prerequisites": [
+        "s30"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s31.kts"
+      },
+      "recipes": [
+        "s31-1"
+      ],
+      "editTarget": "f_channel"
+    },
+    {
+      "id": "s32",
+      "title": "Choose a bounded group of new samples",
+      "kind": "author",
+      "quiz": {
+        "id": "q32",
+        "prompt": "How many halfwords does a full input window contain?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Sixty-eight."
+          },
+          {
+            "id": "b",
+            "text": "Seventy-one."
+          },
+          {
+            "id": "c",
+            "text": "Sixty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Add the retained history length to the new-sample count."
+        },
+        {
+          "id": "s32-h2",
+          "text": "The four-frame trace selects a block of four new samples for the current channel."
+        }
+      ],
+      "content": "native/s32.tex",
+      "prerequisites": [
+        "s31"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s32.kts"
+      },
+      "recipes": [
+        "s32-1"
+      ],
+      "editTarget": "f_block"
+    },
+    {
+      "id": "s33",
+      "title": "Gather one channel from interleaved PCM",
+      "kind": "author",
+      "quiz": {
+        "id": "q33",
+        "prompt": "What is the byte stride between successive left samples in stereo?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Four."
+          },
+          {
+            "id": "b",
+            "text": "Two."
+          },
+          {
+            "id": "c",
+            "text": "Eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Advance by a complete interleaved frame while keeping the channel index fixed."
+        },
+        {
+          "id": "s33-h2",
+          "text": "The first channel window contains seven zeros followed by 12000, zero, minus 8000 and 32767."
+        }
+      ],
+      "content": "native/s33.tex",
+      "prerequisites": [
+        "s32"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s33.kts"
+      },
+      "recipes": [
+        "s33-1"
+      ],
+      "editTarget": "f_gather"
+    },
+    {
+      "id": "s34",
+      "title": "Call the kernel with a chronological window",
+      "kind": "author",
+      "quiz": {
+        "id": "q34",
+        "prompt": "Which condition confirms completion of the kernel block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its v0 equals WAV status zero."
+          },
+          {
+            "id": "b",
+            "text": "Its v1 equals the byte length."
+          },
+          {
+            "id": "c",
+            "text": "Its processed count equals the requested block count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Keep the earlier FIR result convention at the nested-call boundary."
+        },
+        {
+          "id": "s34-h2",
+          "text": "The first left-channel call processes four outputs and returns zero clips. Its private outputs are 1500, 1500, 500 and 4596."
+        }
+      ],
+      "content": "native/s34.tex",
+      "prerequisites": [
+        "s33"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s34.kts"
+      },
+      "recipes": [
+        "s34-1"
+      ],
+      "editTarget": "f_kernel"
+    },
+    {
+      "id": "s35",
+      "title": "Accumulate clipping events in a wide count",
+      "kind": "author",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What is the maximum number of sample results in a supported stereo file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "32768."
+          },
+          {
+            "id": "b",
+            "text": "131072."
+          },
+          {
+            "id": "c",
+            "text": "65536."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Each of two channels can contribute one clipped result per frame."
+        },
+        {
+          "id": "s35-h2",
+          "text": "The averaging coefficients produce zero clips for this first block; the accumulated total remains zero."
+        }
+      ],
+      "content": "native/s35.tex",
+      "prerequisites": [
+        "s34"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s35.kts"
+      },
+      "recipes": [
+        "s35-1"
+      ],
+      "editTarget": "f_accumulate"
+    },
+    {
+      "id": "s36",
+      "title": "Scatter results back into interleaved order",
+      "kind": "author",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which output slots may the first channel pass change?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the selected channel's sample slots."
+          },
+          {
+            "id": "b",
+            "text": "Every halfword before the current frame."
+          },
+          {
+            "id": "c",
+            "text": "The input history slots in source."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Use an interleaved destination stride even though the kernel output is contiguous."
+        },
+        {
+          "id": "s36-h2",
+          "text": "The left output slots contain 1500, 1500, 500 and 4596 while right slots retain their sentinel bytes."
+        }
+      ],
+      "content": "native/s36.tex",
+      "prerequisites": [
+        "s35"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s36.kts"
+      },
+      "recipes": [
+        "s36-1"
+      ],
+      "editTarget": "f_scatter"
+    },
+    {
+      "id": "s37",
+      "title": "Locate the retained input suffix",
+      "kind": "author",
+      "quiz": {
+        "id": "q37",
+        "prompt": "Which buffer supplies the next history?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The filtered output buffer."
+          },
+          {
+            "id": "b",
+            "text": "The coefficient array."
+          },
+          {
+            "id": "c",
+            "text": "The chronological input window."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Subtract seven samples from the combined window length, not from the new-sample count."
+        },
+        {
+          "id": "s37-h2",
+          "text": "For a four-sample block, the retained suffix begins eight bytes into the window: three zeros followed by the four new input samples."
+        }
+      ],
+      "content": "native/s37.tex",
+      "prerequisites": [
+        "s36"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s37.kts"
+      },
+      "recipes": [
+        "s37-1"
+      ],
+      "editTarget": "f_history_base"
+    },
+    {
+      "id": "s38",
+      "title": "Copy history safely within the window",
+      "kind": "author",
+      "quiz": {
+        "id": "q38",
+        "prompt": "Why is forward copying safe here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Filtered samples are all zero."
+          },
+          {
+            "id": "b",
+            "text": "The destination begins below the overlapping source."
+          },
+          {
+            "id": "c",
+            "text": "The two regions are always disjoint."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Trace source and destination addresses for a one-sample block."
+        },
+        {
+          "id": "s38-h2",
+          "text": "The new history is three zeros followed by 12000, zero, minus 8000 and 32767."
+        }
+      ],
+      "content": "native/s38.tex",
+      "prerequisites": [
+        "s37"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s38.kts"
+      },
+      "recipes": [
+        "s38-1"
+      ],
+      "editTarget": "f_history"
+    },
+    {
+      "id": "s39",
+      "title": "Advance by the actual block length",
+      "kind": "author",
+      "quiz": {
+        "id": "q39",
+        "prompt": "What is the second block size for sixty-five frames?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One."
+          },
+          {
+            "id": "b",
+            "text": "Sixty-four."
+          },
+          {
+            "id": "c",
+            "text": "Seven."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "The block limit and the amount actually processed are different quantities."
+        },
+        {
+          "id": "s39-h2",
+          "text": "The short trace reaches frame four and finishes its first channel. A sixty-five-frame input would next select a one-frame block."
+        }
+      ],
+      "content": "native/s39.tex",
+      "prerequisites": [
+        "s38"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s39.kts"
+      },
+      "recipes": [
+        "s39-1"
+      ],
+      "editTarget": "f_advance_block"
+    },
+    {
+      "id": "s40",
+      "title": "Finish one channel before starting the next",
+      "kind": "author",
+      "quiz": {
+        "id": "q40",
+        "prompt": "What must happen when starting the right channel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Keep the left channel's final history."
+          },
+          {
+            "id": "b",
+            "text": "Skip its first seven frames."
+          },
+          {
+            "id": "c",
+            "text": "Reset its frame cursor and zero its own history."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Each channel represents a separate causal input sequence."
+        },
+        {
+          "id": "s40-h2",
+          "text": "After the second channel, channel index equals two and both interleaved outputs are complete."
+        }
+      ],
+      "content": "native/s40.tex",
+      "prerequisites": [
+        "s39"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s40.kts"
+      },
+      "recipes": [
+        "s40-1"
+      ],
+      "editTarget": "f_advance_channel"
+    },
+    {
+      "id": "s41",
+      "title": "Return status and the total clip count",
+      "kind": "author",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Why does the caller save clips before encoding?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The saved registers cannot hold counts."
+          },
+          {
+            "id": "b",
+            "text": "Encoding returns a byte count in the same result register."
+          },
+          {
+            "id": "c",
+            "text": "Encoding needs clips as its sample rate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Result registers are shared storage across calls, but their units belong to each interface."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The completed trace filter returns zero clips and produces sixteen PCM bytes in interleaved order."
+        }
+      ],
+      "content": "native/s41.tex",
+      "prerequisites": [
+        "s40"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s41.kts"
+      },
+      "recipes": [
+        "s41-1"
+      ],
+      "editTarget": "f_return"
+    },
+    {
+      "id": "s42",
+      "title": "Observe a block boundary and a zero-frame call",
+      "kind": "observe",
+      "quiz": {
+        "id": "q42",
+        "prompt": "What distinguishes the block boundary from a new channel?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Input history continues across blocks of the same channel."
+          },
+          {
+            "id": "b",
+            "text": "Both require zero history."
+          },
+          {
+            "id": "c",
+            "text": "The coefficient order reverses."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Use an exact state check for the boundary; listening cannot establish bit-for-bit continuity."
+        },
+        {
+          "id": "s42-h2",
+          "text": "The sixty-five-frame result is continuous across the block split. The zero-frame call succeeds with zero clips and touches only its prefix and invocation frame."
+        }
+      ],
+      "content": "native/s42.tex",
+      "prerequisites": [
+        "s41"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s42.kts"
+      },
+      "recipes": [
+        "s42-1",
+        "s42-2"
+      ]
+    },
+    {
+      "id": "s43",
+      "title": "Validate the description before producing output",
+      "kind": "author",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Does the encoder use the parser's stored PCM offset?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes; it adds that offset to a0."
+          },
+          {
+            "id": "b",
+            "text": "Only for stereo."
+          },
+          {
+            "id": "c",
+            "text": "No; a0 already points directly to PCM."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Follow the encoder argument contract rather than the origin of the prefix."
+        },
+        {
+          "id": "s43-h2",
+          "text": "The trace encoder receives sixteen PCM bytes and a successful canonical bound of sixty bytes."
+        }
+      ],
+      "content": "native/s43.tex",
+      "prerequisites": [
+        "s42"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s43.kts"
+      },
+      "recipes": [
+        "s43-1"
+      ],
+      "editTarget": "e_call"
+    },
+    {
+      "id": "s44",
+      "title": "Check capacity before the first write",
+      "kind": "author",
+      "quiz": {
+        "id": "q44",
+        "prompt": "How should a capacity with its top bit set compare with sixty?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "As a request for zero bytes."
+          },
+          {
+            "id": "b",
+            "text": "As a larger unsigned capacity."
+          },
+          {
+            "id": "c",
+            "text": "As a negative capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Capacity is supplied as an unsigned sixty-four-bit count."
+        },
+        {
+          "id": "s44-h2",
+          "text": "A capacity of sixty passes for the trace; fifty-nine fails with unchanged destination and zero count."
+        }
+      ],
+      "content": "native/s44.tex",
+      "prerequisites": [
+        "s43"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s44.kts"
+      },
+      "recipes": [
+        "s44-1"
+      ],
+      "editTarget": "e_capacity"
+    },
+    {
+      "id": "s45",
+      "title": "Write the outer canonical header",
+      "kind": "author",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Which RIFF size belongs to a sixty-byte canonical file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Fifty-two."
+          },
+          {
+            "id": "b",
+            "text": "Sixty."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Apply the same outer-size convention used by the parser."
+        },
+        {
+          "id": "s45-h2",
+          "text": "The trace header begins RIFF, size fifty-two, WAVE. Only its first twelve bytes have been authored so far."
+        }
+      ],
+      "content": "native/s45.tex",
+      "prerequisites": [
+        "s44"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s45.kts"
+      },
+      "recipes": [
+        "s45-1"
+      ],
+      "editTarget": "e_riff"
+    },
+    {
+      "id": "s46",
+      "title": "Write the canonical format identity",
+      "kind": "author",
+      "quiz": {
+        "id": "q46",
+        "prompt": "How long is the canonical format payload?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Eighteen bytes whenever the input used eighteen."
+          },
+          {
+            "id": "b",
+            "text": "Forty-four bytes."
+          },
+          {
+            "id": "c",
+            "text": "Sixteen bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "The writer has one published output layout independent of the input chunk arrangement."
+        },
+        {
+          "id": "s46-h2",
+          "text": "The format payload starts at twenty and declares PCM with two channels."
+        }
+      ],
+      "content": "native/s46.tex",
+      "prerequisites": [
+        "s45"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s46.kts"
+      },
+      "recipes": [
+        "s46-1"
+      ],
+      "editTarget": "e_fmt"
+    },
+    {
+      "id": "s47",
+      "title": "Write consistent rate fields",
+      "kind": "author",
+      "quiz": {
+        "id": "q47",
+        "prompt": "Which rate changes when channel count doubles at a fixed sample rate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Neither rate."
+          },
+          {
+            "id": "b",
+            "text": "Byte rate."
+          },
+          {
+            "id": "c",
+            "text": "Frame rate."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "Count bytes in one frame before multiplying by frames per second."
+        },
+        {
+          "id": "s47-h2",
+          "text": "The trace writes 16000 frames per second and 64000 bytes per second."
+        }
+      ],
+      "content": "native/s47.tex",
+      "prerequisites": [
+        "s46"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s47.kts"
+      },
+      "recipes": [
+        "s47-1"
+      ],
+      "editTarget": "e_rate"
+    },
+    {
+      "id": "s48",
+      "title": "Write the frame width and sample width",
+      "kind": "author",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Which field remains sixteen when converting this description to mono?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bits per sample."
+          },
+          {
+            "id": "b",
+            "text": "Block alignment."
+          },
+          {
+            "id": "c",
+            "text": "Channel count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "Keep the units next to each field as you lay out the bytes."
+        },
+        {
+          "id": "s48-h2",
+          "text": "The stereo header contains block alignment four and sample width sixteen."
+        }
+      ],
+      "content": "native/s48.tex",
+      "prerequisites": [
+        "s47"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s48.kts"
+      },
+      "recipes": [
+        "s48-1"
+      ],
+      "editTarget": "e_frame_format"
+    },
+    {
+      "id": "s49",
+      "title": "Write the data header for the exact PCM extent",
+      "kind": "author",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Where does canonical PCM begin?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original input offset fifty-six."
+          },
+          {
+            "id": "b",
+            "text": "Immediately after RIFF."
+          },
+          {
+            "id": "c",
+            "text": "Offset forty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "The new file layout is independent of the parsed input offset."
+        },
+        {
+          "id": "s49-h2",
+          "text": "The trace declares sixteen payload bytes, beginning at offset forty-four."
+        }
+      ],
+      "content": "native/s49.tex",
+      "prerequisites": [
+        "s48"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s49.kts"
+      },
+      "recipes": [
+        "s49-1"
+      ],
+      "editTarget": "e_data"
+    },
+    {
+      "id": "s50",
+      "title": "Copy sample bytes without changing their codes",
+      "kind": "author",
+      "quiz": {
+        "id": "q50",
+        "prompt": "Does canonical encoding filter the PCM a second time?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if the source was stereo."
+          },
+          {
+            "id": "b",
+            "text": "No; it copies the supplied PCM codes."
+          },
+          {
+            "id": "c",
+            "text": "Yes; canonical output always filters."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "The filter and container writer are separate operations with separate inputs."
+        },
+        {
+          "id": "s50-h2",
+          "text": "The prepared encoder observation copies the sixteen worked raw PCM bytes after its header; bytes beyond the sixty-byte result remain sentinels."
+        }
+      ],
+      "content": "native/s50.tex",
+      "prerequisites": [
+        "s49"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s50.kts"
+      },
+      "recipes": [
+        "s50-1"
+      ],
+      "editTarget": "e_copy"
+    },
+    {
+      "id": "s51",
+      "title": "Return the complete encoded byte count",
+      "kind": "author",
+      "quiz": {
+        "id": "q51",
+        "prompt": "Which count should the saver receive from the encoder?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The actual returned complete file count."
+          },
+          {
+            "id": "b",
+            "text": "The entire destination capacity."
+          },
+          {
+            "id": "c",
+            "text": "The original input count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "A buffer's size and its current valid file extent are separate values."
+        },
+        {
+          "id": "s51-h2",
+          "text": "The trace returns sixty complete file bytes; empty audio returns forty-four."
+        }
+      ],
+      "content": "native/s51.tex",
+      "prerequisites": [
+        "s50"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s51.kts"
+      },
+      "recipes": [
+        "s51-1"
+      ],
+      "editTarget": "e_return"
+    },
+    {
+      "id": "s52",
+      "title": "Read the canonical output independently",
+      "kind": "observe",
+      "quiz": {
+        "id": "q52",
+        "prompt": "Why use an independent reader?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A WAV parser must always be external."
+          },
+          {
+            "id": "b",
+            "text": "The simulator cannot expose bytes."
+          },
+          {
+            "id": "c",
+            "text": "Two routines can agree on the same incorrect layout."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s52-h1",
+          "text": "Compare the public format fields and exact samples, not only a successful return."
+        },
+        {
+          "id": "s52-h2",
+          "text": "The result has a forty-four-byte canonical header, four stereo frames and unchanged sample bytes; the next byte remains a5."
+        }
+      ],
+      "content": "native/s52.tex",
+      "prerequisites": [
+        "s51"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s52.kts"
+      },
+      "recipes": [
+        "s52-1"
+      ]
+    },
+    {
+      "id": "s53",
+      "title": "Validate the caller buffer capacity first",
+      "kind": "author",
+      "quiz": {
+        "id": "q53",
+        "prompt": "Is a one-byte capacity rejected by the capacity precheck?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only if the path is empty."
+          },
+          {
+            "id": "b",
+            "text": "No; later transfer or format checks decide its result."
+          },
+          {
+            "id": "c",
+            "text": "Yes; every capacity must be at least forty-four."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s53-h1",
+          "text": "Apply the loader capacity contract separately from the parser minimum file length."
+        },
+        {
+          "id": "s53-h2",
+          "text": "The ordinary capacity passes; zero and a top-bit-set value fail before pointer access."
+        }
+      ],
+      "content": "native/s53.tex",
+      "prerequisites": [
+        "s52"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s53.kts"
+      },
+      "recipes": [
+        "s53-1"
+      ],
+      "editTarget": "l_bound"
+    },
+    {
+      "id": "s54",
+      "title": "Acquire a descriptor and initialize progress",
+      "kind": "author",
+      "quiz": {
+        "id": "q54",
+        "prompt": "Which value should later reads use as their descriptor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The value actually returned by open."
+          },
+          {
+            "id": "b",
+            "text": "Always three."
+          },
+          {
+            "id": "c",
+            "text": "The source buffer address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s54-h1",
+          "text": "A resource handle is an acquired result, not a constant in the file format."
+        },
+        {
+          "id": "s54-h2",
+          "text": "A successful open leaves a live descriptor and zero accepted bytes. The grading fixture may choose a descriptor other than three."
+        }
+      ],
+      "content": "native/s54.tex",
+      "prerequisites": [
+        "s53"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s54.kts"
+      },
+      "recipes": [
+        "s54-1"
+      ],
+      "editTarget": "l_open"
+    },
+    {
+      "id": "s55",
+      "title": "Accumulate actual positive read progress",
+      "kind": "author",
+      "quiz": {
+        "id": "q55",
+        "prompt": "What follows a positive short read?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Assume EOF."
+          },
+          {
+            "id": "b",
+            "text": "Advance by the requested count."
+          },
+          {
+            "id": "c",
+            "text": "Advance by the actual count and read again."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s55-h1",
+          "text": "Use the syscall result as progress; the request is only an upper bound."
+        },
+        {
+          "id": "s55-h2",
+          "text": "With forced short reads, accepted bytes remain contiguous and the next request starts immediately after the actual prefix."
+        }
+      ],
+      "content": "native/s55.tex",
+      "prerequisites": [
+        "s54"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s55.kts"
+      },
+      "recipes": [
+        "s55-1"
+      ],
+      "editTarget": "l_read"
+    },
+    {
+      "id": "s56",
+      "title": "Distinguish an exact fit from excess input",
+      "kind": "author",
+      "quiz": {
+        "id": "q56",
+        "prompt": "Where may the exact-fit probe write?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The caller descriptor."
+          },
+          {
+            "id": "b",
+            "text": "The private one-byte frame slot."
+          },
+          {
+            "id": "c",
+            "text": "One byte beyond the caller buffer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s56-h1",
+          "text": "The probe distinguishes stream length without extending the caller buffer."
+        },
+        {
+          "id": "s56-h2",
+          "text": "The exact-capacity trace has eighty-two accepted bytes and a zero-byte probe; it proceeds to load_eof."
+        }
+      ],
+      "content": "native/s56.tex",
+      "prerequisites": [
+        "s55"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s56.kts"
+      },
+      "recipes": [
+        "s56-1"
+      ],
+      "editTarget": "l_probe"
+    },
+    {
+      "id": "s57",
+      "title": "Close before parsing the complete file",
+      "kind": "author",
+      "quiz": {
+        "id": "q57",
+        "prompt": "What count does a successful load return?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Complete file bytes accepted."
+          },
+          {
+            "id": "b",
+            "text": "Frames returned by the nested parser."
+          },
+          {
+            "id": "c",
+            "text": "Unused buffer capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s57-h1",
+          "text": "Convert the nested result convention only after checking its status."
+        },
+        {
+          "id": "s57-h2",
+          "text": "The successful trace load returns eighty-two bytes and the parsed descriptor, with no live file descriptor."
+        }
+      ],
+      "content": "native/s57.tex",
+      "prerequisites": [
+        "s56"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s57.kts"
+      },
+      "recipes": [
+        "s57-1"
+      ],
+      "editTarget": "l_finish"
+    },
+    {
+      "id": "s58",
+      "title": "Validate the complete count before pointer use",
+      "kind": "author",
+      "quiz": {
+        "id": "q58",
+        "prompt": "What must the saver receive?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only PCM bytes."
+          },
+          {
+            "id": "b",
+            "text": "The full allocation including its guard."
+          },
+          {
+            "id": "c",
+            "text": "A complete supported stream and its exact count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s58-h1",
+          "text": "Saving an existing complete container is a different call from encoding PCM."
+        },
+        {
+          "id": "s58-h2",
+          "text": "The eighty-two-byte trace passes the early count checks."
+        }
+      ],
+      "content": "native/s58.tex",
+      "prerequisites": [
+        "s57"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s58.kts"
+      },
+      "recipes": [
+        "s58-1"
+      ],
+      "editTarget": "sv_bound"
+    },
+    {
+      "id": "s59",
+      "title": "Parse before opening for truncation",
+      "kind": "author",
+      "quiz": {
+        "id": "q59",
+        "prompt": "Why validate before the output open?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Parsing requires the output descriptor."
+          },
+          {
+            "id": "b",
+            "text": "Opening in truncate mode can destroy an existing file."
+          },
+          {
+            "id": "c",
+            "text": "The parser needs a writable file."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s59-h1",
+          "text": "Resource acquisition can change external state before any write call."
+        },
+        {
+          "id": "s59-h2",
+          "text": "The trace validates privately. A malformed trailer returns format failure without opening or changing the old output."
+        }
+      ],
+      "content": "native/s59.tex",
+      "prerequisites": [
+        "s58"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s59.kts"
+      },
+      "recipes": [
+        "s59-1"
+      ],
+      "editTarget": "sv_validate"
+    },
+    {
+      "id": "s60",
+      "title": "Acquire output only after validation",
+      "kind": "author",
+      "quiz": {
+        "id": "q60",
+        "prompt": "Is the readable guard part of the saved file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "No; it lies outside the exact file extent."
+          },
+          {
+            "id": "b",
+            "text": "Yes; every saved WAV ends with a guard byte."
+          },
+          {
+            "id": "c",
+            "text": "Only after an odd-sized chunk."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s60-h1",
+          "text": "A syscall memory-access requirement does not alter the file format."
+        },
+        {
+          "id": "s60-h2",
+          "text": "The permitted output is now open with zero bytes written; the guard remains outside the selected count."
+        }
+      ],
+      "content": "native/s60.tex",
+      "prerequisites": [
+        "s59"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s60.kts"
+      },
+      "recipes": [
+        "s60-1"
+      ],
+      "editTarget": "sv_open"
+    },
+    {
+      "id": "s61",
+      "title": "Advance writes by actual progress",
+      "kind": "author",
+      "quiz": {
+        "id": "q61",
+        "prompt": "How should zero progress be handled?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Retry forever."
+          },
+          {
+            "id": "b",
+            "text": "Declare the whole file saved."
+          },
+          {
+            "id": "c",
+            "text": "Close and return I/O failure."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s61-h1",
+          "text": "The loop needs positive progress to approach its finite complete count."
+        },
+        {
+          "id": "s61-h2",
+          "text": "Forced short writes form a contiguous file prefix. Requested counts and accepted counts can differ."
+        }
+      ],
+      "content": "native/s61.tex",
+      "prerequisites": [
+        "s60"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s61.kts"
+      },
+      "recipes": [
+        "s61-1"
+      ],
+      "editTarget": "sv_write"
+    },
+    {
+      "id": "s62",
+      "title": "Close and return the selected count",
+      "kind": "author",
+      "quiz": {
+        "id": "q62",
+        "prompt": "Does a later write failure restore an old truncated file?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only when the status is three."
+          },
+          {
+            "id": "b",
+            "text": "No; the contract permits the accepted output prefix."
+          },
+          {
+            "id": "c",
+            "text": "Yes; close rolls back truncation."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s62-h1",
+          "text": "Distinguish validation-before-open from rollback after external writes begin."
+        },
+        {
+          "id": "s62-h2",
+          "text": "The trace save returns eighty-two bytes and leaves no live output descriptor."
+        }
+      ],
+      "content": "native/s62.tex",
+      "prerequisites": [
+        "s61"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s62.kts"
+      },
+      "recipes": [
+        "s62-1"
+      ],
+      "editTarget": "sv_finish"
+    },
+    {
+      "id": "s63",
+      "title": "Connect load, filter, encode and save",
+      "kind": "observe",
+      "quiz": {
+        "id": "q63",
+        "prompt": "Which address does the pipeline pass to filtering?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Source base plus the accepted PCM offset."
+          },
+          {
+            "id": "b",
+            "text": "Source base plus forty-four unconditionally."
+          },
+          {
+            "id": "c",
+            "text": "The descriptor address."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s63-h1",
+          "text": "The input chunk layout and canonical output layout have different PCM offsets."
+        },
+        {
+          "id": "s63-h2",
+          "text": "The input is eighty-two bytes, output sixty bytes, and clips zero. The filtered PCM codes are 1500, minus 1500, 1500, 500, 500, 500, 4596 and minus 3596."
+        }
+      ],
+      "content": "native/s63.tex",
+      "prerequisites": [
+        "s62"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s63.kts"
+      },
+      "recipes": [
+        "s63-1"
+      ]
+    },
+    {
+      "id": "s64",
+      "title": "Run the two-second observation after exact checks",
+      "kind": "observe",
+      "quiz": {
+        "id": "q64",
+        "prompt": "What can listening establish about exact Q15 arithmetic?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It proves every output bit."
+          },
+          {
+            "id": "b",
+            "text": "It replaces saturation tests."
+          },
+          {
+            "id": "c",
+            "text": "It is a qualitative observation alongside exact checks."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s64-h1",
+          "text": "Keep exact numeric checks as the acceptance condition before the longer playback observation."
+        },
+        {
+          "id": "s64-h2",
+          "text": "The input has 128056 bytes and the canonical result 128044 bytes, both describing two seconds at 16000 Hz with two channels."
+        }
+      ],
+      "content": "native/s64.tex",
+      "prerequisites": [
+        "s63"
+      ],
+      "completion": {
+        "type": "cli-grade",
+        "check": "checks/construction/s64.kts"
+      },
+      "recipes": [
+        "s64-1"
+      ]
+    }
+  ]
+}

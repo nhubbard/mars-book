@@ -1,0 +1,18 @@
+\section{Advance by a bounded chunk, including its padding}
+Each ordinary chunk has a four-byte identifier, a four-byte little-endian payload
+length and that many payload bytes. An odd payload length has one following pad byte.
+The length does not include that pad or the eight-byte chunk header. Even an empty chunk advances past its header. Compare all four
+identifier bytes: the format identifier is \texttt{fmt\ } with a final space.
+
+At a candidate header offset, require at least eight remaining bytes before loading
+its fields. After consuming that header, compare the payload length plus its parity
+bit with the remaining extent. Use unsigned wide arithmetic: a declared length of
+\texttt{ffffffff} needs 4294967296 bytes including its pad, not zero. Reject it against
+the finite remaining interval before advancing an address.
+
+The first ancillary chunk in the worked file has identifier \texttt{JUNK}, length
+three, payload \texttt{01 02 03} and pad \texttt{a5}. It occupies twelve bytes in total,
+so the following format header begins at 24. Treat the pad as an extent byte, not as
+a fourth payload byte. This profile permits any pad value. After skipping an unknown
+chunk, resume at the computed next header; do not search its payload for \texttt{fmt}
+or \texttt{data} text that might occur by chance.

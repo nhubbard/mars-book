@@ -1,0 +1,30 @@
+\section{Step 42 Observe a block boundary and a zero-frame call}\label{pcm-wav-s42}
+Use the boundary65 recipe and compare frames sixty-three and sixty-four with the table below. Its result needs history from the first sixty-four frames; a reset at the block boundary changes it. Repeat with zero-filter, which supplies a valid empty prefix and no PCM bytes. Then use the direct checking fixture to poison the unused PCM and coefficient addresses; an empty data array alone cannot prove absence of reads.
+
+
+For the left channel, the retained inputs at frames fifty-seven through sixty-three
+are 27699, 29693, 31687, minus 31855, minus 29861, minus 27867 and minus 25873.
+The next input is minus 23879. The right-channel values are each 997 greater.
+All eight coefficient codes remain 4096. Carry those seven input codes into the
+one-sample second block; the already filtered frame sixty-three is not its history.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrr}
+Frame & Output left & Output right \\
+\hline
+63 & $-84$ & 913 \\
+64 & $-6282$ & $-5285$ \\
+\end{tabular}
+\end{center}
+
+Use \texttt{s42-1}, then \texttt{s42-2} and stop at \texttt{filter\_return}.
+
+\paragraph{Observe} The sixty-five-frame result is continuous across the block split. The zero-frame call succeeds with zero clips and touches only its prefix and invocation frame.
+
+\paragraph{Check} What distinguishes the block boundary from a new channel?
+\begin{itemize}
+\item[A.] Input history continues across blocks of the same channel.
+\item[B.] Both require zero history.
+\item[C.] The coefficient order reverses.
+\end{itemize}

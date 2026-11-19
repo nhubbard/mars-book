@@ -1,0 +1,22 @@
+\section{Transfer bytes and establish EOF before parsing}
+The loader first checks that its unsigned capacity lies from one through 266240.
+Then open the input, accumulate actual positive read counts and continue to EOF.
+When the caller buffer becomes exactly full, use a private one-byte probe to distinguish
+an exact fit from more input. The probe's byte must not be stored beyond the caller
+buffer. Close the descriptor before parsing the accepted complete bytes and publishing
+metadata. A failed load may retain its accepted buffer prefix; the descriptor stays
+unchanged.
+
+A read error, including an error at the probe, returns I/O status three. An extra byte
+past capacity returns two. Once a complete file has been established, an unsupported
+or malformed container returns one. For example, a valid forty-four-byte empty-audio
+file with capacity 43 fails the loader's bound, even though its representation would
+pass parsing in a large enough buffer. Do not replace that earlier observation with
+a later format guess.
+
+The saver validates the selected complete stream before opening output in truncate
+mode. Advance by actual positive short writes, reject zero progress or a negative
+result, and close every acquired descriptor once on each return path. A later failure
+cannot undo truncation or an accepted prefix. The current educational write syscall
+also reads one byte beyond its requested interval, including on short or error returns.
+Provide a readable guard outside the file extent, but never add it to the file count.

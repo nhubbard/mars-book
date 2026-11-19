@@ -1,0 +1,31 @@
+\section{Walk the complete eighty-two-byte example}
+The byte offsets below are relative to the beginning of the file. Sizes in this table
+are numerical decimal values; the identifiers are literal ASCII bytes. The data region
+begins at 56, after two complete earlier chunks and the data chunk's own header.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rll}
+Offset & Region & Extent in bytes \\
+\hline
+0 & RIFF identifier, size 74, WAVE identifier & 12 \\
+12 & JUNK header, length three & 8 \\
+20 & JUNK payload and its pad & $3+1$ \\
+24 & fmt header, length sixteen & 8 \\
+32 & PCM format payload & 16 \\
+48 & data header, length sixteen & 8 \\
+56 & Four stereo frames & 16 \\
+72 & note header, length one & 8 \\
+80 & note payload and its pad & $1+1$ \\
+\end{tabular}
+\end{center}
+
+The final pad is \texttt{7f}. The chunk walk ends at 82, exactly at the RIFF limit.
+Finding the data chunk at 48 is not permission to stop validating: its following chunk
+must still fit. A file with the same sixteen sample bytes and a damaged final chunk
+must fail parsing without publishing the descriptor.
+
+Record the current offset and remaining extent before each header load. Then annotate
+the one place where the next offset gains an extra byte for odd size. This trace makes
+an omitted pad visible as a wrong next identifier rather than as an unexplained sample
+error much later in the program.

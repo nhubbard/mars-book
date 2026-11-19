@@ -441,3 +441,26 @@ now start with sentinel buffers, so seeded input cannot conceal missing reads. T
 FIR direct-return observation is distinguished from caller result conversion. Public
 feedback export and separate chapter distributions remain next; actual IDE captures,
 remote controls and independent accessibility validation remain pending.
+
+
+PCM WAV is now the thirty-first registered draft exercise package and included native
+chapter. It retains 64 steps, 55 unfinished regions, 65 observation recipes and 64 quizzes
+with 128 hints. Independently authored public feedback adds seven completed-interface
+domains with 127 cases and 64 guided files with 127 checkpoint cases. Guided feedback
+stops at the named observation, so earlier steps remain usable after later bodies are
+complete. Both cumulative and completed sources pass all public checkpoints at normal
+and wide addresses (508 executions); both complete algorithms pass all public final
+checks at both layouts (another 508). The public host models match an independent
+oracle for 74 containers and 144 filter vectors; 15 assembled regressions and six
+unfinished guided controls are rejected.
+
+The student archive contains 174 exact, deterministic, student-only files. Its native
+assignment and reading fragments remain LaTeX; JSON indexes exercises and planned assets
+without controlling book composition. The private instructor archive embeds that exact
+student ZIP and records its SHA-256. Tests run 55 positive cases from extracted public
+checks, reject 12 unfinished completed-interface cases, and run all 686 private cases
+through the packaged instructor command. Quiz keys and full solutions remain private.
+The main manuscript now contains 31 packaged chapters. The next chapter is CBOR telemetry;
+four chapter drafts remain before the requested substantial editing pass. Actual IDE
+captures, remote policy enforcement and independent accessibility validation remain
+pending; four WAV capture plans are explicitly uncaptured.

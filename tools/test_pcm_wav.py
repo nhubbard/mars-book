@@ -63,7 +63,7 @@ class PcmWavFixtureTests(unittest.TestCase):
     def test_native_passages_are_included_once(self):
         passages = [p for p, _ in book.sources('drafts/pcm-wav.tex')
                     if p.parent.name == '031-pcm-wav']
-        self.assertEqual(89, len(passages))
+        self.assertEqual(90, len(passages))
         self.assertEqual(len(passages), len(set(passages)))
         self.assertEqual('chapter', passages[0].stem)
         self.assertEqual('purpose', passages[1].stem)
