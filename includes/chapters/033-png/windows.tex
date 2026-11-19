@@ -1,0 +1,19 @@
+\section{Keep counts beside cursors}
+Represent a readable window with a full-width address and an unsigned remaining-byte
+count. Before reading a chunk envelope, require at least twelve bytes: four for its
+length, four for its type and four for its CRC. Then compare the decoded payload
+length with \emph{remaining minus twelve}. This ordering avoids forming an unchecked
+\texttt{length + 12}. Check the format's length limit as well as the supplied window.
+Only after these checks may the parser read the payload or the stored CRC.
+
+Use 64-bit address arithmetic even when a dimension or byte count fits in 32 bits.
+A small buffer can live above 4 GiB. Saving its pointer with a word store, or advancing
+it with a 32-bit addition, can destroy its high bits. Byte samples are unsigned:
+\texttt{lbu} loads the values 128 through 255 without sign extension. Use a doubleword
+save for a retained address, and distinguish the byte count from the address to which
+it will be added. These choices also apply to private workspace and saved stack state.
+
+The size bounds make the largest row $3\times512=1536$ sample bytes. Its filter prefix
+raises that to 1537, and 512 such rows occupy 786944 bytes. Derive the required size
+after validating dimensions; require sufficient caller storage before writing. A
+compressed input bound alone does not bound decompressed output closely enough.

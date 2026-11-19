@@ -1,0 +1,22 @@
+\section{Choose the accepted image subset}
+The exercise accepts static, noninterlaced RGB images with eight bits per channel
+(PNG color type 2, bit depth 8), dimensions from 1 through 512, and at most 1 MiB of
+file input. Compression and filter methods are both zero. Other valid PNG formats,
+including indexed color, grayscale, alpha channels and interlacing, are outside this
+exercise. Reject them before reserving row storage or decoding compressed samples.
+The bitmap output preserves sample numbers; it does not perform color management.
+
+Require IHDR first, one uninterrupted run of IDAT chunks, and an empty IEND at the
+exact end of the supplied file. An optional PLTE may occur once before IDAT; its
+payload must contain 1 through 256 RGB triples. Truecolor pixels do not index that
+palette. Check every chunk CRC, including chunks whose payload you skip. Validate
+that all four type bytes are ASCII letters and that the reserved third letter is
+uppercase. Reject unknown critical chunks. Skip otherwise permitted ancillary chunks
+without interpreting their data. An ancillary chunk after IDAT closes the IDAT run.
+
+This teaching subset also rejects transparency and animation control/data chunks
+\texttt{tRNS}, \texttt{acTL}, \texttt{fcTL} and \texttt{fdAT}. Silently ignoring them
+would make the displayed result misleading. These are local restrictions, not claims
+that such PNG files are malformed. Likewise, skipping color metadata is not equivalent
+to implementing its color interpretation. The later APNG chapter will replace the
+static-image restriction with explicit frame semantics.

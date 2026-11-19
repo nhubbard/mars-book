@@ -580,3 +580,24 @@ The remaining chapter drafts are PNG, small lossless video and APNG. Actual ligh
 captures, remote progression/hint enforcement and independent accessibility validation
 remain pending. Earlier chapter prose remains unchanged for the requested substantive
 edit after all chapter drafts exist.
+
+
+The PNG reading foundation is directly composed in nineteen native conceptual passages
+at `drafts/png.tex`. It separates chunk admission/CRC, joined IDAT data, zlib/DEFLATE,
+filter reconstruction and framebuffer publication. A fixed 115-byte PNG splits its
+zlib header across two IDAT chunks and uses all five row filters. The reading traces
+its 35 inflated bytes, 30 RGB bytes and ten display words, explains full-width address
+retention, overlapping matches and the dependency that prevents a naive Sub vector loop.
+One tagged native pipeline diagram, three header-tagged tables and four reasoning
+exercises accompany the initial prose. Public input generation refuses existing paths.
+
+All 93 public tests pass. Private host verification decodes 495 generated images with
+Pillow 13.0.0, independently reverses the row filters, checks exact stream completion,
+CRC domains, payload joining and packed word values, and checks 66265 Paeth triples
+against a separate distance derivation. These are host observations, not verified new
+MIPS interfaces or performance results. The scalar/MSA smoke decoder has been inspected
+for adaptation; its 32-bit pointer assumptions and acceptance details remain explicit
+audit work. Cumulative assembly, public/private feedback and chapter033 archives remain
+next. The integrated manuscript retains 32 packaged chapters; PNG, video and APNG are
+not complete. Actual IDE captures and independent accessibility review remain pending.
+The requested substantial editing pass remains deferred; earlier prose is unchanged.

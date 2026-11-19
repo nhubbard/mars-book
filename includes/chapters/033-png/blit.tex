@@ -1,0 +1,19 @@
+\section{Pack RGB into display words}
+For each pixel, load three unsigned bytes and form
+$(R\ll16)\mathbin{|}(G\ll8)\mathbin{|}B$. Store one word, advance the source by
+three bytes and the destination by four. At row end, advance to the next declared
+destination row start rather than assuming that the displayed image fills its stride.
+On the 512-word display, the next row starts 2048 bytes after the current row start,
+even for the two-pixel fixture.
+
+Validate destination capacity using the final active row and its width. The bytes
+between active row ends and the next row start are padding owned by the caller;
+leave them unchanged. Guard those gaps as well as the allocation's outer ends.
+Also verify the source byte immediately following the last complete RGB pixel is
+never read. Mapped neighboring memory is not permission to load a wider group.
+
+Delay this stage until all chunks, compressed data and filter selectors have passed
+validation. A failure can leave scratch bytes partly decoded, but it must leave the
+visible framebuffer unchanged. This requires separate scratch and framebuffer storage;
+decoding directly onto the visible image cannot provide the same failure behavior
+without another publication mechanism.

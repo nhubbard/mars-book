@@ -1,0 +1,20 @@
+\section{Decode an image in stages}
+A PNG file does not contain a row of framebuffer words. It contains chunks, some of
+which carry parts of a compressed stream. Decompression produces rows of filtered
+sample bytes. Reversing the row filters recovers red, green and blue samples. Only
+then can the program pack those samples into the words used by the bitmap display.
+This chapter builds these transformations separately. When a pixel is wrong, inspect
+the bytes at the preceding boundary before changing the display loop.
+
+The first image is two pixels wide and five rows high. Each row uses a different
+filter. Its first IDAT chunk contains only the first byte of the zlib header; the next
+chunk contains the rest of the stream. This deliberate split prevents a convenient
+file layout from becoming an accidental decoder assumption. The fixture helper at
+\path{drafts/png-fixtures/fixture.py} reproduces the file and each intermediate byte
+sequence. It generates inputs and expected observations; it does not implement a
+PNG decoder for the assembly program to call.
+
+The reading begins with scalar processing. Later, sixteen independent byte additions
+can replace part of the Up-filter loop, and vector shuffles can pack RGB samples.
+The scalar version remains a comparison throughout. A faster image with even one
+incorrect channel is a failed decoder.

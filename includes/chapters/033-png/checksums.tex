@@ -1,0 +1,17 @@
+\section{Give each checksum its own byte domain}
+PNG's chunk CRC covers the four type bytes followed by the payload. It excludes the
+length and the stored CRC itself. Reuse the reflected CRC-32 reasoning from the
+checksum chapter, including the initial and final complements. Compare the resulting
+32-bit pattern with the four stored big-endian bytes. Skipped ancillary data must
+still contribute to this calculation.
+
+The zlib stream has a different checksum, Adler-32, over the \emph{inflated} bytes.
+For PNG, those bytes still include the row filter selectors and residuals. They are
+not the final RGB values. A chunk CRC can pass while Adler-32 fails: recomputing a
+chunk CRC after corrupting the compressed payload does not repair the inner stream.
+Conversely, a correct zlib stream does not excuse a damaged chunk envelope.
+
+CRC and Adler checks detect many accidental corruptions. Neither establishes who
+created a file. For this program their purpose is to reject inconsistent input before
+publishing pixels. Private scratch buffers may already have changed when a late
+checksum fails; framebuffer publication must wait until validation is complete.
