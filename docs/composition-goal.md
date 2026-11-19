@@ -601,3 +601,20 @@ audit work. Cumulative assembly, public/private feedback and chapter033 archives
 next. The integrated manuscript retains 32 packaged chapters; PNG, video and APNG are
 not complete. Actual IDE captures and independent accessibility review remain pending.
 The requested substantial editing pass remains deferred; earlier prose is unchanged.
+
+
+The PNG collector now has two private MIPS64 prototypes: immediate payload copying
+and a validation-first rescan with branchless CRC steps. Both retain full-width
+addresses and saved state, validate the bounded static RGB8 container, retain source
+bytes and publish the descriptor only on success. A native interface passage gives
+four argument registers, the five-doubleword descriptor and success/failure ownership.
+Both prototypes pass 326 independently generated cases at normal and above-4-GiB
+addresses (1304 simulator cases). The domain has 41 accepted and 285 rejected cases,
+covering truncated windows, split/empty IDAT payloads, capacity boundaries, dimensions,
+palette placement, unsupported and malformed types, CRCs and unsigned count limits.
+Eight assembled faults are rejected, including narrowed pointers and failure metadata
+stores. Generators reproduce the checked sources and cases from relocated paths.
+This is chunk collection evidence only; new inflate/unfilter/blit assembly, cumulative
+construction, feedback and separate PNG archives remain next. Actual captures and
+independent accessibility review remain pending. The main manuscript retains 32
+packaged chapters; earlier chapter prose remains retained for the later editing pass.

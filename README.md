@@ -206,10 +206,12 @@ completed; free-writing checks accept equivalent exact implementations. Instruct
 solutions and keys are separate and private. The four IDE capture plans are uncaptured.
 Substantive prose editing remains deferred until all 35 chapter drafts are complete.
 
-The PNG chapter now has an initial native reading at `drafts/png.tex`, with nineteen
-conceptual passages, a pipeline figure, three byte-domain tables and reproducible
-RGB8 fixtures. Host checks cover independent pixel decoding and intermediate row
-bytes. It is not yet a registered exercise package; the main manuscript remains at
-32 packaged chapters. Assembly construction, feedback, measurements and actual IDE
-captures follow before integration. Existing chapter prose is retained for the
-author's editing pass after the remaining drafts.
+The PNG chapter has an initial native reading at `drafts/png.tex`, with twenty
+reading passages, a pipeline figure, four tables and reproducible RGB8 fixtures.
+Two private collector prototypes pass the same 326 container and ownership cases
+at ordinary and above-4-GiB addresses; eight assembled faults are rejected. The
+reading distinguishes container acceptance from successful decompression and preserves
+the descriptor on collector failure. Inflation, row reconstruction, student construction,
+feedback, measurements and actual IDE captures remain next. PNG is not yet a registered
+exercise package; the main manuscript retains 32 packaged chapters. Existing chapter
+prose remains retained for the author's editing pass after the remaining drafts.

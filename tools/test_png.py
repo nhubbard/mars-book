@@ -81,7 +81,7 @@ class PngFoundationTests(unittest.TestCase):
 
     def test_native_composition_is_direct_and_not_integrated_prematurely(self):
         paths = [p for p,_ in book.sources('drafts/png.tex') if p.parent.name == '033-png']
-        self.assertEqual(20,len(paths)); self.assertEqual(20,len(set(paths)))
+        self.assertEqual(21,len(paths)); self.assertEqual(21,len(set(paths)))
         self.assertEqual('purpose',paths[1].stem); self.assertEqual('sources',paths[-1].stem)
         self.assertEqual(0,len(book.validate('drafts/png.tex')))
         self.assertNotIn('033-png',(book.ROOT/'main.tex').read_text())

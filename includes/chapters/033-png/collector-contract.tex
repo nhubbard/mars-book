@@ -1,0 +1,39 @@
+\section{Give the chunk collector a small interface}
+The first assembly entry is \texttt{png\_collect}. It accepts the file address in
+\texttt{\$a0}, the unsigned file byte count in \texttt{\$a1}, a distinct compressed-data
+destination in \texttt{\$a2}, and an eight-byte-aligned descriptor address in
+\texttt{\$a3}. The descriptor has five native doubleword fields. Initialize its first
+field with the destination capacity; leave the other four fields as sentinels while
+developing the parser. A native field follows target memory byte order. It is not a
+big-endian PNG field merely because the descriptor describes a PNG.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{p{22mm}p{35mm}p{93mm}}
+\toprule Byte offset & Field & Owner and meaning \\\midrule
+0 & Capacity & Caller input: writable compressed-data bytes \\
+8 & Width & Successful output: pixels per row \\
+16 & Height & Successful output: number of rows \\
+24 & Joined length & Successful output: total IDAT payload bytes \\
+32 & Inflated length & Successful output: $h(1+3w)$ bytes \\\bottomrule
+\end{longtable}
+On success, return zero in \texttt{\$v0} and the joined length in \texttt{\$v1}.
+Publish all four output fields. On failure, return one in \texttt{\$v0}, zero in
+\texttt{\$v1}, and retain the entire descriptor. Preserve the file, destination
+padding, saved registers and the caller's stack pointer. The compressed destination
+may hold a partially copied prefix on failure; the caller must not use it unless the
+status is zero. No file syscalls or framebuffer stores belong in this entry.
+
+The caller provides nonoverlapping file, destination, descriptor and private stack
+storage. Their addresses retain all 64 bits. A selected file shorter than eight bytes
+or longer than 1 MiB fails before any file or descriptor access. Otherwise, validate
+the signature and the complete container according to this chapter's subset. Require
+at least six joined bytes for the zlib wrapper, but do not yet interpret their header,
+compressed blocks or checksum. Thus a successful collector can still produce a stream
+that the inflater rejects. The descriptor's inflated length is a prediction from the
+validated dimensions, not evidence that those bytes have been decompressed.
+
+For the worked input, initialize capacity to 46. Success writes width 2, height 5,
+joined length 46 and inflated length 35. Capacity 45 fails; even if some payload has
+already been copied, the four output fields remain sentinels. Check these observations
+before adding the inflater. They distinguish a destination-capacity error from a
+malformed compressed block, and both from a later unsupported row selector.
