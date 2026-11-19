@@ -863,3 +863,31 @@ reader, index, seek, encoder and playback assembly remain to be constructed.
 The main manuscript still has 32 packaged chapters; video/PNG final packaging,
 APNG, actual annotated IDE captures and independent accessibility verification
 remain unfinished. The author-requested broad rewrite remains deferred.
+
+
+Chapter 34 now reaches complete-file index publication at step 36. Thirteen new
+native passages develop bounded global-header parsing, a private scratch/context
+interface for nested record calls, exact input completion and a second publication
+pass over immutable bytes. The native index-context table makes input storage
+promises, output metadata and retained fields explicit. Thirteen quizzes,
+twenty-six hints and twenty-five recipes accompany the unfinished regions.
+Attachment preserves the student's record instructions and gives the previous
+example caller a distinct entry name.
+
+The index gate passes 868 simulator cases, rejects eleven assembled faults and
+verifies eleven ordinary callers. Conditional and equivalent mask-based record
+validators and a larger private index frame pass both orders/layouts. Twelve
+six-call reuse cases make 72 calls, including successful reindexing after late
+rejection and shorter results retaining their unused directory suffix. All 155
+public tests and 60 existing package validation/build commands pass. The ordinary
+caller retains the full conservative file arena. Private grouped observations
+compact unused file tails; above-four-GiB tests use a bounded 128-KiB fixture arena
+within the simulator's fixed four-MiB wide-data window. Every supplied input byte,
+semantic bound and ordinary full-arena run is retained.
+
+This stage indexes a complete file already in memory. Actual file loading and EOF
+probing, seeking, encoding and presentation are still to be constructed. The main
+manuscript still contains 32 packaged chapters. PNG/video final packaging, APNG,
+automated annotated IDE capture and independent accessibility verification remain
+open. Earlier native prose and instruction-count measurements are preserved; the
+author-requested broad prose rewrite remains deferred.

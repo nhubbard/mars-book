@@ -1,0 +1,24 @@
+\section{Step 35: Walk the validated records again}
+Read the already-validated payload length at the current record's offset
+eight. Add sixteen to obtain the complete record extent, advance the file
+offset by it, and increment the record index. The supplied second-pass loop
+continues until every admitted entry is published.
+
+Fill \texttt{index\_next}. This pass need not repeat CRC calculation or scratch
+reconstruction because the source has remained immutable. If another part of a
+program can change the file bytes during this operation, that precondition no
+longer holds. It must synchronize ownership or revalidate before using this
+construction. An in-place edit invalidates an earlier directory as well.
+
+\paragraph{Observe} Prepare \texttt{s35-1} and stop before
+\texttt{index\_entry\_advanced}. At the first \texttt{index\_entry\_advanced},
+\texttt{\$s6} is 12\,328 and \texttt{\$s7} is one. Continuing fills all
+eight entries; publication is still unfinished and returns development status four.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What permits this pass to omit CRC calculation?
+\begin{itemize}
+\item[A.] The file was fully validated and remains immutable.
+\item[B.] Directory entries contain checksums.
+\item[C.] Every record has the same size.
+\end{itemize}

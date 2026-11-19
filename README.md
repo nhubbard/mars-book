@@ -276,3 +276,15 @@ conditional version; the native text records the complete-call measurement
 boundary. All 148 public tests and the existing package validation/build commands
 pass. The whole-file codec and playback construction, video distributions, actual
 IDE captures, independent accessibility audit and APNG remain unfinished.
+
+The video construction now reaches step 36. Thirteen additional native lessons
+explain complete in-memory file validation, nested record calls on scratch, exact
+file completion, file-relative offsets and atomic directory/context publication.
+The student attachment preserves the record implementation; twenty-five controls
+retain instruction text. Its separate gate passes 868 simulator cases, rejects
+eleven assembled faults and verifies eleven ordinary callers. Three implementations
+are checked in both byte orders and normal/high layouts. Twelve six-call reuse
+cases preserve earlier public results across failure. All 155 public tests and
+60 existing package validation/build commands pass. The later file loader must
+still establish actual filesystem EOF; file I/O, seek, encoder/playback, final
+video packaging/integration, APNG and real annotated IDE captures remain pending.
