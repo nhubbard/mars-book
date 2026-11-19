@@ -1,0 +1,19 @@
+\section{Separate accepted audio from published metadata}
+Maintain flags for whether format and data have been seen, accepted format fields,
+the candidate data offset and its length, and the next chunk offset. Finding data
+proves a possible audio region; it does not finish the outer walk. Requiring the format
+first lets the parser check frame divisibility at that point. Continue validating later
+chunks before copying the final descriptor to caller memory.
+
+The worked input has sixteen PCM bytes and four frames. Deleting its last pad does
+not change those sample bytes. If the outer size remains 74, the file already fails
+its exact extent; if the size is adjusted to 73, its final odd-sized chunk instead
+lacks the required pad. Neither failure may leave partially accepted rate or channel fields in the
+caller descriptor. Use an untouched sentinel descriptor to observe that distinction.
+
+After a successful parse, the program can form the PCM pointer from the particular
+buffer base plus 56 and pass four frames through its description prefix. There is no
+sample decompression step for the supported PCM representation. The processing kernel
+still has to interpret signed little-endian sample codes and interleaving correctly.
+Validation authorizes that slice; it does not silently transform it into planar
+channels or a different byte order.

@@ -1,0 +1,28 @@
+\section{Publish a descriptor after the complete walk}
+The parser's output is thirty-two bytes in the simulator's little-endian memory.
+It records both the audio description and the location of its bytes. The following
+layout is an interface contract; it is not a copy of a file header.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rll}
+Offset & Field & Width \\
+\hline
+0 & Frame rate & Unsigned 32 bits \\
+4 & Channel count & Unsigned 32 bits \\
+8 & Frame count & Unsigned 64 bits \\
+16 & PCM offset from file start & Unsigned 64 bits \\
+24 & PCM byte count & Unsigned 64 bits \\
+\end{tabular}
+\end{center}
+
+For the worked file, the five values are 16000, two, four, 56 and sixteen. They refer
+to two different extents: four frames in the sixteen-byte PCM slice, within an
+eighty-two-byte file. Derive a PCM address by adding the stored offset to the particular
+file buffer's full address. The offset does not retain an earlier buffer's address.
+
+Retain candidate fields privately while scanning. Publish all thirty-two bytes only
+after every chunk, including any chunk after data, has passed. On failure the caller's
+descriptor stays unchanged. The bound, filter and encoder consume only the first
+sixteen bytes, containing rate, channels and frames. They derive their own byte count
+and never follow the trailing offset or length fields from an unrelated parsed file.

@@ -1,0 +1,35 @@
+\section{Check the container, kernel and connected program separately}
+For parsing, vary chunk offsets and parity, the two supported format lengths, unknown
+chunks on both sides of data, empty audio and all local limits. Reject truncated
+headers, lengths that wrap in a narrow calculation, missing pads, duplicate required
+chunks, inconsistent format fields, partial frames and incorrect outer extents. Follow
+a failed call with a valid one in the same session to expose stale flags or offsets.
+
+For filtering, compare exact signed outputs with an independent wide-integer model.
+Use both channel counts, asymmetric channel data, endpoint products, rounding ties,
+clipped and unclipped results, block splits and zero frames. Check all saved-register
+bits, output guards and caller-data accesses. A whole-file result and concatenated
+blocks must agree; a new file begins with zero histories, regardless of the previous
+file's final samples.
+
+For the connected program, load a file whose data is not at 44, filter its selected
+PCM, encode a canonical file and save the actual encoded length. Decode that saved
+file with an independent audio tool and compare every channel's samples. Also inspect
+file lifecycle under short operations and injected failures. Separate library
+interoperability, local strict-format checks and actual simulator execution in the
+verification record. None alone establishes all three.
+
+\subsection*{Compare the empty-data interpretation explicitly}
+The host audit found a concrete difference in FFmpeg 9.0.2. For an empty data chunk
+followed by a note chunk, it attempted to decode the following metadata as PCM.
+The local model and Python's wave reader instead recovered zero frames. The
+\href{https://github.com/FFmpeg/FFmpeg/blob/n9.0.2/libavformat/wavdec.c}{release demuxer source}
+treats a zero data length as having an unspecified end, which explains that observation.
+The audit records these cases separately from exact matching decodes.
+
+Keep the empty-data and trailing-chunk rules stated above. Also test an empty canonical
+file with no following chunk, so the diagnostic does not conflate zero frames with
+all empty-file interoperability. The difference illustrates why an independent library
+is an additional observation rather than the source of the exercise's strict decisions.
+No MARS implementation has been executed for this chapter yet; these are host-model
+checks and the implementation still has to meet the same cases.

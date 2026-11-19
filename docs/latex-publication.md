@@ -316,3 +316,21 @@ The standalone QOI entry remains 49 pages. Both PDFs have tagged structure and t
 requested embedded fonts. All 49 integrated QOI pages were rendered and inspected;
 this build reports no overfull boxes or missing characters. This is structural/layout
 verification, not PDF/UA certification or assistive-technology testing.
+
+
+Build the standalone PCM WAV foundation with
+`python3 tools/book.py build --entry drafts/pcm-wav.tex`. It has 22 native reading
+segments, four semantic tables, one native interleaving diagram and no minted blocks
+at this foundation stage. The existing font and IntelliJ-derived highlighting setup
+is retained. Its fixed input helper is drafts/pcm-wav-fixtures/fixture.py. The chapter
+is not yet included in main.tex or registered as a complete course package. Simulator
+implementations, construction steps and actual IDE captures remain subsequent work.
+
+The first PCM WAV reading build has 12 physical pages. Local inspection confirms tagged
+PDF 2.0 structure, four tables with 15 header cells, one native figure with a semantic
+alternative description, and embedded Minion Pro, Noto Sans Math and JetBrains Mono.
+All 12 pages were rendered and inspected; the interleaving diagram was also inspected
+at a larger scale and its frame labels spaced apart. The build reports no overfull
+boxes or missing characters. These checks are not PDF/UA certification or an
+assistive-technology evaluation. The main manuscript remains 1286 pages and 30 packaged
+chapters until the WAV assembly construction and distributions are verified.

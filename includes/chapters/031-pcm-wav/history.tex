@@ -1,0 +1,19 @@
+\section{Carry input history across blocks}
+The earlier kernel accepts at most sixty-four output samples per call. Its input window
+contains seven chronological history samples followed by that call's new samples.
+For a file wrapper, form such a window for each channel, invoke the kernel, and retain
+the last seven \emph{input} samples for the next block. The history does not contain
+the newly filtered outputs. Using outputs would introduce feedback and change the
+mathematical operation.
+
+Suppose the first block has three frames. Its window begins with seven zeros and then
+three new values. The next history is the last seven values of that ten-value window:
+four zeros followed by the three actual input codes. Keeping only the three new codes
+without their preceding zeros would leave four uninitialized history positions. The
+same rule works for a one-frame block and for a full sixty-four-frame block.
+
+At every split point, concatenated block results must equal a whole-file result with
+the same beginning condition. Check block sizes one, three, seven and sixty-four.
+A difference at a block boundary usually identifies wrong retained history, a changed
+channel stride or a repeated rounding operation. Reset both channel histories at the
+start of each new file, including after an earlier file operation failed.

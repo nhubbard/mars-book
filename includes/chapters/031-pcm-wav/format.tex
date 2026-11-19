@@ -1,0 +1,39 @@
+\section{Check a format whose fields agree}
+The format payload identifies sixteen-bit integer PCM with format tag one. The worked
+values are channels two, frame rate 16000, byte rate 64000, frame size four and sample
+width sixteen bits. A sixteen-byte format payload holds these six fields. The local
+reader also accepts an eighteen-byte payload whose final two extension-size bytes are
+zero; it does not interpret any other extension.
+
+Offsets in this table begin at the format payload, which is file offset 32 in the
+worked input. Each numerical field is unsigned and little endian.
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rlrr}
+Payload offset & Field & Bytes & Worked value \\
+\hline
+0 & Format tag & 2 & 1 \\
+2 & Channel count & 2 & 2 \\
+4 & Frame rate & 4 & 16000 \\
+8 & Byte rate & 4 & 64000 \\
+12 & Frame size & 2 & 4 \\
+14 & Bits per sample & 2 & 16 \\
+16 & Extension size, if present & 2 & 0 \\
+\end{tabular}
+\end{center}
+The last row is absent from the worked sixteen-byte payload. Test its value only
+when the validated payload length is eighteen; otherwise those two bytes belong
+to the following chunk header.
+
+Derive the redundant quantities after validating the independent ones. With $C$
+channels and sixteen-bit codes, one frame has $2C$ bytes. At rate $F$, the required byte
+rate is $2CF$. Compare the stored frame size and byte rate with those results. A
+stereo declaration paired with frame size two is inconsistent even if the data length
+is even. The local bounds keep the correct products small, but perform their formation
+without accidentally retaining a signed field interpretation.
+
+Keep the distinction between format payload and compiler structure layout. The file's
+six fields have specified byte widths and positions; a native language structure may
+include fields or alignment rules that the file does not contain. Assemble unsigned
+fields from their actual bytes. The PCM sample codes use a signed interpretation,
+which is a later operation on a different region.

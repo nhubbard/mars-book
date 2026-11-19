@@ -1,0 +1,20 @@
+\section{Retain caller state and select exact memory intervals}
+Preserve all sixty-four bits of \texttt{s0} through \texttt{s7}, \texttt{fp} and
+\texttt{sp}, and return through the incoming \texttt{ra}. Nested calls need private
+storage for their return addresses and live arguments. No routine uses console I/O.
+Arguments, temporary registers and vector/overlapping floating-point storage may change.
+These rules match the earlier processing kernels; a file wrapper does not relax them.
+
+Descriptors are eight-byte aligned. PCM, coefficient, byte-file and path pointers may
+be unaligned. Caller objects are disjoint. The filter reads exactly the selected PCM
+and sixteen coefficient bytes and writes exactly the corresponding output PCM; the
+encoder reads exactly its selected PCM and writes only its returned file bytes. The
+filter and encoder read only the description prefix's first sixteen bytes. Private
+stack storage and submission-owned constants do not enlarge a caller's selected slice.
+
+For parsing and saving, reject a count above 266240 with status two and one below
+forty-four with status one before pointer access. The filter validates its prefix
+before PCM access or output writes. With zero frames it accesses neither PCM nor
+coefficients, even though the prefix still needs validation. The bound routine also
+needs a readable prefix; its interface supplies a pointer rather than packed values.
+Keep these differences visible when constructing invalid-argument checks.

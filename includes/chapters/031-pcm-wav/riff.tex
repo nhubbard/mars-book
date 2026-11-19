@@ -1,0 +1,18 @@
+\section{Read the outer RIFF extent}
+The first twelve bytes identify a RIFF WAVE container. Four literal bytes spell
+\texttt{RIFF}, an unsigned little-endian word gives the following extent, and four
+more bytes spell \texttt{WAVE}. The extent excludes the first eight bytes. In the
+worked file it is 74, so the exact complete length is 82 bytes. It is neither the
+sample count nor the PCM payload length.
+
+First reject an unsupported caller byte count without loading the input pointer.
+Then compare the literal identifiers and assemble the size field from its bytes.
+Require that size plus eight equals the supplied count. This establishes an outer
+limit for the chunk walk. A smaller declaration does not authorize scanning trailing
+bytes for another useful chunk; a larger one does not make the missing bytes readable.
+
+Keep this numerical offset separate from a full-width address. Once an offset has
+been proved to fit, the base address plus that offset locates its byte. The bounded
+file makes the offset small; it does not make the address a thirty-two-bit value.
+The exercise uses little-endian RIFF only. Other container variants are outside its
+local profile and must not be interpreted by merely changing the magic comparison.

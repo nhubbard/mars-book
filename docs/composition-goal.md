@@ -386,3 +386,15 @@ the exact student ZIP and records its SHA-256 digest. Five representative unfini
 regions fail their guided check;45 execution cases run from extracted public check files.
 Actual IDE captures, remote instructor controls, accessibility certification and the
 later substantive editing pass remain pending. The next chapter is the PCM WAV filter.
+
+
+The PCM WAV reading foundation is now directly authored in 22 native include segments
+under 031-pcm-wav and built through drafts/pcm-wav.tex. It distinguishes frames, channel
+samples, PCM bytes and complete file bytes; traces an 82-byte input with data at 56; and
+reuses the exact eight-tap Q15 contract with separate zero histories for stereo channels.
+A fixed four-frame trace and a two-second deterministic stereo input are public. The
+private host oracle is checked against Python wave, NumPy and FFmpeg; the observed
+zero-length-data/footer interpretation difference is documented separately. This is
+host evidence, not MARS implementation or performance evidence. The full manuscript
+remains 30 packaged chapters; assembly construction and packaging for WAV are next.
+Earlier chapter prose remains unchanged for the later substantive editing pass.

@@ -1,0 +1,18 @@
+\section{Interpret signed codes without corrupting their bytes}
+The first left code is stored as \texttt{e0 2e}, representing 12000. The following
+right code is \texttt{20 d1}. Combining those two unsigned bytes yields
+\texttt{d120}, or 53536 as an unsigned number. The same sixteen-bit code represents
+minus 12000 when interpreted as a signed two's-complement sample. Sign extension
+belongs after assembly of the code, before multiplication by a signed coefficient.
+
+A byte-oriented load path must not sign-extend \texttt{d1} as an independent component
+and let its high bits contaminate another operation. Conversely, leaving the completed
+code unsigned turns a negative sample into a large positive input. Those mistakes may
+still produce valid WAV output with a plausible duration; an audio player is not a
+signed-arithmetic checker.
+
+A file's even sample offsets also do not prove alignment of the buffer address. If the
+buffer begins at an odd address, its PCM samples remain odd-addressed after adding
+an even offset such as 56. Use an input path that satisfies the callable kernel's
+unaligned-byte contract. Test both the exact numerical samples and the bytes stored
+for their results, including the distinct endpoints minus 32768 and 32767.

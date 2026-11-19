@@ -1,0 +1,28 @@
+\section{Keep two histories while retaining interleaved output}
+For each block, gather left codes in chronological order into one window and right
+codes into another. Each window has its own seven-value history. Both use the same
+eight coefficients, but no sample from one channel enters the other channel's sum.
+After filtering, place the left and right results back into their original frame
+positions. Update each history from its own input window.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=2.1cm,y=0.7cm,alt={Eight consecutive signed sixteen-bit sample slots form four stereo frames. Slots from left to right are L0,R0,L1,R1,L2,R2,L3,R3. Left filtering follows slots zero,two,four,six; right filtering follows slots one,three,five,seven. Each slot is two bytes and each complete frame is four bytes.}]
+\foreach \frame in {0,1,2,3}{
+ \pgfmathtruncatemacro{\leftslot}{2*\frame}
+ \pgfmathtruncatemacro{\rightslot}{2*\frame+1}
+ \draw[fill=black!8] (\leftslot*0.5,0) rectangle +(0.5,1);
+ \draw (\rightslot*0.5,0) rectangle +(0.5,1);
+ \node at (\leftslot*0.5+0.25,0.5) {$L_{\frame}$};
+ \node at (\rightslot*0.5+0.25,0.5) {$R_{\frame}$};
+ \node[below] at (\frame+0.5,-0.15) {frame \frame};
+}
+\end{tikzpicture}
+\caption{Interleaved storage contains two separate time sequences. The slot order is also specified in the figure description; this is a native drawing, not an IDE capture.}
+\end{figure}
+
+The stride from left frame zero to left frame one is four bytes, not two. A pointer
+increment that is correct for mono therefore selects the wrong sequence in stereo.
+Use a left-only impulse and then a right-only impulse to expose channel mixing. Also
+choose different signals in the two channels: an error that swaps identical channels
+cannot be detected by comparing those identical outputs.

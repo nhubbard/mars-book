@@ -1,0 +1,18 @@
+\section{Give the sample stream a file representation}
+The mixer and FIR routines worked on arrays of signed sample codes. Their arguments
+supplied the addresses and lengths, so neither routine had to discover what an input
+file meant. A WAV file adds that description: it identifies an audio representation,
+channel count, sample rate and region of sample bytes. The file reader must establish
+those facts before choosing which bytes to pass to a processing kernel.
+
+In this chapter, read a bounded PCM WAV file, filter its audio and write a canonical
+WAV result. Reuse the eight-tap Q15 arithmetic from the FIR chapter. The new work is
+finding a valid sample slice, retaining its channel structure and carrying its history
+across blocks. A successful file operation, a valid container and a correct filter are
+separate observations. Each can fail while the other two appear plausible.
+
+Begin with the four-frame input made by
+\texttt{python3 drafts/pcm-wav-fixtures/fixture.py input.wav}. It is eighty-two bytes,
+not a forty-four-byte header followed by audio. The same helper can create a two-second
+input with \texttt{--fixture listen}. It refuses an existing output. Keep the short file
+for exact tracing and the longer one for playback after the byte-level checks pass.

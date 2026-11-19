@@ -1,0 +1,20 @@
+\section{Write a canonical container around the selected PCM}
+The output writer uses a twelve-byte RIFF prefix, a twenty-four-byte format chunk
+with sixteen payload bytes, and an eight-byte data header followed by PCM. Its PCM
+offset is always 44. It derives the sizes from the validated rate, channel count and
+frame count in the description prefix; it never copies the parsed input offset 56
+into an output pointer calculation.
+
+For the worked four-frame stereo result, the PCM size is sixteen and the complete
+canonical file size is sixty. The RIFF size field is therefore 52. Keep rate 16000,
+channel count two, byte rate 64000, frame size four and width sixteen. Only the PCM
+codes change during filtering. The input's JUNK and note chunks are not carried into
+this canonical output. Copying PCM without filtering would preserve its audio bytes, but would not
+preserve the original container or its ancillary metadata.
+
+Validate the description and require the entire $44+2CN$ output capacity before
+reading PCM or writing a header. On description or capacity failure, leave output
+unchanged. On success, copy exactly the selected PCM and return the complete file
+length, with no trailing terminator. The zero-frame case writes a valid forty-four-byte
+file and reads no PCM bytes. The writer has no reason to emit an odd data pad because
+every selected frame contains an even number of bytes.
