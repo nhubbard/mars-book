@@ -494,3 +494,22 @@ worked passage follows both cursor and remaining count through the optional two-
 identifier-like string. Telemetry decode, exact sizing, encode, cumulative construction,
 feedback and chapter032 distributions remain next. The main manuscript still has 31
 packaged chapters; earlier prose and human contributions remain unchanged.
+
+
+Both complete CBOR telemetry prototypes now implement all five memory entries. The
+reference uses a private candidate record, recursive walking and threshold-based sizing.
+The alternative retains checked input slices, revisits samples after validation, uses
+explicit container frames, byte-width sizing and reverse-address argument stores. Both
+pass 648 head, 1000 walker and 2436 telemetry cases at normal and above-4-GiB addresses,
+for 16336 simulator cases. The telemetry cases include 731 decode, 420 exact-bound, 1260
+encode, 18 invalid-record and seven capacity observations. Twelve new assembled
+regressions are rejected. Twelve actual MIPS encodings match independent cbor2 decoding
+and canonical output. All generators reproduce their checked artifacts exactly.
+
+New native passages inspect exact flat-record bytes, sentinel tails and publication
+failure, then compare actual decoder work on three inputs. The 1024-byte optional-data
+input projects to seven bytes; output length does not establish traversal work. Recorded
+counts are not acceptance rules, isolated algorithm costs, elapsed timings or IDE
+captures. Cumulative construction, public feedback, separate chapter032 distributions
+and actual captures remain next. The main manuscript still has 31 packaged chapters;
+prior chapter exposition and human writing remain unchanged for the later editing pass.

@@ -1,0 +1,35 @@
+\section{Separate input traversal from retained output}
+Two complete private prototypes use different storage strategies. The candidate version
+keeps decoded payloads in a private record until validation finishes. The checked-slice
+version retains input locations, validates the whole record and then revisits the sample
+heads during publication. Its generic walker uses explicit frames; the candidate
+version's walker uses recursive calls. Both produce identical required-field encodings.
+
+The table records completed MIPS instructions inside \texttt{telemetry\_decode}, from
+entry until its return to the caller. The inputs are the helper's trace, maximum-output
+record and exact-input-budget record. Results are identical at ordinary and above-4-GiB
+addresses. These figures are observed work, not elapsed host time or grading targets.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{lrrrr}
+Input & Input bytes & Output bytes & Candidate & Checked slices \\
+\hline
+Worked trace & 52 & 37 & 2186 & 2620 \\
+Maximum output & 241 & 241 & 7199 & 11344 \\
+Exact input budget & 1024 & 7 & 7712 & 5454 \\
+\end{tabular}
+\end{center}
+
+The maximum-output record has sixty-four readings. Revisiting those heads adds work
+during publication. The input-budget record has empty required payloads and a large
+optional array. Its output is only seven bytes, but the decoder must still walk and
+validate the optional children. Dropping metadata does not authorize jumping past an
+unvalidated item. The explicit-frame prototype performs less work on this particular
+container-heavy input, while it performs more work on the other two.
+
+These prototypes also differ in their head readers and size calculations. The table
+therefore does not isolate the cost of recursion or a second pass. It establishes that
+output size alone does not predict decoding work, and that one input cannot establish
+which complete method does less work in general. Both methods must meet the same field,
+range, depth and publication contracts before their work counts are compared.

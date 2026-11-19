@@ -403,3 +403,13 @@ the scope statements. The standalone reading remains 13 physical pages, now with
 26 directly authored passages. All pages were rendered and inspected again; the
 requested fonts remain embedded, with no overfull boxes, missing characters or font
 substitution warnings. The main manuscript remains at 31 packaged chapters.
+
+
+The complete-prototype CBOR reading has 28 native passages and 14 physical pages.
+It adds exact published-record observations and a three-input decoder-work comparison,
+retaining zero minted listings. All pages were rendered and inspected, including the
+final exercise/scope flow after removing an obsolete forced page break. Tagged structure
+contains six tables with 20 header cells and one described native figure. Minion Pro,
+Noto Sans Math and JetBrains Mono remain embedded, with no overfull boxes, missing
+characters or font-substitution warnings. This is structural and visual verification,
+not independent PDF/UA certification. The main manuscript remains 31 packaged chapters.
