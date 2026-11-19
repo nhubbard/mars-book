@@ -426,3 +426,18 @@ remain explicitly uncaptured. Cumulative completed-body execution, public feedba
 separate WAV distributions remain next; the main manuscript still has 30 packaged
 chapters. Earlier exposition is retained apart from its updated scope statement, and
 the requested substantive editing pass remains deferred until all chapter drafts exist.
+
+
+Private cumulative WAV verification now covers 254 direct/caller executions across
+all 65 recipes at normal and above-4-GiB addresses. Checks compare exact intermediate
+arrays, declared private frame state, illustrated registers, descriptor ownership and
+subsequent development/success returns. Both construction-compatible complete variants
+also pass all 2744 memory/file cases. Fifteen deliberate accuracy/ownership regressions
+are rejected; ten explicit unfinished nested-call cases preserve outputs, registers and
+file cleanup. Twelve actual simulator WAV files match independently decoded prototype
+outputs; four real host-file round trips pass and two malformed inputs preserve output.
+All private generators reproduce their artifacts byte-for-byte. Public loader fixtures
+now start with sentinel buffers, so seeded input cannot conceal missing reads. The raw
+FIR direct-return observation is distinguished from caller result conversion. Public
+feedback export and separate chapter distributions remain next; actual IDE captures,
+remote controls and independent accessibility validation remain pending.

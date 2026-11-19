@@ -11,7 +11,8 @@ only data declarations and caller controls; the entire text section stays byte-f
 unchanged. Keep supplied region markers, data boundaries, scalar controls, routes and
 frames. Mode order is bound, parse, filter, encode, load, save, pipeline, kernel.
 
-Metadata begins as a valid 16-byte prefix for bound/filter/encode and as a 64-byte a5
+Loader and pipeline observations begin with a sentinel source arena; their incoming
+file bytes are supplied separately by the file fixture. Metadata begins as a valid 16-byte prefix for bound/filter/encode and as a 64-byte a5
 sentinel for parse/load/save/pipeline/kernel. Filter input is raw interleaved PCM in
 source. Encoder input is raw PCM in samples. Parser input is a complete file in source.
 Kernel mode uses a seven-history-plus-new-samples window in kernel_window. Prefix
@@ -29,10 +30,21 @@ launch or create host files. Use `../pcm-wav-fixtures/fixture.py input.wav --fix
 for an ordinary trace file, or select listen for the two-second run. Its output must be
 fresh. Run the pipeline in the directory containing that input.wav.
 
-This is a native reading and safe-input preparation milestone. The earlier private
-complete implementations have been verified, but they are not these cumulative starter
-prefixes. Execution verification of all completed cumulative bodies, guided-check export,
-completed public feedback and packaging are pending. Intended checkpoint observations
-must not be advertised as executed student checkpoints yet. The four capture plans have
-no actual IDE pixels or coordinate receipts. Remote progression/hint enforcement is
-also pending. The substantial prose rewrite is deferred until all 35 chapter drafts.
+The private cumulative checks now verify all 65 recipes at both address layouts:
+254 direct/caller checkpoint executions, including continuation through unfinished
+regions and exact intermediate arrays, private state and descriptor ownership. Step
+s01 observes the caller only; the earlier FIR observation uses function_return for a
+direct invocation and kernel_return before the caller converts the raw kernel count.
+Pipeline observations use the caller only. These boundaries are recorded separately.
+
+Both complete private implementations pass 2744 completed-interface executions. Fifteen
+assembled fault controls are rejected, and ten explicit nested-development cases check
+propagation through bound, FIR and parser calls. Twelve actual MIPS output files decode
+independently; four real host-file round trips pass and malformed input preserves old
+outputs. The earlier prototype performance figures retain their original source and
+measurement boundaries; the new construction contains additional routes and guards.
+
+Public feedback exports and chapter distributions remain pending. The four capture
+plans have no actual IDE pixels or coordinate receipts. Remote progression/hint
+enforcement and independent accessibility validation are also pending. The substantial
+prose rewrite remains deferred until all 35 chapter drafts exist.

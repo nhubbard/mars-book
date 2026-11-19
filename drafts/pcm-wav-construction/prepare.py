@@ -39,7 +39,7 @@ def values(recipe):
     data = octets(recipe['fileHex'], 266272); pcm = octets(recipe['pcmHex'], 262176)
     kernel = octets(recipe['kernelHex'], 160); coeff = octets(recipe['coefficientHex'], 64)
     octets(recipe['inputFileHex'], 266240); octets(recipe['outputFileHex'], 266240)
-    for key in ['inputExists', 'outputWritable']:
+    for key in ['inputExists', 'outputWritable', 'callerOnly']:
         if type(recipe[key]) is not bool:
             raise ValueError('File switches must be booleans')
     for key in ['readChunk', 'writeChunk']:

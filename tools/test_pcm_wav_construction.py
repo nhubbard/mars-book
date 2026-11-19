@@ -41,7 +41,7 @@ class WavConstructionTests(unittest.TestCase):
             for q in selected:
                 self.assertEqual(step['id'], q['step'])
                 self.assertEqual(step['target'], q['target'])
-                self.assertEqual(step['checkpoint'], q['functionCheckpoint'])
+                self.assertEqual(step.get('directCheckpoint', step['checkpoint']), q['functionCheckpoint'])
                 self.assertEqual(step['target']+'_return' if step['checkpoint'] == 'function_return'
                                  else step['checkpoint'], q['callerCheckpoint'])
                 self.assertIn(r'\texttt{'+q['id']+'}', native)
@@ -82,7 +82,7 @@ class WavConstructionTests(unittest.TestCase):
                         {'fileHex': '0'}, {'target': 'unknown'}, {'inputExists': 1},
                         {'readChunk': 0}, {'writeChunk': True}, {'firstDescriptor': 32},
                         {'failReadAfter': -1}, {'outputFileHex': '0'}, {'outputWritable': 1},
-                        {'kernelCount': False}, {'pcmHex': 'ff'*262177}]:
+                        {'callerOnly': 1}, {'kernelCount': False}, {'pcmHex': 'ff'*262177}]:
             with self.subTest(changes=list(changes)), self.assertRaises(ValueError):
                 self.prep.prepare(self.source, {**q, **changes})
         enc = next(q for q in self.recipes if q['target'] == 'encode')
@@ -106,6 +106,7 @@ class WavConstructionTests(unittest.TestCase):
         self.assertEqual((82, 84, 81, 58), tuple(len(bytes.fromhex(q['fileHex'])) for q in [trace, extended, bad, empty]))
         self.assertEqual(bytes.fromhex(trace['fileHex'])[56:72], bytes.fromhex(extended['fileHex'])[58:74])
         self.assertEqual(73, int.from_bytes(bytes.fromhex(bad['fileHex'])[4:8], 'little'))
+        self.assertTrue(all(q['fileHex'] == '' for q in self.recipes if q['target'] in ['load', 'pipeline']))
         self.assertEqual('0', empty['frames'])
         self.assertEqual(b'data'+bytes(4), bytes.fromhex(empty['fileHex'])[38:46])
         zero = next(q for q in self.recipes if q['scenario'] == 'zero-filter')

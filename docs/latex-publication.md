@@ -359,3 +359,12 @@ JetBrains Mono remain embedded. No overflowing boxes, missing characters or font
 substitution warnings are reported. These are structural and visual checks, not PDF/UA
 certification or assistive-technology testing. The main manuscript remains 30 packaged
 chapters and 1286 physical pages until WAV grading and distributions are verified.
+
+
+The cumulative WAV verification milestone retains the 46-page native layout and requested
+embedded fonts. The changed scope statement now records private checkpoint verification
+while leaving public exports, chapter distributions and actual IDE captures pending.
+Rendered pages 1..45 match the previously reviewed pixels exactly; the final scope page
+was rendered and inspected again. Tagged structure still contains six tables, 23 header
+cells, one described native figure and 64 quiz lists. This remains structural verification,
+not independent accessibility certification.
