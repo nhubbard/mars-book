@@ -1,0 +1,24 @@
+\section{Step 20: Require exact command completion}
+Reaching pixel 4096 proves that commands cover the image. It does not prove
+that the payload ends there. Compare the byte cursor with the exclusive payload
+end and reject any leftover byte, including an otherwise valid extra command.
+This makes the record extent unambiguous for the file reader.
+
+Fill \texttt{record\_exact}. For the worked delta, the second command skips
+4095 pixels and changes none. It consumes only its four-byte header and brings
+both cursors to their required ends. The checkpoint that follows is the first
+place from which either application loop may run. A valid prefix followed by a
+bad late command must never reach it.
+
+\paragraph{Observe} Prepare \texttt{s20-1} and stop before
+\texttt{record\_validation\_ready}. At \texttt{record\_validation\_ready}, the byte cursor is
+source plus 27 and the pixel cursor is 4096. All frame and context bytes are
+still unchanged.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What must hold before applying a delta?
+\begin{itemize}
+\item[A.] Only its first command must fit.
+\item[B.] Both the pixel coverage and payload consumption must be exact.
+\item[C.] The checksum field must be rewritten.
+\end{itemize}

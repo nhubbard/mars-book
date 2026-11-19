@@ -1,0 +1,16 @@
+\section{Step 99 Recognize exact completion}
+Fill \texttt{vs\_success}. Change the saved logical status to success only after progress equals the total byte count. No extra write is needed to discover an end marker: this routine already knows the exact extent that must be stored.
+
+A test failure threshold equal to the total count should therefore still allow success. The final requested bytes reach that threshold, progress becomes equal to total and the loop goes directly to success. An unnecessary extra request could falsely turn an already completed transfer into a reported failure. Closing and publishing remain separate steps.
+
+Use \texttt{s99-1} and stop before \texttt{vs\_success\_ready}.
+
+\paragraph{Observe} Every admitted source byte has been transferred. Logical status is success; the owned descriptor still needs closing.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} Is another write needed after the exact count has been transferred?
+\begin{enumerate}[label=\Alph*.]
+\item Yes, to request an EOF byte.
+\item Yes, to calculate the record CRC.
+\item No; exact progress already establishes transfer completion.
+\end{enumerate}

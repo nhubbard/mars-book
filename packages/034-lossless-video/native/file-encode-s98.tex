@@ -1,0 +1,16 @@
+\section{Step 98 Advance by actual progress}
+Fill \texttt{vs\_result}. A positive result advances completed progress by that result. A zero or negative result ends the attempt through the owned-descriptor cleanup path. Never advance by the requested count after a short write; doing so would skip the bytes that the service did not accept.
+
+For the 257-byte limit, the next source address is base plus 257, even though the first request was 4096. Continue until completed progress equals the total. The service contract does not return more than requested; the routine relies on that ABI property when maintaining progress within the admitted source extent.
+
+Use \texttt{s98-1} and stop before \texttt{vs\_progress\_ready}.
+
+\paragraph{Observe} After the first short write, progress is 257. The next iteration begins at the first byte that has not yet been transferred.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} How far should progress advance after a short write?
+\begin{enumerate}[label=\Alph*.]
+\item By the requested count.
+\item By the actual positive result.
+\item By one complete frame.
+\end{enumerate}

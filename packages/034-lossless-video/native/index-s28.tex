@@ -1,0 +1,22 @@
+\section{Step 28: Admit duration and reserved bytes}
+Read the four-byte duration and require one through 1000 milliseconds.
+Store the admitted native value at stack offset 88. Read the final four reserved
+header bytes and require zero. A zero duration is not interpreted as a request
+to play as quickly as possible; it is outside this format.
+
+Fill \texttt{index\_timing}. Timing metadata is validated now, although the
+indexer performs no sleeping and reads no clock. The eventual player can use
+the admitted duration without reparsing an unchecked field. Keep it private
+until the entire file has passed validation.
+
+\paragraph{Observe} Prepare \texttt{s28-1} and stop before
+\texttt{index\_timing\_ready}. At \texttt{index\_timing\_ready}, \texttt{\$sp+88} contains
+the eight-byte value forty. The reserved value in \texttt{\$t0} is zero.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Does the indexer wait forty milliseconds per frame?
+\begin{itemize}
+\item[A.] Yes, while checking its CRC.
+\item[B.] Yes, before each directory store.
+\item[C.] No; it only validates and retains the duration.
+\end{itemize}

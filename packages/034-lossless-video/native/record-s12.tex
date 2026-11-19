@@ -1,0 +1,26 @@
+\section{Step 12: Initialize the record checksum}
+The checksum covers header bytes zero through eleven followed immediately by
+the payload bytes. It excludes the stored checksum at offsets twelve through
+fifteen. This is a logical concatenation of two source windows; it does not
+require a temporary copy.
+
+Fill \texttt{record\_crc\_state}. Set \texttt{\$t0} to the source, its current
+exclusive end \texttt{\$t1} to source plus twelve, the accumulator
+\texttt{\$t2} to \texttt{0x00000000ffffffff}, and the reflected polynomial
+\texttt{\$t3} to \texttt{0x00000000edb88320}. Clear the phase flag
+\texttt{\$t7}. The supplied control flow switches to the payload window once,
+then finishes. These constants must have zero high halves; an unintended
+sign extension would enter later right shifts.
+
+\paragraph{Observe} Prepare \texttt{s12-1} and stop before
+\texttt{record\_crc\_state\_ready}. At \texttt{record\_crc\_state\_ready}, inspect the full 64-bit
+accumulator and polynomial. The current window is the twelve header bytes and
+\texttt{\$t7} is zero.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Which bytes are omitted from checksum input?
+\begin{itemize}
+\item[A.] The stored checksum field.
+\item[B.] The sequence field.
+\item[C.] The payload.
+\end{itemize}

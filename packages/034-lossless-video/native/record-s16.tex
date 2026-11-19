@@ -1,0 +1,23 @@
+\section{Step 16: Separate full-frame shape from delta shape}
+A full frame has exactly 4096 RGB triples, or 12\,288 bytes. Its length is
+sufficient to prove the shape because every byte value is an allowed channel.
+A delta uses variable-length commands, so it needs a cursor walk before it can
+be applied.
+
+Fill \texttt{record\_shape}. For kind zero, require the saved payload length to
+be 12\,288. For both kinds, initialize the payload cursor \texttt{\$t0} from
+\texttt{\$s5} and the pixel cursor \texttt{\$t1} to zero. Supplied control
+flow sends a validated full frame directly to the application boundary. A delta
+enters command validation. Neither route has yet changed a pixel.
+
+\paragraph{Observe} Prepare \texttt{s16-1} and stop before
+\texttt{record\_shape\_ready}. At \texttt{record\_shape\_ready}, the worked delta has
+\texttt{\$t0} equal to source plus sixteen and \texttt{\$t1} zero.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why does a full frame not need a command walk?
+\begin{itemize}
+\item[A.] Its triples have fixed extent and no command headers.
+\item[B.] Its CRC is always zero.
+\item[C.] Its old pixels supply missing bytes.
+\end{itemize}

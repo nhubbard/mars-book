@@ -1,0 +1,16 @@
+\section{Step 109 Prepare the first reconstruction}
+Fill \texttt{vp\_seek\_context}. Build a private seek context from the new validation result, including file count, directory, frame count, period, display capacity and separate scratch storage. Its output fields belong to this call.
+
+A start in the middle of a prediction chain cannot use whichever pixels happened to be displayed before playback began. The initial seek loads an independent full frame and replays to the start. It copies the accepted result to the display only after successful reconstruction. Subsequent sequential frames will not repeat that seek.
+
+Use \texttt{s109-1} and stop before \texttt{vp\_seek\_context\_ready}.
+
+\paragraph{Observe} The seek context describes the newly validated file and the actual display destination, with separate scratch.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} Why use a seek for the first requested frame?
+\begin{enumerate}[label=\Alph*.]
+\item To avoid validating the reloaded file.
+\item To reconstruct the requested prediction state independently of old display pixels.
+\item To skip the first interval.
+\end{enumerate}

@@ -1,0 +1,81 @@
+\section{Index a complete file before choosing a frame}
+A record routine sees one frame. Opening an animation also requires checks that
+span frames: the global header, the declared frame count, the sequence of record
+windows and the exact file end. Implement \texttt{video\_index} for this task.
+For now its caller supplies the complete file as bytes in memory. The later
+loader must obtain those bytes from a file and establish the actual end of input;
+this function performs no file-system calls.
+
+Pass the file address in \texttt{\$a0}, its complete byte count in
+\texttt{\$a1}, a native offset-directory address in \texttt{\$a2}, and an
+80-byte native context in \texttt{\$a3}. The file address may be unaligned.
+The directory and context are eight-byte aligned. A directory entry is an
+unsigned eight-byte offset from the file beginning, not a pointer. Up to 256
+entries require 2048 bytes. A later seek can obtain a record's address by adding
+its admitted offset to the retained file base.
+
+The context supplies a separate scratch image. The illustrated validator calls
+\texttt{video\_apply\_record} on each record using this image. A full first
+record initializes it; each following record then has a valid previous image.
+The scratch image is temporary work storage. Its active contents are unspecified
+after either success or failure and must not be used as the displayed frame.
+This permits rejection of a late record after earlier records have changed the
+scratch image. Public outputs still remain unchanged on failure.
+
+\begin{table}[htbp]
+\centering
+\caption{Index context. All fields use eight native bytes.}
+\label{tab:video-index-context}
+\begin{tabular}{r p{1.5in} p{2.8in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & Directory capacity & Input byte capacity, at least eight times the frame count. \\
+8 & Scratch address & Input pointer to four-byte-aligned image storage. \\
+16 & Scratch capacity & Input byte capacity, at least 16\,384. \\
+24 & Frame count & Output, one through 256. \\
+32 & Full-frame period & Output, one through 64. \\
+40 & Duration & Output milliseconds per frame, one through 1000. \\
+48 & Validated file bytes & Output, the exact admitted input count. \\
+56 & Directory entries & Output, equal to the frame count. \\
+64--79 & Retained suffix & Leave both eight-byte fields unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Success returns zero in \texttt{\$v0} and the active directory byte count in
+\texttt{\$v1}. Failure returns one and zero, retaining the complete directory
+and context, including earlier successful outputs. Keep the file immutable on
+both paths. Scratch accesses must fit its 16\,384 active bytes. Retain every
+other caller byte, saved register, frame pointer and stack pointer.
+
+The caller promises readable file bytes, sufficient writable directory storage
+for its declared capacity, a writable context, scratch storage and a valid stack.
+These windows are disjoint. Use a sixteen-byte-aligned stack at entry and keep
+that alignment across nested calls. The supplied caller clears the low four
+stack-address bits before its first call. The illustrated index frame is 256
+bytes; it saves the return address because calling another function replaces
+\texttt{\$ra}. Its 48-byte record context begins at stack offset 128 and stays
+separate from the record routine's own frame below the current stack pointer.
+
+Build this stage from your completed record working file. Run
+\texttt{python3 packages/034-lossless-video/construction/video-index-construction/attach.py --source work.asm
+--output index-work.asm}. The attachment retains your record instruction text
+and gives its old example entry the name \texttt{record\_example\_main}; the
+new \texttt{main} calls the indexer. It refuses conflicting labels and existing
+output files. Prepare an observation with
+\texttt{python3 packages/034-lossless-video/construction/video-index-construction/prepare.py s24-1 --source
+index-work.asm --output observe.asm}. Preparation changes data, preserving
+instructions. An unfinished record prerequisite propagates development status
+four through the indexer. Complete that prerequisite before interpreting the
+later checkpoints.
+
+Use two passes over the retained file. The first validates every record and exact
+completion, publishing nothing. The second records the already-validated offsets.
+The file must remain immutable between the passes and while the directory is in
+use. A validation-only implementation may avoid scratch reconstruction if it
+establishes all the same format checks. Free-writing grading checks the public
+behavior and scratch bounds, without prescribing a private frame or scratch image
+contents. Development status four remains limited to unfinished construction;
+after the directory-writing region is filled, an unfinished later region may
+return four with a partial directory. A completed failure status one never does.

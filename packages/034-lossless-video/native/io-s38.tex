@@ -1,0 +1,23 @@
+\section{Step 38: Retain buffer, context and progress state}
+Opening replaces the return-value register, and later reads replace argument
+registers with descriptor, buffer and request values. Give the persistent state
+saved-register names before issuing those services: buffer in \texttt{\$s0},
+capacity in \texttt{\$s1}, transferred count zero in \texttt{\$s2}, result
+context in \texttt{\$s4}, and failure status one in \texttt{\$s5}.
+
+Fill \texttt{io\_state}. The path remains in \texttt{\$a0} until open. No
+result field is published yet. The transferred count measures bytes already
+stored at the start of the destination; it is not the most recent request size.
+
+\paragraph{Observe} Prepare \texttt{s38-1} and stop before
+\texttt{io\_state\_ready}. At \texttt{io\_state\_ready}, \texttt{\$s2} is zero and
+\texttt{\$s5} is one. \texttt{\$s0} names the byte three positions after
+\texttt{index\_file\_data}.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What does the running transferred count describe?
+\begin{itemize}
+\item[A.] The descriptor number.
+\item[B.] The accumulated bytes stored in the buffer.
+\item[C.] The number of frame records.
+\end{itemize}

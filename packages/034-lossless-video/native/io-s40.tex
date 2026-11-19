@@ -1,0 +1,24 @@
+\section{Step 40: Request only remaining bounded bytes}
+If the running count equals capacity, branch to the supplied private-probe
+path. Otherwise subtract the count from capacity. Request the smaller of that
+remainder and 4096, using the owned descriptor and destination base plus the
+running count. This request is positive because the full-buffer case has already
+branched away.
+
+Fill \texttt{io\_request}. Select service 14 and issue one read. A large file
+need not cause a single large temporary service allocation; chunking bounds each
+request. Both source-buffer cursor arithmetic and the total count use 64-bit
+operations. The service's request argument remains a small admitted integer.
+
+\paragraph{Observe} Prepare \texttt{s40-1} and stop before
+\texttt{io\_request\_ready}. At the first \texttt{io\_request\_ready}, the normal moving
+file has returned 4096 bytes, the requested count was 4096, and the destination
+argument named the staging-buffer beginning. The accumulated count is still zero.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why is this read request never zero?
+\begin{itemize}
+\item[A.] A full buffer takes the separate probe path.
+\item[B.] Zero-length reads always report errors.
+\item[C.] The file header guarantees a large file.
+\end{itemize}

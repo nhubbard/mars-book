@@ -1,0 +1,13 @@
+\section{Step 50 Search backward to the latest independent image}
+Fill \texttt{seek\_full}. Read the bounded record's kind byte. Zero identifies a full image and ends the search. One identifies a delta: reject an attempt to move before index zero; otherwise decrement \texttt{\$s5} and branch to \texttt{seek\_scan}. Reject other kinds. The already filled offset region runs again for each candidate. Do not round the target down to a multiple of the period. That would miss permitted extra full frames.
+
+Use \texttt{s50-1} and stop before \texttt{seek\_full\_ready}.
+
+\paragraph{Observe} At \texttt{seek\_full\_ready}, ordinary target six has selected index four. Prepare the extra-full recipe and repeat: the selected index is five. No image has been changed.
+
+\paragraph{Check} Why inspect record kinds instead of rounding by the period?
+\begin{enumerate}[label=\Alph*.]
+\item Every delta contains a hidden full image.
+\item Extra full frames are permitted between required ones.
+\item The period is a byte offset.
+\end{enumerate}

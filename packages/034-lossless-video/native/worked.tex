@@ -1,0 +1,23 @@
+\section{Walk two updates and an unchanged frame}
+Frame one's payload is eleven bytes:
+\texttt{00 00 00 01 01 00 00 0F FF 00 00}. The first command skips zero pixels,
+changes one pixel with red delta one, and leaves the cursor at one. The second skips
+4095 pixels and changes zero, ending at 4096. Only the first working word changes.
+
+Frame two changes a two-by-two region beginning at $(x,y)=(5,5)$. Packed row-major
+indices are 325, 326, 389 and 390. The first command skips 325 and changes two. The
+next skips 62 and changes two, because the cursor already advanced to 327. The last
+skips 3705 and changes zero. Every changed pixel uses hexadecimal delta
+\texttt{10 20 40}. The payload occupies 24 bytes.
+\Needspace{9\baselineskip}
+\begin{longtable}{p{19mm}p{42mm}p{34mm}p{42mm}}
+\toprule Pixel index & Previous display word & XOR word & Frame-two word \\\midrule
+325 & \texttt{0x00C22384} & \texttt{0x00102040} & \texttt{0x00D203C4} \\
+326 & \texttt{0x00E748A9} & \texttt{0x00102040} & \texttt{0x00F768E9} \\
+389 & \texttt{0x00F758B9} & \texttt{0x00102040} & \texttt{0x00E778F9} \\
+390 & \texttt{0x001C7DDE} & \texttt{0x00102040} & \texttt{0x000C5D9E} \\\bottomrule
+\end{longtable}
+Frame three is identical to frame two. Its entire payload is
+\texttt{10 00 00 00}: skip 4096, change zero. The frame index and display interval
+still advance. An unchanged image is not an absent frame; it retains its place in
+the timeline and its duration.

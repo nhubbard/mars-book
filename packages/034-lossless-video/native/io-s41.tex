@@ -1,0 +1,23 @@
+\section{Step 41: Distinguish progress, EOF and read errors}
+A negative service result takes the close path with the retained failure
+status. Zero takes the EOF path. Only a positive count advances
+\texttt{\$s2}; add exactly the returned value, not the requested count. The
+supplied loop then forms the next request from the remaining capacity.
+
+Fill \texttt{io\_result}. A short positive read does not prove EOF. The next
+read may return more bytes, including the remainder of a header that crossed a
+service boundary. The file fixture backend can limit each transfer to seven
+bytes so this distinction is observable even for an ordinary regular file.
+
+\paragraph{Observe} Prepare \texttt{s41-1} and stop before
+\texttt{io\_progress\_ready}. At the first \texttt{io\_progress\_ready} in the default
+run, \texttt{\$s2} is 4096. With an injected seven-byte transfer limit it
+would be seven. Continuing eventually reaches actual EOF or a read failure.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} After a short positive read, what happens next?
+\begin{itemize}
+\item[A.] Declare EOF immediately.
+\item[B.] Advance by the returned count and read again.
+\item[C.] Advance by the requested count.
+\end{itemize}

@@ -1,0 +1,24 @@
+\section{Step 9: Check kind and reserved bytes}
+Read the kind with an unsigned byte load. Zero selects a full frame and one a
+delta; no other value is defined. Keep the admitted kind in \texttt{\$s4}. Read
+header bytes one, two and three and reject if any is nonzero. Their reservation
+lets a later format define additional meanings without silently changing the
+current decoder's behavior.
+
+Fill \texttt{record\_kind}. Byte loads make these checks independent of the
+simulator's native order and of the record's alignment. Combining reserved bytes
+with bitwise OR is sufficient: the result is zero exactly when all three bytes
+are zero. Do not mask the kind down to its low bit; that would accept undefined
+values such as three.
+
+\paragraph{Observe} Prepare \texttt{s09-1} and stop before
+\texttt{record\_kind\_ready}. At \texttt{record\_kind\_ready}, \texttt{\$s4} is one for
+the worked delta. The frame remains the previous image.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What must happen for kind three?
+\begin{itemize}
+\item[A.] Treat it as delta because its low bit is one.
+\item[B.] Treat it as an optional full frame.
+\item[C.] Reject the record.
+\end{itemize}

@@ -1,0 +1,20 @@
+\section{Keep presentation time separate from decoding work}
+The moving fixture assigns forty milliseconds to each frame, giving eight display
+intervals and a total logical duration of 320 milliseconds. Frame six begins at
+logical time 240 milliseconds. An unchanged frame still receives its full interval.
+A seek chooses pixels by frame index; resuming playback then establishes a new wall-time
+anchor for that position.
+
+For a simple player, calculate the next deadline from the initial anchor and the
+number of completed intervals. Decode and display the frame, then request only the
+positive time remaining before its deadline. Sleeping for a fresh full interval
+after every decode would accumulate decoding time into the playback duration. When
+work finishes late, continue without a negative sleep and record the lateness.
+
+MARS time service 30 returns wall-clock milliseconds split across two 32-bit halves;
+combine those halves as unsigned quantities before doing full-width arithmetic.
+Service 32 requests a sleep from its millisecond argument. These host services do
+not guarantee exact presentation times. Keep deterministic deadline arithmetic
+checks separate from an interactive playback observation, and name any clock-reset
+policy explicitly. Simulated instruction counts measure computation, not elapsed
+sleep time or UI repaint latency.

@@ -1,0 +1,27 @@
+\section{Step 36: Publish index metadata}
+Store admitted count, period, duration, complete file bytes and directory
+entry count at context offsets 24 through 56. Return zero and eight times the
+frame count. Retain directory capacity, scratch pointer, scratch capacity and
+the sixteen-byte suffix. The supplied epilogue restores saved state and returns
+to the caller, which reports that the directory is ready.
+
+Fill \texttt{index\_publish}. Run the four valid fixtures and all failure
+controls. Then reuse the same output storage for success, a rejected late command,
+and another valid file. Rejection must retain the earlier directory and metadata;
+a shorter later directory must retain bytes after its own active entries. The
+scratch image has no such retention promise. A successful index now gives the
+future seeker validated record locations and timing metadata.
+
+\paragraph{Observe} Prepare \texttt{s36-1} and stop before
+\texttt{index\_published}. At \texttt{index\_published}, the return values are zero and
+64. Published values are eight frames, period four, duration forty, file count
+24\,795 and eight directory entries. The eight offsets are 24, 12\,328,
+12\,355, 12\,395, 12\,415, 24\,719, 24\,752 and 24\,775.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What must a failed reindex retain?
+\begin{itemize}
+\item[A.] Only its scratch image.
+\item[B.] The earlier public directory and context.
+\item[C.] Only the input count.
+\end{itemize}

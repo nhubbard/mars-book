@@ -1,0 +1,26 @@
+\section{Seek from a full frame rather than a blank image}
+Validate the whole file and store the beginning offset of each record in a native
+directory. Associate each target with the latest full frame at or before it. The
+required period guarantees a suitable starting frame; optional full frames can move
+that starting point closer to the target.
+
+To seek to frame six in the moving fixture, load full frame four, then apply deltas
+five and six. Do not XOR delta six into a cleared frame or into a previously displayed
+unrelated frame. Seeking to frame three starts at full frame zero and applies three
+deltas. The maximum number of intervening deltas is period minus one.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=19mm,every node/.style={font=\small,align=center},alt={Eight frames have full frames at indices zero and four. Seeking frame six reconstructs full frame four, delta five, then delta six, without replaying frames zero through three.}]
+\foreach \i/\kind in {0/Full,1/Delta,2/Delta,3/Delta,4/Full,5/Delta,6/Delta,7/Delta}{\node[draw,minimum width=16mm,minimum height=11mm] (f\i) at (\i,0) {\i\\\kind};}
+\foreach \i/\j in {0/1,1/2,2/3,3/4,4/5,5/6,6/7}{\draw[-{Latex}] (f\i.east)--(f\j.west);}
+\draw[-{Latex}] (f4.south)--++(0,-7mm)-|(f6.south);
+\node[below=9mm of f5] {seek target six};
+\end{tikzpicture}
+\caption{Replay begins at an independent full frame.}
+\end{figure}
+
+The extra-full fixture stores frame five as another full frame. It decodes to the
+same pixels as the moving fixture, but a seek to six can start at five and apply only
+one delta. A decoder that insists all nonperiodic frames must be deltas would reject
+this permitted encoding. Check both ordinary decoding and every possible seek target.

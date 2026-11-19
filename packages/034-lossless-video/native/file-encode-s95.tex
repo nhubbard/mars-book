@@ -1,0 +1,16 @@
+\section{Step 95 Retain transport state across services}
+Fill \texttt{vs\_state}. Retain the immutable source base, total byte count and result-context address in saved registers. Initialize completed progress to zero and the logical final status to failure. The supplied prologue initializes the owned descriptor to minus one, meaning that this invocation has not acquired a descriptor.
+
+The service number and return value share \texttt{\$v0}; subsequent services will overwrite it. A separate saved logical status is therefore needed to remember whether the entire transfer finished. Likewise, do not leave the source base only in an argument register that the open request will repurpose.
+
+Use \texttt{s95-1} and stop before \texttt{vs\_state\_ready}.
+
+\paragraph{Observe} Completed progress is zero, logical status is failure and the descriptor ownership marker is minus one.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} Why retain a logical status separately from the service return register?
+\begin{enumerate}[label=\Alph*.]
+\item It changes the file format.
+\item Later services overwrite the service return register.
+\item Every close returns the original byte count.
+\end{enumerate}

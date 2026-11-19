@@ -1056,3 +1056,38 @@ initial failures retain display/result state. Recorded process time includes sta
 assembly, encoding, I/O, validation, decoding and sleep; it is not isolated playback
 or an IDE latency measurement. Final chapter packaging/integration, actual IDE
 captures and independent accessibility review remain pending.
+
+
+The lossless-video initial text and distribution draft is now registered as
+`034-lossless-video` and included as chapter 34 in `main.tex`. Its nine construction
+stages supply 122 steps, 244 hints, published numeric fixtures, a cumulative unfinished
+starter and a smaller entry-only starter for free writing. The closing native
+assignment explains how the two early threads join, how to retain prior edits,
+which observations belong to each stage, and how to run completed feedback.
+Data-only example compaction preserves instruction text and supported input limits.
+
+The exact relocated student archive contains 254 files and eleven public domains
+with 258 cases. Private checks and 122 quiz keys remain in the instructor repository.
+The completed package gate passes 6,264 cases across three implementations, including
+one with submission-owned constants and additional 4,096-byte entry frames. It
+rejects both unfinished starters and five assembled faults, including ignored path
+arguments, source-stride errors, short-write progress and signed lateness ordering.
+Extracted runners pass 92 public and six selected private cases and refuse existing
+reports without changing them. Two ordinary real-clock callers produce files that
+an independent host decoder recovers to all eight original frames.
+
+All 215 public tooling tests, seven highlighter tests, 64 package validation/build
+commands and seventeen native-composition workflow validations pass. The reading
+has 101 pages and the assignment has three; the integrated manuscript has 1,569
+pages. All 101 video body pages match the standalone text and coordinates. The
+first 95 reading pages match the earlier rendered pages exactly; fresh contact sheets,
+enlarged closing pages, the standalone assignment, contents and chapter boundary
+were inspected. Fonts are embedded with Unicode maps. The chapter retains 122
+observation passages, 22 tagged tables, 79 header cells and one described native
+figure. These checks do not certify PDF/UA compliance or student usability.
+
+Chapters 33 and 34 now have initial native text/packages in the manuscript. Their
+five PNG and six video light-theme IDE figures remain uncaptured; independent
+accessibility review remains pending. H.263 stays at the documented planning stage
+until the preceding chapter work is complete. Substantive editing remains the
+separate future goal requested by the author.

@@ -1,0 +1,25 @@
+\section{Step 31: Call the record validator on scratch}
+Form the record address from the file base plus the current offset. Pass
+the saved record byte count, admitted scratch address, and private record-context
+address to \texttt{video\_apply\_record}. This is a nested call, so arguments
+and temporary registers may be overwritten. The outer cursor and frame count
+stay in saved registers; the prologue has already saved this function's own
+return address.
+
+Fill \texttt{index\_validate}. Zero means the record passed its kind, sequence,
+period, CRC and payload checks and was applied to scratch. Propagate development
+status four if the prerequisite is unfinished. Any completed rejection takes the
+index failure path. None of these paths publishes a directory entry yet.
+
+\paragraph{Observe} Prepare \texttt{s31-1} and stop before
+\texttt{index\_record\_valid}. At the first \texttt{index\_record\_valid}, the nested return
+is zero and 16\,384. The private expected sequence at \texttt{\$sp+136} is
+one. Scratch contains frame zero; the public directory and context are unchanged.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Which return address must the outer prologue preserve?
+\begin{itemize}
+\item[A.] The checksum value.
+\item[B.] The next frame index.
+\item[C.] Its own caller's return address.
+\end{itemize}

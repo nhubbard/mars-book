@@ -1,0 +1,94 @@
+\section{Give a seek its own working image}
+Sequential decoding carries one accepted image into the next delta. A seek begins
+with a frame number instead. The image currently displayed might belong to an
+entirely different position, so it cannot serve as that delta's predecessor.
+Implement \texttt{video\_seek} to choose an independent full frame and replay
+only the records needed for the requested position.
+
+Pass the immutable file base in \texttt{\$a0}, the unsigned target frame index in
+\texttt{\$a1}, a four-byte-aligned destination image in \texttt{\$a2}, and a
+96-byte, eight-byte-aligned native seek context in \texttt{\$a3}. The file and
+its offset directory must come from a successful \texttt{video\_index} call.
+Keep both unchanged while seeking. This interface uses that earlier whole-file
+validation; it does not re-index a new file merely because its address is reused.
+The context provides the accepted file count, frame count and period, plus separate
+scratch image storage. The directory holds at least one native offset per frame.
+The caller supplies valid disjoint file, directory, context, image, scratch and
+private-stack windows. Retain the saved registers, frame pointer and stack pointer,
+and keep the stack sixteen-byte aligned across nested calls.
+
+\begin{table}[htbp]
+\centering
+\caption{Seek context. Each field occupies eight native bytes.}
+\label{tab:video-seek-context}
+\begin{tabular}{r p{1.4in} p{2.9in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & File bytes & Input, admitted complete-file count. \\
+8 & Directory & Input pointer to aligned native offsets. \\
+16 & Frame count & Input, one through 256. \\
+24 & Full-frame period & Input, one through 64. \\
+32 & Image capacity & Input, at least 16\,384 bytes. \\
+40 & Scratch address & Input pointer, four-byte aligned. \\
+48 & Scratch capacity & Input, at least 16\,384 bytes. \\
+56 & Target & Output, requested frame index. \\
+64 & Replay start & Output, latest full frame at or before target. \\
+72 & Records replayed & Output, target minus start plus one. \\
+80--95 & Retained suffix & Leave unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Success returns zero in \texttt{\$v0} and 16\,384 in \texttt{\$v1}. Only
+success copies the complete reconstructed image to the destination and publishes
+context offsets 56 through 79. Failure returns one and zero without storing to
+any destination-image or context byte, including previously successful results.
+Scratch contents are unspecified on either return. Source and directory bytes
+remain immutable. These rules make a failed seek harmless to the displayed frame,
+even when a late replayed record fails after earlier records changed scratch.
+
+Reject an out-of-range target, invalid file/frame/period counts, insufficient image
+or scratch capacity, and misaligned native pointers before directory or file access.
+The early context-alignment test must precede context loads. When consulting an
+offset, require at least the file's 24-byte header before it and sixteen readable
+bytes after it. A record window ends at the next directory offset, or at file end
+for the final record. Reject reversed, short or oversized windows before passing
+one to the record routine. These local bounds checks do not replace whole-file
+validation or permit mutation of the indexed source.
+
+The worked target is six. Ordinary moving data starts at full frame four; the
+extra-full data starts at five. In either case, a successful seek produces the
+same frame-six words. It publishes different replay starts and counts:
+
+\begin{table}[htbp]
+\centering
+\caption{Two permitted encodings of the same requested pixels.}
+\begin{tabular}{l r r l}
+\toprule
+Input & Target & Start & Applied record indices \\
+\midrule
+Moving & 6 & 4 & 4, 5, 6 \\
+Extra full & 6 & 5 & 5, 6 \\
+Moving & 3 & 0 & 0, 1, 2, 3 \\
+Moving & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Attach this stage to the completed reader with
+\texttt{python3 packages/034-lossless-video/construction/video-seek-construction/attach.py --source reader-work.asm
+--output seek-work.asm}. It retains all earlier instructions and names the previous
+entry \texttt{reader\_example\_main}. The new caller loads \texttt{animation.mlv},
+indexes it, then seeks. Generate the moving file with the earlier fixture command.
+Use the seek preparation helper to choose a target or capacity without changing
+instructions. A recipe naming extra-full requires that actual fixture as the file;
+the grading backend supplies it automatically during the corresponding observation.
+Output commands refuse existing files.
+
+The illustration uses a 192-byte private frame, including a separate 48-byte record
+context at offset 128. Free-writing work may use another layout. Unfinished regions
+return development status four. After the image-copy region is filled, a later
+unfinished publication region can return four with a changed image; completed
+failure one never permits that behavior. Compare observations at their named
+checkpoints before continuing, then check the completed callable contract.

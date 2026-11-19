@@ -1,0 +1,109 @@
+\section{Assemble and store a complete animation}
+A record encoder owns one image transition. The file encoder must give those
+transitions a beginning, order and exact end. Its source is a packed array of
+native images; its destination is a byte sequence with one global header followed
+by exactly the declared number of records. No path or file descriptor belongs to
+this computation. Keeping the staged result available allows the existing reader
+to reject a construction error before an output file is opened.
+
+Implement \texttt{video\_encode\_file} with source address in \texttt{\$a0}, exact
+source byte count in \texttt{\$a1}, staging address in \texttt{\$a2} and a native
+96-byte context in \texttt{\$a3}. The source contains one through 256 consecutive
+64 by 64 images, each 16\,384 bytes of native \texttt{0x00RRGGBB} words. Require
+four-byte source and eight-byte context alignment. The staging address may be
+unaligned. All caller-supplied windows and the private stack are disjoint, except
+for the deliberate staging alias described below.
+
+\begin{table}[htbp]
+\centering
+\caption{The complete-file encoder's native context.}
+\label{tab:video-file-encode-context}
+\begin{tabular}{r p{1.5in} p{2.8in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & Staging capacity & 12\,328 through 7\,344\,152 bytes. \\
+8 & Frame count & One through 256; source bytes equal this count times 16\,384. \\
+16 & Full-frame period & One through 64. \\
+24 & Frame duration & One through 1000 milliseconds. \\
+32, 40 & Previous address, capacity & Four-byte-aligned working image; at least 16\,384 bytes. \\
+48, 56 & XOR address, capacity & Four-byte-aligned scratch; at least 16\,384 bytes. \\
+64 & Produced file bytes & Output on complete success only. \\
+72 & Produced records & Output on complete success only. \\
+80--95 & Retained suffix & Leave unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The capacity ceiling follows the format's maximum admitted record, not this
+particular encoder's usual choice: $24+256\times28\,688=7\,344\,152$ bytes.
+The minimum admits a global header and one full record. It does not guarantee room
+for every declared image. With capacity at least $24+n\times28\,688$, every valid
+$n$-frame input must succeed. At a smaller admitted capacity, a valid compact
+representation may succeed or a selected representation may fail to fit.
+Completed grading accepts equivalent valid full or delta choices, including extra
+full records. Every required periodic full record remains mandatory.
+
+Return zero with the exact file count on success, or one with a zero count on
+completed failure. Development status four still means an unfinished region.
+The source remains immutable. On failure, the whole caller context remains unchanged,
+including old output fields. Staging, working previous pixels and XOR scratch may
+change within their active windows. Those temporary bytes are not restored by a
+failed call. Preserve an old animation in a separate area if it must survive a
+replacement attempt. Preserve saved registers and sixteen-byte stack alignment
+across nested record calls.
+
+\begin{table}[htbp]
+\centering
+\caption{Storage roles during complete-file encoding.}
+\label{tab:video-file-encode-storage}
+\begin{tabular}{p{1.5in} p{3.5in}}
+\toprule
+Storage & Lifetime and interpretation \\
+\midrule
+Packed source & Immutable native words; 16\,384 bytes per image. \\
+Staging & Mutable serialized header and records; publish only an exact complete extent. \\
+Previous and XOR & Temporary native words; their active contents may change on failure. \\
+Caller context & Inputs retained; two output fields change only on success. \\
+Private record context & New sequence zero for each file; lives in the current stack frame. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+From \texttt{packages/034-lossless-video/construction/video-file-encode-construction}, attach your preceding record
+encoder with \texttt{attach.py --source record-work.asm --output file-work.asm}.
+The importer retains that working file and gives the existing file arena the alias
+\texttt{file\_encode\_output}. It does not reserve a second maximum-sized staging
+arena. Both names identify the same storage; an old file and its directory cease
+to be usable while new encoding overwrites those bytes. The packed source remains
+separate. The maximum 256-image source itself occupies four MiB; its boundary check
+uses the normal memory layout. Smaller cases also check high addresses in both
+byte orders.
+
+Prepare an observation with \texttt{prepare.py s84-1 --source file-work.asm --output
+observe.asm}. The helper changes packed source data, native controls and the output
+path, leaving your instructions intact. Existing output files are refused by the
+host preparation tools. This protection concerns authoring files; it does not
+change the truncate-write behavior of the simulated program.
+
+After encoding, implement \texttt{video\_store}: path in \texttt{\$a0}, admitted
+byte source in \texttt{\$a1}, exact count in \texttt{\$a2} and an eight-byte-aligned
+16-byte result context in \texttt{\$a3}. Admit counts one through 7\,344\,152.
+The byte source also has one readable byte immediately after its exact extent:
+MARS service fifteen currently reads a lookahead byte beyond each requested
+window, then passes only the requested count to the file environment. The guard
+is not transferred and must remain unchanged. The path is readable and
+NUL-terminated; source, path, result context and private
+stack are disjoint. On success return zero/count and store count at context offset
+zero. On failure return one/zero and retain the context. Offset eight is always
+retained. The byte source and path stay immutable. Each request transfers at most
+4096 bytes, and progress follows the actual positive result. Close exactly the
+descriptor acquired by this call on every completed path that owns one.
+
+This transport routine does not validate a container and does not provide atomic
+file replacement. A successful truncate-write open can discard the old target
+before the first byte is written. A later error can leave an empty file or a
+transferred prefix. The provided caller therefore validates and seeks through the
+staged container before opening its path. It then stores and reloads the file.
+Reload count equality is one transport check; the next playback stage must validate
+the newly loaded bytes before trusting a directory.

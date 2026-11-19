@@ -1,0 +1,27 @@
+\section{Give the XOR kernel a testable native-word interface}
+Implement \texttt{video\_xor\_words} and \texttt{video\_xor\_words\_msa}. Both receive
+left and right word-array addresses in \texttt{\$a0} and \texttt{\$a1}, output in
+\texttt{\$a2}, and a word count in \texttt{\$a3}. Counts from zero through 4096 are
+valid. For a positive count, all three addresses are word-aligned and describe
+readable inputs or a writable output of exactly four times the count bytes.
+
+The output may be disjoint from both inputs or exactly equal to one of them. Inputs
+may also coincide. Partial overlaps are outside this interface's caller preconditions.
+Load both corresponding inputs before storing their output. This makes exact aliases
+safe and lets a validated delta be applied in place. Count zero succeeds without
+reading or writing either pointer, even if their values are otherwise unusable.
+
+Success returns zero in \texttt{\$v0} and the number of nonzero XOR words in
+\texttt{\$v1}. Invalid count or required alignment returns one and zero before input
+access or output stores. Retain saved registers, the caller's stack pointer, every
+byte outside the output window and inputs that are not aliased to output. Do not
+perform file I/O inside this leaf computation.
+
+Although valid image words have a zero high byte, this kernel computes all 32 bits.
+A difference of \texttt{0x80000000} counts as one changed word. That broader numeric
+contract exposes mistaken signed comparisons without changing the serialized RGB
+format. When its inputs are previous and current images, the nonzero result count is the
+changed-pixel count. When using the same primitive to apply a delta, that count
+instead describes nonzero reconstructed words; the player need not use it.
+The following six edits construct this kernel; the full file-codec assembly
+construction remains a later stage of this draft.

@@ -1,0 +1,24 @@
+\section{Step 33: Require the complete file end}
+After exactly the declared number of records, compare the final offset
+with the complete input byte count. Equality is required. A valid record prefix
+followed by an extra byte is not a valid file under this contract. Conversely,
+a declared extra frame would already have failed its record-window check.
+
+Fill \texttt{index\_exact}. This boundary proves the global header and every
+record have passed validation and the buffer has no unexplained suffix. It does
+not prove that a future file loader has read through operating-system EOF; that
+is the loader's separate responsibility. The next pass may now publish offsets
+because the caller keeps these validated bytes immutable.
+
+\paragraph{Observe} Prepare \texttt{s33-1} and stop before
+\texttt{index\_file\_valid}. At \texttt{index\_file\_valid}, \texttt{\$s6} equals
+24\,795 and \texttt{\$s7} equals eight. No public directory or context
+byte has been written.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Can a valid record prefix followed by one extra byte succeed?
+\begin{itemize}
+\item[A.] Yes, if its CRCs match.
+\item[B.] No; the complete file must end exactly.
+\item[C.] Yes, if the byte is zero.
+\end{itemize}

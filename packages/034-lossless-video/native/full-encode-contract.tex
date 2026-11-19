@@ -1,0 +1,95 @@
+\section{Encode a full record before adding temporal prediction}
+A decoder receives bytes and constructs numeric display words. The encoder travels
+in the other direction. It receives 4096 native \texttt{0x00RRGGBB} words and emits
+one full-frame record: sixteen header bytes followed by 12\,288 RGB bytes. This
+first stage deliberately emits a full frame at any valid sequence index. Full
+frames are permitted between scheduled boundaries, so its records remain usable
+when delta selection is added later.
+
+Implement \texttt{video\_encode\_full}. Pass the four-byte-aligned source in
+\texttt{\$a0}, its exact byte count 16\,384 in \texttt{\$a1}, the byte-addressed
+record destination in \texttt{\$a2}, and a 64-byte, eight-byte-aligned native
+context in \texttt{\$a3}. The destination need not be word aligned. The caller
+supplies valid, disjoint source, destination, previous-image, context and private
+stack windows. Retain the saved registers, frame pointer and stack pointer. Keep
+the stack sixteen-byte aligned. The illustrated private frame is 96 bytes; an
+equivalent implementation may use another layout.
+
+\begin{table}[htbp]
+\centering
+\caption{Full-record encoder context. All fields occupy eight native bytes.}
+\label{tab:video-full-encode-context}
+\begin{tabular}{r p{1.6in} p{2.7in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & Destination capacity & Input, at least 12\,304 bytes. \\
+8 & Next sequence & Input zero through 255; increment only on success. \\
+16 & Full-frame period & Input one through 64; retain it. \\
+24 & Previous-image address & Input pointer to four-byte-aligned storage. \\
+32 & Previous-image capacity & Input, at least 16\,384 bytes. \\
+40 & Last kind & Output zero for this full record. \\
+48 & Encoded byte count & Output 12\,304. \\
+56 & Retained suffix & Leave unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Success returns zero in \texttt{\$v0} and 12\,304 in \texttt{\$v1}. It writes
+the complete record, copies the source image to previous-image storage, increments
+the sequence, and publishes the kind and encoded count. Retain the source on both
+paths. Failure returns one and zero without storing to any destination,
+previous-image or context byte. This includes invalid colors discovered at the
+last pixel, not merely invalid capacities discovered at entry. Check counts,
+sequence, period and native alignment before source or output access. Reject source
+count/alignment and context alignment before reading context fields.
+
+Every source word must have a zero high byte. Accepting a nonzero high byte and
+discarding it would silently change the input contract. Inspect all 4096 words
+before writing any record byte. Once validation and capacities succeed, the
+remaining steps have admitted storage and fixed extents. This permits a direct
+output pass without an extra payload buffer. The previous image changes only
+after the complete record, including its checksum, has been written.
+
+\begin{table}[htbp]
+\centering
+\caption{One numeric pixel has different memory bytes but the same RGB output.}
+\begin{tabular}{l l l}
+\toprule
+Representation & Bytes for \texttt{0x00123456} & Interpretation \\
+\midrule
+Native little endian & \texttt{56 34 12 00} & Four-byte source word \\
+Native big endian & \texttt{00 12 34 56} & The same numeric source word \\
+MLV1 payload & \texttt{12 34 56} & Red, green, blue \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Load a native word numerically, extract channels with shifts, and store individual
+bytes. Copying the first three source memory bytes would be wrong in both native
+orders shown. The unused high byte occupies source storage but is not a color
+sample. Its removal is a representation change, not temporal compression.
+
+The default source is a deterministic gradient: pixel $i$ is
+\texttt{((i * 257) XOR 0x123456) AND 0xFFFFFF}. Its first four payload triples are
+\texttt{12 34 56}, \texttt{12 35 57}, \texttt{12 36 54} and \texttt{12 37 55};
+the final triple is \texttt{02 3A A9}. At sequence zero, the completed header is
+\texttt{00 00 00 00 00 00 00 00 00 00 30 00 F8 CD 76 19}.
+The CRC covers header bytes zero through eleven followed immediately by the payload
+for checksum purposes. Stored checksum bytes twelve through fifteen are excluded.
+
+Attach this stage with
+\texttt{python3 packages/034-lossless-video/construction/video-full-encode-construction/attach.py --source
+seek-work.asm --output encoder-work.asm}. Earlier instructions remain intact under
+the retained seek example entry. The new caller uses generated native pixels,
+encodes a full record, then calls the existing record decoder on those bytes.
+It needs no host video file. Preparation changes input words and context controls
+without changing instructions. The fixture helper can also export the numeric
+source words as JSON for independent inspection; it supplies no video encoder.
+All output commands refuse an existing file.
+
+Development status four can expose a partially written record after the header
+regions are filled, or an updated previous image after its copy region is filled.
+That is limited to unfinished construction. Completed failure one permits none
+of those stores. Later delta and file-encoding stages will add prediction and
+complete-file framing; a correct full record by itself is not yet an animation file.

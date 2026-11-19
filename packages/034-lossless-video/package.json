@@ -1,0 +1,6213 @@
+{
+  "formatVersion": 1,
+  "id": "034-lossless-video",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Build a small lossless video codec",
+  "audience": "Students with basic programming competence and prior assembly/MSA experience",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "4bbee135c4e7612ea3a2048101624df4d0429623",
+    "memoryLayout": "Student-owned ordinary data in the first two MiB; reserved separate grading arenas and 32768-byte private stack",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "enterFunction",
+      "readDataAddress",
+      "readBytes",
+      "traceMemoryAccesses",
+      "traceMemoryStores",
+      "provideFiles",
+      "provideTiming",
+      "runUntilSyscall"
+    ]
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native stage-local observations and public completed checks; remote progression is pending"
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.tex",
+  "reading": "reading.json",
+  "gradingHarness": "checks/harness.asm",
+  "prerequisites": [
+    "Native MIPS64 memory and calling conventions",
+    "CRC32 and bounded record parsing",
+    "Numeric RGB words and MSA word/vector operations"
+  ],
+  "learningObjectives": [
+    "Encode and recover exact frame sequences using full/XOR records",
+    "Validate whole files before directory and picture publication",
+    "Keep failed-call state according to each interface contract",
+    "Seek independently and play sequentially with anchored deadlines",
+    "Compare correct scalar/MSA work and valid representation choices"
+  ],
+  "functionContract": {
+    "entries": [
+      "video_xor_words",
+      "video_xor_words_msa",
+      "video_apply_record",
+      "video_index",
+      "video_load",
+      "video_seek",
+      "video_encode_full",
+      "video_encode_record",
+      "video_encode_file",
+      "video_store",
+      "video_now",
+      "video_play"
+    ],
+    "statuses": {
+      "0": "success",
+      "1": "completed failure",
+      "4": "unfinished construction only"
+    },
+    "profile": "MLV1 64x64 RGB, one through 256 frames, period 1..64, duration 1..1000ms",
+    "maxFileBytes": 7344152,
+    "maxPackedSourceBytes": 4194304,
+    "publication": "Interface-specific: playback failure retains actual accepted pictures; file staging/work may change, final fields publish only on success",
+    "privateStack": "32768 supplied bytes, no required offsets"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "region": "video_admit",
+      "checkpoint": "video_admitted",
+      "recipe": "s01-1",
+      "quiz": {
+        "id": "video-s01-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "An empty computation has no input or output memory accesses."
+          },
+          {
+            "id": "B",
+            "text": "Every pointer is then automatically aligned."
+          },
+          {
+            "id": "C",
+            "text": "A zero word always means a black frame."
+          }
+        ],
+        "prompt": "Why does count zero return before pointer use?"
+      },
+      "hints": [
+        {
+          "id": "video-s01-h1",
+          "text": "Treat the count as unsigned before calculating a byte extent."
+        },
+        {
+          "id": "video-s01-h2",
+          "text": "Only a positive count requires usable word-aligned windows."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/kernel-s01.tex",
+      "stage": "video-construction",
+      "prerequisites": [],
+      "title": "Admit the count before dereferencing pointers",
+      "recipes": [
+        "s01-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "video_admitted",
+        "completedStageCheck": "checks/kernel.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s02",
+      "region": "video_scalar_word",
+      "checkpoint": "video_scalar_stored",
+      "recipe": "s02-1",
+      "quiz": {
+        "id": "video-s02-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The current pixel is nonblack."
+          },
+          {
+            "id": "B",
+            "text": "The complete XOR word is nonzero."
+          },
+          {
+            "id": "C",
+            "text": "The XOR word is positive as a signed number."
+          }
+        ],
+        "prompt": "What is the change predicate?"
+      },
+      "hints": [
+        {
+          "id": "video-s02-h1",
+          "text": "A Boolean zero/nonzero result contributes at most one per word."
+        },
+        {
+          "id": "video-s02-h2",
+          "text": "Keep the word count separate from the four-byte pointer increments."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/kernel-s02.tex",
+      "stage": "video-construction",
+      "prerequisites": [
+        "s01"
+      ],
+      "title": "Restore one word and count its change",
+      "recipes": [
+        "s02-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "video_scalar_stored",
+        "completedStageCheck": "checks/kernel.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s03",
+      "region": "video_group_bound",
+      "checkpoint": "video_group_ready",
+      "recipe": "s03-1",
+      "quiz": {
+        "id": "video-s03-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One."
+          },
+          {
+            "id": "B",
+            "text": "Sixteen."
+          },
+          {
+            "id": "C",
+            "text": "Four."
+          }
+        ],
+        "prompt": "How many native words are in one admitted vector group?"
+      },
+      "hints": [
+        {
+          "id": "video-s03-h1",
+          "text": "Each vector contains sixteen bytes and each word uses four."
+        },
+        {
+          "id": "video-s03-h2",
+          "text": "Test the word remainder, not whether at least one word remains."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/kernel-s03.tex",
+      "stage": "video-construction",
+      "prerequisites": [
+        "s02"
+      ],
+      "title": "Admit four words for a vector group",
+      "recipes": [
+        "s03-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "video_group_ready",
+        "completedStageCheck": "checks/kernel.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s04",
+      "region": "video_group_xor",
+      "checkpoint": "video_group_stored",
+      "recipe": "s04-1",
+      "quiz": {
+        "id": "video-s04-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Output may exactly alias an input."
+          },
+          {
+            "id": "B",
+            "text": "The CRC needs the output first."
+          },
+          {
+            "id": "C",
+            "text": "It changes the frame period."
+          }
+        ],
+        "prompt": "Why must both vector inputs be loaded before the store?"
+      },
+      "hints": [
+        {
+          "id": "video-s04-h1",
+          "text": "The operation is bitwise across the vector, while its memory representation is word-oriented."
+        },
+        {
+          "id": "video-s04-h2",
+          "text": "Retain the result vector for the next lane-count step."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/kernel-s04.tex",
+      "stage": "video-construction",
+      "prerequisites": [
+        "s03"
+      ],
+      "title": "XOR and store four independent word lanes",
+      "recipes": [
+        "s04-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "video_group_stored",
+        "completedStageCheck": "checks/kernel.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s05",
+      "region": "video_group_count",
+      "checkpoint": "video_group_counted",
+      "recipe": "s05-1",
+      "quiz": {
+        "id": "video-s05-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One."
+          },
+          {
+            "id": "B",
+            "text": "Two."
+          },
+          {
+            "id": "C",
+            "text": "The number of nonzero bytes in those lanes."
+          }
+        ],
+        "prompt": "How many changes does a group with two nonzero word lanes contribute?"
+      },
+      "hints": [
+        {
+          "id": "video-s05-h1",
+          "text": "A word with only bit 31 set is still a nonzero word."
+        },
+        {
+          "id": "video-s05-h2",
+          "text": "Contribute one Boolean for each of the four word lanes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/kernel-s05.tex",
+      "stage": "video-construction",
+      "prerequisites": [
+        "s04"
+      ],
+      "title": "Count changed word lanes rather than changed groups",
+      "recipes": [
+        "s05-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "video_group_counted",
+        "completedStageCheck": "checks/kernel.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s06",
+      "region": "video_group_advance",
+      "checkpoint": "video_group_advanced",
+      "recipe": "s06-1",
+      "quiz": {
+        "id": "video-s06-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Four bytes."
+          },
+          {
+            "id": "B",
+            "text": "Eight bytes."
+          },
+          {
+            "id": "C",
+            "text": "Sixteen bytes."
+          }
+        ],
+        "prompt": "After a four-word group, how far does each pointer advance?"
+      },
+      "hints": [
+        {
+          "id": "video-s06-h1",
+          "text": "Advance each pointer by sixteen bytes and reduce words remaining by four."
+        },
+        {
+          "id": "video-s06-h2",
+          "text": "The supplied empty-tail test prevents a load after an exact group boundary."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/kernel-s06.tex",
+      "stage": "video-construction",
+      "prerequisites": [
+        "s05"
+      ],
+      "title": "Advance the group and retain its scalar remainder",
+      "recipes": [
+        "s06-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "video_group_advanced",
+        "completedStageCheck": "checks/kernel.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s07",
+      "region": "record_admit",
+      "checkpoint": "record_admitted",
+      "recipe": "s07-1",
+      "quiz": {
+        "id": "video-s07-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its fields can be read as individual bytes."
+          },
+          {
+            "id": "B",
+            "text": "All records begin at a multiple of sixteen."
+          },
+          {
+            "id": "C",
+            "text": "A delta has no header."
+          }
+        ],
+        "prompt": "Why is the record address allowed to be unaligned?"
+      },
+      "hints": [
+        {
+          "id": "video-s07-h1",
+          "text": "Check count bounds before pointer loads."
+        },
+        {
+          "id": "video-s07-h2",
+          "text": "Use masks on addresses to test the two native alignments."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s07.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s06"
+      ],
+      "title": "Admit a bounded record window",
+      "recipes": [
+        "s07-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_admitted",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s08",
+      "region": "record_context",
+      "checkpoint": "record_context_ready",
+      "recipe": "s08-1",
+      "quiz": {
+        "id": "video-s08-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "In the published sequence field."
+          },
+          {
+            "id": "B",
+            "text": "In the private stack frame."
+          },
+          {
+            "id": "C",
+            "text": "In the record checksum field."
+          }
+        ],
+        "prompt": "Where can this validation step store its temporary sequence?"
+      },
+      "hints": [
+        {
+          "id": "video-s08-h1",
+          "text": "Native context fields use ld."
+        },
+        {
+          "id": "video-s08-h2",
+          "text": "Keep output fields unchanged until the call succeeds."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s08.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s07"
+      ],
+      "title": "Read the context without publishing results",
+      "recipes": [
+        "s08-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_context_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s09",
+      "region": "record_kind",
+      "checkpoint": "record_kind_ready",
+      "recipe": "s09-1",
+      "quiz": {
+        "id": "video-s09-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Treat it as delta because its low bit is one."
+          },
+          {
+            "id": "B",
+            "text": "Treat it as an optional full frame."
+          },
+          {
+            "id": "C",
+            "text": "Reject the record."
+          }
+        ],
+        "prompt": "What must happen for kind three?"
+      },
+      "hints": [
+        {
+          "id": "video-s09-h1",
+          "text": "The only admitted kind values are zero and one."
+        },
+        {
+          "id": "video-s09-h2",
+          "text": "Check all three reserved bytes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s09.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s08"
+      ],
+      "title": "Check kind and reserved bytes",
+      "recipes": [
+        "s09-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_kind_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s10",
+      "region": "record_sequence",
+      "checkpoint": "record_sequence_ready",
+      "recipe": "s10-1",
+      "quiz": {
+        "id": "video-s10-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only delta."
+          },
+          {
+            "id": "B",
+            "text": "Either full or delta."
+          },
+          {
+            "id": "C",
+            "text": "Neither kind."
+          }
+        ],
+        "prompt": "With period four, which kind is valid at sequence five?"
+      },
+      "hints": [
+        {
+          "id": "video-s10-h1",
+          "text": "Assemble the sequence from unsigned bytes."
+        },
+        {
+          "id": "video-s10-h2",
+          "text": "A required full frame does not forbid extra full frames."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s10.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s09"
+      ],
+      "title": "Match sequence and the full-frame schedule",
+      "recipes": [
+        "s10-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_sequence_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s11",
+      "region": "record_extent",
+      "checkpoint": "record_extent_ready",
+      "recipe": "s11-1",
+      "quiz": {
+        "id": "video-s11-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The last payload byte."
+          },
+          {
+            "id": "B",
+            "text": "The checksum byte."
+          },
+          {
+            "id": "C",
+            "text": "The first address beyond the payload."
+          }
+        ],
+        "prompt": "What does the payload end pointer name?"
+      },
+      "hints": [
+        {
+          "id": "video-s11-h1",
+          "text": "The total count includes sixteen header bytes."
+        },
+        {
+          "id": "video-s11-h2",
+          "text": "Do not include a trailing byte merely because it is readable."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s11.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s10"
+      ],
+      "title": "Prove the exact payload extent",
+      "recipes": [
+        "s11-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_extent_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s12",
+      "region": "record_crc_state",
+      "checkpoint": "record_crc_state_ready",
+      "recipe": "s12-1",
+      "quiz": {
+        "id": "video-s12-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The stored checksum field."
+          },
+          {
+            "id": "B",
+            "text": "The sequence field."
+          },
+          {
+            "id": "C",
+            "text": "The payload."
+          }
+        ],
+        "prompt": "Which bytes are omitted from checksum input?"
+      },
+      "hints": [
+        {
+          "id": "video-s12-h1",
+          "text": "Use the two supplied windows rather than copying the record."
+        },
+        {
+          "id": "video-s12-h2",
+          "text": "Inspect all sixteen hexadecimal digits of each constant."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s12.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s11"
+      ],
+      "title": "Initialize the record checksum",
+      "recipes": [
+        "s12-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_crc_state_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s13",
+      "region": "record_crc_byte",
+      "checkpoint": "record_crc_byte_ready",
+      "recipe": "s13-1",
+      "quiz": {
+        "id": "video-s13-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Eight."
+          },
+          {
+            "id": "B",
+            "text": "One."
+          },
+          {
+            "id": "C",
+            "text": "Twelve."
+          }
+        ],
+        "prompt": "How many bytes does this region consume?"
+      },
+      "hints": [
+        {
+          "id": "video-s13-h1",
+          "text": "Use lbu for the next checksum byte."
+        },
+        {
+          "id": "video-s13-h2",
+          "text": "Do not perform a bit shift before the byte checkpoint."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s13.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s12"
+      ],
+      "title": "Feed one byte to the checksum",
+      "recipes": [
+        "s13-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_crc_byte_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s14",
+      "region": "record_crc_bit",
+      "checkpoint": "record_crc_bit_ready",
+      "recipe": "s14-1",
+      "quiz": {
+        "id": "video-s14-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The old low bit."
+          },
+          {
+            "id": "B",
+            "text": "The new high bit."
+          },
+          {
+            "id": "C",
+            "text": "The next input byte's high bit."
+          }
+        ],
+        "prompt": "Which bit determines whether to XOR the polynomial?"
+      },
+      "hints": [
+        {
+          "id": "video-s14-h1",
+          "text": "Extract the low bit before shifting."
+        },
+        {
+          "id": "video-s14-h2",
+          "text": "A logical right shift inserts zero at the high end."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s14.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s13"
+      ],
+      "title": "Perform one reflected CRC bit recurrence",
+      "recipes": [
+        "s14-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_crc_bit_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s15",
+      "region": "record_crc_check",
+      "checkpoint": "record_crc_checked",
+      "recipe": "s15-1",
+      "quiz": {
+        "id": "video-s15-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, because CRCs check the format."
+          },
+          {
+            "id": "B",
+            "text": "Yes, if the record is short."
+          },
+          {
+            "id": "C",
+            "text": "No; command bounds need separate checks."
+          }
+        ],
+        "prompt": "Does a matching CRC prove command bounds are valid?"
+      },
+      "hints": [
+        {
+          "id": "video-s15-h1",
+          "text": "Finalize only after both checksum windows."
+        },
+        {
+          "id": "video-s15-h2",
+          "text": "Do not feed the stored checksum back into the recurrence."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s15.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s14"
+      ],
+      "title": "Compare the finalized checksum",
+      "recipes": [
+        "s15-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_crc_checked",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s16",
+      "region": "record_shape",
+      "checkpoint": "record_shape_ready",
+      "recipe": "s16-1",
+      "quiz": {
+        "id": "video-s16-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its triples have fixed extent and no command headers."
+          },
+          {
+            "id": "B",
+            "text": "Its CRC is always zero."
+          },
+          {
+            "id": "C",
+            "text": "Its old pixels supply missing bytes."
+          }
+        ],
+        "prompt": "Why does a full frame not need a command walk?"
+      },
+      "hints": [
+        {
+          "id": "video-s16-h1",
+          "text": "Only kind zero has the fixed RGB payload length."
+        },
+        {
+          "id": "video-s16-h2",
+          "text": "Keep the validation cursor measured in pixels."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s16.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s15"
+      ],
+      "title": "Separate full-frame shape from delta shape",
+      "recipes": [
+        "s16-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_shape_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s17",
+      "region": "record_pair",
+      "checkpoint": "record_pair_ready",
+      "recipe": "s17-1",
+      "quiz": {
+        "id": "video-s17-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Skip one, change zero."
+          },
+          {
+            "id": "B",
+            "text": "Skip zero, change zero."
+          },
+          {
+            "id": "C",
+            "text": "Skip zero, change one."
+          }
+        ],
+        "prompt": "Which command makes no progress?"
+      },
+      "hints": [
+        {
+          "id": "video-s17-h1",
+          "text": "Check four remaining bytes before either halfword is assembled."
+        },
+        {
+          "id": "video-s17-h2",
+          "text": "A command may have one zero count, but not two."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s17.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s16"
+      ],
+      "title": "Read a command and require progress",
+      "recipes": [
+        "s17-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_pair_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s18",
+      "region": "record_pixel_bounds",
+      "checkpoint": "record_pixels_ready",
+      "recipe": "s18-1",
+      "quiz": {
+        "id": "video-s18-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The original 4096 pixels."
+          },
+          {
+            "id": "B",
+            "text": "The payload byte count."
+          },
+          {
+            "id": "C",
+            "text": "The pixels remaining after the skip."
+          }
+        ],
+        "prompt": "What remainder bounds the changed span?"
+      },
+      "hints": [
+        {
+          "id": "video-s18-h1",
+          "text": "Keep pixel counts separate from byte counts."
+        },
+        {
+          "id": "video-s18-h2",
+          "text": "Subtract an admitted skip before checking changed."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s18.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s17"
+      ],
+      "title": "Bound both pixel spans",
+      "recipes": [
+        "s18-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_pixels_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s19",
+      "region": "record_payload_bounds",
+      "checkpoint": "record_payload_ready",
+      "recipe": "s19-1",
+      "quiz": {
+        "id": "video-s19-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Six."
+          },
+          {
+            "id": "B",
+            "text": "Two."
+          },
+          {
+            "id": "C",
+            "text": "Eight."
+          }
+        ],
+        "prompt": "How many triple bytes follow a changed count of two?"
+      },
+      "hints": [
+        {
+          "id": "video-s19-h1",
+          "text": "Triples have three bytes; image words have four."
+        },
+        {
+          "id": "video-s19-h2",
+          "text": "Admit the byte product before advancing either cursor."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s19.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s18"
+      ],
+      "title": "Bound the changed triples and advance",
+      "recipes": [
+        "s19-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_payload_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s20",
+      "region": "record_exact",
+      "checkpoint": "record_validation_ready",
+      "recipe": "s20-1",
+      "quiz": {
+        "id": "video-s20-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only its first command must fit."
+          },
+          {
+            "id": "B",
+            "text": "Both the pixel coverage and payload consumption must be exact."
+          },
+          {
+            "id": "C",
+            "text": "The checksum field must be rewritten."
+          }
+        ],
+        "prompt": "What must hold before applying a delta?"
+      },
+      "hints": [
+        {
+          "id": "video-s20-h1",
+          "text": "Pixel completion and byte completion are separate conditions."
+        },
+        {
+          "id": "video-s20-h2",
+          "text": "Reject a suffix even if it begins with a valid command."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s20.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s19"
+      ],
+      "title": "Require exact command completion",
+      "recipes": [
+        "s20-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_validation_ready",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s21",
+      "region": "record_full",
+      "checkpoint": "record_full_applied",
+      "recipe": "s21-1",
+      "quiz": {
+        "id": "video-s21-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Three bytes."
+          },
+          {
+            "id": "B",
+            "text": "One byte."
+          },
+          {
+            "id": "C",
+            "text": "Four bytes."
+          }
+        ],
+        "prompt": "How far does the destination advance per RGB triple?"
+      },
+      "hints": [
+        {
+          "id": "video-s21-h1",
+          "text": "Build a numeric word before its native store."
+        },
+        {
+          "id": "video-s21-h2",
+          "text": "The input and output strides differ."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s21.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s20"
+      ],
+      "title": "Expand an accepted full frame",
+      "recipes": [
+        "s21-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_full_applied",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s22",
+      "region": "record_delta",
+      "checkpoint": "record_delta_applied",
+      "recipe": "s22-1",
+      "quiz": {
+        "id": "video-s22-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every command has already been validated, and the record stays immutable."
+          },
+          {
+            "id": "B",
+            "text": "XOR automatically undoes any later failure."
+          },
+          {
+            "id": "C",
+            "text": "All delta records contain exactly one changed pixel."
+          }
+        ],
+        "prompt": "Why can this pass write directly into the working image?"
+      },
+      "hints": [
+        {
+          "id": "video-s22-h1",
+          "text": "Restart both cursors after validation."
+        },
+        {
+          "id": "video-s22-h2",
+          "text": "A skip changes the cursor without touching those image words."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s22.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s21"
+      ],
+      "title": "Apply an accepted delta in place",
+      "recipes": [
+        "s22-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_delta_applied",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s23",
+      "region": "record_publish",
+      "checkpoint": "record_published",
+      "recipe": "s23-1",
+      "quiz": {
+        "id": "video-s23-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It advances to avoid retrying the bad record."
+          },
+          {
+            "id": "B",
+            "text": "It remains unchanged."
+          },
+          {
+            "id": "C",
+            "text": "It becomes the record payload length."
+          }
+        ],
+        "prompt": "What happens to the expected sequence on failure?"
+      },
+      "hints": [
+        {
+          "id": "video-s23-h1",
+          "text": "Publish only the three output fields defined by the contract."
+        },
+        {
+          "id": "video-s23-h2",
+          "text": "Compare the whole frame and context after a rejected late command."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/record-s23.tex",
+      "stage": "video-record-construction",
+      "prerequisites": [
+        "s22"
+      ],
+      "title": "Publish the accepted frame",
+      "recipes": [
+        "s23-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "record_published",
+        "completedStageCheck": "checks/record.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s24",
+      "region": "index_admit",
+      "checkpoint": "index_admitted",
+      "recipe": "s24-1",
+      "quiz": {
+        "id": "video-s24-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Frames."
+          },
+          {
+            "id": "B",
+            "text": "Bytes including the global header."
+          },
+          {
+            "id": "C",
+            "text": "Directory entries."
+          }
+        ],
+        "prompt": "What unit does the complete input count use?"
+      },
+      "hints": [
+        {
+          "id": "video-s24-h1",
+          "text": "Keep the count comparison unsigned and 64-bit."
+        },
+        {
+          "id": "video-s24-h2",
+          "text": "Load the large upper bound into a register."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s24.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s23"
+      ],
+      "title": "Admit complete-file arguments",
+      "recipes": [
+        "s24-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_admitted",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s25",
+      "region": "index_context",
+      "checkpoint": "index_context_ready",
+      "recipe": "s25-1",
+      "quiz": {
+        "id": "video-s25-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The public directory."
+          },
+          {
+            "id": "B",
+            "text": "The published frame count."
+          },
+          {
+            "id": "C",
+            "text": "The active scratch image."
+          }
+        ],
+        "prompt": "What may a rejected late record change?"
+      },
+      "hints": [
+        {
+          "id": "video-s25-h1",
+          "text": "The scratch capacity is measured in bytes."
+        },
+        {
+          "id": "video-s25-h2",
+          "text": "Retain the admitted scratch pointer across nested calls."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s25.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s24"
+      ],
+      "title": "Admit scratch storage",
+      "recipes": [
+        "s25-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_context_ready",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s26",
+      "region": "index_geometry",
+      "checkpoint": "index_geometry_ready",
+      "recipe": "s26-1",
+      "quiz": {
+        "id": "video-s26-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "As an unsigned big-endian integer."
+          },
+          {
+            "id": "B",
+            "text": "As native memory order."
+          },
+          {
+            "id": "C",
+            "text": "As a pixel address."
+          }
+        ],
+        "prompt": "How are the width bytes interpreted?"
+      },
+      "hints": [
+        {
+          "id": "video-s26-h1",
+          "text": "The version is included in the magic."
+        },
+        {
+          "id": "video-s26-h2",
+          "text": "Check width and height independently."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s26.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s25"
+      ],
+      "title": "Check the format and geometry",
+      "recipes": [
+        "s26-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_geometry_ready",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s27",
+      "region": "index_schedule",
+      "checkpoint": "index_schedule_ready",
+      "recipe": "s27-1",
+      "quiz": {
+        "id": "video-s27-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "256."
+          },
+          {
+            "id": "B",
+            "text": "255."
+          },
+          {
+            "id": "C",
+            "text": "257."
+          }
+        ],
+        "prompt": "What is the last sequence index in a 256-frame file?"
+      },
+      "hints": [
+        {
+          "id": "video-s27-h1",
+          "text": "Distinguish a number of frames from an index."
+        },
+        {
+          "id": "video-s27-h2",
+          "text": "The period must be nonzero before remainder calculations."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s27.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s26"
+      ],
+      "title": "Admit frame count and full-frame period",
+      "recipes": [
+        "s27-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_schedule_ready",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s28",
+      "region": "index_timing",
+      "checkpoint": "index_timing_ready",
+      "recipe": "s28-1",
+      "quiz": {
+        "id": "video-s28-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, while checking its CRC."
+          },
+          {
+            "id": "B",
+            "text": "Yes, before each directory store."
+          },
+          {
+            "id": "C",
+            "text": "No; it only validates and retains the duration."
+          }
+        ],
+        "prompt": "Does the indexer wait forty milliseconds per frame?"
+      },
+      "hints": [
+        {
+          "id": "video-s28-h1",
+          "text": "Duration is serialized big-endian but saved natively."
+        },
+        {
+          "id": "video-s28-h2",
+          "text": "Check the final reserved field separately."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s28.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s27"
+      ],
+      "title": "Admit duration and reserved bytes",
+      "recipes": [
+        "s28-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_timing_ready",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s29",
+      "region": "index_capacity",
+      "checkpoint": "index_capacity_ready",
+      "recipe": "s29-1",
+      "quiz": {
+        "id": "video-s29-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero."
+          },
+          {
+            "id": "B",
+            "text": "The number of frames."
+          },
+          {
+            "id": "C",
+            "text": "The file byte count."
+          }
+        ],
+        "prompt": "Which sequence belongs in the private context initially?"
+      },
+      "hints": [
+        {
+          "id": "video-s29-h1",
+          "text": "Directory capacity is eight bytes per frame."
+        },
+        {
+          "id": "video-s29-h2",
+          "text": "The first nested call must expect record zero."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s29.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s28"
+      ],
+      "title": "Prepare a private record context",
+      "recipes": [
+        "s29-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_capacity_ready",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s30",
+      "region": "index_window",
+      "checkpoint": "index_window_ready",
+      "recipe": "s30-1",
+      "quiz": {
+        "id": "video-s30-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The CRC requires native alignment."
+          },
+          {
+            "id": "B",
+            "text": "The callee relies on the caller supplying a readable complete window."
+          },
+          {
+            "id": "C",
+            "text": "The header is always the last record."
+          }
+        ],
+        "prompt": "Why check the outer record extent before calling its validator?"
+      },
+      "hints": [
+        {
+          "id": "video-s30-h1",
+          "text": "Check sixteen header bytes before reading payload length."
+        },
+        {
+          "id": "video-s30-h2",
+          "text": "Compare the whole record size with remaining file bytes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s30.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s29"
+      ],
+      "title": "Locate one bounded record window",
+      "recipes": [
+        "s30-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_window_ready",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s31",
+      "region": "index_validate",
+      "checkpoint": "index_record_valid",
+      "recipe": "s31-1",
+      "quiz": {
+        "id": "video-s31-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The checksum value."
+          },
+          {
+            "id": "B",
+            "text": "The next frame index."
+          },
+          {
+            "id": "C",
+            "text": "Its own caller's return address."
+          }
+        ],
+        "prompt": "Which return address must the outer prologue preserve?"
+      },
+      "hints": [
+        {
+          "id": "video-s31-h1",
+          "text": "Reload the record length after a nested call if it is needed."
+        },
+        {
+          "id": "video-s31-h2",
+          "text": "The private context pointer is relative to the outer stack frame."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s31.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s30"
+      ],
+      "title": "Call the record validator on scratch",
+      "recipes": [
+        "s31-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_record_valid",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s32",
+      "region": "index_advance",
+      "checkpoint": "index_record_advanced",
+      "recipe": "s32-1",
+      "quiz": {
+        "id": "video-s32-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The complete record byte count, including its header."
+          },
+          {
+            "id": "B",
+            "text": "One pixel."
+          },
+          {
+            "id": "C",
+            "text": "The number of frames."
+          }
+        ],
+        "prompt": "What advances the byte offset?"
+      },
+      "hints": [
+        {
+          "id": "video-s32-h1",
+          "text": "The saved size already includes sixteen header bytes."
+        },
+        {
+          "id": "video-s32-h2",
+          "text": "Increment the record index separately."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s32.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s31"
+      ],
+      "title": "Advance the validation walk",
+      "recipes": [
+        "s32-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_record_advanced",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s33",
+      "region": "index_exact",
+      "checkpoint": "index_file_valid",
+      "recipe": "s33-1",
+      "quiz": {
+        "id": "video-s33-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, if its CRCs match."
+          },
+          {
+            "id": "B",
+            "text": "No; the complete file must end exactly."
+          },
+          {
+            "id": "C",
+            "text": "Yes, if the byte is zero."
+          }
+        ],
+        "prompt": "Can a valid record prefix followed by one extra byte succeed?"
+      },
+      "hints": [
+        {
+          "id": "video-s33-h1",
+          "text": "Compare against the full supplied byte count."
+        },
+        {
+          "id": "video-s33-h2",
+          "text": "Do not begin public stores before this check."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s33.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s32"
+      ],
+      "title": "Require the complete file end",
+      "recipes": [
+        "s33-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_file_valid",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s34",
+      "region": "index_entry",
+      "checkpoint": "index_entry_stored",
+      "recipe": "s34-1",
+      "quiz": {
+        "id": "video-s34-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The absolute file pointer."
+          },
+          {
+            "id": "B",
+            "text": "The frame duration."
+          },
+          {
+            "id": "C",
+            "text": "The file-relative offset 24."
+          }
+        ],
+        "prompt": "What value belongs in directory entry zero?"
+      },
+      "hints": [
+        {
+          "id": "video-s34-h1",
+          "text": "Each directory element occupies eight native bytes."
+        },
+        {
+          "id": "video-s34-h2",
+          "text": "The first eight arena bytes are a guard, outside the directory."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s34.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s33"
+      ],
+      "title": "Publish one native offset",
+      "recipes": [
+        "s34-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_entry_stored",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s35",
+      "region": "index_next",
+      "checkpoint": "index_entry_advanced",
+      "recipe": "s35-1",
+      "quiz": {
+        "id": "video-s35-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The file was fully validated and remains immutable."
+          },
+          {
+            "id": "B",
+            "text": "Directory entries contain checksums."
+          },
+          {
+            "id": "C",
+            "text": "Every record has the same size."
+          }
+        ],
+        "prompt": "What permits this pass to omit CRC calculation?"
+      },
+      "hints": [
+        {
+          "id": "video-s35-h1",
+          "text": "Re-read lengths from the file, not from scratch image words."
+        },
+        {
+          "id": "video-s35-h2",
+          "text": "Keep file offsets separate from absolute source addresses."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s35.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s34"
+      ],
+      "title": "Walk the validated records again",
+      "recipes": [
+        "s35-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_entry_advanced",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s36",
+      "region": "index_publish",
+      "checkpoint": "index_published",
+      "recipe": "s36-1",
+      "quiz": {
+        "id": "video-s36-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only its scratch image."
+          },
+          {
+            "id": "B",
+            "text": "The earlier public directory and context."
+          },
+          {
+            "id": "C",
+            "text": "Only the input count."
+          }
+        ],
+        "prompt": "What must a failed reindex retain?"
+      },
+      "hints": [
+        {
+          "id": "video-s36-h1",
+          "text": "Publish exactly the five specified output fields."
+        },
+        {
+          "id": "video-s36-h2",
+          "text": "Check output guards and retained results after an invalid late record."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/index-s36.tex",
+      "stage": "video-index-construction",
+      "prerequisites": [
+        "s35"
+      ],
+      "title": "Publish index metadata",
+      "recipes": [
+        "s36-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "index_published",
+        "completedStageCheck": "checks/index.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s37",
+      "region": "io_admit",
+      "checkpoint": "io_admitted",
+      "recipe": "s37-1",
+      "quiz": {
+        "id": "video-s37-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Return before opening the file."
+          },
+          {
+            "id": "B",
+            "text": "Open and immediately close it."
+          },
+          {
+            "id": "C",
+            "text": "Read one byte to discover its size."
+          }
+        ],
+        "prompt": "What should an invalid capacity do?"
+      },
+      "hints": [
+        {
+          "id": "video-s37-h1",
+          "text": "Keep the capacity comparison unsigned and full-width."
+        },
+        {
+          "id": "video-s37-h2",
+          "text": "The early-return status is already initialized."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s37.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s36"
+      ],
+      "title": "Admit a loader capacity before opening",
+      "recipes": [
+        "s37-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_admitted",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s38",
+      "region": "io_state",
+      "checkpoint": "io_state_ready",
+      "recipe": "s38-1",
+      "quiz": {
+        "id": "video-s38-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The descriptor number."
+          },
+          {
+            "id": "B",
+            "text": "The accumulated bytes stored in the buffer."
+          },
+          {
+            "id": "C",
+            "text": "The number of frame records."
+          }
+        ],
+        "prompt": "What does the running transferred count describe?"
+      },
+      "hints": [
+        {
+          "id": "video-s38-h1",
+          "text": "Keep persistent values out of syscall argument registers."
+        },
+        {
+          "id": "video-s38-h2",
+          "text": "Do not write the result context during setup."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s38.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s37"
+      ],
+      "title": "Retain buffer, context and progress state",
+      "recipes": [
+        "s38-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_state_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s39",
+      "region": "io_open",
+      "checkpoint": "io_open_ready",
+      "recipe": "s39-1",
+      "quiz": {
+        "id": "video-s39-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always three."
+          },
+          {
+            "id": "B",
+            "text": "The filename address."
+          },
+          {
+            "id": "C",
+            "text": "The handle returned by open."
+          }
+        ],
+        "prompt": "Which descriptor must later reads use?"
+      },
+      "hints": [
+        {
+          "id": "video-s39-h1",
+          "text": "A failed open must not enter the owned cleanup path."
+        },
+        {
+          "id": "video-s39-h2",
+          "text": "Keep the descriptor in a saved register."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s39.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s38"
+      ],
+      "title": "Open read-only and acquire the descriptor",
+      "recipes": [
+        "s39-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_open_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s40",
+      "region": "io_request",
+      "checkpoint": "io_request_ready",
+      "recipe": "s40-1",
+      "quiz": {
+        "id": "video-s40-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A full buffer takes the separate probe path."
+          },
+          {
+            "id": "B",
+            "text": "Zero-length reads always report errors."
+          },
+          {
+            "id": "C",
+            "text": "The file header guarantees a large file."
+          }
+        ],
+        "prompt": "Why is this read request never zero?"
+      },
+      "hints": [
+        {
+          "id": "video-s40-h1",
+          "text": "Compare progress with capacity before forming a request."
+        },
+        {
+          "id": "video-s40-h2",
+          "text": "The destination is base plus accumulated bytes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s40.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s39"
+      ],
+      "title": "Request only remaining bounded bytes",
+      "recipes": [
+        "s40-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_request_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s41",
+      "region": "io_result",
+      "checkpoint": "io_progress_ready",
+      "recipe": "s41-1",
+      "quiz": {
+        "id": "video-s41-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Declare EOF immediately."
+          },
+          {
+            "id": "B",
+            "text": "Advance by the returned count and read again."
+          },
+          {
+            "id": "C",
+            "text": "Advance by the requested count."
+          }
+        ],
+        "prompt": "After a short positive read, what happens next?"
+      },
+      "hints": [
+        {
+          "id": "video-s41-h1",
+          "text": "Test the signed service result before adding it."
+        },
+        {
+          "id": "video-s41-h2",
+          "text": "A positive short read is still progress."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s41.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s40"
+      ],
+      "title": "Distinguish progress, EOF and read errors",
+      "recipes": [
+        "s41-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_progress_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s42",
+      "region": "io_probe",
+      "checkpoint": "io_probe_ready",
+      "recipe": "s42-1",
+      "quiz": {
+        "id": "video-s42-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At destination plus capacity."
+          },
+          {
+            "id": "B",
+            "text": "In the published count field."
+          },
+          {
+            "id": "C",
+            "text": "In private stack storage."
+          }
+        ],
+        "prompt": "Where is the extra-byte probe stored?"
+      },
+      "hints": [
+        {
+          "id": "video-s42-h1",
+          "text": "A zero-byte request cannot establish EOF."
+        },
+        {
+          "id": "video-s42-h2",
+          "text": "A negative probe result is a failure."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s42.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s41"
+      ],
+      "title": "Probe EOF at exact capacity",
+      "recipes": [
+        "s42-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_probe_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s43",
+      "region": "io_eof",
+      "checkpoint": "io_eof_ready",
+      "recipe": "s43-1",
+      "quiz": {
+        "id": "video-s43-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "No; the indexer checks the format afterward."
+          },
+          {
+            "id": "B",
+            "text": "Yes, because the bytes were read through EOF."
+          },
+          {
+            "id": "C",
+            "text": "Yes, if the filename ends in .mlv."
+          }
+        ],
+        "prompt": "Does a successful load prove MLV1 validity?"
+      },
+      "hints": [
+        {
+          "id": "video-s43-h1",
+          "text": "Only the loader count is tested at this layer."
+        },
+        {
+          "id": "video-s43-h2",
+          "text": "Keep success in a saved value until after closing."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s43.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s42"
+      ],
+      "title": "Accept only a nonempty completed load",
+      "recipes": [
+        "s43-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_eof_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s44",
+      "region": "io_close",
+      "checkpoint": "io_close_ready",
+      "recipe": "s44-1",
+      "quiz": {
+        "id": "video-s44-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The close service number."
+          },
+          {
+            "id": "B",
+            "text": "The saved logical status."
+          },
+          {
+            "id": "C",
+            "text": "The filename suffix."
+          }
+        ],
+        "prompt": "What stores the intended result while closing?"
+      },
+      "hints": [
+        {
+          "id": "video-s44-h1",
+          "text": "Close exactly the handle acquired by this call."
+        },
+        {
+          "id": "video-s44-h2",
+          "text": "Do not close after a failed open."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s44.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s43"
+      ],
+      "title": "Close the owned descriptor",
+      "recipes": [
+        "s44-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_close_ready",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s45",
+      "region": "io_publish",
+      "checkpoint": "io_published",
+      "recipe": "s45-1",
+      "quiz": {
+        "id": "video-s45-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After any nonnegative read."
+          },
+          {
+            "id": "B",
+            "text": "Before the EOF probe."
+          },
+          {
+            "id": "C",
+            "text": "After successful completed loading."
+          }
+        ],
+        "prompt": "When may the caller invoke the indexer?"
+      },
+      "hints": [
+        {
+          "id": "video-s45-h1",
+          "text": "Publish only the loaded-count field."
+        },
+        {
+          "id": "video-s45-h2",
+          "text": "Do not pair an old directory with overwritten staging bytes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/io-s45.tex",
+      "stage": "video-io-construction",
+      "prerequisites": [
+        "s44"
+      ],
+      "title": "Publish loaded bytes and call the indexer",
+      "recipes": [
+        "s45-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "io_published",
+        "completedStageCheck": "checks/load.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s46",
+      "region": "seek_admit",
+      "checkpoint": "seek_admitted",
+      "recipe": "s46-1",
+      "quiz": {
+        "id": "video-s46-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its eight-byte alignment."
+          },
+          {
+            "id": "B",
+            "text": "The kind of the target record."
+          },
+          {
+            "id": "C",
+            "text": "The current displayed color."
+          }
+        ],
+        "prompt": "Which check belongs before the first context load?"
+      },
+      "hints": [
+        {
+          "id": "video-s46-h1",
+          "text": "A native doubleword load needs the documented alignment."
+        },
+        {
+          "id": "video-s46-h2",
+          "text": "The file has already been validated, but this call still admits its own native arguments."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s46.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s45"
+      ],
+      "title": "Admit the native context before loading it",
+      "recipes": [
+        "s46-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_admitted",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s47",
+      "region": "seek_context",
+      "checkpoint": "seek_context_ready",
+      "recipe": "s47-1",
+      "quiz": {
+        "id": "video-s47-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A target must be a multiple of four."
+          },
+          {
+            "id": "B",
+            "text": "The valid indices are zero through seven."
+          },
+          {
+            "id": "C",
+            "text": "Only full-frame indices may be requested."
+          }
+        ],
+        "prompt": "Why is target eight invalid for eight frames?"
+      },
+      "hints": [
+        {
+          "id": "video-s47-h1",
+          "text": "Count and last valid index differ by one."
+        },
+        {
+          "id": "video-s47-h2",
+          "text": "Use a strict unsigned less-than comparison for the target."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s47.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s46"
+      ],
+      "title": "Check the target against the accepted frame count",
+      "recipes": [
+        "s47-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_context_ready",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s48",
+      "region": "seek_state",
+      "checkpoint": "seek_state_ready",
+      "recipe": "s48-1",
+      "quiz": {
+        "id": "video-s48-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The current directory index."
+          },
+          {
+            "id": "B",
+            "text": "The current record address."
+          },
+          {
+            "id": "C",
+            "text": "The requested target."
+          }
+        ],
+        "prompt": "Which value must remain fixed during the backward search?"
+      },
+      "hints": [
+        {
+          "id": "video-s48-h1",
+          "text": "A search position changes; the requested result does not."
+        },
+        {
+          "id": "video-s48-h2",
+          "text": "Saved registers survive the record routine when both functions follow the ABI."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s48.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s47"
+      ],
+      "title": "Keep file identity separate from the replay cursor",
+      "recipes": [
+        "s48-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_state_ready",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s49",
+      "region": "seek_offset",
+      "checkpoint": "seek_offset_ready",
+      "recipe": "s49-1",
+      "quiz": {
+        "id": "video-s49-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A byte offset from this file base."
+          },
+          {
+            "id": "B",
+            "text": "An absolute framebuffer address."
+          },
+          {
+            "id": "C",
+            "text": "A count of RGB words."
+          }
+        ],
+        "prompt": "What does a directory entry represent?"
+      },
+      "hints": [
+        {
+          "id": "video-s49-h1",
+          "text": "Native storage order and the meaning of a stored integer are separate matters."
+        },
+        {
+          "id": "video-s49-h2",
+          "text": "Prove that sixteen header bytes remain before forming the record window."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s49.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s48"
+      ],
+      "title": "Turn a directory offset into a bounded record address",
+      "recipes": [
+        "s49-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_offset_ready",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s50",
+      "region": "seek_full",
+      "checkpoint": "seek_full_ready",
+      "recipe": "s50-1",
+      "quiz": {
+        "id": "video-s50-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every delta contains a hidden full image."
+          },
+          {
+            "id": "B",
+            "text": "Extra full frames are permitted between required ones."
+          },
+          {
+            "id": "C",
+            "text": "The period is a byte offset."
+          }
+        ],
+        "prompt": "Why inspect record kinds instead of rounding by the period?"
+      },
+      "hints": [
+        {
+          "id": "video-s50-h1",
+          "text": "The period guarantees an upper bound on the backward distance."
+        },
+        {
+          "id": "video-s50-h2",
+          "text": "The first full record encountered while walking backward is the nearest one."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s50.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s49"
+      ],
+      "title": "Search backward to the latest independent image",
+      "recipes": [
+        "s50-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_full_ready",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s51",
+      "region": "seek_record_context",
+      "checkpoint": "seek_replay_ready",
+      "recipe": "s51-1",
+      "quiz": {
+        "id": "video-s51-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero."
+          },
+          {
+            "id": "B",
+            "text": "The final target plus one."
+          },
+          {
+            "id": "C",
+            "text": "Four."
+          }
+        ],
+        "prompt": "Which expected sequence belongs to a seek starting at full frame four?"
+      },
+      "hints": [
+        {
+          "id": "video-s51-h1",
+          "text": "The record header retains its original file sequence number."
+        },
+        {
+          "id": "video-s51-h2",
+          "text": "Use a private record context so intermediate successes cannot publish final seek state."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s51.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s50"
+      ],
+      "title": "Start record sequence state at the selected full frame",
+      "recipes": [
+        "s51-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_replay_ready",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s52",
+      "region": "seek_window",
+      "checkpoint": "seek_window_ready",
+      "recipe": "s52-1",
+      "quiz": {
+        "id": "video-s52-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The validated file byte count."
+          },
+          {
+            "id": "B",
+            "text": "An unused directory entry after the frame count."
+          },
+          {
+            "id": "C",
+            "text": "The destination capacity."
+          }
+        ],
+        "prompt": "What supplies the end of the last record window?"
+      },
+      "hints": [
+        {
+          "id": "video-s52-h1",
+          "text": "There is no directory entry after the last accepted frame."
+        },
+        {
+          "id": "video-s52-h2",
+          "text": "Check order before subtracting two unsigned offsets."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s52.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s51"
+      ],
+      "title": "Construct one exact record window",
+      "recipes": [
+        "s52-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_window_ready",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s53",
+      "region": "seek_apply",
+      "checkpoint": "seek_applied",
+      "recipe": "s53-1",
+      "quiz": {
+        "id": "video-s53-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The visible destination immediately."
+          },
+          {
+            "id": "B",
+            "text": "The separate scratch image."
+          },
+          {
+            "id": "C",
+            "text": "The immutable file buffer."
+          }
+        ],
+        "prompt": "Where should a replayed full frame be written before the target is complete?"
+      },
+      "hints": [
+        {
+          "id": "video-s53-h1",
+          "text": "An individual record success is earlier than whole-seek success."
+        },
+        {
+          "id": "video-s53-h2",
+          "text": "Check the nested status before advancing the replay index."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s53.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s52"
+      ],
+      "title": "Replay into scratch and propagate a rejected record",
+      "recipes": [
+        "s53-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_applied",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s54",
+      "region": "seek_advance",
+      "checkpoint": "seek_reconstructed",
+      "recipe": "s54-1",
+      "quiz": {
+        "id": "video-s54-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Two."
+          },
+          {
+            "id": "B",
+            "text": "Four."
+          },
+          {
+            "id": "C",
+            "text": "Three."
+          }
+        ],
+        "prompt": "How many records are replayed from start four through target six?"
+      },
+      "hints": [
+        {
+          "id": "video-s54-h1",
+          "text": "Both endpoints are included."
+        },
+        {
+          "id": "video-s54-h2",
+          "text": "Test a target that is itself a full frame: it still requires one application."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s54.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s53"
+      ],
+      "title": "Replay through the target exactly once",
+      "recipes": [
+        "s54-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_reconstructed",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s55",
+      "region": "seek_copy",
+      "checkpoint": "seek_frame_copied",
+      "recipe": "s55-1",
+      "quiz": {
+        "id": "video-s55-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Scratch already contains native display words."
+          },
+          {
+            "id": "B",
+            "text": "Byte order never matters in a framebuffer."
+          },
+          {
+            "id": "C",
+            "text": "Each source byte is a separate pixel."
+          }
+        ],
+        "prompt": "Why does this vector copy need no RGB packing shuffle?"
+      },
+      "hints": [
+        {
+          "id": "video-s55-h1",
+          "text": "The earlier record routine already constructed each numeric color."
+        },
+        {
+          "id": "video-s55-h2",
+          "text": "There are 16,384 bytes divided by sixteen bytes per vector."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s55.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s54"
+      ],
+      "title": "Copy the complete reconstructed image in bounded vectors",
+      "recipes": [
+        "s55-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_frame_copied",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s56",
+      "region": "seek_publish",
+      "checkpoint": "seek_published",
+      "recipe": "s56-1",
+      "quiz": {
+        "id": "video-s56-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Milliseconds of playback."
+          },
+          {
+            "id": "B",
+            "text": "Applied records, including the starting full frame."
+          },
+          {
+            "id": "C",
+            "text": "All directory entries in the file."
+          }
+        ],
+        "prompt": "What does the replay count measure?"
+      },
+      "hints": [
+        {
+          "id": "video-s56-h1",
+          "text": "The final metadata describes this successful seek."
+        },
+        {
+          "id": "video-s56-h2",
+          "text": "Retain earlier output fields on failure rather than clearing them."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/seek-s56.tex",
+      "stage": "video-seek-construction",
+      "prerequisites": [
+        "s55"
+      ],
+      "title": "Publish the target and the replay boundary together",
+      "recipes": [
+        "s56-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "seek_published",
+        "completedStageCheck": "checks/seek.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s57",
+      "region": "ef_admit",
+      "checkpoint": "ef_admitted",
+      "recipe": "s57-1",
+      "quiz": {
+        "id": "video-s57-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A larger value can share the same low 32 bits."
+          },
+          {
+            "id": "B",
+            "text": "Every source has a variable number of pixels."
+          },
+          {
+            "id": "C",
+            "text": "The destination must be sixteen-byte aligned."
+          }
+        ],
+        "prompt": "Why compare the complete source count?"
+      },
+      "hints": [
+        {
+          "id": "video-s57-h1",
+          "text": "Counts are byte quantities in full-width registers."
+        },
+        {
+          "id": "video-s57-h2",
+          "text": "Reject count and native alignment before context loads."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s57.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s56"
+      ],
+      "title": "Admit an exact native source image",
+      "recipes": [
+        "s57-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_admitted",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s58",
+      "region": "ef_context",
+      "checkpoint": "ef_context_ready",
+      "recipe": "s58-1",
+      "quiz": {
+        "id": "video-s58-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the 12,288 RGB bytes."
+          },
+          {
+            "id": "B",
+            "text": "The sixteen-byte header and all RGB payload bytes."
+          },
+          {
+            "id": "C",
+            "text": "The native previous image as well as the record."
+          }
+        ],
+        "prompt": "What must the output capacity include?"
+      },
+      "hints": [
+        {
+          "id": "video-s58-h1",
+          "text": "The record count includes its header."
+        },
+        {
+          "id": "video-s58-h2",
+          "text": "Admit every writable window before reading pixel values."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s58.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s57"
+      ],
+      "title": "Admit output and previous-image capacity",
+      "recipes": [
+        "s58-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_context_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s59",
+      "region": "ef_state",
+      "checkpoint": "ef_state_ready",
+      "recipe": "s59-1",
+      "quiz": {
+        "id": "video-s59-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The already incremented next-sequence value."
+          },
+          {
+            "id": "B",
+            "text": "The source byte count."
+          },
+          {
+            "id": "C",
+            "text": "The input next-sequence value."
+          }
+        ],
+        "prompt": "Which sequence belongs in the new record header?"
+      },
+      "hints": [
+        {
+          "id": "video-s59-h1",
+          "text": "The header identifies the record being produced now."
+        },
+        {
+          "id": "video-s59-h2",
+          "text": "Advance sequence only after the record and previous image are complete."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s59.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s58"
+      ],
+      "title": "Retain sequence state while walking pixels",
+      "recipes": [
+        "s59-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_state_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s60",
+      "region": "ef_validate",
+      "checkpoint": "ef_pixels_valid",
+      "recipe": "s60-1",
+      "quiz": {
+        "id": "video-s60-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A late invalid color must leave the entire output unchanged."
+          },
+          {
+            "id": "B",
+            "text": "The CRC cannot process zero bytes."
+          },
+          {
+            "id": "C",
+            "text": "RGB order depends on the last pixel."
+          }
+        ],
+        "prompt": "Why validate the last color before emitting the first triple?"
+      },
+      "hints": [
+        {
+          "id": "video-s60-h1",
+          "text": "A full-source validation pass establishes the later output pass can complete."
+        },
+        {
+          "id": "video-s60-h2",
+          "text": "The source word has 24 color bits and eight required zero bits."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s60.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s59"
+      ],
+      "title": "Validate every high byte before the first output store",
+      "recipes": [
+        "s60-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_pixels_valid",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s61",
+      "region": "ef_header",
+      "checkpoint": "ef_header_ready",
+      "recipe": "s61-1",
+      "quiz": {
+        "id": "video-s61-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "FF 00 00 00."
+          },
+          {
+            "id": "B",
+            "text": "00 00 00 FF."
+          },
+          {
+            "id": "C",
+            "text": "00 FF 00 FF."
+          }
+        ],
+        "prompt": "Which byte sequence represents sequence 255 on the wire?"
+      },
+      "hints": [
+        {
+          "id": "video-s61-h1",
+          "text": "Record integers are big-endian in both simulator byte orders."
+        },
+        {
+          "id": "video-s61-h2",
+          "text": "Use byte stores so the record needs no native alignment."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s61.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s60"
+      ],
+      "title": "Write kind, reserved bytes and sequence in wire order",
+      "recipes": [
+        "s61-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_header_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s62",
+      "region": "ef_length",
+      "checkpoint": "ef_length_ready",
+      "recipe": "s62-1",
+      "quiz": {
+        "id": "video-s62-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The entire record including its header."
+          },
+          {
+            "id": "B",
+            "text": "The destination allocation."
+          },
+          {
+            "id": "C",
+            "text": "Payload bytes only."
+          }
+        ],
+        "prompt": "What does the header length field count?"
+      },
+      "hints": [
+        {
+          "id": "video-s62-h1",
+          "text": "Distinguish the wire payload length from the callable return count."
+        },
+        {
+          "id": "video-s62-h2",
+          "text": "Twelve thousand two hundred eighty-eight is hexadecimal 0x3000."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s62.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s61"
+      ],
+      "title": "Store the RGB payload length separately from record size",
+      "recipes": [
+        "s62-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_length_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s63",
+      "region": "ef_payload",
+      "checkpoint": "ef_payload_ready",
+      "recipe": "s63-1",
+      "quiz": {
+        "id": "video-s63-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Native word byte order differs from the RGB wire order."
+          },
+          {
+            "id": "B",
+            "text": "Every color channel is a native doubleword."
+          },
+          {
+            "id": "C",
+            "text": "All source memory bytes are already in RGB order."
+          }
+        ],
+        "prompt": "Why extract numeric channels instead of copying three memory bytes?"
+      },
+      "hints": [
+        {
+          "id": "video-s63-h1",
+          "text": "A native load recovers the same number in either target byte order."
+        },
+        {
+          "id": "video-s63-h2",
+          "text": "Source and payload cursors advance by different byte strides."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s63.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s62"
+      ],
+      "title": "Extract RGB from numeric source words",
+      "recipes": [
+        "s63-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_payload_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s64",
+      "region": "ef_crc_state",
+      "checkpoint": "ef_crc_state_ready",
+      "recipe": "s64-1",
+      "quiz": {
+        "id": "video-s64-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The payload."
+          },
+          {
+            "id": "B",
+            "text": "The four bytes reserved for the stored CRC itself."
+          },
+          {
+            "id": "C",
+            "text": "The sequence field."
+          }
+        ],
+        "prompt": "Which bytes are excluded from the CRC input?"
+      },
+      "hints": [
+        {
+          "id": "video-s64-h1",
+          "text": "The checksum input concatenates header bytes 0\u201311 and the payload."
+        },
+        {
+          "id": "video-s64-h2",
+          "text": "Do not reset the accumulator when the feed loop changes ranges."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s64.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s63"
+      ],
+      "title": "Seed one CRC across two disjoint stored ranges",
+      "recipes": [
+        "s64-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_crc_state_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s65",
+      "region": "ef_crc_bit",
+      "checkpoint": "ef_crc_bit_ready",
+      "recipe": "s65-1",
+      "quiz": {
+        "id": "video-s65-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A signed word right shift."
+          },
+          {
+            "id": "B",
+            "text": "A rotation through the previous image."
+          },
+          {
+            "id": "C",
+            "text": "A logical doubleword right shift."
+          }
+        ],
+        "prompt": "Which shift belongs in the reflected CRC update?"
+      },
+      "hints": [
+        {
+          "id": "video-s65-h1",
+          "text": "The recurrence shifts in zero, independent of bit 31."
+        },
+        {
+          "id": "video-s65-h2",
+          "text": "Test the original low bit before shifting it away."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s65.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s64"
+      ],
+      "title": "Apply the reflected CRC bit update",
+      "recipes": [
+        "s65-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_crc_bit_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s66",
+      "region": "ef_crc_store",
+      "checkpoint": "ef_crc_ready",
+      "recipe": "s66-1",
+      "quiz": {
+        "id": "video-s66-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Never; its field is excluded."
+          },
+          {
+            "id": "B",
+            "text": "Before processing the payload."
+          },
+          {
+            "id": "C",
+            "text": "After every color word."
+          }
+        ],
+        "prompt": "When should the stored checksum be included in this CRC calculation?"
+      },
+      "hints": [
+        {
+          "id": "video-s66-h1",
+          "text": "Finalize once after both covered ranges."
+        },
+        {
+          "id": "video-s66-h2",
+          "text": "Stored byte order is a separate step from computing the numeric CRC."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s66.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s65"
+      ],
+      "title": "Finalize and store the checksum without feeding it back",
+      "recipes": [
+        "s66-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_crc_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s67",
+      "region": "ef_previous",
+      "checkpoint": "ef_previous_ready",
+      "recipe": "s67-1",
+      "quiz": {
+        "id": "video-s67-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The source of the most recent failed attempt."
+          },
+          {
+            "id": "B",
+            "text": "The source of the last successfully encoded record."
+          },
+          {
+            "id": "C",
+            "text": "An arbitrary displayed seek target."
+          }
+        ],
+        "prompt": "Which image should a later delta use as its predecessor?"
+      },
+      "hints": [
+        {
+          "id": "video-s67-h1",
+          "text": "Prediction state belongs to committed output history."
+        },
+        {
+          "id": "video-s67-h2",
+          "text": "The current full record does not need old previous-image contents."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s67.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s66"
+      ],
+      "title": "Commit the source as the next prediction reference",
+      "recipes": [
+        "s67-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_previous_ready",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s68",
+      "region": "ef_publish",
+      "checkpoint": "ef_published",
+      "recipe": "s68-1",
+      "quiz": {
+        "id": "video-s68-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Sequence wraps to zero automatically."
+          },
+          {
+            "id": "B",
+            "text": "The record must be discarded because 255 cannot be encoded."
+          },
+          {
+            "id": "C",
+            "text": "Next sequence 256, which a further call rejects."
+          }
+        ],
+        "prompt": "What follows a successful encoding at sequence 255?"
+      },
+      "hints": [
+        {
+          "id": "video-s68-h1",
+          "text": "The last legal record index and the next-sequence state have different bounds."
+        },
+        {
+          "id": "video-s68-h2",
+          "text": "A rejected retry retains actual previously produced bytes and prediction state."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/full-encode-s68.tex",
+      "stage": "video-full-encode-construction",
+      "prerequisites": [
+        "s67"
+      ],
+      "title": "Advance sequence only after the record is complete",
+      "recipes": [
+        "s68-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "ef_published",
+        "completedStageCheck": "checks/full.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s69",
+      "region": "dr_admit",
+      "checkpoint": "dr_admitted",
+      "recipe": "s69-1",
+      "quiz": {
+        "id": "video-s69-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The native context."
+          },
+          {
+            "id": "B",
+            "text": "The serialized record destination."
+          },
+          {
+            "id": "C",
+            "text": "Every RGB triple."
+          }
+        ],
+        "prompt": "Which pointer needs eight-byte alignment?"
+      },
+      "hints": [
+        {
+          "id": "video-s69-h1",
+          "text": "Reject native argument shape before context loads."
+        },
+        {
+          "id": "video-s69-h2",
+          "text": "Use the full-width source count."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s69.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s68"
+      ],
+      "title": "Admit the source and extended native context",
+      "recipes": [
+        "s69-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_admitted",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s70",
+      "region": "dr_context",
+      "checkpoint": "dr_context_ready",
+      "recipe": "s70-1",
+      "quiz": {
+        "id": "video-s70-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every full frame will fit."
+          },
+          {
+            "id": "B",
+            "text": "Only that some record could fit; the selected record still needs admission."
+          },
+          {
+            "id": "C",
+            "text": "The frame contains at most twenty changed pixels."
+          }
+        ],
+        "prompt": "What does the twenty-byte minimum establish?"
+      },
+      "hints": [
+        {
+          "id": "video-s70-h1",
+          "text": "The smallest delta has a sixteen-byte header and one four-byte pair."
+        },
+        {
+          "id": "video-s70-h2",
+          "text": "A full record still needs 12,304 bytes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s70.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s69"
+      ],
+      "title": "Admit both prediction and XOR storage",
+      "recipes": [
+        "s70-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_context_ready",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s71",
+      "region": "dr_schedule",
+      "checkpoint": "dr_schedule_ready",
+      "recipe": "s71-1",
+      "quiz": {
+        "id": "video-s71-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Whenever a single pixel changes."
+          },
+          {
+            "id": "B",
+            "text": "Whenever scratch has sixteen-byte alignment."
+          },
+          {
+            "id": "C",
+            "text": "When sequence modulo period is zero."
+          }
+        ],
+        "prompt": "When is a full frame mandatory?"
+      },
+      "hints": [
+        {
+          "id": "video-s71-h1",
+          "text": "The required schedule uses frame indices, not byte offsets."
+        },
+        {
+          "id": "video-s71-h2",
+          "text": "Admit the divisor before computing a remainder."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s71.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s70"
+      ],
+      "title": "Determine whether this sequence requires a full frame",
+      "recipes": [
+        "s71-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_schedule_ready",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s72",
+      "region": "dr_validate",
+      "checkpoint": "dr_pixels_valid",
+      "recipe": "s72-1",
+      "quiz": {
+        "id": "video-s72-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its pixels are independent of prediction history."
+          },
+          {
+            "id": "B",
+            "text": "It has no payload."
+          },
+          {
+            "id": "C",
+            "text": "Its sequence is always zero."
+          }
+        ],
+        "prompt": "Why can a required full frame ignore old image contents?"
+      },
+      "hints": [
+        {
+          "id": "video-s72-h1",
+          "text": "Additional required full frames occur at later period boundaries too."
+        },
+        {
+          "id": "video-s72-h2",
+          "text": "Pointer/capacity admission and reading old contents are separate operations."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s72.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s71"
+      ],
+      "title": "Validate the images before choosing a representation",
+      "recipes": [
+        "s72-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_pixels_valid",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s73",
+      "region": "dr_xor",
+      "checkpoint": "dr_xor_ready",
+      "recipe": "s73-1",
+      "quiz": {
+        "id": "video-s73-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Compressed bytes."
+          },
+          {
+            "id": "B",
+            "text": "Changed pixels."
+          },
+          {
+            "id": "C",
+            "text": "The number of vector lanes allocated."
+          }
+        ],
+        "prompt": "What does the kernel return count measure here?"
+      },
+      "hints": [
+        {
+          "id": "video-s73-h1",
+          "text": "Each nonzero word represents one changed pixel."
+        },
+        {
+          "id": "video-s73-h2",
+          "text": "Keep scratch separate from both immutable input images."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s73.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s72"
+      ],
+      "title": "Reuse the MSA XOR kernel on the complete image",
+      "recipes": [
+        "s73-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_xor_ready",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s74",
+      "region": "dr_measure_skip",
+      "checkpoint": "dr_skip_measured",
+      "recipe": "s74-1",
+      "quiz": {
+        "id": "video-s74-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "There is a required sentinel word after every frame."
+          },
+          {
+            "id": "B",
+            "text": "The next word belongs to the checksum."
+          },
+          {
+            "id": "C",
+            "text": "The cursor is an exclusive end and must be tested before loading."
+          }
+        ],
+        "prompt": "What permits a skip scan to stop at pixel 4096?"
+      },
+      "hints": [
+        {
+          "id": "video-s74-h1",
+          "text": "A valid source window contains exactly 4096 words."
+        },
+        {
+          "id": "video-s74-h2",
+          "text": "A zero-length initial skip is allowed when the next changed run makes progress."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s74.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s73"
+      ],
+      "title": "Measure a maximal run of unchanged pixels",
+      "recipes": [
+        "s74-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_skip_measured",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s75",
+      "region": "dr_measure_change",
+      "checkpoint": "dr_change_measured",
+      "recipe": "s75-1",
+      "quiz": {
+        "id": "video-s75-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Ten bytes."
+          },
+          {
+            "id": "B",
+            "text": "Six bytes."
+          },
+          {
+            "id": "C",
+            "text": "Two bytes."
+          }
+        ],
+        "prompt": "What is the cost of a command with two changed pixels?"
+      },
+      "hints": [
+        {
+          "id": "video-s75-h1",
+          "text": "Charge four header bytes plus two triples."
+        },
+        {
+          "id": "video-s75-h2",
+          "text": "The pixel cursor advances in pixels while the accumulated cost advances in bytes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s75.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s74"
+      ],
+      "title": "Charge triples and command headers separately",
+      "recipes": [
+        "s75-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_change_measured",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s76",
+      "region": "dr_choose",
+      "checkpoint": "dr_delta_admitted",
+      "recipe": "s76-1",
+      "quiz": {
+        "id": "video-s76-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Append an empty delta terminator."
+          },
+          {
+            "id": "B",
+            "text": "Choose a full record."
+          },
+          {
+            "id": "C",
+            "text": "Discard the source image."
+          }
+        ],
+        "prompt": "What happens on the illustrated exact-size tie?"
+      },
+      "hints": [
+        {
+          "id": "video-s76-h1",
+          "text": "Both choices decode, but the guided policy fixes ties for reproducible observations."
+        },
+        {
+          "id": "video-s76-h2",
+          "text": "The output capacity must include the sixteen-byte record header."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s76.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s75"
+      ],
+      "title": "Select full fallback before any output store",
+      "recipes": [
+        "s76-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_delta_admitted",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s77",
+      "region": "dr_header",
+      "checkpoint": "dr_header_ready",
+      "recipe": "s77-1",
+      "quiz": {
+        "id": "video-s77-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The full output capacity."
+          },
+          {
+            "id": "B",
+            "text": "The number of changed words."
+          },
+          {
+            "id": "C",
+            "text": "The measured delta payload length."
+          }
+        ],
+        "prompt": "Which value belongs in header offsets eight through eleven?"
+      },
+      "hints": [
+        {
+          "id": "video-s77-h1",
+          "text": "The variable payload length is retained in a saved register."
+        },
+        {
+          "id": "video-s77-h2",
+          "text": "Wire fields remain big-endian in both native modes."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s77.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s76"
+      ],
+      "title": "Write a variable-length delta header",
+      "recipes": [
+        "s77-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_header_ready",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s78",
+      "region": "dr_emit_skip",
+      "checkpoint": "dr_skip_written",
+      "recipe": "s78-1",
+      "quiz": {
+        "id": "video-s78-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After both two-byte counts."
+          },
+          {
+            "id": "B",
+            "text": "Immediately after the skip high byte."
+          },
+          {
+            "id": "C",
+            "text": "Before the command header."
+          }
+        ],
+        "prompt": "Where does the first XOR triple follow its skip?"
+      },
+      "hints": [
+        {
+          "id": "video-s78-h1",
+          "text": "Reserve the changed-count field before writing triples."
+        },
+        {
+          "id": "video-s78-h2",
+          "text": "Measurement and emission must use the same run boundaries."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s78.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s77"
+      ],
+      "title": "Emit the same skip that was measured",
+      "recipes": [
+        "s78-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_skip_written",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s79",
+      "region": "dr_emit_change",
+      "checkpoint": "dr_change_written",
+      "recipe": "s79-1",
+      "quiz": {
+        "id": "video-s79-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Replace the pixel with numeric color one."
+          },
+          {
+            "id": "B",
+            "text": "XOR one into the old blue channel."
+          },
+          {
+            "id": "C",
+            "text": "Skip one pixel without reading the old value."
+          }
+        ],
+        "prompt": "What does the triple 00 00 01 mean in this first command?"
+      },
+      "hints": [
+        {
+          "id": "video-s79-h1",
+          "text": "The delta triple describes a difference, not an absolute color."
+        },
+        {
+          "id": "video-s79-h2",
+          "text": "The still-frame command has a nonzero skip and zero changed count."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s79.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s78"
+      ],
+      "title": "Emit XOR triples and close each command",
+      "recipes": [
+        "s79-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_change_written",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s80",
+      "region": "dr_crc",
+      "checkpoint": "dr_crc_ready",
+      "recipe": "s80-1",
+      "quiz": {
+        "id": "video-s80-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Forty bytes including the full header."
+          },
+          {
+            "id": "B",
+            "text": "The destination capacity."
+          },
+          {
+            "id": "C",
+            "text": "Payload bytes, twenty-four for the default pair."
+          }
+        ],
+        "prompt": "Which count is passed to the CRC helper?"
+      },
+      "hints": [
+        {
+          "id": "video-s80-h1",
+          "text": "The helper separately feeds its fixed twelve-byte header prefix."
+        },
+        {
+          "id": "video-s80-h2",
+          "text": "Do not feed its four checksum bytes back into the CRC."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s80.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s79"
+      ],
+      "title": "Finish the checksum over the selected payload length",
+      "recipes": [
+        "s80-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_crc_ready",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s81",
+      "region": "dr_previous",
+      "checkpoint": "dr_previous_ready",
+      "recipe": "s81-1",
+      "quiz": {
+        "id": "video-s81-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The current source pixels."
+          },
+          {
+            "id": "B",
+            "text": "The XOR difference words."
+          },
+          {
+            "id": "C",
+            "text": "The serialized command headers."
+          }
+        ],
+        "prompt": "Which data becomes the next previous image?"
+      },
+      "hints": [
+        {
+          "id": "video-s81-h1",
+          "text": "A future delta compares two actual images."
+        },
+        {
+          "id": "video-s81-h2",
+          "text": "Scratch differences are temporary work, not committed prediction history."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s81.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s80"
+      ],
+      "title": "Commit the current image after record completion",
+      "recipes": [
+        "s81-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_previous_ready",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s82",
+      "region": "dr_publish",
+      "checkpoint": "dr_published",
+      "recipe": "s82-1",
+      "quiz": {
+        "id": "video-s82-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The CRC helper requires two framebuffers."
+          },
+          {
+            "id": "B",
+            "text": "Encoding commits the previous image before the decoder comparison."
+          },
+          {
+            "id": "C",
+            "text": "A delta can always decode against its own new image."
+          }
+        ],
+        "prompt": "Why did the caller save an old decoder image before encoding?"
+      },
+      "hints": [
+        {
+          "id": "video-s82-h1",
+          "text": "Prediction correctness needs the actual predecessor."
+        },
+        {
+          "id": "video-s82-h2",
+          "text": "Successful output count is the record length, not the caller allocation."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s82.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s81"
+      ],
+      "title": "Publish the selected kind, count and next sequence",
+      "recipes": [
+        "s82-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_published",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s83",
+      "region": "dr_full_call",
+      "checkpoint": "dr_full_return",
+      "recipe": "s83-1",
+      "quiz": {
+        "id": "video-s83-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the CRC field."
+          },
+          {
+            "id": "B",
+            "text": "The directory of an already opened video."
+          },
+          {
+            "id": "C",
+            "text": "The same previous image and sequence/kind/count fields."
+          }
+        ],
+        "prompt": "What does the shared full encoder update on success?"
+      },
+      "hints": [
+        {
+          "id": "video-s83-h1",
+          "text": "The first sixty-four context bytes retain their earlier meanings."
+        },
+        {
+          "id": "video-s83-h2",
+          "text": "A fallback that fails capacity still must leave output and prediction state unchanged."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/delta-encode-s83.tex",
+      "stage": "video-delta-encode-construction",
+      "prerequisites": [
+        "s82"
+      ],
+      "title": "Delegate mandatory and fallback full records",
+      "recipes": [
+        "s83-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "dr_full_return",
+        "completedStageCheck": "checks/record-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s84",
+      "region": "fe_admit",
+      "checkpoint": "fe_admitted",
+      "recipe": "s84-1",
+      "quiz": {
+        "id": "video-s84-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The count must equal the declared frame count multiplied by 16,384."
+          },
+          {
+            "id": "B",
+            "text": "The destination must be word-aligned."
+          },
+          {
+            "id": "C",
+            "text": "The input must already contain serialized RGB triples."
+          }
+        ],
+        "prompt": "What additional fact is needed after admitting the source count range?"
+      },
+      "hints": [
+        {
+          "id": "video-s84-h1",
+          "text": "Use unsigned comparisons on the complete argument."
+        },
+        {
+          "id": "video-s84-h2",
+          "text": "Defer the relationship to the declared frame count until the context is readable."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s84.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s83"
+      ],
+      "title": "Admit a packed sequence",
+      "recipes": [
+        "s84-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_admitted",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s85",
+      "region": "fe_context",
+      "checkpoint": "fe_context_ready",
+      "recipe": "s85-1",
+      "quiz": {
+        "id": "video-s85-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A shift automatically checks available memory."
+          },
+          {
+            "id": "B",
+            "text": "The bound makes the multiplication exact and prevents overflow from disguising a mismatched count."
+          },
+          {
+            "id": "C",
+            "text": "All frames must be full records."
+          }
+        ],
+        "prompt": "Why bound the frame count before shifting it left by fourteen?"
+      },
+      "hints": [
+        {
+          "id": "video-s85-h1",
+          "text": "Compare the saved source byte count with the computed product."
+        },
+        {
+          "id": "video-s85-h2",
+          "text": "Validate both working pointers even when the first record will be full."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s85.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s84"
+      ],
+      "title": "Relate the controls to their storage",
+      "recipes": [
+        "s85-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_context_ready",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s86",
+      "region": "fe_state",
+      "checkpoint": "fe_state_ready",
+      "recipe": "s86-1",
+      "quiz": {
+        "id": "video-s86-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The native source image size."
+          },
+          {
+            "id": "B",
+            "text": "The staging byte offset."
+          },
+          {
+            "id": "C",
+            "text": "The global header size."
+          }
+        ],
+        "prompt": "Which quantity advances by a variable amount after a successful record?"
+      },
+      "hints": [
+        {
+          "id": "video-s86-h1",
+          "text": "Reserve the global header before adding any records."
+        },
+        {
+          "id": "video-s86-h2",
+          "text": "Use saved state for values needed across the record call."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s86.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s85"
+      ],
+      "title": "Keep two independent cursors",
+      "recipes": [
+        "s86-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_state_ready",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s87",
+      "region": "fe_record_context",
+      "checkpoint": "fe_record_context_ready",
+      "recipe": "s87-1",
+      "quiz": {
+        "id": "video-s87-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every old word is guaranteed to be zero."
+          },
+          {
+            "id": "B",
+            "text": "The source is serialized in native byte order."
+          },
+          {
+            "id": "C",
+            "text": "A fresh sequence zero requires a full first record."
+          }
+        ],
+        "prompt": "What makes stale previous-image contents harmless at the start of a new file?"
+      },
+      "hints": [
+        {
+          "id": "video-s87-h1",
+          "text": "The record context belongs to this call, not to a previous file."
+        },
+        {
+          "id": "video-s87-h2",
+          "text": "Reuse working storage, but reset the sequence that gives its contents meaning."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s87.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s86"
+      ],
+      "title": "Start each file with fresh prediction state",
+      "recipes": [
+        "s87-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_record_context_ready",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s88",
+      "region": "fe_header",
+      "checkpoint": "fe_header_ready",
+      "recipe": "s88-1",
+      "quiz": {
+        "id": "video-s88-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "As a native doubleword."
+          },
+          {
+            "id": "B",
+            "text": "As four big-endian bytes 00 00 00 28."
+          },
+          {
+            "id": "C",
+            "text": "As the ASCII characters 4 and 0."
+          }
+        ],
+        "prompt": "How is the duration forty encoded in the file?"
+      },
+      "hints": [
+        {
+          "id": "video-s88-h1",
+          "text": "Extract the most significant serialized byte first."
+        },
+        {
+          "id": "video-s88-h2",
+          "text": "Keep flags and reserved bytes explicitly zero."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s88.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s87"
+      ],
+      "title": "Serialize the global header",
+      "recipes": [
+        "s88-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_header_ready",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s89",
+      "region": "fe_window",
+      "checkpoint": "fe_window_ready",
+      "recipe": "s89-1",
+      "quiz": {
+        "id": "video-s89-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The remaining capacity after the current produced offset."
+          },
+          {
+            "id": "B",
+            "text": "The source byte count for the whole file."
+          },
+          {
+            "id": "C",
+            "text": "The original total staging capacity on every iteration."
+          }
+        ],
+        "prompt": "Which capacity belongs in the nested record context?"
+      },
+      "hints": [
+        {
+          "id": "video-s89-h1",
+          "text": "Keep the produced offset within capacity before subtracting."
+        },
+        {
+          "id": "video-s89-h2",
+          "text": "The nested source count is always 16,384."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s89.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s88"
+      ],
+      "title": "Pass only the remaining staging window",
+      "recipes": [
+        "s89-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_window_ready",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s90",
+      "region": "fe_record",
+      "checkpoint": "fe_record_ready",
+      "recipe": "s90-1",
+      "quiz": {
+        "id": "video-s90-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The source image byte count."
+          },
+          {
+            "id": "B",
+            "text": "The smallest possible delta size."
+          },
+          {
+            "id": "C",
+            "text": "The actual successful record byte count."
+          }
+        ],
+        "prompt": "Which result should determine the next staging offset?"
+      },
+      "hints": [
+        {
+          "id": "video-s90-h1",
+          "text": "Save the returned count before subsequent loads overwrite temporary registers."
+        },
+        {
+          "id": "video-s90-h2",
+          "text": "Propagate an unfinished nested routine as development status four."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s90.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s89"
+      ],
+      "title": "Accept one complete record",
+      "recipes": [
+        "s90-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_record_ready",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s91",
+      "region": "fe_advance",
+      "checkpoint": "fe_record_advanced",
+      "recipe": "s91-1",
+      "quiz": {
+        "id": "video-s91-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Before checking the nested result."
+          },
+          {
+            "id": "B",
+            "text": "After one complete successful record."
+          },
+          {
+            "id": "C",
+            "text": "Only when the record is full."
+          }
+        ],
+        "prompt": "When may the outer sequence advance?"
+      },
+      "hints": [
+        {
+          "id": "video-s91-h1",
+          "text": "Advance source and destination using their respective units."
+        },
+        {
+          "id": "video-s91-h2",
+          "text": "Do not count a partially attempted record as completed."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s91.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s90"
+      ],
+      "title": "Advance after success",
+      "recipes": [
+        "s91-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_record_advanced",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s92",
+      "region": "fe_exact",
+      "checkpoint": "fe_complete",
+      "recipe": "s92-1",
+      "quiz": {
+        "id": "video-s92-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every pixel has the same value."
+          },
+          {
+            "id": "B",
+            "text": "Every record has the same size."
+          },
+          {
+            "id": "C",
+            "text": "Exactly the admitted packed source extent has been consumed."
+          }
+        ],
+        "prompt": "What does a successful final source-cursor check establish?"
+      },
+      "hints": [
+        {
+          "id": "video-s92-h1",
+          "text": "Retain the original source base separately from the moving cursor."
+        },
+        {
+          "id": "video-s92-h2",
+          "text": "Check the private next sequence as well as the outer loop count."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s92.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s91"
+      ],
+      "title": "Check the complete sequence",
+      "recipes": [
+        "s92-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_complete",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s93",
+      "region": "fe_publish",
+      "checkpoint": "fe_published",
+      "recipe": "s93-1",
+      "quiz": {
+        "id": "video-s93-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The entire staging area is restored."
+          },
+          {
+            "id": "B",
+            "text": "The caller context, including its earlier output fields, is unchanged."
+          },
+          {
+            "id": "C",
+            "text": "The previous-image work area is restored."
+          }
+        ],
+        "prompt": "What remains guaranteed on a completed encoding failure?"
+      },
+      "hints": [
+        {
+          "id": "video-s93-h1",
+          "text": "Publish only after every record succeeds."
+        },
+        {
+          "id": "video-s93-h2",
+          "text": "Context publication and restoration of staging bytes are different contracts."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s93.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s92"
+      ],
+      "title": "Publish the complete file counts",
+      "recipes": [
+        "s93-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "fe_published",
+        "completedStageCheck": "checks/file-encode.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s94",
+      "region": "vs_admit",
+      "checkpoint": "vs_admitted",
+      "recipe": "s94-1",
+      "quiz": {
+        "id": "video-s94-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "In the caller before opening the output path."
+          },
+          {
+            "id": "B",
+            "text": "After the output file has been truncated."
+          },
+          {
+            "id": "C",
+            "text": "Inside every write request."
+          }
+        ],
+        "prompt": "Where does container validation occur in this calling sequence?"
+      },
+      "hints": [
+        {
+          "id": "video-s94-h1",
+          "text": "Reject zero and oversized counts before issuing service thirteen."
+        },
+        {
+          "id": "video-s94-h2",
+          "text": "A readable byte source does not need native-word alignment."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s94.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s93"
+      ],
+      "title": "Admit a byte transfer before opening",
+      "recipes": [
+        "s94-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_admitted",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s95",
+      "region": "vs_state",
+      "checkpoint": "vs_state_ready",
+      "recipe": "s95-1",
+      "quiz": {
+        "id": "video-s95-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It changes the file format."
+          },
+          {
+            "id": "B",
+            "text": "Later services overwrite the service return register."
+          },
+          {
+            "id": "C",
+            "text": "Every close returns the original byte count."
+          }
+        ],
+        "prompt": "Why retain a logical status separately from the service return register?"
+      },
+      "hints": [
+        {
+          "id": "video-s95-h1",
+          "text": "Keep the total count separate from completed progress."
+        },
+        {
+          "id": "video-s95-h2",
+          "text": "Descriptor minus one is an ownership marker, not a handle to close."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s95.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s94"
+      ],
+      "title": "Retain transport state across services",
+      "recipes": [
+        "s95-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_state_ready",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s96",
+      "region": "vs_open",
+      "checkpoint": "vs_open_ready",
+      "recipe": "s96-1",
+      "quiz": {
+        "id": "video-s96-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always descriptor three."
+          },
+          {
+            "id": "B",
+            "text": "The descriptor from the preceding input file."
+          },
+          {
+            "id": "C",
+            "text": "The successful result of this open."
+          }
+        ],
+        "prompt": "Which descriptor must later writes and close use?"
+      },
+      "hints": [
+        {
+          "id": "video-s96-h1",
+          "text": "Test the signed service result before saving ownership."
+        },
+        {
+          "id": "video-s96-h2",
+          "text": "Use flag one only after the caller has validated the staged container."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s96.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s95"
+      ],
+      "title": "Acquire the selected output descriptor",
+      "recipes": [
+        "s96-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_open_ready",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s97",
+      "region": "vs_request",
+      "checkpoint": "vs_requested",
+      "recipe": "s97-1",
+      "quiz": {
+        "id": "video-s97-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Exactly 257 bytes were transferred."
+          },
+          {
+            "id": "B",
+            "text": "The full requested chunk was transferred."
+          },
+          {
+            "id": "C",
+            "text": "The file has reached its final size."
+          }
+        ],
+        "prompt": "What does a positive write result of 257 mean?"
+      },
+      "hints": [
+        {
+          "id": "video-s97-h1",
+          "text": "Form addresses with full-width addition."
+        },
+        {
+          "id": "video-s97-h2",
+          "text": "Bound the request by both remaining bytes and 4096."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s97.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s96"
+      ],
+      "title": "Request a bounded chunk",
+      "recipes": [
+        "s97-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_requested",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s98",
+      "region": "vs_result",
+      "checkpoint": "vs_progress_ready",
+      "recipe": "s98-1",
+      "quiz": {
+        "id": "video-s98-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "By the requested count."
+          },
+          {
+            "id": "B",
+            "text": "By the actual positive result."
+          },
+          {
+            "id": "C",
+            "text": "By one complete frame."
+          }
+        ],
+        "prompt": "How far should progress advance after a short write?"
+      },
+      "hints": [
+        {
+          "id": "video-s98-h1",
+          "text": "Reject nonpositive results before adding to progress."
+        },
+        {
+          "id": "video-s98-h2",
+          "text": "Use the same progress for the next source pointer and remaining count."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s98.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s97"
+      ],
+      "title": "Advance by actual progress",
+      "recipes": [
+        "s98-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_progress_ready",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s99",
+      "region": "vs_success",
+      "checkpoint": "vs_success_ready",
+      "recipe": "s99-1",
+      "quiz": {
+        "id": "video-s99-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, to request an EOF byte."
+          },
+          {
+            "id": "B",
+            "text": "Yes, to calculate the record CRC."
+          },
+          {
+            "id": "C",
+            "text": "No; exact progress already establishes transfer completion."
+          }
+        ],
+        "prompt": "Is another write needed after the exact count has been transferred?"
+      },
+      "hints": [
+        {
+          "id": "video-s99-h1",
+          "text": "Keep the loop completion test before the next request."
+        },
+        {
+          "id": "video-s99-h2",
+          "text": "A write stream has no extra EOF byte to emit."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s99.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s98"
+      ],
+      "title": "Recognize exact completion",
+      "recipes": [
+        "s99-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_success_ready",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s100",
+      "region": "vs_close",
+      "checkpoint": "vs_closed",
+      "recipe": "s100-1",
+      "quiz": {
+        "id": "video-s100-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "To tell later cleanup that no descriptor remains owned."
+          },
+          {
+            "id": "B",
+            "text": "To restore the old file contents."
+          },
+          {
+            "id": "C",
+            "text": "To reset the encoder sequence."
+          }
+        ],
+        "prompt": "Why clear the ownership marker after closing?"
+      },
+      "hints": [
+        {
+          "id": "video-s100-h1",
+          "text": "Close the saved descriptor, not the current service number."
+        },
+        {
+          "id": "video-s100-h2",
+          "text": "Keep logical success or failure independent of the close result register."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s100.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s99"
+      ],
+      "title": "Release ownership exactly once",
+      "recipes": [
+        "s100-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_closed",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s101",
+      "region": "vs_publish",
+      "checkpoint": "vs_published",
+      "recipe": "s101-1",
+      "quiz": {
+        "id": "video-s101-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Trust the old directory solely because the byte count matches."
+          },
+          {
+            "id": "B",
+            "text": "Validate the newly loaded file before using a directory for playback."
+          },
+          {
+            "id": "C",
+            "text": "Interpret the file as native-word pixel storage."
+          }
+        ],
+        "prompt": "What must playback do after the shared staging area has been reloaded?"
+      },
+      "hints": [
+        {
+          "id": "video-s101-h1",
+          "text": "Store the result count only on logical success."
+        },
+        {
+          "id": "video-s101-h2",
+          "text": "Equal byte counts alone do not establish equal or valid file contents."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/file-encode-s101.tex",
+      "stage": "video-file-encode-construction",
+      "prerequisites": [
+        "s100"
+      ],
+      "title": "Publish the transport result",
+      "recipes": [
+        "s101-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vs_published",
+        "completedStageCheck": "checks/store.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s102",
+      "region": "vn_read",
+      "checkpoint": "vn_read_ready",
+      "recipe": "s102-1",
+      "quiz": {
+        "id": "video-s102-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "In two thirty-two-bit halves in the argument registers."
+          },
+          {
+            "id": "B",
+            "text": "As a file descriptor in the ordinary result register."
+          },
+          {
+            "id": "C",
+            "text": "As an instruction count."
+          }
+        ],
+        "prompt": "Where does service thirty return its clock value?"
+      },
+      "hints": [
+        {
+          "id": "video-s102-h1",
+          "text": "Select the time service before executing syscall."
+        },
+        {
+          "id": "video-s102-h2",
+          "text": "Treat the returned halves as bits of one value."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s102.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s101"
+      ],
+      "title": "Request the two clock halves",
+      "recipes": [
+        "s102-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vn_read_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s103",
+      "region": "vn_join",
+      "checkpoint": "vn_join_ready",
+      "recipe": "s103-1",
+      "quiz": {
+        "id": "video-s103-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "To change milliseconds into seconds."
+          },
+          {
+            "id": "B",
+            "text": "To keep its sign extension from overwriting the high half."
+          },
+          {
+            "id": "C",
+            "text": "To align the file buffer."
+          }
+        ],
+        "prompt": "Why zero-extend the low half before OR?"
+      },
+      "hints": [
+        {
+          "id": "video-s103-h1",
+          "text": "Discard every bit above the low thirty-two bits."
+        },
+        {
+          "id": "video-s103-h2",
+          "text": "Shift the high half into its final position before combining."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s103.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s102"
+      ],
+      "title": "Reconstruct all sixty-four clock bits",
+      "recipes": [
+        "s103-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vn_join_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s104",
+      "region": "vp_admit",
+      "checkpoint": "vp_admitted",
+      "recipe": "s104-1",
+      "quiz": {
+        "id": "video-s104-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The native playback context."
+          },
+          {
+            "id": "B",
+            "text": "The native display image."
+          },
+          {
+            "id": "C",
+            "text": "The serialized file base."
+          }
+        ],
+        "prompt": "Which pointer may be byte-aligned rather than word-aligned?"
+      },
+      "hints": [
+        {
+          "id": "video-s104-h1",
+          "text": "Keep the initialized failure status and zero accepted count."
+        },
+        {
+          "id": "video-s104-h2",
+          "text": "Admit native alignment before native loads."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s104.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s103"
+      ],
+      "title": "Admit the loaded byte extent",
+      "recipes": [
+        "s104-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_admitted",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s105",
+      "region": "vp_context",
+      "checkpoint": "vp_context_ready",
+      "recipe": "s105-1",
+      "quiz": {
+        "id": "video-s105-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After the file header supplies an admitted frame count."
+          },
+          {
+            "id": "B",
+            "text": "Only after every frame has been displayed."
+          },
+          {
+            "id": "C",
+            "text": "From the display address."
+          }
+        ],
+        "prompt": "When is the actual required directory size known?"
+      },
+      "hints": [
+        {
+          "id": "video-s105-h1",
+          "text": "Check pointer alignment and capacity as separate conditions."
+        },
+        {
+          "id": "video-s105-h2",
+          "text": "Leave frame-count-dependent directory admission to the indexer."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s105.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s104"
+      ],
+      "title": "Admit the output and validation storage",
+      "recipes": [
+        "s105-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_context_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s106",
+      "region": "vp_index_context",
+      "checkpoint": "vp_index_context_ready",
+      "recipe": "s106-1",
+      "quiz": {
+        "id": "video-s106-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "An address alone does not certify the bytes now stored there."
+          },
+          {
+            "id": "B",
+            "text": "Native pointers change byte order automatically."
+          },
+          {
+            "id": "C",
+            "text": "Every reload increases the frame count."
+          }
+        ],
+        "prompt": "Why rebuild validation state after reusing the file address?"
+      },
+      "hints": [
+        {
+          "id": "video-s106-h1",
+          "text": "Use the index context layout already defined in this chapter."
+        },
+        {
+          "id": "video-s106-h2",
+          "text": "Private output fields can be initialized without publishing external results."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s106.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s105"
+      ],
+      "title": "Build a private validation context",
+      "recipes": [
+        "s106-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_index_context_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s107",
+      "region": "vp_index",
+      "checkpoint": "vp_indexed",
+      "recipe": "s107-1",
+      "quiz": {
+        "id": "video-s107-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "That every CRC is correct."
+          },
+          {
+            "id": "B",
+            "text": "That the byte counts agree; the contents still require validation."
+          },
+          {
+            "id": "C",
+            "text": "That the old directory is safe to reuse."
+          }
+        ],
+        "prompt": "What does equal reload size establish by itself?"
+      },
+      "hints": [
+        {
+          "id": "video-s107-h1",
+          "text": "Pass the newly loaded count, not an earlier cached count."
+        },
+        {
+          "id": "video-s107-h2",
+          "text": "Check the nested status before reading its successful output fields."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s107.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s106"
+      ],
+      "title": "Validate the entire reloaded file",
+      "recipes": [
+        "s107-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_indexed",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s108",
+      "region": "vp_range",
+      "checkpoint": "vp_range_ready",
+      "recipe": "s108-1",
+      "quiz": {
+        "id": "video-s108-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Six."
+          },
+          {
+            "id": "B",
+            "text": "One."
+          },
+          {
+            "id": "C",
+            "text": "Two."
+          }
+        ],
+        "prompt": "How many intervals remain when an eight-frame file starts at six?"
+      },
+      "hints": [
+        {
+          "id": "video-s108-h1",
+          "text": "Treat the start as an unsigned frame index."
+        },
+        {
+          "id": "video-s108-h2",
+          "text": "Admit it before requesting an anchor time."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s108.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s107"
+      ],
+      "title": "Choose the playback suffix",
+      "recipes": [
+        "s108-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_range_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s109",
+      "region": "vp_seek_context",
+      "checkpoint": "vp_seek_context_ready",
+      "recipe": "s109-1",
+      "quiz": {
+        "id": "video-s109-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "To avoid validating the reloaded file."
+          },
+          {
+            "id": "B",
+            "text": "To reconstruct the requested prediction state independently of old display pixels."
+          },
+          {
+            "id": "C",
+            "text": "To skip the first interval."
+          }
+        ],
+        "prompt": "Why use a seek for the first requested frame?"
+      },
+      "hints": [
+        {
+          "id": "video-s109-h1",
+          "text": "Populate every seek input from the admitted file or caller storage."
+        },
+        {
+          "id": "video-s109-h2",
+          "text": "Keep the scratch image separate from the display."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s109.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s108"
+      ],
+      "title": "Prepare the first reconstruction",
+      "recipes": [
+        "s109-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_seek_context_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s110",
+      "region": "vp_record_context",
+      "checkpoint": "vp_record_context_ready",
+      "recipe": "s110-1",
+      "quiz": {
+        "id": "video-s110-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Six."
+          },
+          {
+            "id": "B",
+            "text": "Seven."
+          },
+          {
+            "id": "C",
+            "text": "Zero."
+          }
+        ],
+        "prompt": "Which sequence follows a successful seek to start six?"
+      },
+      "hints": [
+        {
+          "id": "video-s110-h1",
+          "text": "The first frame is supplied by seek, not by this record context."
+        },
+        {
+          "id": "video-s110-h2",
+          "text": "Initialize private sequence state afresh for each playback."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s110.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s109"
+      ],
+      "title": "Continue sequentially after the seek",
+      "recipes": [
+        "s110-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_record_context_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s111",
+      "region": "vp_anchor",
+      "checkpoint": "vp_anchored",
+      "recipe": "s111-1",
+      "quiz": {
+        "id": "video-s111-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The initial seek after the anchor."
+          },
+          {
+            "id": "B",
+            "text": "The earlier file open and reload."
+          },
+          {
+            "id": "C",
+            "text": "Every previous exercise in the chapter."
+          }
+        ],
+        "prompt": "Which work belongs inside this presentation schedule?"
+      },
+      "hints": [
+        {
+          "id": "video-s111-h1",
+          "text": "Retain the anchor independently of the moving deadline."
+        },
+        {
+          "id": "video-s111-h2",
+          "text": "Preserve the last observed time for backward-change checks."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s111.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s110"
+      ],
+      "title": "Anchor time after validation",
+      "recipes": [
+        "s111-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_anchored",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s112",
+      "region": "vp_deadline",
+      "checkpoint": "vp_deadline_ready",
+      "recipe": "s112-1",
+      "quiz": {
+        "id": "video-s112-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The latest actual clock sample."
+          },
+          {
+            "id": "B",
+            "text": "The previous scheduled deadline."
+          },
+          {
+            "id": "C",
+            "text": "The last encoded record size."
+          }
+        ],
+        "prompt": "Which value supplies the base for the next deadline?"
+      },
+      "hints": [
+        {
+          "id": "video-s112-h1",
+          "text": "Compare the unsigned sum with its original operand to detect wrap."
+        },
+        {
+          "id": "video-s112-h2",
+          "text": "Check overflow before beginning that interval."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s112.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s111"
+      ],
+      "title": "Advance the scheduled deadline",
+      "recipes": [
+        "s112-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_deadline_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s113",
+      "region": "vp_first",
+      "checkpoint": "vp_first_ready",
+      "recipe": "s113-1",
+      "quiz": {
+        "id": "video-s113-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The old display from before the seek."
+          },
+          {
+            "id": "B",
+            "text": "An all-zero image."
+          },
+          {
+            "id": "C",
+            "text": "The successfully reconstructed start image."
+          }
+        ],
+        "prompt": "What must the next sequential delta use as its previous image?"
+      },
+      "hints": [
+        {
+          "id": "video-s113-h1",
+          "text": "Use the caller's admitted display as the seek destination."
+        },
+        {
+          "id": "video-s113-h2",
+          "text": "Do not repeat the seek for every following frame."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s113.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s112"
+      ],
+      "title": "Seek exactly once to establish the first picture",
+      "recipes": [
+        "s113-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_first_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s114",
+      "region": "vp_presented",
+      "checkpoint": "vp_frame_presented",
+      "recipe": "s114-1",
+      "quiz": {
+        "id": "video-s114-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "That zero frames were accepted regardless of display changes."
+          },
+          {
+            "id": "B",
+            "text": "That the entire display was restored."
+          },
+          {
+            "id": "C",
+            "text": "The actual accepted count."
+          }
+        ],
+        "prompt": "What should a later clock failure report about already accepted frames?"
+      },
+      "hints": [
+        {
+          "id": "video-s114-h1",
+          "text": "Increment once per accepted logical frame, even when pixel values repeat."
+        },
+        {
+          "id": "video-s114-h2",
+          "text": "Do not publish final external counters at this boundary."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s114.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s113"
+      ],
+      "title": "Count the picture that has become visible",
+      "recipes": [
+        "s114-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_frame_presented",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s115",
+      "region": "vp_sample",
+      "checkpoint": "vp_sampled",
+      "recipe": "s115-1",
+      "quiz": {
+        "id": "video-s115-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The scheduled deadline minus the current admitted time, when positive."
+          },
+          {
+            "id": "B",
+            "text": "The record payload length."
+          },
+          {
+            "id": "C",
+            "text": "A fresh full duration after every decode."
+          }
+        ],
+        "prompt": "What determines the remaining wait?"
+      },
+      "hints": [
+        {
+          "id": "video-s115-h1",
+          "text": "Read time after work rather than assuming decoding cost is zero."
+        },
+        {
+          "id": "video-s115-h2",
+          "text": "Use the same clock-joining helper after every sleep."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s115.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s114"
+      ],
+      "title": "Observe time after producing the picture",
+      "recipes": [
+        "s115-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_sampled",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s116",
+      "region": "vp_compare",
+      "checkpoint": "vp_clock_compared",
+      "recipe": "s116-1",
+      "quiz": {
+        "id": "video-s116-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It silently starts a new schedule."
+          },
+          {
+            "id": "B",
+            "text": "It fails while retaining the last accepted picture."
+          },
+          {
+            "id": "C",
+            "text": "It sends a negative sleep request."
+          }
+        ],
+        "prompt": "How does this player handle a backward observed clock change?"
+      },
+      "hints": [
+        {
+          "id": "video-s116-h1",
+          "text": "Use unsigned ordering for the complete reconstructed value."
+        },
+        {
+          "id": "video-s116-h2",
+          "text": "Admit monotonicity before treating a difference as a wait or lateness."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s116.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s115"
+      ],
+      "title": "Reject backward observed time",
+      "recipes": [
+        "s116-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_clock_compared",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s117",
+      "region": "vp_sleep",
+      "checkpoint": "vp_sleep_requested",
+      "recipe": "s117-1",
+      "quiz": {
+        "id": "video-s117-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Host sleep completion does not guarantee that the exact deadline was reached."
+          },
+          {
+            "id": "B",
+            "text": "Every sleep changes the file's frame count."
+          },
+          {
+            "id": "C",
+            "text": "The time service returns a record checksum."
+          }
+        ],
+        "prompt": "Why sample again after sleeping?"
+      },
+      "hints": [
+        {
+          "id": "video-s117-h1",
+          "text": "Request the difference only on the positive path."
+        },
+        {
+          "id": "video-s117-h2",
+          "text": "Return to the sampling loop after service thirty-two."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s117.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s116"
+      ],
+      "title": "Wait only for a positive remainder",
+      "recipes": [
+        "s117-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_sleep_requested",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s118",
+      "region": "vp_late",
+      "checkpoint": "vp_interval_complete",
+      "recipe": "s118-1",
+      "quiz": {
+        "id": "video-s118-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Once for every clock sample."
+          },
+          {
+            "id": "B",
+            "text": "Once for every changed pixel."
+          },
+          {
+            "id": "C",
+            "text": "At most once, when that interval completes late."
+          }
+        ],
+        "prompt": "How often can one interval increment the late counter?"
+      },
+      "hints": [
+        {
+          "id": "video-s118-h1",
+          "text": "Equality with the deadline is on time."
+        },
+        {
+          "id": "video-s118-h2",
+          "text": "Compare lateness with the retained maximum using unsigned ordering."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s118.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s117"
+      ],
+      "title": "Record lateness once per interval",
+      "recipes": [
+        "s118-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_interval_complete",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s119",
+      "region": "vp_advance",
+      "checkpoint": "vp_advanced",
+      "recipe": "s119-1",
+      "quiz": {
+        "id": "video-s119-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "280 milliseconds."
+          },
+          {
+            "id": "B",
+            "text": "320 milliseconds."
+          },
+          {
+            "id": "C",
+            "text": "Eight simulated instructions."
+          }
+        ],
+        "prompt": "What is the full logical duration of eight forty-millisecond display intervals?"
+      },
+      "hints": [
+        {
+          "id": "video-s119-h1",
+          "text": "Finish the interval before incrementing the index."
+        },
+        {
+          "id": "video-s119-h2",
+          "text": "Leave anchor and scheduled deadline independent of actual lateness."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s119.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s118"
+      ],
+      "title": "Move to the next frame without moving the anchor",
+      "recipes": [
+        "s119-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_advanced",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s120",
+      "region": "vp_window",
+      "checkpoint": "vp_window_ready",
+      "recipe": "s120-1",
+      "quiz": {
+        "id": "video-s120-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At the exact accepted file count."
+          },
+          {
+            "id": "B",
+            "text": "At the source image word count."
+          },
+          {
+            "id": "C",
+            "text": "At the next allocated memory page."
+          }
+        ],
+        "prompt": "How is the final record window ended?"
+      },
+      "hints": [
+        {
+          "id": "video-s120-h1",
+          "text": "Use full-width address addition for the file base plus offset."
+        },
+        {
+          "id": "video-s120-h2",
+          "text": "Do not read a directory entry beyond the final one."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s120.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s119"
+      ],
+      "title": "Locate the next record from the validated directory",
+      "recipes": [
+        "s120-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_window_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s121",
+      "region": "vp_record",
+      "checkpoint": "vp_record_ready",
+      "recipe": "s121-1",
+      "quiz": {
+        "id": "video-s121-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "No, because it has no changed pixels."
+          },
+          {
+            "id": "B",
+            "text": "Yes, because it advances the logical frame sequence."
+          },
+          {
+            "id": "C",
+            "text": "Only if it is encoded as full."
+          }
+        ],
+        "prompt": "Does an unchanged delta receive a display interval?"
+      },
+      "hints": [
+        {
+          "id": "video-s121-h1",
+          "text": "Propagate nested status before advancing accepted progress."
+        },
+        {
+          "id": "video-s121-h2",
+          "text": "Keep the private expected sequence across successive record calls."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s121.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s120"
+      ],
+      "title": "Apply the next record to the accepted picture",
+      "recipes": [
+        "s121-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_record_ready",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    },
+    {
+      "id": "s122",
+      "region": "vp_publish",
+      "checkpoint": "vp_published",
+      "recipe": "s122-1",
+      "quiz": {
+        "id": "video-s122-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only after every requested interval completes successfully."
+          },
+          {
+            "id": "B",
+            "text": "Before validating the file."
+          },
+          {
+            "id": "C",
+            "text": "Whenever a clock sample is read."
+          }
+        ],
+        "prompt": "When do the four final context outputs change?"
+      },
+      "hints": [
+        {
+          "id": "video-s122-h1",
+          "text": "Publish the four output fields together at the completed boundary."
+        },
+        {
+          "id": "video-s122-h2",
+          "text": "Return the accepted count on both complete success and completed failure."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/playback-s122.tex",
+      "stage": "video-playback-construction",
+      "prerequisites": [
+        "s121"
+      ],
+      "title": "Publish only a complete playback result",
+      "recipes": [
+        "s122-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "vp_published",
+        "completedStageCheck": "checks/playback.kts",
+        "scope": "Stage-local construction observation; completed-interface feedback is separate. Use the matching stage working file."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/kernel.kts",
+    "checks/record.kts",
+    "checks/index.kts",
+    "checks/load.kts",
+    "checks/seek.kts",
+    "checks/full.kts",
+    "checks/record-encode.kts",
+    "checks/file-encode.kts",
+    "checks/store.kts",
+    "checks/playback.kts",
+    "checks/reuse.kts"
+  ],
+  "exports": [
+    "package.json",
+    "README.md",
+    "assignment.tex",
+    "starter",
+    "native",
+    "checks",
+    "captures",
+    "reading.json",
+    "construction",
+    "inputs.json",
+    "steps.json",
+    "grade.py"
+  ]
+}

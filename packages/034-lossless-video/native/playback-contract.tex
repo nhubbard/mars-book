@@ -1,0 +1,103 @@
+\section{Validate the reload and run its display intervals}
+The earlier caller checked that reload returned the expected byte count. A player
+needs a stronger boundary: validate the actual loaded bytes before using any old
+directory or changing the display. Implement \texttt{video\_play} with immutable
+file base in \texttt{\$a0}, exact loaded byte count in \texttt{\$a1}, display-image
+address in \texttt{\$a2} and a native 96-byte context in \texttt{\$a3}. Source
+bytes may be unaligned; display and scratch are four-byte aligned, directory and
+context eight-byte aligned. The caller supplies disjoint valid file, display,
+directory, scratch, context and private-stack storage. Keep the accepted file and
+its new directory immutable throughout this call.
+
+\begin{table}[htbp]
+\centering
+\caption{Native playback context, with eight-byte fields.}
+\label{tab:video-playback-context}
+\begin{tabular}{r p{1.5in} p{2.8in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+0 & Display capacity & At least 16\,384 bytes. \\
+8, 16 & Directory address, capacity & Native offsets; enough for the admitted frame count. \\
+24, 32 & Scratch address, capacity & Separate working image; at least 16\,384 bytes. \\
+40 & Start frame & Unsigned index below the admitted frame count. \\
+48 & Accepted frames & Final output, number in the played suffix. \\
+56 & Late intervals & Final output, intervals ending after their scheduled deadline. \\
+64 & Maximum lateness & Final output, unsigned milliseconds. \\
+72 & Logical duration & Final output, suffix interval count times duration. \\
+80--95 & Retained suffix & Leave unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Index the whole loaded file before reading the clock or accessing display pixels.
+Directory and scratch may change during the call. Seek once to reconstruct the
+requested start independently of old displayed pixels, then apply successive
+records directly to that accepted image. The bitmap display tool can observe this
+image storage when connected to its actual address. No tool connection is required
+for the headless pixel checks, and a completed memory store does not establish
+when an IDE repaint becomes visible.
+
+Read the initial anchor after validation and before the first seek. Add one duration
+to the scheduled deadline before each frame, rejecting unsigned overflow before
+presenting that interval. After each accepted frame, read time. Reject an observed
+backward change; this player does not re-anchor. If time is below deadline, request
+only the positive remainder with service thirty-two, then read time again. Repeat
+until deadline is reached. Equal time is on time; a greater value records lateness
+once for that interval. Advance the original schedule without dropping frames.
+Every frame, including an unchanged or final frame, receives its interval.
+
+This defines the timing protocol for the exercise: one anchor reading, a reading
+after each accepted frame, and a further reading after every requested sleep.
+There are no other clock requests. It makes the service boundary observable while
+allowing different instruction sequences, stack layouts, copies and valid file
+representations. Deadlines and observed times use complete unsigned 64-bit values;
+all admitted differences fit the stated operation's range. Real clock and sleep
+services still provide no guarantee of exact host or UI presentation time.
+
+\begin{table}[htbp]
+\centering
+\caption{One interval anchored at 1000 with duration forty, in milliseconds.}
+\label{tab:video-playback-timelines}
+\begin{tabular}{l p{1.5in} p{2.1in}}
+\toprule
+Observed times after anchor & Requests & Interval result \\
+\midrule
+1040 & None & Exact deadline, zero lateness. \\
+1010, 1040 & Sleep 30 & Remaining time only. \\
+1010, 1035, 1040 & Sleep 30, sleep 5 & Early wakeup checked again. \\
+1030, 1047 & Sleep 10 & Seven milliseconds late. \\
+1010, 1009 & Sleep 30 & Backward observed time: failure. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Success returns zero and the accepted frame count. Only complete success publishes
+the four final context outputs. Completed failure returns one and the actual count
+already accepted; an initial rejection returns count zero. Final context fields
+remain unchanged on failure, but earlier accepted display pixels are not rolled
+back. A failure after presenting the second frame therefore returns two and leaves
+that second image visible. Development status four carries the private progress counter. While the counter
+region is still unfinished, an already changed display may coexist with a zero
+counter; the complete routine supplies the accepted-count guarantee.
+Retain saved registers, frame pointer and original stack pointer, with sixteen-byte
+stack alignment across nested calls. The illustrated private frame is 352 bytes,
+including separate index, seek and record contexts; another layout is permitted.
+
+Attach your file-codec working source with \texttt{attach.py --source file-work.asm
+--output playback-work.asm} from \texttt{packages/034-lossless-video/construction/video-playback-construction}.
+The earlier instructions remain intact under \texttt{file\_codec\_example\_main}.
+The new caller encodes, checks, seeks, stores and reloads, then invokes the player,
+which validates that reload afresh. Prepare observations with \texttt{prepare.py
+s102-1 --source playback-work.asm --output observe.asm}. Preparation changes input
+data and native controls, retaining your instructions and refusing existing output
+files. The first two regions build the callable \texttt{video\_now} helper; guided
+checks can call it directly before the player reaches its anchor region.
+
+The grading clock uses \texttt{provideTiming} to supply explicit readings and record
+sleep requests without waiting on the host. \texttt{runUntilSyscall} stops before
+a selected service so each accepted frame can be inspected without depending on a
+private student label. These are deterministic arithmetic and pixel checks. In an
+interactive IDE run, inspect the corresponding actual clock values and frame words;
+scripted milliseconds are not a claim about the host's speed. Actual annotated IDE
+captures remain a separate verification step.

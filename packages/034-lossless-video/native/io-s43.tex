@@ -1,0 +1,22 @@
+\section{Step 43: Accept only a nonempty completed load}
+Both an ordinary zero read and a successful full-buffer EOF probe reach
+this path. Reject a zero accumulated count, then select success by clearing
+\texttt{\$s5}. The close path follows regardless of success or failure.
+
+Fill \texttt{io\_eof}. This loader accepts nonempty bytes, including a
+one-byte file; the indexer later requires the complete video header and records.
+Keep the layers distinct. An empty input fails loading, while a nonempty
+malformed animation can succeed here and be rejected during indexing.
+
+\paragraph{Observe} Prepare \texttt{s43-1} and stop before
+\texttt{io\_eof\_ready}. At \texttt{io\_eof\_ready}, the moving file count is
+24\,795 and \texttt{\$s5} is zero. Its descriptor is still owned; result
+publication has not happened.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Does a successful load prove MLV1 validity?
+\begin{itemize}
+\item[A.] No; the indexer checks the format afterward.
+\item[B.] Yes, because the bytes were read through EOF.
+\item[C.] Yes, if the filename ends in .mlv.
+\end{itemize}

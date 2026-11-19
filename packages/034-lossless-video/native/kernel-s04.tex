@@ -1,0 +1,16 @@
+\section{Kernel step 4 XOR and store four independent word lanes}
+Fill \texttt{video\_group\_xor}. Load four native words from each input into \texttt{\$w0} and \texttt{\$w1}, compute vector XOR into \texttt{\$w2}, and store its four words. Both input loads must precede the output store so exact aliases remain valid.
+
+Use word-vector loads and stores to keep each lane's numeric word interpretation consistent across target byte orders. At the worked checkpoint, the first four output words are zero, hexadecimal \texttt{88}, zero and \texttt{10000}. The pointers and remaining count have not advanced yet.
+
+Every lane uses corresponding input words and no result depends on a neighboring output. This is the independence that permits grouping. It does not remove the separate task of counting nonzero lanes, nor does it decide how zero runs will be represented in the serialized command stream.
+
+\paragraph{Observe} Use \texttt{s04-1}; stop before \texttt{video\_group\_stored}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why must both vector inputs be loaded before the store?
+\begin{itemize}
+\item[A.] Output may exactly alias an input.
+\item[B.] The CRC needs the output first.
+\item[C.] It changes the frame period.
+\end{itemize}

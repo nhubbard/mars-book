@@ -1,0 +1,22 @@
+\section{Interpret skip and changed counts in pixels}
+A delta payload is a sequence of commands. Each command starts with a two-byte skip
+count and a two-byte changed count, followed by three XOR bytes for each changed
+pixel. The counts are big-endian; the XOR triples are red, green and blue. Start the
+pixel cursor at zero for every delta record.
+
+A skip advances the cursor without modifying those pixels. A changed count consumes
+triples and XORs their numeric word values into the following pixels. Both counts
+may be zero individually, but their sum must be positive. Require each count to fit
+the pixels still available, using the remaining count after the skip when admitting
+the changed span. Require every changed triple to fit the remaining payload bytes.
+Stop only when all 4096 pixels are covered, then require exact payload completion.
+
+A final command may consist solely of a nonzero skip. A final changed span needs no
+additional terminator. Do not append a zero/zero command: it makes no progress and
+would leave the cursor unchanged. A changed span is allowed to include a zero triple.
+That is a valid, potentially inefficient way to encode an unchanged pixel. Accept
+such equivalent encodings when grading decoded results.
+
+There can be at most 4096 commands because every command covers at least one pixel.
+Their four-byte headers and at most 4096 triples give the conservative payload bound
+$4\cdot4096+3\cdot4096=28\,672$. This bounds storage; it is not a required encoded size.

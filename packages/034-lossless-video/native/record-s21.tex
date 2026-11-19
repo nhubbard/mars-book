@@ -1,0 +1,27 @@
+\section{Step 21: Expand an accepted full frame}
+A full record has passed all checks needed for application. Read each red,
+green and blue byte, shift red left sixteen and green left eight, and OR the
+channels into a numeric \texttt{0x00RRGGBB} word. Store that word with
+\texttt{sw}. Native storage changes byte arrangement when native order changes;
+the numeric color remains the same.
+
+Fill \texttt{record\_full}. Start at \texttt{\$s5} and \texttt{\$s2}; repeat
+4096 times, advancing the source by three and destination by four. Use
+\texttt{\$s7} as a countdown for the illustrated implementation. Do not copy
+three file bytes into the first three image bytes: that would give the wrong
+numeric word in at least one byte order. The \texttt{s21-1} observation selects
+record zero to exercise this route.
+
+\paragraph{Observe} Prepare \texttt{s21-1} and stop before
+\texttt{record\_full\_applied}. At \texttt{record\_full\_applied}, \texttt{\$s7} is zero,
+the first image word is \texttt{0x000061c2}, and every word matches frame
+zero. The context has not been published. Continuing reaches the still-unfinished
+publication region and returns development status four.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} How far does the destination advance per RGB triple?
+\begin{itemize}
+\item[A.] Three bytes.
+\item[B.] One byte.
+\item[C.] Four bytes.
+\end{itemize}

@@ -1,0 +1,13 @@
+\section{Step 52 Construct one exact record window}
+Fill \texttt{seek\_window}. Read and bound the current offset again for the replay index. For a nonfinal record, load the next directory offset and require it not to exceed file count. For the final record, use file count itself as the end. Require end not below start; then subtract to obtain a window of sixteen through 28\,688 bytes. Pass file base plus start, that exact length, scratch address and private record context in \texttt{\$a0} through \texttt{\$a3}. The record routine will compare its declared payload length with this window and validate its CRC and command stream.
+
+Use \texttt{s52-1} and stop before \texttt{seek\_window\_ready}.
+
+\paragraph{Observe} At \texttt{seek\_window\_ready}, the first ordinary call names full record four, length 12\,304 bytes: sixteen header bytes plus 12\,288 RGB bytes. Its destination is scratch, not the final image.
+
+\paragraph{Check} What supplies the end of the last record window?
+\begin{enumerate}[label=\Alph*.]
+\item The validated file byte count.
+\item An unused directory entry after the frame count.
+\item The destination capacity.
+\end{enumerate}

@@ -1,0 +1,24 @@
+\section{Step 30: Locate one bounded record window}
+The supplied loop begins with file offset \texttt{\$s6}=24 and record
+index \texttt{\$s7}=0. Subtract the offset from the admitted file count and
+require at least sixteen remaining bytes before reading a record header. Read
+its payload length at header offset eight. Reject lengths above 28\,672, then
+add sixteen and require the whole record to fit the remaining file bytes.
+
+Fill \texttt{index\_window}. Save the admitted total record bytes at stack
+offset 96. This outer check is needed before calling the record routine: the
+callee accepts a complete record window and cannot know whether the file buffer
+really contains its declared bytes. Keep this count across the nested call.
+
+\paragraph{Observe} Prepare \texttt{s30-1} and stop before
+\texttt{index\_window\_ready}. At the first \texttt{index\_window\_ready},
+\texttt{\$sp+96} contains 12\,304. The file offset remains 24 and the record
+index remains zero.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why check the outer record extent before calling its validator?
+\begin{itemize}
+\item[A.] The CRC requires native alignment.
+\item[B.] The callee relies on the caller supplying a readable complete window.
+\item[C.] The header is always the last record.
+\end{itemize}
