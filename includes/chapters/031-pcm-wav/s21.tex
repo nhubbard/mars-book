@@ -1,0 +1,13 @@
+\section{Step 21 Require format before a unique data chunk}\label{pcm-wav-s21}
+At \texttt{parse\_data}, require the format flag and reject an already set data flag. Save the payload's file-relative offset in \texttt{s7} and byte length in \texttt{fp}. A data chunk before format is outside this profile, even if a later format could explain it. Do not change the input pointer to the payload yet: the walker still needs the original base to validate following chunks.
+
+Author region \texttt{p\_data}. Use \texttt{s21-1} and stop at \texttt{after\_p\_data}.
+
+\paragraph{Observe} The candidate PCM region begins at offset fifty-six and contains sixteen bytes.
+
+\paragraph{Check} Why retain the original file base?
+\begin{itemize}
+\item[A.] Later chunks are still addressed relative to it.
+\item[B.] The filter writes its history into the header.
+\item[C.] The data offset is an absolute address.
+\end{itemize}

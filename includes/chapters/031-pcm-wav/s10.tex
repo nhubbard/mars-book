@@ -1,0 +1,13 @@
+\section{Step 10 Dispatch recognized chunks and skip opaque ones}\label{pcm-wav-s10}
+Read the four-byte chunk identifier and branch to \texttt{parse\_format} for fmt followed by a space, or \texttt{parse\_data} for data. For any other identifier, move the already validated next offset into \texttt{s3} and continue the chunk loop. Unknown bytes are not strings to scan for an embedded identifier. Their declared payload and pad determine the next header. On this input the JUNK chunk is skipped before dispatch reaches the format handler.
+
+Author region \texttt{p\_dispatch}. Use \texttt{s10-1} and stop at \texttt{parse\_format}.
+
+\paragraph{Observe} The first visit to parse\_format describes the chunk at offset twenty-four, with a sixteen-byte payload at thirty-two.
+
+\paragraph{Check} How should an unknown chunk be skipped?
+\begin{itemize}
+\item[A.] Search its payload for fmt.
+\item[B.] Assume it has no payload.
+\item[C.] Use its validated complete span.
+\end{itemize}

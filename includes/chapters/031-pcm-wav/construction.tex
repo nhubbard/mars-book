@@ -1,0 +1,52 @@
+\section{Build one working program through separate observations}
+Copy \path{drafts/pcm-wav-construction/main.asm} to your working source. The caller
+selects bound, parse, filter, encode, load, save, the connected pipeline or the earlier
+FIR kernel. Each BEGIN/END region initially returns a safe unfinished result. Replace
+that region with your instructions while retaining the supplied labels, saved-register
+frames and routes. Use the eight-byte result slots: the name \texttt{count} does not
+make every result a byte count.
+
+From the construction directory, run \texttt{python3 prepare.py s01-1 --source working.asm --output observation.asm},
+using fresh output names and the recipe named in each step. Preparation replaces only
+fixture data and caller controls. It preserves your authored instructions and refuses
+to replace an existing output. Continue editing your working source, rather than
+restarting from the untouched starter at each observation.
+
+A completed WAV entry returns statuses zero through three. During construction,
+status four and zero count mean that execution reached an unfinished region. Earlier
+regions may already have written an output prefix or accepted file bytes. Stop at the
+named checkpoint before its instruction to inspect that earlier work. Each supplied
+after-label has its own \texttt{nop}, so a jump to a different handler does not appear
+to have completed the preceding body at the same address. A direct
+\texttt{function\_return} observation corresponds to the selected caller's return label;
+the pipeline instead stops at \texttt{results\_ready}, before publishing result slots.
+
+The earlier FIR entry has a different result convention: \texttt{v0} is its processed
+sample count, not a WAV status. Its missing-body return is minus one with zero clips.
+The supplied WAV wrapper compares a positive requested block count with the actual
+kernel count and routes an incomplete kernel to development status four. Retain this
+guard while bringing forward your earlier routine.
+
+\section{Follow the illustrated private state without changing the public contract}
+The parser uses a 160-byte frame, the filter 512 bytes, and encoder, loader and saver
+128 bytes each. Saved registers, frame pointer and return address occupy bytes zero
+through seventy-nine. The parser's candidate frame count is at eighty. The filter's
+input window begins at 112 and its private output at 256. The loader's one-byte probe
+is at 112; the saver's private descriptor begins at eighty. None of these temporary
+objects is a caller-visible result.
+
+The supplied file descriptor marker in \texttt{s3} starts at minus one. Development
+cleanup closes a nonnegative acquired descriptor once. After a completed close, set
+the marker back to minus one before entering another operation that can fail or return
+unfinished. Nested-call guards propagate failed validation before using its results.
+Keep full saved-register values and the original stack pointer through every route.
+These register and frame choices support the illustrated guided construction;
+equivalent complete solutions may use different private layouts.
+
+Preparing an observation does not create host files or force short reads in an ordinary
+IDE run. Recipes declare separate in-memory grading files, permissions, transfer sizes
+and descriptor values for the checking system. For a real successful file run, create
+\texttt{input.wav} in the launch's working directory with the fixed fixture helper.
+Use \texttt{--fixture trace} for the short input and \texttt{--fixture listen} for the
+final two-second observation. Forced failures and exact short transfers need the
+checking fixture.

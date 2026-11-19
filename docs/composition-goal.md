@@ -411,3 +411,18 @@ Bounded requests preserve output bytes while reducing repeated copy work under f
 short writes. This is not a wall-time or IntelliJ launch measurement. Student cumulative
 construction, quizzes/hints, public feedback and separate WAV archives remain next.
 The main manuscript is still 30 packaged chapters; prior chapter prose remains retained.
+
+
+The WAV cumulative reading now adds 64 directly authored native step includes, 55 safe
+unfinished regions, 64 quizzes, 128 progressive hints and 65 exact observation recipes.
+The preparation helper preserves the entire instruction section, full-width controls
+and existing output files. Its native block-boundary fixture gives exact results at
+frames 63 and 64, alongside zero-frame and malformed-trailer observations. All 130
+prepared files assemble at normal and wide addresses; 30 executed unfinished-entry and
+caller checks establish safe development returns, register/stack retention and no I/O.
+These are starter checks, not completed-prefix or guided-checkpoint verification. The
+private quiz keys stay outside public history. Four new light-theme IDE capture plans
+remain explicitly uncaptured. Cumulative completed-body execution, public feedback and
+separate WAV distributions remain next; the main manuscript still has 30 packaged
+chapters. Earlier exposition is retained apart from its updated scope statement, and
+the requested substantive editing pass remains deferred until all chapter drafts exist.

@@ -347,3 +347,15 @@ one native figure with a semantic description. All 13 pages were rendered and in
 including the measured-work table at higher resolution. The requested fonts remain
 embedded; no overfull boxes or missing characters are reported. Tagged structure is
 verified, while independent accessibility certification remains pending.
+
+
+The WAV cumulative reading now builds as 46 physical pages with the original 23 reading
+passages woven around 64 new native steps and one construction-state include. It retains
+zero minted listings; no unexported code-highlighting approximation has been added. The
+six native tables have 23 semantic header cells, and the interleaving figure retains its
+alternative description. All pages were rendered and inspected, including the final
+scope page after keeping its last paragraph together. Minion Pro, Noto Sans Math and
+JetBrains Mono remain embedded. No overflowing boxes, missing characters or font
+substitution warnings are reported. These are structural and visual checks, not PDF/UA
+certification or assistive-technology testing. The main manuscript remains 30 packaged
+chapters and 1286 physical pages until WAV grading and distributions are verified.

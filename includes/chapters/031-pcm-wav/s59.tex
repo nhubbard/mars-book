@@ -1,0 +1,13 @@
+\section{Step 59 Parse before opening for truncation}\label{pcm-wav-s59}
+Call \texttt{wav\_parse} on the selected bytes and count, using private descriptor space at frame offset eighty. The supplied guard propagates any failure before output is opened. The path is retained in \texttt{s0}, selected bytes in \texttt{s1} and count in \texttt{s2}. This order keeps an existing output intact when the supplied container is malformed; it cannot undo a write failure after truncation later begins.
+
+Author region \texttt{sv\_validate}. Use \texttt{s59-1} and stop at \texttt{after\_sv\_validate}.
+
+\paragraph{Observe} The trace validates privately. A malformed trailer returns format failure without opening or changing the old output.
+
+\paragraph{Check} Why validate before the output open?
+\begin{itemize}
+\item[A.] Parsing requires the output descriptor.
+\item[B.] Opening in truncate mode can destroy an existing file.
+\item[C.] The parser needs a writable file.
+\end{itemize}
