@@ -9,7 +9,7 @@ from pathlib import Path
 import struct
 
 
-def render(png, receipt, output):
+def validate_capture(png, receipt):
     raw = png.read_bytes()
     if raw[:8] != b'\x89PNG\r\n\x1a\n' or raw[12:16] != b'IHDR':
         raise ValueError('Expected a captured PNG')
@@ -22,13 +22,26 @@ def render(png, receipt, output):
         raise ValueError('Receipt does not match the screenshot')
     if receipt['viewport'] != {'width': width, 'height': height}:
         raise ValueError('Receipt dimensions do not match the screenshot')
+    for callout in receipt['callouts']:
+        box = callout['box']
+        values = [box[key] for key in ('x', 'y', 'width', 'height')]
+        if any(type(value) is not int for value in values):
+            raise ValueError('Capture coordinates must be integer pixels')
+        x, y, w, h = values
+        if min(x, y) < 0 or min(w, h) <= 0 or x + w > width or y + h > height:
+            raise ValueError('Callout is outside the screenshot')
+        if not isinstance(callout['label'], str) or not callout['label'].strip():
+            raise ValueError('A callout needs a description')
+    return raw, width, height
+
+
+def render(png, receipt, output):
+    raw, width, height = validate_capture(png, receipt)
     labels = []
     boxes = []
     for index, callout in enumerate(receipt['callouts'], 1):
         box = callout['box']
         x, y, w, h = [box[key] for key in ('x', 'y', 'width', 'height')]
-        if min(x, y) < 0 or min(w, h) <= 0 or x + w > width or y + h > height:
-            raise ValueError('Callout is outside the screenshot')
         boxes.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="none" stroke="#004b87" stroke-width="3"/>')
         cy = max(12, y)
         boxes.append(f'<circle cx="{x + 12}" cy="{cy}" r="12" fill="#004b87"/><text x="{x + 12}" y="{cy + 5}" text-anchor="middle" fill="white" font-size="15">{index}</text>')

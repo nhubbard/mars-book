@@ -88,8 +88,37 @@ package figure from planned to verified. The main MARS plugin contains no captur
 implementation or authoring-plugin dependency.
 
 
-The current private smoke image still contains the native editor analysis badge.
-Daemon completion events alone do not establish its visible settled state. Final
-book capture acceptance must check that indicator as well as the source/value
-assertions. This is an explicit remaining driver/UI check, alongside vector/tool
-view selection and native annotations.
+Earlier smoke images exposed a native analysis badge after a daemon-completion
+event. The current driver also checks visible editor labels and notification balloons,
+and the latest raw proof has neither. It does not draw a transient trainer highlight
+while taking the raw image. Vector/tool view selection and full chapter batches remain
+unfinished.
+
+## Native annotation includes
+
+`tools/annotate_tex.py` creates a native, editable figure include from the original
+PNG and verified receipt. Supply a caption and an alternative description. An optional
+crop uses original PNG pixel coordinates and must retain every callout. For the current
+1280-by-900 driver proof, the measured crop is `(40, 170, 740, 670)`:
+
+```sh
+python3 tools/annotate_tex.py raw.png receipt.json figure.tex \
+  --caption "The changed-word count is two before the next instruction." \
+  --alt "The debugger is paused; numbered callouts identify the count and next instruction." \
+  --crop 40 170 740 670
+```
+
+The exporter refuses an existing native include, so regeneration cannot overwrite
+human composition edits. Drawn boxes and numbered markers are TikZ; the legend and
+caption are ordinary native text. The unchanged full PNG remains the source even when
+LaTeX trims its displayed viewport. Crops use measured natural image dimensions, so
+PNG resolution metadata cannot shift the coordinate mapping. The optional image
+reference must resolve to that same verified PNG. The SVG exporter remains a draft
+preview, not a print dependency.
+
+A one-page private proof is compiled with the shared book font/style includes. Its
+PDF has one described Figure and two native legend items. Checks compare every
+embedded image pixel with the original and extract the typeset labels. Color and
+grayscale renders are reviewed separately. These checks do not certify PDF/UA
+compliance or complete the vector-lane teaching figure; no chapter figure plan has
+been marked verified from this pipeline proof.

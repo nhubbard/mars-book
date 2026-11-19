@@ -86,9 +86,7 @@ owned sessions, breakpoints and analysis listeners are cleaned up on cancellatio
 
 The raw PNG remains unannotated. Its receipt records native UI bounds, observed row
 text, the source stop, actual locale and viewport, the IDE build, source provenance,
-MARS archive digest and installed authoring JAR digest. Features Trainer's public
-highlight utility resolves the UI component; its temporary highlight is removed before
-capture so the print annotations can remain native LaTeX. The platform remote-driver
+MARS archive digest and installed authoring JAR digest. Native Swing bounds resolve the callouts. Trainer highlights are cleared without drawing a temporary overlay during capture, so the PNG stays unannotated and the print annotations remain native LaTeX. The platform remote-driver
 screenshot transport belongs to the external test process; this installed plugin uses
 JDK screen capture restricted to its own IDE root instead of depending on that transport.
 
@@ -129,8 +127,11 @@ uses `PluginDetailsService`; the activity receives its own descriptor through
 [Plugin Verifier input contract](https://github.com/JetBrains/intellij-plugin-verifier#plugin-path-specification).
 
 
-Visual review of the current smoke image still shows the editor's “Analyzing” badge.
-The daemon-event gate therefore does not yet establish that the visible progress
-indicator has settled. Add that visible readiness check before accepting final book
-figures. The scalar register/source assertions remain independently verified; the
-smoke image is retained privately and no chapter figure is marked complete.
+The current driver also waits for the native editor's visible “Analyzing” and
+“Indexing” labels to disappear. It checks ordinary Swing labels rather than the
+platform's internal analyzer-status classes. Notification balloons in the dedicated
+capture instance are hidden through the public notification API without expiring the
+notifications. The gate checks for their return before and after capture. The latest
+private proof has a settled checkmark, a white register view and no overlay or balloon.
+Eleven Jupiter tests and the actual graphical batch cover this increment. The planned
+MSA lane view and full chapter capture batches remain incomplete.

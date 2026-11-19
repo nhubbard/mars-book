@@ -69,8 +69,10 @@ the page; code labels reserve room for the opening lines of their listings.
 ## Native figures and accessibility
 
 Diagram text, tables, equations, captions, and labels are native LaTeX/TikZ. Draft SVGs
-remain package previews and are not compilation dependencies. Future IDE screenshots
-must be original verified light-theme PNGs. Draw annotation rectangles and labels in
+remain package previews and are not compilation dependencies. IDE screenshots
+must be original verified light-theme PNGs. The native annotation exporter in
+`tools/annotate_tex.py` creates editable TikZ boxes and native text from a verified
+receipt; see `docs/capture-workflow.md`. Draw annotation rectangles and labels in
 LaTeX/TikZ using the capture receipt; preserve the original pixels and dimensions.
 Capture recipes are still labelled as pending figures in the manuscript.
 
