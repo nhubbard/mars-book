@@ -1,0 +1,409 @@
+{
+  "status": "First ten native loader steps; remaining decoder construction and executable public feedback pending",
+  "steps": [
+    {
+      "id": "s01",
+      "kind": "edit",
+      "region": "load_capacity",
+      "title": "Validate the selected byte capacity",
+      "prose": "At \\texttt{loader\\_call}, \\texttt{\\$a0} points to the path, \\texttt{\\$a1} points to writable file storage, and \\texttt{\\$a2} is its selected byte capacity. Implement \\texttt{load\\_capacity}: initialize failure status one and result count zero, then reject zero or an unsigned capacity above 1048576. Branch to \\texttt{load\\_early} on either failure. Let a supported capacity fall through to the supplied frame setup. No path read or file operation belongs before these checks.\n\nUse the exact-fit recipe with capacity 115. Also try the wide-count recipe, whose value is decimal 4294967296. That value is a count; its low word happens to be zero. Comparing a narrowed value would discard the reason it exceeds the limit.",
+      "expectedObservation": "The supported case reaches load_capacity_ready with a2 equal to 115. The wide count returns status one and count zero without opening a file.",
+      "checkpoint": "load_capacity_ready",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Why must the capacity comparison retain all 64 bits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The path is always more than four gigabytes long."
+          },
+          {
+            "id": "b",
+            "text": "A large count can have small low 32 bits."
+          },
+          {
+            "id": "c",
+            "text": "The PNG CRC is a 64-bit checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Separate the selected count from the address of the selected window."
+        },
+        {
+          "id": "s01-h2",
+          "text": "A capacity of 4294967296 is outside the bound even though its low word is zero."
+        }
+      ],
+      "recipes": [
+        "s01-1",
+        "s01-wide"
+      ]
+    },
+    {
+      "id": "s02",
+      "kind": "edit",
+      "region": "load_state",
+      "title": "Retain the destination and initialize progress",
+      "prose": "The supplied prologue saves the return address and the saved registers used by this loader. Fill \\texttt{load\\_state} after that prologue. Retain the destination in \\texttt{\\$s0}, capacity in \\texttt{\\$s1}, and zero bytes read in \\texttt{\\$s2}. Keep a failure candidate of one in \\texttt{\\$s4}. A later successful EOF check will change that candidate to zero.\n\nThe original arguments cannot remain only in \\texttt{\\$a1} and \\texttt{\\$a2}: opening a file uses those registers for flags and mode, and reading uses them for a destination and request size. The retained values describe the whole selected buffer, while each read describes only its remaining suffix.",
+      "expectedObservation": "s0 is the original destination, s1 is 115, s2 is zero and s4 is one. No descriptor has been acquired.",
+      "checkpoint": "load_state_ready",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What does s2 count during the loading loop?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Bytes already stored in the selected file buffer."
+          },
+          {
+            "id": "b",
+            "text": "The file descriptor number."
+          },
+          {
+            "id": "c",
+            "text": "Pixels already displayed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Start the counter before the first read, rather than guessing the eventual file length."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Only a positive read result increases s2."
+        }
+      ],
+      "recipes": [
+        "s02-1"
+      ]
+    },
+    {
+      "id": "s03",
+      "kind": "edit",
+      "region": "load_open",
+      "title": "Acquire one read-only descriptor",
+      "prose": "Fill \\texttt{load\\_open}. Keep the path argument in \\texttt{\\$a0}, choose read-only flags zero, set the unused mode argument to zero, and issue syscall 13. A negative result branches to \\texttt{load\\_open\\_failed}. Retain any successful descriptor in \\texttt{\\$s3}; do not replace it with the conventional value three.\n\nStop at \\texttt{load\\_open\\_ready}. At this point the routine owns a descriptor but has not loaded bytes. Continue once into the next unfinished region. Its supplied development exit closes that descriptor before returning status four. Earlier unfinished regions use the exit that owns no descriptor. This distinction keeps an incomplete program safe to run.",
+      "expectedObservation": "The checked fixture returns descriptor eleven. The next unfinished region closes that same descriptor and returns development status four.",
+      "checkpoint": "load_open_ready",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which descriptor should a later read use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Three, because it is the first conventional file descriptor."
+          },
+          {
+            "id": "b",
+            "text": "The byte count returned by the previous read."
+          },
+          {
+            "id": "c",
+            "text": "The successful value returned by this open."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "A successful open acquires a resource, rather than naming a fixed register convention."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Retain the returned value before another syscall changes v0."
+        }
+      ],
+      "recipes": [
+        "s03-1"
+      ]
+    },
+    {
+      "id": "s04",
+      "kind": "edit",
+      "region": "load_request",
+      "title": "Request the remaining writable suffix",
+      "prose": "At \\texttt{load\\_read}, compare the count with capacity. A full buffer branches to \\texttt{load\\_probe}. Otherwise form destination plus bytes read for \\texttt{\\$a1}, and capacity minus bytes read for \\texttt{\\$a2}. Put the retained descriptor in \\texttt{\\$a0} and issue syscall 14.\n\nThe partial fixture contains seventeen bytes while capacity is 115. Stop at \\texttt{load\\_request\\_ready}: the first seventeen destination bytes now match the file, but the progress counter has not yet been updated. The returned positive count, not the requested 115, tells the next region how many bytes arrived. A short read is not EOF.",
+      "expectedObservation": "v0 is seventeen, s2 is still zero, and exactly the first seventeen file bytes have arrived. The unfinished result region closes the file on continuation.",
+      "checkpoint": "load_request_ready",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why is advancing by the requested count incorrect?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The descriptor must be incremented after each read."
+          },
+          {
+            "id": "b",
+            "text": "A read can return fewer bytes than requested."
+          },
+          {
+            "id": "c",
+            "text": "The file buffer contains four bytes per pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Compare what was offered as writable space with what the service actually reports storing."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The seventeenth byte is followed by untouched space, not by ninety-eight newly read bytes."
+        }
+      ],
+      "recipes": [
+        "s04-1"
+      ]
+    },
+    {
+      "id": "s05",
+      "kind": "edit",
+      "region": "load_result",
+      "title": "Consume the read result",
+      "prose": "Fill \\texttt{load\\_result}. A negative read result takes the failure-closing path. Zero branches to \\texttt{load\\_eof}. For a positive result, add the returned count to \\texttt{\\$s2}, retaining all address and count bits. The supplied code after \\texttt{load\\_progress\\_ready} returns to \\texttt{load\\_read}.\n\nIn the partial-file recipe, the first positive result raises progress from zero to seventeen. The next request begins at destination plus seventeen and offers 98 bytes. Its zero result reports EOF; it does not reset the progress counter. This loader handles bytes only, so reaching EOF on seventeen bytes does not establish that the file is a complete PNG.",
+      "expectedObservation": "At load_progress_ready, s2 is seventeen. A subsequent EOF preserves that count; no destination gap has been introduced.",
+      "checkpoint": "load_progress_ready",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What destination should the second request use?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The original destination plus seventeen."
+          },
+          {
+            "id": "b",
+            "text": "The original destination plus 115."
+          },
+          {
+            "id": "c",
+            "text": "The path address plus seventeen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "The next unread position follows the bytes actually copied."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Capacity minus seventeen is 98, but that remaining count is not a destination address."
+        }
+      ],
+      "recipes": [
+        "s05-1"
+      ]
+    },
+    {
+      "id": "s06",
+      "kind": "edit",
+      "region": "load_probe",
+      "title": "Probe after an exact fill",
+      "prose": "Use the 115-byte worked file with capacity 115. Once the main buffer fills, there is no room for a further byte there. Implement \\texttt{load\\_probe} by requesting one byte into the supplied private stack slot at offset 64. A nonzero result takes the failure-closing path: a positive result means extra data, and a negative result means an I/O failure. Zero continues to the EOF check.\n\nThe selected capacity bounds the file, not merely the part the program chooses to keep. Without this probe, a valid 115-byte file and a longer file sharing that prefix would look the same to the loader. The probe destination must not be the byte immediately after the accepted buffer.",
+      "expectedObservation": "The exact-fit file produces a one-byte request with result zero. The accepted 115 bytes and the following guard stay unchanged.",
+      "checkpoint": "load_probe_ready",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What does a probe result of one establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The file was exactly one byte long."
+          },
+          {
+            "id": "b",
+            "text": "The current PNG has one image row."
+          },
+          {
+            "id": "c",
+            "text": "The file exceeds the selected capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "The main destination was already full before this request."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The byte exists after the accepted prefix, so this file cannot fit the selected window."
+        }
+      ],
+      "recipes": [
+        "s06-1"
+      ]
+    },
+    {
+      "id": "s07",
+      "kind": "edit",
+      "region": "load_eof",
+      "title": "Accept only a nonempty EOF",
+      "prose": "Implement \\texttt{load\\_eof}. If no bytes have arrived, retain the failure candidate and branch to \\texttt{load\\_close}. Otherwise set \\texttt{\\$s4} to zero and continue to closing. Both an ordinary zero read and an exact-fit zero probe reach this decision.\n\nDo not return immediately after changing the candidate to zero. The descriptor still belongs to the routine and must be released. At this intermediate step the close region remains unfinished, so continuing still returns development status four after cleanup. A successful candidate is not yet a completed return.",
+      "expectedObservation": "The worked file has s2 equal to 115 and s4 equal to zero. Its descriptor remains open at this checkpoint and is closed on continuation.",
+      "checkpoint": "load_eof_ready",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why is a zero read insufficient by itself for success?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The descriptor must have the numeric value zero."
+          },
+          {
+            "id": "b",
+            "text": "The file may have been empty from the start."
+          },
+          {
+            "id": "c",
+            "text": "PNG dimensions are always zero before decompression."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Trace the first read of an empty file."
+        },
+        {
+          "id": "s07-h2",
+          "text": "A zero result identifies EOF; the progress count distinguishes empty from nonempty input."
+        }
+      ],
+      "recipes": [
+        "s07-1"
+      ]
+    },
+    {
+      "id": "s08",
+      "kind": "edit",
+      "region": "load_close",
+      "title": "Release the acquired descriptor once",
+      "prose": "Fill \\texttt{load\\_close} with syscall 16 on the descriptor retained in \\texttt{\\$s3}. This path handles normal EOF, a failed read and a nonzero probe. Open failure bypasses it because no descriptor was acquired.\n\nStop at \\texttt{load\\_close\\_ready}. The file observation now has one close and no open descriptor. The remaining result region uses the development exit that does not close anything. The close service does not provide the loader's success result; that result still comes from the candidate and progress values retained by the routine.",
+      "expectedObservation": "The acquired descriptor is closed exactly once. The success candidate remains zero and the byte count remains 115.",
+      "checkpoint": "load_close_ready",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which path must avoid this close operation?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The path where open returned a negative result."
+          },
+          {
+            "id": "b",
+            "text": "The path where the final read returned zero."
+          },
+          {
+            "id": "c",
+            "text": "The path where the file exactly filled capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Ownership begins only after a successful open."
+        },
+        {
+          "id": "s08-h2",
+          "text": "A failed open supplies no descriptor for this routine to release."
+        }
+      ],
+      "recipes": [
+        "s08-1"
+      ]
+    },
+    {
+      "id": "s09",
+      "kind": "edit",
+      "region": "load_publish",
+      "title": "Publish the completed loader result",
+      "prose": "Fill \\texttt{load\\_publish}. Return the candidate in \\texttt{\\$v0}; initialize \\texttt{\\$v1} to zero. A failed candidate goes to the supplied restore path with count zero. For success, put the retained byte count in \\texttt{\\$v1} and continue through \\texttt{load\\_publish\\_ready} to restore.\n\nThe restore code reloads the caller's saved registers and stack pointer. Copying the count to its return register before restoring \\texttt{\\$s2} preserves the result while returning that saved register to its caller-owned value. The complete caller records 115 and then reaches the still-unfilled decoder, so the program's development message remains expected.",
+      "expectedObservation": "The direct loader returns status zero and count 115 with saved state restored. The caller publishes loaded_count but leaves decoder results and pixels untouched.",
+      "checkpoint": "load_publish_ready",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why copy s2 into v1 before restoring s2?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The count becomes a path address during close."
+          },
+          {
+            "id": "b",
+            "text": "The restore code deletes the file."
+          },
+          {
+            "id": "c",
+            "text": "Restoring s2 recovers the caller's previous value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "The saved register and the return register have different ownership at this boundary."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The caller is entitled to its old s2 value and the newly returned byte count."
+        }
+      ],
+      "recipes": [
+        "s09-1"
+      ]
+    },
+    {
+      "id": "s10",
+      "kind": "observe",
+      "region": null,
+      "title": "Separate loading failures from PNG failures",
+      "prose": "Use the completed loader with the three boundary recipes: an empty file, a 116-byte file with capacity 115, and a missing path. Each returns status one and count zero. The empty and longer files each acquire and close a descriptor; the missing path acquires none. The longer file may leave its first 115 bytes in scratch storage, so failure does not promise that scratch is unchanged.\n\nThen use \\texttt{partial.bin}, whose seventeen bytes fit the capacity. Loading succeeds even though a PNG decoder will later reject the truncated image. Keep this boundary visible when debugging: a file-operation failure and a format failure arise in different stages, and neither publishes pixels.",
+      "expectedObservation": "Boundary failures retain zero returned count and release acquired descriptors. A short but nonempty file can load successfully while still failing PNG validation.",
+      "checkpoint": "function_return",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Which conclusion follows from loader success?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The file is a supported PNG."
+          },
+          {
+            "id": "b",
+            "text": "A nonempty complete file fit the selected byte capacity."
+          },
+          {
+            "id": "c",
+            "text": "All framebuffer words have been written."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The loader never examines the PNG signature or chunk names."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Success establishes a byte window that the next stage must validate."
+        }
+      ],
+      "recipes": [
+        "s10-empty",
+        "s10-long",
+        "s10-missing",
+        "s10-partial"
+      ]
+    }
+  ]
+}

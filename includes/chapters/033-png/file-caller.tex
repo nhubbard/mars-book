@@ -1,0 +1,41 @@
+\section{Load a file into a distinct byte window}
+The supplied caller in \path{drafts/png-construction/main.asm} obtains one workspace
+block using MARS syscall 9. Its first 1 MiB is the framebuffer, so the bitmap tool's
+heap base identifies the displayed words. The next 1 MiB holds file bytes, the next
+1 MiB holds joined IDAT data, and the final 786944 bytes hold filtered rows. The total
+request is $3\times1048576+786944=3932672$ bytes. Static path strings, context fields
+and read-only tables remain separate from this heap block.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{p{32mm}p{36mm}p{82mm}}
+\toprule Offset from block start & Capacity in bytes & Purpose \\\midrule
+0 & 1048576 & Framebuffer, 512 words per row \\
+1048576 & 1048576 & Original file bytes \\
+2097152 & 1048576 & Joined compressed payloads \\
+3145728 & 786944 & Inflated and reconstructed rows \\\bottomrule
+\end{longtable}
+Follow each pointer from the caller's named address records rather than typing these
+addresses as absolute constants. The caller uses full-width addition and doubleword
+stores for those records. Its normal heap allocation is sufficient for the fixed
+positive request; the function entries also accept separately supplied buffers when
+testing addresses above 4 GiB.
+
+The new entry \texttt{png\_load} takes a NUL-terminated path in \texttt{\$a0}, a writable
+destination in \texttt{\$a1}, and an unsigned capacity in \texttt{\$a2}. Require capacity
+from one through 1 MiB before any path read or file operation. Success returns zero
+in \texttt{\$v0} and the exact nonempty file length in \texttt{\$v1}. Failure returns
+one and zero. A failed operation can leave a copied prefix in the destination; bytes
+outside its capacity remain caller-owned. Preserve the path, saved registers and
+stack pointer, and close every descriptor acquired by this call.
+
+The loader makes no judgment about PNG contents. After success, the caller records
+the loaded count and calls the decoder. This separation lets a seventeen-byte
+truncated image load successfully and then fail format validation. A missing file,
+an empty file, an I/O error or an extra byte beyond capacity fails at the loading
+stage instead. The caller prints a different message for these two kinds of failure.
+
+Generate \texttt{image.png} with the public fixture helper and use the MARS launch's
+working directory that contains it. The helper in \path{drafts/png-construction/fixtures.py}
+also creates the exact partial, empty and one-byte-longer inputs used below. It refuses
+an existing destination. Preparing a source recipe changes its path, capacity and mode
+controls while retaining the complete instruction section, including your own edits.

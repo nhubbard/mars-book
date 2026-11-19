@@ -666,3 +666,26 @@ All 95 public tests and three authoring-plugin exporter tests pass. Native PDF c
 remain separate from independent accessibility review. Cumulative student construction,
 public/private final feedback, file-loading caller and chapter033 distributions remain
 next. Actual screenshots are uncaptured; the integrated manuscript retains 32 packages.
+
+
+The PNG draft now supplies the file-loading caller and the first ten cumulative
+construction steps. Nine editable regions develop full-width capacity admission,
+retained progress, short reads, exact-fit probing, EOF acceptance, descriptor cleanup
+and result publication. Fourteen observation recipes preserve student instruction
+edits; ten quizzes and twenty hints accompany directly authored native passages.
+The public starter remains safe to run with its decoder unfinished. Completed private
+variants accept equivalent read scheduling and are checked separately from the
+illustrated checkpoint registers. All 100 public tests pass; the native PNG reading
+builds as 25 pages with Minion Pro and Noto Sans Math. Its nine tables have 32 tagged
+headers, and its native pipeline figure retains alternative text. These observations
+do not complete an independent accessibility audit.
+
+The new loader/caller domain passes 1088 simulator cases across byte orders and address
+layouts, including direct and supplied-main checkpoints. Eight assembled faults are
+rejected. Both complete algorithms also decode the original 512-by-512 smoke image
+from an actual host file in scalar/MSA modes; every dumped pixel matches independent
+Pillow output. The existing upstream PNG smoke suite passes unchanged. Old memory-entry
+instruction measurements keep their original sources and boundary. Remaining decoder
+construction, final feedback, package integration and actual IDE captures remain next.
+The integrated manuscript still contains 32 packaged chapters. Earlier prose is retained
+for the requested substantial editing pass after all chapter drafts are written.

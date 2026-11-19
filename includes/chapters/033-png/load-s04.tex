@@ -1,0 +1,15 @@
+\section{Step 4 Request the remaining writable suffix}\label{png-load-s04}
+At \texttt{load\_read}, compare the count with capacity. A full buffer branches to \texttt{load\_probe}. Otherwise form destination plus bytes read for \texttt{\$a1}, and capacity minus bytes read for \texttt{\$a2}. Put the retained descriptor in \texttt{\$a0} and issue syscall 14.
+
+The partial fixture contains seventeen bytes while capacity is 115. Stop at \texttt{load\_request\_ready}: the first seventeen destination bytes now match the file, but the progress counter has not yet been updated. The returned positive count, not the requested 115, tells the next region how many bytes arrived. A short read is not EOF.
+
+Use \texttt{s04-1} and stop before \texttt{load\_request\_ready}.
+
+\paragraph{Observe} v0 is seventeen, s2 is still zero, and exactly the first seventeen file bytes have arrived. The unfinished result region closes the file on continuation.
+
+\paragraph{Check} Why is advancing by the requested count incorrect?
+\begin{itemize}
+\item[A.] The descriptor must be incremented after each read.
+\item[B.] A read can return fewer bytes than requested.
+\item[C.] The file buffer contains four bytes per pixel.
+\end{itemize}

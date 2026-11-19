@@ -1,0 +1,15 @@
+\section{Step 2 Retain the destination and initialize progress}\label{png-load-s02}
+The supplied prologue saves the return address and the saved registers used by this loader. Fill \texttt{load\_state} after that prologue. Retain the destination in \texttt{\$s0}, capacity in \texttt{\$s1}, and zero bytes read in \texttt{\$s2}. Keep a failure candidate of one in \texttt{\$s4}. A later successful EOF check will change that candidate to zero.
+
+The original arguments cannot remain only in \texttt{\$a1} and \texttt{\$a2}: opening a file uses those registers for flags and mode, and reading uses them for a destination and request size. The retained values describe the whole selected buffer, while each read describes only its remaining suffix.
+
+Use \texttt{s02-1} and stop before \texttt{load\_state\_ready}.
+
+\paragraph{Observe} s0 is the original destination, s1 is 115, s2 is zero and s4 is one. No descriptor has been acquired.
+
+\paragraph{Check} What does s2 count during the loading loop?
+\begin{itemize}
+\item[A.] Bytes already stored in the selected file buffer.
+\item[B.] The file descriptor number.
+\item[C.] Pixels already displayed.
+\end{itemize}
