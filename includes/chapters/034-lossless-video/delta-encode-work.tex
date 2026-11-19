@@ -1,0 +1,38 @@
+\section{Separate kernel savings from representation choices}
+A shorter record reduces work in the CRC and decoder as well as stored bytes.
+That effect is different from replacing a scalar XOR loop with MSA. The following
+comparison changes only the XOR entry called by the record encoder. Source images,
+greedy run policy, output bytes, CRC, copy and publication remain identical.
+Measurements begin at \texttt{video\_encode\_record} and end when it returns;
+they exclude fixture preparation, the caller's decoder and presentation time.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete record encoding with scalar or MSA XOR, in little-endian mode.}
+\label{tab:video-delta-encode-work}
+\begin{tabular}{l r r r r}
+\toprule
+Pair and sequence & Record bytes & Scalar & MSA & Saved instructions \\
+\midrule
+Few, 2 & 40 & 227\,108 & 203\,560 & 23\,548 \\
+Still, 2 & 20 & 225\,593 & 202\,045 & 23\,548 \\
+Tail, 2 & 23 & 225\,823 & 202\,275 & 23\,548 \\
+All change, 2 & 12\,304 & 1\,183\,857 & 1\,160\,309 & 23\,548 \\
+Few, 0 & 12\,304 & 1\,065\,268 & 1\,065\,268 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The full image XOR saves the same 23\,548 simulated instructions whenever it runs.
+That is about ten percent of the sparse and unchanged examples, and about two
+percent when a measured all-change delta falls back to full encoding. A required
+full frame bypasses XOR entirely, so changing the kernel saves nothing there.
+These counts are computation measurements, not host-time guarantees or requirements
+for equivalent student implementations.
+
+The alternative encoder used in completed verification sometimes chooses additional
+full frames and therefore has different bytes and work. Its pixel correctness does
+not make those results a controlled kernel comparison. Keep the selected kind,
+produced count, input sequence and exact reconstruction beside any performance
+claim. A faster path with stale previous pixels is a failed encoder regardless of
+its instruction count.

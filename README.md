@@ -352,3 +352,19 @@ encoding, timed playback, final video feedback/distributions and manuscript inte
 remain unfinished. Actual IDE captures and independent accessibility review remain
 pending; H.263 is still planning only until chapters 33 and 34 are complete. The
 substantive editing pass remains a separate future goal.
+
+The lossless-video construction now reaches step 83 with full/delta record selection.
+Fifteen native lessons add zero/changed run measurement, exact record admission,
+variable-length emission and prediction-state publication. Fifteen quizzes, thirty
+hints and thirty-three recipes accompany the student scaffold, which imports earlier
+XOR work while preserving its data and local references. The gate passes 1,144
+simulator cases, rejects fourteen assembled faults and checks fourteen ordinary
+callers. Completed grading independently parses records, checks host CRCs and
+compares reconstructed colors while accepting valid alternative choices; guided
+observations retain the illustrated greedy policy. A controlled scalar/MSA XOR
+comparison saves 23,548 simulated instructions when XOR runs, about ten percent for
+the measured sparse records and two percent for full fallback; required full frames
+bypass it. All 192 tooling tests pass. Complete-file encoding, timed playback,
+final video distributions/feedback and manuscript integration remain unfinished.
+Actual IDE figures and independent accessibility review remain pending. H.263 remains
+planning only until chapters 33 and 34 are complete; substantive editing is separate.

@@ -1,0 +1,104 @@
+\section{Measure a delta before selecting its record}
+The previous image now has a defined meaning: it is the source of the last
+successfully encoded record. A new frame can be compared with that image using
+the XOR kernel developed at the beginning of this chapter. Zero XOR words identify
+unchanged pixels. Nonzero words contain the RGB differences to serialize. The
+changed-word count is useful evidence, but it does not include command headers or
+predict the encoded byte count by itself.
+
+Implement \texttt{video\_encode\_record} with the same four arguments as the full
+encoder: source, exact source byte count, destination and native context. The
+context grows to 96 bytes. The first 64 bytes retain their earlier field meanings,
+except that kind and encoded count describe the selected full or delta record.
+At entry the destination capacity must be at least twenty bytes, the smallest
+possible record. The actual selected record must fit before any output store.
+
+\begin{table}[htbp]
+\centering
+\caption{Additional fields in the record encoder context.}
+\label{tab:video-delta-encode-context}
+\begin{tabular}{r p{1.5in} p{2.8in}}
+\toprule
+Offset & Field & Meaning \\
+\midrule
+64 & XOR scratch address & Four-byte-aligned pointer to 4096 native words. \\
+72 & XOR scratch capacity & At least 16\,384 bytes. \\
+80--95 & Retained suffix & Leave these sixteen bytes unchanged. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The caller supplies disjoint source, previous image, scratch, byte destination,
+context and private stack windows. Source and previous-image capacities and native
+alignment follow the full encoder. Admit scratch alignment and capacity on every
+call, including required full frames. Retain the saved registers, frame pointer and
+stack pointer, and maintain sixteen-byte stack alignment across nested calls.
+Source words must have zero high bytes. For a nonperiodic frame, validate the old
+previous-image words too, even if a full representation is eventually selected.
+At a required full-frame boundary, old image contents are irrelevant and need not
+be read. This allows frame zero to establish fresh prediction state.
+
+A sequence divisible by the positive period requires a full record. Other indices
+may use a full or a valid delta record. Completed grading compares record structure,
+CRC, sequence and reconstructed numeric colors; it accepts additional full frames
+and equivalent delta command boundaries, including valid zero XOR triples. Capacity
+12\,304 always suffices for a valid input because a full representation fits.
+A smaller buffer may succeed with a compact choice or fail unchanged if the chosen
+representation does not fit. A capacity failure does not assert that no possible
+encoding could fit. State a course's compression-specific requirements separately
+from this general representation contract.
+
+The guided implementation chooses a reproducible policy. After validating colors,
+it computes XOR words into scratch. It scans maximal zero runs and maximal nonzero
+runs, charging four bytes per command and three per changed pixel. It chooses a
+full record when that predicted payload is at least 12\,288 bytes, including an
+exact tie. Otherwise it admits sixteen header bytes plus the predicted payload,
+then repeats the same run walk to emit it. The two walks must agree exactly.
+Scratch is temporary and may change on failure; output, previous image and final
+context still must receive no stores on completed failure one.
+
+\begin{table}[htbp]
+\centering
+\caption{Greedy choices for the supplied frame pairs at nonperiodic sequence one.}
+\begin{tabular}{l r r r l}
+\toprule
+Pair & Changed pixels & Commands & Delta bytes & Chosen record bytes \\
+\midrule
+Few & 4 & 3 & 24 & 40, delta \\
+Still & 0 & 1 & 4 & 20, delta \\
+Tail & 1 & 1 & 7 & 23, delta \\
+All change & 4096 & 1 & 12\,292 & 12\,304, full \\
+Alternating & 2048 & 2049 & 14\,340 & 12\,304, full \\
+Tie & 4092 & 3 & 12\,288 & 12\,304, full \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The few-change pair changes pixel zero by \texttt{0x000001}, pixels 325 and 326
+by \texttt{0x102040}, and pixel 4095 by \texttt{0x008000}. Its commands are
+skip zero/change one, skip 324/change two, and skip 3768/change one. Those counts
+cover all 4096 pixels without a terminator. The payload stores XOR triples, not
+current-frame colors. At sequence one, its complete header is
+\texttt{01 00 00 00 00 00 00 01 00 00 00 18 D7 F7 3B 51}.
+An unchanged frame instead has the four-byte payload \texttt{10 00 00 00}:
+skip 4096, change zero. A zero/zero pair would make no progress and is invalid.
+
+Attach this stage with \texttt{attach.py --source encoder-work.asm --kernel-source
+xor-work.asm --output record-encoder.asm} from
+\texttt{drafts/video-delta-encode-construction}. Supply your earlier XOR working
+file as well as the full encoder. The guided importer retains its data and example,
+namespaces local labels with \texttt{deltaKernel\_}, and keeps the public XOR entry
+names. Instruction names, registers, strings and comments retain their contents;
+local symbolic references follow their renamed labels. Use ordinary identifier
+labels in this guided import. Free-writing projects may arrange their libraries
+differently while preserving the callable contract.
+
+A provided \texttt{video\_record\_crc} leaf helper applies the earlier CRC recurrence
+to twelve header bytes followed by a variable-size payload, excluding the checksum
+field. It assumes those windows have already been admitted, writes the four CRC
+bytes, and returns status zero with the numeric checksum in \texttt{\$v1}. The
+new work is choosing and emitting a record; the helper avoids rederiving the same
+CRC loop. The supplied caller copies the old previous image to a separate decoder
+image before encoding, then decodes the produced bytes against that actual old
+state. Copying the newly committed previous image into the decoder would conceal
+a broken prediction chain.
