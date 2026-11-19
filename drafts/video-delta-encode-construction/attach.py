@@ -8,7 +8,7 @@ def attach(source,kernel):
  if source.count('\n.text\n')!=1 or len(re.findall(r'^main:',source,re.M))!=1 or source.count('\nvideo_encode_full:\n')!=1:raise ValueError('Use one full-encoder working file')
  if kernel.count('\n.text\n')!=1 or any(kernel.count('\n'+n+':\n')!=1 for n in('video_xor_words','video_xor_words_msa')):raise ValueError('Supply the earlier XOR working file')
  if re.search(r'^(?:dr_\w+|delta_\w+|drCrc_\w+|deltaKernel_\w+|video_encode_record|video_record_crc|video_xor_words|video_xor_words_msa|full_encoder_example_main):',source,re.M):raise ValueError('Delta/kernel labels already exist')
- labels=re.findall(r'^([^\s:#]+):',kernel,re.M)
+ labels=re.findall(r'^\s*([^\s:#]+):',kernel,re.M)
  if any(re.fullmatch(r'[A-Za-z_]\w*',n)is None for n in labels):raise ValueError('Use ordinary identifier labels in the guided kernel file')
  keep={'video_xor_words','video_xor_words_msa'};rename={n:'deltaKernel_'+n for n in labels if n not in keep}
  token=re.compile(r'(?<![\w.$])('+'|'.join(sorted(rename,key=len,reverse=True))+r')\b')
