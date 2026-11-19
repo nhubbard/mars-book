@@ -1,0 +1,20 @@
+\section{Keep the cursor and remaining count in step}
+Consider the optional byte string in the worked input. Its head, \texttt{42}, is at
+offset six and says that two payload bytes follow. At this point, the cursor is six
+and the remaining count is forty-six: together they still describe the original
+fifty-two-byte input. Consuming the one-byte head moves the cursor to seven and
+reduces the count to forty-five. Before passing over the payload, compare its length,
+two, with that remaining count. Both bytes fit. Move the cursor to nine and reduce
+the count to forty-three.
+
+The head and payload are separate advances, but each advance changes both quantities.
+At every boundary, the cursor offset plus the remaining count must still be fifty-two.
+Advancing the cursor without reducing the count makes the next child appear to have
+more input than exists. The incorrect extra allowance can remain unnoticed until a
+later, truncated head asks to read beyond the selected bytes.
+
+The skipper does not need to load these two payload bytes: their contents do not affect
+their extent. It must nevertheless prove that they exist before advancing. Try a selected
+count of eight for the same input prefix. The byte-string head at six still exists,
+but only one payload byte remains after it. Reject the item there; a later unsupported
+byte or missing map field must not be needed to discover this earlier truncation.

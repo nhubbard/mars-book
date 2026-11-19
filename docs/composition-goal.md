@@ -480,3 +480,17 @@ records and 5040 equivalent encodings, with all 256 initial bytes, 75 truncated 
 host evidence only. MIPS implementations, cumulative construction, public feedback and
 chapter032 archives remain next. The main manuscript retains 31 packaged chapters.
 Earlier exposition is unchanged; substantial rewriting remains deferred as requested.
+
+
+The CBOR head reader and generic bounded walker now have two tested private MIPS
+prototypes: shift-accumulation with recursive traversal, and positional accumulation
+with explicit container frames. Each passes 648 head and 1000 walker cases at normal
+and above-4-GiB addresses (6592 simulator executions). Eight assembled regressions
+are rejected, including lost high counter bits, premature argument reads, signed
+count comparisons, duplicate keys, ninth containers and incorrect payload bounds.
+Every checked source access stays within the selected head/item; caller input is
+unchanged, saved state is retained and private stack accesses are bounded. A new native
+worked passage follows both cursor and remaining count through the optional two-byte
+identifier-like string. Telemetry decode, exact sizing, encode, cumulative construction,
+feedback and chapter032 distributions remain next. The main manuscript still has 31
+packaged chapters; earlier prose and human contributions remain unchanged.

@@ -396,3 +396,10 @@ characters or font-substitution warnings are reported. This is a host-verified r
 foundation with zero minted listings, not a completed simulator exercise. Actual
 IDE captures and independent PDF/UA or assistive-technology validation remain pending.
 The integrated manuscript remains at 31 packaged chapters and 1333 physical pages.
+
+
+The verified CBOR head/walker milestone adds one native worked passage and updates
+the scope statements. The standalone reading remains 13 physical pages, now with
+26 directly authored passages. All pages were rendered and inspected again; the
+requested fonts remain embedded, with no overfull boxes, missing characters or font
+substitution warnings. The main manuscript remains at 31 packaged chapters.
