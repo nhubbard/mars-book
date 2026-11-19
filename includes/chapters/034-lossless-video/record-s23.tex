@@ -19,6 +19,41 @@ future file reader, directory and playback loop.
 last kind one and active bytes 16\,384. The caller prints
 \texttt{Record applied.} after returning.
 
+The supplied delta changes only the first pixel of an already initialized
+frame. Its red channel changes from zero to one; the green and blue channels
+remain 97 and 194. That small change is useful for testing exact reconstruction,
+but a printed picture cannot establish that the low bit is correct. Inspect the
+first word as well as the overall picture.
+
+To reproduce the bitmap view, configure Bitmap Display in the entry file's
+comment header before launching Debug. Use \texttt{base=custom}, set
+\texttt{address} to the first active RGB word, and set \texttt{initial=true}.
+For this supplied \texttt{s23-1} layout, the address is \texttt{0x10017054};
+it is \texttt{frame\_words} plus the four-byte leading guard. If your data
+layout differs, resolve that label in your own assembled program and add four.
+The guard is not a pixel. Set display width and height to 512, and
+\texttt{unitWidth} and \texttt{unitHeight} to eight. Each group of eight
+screen units then represents one of the 64 pixels along that dimension.
+
+The initial snapshot matters here: the previous picture is supplied in
+\texttt{.data}, while this record writes only its changed pixel. A display
+that starts black and observes later writes alone would leave the other 4095
+pixels black. The launch-time initial snapshot reads the supplied picture
+without adding simulated memory accesses. It does not execute the decoder.
+Keep the display connected at launch, then stop at the publication checkpoint.
+Open its Bitmap Display editor tab to inspect the result. Applying new settings
+clears the captured picture; rerun after changing the header.
+
+Figure~\ref{fig:video-record-publication} pairs the picture with its publication
+state. In the Memory tab, inspect \texttt{record\_context}. The Words column
+shows each eight-byte field as two four-byte words. In this little-endian run,
+read the low word first. The capacity and period are retained, while next sequence,
+accepted kind and active byte count have been published. The final pattern pair
+remains unchanged. The return registers agree with that accepted state.
+
+\input{includes/chapters/034-lossless-video/fig-record-publication}
+\clearpage
+
 \Needspace{7\baselineskip}
 \paragraph{Check} What happens to the expected sequence on failure?
 \begin{itemize}

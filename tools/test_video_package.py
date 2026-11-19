@@ -39,7 +39,7 @@ class VideoPackageTests(unittest.TestCase):
   for call in run.call_args_list:self.assertEqual(str(root/'checks/harness.asm'),call.args[0][-1]);self.assertTrue(call.kwargs['check'])
  def test_capture_plans_are_honest_and_stage_local(self):
   root,m=course.validate(ID);plans=json.loads((root/m['figures']).read_text())['figures'];self.assertEqual(6,len(plans));recipes={r['id']for r in json.loads((root/'inputs.json').read_text())['recipes']}
-  self.assertEqual(['video-vector-count','video-index-publication'],[f['id']for f in plans if f['captureStatus']=='verified'])
+  self.assertEqual(['video-vector-count','video-record-publication','video-index-publication'],[f['id']for f in plans if f['captureStatus']=='verified'])
   for f in plans:
    self.assertEqual('IntelliJ Light',f['theme']);self.assertIn(f['recipe'],recipes);self.assertTrue((root/'construction'/f['stage']).is_dir())
    if f['captureStatus']=='planned':self.assertNotIn('artifact',f);self.assertNotIn('receipt',f)

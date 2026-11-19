@@ -1154,3 +1154,39 @@ Two video figures are now verified. For the chapter 33/34 priority, four video a
 five PNG figure plans remain incomplete. Other earlier chapter capture plans and
 independent accessibility review remain outstanding as well. H.263 remains planning
 until the preceding work is completed; substantive editing is still separate.
+
+
+## Native record-publication bitmap plate
+
+The step-23 plate adds the accepted picture, published context and return values
+from three automated light-theme Debug launches. Screenshot orchestration remains
+in the separate authoring plugin, dependent on MARS. Upstream commit `76edb47b`
+adds ordinary custom framebuffer addresses and optional non-notifying initial
+pixels; it contains no book-specific capture classes or authoring dependency.
+
+The private CLI oracle checks all 4096 RGB words and all retained/published context
+fields. Native tooltip addresses/colors and native painted pixels match exactly.
+Retained logical- and native-resolution screen diagnostics show at most 3/255
+channel difference; only the screen photograph has that explicit measured bound.
+The screenshot is never recolored. Receipts distinguish exact native checks from
+the photograph's histogram and digest. The exact installed authoring plugin is
+compatible with the pinned IDE, using thirteen experimental public APIs and no
+internal or invalid override-only APIs. Its 28 Jupiter tests pass; the upstream
+bitmap feature passes 887 plugin tests and the existing full coverage gate.
+
+The native plate and connected explanation teach initialized deltas, the leading
+guard, custom framebuffer selection and low/high word pairs. The plate precedes
+the quiz. All 225 public tooling tests pass, and the 279-file student export passes
+the 6264-case three-implementation grading gate. Source solutions, quiz keys and
+private checks remain in the instructor repository. Three video figure plans and
+five PNG plans remain incomplete; earlier chapter captures and independent
+accessibility review are also outstanding. H.263 remains planning, and substantive
+editing remains a separate future goal.
+
+The resulting chapter has 107 pages; the full manuscript has 1575. All 107 chapter
+body pages match in text and coordinates, and all 106 running headers per document
+identify chapter 34 correctly. Its 22 tagged tables and 79 header cells remain
+unchanged; four native Figures have descriptions. The new plate is chapter page 26
+(printed manuscript page 1490). The index plate is now figure 34.4 on chapter page
+38; its standalone preview has been renumbered and rechecked without altering any
+original debugger pixels.

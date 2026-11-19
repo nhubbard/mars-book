@@ -138,7 +138,7 @@ The paired views now form the native step-five chapter figure in
 `includes/chapters/034-lossless-video/fig-vector-count.tex`. Its original PNGs and
 receipts are retained under `book/captures/034-lossless-video`, alongside the reviewed
 preview and crop metadata. The native figure has been reviewed in color and grayscale.
-`video-vector-count` and `video-index-publication` are verified; four other video captures remain planned.
+`video-vector-count`, `video-record-publication` and `video-index-publication` are verified; three other video captures remain planned.
 Completed fixture source remains private. MARS has no dependency on the book or
 authoring plugin.
 
@@ -187,3 +187,13 @@ differences fail. No screenshot pixels are corrected or replaced. Exact decoder
 state comes from the independent grader and native UI assertions, rather than
 inference from the photograph's colors. See the authoring-plugin README for the
 plan fields and the distinction between these checks.
+
+
+The step-23 record plate now combines source, bitmap, context and return details
+from three actual Debug launches of the same source/input/checkpoint. Exact native
+checks cover all 4096 displayed pixel addresses and RGB values. The context view
+shows retained capacity/period/suffix and published next sequence, kind and active
+bytes. Native LaTeX explains the initialized-picture requirement and the one-bit
+red change that cannot be judged from print. The screen-color histogram is retained
+separately in the raw receipt. Color/grayscale review and unchanged embedded-image
+checks pass; other chapter captures and independent accessibility review remain open.
