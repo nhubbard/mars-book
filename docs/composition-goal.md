@@ -762,3 +762,24 @@ zlib, an independent bit-position oracle and image decoding verify the public fi
 All 120 public tests pass. Row/packing construction, final feedback, PNG distributions,
 actual captures, video and APNG remain unfinished; 32 packaged chapters remain integrated.
 The requested major prose editing pass remains deferred until all drafts exist.
+
+
+PNG steps 71–83 now develop reconstruction through thirteen unfinished regions.
+The directly authored native passages explain shape admission, complete selector
+prevalidation, zero upper boundaries, row/sample cursors, predictors, wrapping
+restoration and bounded MSA Up groups with tails. Thirteen quizzes, twenty-six
+hints and nineteen public recipes accompany the prose. A native row-window table
+separates scanline bytes from sample extents. The cumulative order was checked and
+corrected so shared row progression and sample storage precede later predictors.
+
+The reconstruction gate passes 2232 simulator cases across both byte orders and
+address layouts, rejects nine assembled faults and passes twelve actual-file runs.
+Three completed variants include an equivalent predictor formulation and a different
+frame layout. Reuse sequences cover success, invalid late selectors and fresh
+first-row boundaries in one session; full-size scalar/MSA callers compare all
+786944 reconstructed bytes. The Average fault controls include sums above 255.
+All 126 public tests pass. The temporary caller stops after reconstruction without
+publishing pixels. Packing/publication construction, final PNG feedback and
+distributions, actual IDE captures, video and APNG remain unfinished. The integrated
+manuscript still has 32 packaged chapters. Earlier prose and instruction measurements
+are preserved, with the substantial editing pass deferred as requested.

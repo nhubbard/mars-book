@@ -1,0 +1,16 @@
+\section{Step 78 Select the Sub predictor}
+The supplied scalar dispatch distinguishes Sub, Up, Average and Paeth. Up already has its predictor in \texttt{\$t4}, the upper value. Sub needs the left value instead. Fill \texttt{row\_left} by selecting that previously loaded left sample into the common predictor register \texttt{\$t4}. Leave residual addition to the shared store step.
+
+The first Sub row in the worked fixture begins at offset 14. Its first residual is 20 and its left boundary is zero, so its first reconstructed red sample will remain 20. At the second red sample, three bytes later, left is the reconstructed 20; residual 30 will produce 50. The predictor changes as the row advances.
+
+Keeping selection separate from addition gives all scalar filters one byte-publication operation. It also makes a debugging observation precise: at \texttt{row\_left\_ready}, the selected value is a predictor, not yet the final sample. For the first Sub sample that predictor is zero.
+
+\paragraph{Observe} Use \texttt{s78-1}; stop before \texttt{row\_left\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Which left value does Sub use?
+\begin{itemize}
+\item[A.] The preceding blue residual.
+\item[B.] The selector byte.
+\item[C.] The reconstructed sample of the same channel.
+\end{itemize}

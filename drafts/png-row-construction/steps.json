@@ -1,0 +1,459 @@
+{
+  "steps": [
+    {
+      "id": "s71",
+      "region": "row_shape",
+      "checkpoint": "row_shape_ready",
+      "recipe": "s71-1",
+      "title": "Admit a complete row shape",
+      "quiz": {
+        "id": "png-s71-q1",
+        "question": "Why bound dimensions before calculating the predicted count?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It establishes the permitted shape and bounds the arithmetic."
+          },
+          {
+            "id": "B",
+            "text": "It discovers the compression strategy."
+          },
+          {
+            "id": "C",
+            "text": "It changes the filter selectors."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s71-h1",
+          "text": "Each scanline adds one byte beyond its RGB samples."
+        },
+        {
+          "id": "png-s71-h2",
+          "text": "Check width and height independently before computing h(1+3w)."
+        }
+      ]
+    },
+    {
+      "id": "s72",
+      "region": "row_selectors",
+      "checkpoint": "row_selectors_ready",
+      "recipe": "s72-1",
+      "title": "Validate every selector before writing",
+      "quiz": {
+        "id": "png-s72-q1",
+        "question": "What must remain unchanged after a bad final selector?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the final selector."
+          },
+          {
+            "id": "B",
+            "text": "All row-buffer bytes."
+          },
+          {
+            "id": "C",
+            "text": "Only framebuffer padding."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s72-h1",
+          "text": "A previous row may have a nonzero predictor even when its selector is valid."
+        },
+        {
+          "id": "png-s72-h2",
+          "text": "The validation pass reads row starts and performs no sample stores."
+        }
+      ]
+    },
+    {
+      "id": "s73",
+      "region": "row_zero",
+      "checkpoint": "row_zero_ready",
+      "recipe": "s73-1",
+      "title": "Construct the first row\u2019s upper boundary",
+      "quiz": {
+        "id": "png-s73-q1",
+        "question": "Why use a private zero row?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It stores compressed history."
+          },
+          {
+            "id": "B",
+            "text": "It replaces every None row."
+          },
+          {
+            "id": "C",
+            "text": "It supplies defined upper neighbors for the first row."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s73-h1",
+          "text": "Upper samples must exist even for a first-row Up filter."
+        },
+        {
+          "id": "png-s73-h2",
+          "text": "Clear only the sample extent; preserve the separately saved original byte count."
+        }
+      ]
+    },
+    {
+      "id": "s74",
+      "region": "row_cursor",
+      "checkpoint": "row_cursor_ready",
+      "recipe": "s74-1",
+      "title": "Separate selector and sample cursors",
+      "quiz": {
+        "id": "png-s74-q1",
+        "question": "Where does the upper cursor point?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At the corresponding previous sample, or the zero row."
+          },
+          {
+            "id": "B",
+            "text": "At the previous selector."
+          },
+          {
+            "id": "C",
+            "text": "At compressed input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s74-h1",
+          "text": "Each row start includes one selector byte."
+        },
+        {
+          "id": "png-s74-h2",
+          "text": "The exclusive sample end is first sample plus 3w, not plus 1+3w."
+        }
+      ]
+    },
+    {
+      "id": "s75",
+      "region": "row_finish",
+      "checkpoint": "row_advance_ready",
+      "recipe": "s75-1",
+      "title": "Advance from one row to the next",
+      "quiz": {
+        "id": "png-s75-q1",
+        "question": "What becomes the next row\u2019s upper address?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The current row\u2019s first sample address."
+          },
+          {
+            "id": "B",
+            "text": "The current selector address."
+          },
+          {
+            "id": "C",
+            "text": "The end of compressed input."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s75-h1",
+          "text": "The previous row\u2019s selector must not become an upper sample."
+        },
+        {
+          "id": "png-s75-h2",
+          "text": "Return the original complete row-buffer count, including selectors."
+        }
+      ]
+    },
+    {
+      "id": "s76",
+      "region": "row_neighbors",
+      "checkpoint": "row_neighbors_ready",
+      "recipe": "s76-1",
+      "title": "Load neighbors from reconstructed samples",
+      "quiz": {
+        "id": "png-s76-q1",
+        "question": "What is the left-neighbor distance in RGB8?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One byte."
+          },
+          {
+            "id": "B",
+            "text": "Three bytes."
+          },
+          {
+            "id": "C",
+            "text": "One complete scanline."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s76-h1",
+          "text": "Follow one color channel across two adjacent pixels."
+        },
+        {
+          "id": "png-s76-h2",
+          "text": "Use the current sample offset to avoid reading before the first pixel."
+        }
+      ]
+    },
+    {
+      "id": "s77",
+      "region": "row_store",
+      "checkpoint": "row_store_ready",
+      "recipe": "s77-1",
+      "title": "Restore and store one sample",
+      "quiz": {
+        "id": "png-s77-q1",
+        "question": "What is the restored byte for residual 10 and predictor 250?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "255."
+          },
+          {
+            "id": "B",
+            "text": "260."
+          },
+          {
+            "id": "C",
+            "text": "4."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s77-h1",
+          "text": "The sum may be wider than the stored byte."
+        },
+        {
+          "id": "png-s77-h2",
+          "text": "Advance both sample cursors together after the store."
+        }
+      ]
+    },
+    {
+      "id": "s78",
+      "region": "row_left",
+      "checkpoint": "row_left_ready",
+      "recipe": "s78-1",
+      "title": "Select the Sub predictor",
+      "quiz": {
+        "id": "png-s78-q1",
+        "question": "Which left value does Sub use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The preceding blue residual."
+          },
+          {
+            "id": "B",
+            "text": "The selector byte."
+          },
+          {
+            "id": "C",
+            "text": "The reconstructed sample of the same channel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s78-h1",
+          "text": "The common byte loop has already loaded the neighbors."
+        },
+        {
+          "id": "png-s78-h2",
+          "text": "Do not add the residual inside the predictor-selection region."
+        }
+      ]
+    },
+    {
+      "id": "s79",
+      "region": "row_average",
+      "checkpoint": "row_average_ready",
+      "recipe": "s79-1",
+      "title": "Average before reducing the sample",
+      "quiz": {
+        "id": "png-s79-q1",
+        "question": "When may the Average sum be reduced to eight bits?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Before division."
+          },
+          {
+            "id": "B",
+            "text": "After the predictor has been computed and added to the residual."
+          },
+          {
+            "id": "C",
+            "text": "After either neighbor load."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s79-h1",
+          "text": "Two unsigned bytes can sum to more than 255."
+        },
+        {
+          "id": "png-s79-h2",
+          "text": "The right shift acts on the full nonnegative sum."
+        }
+      ]
+    },
+    {
+      "id": "s80",
+      "region": "row_paeth",
+      "checkpoint": "row_paeth_ready",
+      "recipe": "s80-1",
+      "title": "Implement Paeth with its specified ties",
+      "quiz": {
+        "id": "png-s80-q1",
+        "question": "What does Paeth return?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The selected neighboring byte."
+          },
+          {
+            "id": "B",
+            "text": "The estimate regardless of its distance."
+          },
+          {
+            "id": "C",
+            "text": "The sum of all three neighbors."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s80-h1",
+          "text": "Compare three distances, keeping equality in the earlier candidate\u2019s favor."
+        },
+        {
+          "id": "png-s80-h2",
+          "text": "Converge on the checkpoint after placing the selected value in the common predictor register."
+        }
+      ]
+    },
+    {
+      "id": "s81",
+      "region": "row_vector_bound",
+      "checkpoint": "row_vector_ready",
+      "recipe": "s81-1",
+      "title": "Admit only a full Up vector",
+      "quiz": {
+        "id": "png-s81-q1",
+        "question": "Does width five admit a full sixteen-byte Up group?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, because another row follows."
+          },
+          {
+            "id": "B",
+            "text": "No, its RGB sample extent is fifteen bytes."
+          },
+          {
+            "id": "C",
+            "text": "Yes, because a selector adds one byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s81-h1",
+          "text": "A selector is excluded from the sample extent."
+        },
+        {
+          "id": "png-s81-h2",
+          "text": "Use unsigned remaining-byte comparison rather than testing whether any bytes remain."
+        }
+      ]
+    },
+    {
+      "id": "s82",
+      "region": "row_vector_body",
+      "checkpoint": "row_vector_written",
+      "recipe": "s82-1",
+      "title": "Add and store sixteen independent lanes",
+      "quiz": {
+        "id": "png-s82-q1",
+        "question": "Which vector addition matches PNG byte restoration?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Signed saturating addition."
+          },
+          {
+            "id": "B",
+            "text": "Unsigned saturating addition."
+          },
+          {
+            "id": "C",
+            "text": "Wrapping byte addition."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s82-h1",
+          "text": "Use the same modulo-256 rule as the scalar byte store."
+        },
+        {
+          "id": "png-s82-h2",
+          "text": "Store only the admitted group, then advance both sample cursors equally."
+        }
+      ]
+    },
+    {
+      "id": "s83",
+      "region": "row_up_tail",
+      "checkpoint": "row_up_tail_ready",
+      "recipe": "s83-1",
+      "title": "Finish the Up tail without overreading",
+      "quiz": {
+        "id": "png-s83-q1",
+        "question": "What must an empty Up tail do?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Load one vector to discover its length."
+          },
+          {
+            "id": "B",
+            "text": "Reach row completion without a sample load."
+          },
+          {
+            "id": "C",
+            "text": "Overwrite the selector with zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s83-h1",
+          "text": "Test the exclusive end before the first scalar tail load."
+        },
+        {
+          "id": "png-s83-h2",
+          "text": "The completion checkpoint follows the loop; branch there when no samples remain."
+        }
+      ]
+    }
+  ]
+}
