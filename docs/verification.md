@@ -974,3 +974,28 @@ JetBrains Mono. Tags, headed tables, formulas and the figure alternative are pre
 independent accessibility validation and PDF/UA certification remain outstanding.
 Cumulative packages, actual automated light-theme IDE figures, remote progression,
 student-usability review and the author's deferred substantial rewrite remain unfinished.
+
+
+## QOI prototype interfaces and variable-length results
+
+The private QOI verification covers bound, validate, decode, encode, load, save and the
+connected caller. It audits 480 valid and 127 malformed host fixtures before running the
+assembly cases. Complete reference/alternative programs pass 1309 memory cases and 85
+file/caller cases each at ordinary and wide addresses. A separate isolated hidden-state
+control passes once before same-session cases reject it. No exact instruction count or
+encoder byte identity is a correctness gate. Uniform-image size promises retain the
+specific run-compression objective while allowing other valid encodings.
+
+MARS commit 3f0f4608 adds readRegister(name): Long to the assignment DSL and rejects empty
+register names consistently. The 109-test CLI suite passes, including focused checks
+for full-width numeric/named snapshots, invalid names, stopped execution and retained undo. Encoder output lengths are checked
+as Long before conversion to a bounded byte count. Memory traces are validated against
+that returned count, including same-value writes into unused destination capacity.
+The full extra-readable-byte contract of the current write syscall is retained.
+
+The repeatable private verifier also compiles the upstream QOI C decoder against the
+pinned header, checks actual assembly-produced byte streams and exercises normal host
+files. The earlier Pillow run-cache discrepancy remains documented separately; it does
+not weaken the strict model or serve as an oracle for the assembly results. Full student
+exports, actual light-theme captures, remote instructor policy and independent
+accessibility/usability validation remain pending.

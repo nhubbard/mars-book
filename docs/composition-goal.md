@@ -334,3 +334,22 @@ The private host oracle and independent upstream codec checks establish fixture 
 they are not evidence of a completed MIPS program. Cumulative construction, complete
 MIPS companions, quizzes/hints, distributions and manuscript integration remain next.
 The main manuscript still has 29 packaged chapters; the full goal remains active.
+
+
+The private QOI companions now implement the six interfaces and complete file caller.
+Reference and equivalent bit-field/hash/literal variants each pass 1309 memory and 85
+file/caller cases at ordinary addresses and above 4 GiB, for 5576 successful case
+executions. Twenty-six faulty variants are rejected; a hidden-state variant first passes
+an isolated call and then fails same-session checks. Eighty-four actual assembly images
+are decoded by an independent strict model and freshly compiled, hash-pinned upstream
+reference decoder. Three normal CLI host-file round trips preserve RGBA and metadata,
+and a malformed input preserves an existing destination. These are finite prototype
+checks, not a completed student package or usability certification.
+
+A necessary grader extension, readRegister, returns all 64 bits without advancing execution,
+notifications or undo edits. CLI commit 3f0f4608 has 109 passing Jupiter tests. It enables
+checking variable encoder lengths without requiring one reference encoding; traces also
+reject same-value writes beyond the returned interval. The book now explains measured
+whole-function instruction counts for its public trace and sprite. Cumulative QOI
+construction, public grading exports, quizzes/hints, distributions and actual IDE figures
+remain subsequent work. The substantial prose rewrite stays deferred as requested.

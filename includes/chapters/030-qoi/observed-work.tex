@@ -1,0 +1,56 @@
+\section{Explain the measured work at a complete function boundary}
+The public eight-pixel trace occupies thirty-eight bytes. Its explicit red command is
+\texttt{fe ff 00 00}: four bytes to replace RGB while retaining alpha. The preceding
+pixel is opaque black. Red can also be obtained with changes \((-1,0,0)\), wrapping
+zero minus one to 255. Biasing those three DIFF fields by two gives \texttt{01 10 10};
+with the class bits, the complete tag is \texttt{5a}. That single byte saves three
+bytes without changing the reconstructed color or cache state.
+
+The reference prototype chooses that shorter command and writes a thirty-five-byte
+file for the trace. Its decoded pixels and descriptive header fields match the
+thirty-eight-byte fixture. The comparison is between two representations of the same
+image, so the encoder check decodes the result independently rather than comparing
+file bytes with the fixture. For the sprite, the reference produces sixty-one bytes.
+
+The following measurements count completed simulator instructions from the named
+function entry through its return, including private cache initialization, called
+helpers, validation and delayed returns. Preparing arguments and selecting the stopped
+entry externally are not executed program instructions. Validate and decode receive
+the same public fixture bytes; encode receives the corresponding RGBA words and
+metadata. The last column is the encoder's returned file length.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\small
+\begin{tabular}{llrrrr}
+Fixture & Prototype & Validate & Decode & Encode & File bytes \\
+\hline
+Eight-pixel trace & Reference & 846 & 1748 & 772 & 35 \\
+Eight-pixel trace & Alternative & 854 & 1764 & 788 & 35 \\
+Eight-row sprite & Reference & 2690 & 5548 & 2813 & 61 \\
+Eight-row sprite & Alternative & 2766 & 5700 & 2941 & 61 \\
+\end{tabular}
+\end{center}
+
+The decoder performs validation and a second reconstruction pass, plus its own capacity,
+frame and return work. Its count therefore exceeds twice the standalone validation
+count in these examples. This is the measured cost of retaining the unchanged-output
+failure promise. For these prototypes, the difference is two additional instructions
+per pixel and forty fixed instructions: the output store and pointer advance add
+\(2n\), and the wrapper adds forty. Thus the trace has \(1748-2\cdot846=56\) extra
+instructions, while the sprite has \(5548-2\cdot2690=168\). This relationship is an
+observation of these implementations, not a universal decoder formula. Removing the
+validation pass would alter the failure promise, not merely remove redundant instructions
+from the same interface.
+
+The alternative uses bit-field insertion when assembling colors and shifts and additions
+for the cache hash. It also permits a different literal choice during encoding. These
+are valid implementation choices, but the measured alternative takes more instructions
+for these two inputs. Replacing multiplication with several shifts and additions does
+not automatically reduce simulated work. A host-time comparison would need a separate
+measurement; this table does not measure wall-clock execution or IDE launch time.
+
+Treat these counts as observations of the prototypes, not required answers for a
+student implementation. A different correct cache representation, register allocation
+or encoder choice can produce other counts. Compare complete boundaries on matching
+inputs before attributing a change to a particular instruction sequence.

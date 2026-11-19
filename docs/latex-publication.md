@@ -274,3 +274,11 @@ The current Minion Pro, Noto Sans Math and JetBrains Mono fonts remain embedded.
 structure, table headers and figure descriptions are checked, without claiming external
 PDF/UA certification. The main manuscript remains 29 packaged chapters until the QOI
 MIPS companions, steps and distributions are ready for integration.
+
+
+The verified QOI prototype step adds a twenty-first native reading segment with measured
+whole-function counts and the shorter equivalent DIFF representation of the worked red
+pixel. The current standalone reading is 13 pages, with four headed tables and one
+native described sprite. Complete assembly companions remain private; cumulative
+student construction, distributions and main-manuscript integration are still pending.
+The full 35-chapter goal remains active, with the requested larger prose edit deferred.
