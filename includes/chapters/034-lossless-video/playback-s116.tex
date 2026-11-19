@@ -1,0 +1,16 @@
+\section{Step 116 Reject backward observed time}
+Fill \texttt{vp\_compare}. Compare the new unsigned clock value with the previous observed value. A smaller value stops playback as a clock failure. Otherwise retain it and determine whether it is below the scheduled deadline.
+
+This player does not silently re-anchor after a backward change. Its failure retains the last accepted picture and the actual accepted count, while leaving final context results unchanged. Equal consecutive readings are legal. The policy concerns observed samples; it does not claim to detect a change that occurs and reverses between samples.
+
+Use \texttt{s116-1} and stop before \texttt{vp\_clock\_compared}.
+
+\paragraph{Observe} At exact deadline, the pending-sleep condition is false. A reading below the previous sample instead takes the failure path.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} How does this player handle a backward observed clock change?
+\begin{enumerate}[label=\Alph*.]
+\item It silently starts a new schedule.
+\item It fails while retaining the last accepted picture.
+\item It sends a negative sleep request.
+\end{enumerate}

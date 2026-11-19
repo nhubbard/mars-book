@@ -1,0 +1,36 @@
+\section{Read a real timing result without changing its pixels}
+The deterministic clock makes exact arithmetic observable. An ordinary CLI run
+instead uses the host clock and actual sleep service. The following observations
+come from one fresh process for each input and start position on the author's
+machine. The caller completed the actual encode, store, reload, validation and
+playback path. Final image dumps matched the corresponding source frames.
+
+\begin{table}[htbp]
+\centering
+\caption{Reported playback state from four real-clock CLI runs; times are milliseconds.}
+\label{tab:video-playback-host-observation}
+\begin{tabular}{l r r r r r}
+\toprule
+Input & Start & Frames & Logical & Late intervals & Maximum late \\
+\midrule
+moving & 0 & 8 & 320 & 8 & 45 \\
+moving & 6 & 2 & 80 & 2 & 27 \\
+still & 0 & 4 & 160 & 4 & 23 \\
+all change & 1 & 1 & 40 & 1 & 20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each run retains the logical duration implied by its frame suffix. None reports
+an exact host schedule. An initial seek can finish late, and a requested sleep
+can overshoot; lateness is recorded rather than hidden by moving the anchor.
+A late interval is still an accepted frame with the required numeric pixels.
+Do not use these particular lateness counts as expected answers on another run.
+The maximum values are observations of these runs, not bounds on the simulator.
+
+Loading and initial validation happen before the anchor; the first seek and later
+record applications happen inside the schedule. Whole-process elapsed time also
+includes JVM startup, assembly, encoding and file I/O, so it cannot stand in for
+isolated playback cost. No IntelliJ click-to-frame or repaint time was measured
+here. Actual light-theme IDE observations and their annotated capture receipts
+remain pending.

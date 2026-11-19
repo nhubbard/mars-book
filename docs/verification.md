@@ -1026,3 +1026,33 @@ original source frames. The pinned CLI SHA-256 is
 All 200 tooling tests and 62 package validation/build commands pass. Actual IDE
 captures and independent accessibility review remain pending. Timed playback and
 final video packaging are the next construction work; H.263 is still planning only.
+
+## Reload validation and timed sequential playback
+
+The private playback gate passes 648 simulator cases, rejects eighteen assembled
+faults and checks six ordinary CLI callers using the actual clock/sleep services.
+Three complete implementations run in both byte orders and normal/high layouts.
+The alternative changes clock combination/deadline expressions and verifies that
+unused upper sleep-register bits do not constrain the 32-bit syscall ABI.
+A 256-frame fixture ends with distinct pixels; duration one/thousand, signed-bit
+clock transitions, low-half carry, unsigned deadline wrap, suffix starts, bad late
+CRCs and exact file end are checked. Repeated calls retain a real successful
+image/context through rejected input and then a fresh suffix.
+
+Every accepted picture and requested wait is checked at public syscall boundaries.
+The deterministic timeline covers exact deadlines, remaining waits, early wakeup,
+oversleep, catchup and backward observed time. No private labels/register layout or
+instruction counts are required for completed grading. All twenty-one recipes plus
+an untouched control pass, with the initial clock helper tested directly and the
+player tested both directly and through its actual file-round-trip caller. Compacted
+guided fixtures match both encoder and loader capacities to real 262,144-byte arenas.
+
+The upstream grader extensions are tested in 117 CLI tests, including the packaged
+script engine. The pinned CLI SHA-256 is
+`64a2d909e8b15e32619086e3880f346c014076789e0e9f4be12baea95f4cbde2`.
+All 208 public tooling tests and 62 package validation/build commands pass. Four
+successful real-clock callers dump exact final images and consistent counters; two
+initial failures retain display/result state. Recorded process time includes startup,
+assembly, encoding, I/O, validation, decoding and sleep; it is not isolated playback
+or an IDE latency measurement. Final chapter packaging/integration, actual IDE
+captures and independent accessibility review remain pending.

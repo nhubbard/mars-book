@@ -1028,3 +1028,29 @@ final video feedback/distributions and manuscript integration remain unfinished.
 Actual automated light-theme IDE figures and independent accessibility review remain
 pending. H.263 remains planning only until chapters 33 and 34 are complete; the
 substantive editing pass remains a separate future goal.
+
+
+The lossless-video construction now reaches step 122 with reload validation and timed
+sequential playback. Twenty-one new native lessons, twenty-one quizzes, forty-two
+hints and twenty-one recipes explain clock halves, independent initial seek,
+anchored deadlines, positive remaining waits, early wakeup, lateness and streaming
+failure. A player validates current loaded bytes before clock/display effects and
+returns actual accepted progress on failure while retaining final context outputs.
+
+The gate passes 648 simulator cases, rejects eighteen assembled faults and checks
+six ordinary real-clock callers. Completed grading inspects every accepted image
+at public syscall boundaries, using scripted 64-bit time and nonblocking sleep.
+Three complete implementations run in both orders and normal/high layouts, including
+256 frames with a distinct final picture, duration bounds and persistent-state
+retries. All twenty-one recipes plus an untouched control are checked; the first
+two helper recipes run directly and player recipes run directly/through the caller.
+Real-clock runs dump final pixels and counters; their lateness observations are
+separate from logical timing and do not measure IntelliJ repaint or startup latency.
+
+The required MARS grader extensions provide scripted timing, public syscall-boundary
+inspection and nonexecuting function entry for repeated-call checks. All 117 CLI
+tests pass. All 208 public tooling tests and 62 course validation/build commands
+pass. Final video feedback/distributions and manuscript integration remain pending,
+as do actual automated light-theme IDE captures and independent accessibility review.
+H.263 remains planning only until chapters 33 and 34 are complete. Substantive
+editing remains a separate future goal.
