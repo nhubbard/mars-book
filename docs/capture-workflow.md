@@ -92,7 +92,7 @@ Earlier smoke images exposed a native analysis badge after a daemon-completion
 event. The current driver also checks visible editor labels and notification balloons,
 and the latest raw proof has neither. It does not draw a transient trainer highlight
 while taking the raw image. Native debugger tree expansion and scrolling now capture the MSA word-lane view.
-Bitmap tool selection and full chapter batches remain unfinished. Native memory table selection and cell callouts are implemented.
+Full chapter batches remain unfinished. Native memory table selection and cell callouts are implemented.
 
 ## Native annotation includes
 
@@ -173,3 +173,17 @@ the quiz and following lesson. Panels that span several asserted native cells li
 any of those cells. This enlarges the word values without treating hidden model
 text as visible data. The independent raw-batch, PDF and package checks remain
 separate evidence.
+
+
+## Bitmap fidelity
+
+The separate authoring plugin can select the native Bitmap Display editor and
+assert every displayed address and RGB value against an independently checked
+RGB888 fixture. Tooltip values and native painted pixels must match exactly.
+The screen photograph has a separate recorded check: this Mac's retained logical-
+and native-resolution captures differed by at most 3/255 per channel, so the record
+fixture explicitly permits that measured bound. The default remains zero; larger
+differences fail. No screenshot pixels are corrected or replaced. Exact decoder
+state comes from the independent grader and native UI assertions, rather than
+inference from the photograph's colors. See the authoring-plugin README for the
+plan fields and the distinction between these checks.

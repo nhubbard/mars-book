@@ -43,12 +43,14 @@ import java.awt.Component
 import java.awt.Rectangle
 import java.awt.Robot
 import java.awt.Window
+import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.Locale
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.CREATE_NEW
 import javax.imageio.ImageIO
+import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JTree
 import javax.swing.JTable
@@ -100,6 +102,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val bytes = withContext(Dispatchers.IO) { Files.readAllBytes(path) }
         check(captureSha256(bytes) == figure.sourceSha256) { "Fixture changed: ${figure.id}" }
         check(!Files.exists(output.resolve(figure.id + ".png")) && !Files.exists(output.resolve(figure.id + ".json"))) { "Existing capture refused" }
+        val expectedBitmap = withContext(Dispatchers.IO) { figure.bitmapView?.load(Path.of(plan.projectRoot)) }
         val manager = XDebuggerManager.getInstance(project)
         val analysisReady = AtomicBoolean(false)
         val analysisConnection = project.messageBus.connect(project)
@@ -149,6 +152,9 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         var ownedSessionName: String? = null
         var lastObservedRows = emptyList<String>()
         var memoryAddressRequested = false
+        var sourceAnalysisVerified = false
+        val originalFiles = withContext(Dispatchers.EDT) { FileEditorManager.getInstance(project).openFiles.toSet() }
+        var ownedBitmapFile: VirtualFile? = null
         var lastObservedTabs = emptyList<String>()
         try {
             withContext(Dispatchers.EDT) {
@@ -177,23 +183,53 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             while (true) {
                 val ready = withContext(Dispatchers.EDT) {
                     check(document.modificationStamp == sourceStamp) { "Fixture edited during capture" }
-                    if (!analysisReady.get()) return@withContext null
+                    if (analysisReady.get()) sourceAnalysisVerified = true
+                    if (!analysisReady.get() && !(expectedBitmap != null && sourceAnalysisVerified)) {
+                        if (expectedBitmap != null && FileEditorManager.getInstance(project).selectedTextEditor?.document != document) {
+                            FileEditorManager.getInstance(project).requestOpenFile(source, FileEditorOpenRequest.withFocus(false).withReuseOpen(true))
+                        }
+                        return@withContext null
+                    }
                     val session = manager.currentSession ?: return@withContext null
                     if (session.sessionName != ownedSessionName || !session.isSuspended) return@withContext null
                     check(!session.debugProcess.processHandler.isProcessTerminated) { "Debugger terminated before capture" }
                     val position = session.currentPosition ?: return@withContext null
                     if (position.file != source || position.line != line) return@withContext null
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return@withContext null
-                    if (editor.document != document) return@withContext null
-                    if (visibleAnalysisIndicators(editor.component).isNotEmpty()) return@withContext null
-                    editor.caretModel.moveToLogicalPosition(LogicalPosition(line, 0))
-                    editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    val editors = FileEditorManager.getInstance(project)
+                    if (expectedBitmap == null) {
+                        val editor = editors.selectedTextEditor
+                        if (editor == null || editor.document != document) {
+                            editors.requestOpenFile(source, FileEditorOpenRequest.withFocus(false).withReuseOpen(true))
+                            return@withContext null
+                        }
+                        if (visibleAnalysisIndicators(editor.component).isNotEmpty()) return@withContext null
+                        editor.caretModel.moveToLogicalPosition(LogicalPosition(line, 0))
+                        editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    }
                     val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
                     if (!frame.isActive || Window.getWindows().any { it is JDialog && it.isModal && it.isShowing }) return@withContext null
                     val balloons = captureBalloons(project)
                     if (balloons.isNotEmpty()) {
                         balloons.forEach { it.hide() }
                         return@withContext null
+                    }
+                    if (expectedBitmap != null) {
+                        val bitmapFile = ownedBitmapFile ?: editors.openFiles.singleOrNull {
+                            it !in originalFiles && it.name == "Bitmap Display — " + source.name
+                        }?.also { ownedBitmapFile = it } ?: return@withContext null
+                        if (bitmapFile !in editors.selectedFiles) {
+                            editors.requestOpenFile(bitmapFile, FileEditorOpenRequest.withFocus(false).withReuseOpen(true))
+                            return@withContext null
+                        }
+                        val windows = ToolWindowManager.getInstance(project)
+                        val visible = listOf("Project", "MARS Tools", "Debug").mapNotNull(windows::getToolWindow).filter { it.isVisible }
+                        if (visible.isNotEmpty()) {
+                            visible.forEach { it.hide() }
+                            return@withContext null
+                        }
+                        val canvas = selectedBitmapCanvas(project) ?: return@withContext null
+                        if (observeBookBitmap(canvas, expectedBitmap) == null) return@withContext null
+                        return@withContext emptyList<BookUiRow>()
                     }
                     val descriptor = RunContentManager.getInstance(project).findContentDescriptor(
                         DefaultDebugExecutor.getDebugExecutorInstance(), session.debugProcess.processHandler,
@@ -242,7 +278,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 stable = if (texts != null && texts == previous) stable + 1 else 0
                 previous = texts
                 if (ready != null && stable >= 2) {
-                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url)
+                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap)
                     break
                 }
                 delay(200)
@@ -260,6 +296,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 if (!project.isDisposed) {
                     manager.debugSessions.filter { it.sessionName == ownedSessionName }.forEach { it.stop() }
                     LearningUiHighlightingManager.clearHighlights()
+                    val editors = FileEditorManager.getInstance(project)
+                    editors.openFiles.filter { it !in originalFiles && it.name == "Bitmap Display — " + source.name }.forEach(editors::closeFile)
                     writeAction { manager.breakpointManager.removeBreakpoint(breakpoint) }
                 }
             }
@@ -272,6 +310,10 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             }
         }
     }
+
+    private fun selectedBitmapCanvas(project: Project): JComponent? = FileEditorManager.getInstance(project).selectedEditors
+        .mapNotNull { it.preferredFocusedComponent }
+        .singleOrNull { it.isShowing && it.accessibleContext?.accessibleName == "Bitmap Display" }
 
     private fun <P : XBreakpointProperties<*>> addBreakpoint(project: Project, type: XLineBreakpointType<P>, file: VirtualFile, line: Int) =
         XDebuggerManager.getInstance(project).breakpointManager.addLineBreakpoint(type, file.url, line, type.createBreakpointProperties(file, line))
@@ -300,7 +342,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         }
     }.toList()
 
-    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String) {
+    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?) {
         val snapshot = withContext(Dispatchers.EDT) {
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             val root = frame.rootPane
@@ -308,9 +350,12 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             requireVisibleCaptureViewport(viewport, frame.graphicsConfiguration.bounds)
             val theme = checkNotNull(LafManager.getInstance().currentUIThemeLookAndFeel)
             check(theme.name == "IntelliJ Light" && !theme.isDark)
-            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
-            check(editor.colorsScheme.defaultBackground == Color.WHITE)
-            check(visibleAnalysisIndicators(editor.component).isEmpty()) { "Visible analysis indicator returned" }
+            val editor = FileEditorManager.getInstance(project).selectedTextEditor
+            if (expectedBitmap == null) {
+                checkNotNull(editor)
+                check(editor.colorsScheme.defaultBackground == Color.WHITE)
+                check(visibleAnalysisIndicators(editor.component).isEmpty()) { "Visible analysis indicator returned" }
+            }
             check(captureBalloons(project).isEmpty()) { "Notification appeared before screenshot" }
             val callouts = figure.expectedRows.map { expected ->
                 val row = rows.single { expected.matches(it.text) }
@@ -318,26 +363,66 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     "observedText" to row.text, "column" to expected.column)
             }.toMutableList()
             LearningUiHighlightingManager.clearHighlights()
-            val point = editor.logicalPositionToXY(LogicalPosition(line, 0))
-            SwingUtilities.convertPointToScreen(point, editor.contentComponent)
-            val visible = Rectangle(editor.contentComponent.locationOnScreen, editor.contentComponent.size)
-            val end = editor.offsetToXY(editor.document.getLineEndOffset(line))
-            SwingUtilities.convertPointToScreen(end, editor.contentComponent)
-            val code = Rectangle(point.x, point.y, (end.x - point.x).coerceAtLeast(editor.lineHeight), editor.lineHeight).intersection(visible).intersection(viewport)
-            callouts += mapOf("label" to "Next source instruction", "box" to captureBox(code, viewport))
+            if (expectedBitmap == null) {
+                checkNotNull(editor)
+                val point = editor.logicalPositionToXY(LogicalPosition(line, 0))
+                SwingUtilities.convertPointToScreen(point, editor.contentComponent)
+                val visible = Rectangle(editor.contentComponent.locationOnScreen, editor.contentComponent.size)
+                val end = editor.offsetToXY(editor.document.getLineEndOffset(line))
+                SwingUtilities.convertPointToScreen(end, editor.contentComponent)
+                val code = Rectangle(point.x, point.y, (end.x - point.x).coerceAtLeast(editor.lineHeight), editor.lineHeight).intersection(visible).intersection(viewport)
+                callouts += mapOf("label" to "Next source instruction", "box" to captureBox(code, viewport))
+            } else {
+                val canvas = checkNotNull(selectedBitmapCanvas(project))
+                val bitmap = checkNotNull(observeBookBitmap(canvas, expectedBitmap)) { "Native bitmap changed before capture" }
+                val bounds = Rectangle(bitmap.bounds).apply { translate(canvas.locationOnScreen.x, canvas.locationOnScreen.y) }
+                callouts += mapOf("label" to expectedBitmap.view.label, "box" to captureBox(bounds, viewport))
+            }
             root.paintImmediately(root.bounds)
             Triple(viewport, callouts, rows.map { it.text })
         }
         // The platform's remote-driver screenshot transport is a test-process API. The installed
         // authoring plugin uses the same JDK screen-capture facility, limited to its own IDE root.
-        val image = withContext(Dispatchers.IO) { Robot().createScreenCapture(snapshot.first) }
+        val screenImages = withContext(Dispatchers.IO) { Robot().createMultiResolutionScreenCapture(snapshot.first).resolutionVariants }
+        val image = screenImages.first() as BufferedImage
+        var screenEvidence: BookBitmapScreenEvidence? = null
         withContext(Dispatchers.EDT) {
             val session = checkNotNull(XDebuggerManager.getInstance(project).currentSession)
             check(session.isSuspended && session.sessionName == "Book figure: " + figure.id)
             check(session.currentPosition?.file?.url == sourceUrl && session.currentPosition?.line == line)
-            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
-            check(editor.document.modificationStamp == sourceStamp) { "Fixture edited during screenshot" }
-            check(visibleAnalysisIndicators(editor.component).isEmpty()) { "Analysis indicator appeared during screenshot" }
+            val document = checkNotNull(FileDocumentManager.getInstance().getDocument(checkNotNull(session.currentPosition).file))
+            check(document.modificationStamp == sourceStamp) { "Fixture edited during screenshot" }
+            if (expectedBitmap == null) {
+                val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+                check(editor.document == document)
+                check(visibleAnalysisIndicators(editor.component).isEmpty()) { "Analysis indicator appeared during screenshot" }
+            } else {
+                val canvas = checkNotNull(selectedBitmapCanvas(project))
+                val observed = checkNotNull(observeBookBitmap(canvas, expectedBitmap)) { "Native bitmap changed during capture" }
+                val relative = Rectangle(observed.bounds).apply {
+                    translate(canvas.locationOnScreen.x - snapshot.first.x, canvas.locationOnScreen.y - snapshot.first.y)
+                }
+                val photograph = observed.copy(bounds = relative)
+                val evidence = photograph.screenEvidence(image, expectedBitmap)
+                screenEvidence = evidence
+                if (evidence.maximumChannelError > expectedBitmap.view.screenChannelTolerance) {
+                    val differences = expectedBitmap.colors.indices.mapNotNull { index ->
+                        val point = photograph.center(index)
+                        val actual = image.getRGB(point.x, point.y) and 0xffffff
+                        if (actual == expectedBitmap.colors[index]) null else mapOf("index" to index, "x" to point.x, "y" to point.y,
+                            "expected" to "%06x".format(expectedBitmap.colors[index]), "actual" to "%06x".format(actual))
+                    }
+                    val diagnostic = mapOf("bounds" to relative, "differentPixels" to differences.size, "samples" to differences.take(32),
+                        "colorSpace" to image.colorModel.colorSpace.toString(), "colorModel" to image.colorModel.toString(), "callouts" to snapshot.second)
+                    withContext(Dispatchers.IO) {
+                        Files.newOutputStream(output.resolve(figure.id + "-failed.png"), CREATE_NEW).use { check(ImageIO.write(image, "png", it)) }
+                        val native = screenImages.last() as BufferedImage
+                        Files.newOutputStream(output.resolve(figure.id + "-failed-native.png"), CREATE_NEW).use { check(ImageIO.write(native, "png", it)) }
+                        Files.writeString(output.resolve(figure.id + "-pixel-failure.json"), GsonBuilder().setPrettyPrinting().create().toJson(diagnostic), CREATE_NEW)
+                    }
+                    error("Captured pixels differ from the independently checked frame")
+                }
+            }
             check(captureBalloons(project).isEmpty()) { "Notification appeared during screenshot" }
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             check(frame.isActive && Rectangle(frame.rootPane.locationOnScreen, frame.rootPane.size) == snapshot.first) { "Capture window changed" }
@@ -354,7 +439,11 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "viewport" to mapOf("width" to image.width, "height" to image.height),
                 "visibleAnalysisIndicators" to emptyList<String>(),
                 "notificationBalloonsVisible" to 0,
-                "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView,
+                "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView, "bitmapView" to figure.bitmapView,
+                "observedBitmap" to expectedBitmap?.let { mapOf("columns" to it.view.columns, "rows" to it.view.rows,
+                    "address" to it.view.address, "rgbSha256" to it.view.rgbSha256, "verifiedPixels" to it.colors.size,
+                    "exactTooltipPixels" to it.colors.size, "exactRenderedPixels" to it.colors.size,
+                    "screenChannelTolerance" to it.view.screenChannelTolerance, "screen" to screenEvidence) },
                 "callouts" to snapshot.second, "observedDebuggerRows" to snapshot.third,
                 "sourceSha256" to figure.sourceSha256, "source" to figure.source,
                 "checkpoint" to figure.checkpoint, "sourceLine" to line + 1,

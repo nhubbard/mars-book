@@ -38,6 +38,7 @@ data class BookCaptureFigure(
     val height: Int = 900,
     val debuggerView: BookDebuggerTreeView = BookDebuggerTreeView(),
     val memoryView: BookMemoryView? = null,
+    val bitmapView: BookBitmapView? = null,
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
@@ -46,9 +47,11 @@ data class BookCaptureFigure(
         require(source.isNotBlank() && !Path.of(source).isAbsolute) { "Source must be relative to the fixture project" }
         require(projectRoot.resolve(source).normalize().startsWith(projectRoot.normalize())) { "Source escapes fixture project" }
         require(width in 800..2560 && height in 600..1600) { "Unsupported viewport" }
-        require(expectedRows.isNotEmpty()) { "A figure needs an observed debugger value" }
+        require(expectedRows.isNotEmpty() || bitmapView != null) { "A figure needs an observed debugger value or bitmap" }
         debuggerView.validate()
         memoryView?.validate()
+        bitmapView?.validate(projectRoot)
+        require(bitmapView == null || (memoryView == null && debuggerView.isEmpty && expectedRows.isEmpty())) { "Capture the bitmap in a dedicated raw panel" }
         require(memoryView == null || memoryView.minimumHeight <= height - 200) { "Leave room for the source editor" }
         require(memoryView == null || debuggerView.isEmpty) { "Choose a memory view or a register-tree view for each raw capture" }
         expectedRows.forEach {

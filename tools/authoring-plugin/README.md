@@ -97,7 +97,7 @@ expands the actual MSA register group, `$w2` and its 32-bit lane row. Receipts i
 the common source/checkpoint and the separate views. The native print composition is now integrated as the verified step-five book
 figure, with the original captures retained alongside editable LaTeX annotations.
 No figure plan is marked verified solely because this smoke batch succeeds. Run-only
-console capture, bitmap view selection, stdin handling, full chapter batches and
+console capture, stdin handling, full chapter batches and
 interactive quizzes/progression remain later work in this same separate plugin.
 
 API contracts were inspected in the pinned read-only checkout: `ProjectActivity`,
@@ -135,7 +135,7 @@ platform's internal analyzer-status classes. Notification balloons in the dedica
 capture instance are hidden through the public notification API without expiring the
 notifications. The gate checks for their return before and after capture. The latest
 private proof has a settled checkmark, a white register view and no overlay or balloon.
-Twenty-four Jupiter tests and the actual vector and three-view index batches cover the current
+Twenty-eight Jupiter tests and the actual vector and three-view index batches cover the current
 implementation. Full chapter capture batches remain incomplete. The step-five native composition
 has passed color/grayscale review; independent accessibility review remains pending.
 
@@ -195,3 +195,37 @@ and the exact installed plugin passed dependency-resolved Plugin Verifier checks
 The actual index batch captures directory rows, context rows and a return to the
 register tab. Those views now form the native index-publication figure. Other book captures and
 independent accessibility review remain pending.
+
+
+### Native bitmap capture
+
+A dedicated `bitmapView` panel selects the native Bitmap Display editor opened by
+ordinary source-header settings. It supplies `columns`, `rows`, a hexadecimal
+`address`, a relative `expectedRgb` file, its `rgbSha256`, and a callout `label`.
+The file contains row-major RGB888 pixels from the independently checked fixture.
+Bitmap panels have no debugger-row assertions or memory/tree navigation request;
+other raw panels show the same checkpoint's register state.
+
+The authoring plugin uses public `FileEditor` and Swing contracts. Native tooltip
+hit testing locates the actual painted viewport without reproducing MARS layout
+code. Every cell must expose the expected coordinates, address, and exact RGB value.
+A native offscreen paint must also match every expected pixel exactly. The plugin
+then captures its own IDE root and checks the corresponding screen pixels. Owned
+bitmap tabs are closed between launches, including those opened during register
+captures. No simulator state is changed by this driver.
+
+`screenChannelTolerance` defaults to zero. The arm64 Mac record fixture explicitly
+uses three after retained logical- and native-resolution diagnostic captures both
+showed differences of at most 3/255 per channel. This applies only to the screen
+photograph; native tooltip and rendered-pixel checks remain exact. Receipts record
+the exact native pixel counts, screenshot error histogram, maximum channel error,
+and sampled screenshot RGB digest. Larger differences reject the image and retain
+it as failed diagnostic evidence. The PNG is never recolored to match the fixture.
+This distinction avoids presenting a screen photograph as a numeric decoder oracle.
+
+The ordinary MARS bitmap feature used by this fixture first appears at upstream
+commit `76edb47b728f72d4669269d56f20320d6d50f4cd`: custom framebuffer addresses and
+an optional `initial=true` source-header setting. Initialized pixels are captured
+before execution without simulated memory-access events. The default remains
+write capture. These are general display features; screenshot orchestration and
+all book-specific classes remain solely in this dependent authoring plugin.
