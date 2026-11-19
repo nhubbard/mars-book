@@ -957,3 +957,20 @@ actual IDE captures, remote progression/hint enforcement and independent accessi
 review remain pending. Chapter 34 seeking, encoding, playback and final packaging are
 next. The H.263 capstone remains documented planning until chapters 33 and 34 are
 complete; the substantive edit remains a separate future goal.
+
+The lossless-video construction now reaches step 56. Eleven new native lessons
+explain nearest-full seeking, bounded directory offsets, private record-sequence
+state, scratch replay and final image publication. Eleven quizzes, twenty-two hints
+and twenty observation recipes accompany the unfinished student regions. Its gate
+passes 1,028 simulator cases across four implementations, both native orders and
+ordinary/high addresses, rejects ten assembled faults and checks eight actual-file
+callers. Every recipe and an unfinished control are checked directly and through the
+load/index/seek caller. Sixteen four-call reuse cases preserve earlier images and
+metadata through rejection. With the rest of the implementation held constant, an
+MSA final copy saves 21,504 simulated instructions, about two percent of the measured
+complete seeks. The native text preserves the entry/return boundary and excludes
+loading, initial indexing and presentation. All 175 public tests pass. Encoder and
+playback construction, final video feedback/archives and manuscript integration,
+actual IDE figures and independent accessibility verification remain unfinished.
+H.263 stays at planning until chapters 33 and 34 are complete. Substantive editing
+remains a separate future goal.

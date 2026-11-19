@@ -1,0 +1,13 @@
+\section{Step 49 Turn a directory offset into a bounded record address}
+Fill \texttt{seek\_offset}. Multiply \texttt{\$s5} by eight with a full-width shift, add that displacement to the directory pointer, and load the native offset. Require offset at least 24 and at most file count minus sixteen. Only then add it to the full-width file base and place the record address in \texttt{\$a0}. The directory stores file-relative byte counts, not absolute addresses. Reading its eight native bytes does not require reversing the big-endian wire fields inside the record.
+
+Use \texttt{s49-1} and stop before \texttt{seek\_offset\_ready}.
+
+\paragraph{Observe} The first stop at \texttt{seek\_offset\_ready} addresses record six. Its address is file base plus directory entry six. The kind byte has not yet been read.
+
+\paragraph{Check} What does a directory entry represent?
+\begin{enumerate}[label=\Alph*.]
+\item A byte offset from this file base.
+\item An absolute framebuffer address.
+\item A count of RGB words.
+\end{enumerate}

@@ -1,0 +1,40 @@
+\section{Measure the seek boundary before changing its inner loops}
+The following measurements begin at \texttt{video\_seek} and end when it returns.
+They exclude loading, initial indexing, presentation sleeps and IDE repainting.
+Both versions produce identical exact numeric pixels and seek metadata. They use
+the same record routine and the same search, bounds and publication instructions;
+only the final copy changes. The scalar version copies one native word per loop,
+while the MSA version copies sixteen bytes per loop. These are simulated
+instruction counts in little-endian mode, not elapsed host time.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete seeks with an otherwise identical scalar or vector copy.}
+\label{tab:video-seek-work}
+\begin{tabular}{l r r r r}
+\toprule
+Input and target & Start & Records & Scalar copy & MSA copy \\
+\midrule
+Moving, 0 & 0 & 1 & 1\,029\,452 & 1\,007\,948 \\
+Moving, 6 & 4 & 3 & 1\,033\,892 & 1\,012\,388 \\
+Extra full, 6 & 5 & 2 & 1\,031\,255 & 1\,009\,751 \\
+256 frames, 255 & 192 & 64 & 1\,126\,553 & 1\,105\,049 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each call copies the same 16\,384-byte result, so the saving is the same
+21\,504 instructions. The complete-seek reduction is about two percent here.
+It is not a claim about host speed or every animation. Even a one-record seek
+still reconstructs 4096 pixels and checks the full record CRC. Sixty-three
+unchanged deltas add replay calls and checks but no changed-pixel application.
+The extra full frame removes one replay in the target-six example without
+changing its final pixels.
+
+A faster copy does not remove record decoding work. Before changing the record
+path, keep the validation boundary explicit. An already indexed immutable file
+provides stronger information than an arbitrary incoming record; a cached decoded
+full frame also consumes storage and depends on that file identity. Either design
+needs an ownership and invalidation rule before its counts are comparable. Keep
+those as extensions and retain the current failure/publication tests when evaluating
+them. A stale cached image that produces fewer instructions is still incorrect.

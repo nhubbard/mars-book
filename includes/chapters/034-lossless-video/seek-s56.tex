@@ -1,0 +1,13 @@
+\section{Step 56 Publish the target and the replay boundary together}
+Fill \texttt{seek\_publish}. Store the requested target at context offset 56 and the retained full-frame start at 64. Compute target minus start plus one with full-width arithmetic and store it at 72. Return success zero and active image count 16\,384. Retain all input fields and both suffix fields. The image copy precedes these stores; callers interpret the outputs only after the successful return. This is a single-threaded publication rule, not an atomic machine transaction for concurrent readers.
+
+Use \texttt{s56-1} and stop before \texttt{seek\_published}.
+
+\paragraph{Observe} At \texttt{seek\_published}, the ordinary example publishes target six, start four and replay count three. After return, repeat with extra-full: pixels match while start becomes five and replay count two. A later invalid target retains that actual successful image and all previously published outputs.
+
+\paragraph{Check} What does the replay count measure?
+\begin{enumerate}[label=\Alph*.]
+\item Milliseconds of playback.
+\item Applied records, including the starting full frame.
+\item All directory entries in the file.
+\end{enumerate}

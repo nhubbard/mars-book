@@ -1,0 +1,13 @@
+\section{Step 55 Copy the complete reconstructed image in bounded vectors}
+Fill \texttt{seek\_copy}. Copy exactly 16\,384 bytes from scratch to the destination. The illustrated MSA loop uses \texttt{ld.b} and \texttt{st.b} on one sixteen-byte group at a time, advances both full-width pointers by sixteen, and repeats 1024 times. This operation preserves the already native framebuffer bytes, so it needs no RGB shuffle or byte-order conversion. Four-byte-aligned image bases meet the supplied interface; byte-element vector memory operations do not add a sixteen-byte base-alignment requirement here. A scalar copy is an equivalent completed implementation.
+
+Use \texttt{s55-1} and stop before \texttt{seek\_frame\_copied}.
+
+\paragraph{Observe} At \texttt{seek\_frame\_copied}, all 4096 destination words equal frame six and prefix/suffix guards remain unchanged. The final context outputs still retain their earlier bytes.
+
+\paragraph{Check} Why does this vector copy need no RGB packing shuffle?
+\begin{enumerate}[label=\Alph*.]
+\item Scratch already contains native display words.
+\item Byte order never matters in a framebuffer.
+\item Each source byte is a separate pixel.
+\end{enumerate}
