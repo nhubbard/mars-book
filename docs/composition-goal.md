@@ -353,3 +353,15 @@ reject same-value writes beyond the returned interval. The book now explains mea
 whole-function instruction counts for its public trace and sprite. Cumulative QOI
 construction, public grading exports, quizzes/hints, distributions and actual IDE figures
 remain subsequent work. The substantial prose rewrite stays deferred as requested.
+
+
+The QOI cumulative construction now adds 65 native authoring/observation steps, 57
+unfinished regions, 65 quizzes, 130 progressive hints and 65 exact observation recipes.
+Preparation changes data only and preserves authored instructions. The scaffold has
+independent invocation frames, guarded nested calls and development exits that close
+live file descriptors. Separate checkpoint instructions avoid aliased-label observations.
+Guided checks verify the illustrated intermediate state; completed-interface checks
+accept equivalent implementations. Four light-theme IDE figures remain plans, with no
+capture pixels or coordinate receipts. QOI is still a standalone chapter draft; public
+grading exports, separate archives and manuscript integration remain to be completed.
+All earlier chapter prose is retained for the later requested editing pass.

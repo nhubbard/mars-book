@@ -282,3 +282,18 @@ pixel. The current standalone reading is 13 pages, with four headed tables and o
 native described sprite. Complete assembly companions remain private; cumulative
 student construction, distributions and main-manuscript integration are still pending.
 The full 35-chapter goal remains active, with the requested larger prose edit deferred.
+
+
+The standalone QOI draft now weaves 65 construction and observation steps into the
+existing explanatory passages. Build it with the same `drafts/qoi.tex` entry. Its four
+new IDE figure callouts explicitly mark planned captures; they are not screenshots.
+The new construction uses no minted listings. Existing Minion Pro text, Noto Sans Math
+and JetBrains Mono settings and the IntelliJ-derived highlighting pipeline are retained.
+The measured prototype instruction table describes the original prototypes, not the
+new scaffold with its extra checkpoint instructions and supplied teaching routes.
+
+The cumulative QOI PDF has 48 physical pages. Local inspection confirms embedded Minion
+Pro, JetBrains Mono and Noto Sans Math fonts, a tagged PDF 2.0 structure and no reported
+overfull boxes or missing characters. Rendered-page inspection covers all 48 pages.
+These checks are not a PDF/UA certification or a substitute for assistive-technology
+testing. The later author-requested substantive editing pass remains deferred.
