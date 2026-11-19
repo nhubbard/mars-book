@@ -365,3 +365,12 @@ accept equivalent implementations. Four light-theme IDE figures remain plans, wi
 capture pixels or coordinate receipts. QOI is still a standalone chapter draft; public
 grading exports, separate archives and manuscript integration remain to be completed.
 All earlier chapter prose is retained for the later requested editing pass.
+
+
+QOI now has seven standalone public completed-interface checking domains under
+`drafts/qoi-construction/checks`. A new native passage explains invocation, intermediate
+versus completed checks, caller memory ownership, file fixtures, alpha and equivalent
+encoding. The host decoder is independently audited against the existing 607 private
+valid/malformed fixtures. The complete reference and alternative each pass at both
+normal and wide addresses. Guided exports and final chapter distributions remain the
+next step; instructor algorithms and keys remain private.

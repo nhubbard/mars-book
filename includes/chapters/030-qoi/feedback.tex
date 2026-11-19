@@ -1,0 +1,32 @@
+\section{Check completed routines through their public interfaces}
+The observation recipes describe particular stops while a routine is being built.
+A completed routine needs a different test: call it with inputs whose result is known,
+then compare its externally visible state. The public checks in
+\path{drafts/qoi-construction/checks} make those calls through the six published entry
+points. They do not inspect the routine's labels, scratch registers or frame layout.
+Keep the supplied caller, data arenas and \texttt{function\_return} label so that the
+checks can supply inputs and regain control after each call.
+
+Run \texttt{java -jar /path/to/cli.jar grade /path/to/check.kts /path/to/working.asm}
+with one check file and the current working assembly source. The \texttt{bound},
+\texttt{validate}, \texttt{decode} and \texttt{encode} check files exercise their named
+interfaces. The \texttt{format} file supplies malformed streams and impossible byte
+counts to the validator and decoder. The \texttt{files} file supplies in-memory files,
+short transfers and failures. These file fixtures are installed by the grader; the
+check does not open the student's real input or output files. The \texttt{caller} file
+runs the connected program through \texttt{main} and checks its published result.
+
+An encoder check decodes the returned stream with a host implementation of the local
+format rules, then compares dimensions, descriptive flags and every RGBA component.
+It also checks the stated size bound for uniform images. Returning a different legal
+chunk sequence is therefore acceptable. A decoder check compares the complete output
+words, including alpha, rather than judging the RGB display. Error cases check that
+unpublished metadata and output remain untouched. Memory-access traces also check
+whether a routine reads or writes outside its caller's permitted intervals, even when
+an accidental access happens to leave the final bytes unchanged.
+
+These are feedback checks for completed interfaces. An unfinished development return
+of four is expected to fail them. Continue using the step's named checkpoint while
+that routine is incomplete. Passing the public checks is evidence about their stated
+cases; additional private checks exercise other inputs and repeated calls. No exact
+encoding or instruction-count comparison is required for a free-writing solution.

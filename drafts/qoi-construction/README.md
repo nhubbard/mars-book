@@ -34,6 +34,35 @@ to the sprite, which is the final observation's separate input. It refuses exist
 Guided checkpoint states describe the illustrated register and frame choices. Completed
 free-writing checks accept equivalent algorithms, frames and encodings with the same
 published contracts and uniform-image size promises. Complete solutions and quiz keys
-remain private. Public checkpoint-check exports and separate distributions remain next;
+remain private. Seven public completed-interface check files are in checks/: bound, validate, decode,
+encode, format, files and caller. Run each with the CLI grade command against the
+working source; each file is standalone. These use the supplied data/caller labels and
+function_return only. Intermediate checkpoint-check exports and separate distributions
+remain next;
 remote instructor progression/hint enforcement and actual automated IDE capture are
 also subsequent work. The substantial prose rewrite remains deferred until all 35 drafts.
+
+## Completed-interface feedback
+
+Run `java -jar /path/to/cli.jar grade checks/validate.kts /path/to/working.asm` from
+this directory, substituting the desired check. These are completed-interface tests;
+a safe development return is expected to fail them. The grader supplies file fixtures
+in memory and does not open host files. Keep the supplied caller/data labels and
+function_return boundary for invocation. Internal labels and register choices are free.
+
+| Check | Cases | Main observations |
+| --- | ---: | --- |
+| bound | 9 | Full packed dimension fields, supported domain and conservative capacity |
+| validate | 17 | All chunk types, dimensions, descriptive flags and accepted metadata |
+| decode | 11 | Exact color words including alpha, capacity and packed dimensions |
+| encode | 42 | Independent decoding, flags, output bounds and uniform compression |
+| format | 66 | Truncated commands, bad headers/markers, runs, INDEX adjacency and counts |
+| files | 42 | Short transfers, denied opens, injected errors, EOF probes and cleanup |
+| caller | 4 | Connected pipeline, actual output length, alpha/flags and error publication |
+
+The host decoder is audited privately against 480 valid and 127 malformed fixtures.
+Both private complete implementations pass these 191 cases at ordinary and wide
+addresses (764 implementation executions). Twelve assembled fault controls are rejected,
+including omitted RUN cache insertion, alpha loss and incorrect capacity signedness.
+The six tested unfinished domains are rejected as incomplete. Public tests are feedback;
+private grading exercises additional inputs, repeated calls and ownership boundaries.

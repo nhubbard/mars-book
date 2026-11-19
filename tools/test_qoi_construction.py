@@ -27,6 +27,9 @@ class QoiConstructionTests(unittest.TestCase):
         order = [p.stem for p, _ in book.sources('drafts/qoi.tex')
                  if p.parent.name == '030-qoi' and re.fullmatch(r's[0-9]{2}', p.stem)]
         self.assertEqual([s['id'] for s in self.steps], order)
+        chapter_files = [p for p, _ in book.sources('drafts/qoi.tex') if p.parent.name == '030-qoi']
+        self.assertEqual(len(chapter_files), len(set(chapter_files)),
+                         'Each authored chapter fragment appears once in the reading sequence')
         by_step = {q['step']: q for q in self.recipes}
         for step in self.steps:
             self.assertEqual(2, len(step['hints']))

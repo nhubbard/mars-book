@@ -297,3 +297,8 @@ Pro, JetBrains Mono and Noto Sans Math fonts, a tagged PDF 2.0 structure and no 
 overfull boxes or missing characters. Rendered-page inspection covers all 48 pages.
 These checks are not a PDF/UA certification or a substitute for assistive-technology
 testing. The later author-requested substantive editing pass remains deferred.
+
+The subsequent QOI completed-interface feedback passage adds one native include; the
+standalone chapter now has 49 physical pages. The seven public checking domains remain
+code assets, not generated book composition. Native prose explains invocation and the
+scope of the observations. Earlier prose is retained for the later substantial edit.
