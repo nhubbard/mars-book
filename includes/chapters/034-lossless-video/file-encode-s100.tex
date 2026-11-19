@@ -1,0 +1,16 @@
+\section{Step 100 Release ownership exactly once}
+Fill \texttt{vs\_close}. Issue service sixteen for the descriptor acquired by this invocation. After the close, set the ownership marker back to minus one. Both a completed transfer and a failed write reach this cleanup region, so preserve the separate logical status across the close service.
+
+The reset also matters while constructing the routine. If the later publication region is still unfinished, its development cleanup checks the ownership marker before closing. Leaving the old positive descriptor there would make the unfinished path close it a second time. Ownership records what remains to be released, rather than a history of handles once used.
+
+Use \texttt{s100-1} and stop before \texttt{vs\_closed}.
+
+\paragraph{Observe} The descriptor has been closed exactly once and its ownership marker is minus one. Final result publication has not occurred.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} Why clear the ownership marker after closing?
+\begin{enumerate}[label=\Alph*.]
+\item To tell later cleanup that no descriptor remains owned.
+\item To restore the old file contents.
+\item To reset the encoder sequence.
+\end{enumerate}

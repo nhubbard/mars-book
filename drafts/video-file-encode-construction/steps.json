@@ -1,0 +1,616 @@
+{
+  "steps": [
+    {
+      "id": "s84",
+      "region": "fe_admit",
+      "checkpoint": "fe_admitted",
+      "recipe": "s84-1",
+      "quiz": {
+        "id": "video-s84-q1",
+        "question": "What additional fact is needed after admitting the source count range?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The count must equal the declared frame count multiplied by 16,384."
+          },
+          {
+            "id": "B",
+            "text": "The destination must be word-aligned."
+          },
+          {
+            "id": "C",
+            "text": "The input must already contain serialized RGB triples."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s84-h1",
+          "text": "Use unsigned comparisons on the complete argument."
+        },
+        {
+          "id": "video-s84-h2",
+          "text": "Defer the relationship to the declared frame count until the context is readable."
+        }
+      ]
+    },
+    {
+      "id": "s85",
+      "region": "fe_context",
+      "checkpoint": "fe_context_ready",
+      "recipe": "s85-1",
+      "quiz": {
+        "id": "video-s85-q1",
+        "question": "Why bound the frame count before shifting it left by fourteen?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A shift automatically checks available memory."
+          },
+          {
+            "id": "B",
+            "text": "The bound makes the multiplication exact and prevents overflow from disguising a mismatched count."
+          },
+          {
+            "id": "C",
+            "text": "All frames must be full records."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s85-h1",
+          "text": "Compare the saved source byte count with the computed product."
+        },
+        {
+          "id": "video-s85-h2",
+          "text": "Validate both working pointers even when the first record will be full."
+        }
+      ]
+    },
+    {
+      "id": "s86",
+      "region": "fe_state",
+      "checkpoint": "fe_state_ready",
+      "recipe": "s86-1",
+      "quiz": {
+        "id": "video-s86-q1",
+        "question": "Which quantity advances by a variable amount after a successful record?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The native source image size."
+          },
+          {
+            "id": "B",
+            "text": "The staging byte offset."
+          },
+          {
+            "id": "C",
+            "text": "The global header size."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s86-h1",
+          "text": "Reserve the global header before adding any records."
+        },
+        {
+          "id": "video-s86-h2",
+          "text": "Use saved state for values needed across the record call."
+        }
+      ]
+    },
+    {
+      "id": "s87",
+      "region": "fe_record_context",
+      "checkpoint": "fe_record_context_ready",
+      "recipe": "s87-1",
+      "quiz": {
+        "id": "video-s87-q1",
+        "question": "What makes stale previous-image contents harmless at the start of a new file?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every old word is guaranteed to be zero."
+          },
+          {
+            "id": "B",
+            "text": "The source is serialized in native byte order."
+          },
+          {
+            "id": "C",
+            "text": "A fresh sequence zero requires a full first record."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s87-h1",
+          "text": "The record context belongs to this call, not to a previous file."
+        },
+        {
+          "id": "video-s87-h2",
+          "text": "Reuse working storage, but reset the sequence that gives its contents meaning."
+        }
+      ]
+    },
+    {
+      "id": "s88",
+      "region": "fe_header",
+      "checkpoint": "fe_header_ready",
+      "recipe": "s88-1",
+      "quiz": {
+        "id": "video-s88-q1",
+        "question": "How is the duration forty encoded in the file?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "As a native doubleword."
+          },
+          {
+            "id": "B",
+            "text": "As four big-endian bytes 00 00 00 28."
+          },
+          {
+            "id": "C",
+            "text": "As the ASCII characters 4 and 0."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s88-h1",
+          "text": "Extract the most significant serialized byte first."
+        },
+        {
+          "id": "video-s88-h2",
+          "text": "Keep flags and reserved bytes explicitly zero."
+        }
+      ]
+    },
+    {
+      "id": "s89",
+      "region": "fe_window",
+      "checkpoint": "fe_window_ready",
+      "recipe": "s89-1",
+      "quiz": {
+        "id": "video-s89-q1",
+        "question": "Which capacity belongs in the nested record context?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The remaining capacity after the current produced offset."
+          },
+          {
+            "id": "B",
+            "text": "The source byte count for the whole file."
+          },
+          {
+            "id": "C",
+            "text": "The original total staging capacity on every iteration."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s89-h1",
+          "text": "Keep the produced offset within capacity before subtracting."
+        },
+        {
+          "id": "video-s89-h2",
+          "text": "The nested source count is always 16,384."
+        }
+      ]
+    },
+    {
+      "id": "s90",
+      "region": "fe_record",
+      "checkpoint": "fe_record_ready",
+      "recipe": "s90-1",
+      "quiz": {
+        "id": "video-s90-q1",
+        "question": "Which result should determine the next staging offset?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The source image byte count."
+          },
+          {
+            "id": "B",
+            "text": "The smallest possible delta size."
+          },
+          {
+            "id": "C",
+            "text": "The actual successful record byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s90-h1",
+          "text": "Save the returned count before subsequent loads overwrite temporary registers."
+        },
+        {
+          "id": "video-s90-h2",
+          "text": "Propagate an unfinished nested routine as development status four."
+        }
+      ]
+    },
+    {
+      "id": "s91",
+      "region": "fe_advance",
+      "checkpoint": "fe_record_advanced",
+      "recipe": "s91-1",
+      "quiz": {
+        "id": "video-s91-q1",
+        "question": "When may the outer sequence advance?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Before checking the nested result."
+          },
+          {
+            "id": "B",
+            "text": "After one complete successful record."
+          },
+          {
+            "id": "C",
+            "text": "Only when the record is full."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s91-h1",
+          "text": "Advance source and destination using their respective units."
+        },
+        {
+          "id": "video-s91-h2",
+          "text": "Do not count a partially attempted record as completed."
+        }
+      ]
+    },
+    {
+      "id": "s92",
+      "region": "fe_exact",
+      "checkpoint": "fe_complete",
+      "recipe": "s92-1",
+      "quiz": {
+        "id": "video-s92-q1",
+        "question": "What does a successful final source-cursor check establish?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every pixel has the same value."
+          },
+          {
+            "id": "B",
+            "text": "Every record has the same size."
+          },
+          {
+            "id": "C",
+            "text": "Exactly the admitted packed source extent has been consumed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s92-h1",
+          "text": "Retain the original source base separately from the moving cursor."
+        },
+        {
+          "id": "video-s92-h2",
+          "text": "Check the private next sequence as well as the outer loop count."
+        }
+      ]
+    },
+    {
+      "id": "s93",
+      "region": "fe_publish",
+      "checkpoint": "fe_published",
+      "recipe": "s93-1",
+      "quiz": {
+        "id": "video-s93-q1",
+        "question": "What remains guaranteed on a completed encoding failure?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The entire staging area is restored."
+          },
+          {
+            "id": "B",
+            "text": "The caller context, including its earlier output fields, is unchanged."
+          },
+          {
+            "id": "C",
+            "text": "The previous-image work area is restored."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s93-h1",
+          "text": "Publish only after every record succeeds."
+        },
+        {
+          "id": "video-s93-h2",
+          "text": "Context publication and restoration of staging bytes are different contracts."
+        }
+      ]
+    },
+    {
+      "id": "s94",
+      "region": "vs_admit",
+      "checkpoint": "vs_admitted",
+      "recipe": "s94-1",
+      "quiz": {
+        "id": "video-s94-q1",
+        "question": "Where does container validation occur in this calling sequence?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "In the caller before opening the output path."
+          },
+          {
+            "id": "B",
+            "text": "After the output file has been truncated."
+          },
+          {
+            "id": "C",
+            "text": "Inside every write request."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s94-h1",
+          "text": "Reject zero and oversized counts before issuing service thirteen."
+        },
+        {
+          "id": "video-s94-h2",
+          "text": "A readable byte source does not need native-word alignment."
+        }
+      ]
+    },
+    {
+      "id": "s95",
+      "region": "vs_state",
+      "checkpoint": "vs_state_ready",
+      "recipe": "s95-1",
+      "quiz": {
+        "id": "video-s95-q1",
+        "question": "Why retain a logical status separately from the service return register?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It changes the file format."
+          },
+          {
+            "id": "B",
+            "text": "Later services overwrite the service return register."
+          },
+          {
+            "id": "C",
+            "text": "Every close returns the original byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s95-h1",
+          "text": "Keep the total count separate from completed progress."
+        },
+        {
+          "id": "video-s95-h2",
+          "text": "Descriptor minus one is an ownership marker, not a handle to close."
+        }
+      ]
+    },
+    {
+      "id": "s96",
+      "region": "vs_open",
+      "checkpoint": "vs_open_ready",
+      "recipe": "s96-1",
+      "quiz": {
+        "id": "video-s96-q1",
+        "question": "Which descriptor must later writes and close use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always descriptor three."
+          },
+          {
+            "id": "B",
+            "text": "The descriptor from the preceding input file."
+          },
+          {
+            "id": "C",
+            "text": "The successful result of this open."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s96-h1",
+          "text": "Test the signed service result before saving ownership."
+        },
+        {
+          "id": "video-s96-h2",
+          "text": "Use flag one only after the caller has validated the staged container."
+        }
+      ]
+    },
+    {
+      "id": "s97",
+      "region": "vs_request",
+      "checkpoint": "vs_requested",
+      "recipe": "s97-1",
+      "quiz": {
+        "id": "video-s97-q1",
+        "question": "What does a positive write result of 257 mean?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Exactly 257 bytes were transferred."
+          },
+          {
+            "id": "B",
+            "text": "The full requested chunk was transferred."
+          },
+          {
+            "id": "C",
+            "text": "The file has reached its final size."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s97-h1",
+          "text": "Form addresses with full-width addition."
+        },
+        {
+          "id": "video-s97-h2",
+          "text": "Bound the request by both remaining bytes and 4096."
+        }
+      ]
+    },
+    {
+      "id": "s98",
+      "region": "vs_result",
+      "checkpoint": "vs_progress_ready",
+      "recipe": "s98-1",
+      "quiz": {
+        "id": "video-s98-q1",
+        "question": "How far should progress advance after a short write?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "By the requested count."
+          },
+          {
+            "id": "B",
+            "text": "By the actual positive result."
+          },
+          {
+            "id": "C",
+            "text": "By one complete frame."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s98-h1",
+          "text": "Reject nonpositive results before adding to progress."
+        },
+        {
+          "id": "video-s98-h2",
+          "text": "Use the same progress for the next source pointer and remaining count."
+        }
+      ]
+    },
+    {
+      "id": "s99",
+      "region": "vs_success",
+      "checkpoint": "vs_success_ready",
+      "recipe": "s99-1",
+      "quiz": {
+        "id": "video-s99-q1",
+        "question": "Is another write needed after the exact count has been transferred?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, to request an EOF byte."
+          },
+          {
+            "id": "B",
+            "text": "Yes, to calculate the record CRC."
+          },
+          {
+            "id": "C",
+            "text": "No; exact progress already establishes transfer completion."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s99-h1",
+          "text": "Keep the loop completion test before the next request."
+        },
+        {
+          "id": "video-s99-h2",
+          "text": "A write stream has no extra EOF byte to emit."
+        }
+      ]
+    },
+    {
+      "id": "s100",
+      "region": "vs_close",
+      "checkpoint": "vs_closed",
+      "recipe": "s100-1",
+      "quiz": {
+        "id": "video-s100-q1",
+        "question": "Why clear the ownership marker after closing?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "To tell later cleanup that no descriptor remains owned."
+          },
+          {
+            "id": "B",
+            "text": "To restore the old file contents."
+          },
+          {
+            "id": "C",
+            "text": "To reset the encoder sequence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s100-h1",
+          "text": "Close the saved descriptor, not the current service number."
+        },
+        {
+          "id": "video-s100-h2",
+          "text": "Keep logical success or failure independent of the close result register."
+        }
+      ]
+    },
+    {
+      "id": "s101",
+      "region": "vs_publish",
+      "checkpoint": "vs_published",
+      "recipe": "s101-1",
+      "quiz": {
+        "id": "video-s101-q1",
+        "question": "What must playback do after the shared staging area has been reloaded?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Trust the old directory solely because the byte count matches."
+          },
+          {
+            "id": "B",
+            "text": "Validate the newly loaded file before using a directory for playback."
+          },
+          {
+            "id": "C",
+            "text": "Interpret the file as native-word pixel storage."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "video-s101-h1",
+          "text": "Store the result count only on logical success."
+        },
+        {
+          "id": "video-s101-h2",
+          "text": "Equal byte counts alone do not establish equal or valid file contents."
+        }
+      ]
+    }
+  ]
+}

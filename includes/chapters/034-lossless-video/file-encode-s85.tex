@@ -1,0 +1,16 @@
+\section{Step 85 Relate the controls to their storage}
+Fill \texttt{fe\_context}. Read the frame count, period and duration from the native context. Require one through 256 frames, a period from one through 64 and a duration from one through 1000 milliseconds. Multiply the admitted frame count by 16\,384 and compare it with the saved source count. With the frame count bounded first, shifting left by fourteen gives the exact product without overflow.
+
+Admit the staging capacity and both working buffers before reading any pixels or writing a header. The working previous image and XOR scratch each need four-byte alignment and at least 16\,384 bytes. Their addresses are separate fields from their capacities; a large capacity does not repair a misaligned address.
+
+Use \texttt{s85-1} and stop before \texttt{fe\_context\_ready}.
+
+\paragraph{Observe} The default controls describe eight frames, period four and duration forty milliseconds. The source and staging areas remain untouched.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} Why bound the frame count before shifting it left by fourteen?
+\begin{enumerate}[label=\Alph*.]
+\item A shift automatically checks available memory.
+\item The bound makes the multiplication exact and prevents overflow from disguising a mismatched count.
+\item All frames must be full records.
+\end{enumerate}

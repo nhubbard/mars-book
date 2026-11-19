@@ -1,0 +1,16 @@
+\section{Step 87 Start each file with fresh prediction state}
+Fill \texttt{fe\_record\_context}. Construct a private record context in the aligned stack frame. Its sequence starts at zero on every file call. Copy the admitted period, working-previous pointer, scratch pointer and their capacities into the corresponding record-context fields. Initialize its result and retained fields as ordinary private storage.
+
+The previous-image buffer may still contain pixels from an earlier file. Sequence zero requires a full record, so those old contents do not supply prediction for this file. Reusing an old record sequence would break that rule: the first record could become a delta whose reference image is absent from the new file. Fresh control state establishes a new prediction chain without clearing every working byte first.
+
+Use \texttt{s87-1} and stop before \texttt{fe\_record\_context\_ready}.
+
+\paragraph{Observe} The private record context has sequence zero and the same working-buffer pointers as the admitted file context.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} What makes stale previous-image contents harmless at the start of a new file?
+\begin{enumerate}[label=\Alph*.]
+\item Every old word is guaranteed to be zero.
+\item The source is serialized in native byte order.
+\item A fresh sequence zero requires a full first record.
+\end{enumerate}

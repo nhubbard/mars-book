@@ -999,3 +999,30 @@ files. The earlier Pillow run-cache discrepancy remains documented separately; i
 not weaken the strict model or serve as an oracle for the assembly results. Full student
 exports, actual light-theme captures, remote instructor policy and independent
 accessibility/usability validation remain pending.
+
+## Complete-file encoding and bounded video storage
+
+The private whole-file gate passes 830 positive simulator cases and rejects nineteen
+assembled faults. Three complete implementations vary record selection, write chunk
+size and private stack allocation. Both native orders and normal/high addresses are
+checked; maximum declared staging capacity, 256 source frames and 7,344,152 transported
+bytes are normal-layout-only checks. High-address cases provide a real 262,144-byte
+staging area rather than declaring a capacity larger than that compacted allocation.
+
+Independent host CRC/command parsing checks every reconstructed color, sequence,
+mandatory full frame, header field and exact file end. Two private source families
+extend public fixtures. Repeated calls retain real state through a late invalid frame
+and fresh successful files. Writer checks cover actual short progress, failed opens,
+nondefault descriptors, high-bit counts, partial errors, immutable path/guards and
+success-only context updates. The pinned MARS write service reads a lookahead byte;
+checks allow exactly that readable suffix without transferring or changing it.
+
+All eighteen native recipes plus an untouched source run directly and through the
+caller in both orders, including owned-descriptor cleanup from unfinished regions.
+Seven ordinary CLI callers produce four valid files and reject three invalid sources
+before creating a target. Independent decoding and every seek target agree with the
+original source frames. The pinned CLI SHA-256 is
+`2a2df387c0515813f93d55c1c1f58294e037c555528a9e86f77a26b5580fd639`.
+All 200 tooling tests and 62 package validation/build commands pass. Actual IDE
+captures and independent accessibility review remain pending. Timed playback and
+final video packaging are the next construction work; H.263 is still planning only.

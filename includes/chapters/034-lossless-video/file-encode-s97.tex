@@ -1,0 +1,16 @@
+\section{Step 97 Request a bounded chunk}
+Fill \texttt{vs\_request}. Compute the remaining count as total minus completed progress. Request at most 4096 bytes from source base plus progress using service fifteen and the owned descriptor. The loop reaches this region only while bytes remain, so the request must be positive.
+
+A request is permission to transfer up to that many bytes. It is not evidence that all were transferred. With a test backend limited to 257 bytes per write, an initial request for 4096 succeeds with result 257. The pinned MARS service also reads one lookahead byte after the request; provide the readable guard required by the transport contract. That byte is not included in the transfer. Smaller positive request sizes are also valid completed implementations; the bound controls each service request, not the file's overall size.
+
+Use \texttt{s97-1} and stop before \texttt{vs\_requested}.
+
+\paragraph{Observe} The first illustrated request is 4096 bytes. Under a 257-byte short-write limit, its positive result is 257.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} What does a positive write result of 257 mean?
+\begin{enumerate}[label=\Alph*.]
+\item Exactly 257 bytes were transferred.
+\item The full requested chunk was transferred.
+\item The file has reached its final size.
+\end{enumerate}

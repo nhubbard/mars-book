@@ -368,3 +368,27 @@ bypass it. All 192 tooling tests pass. Complete-file encoding, timed playback,
 final video distributions/feedback and manuscript integration remain unfinished.
 Actual IDE figures and independent accessibility review remain pending. H.263 remains
 planning only until chapters 33 and 34 are complete; substantive editing is separate.
+
+
+The lossless-video construction now reaches step 101 with complete-file encoding
+and bounded file storage. Eighteen native lessons, eighteen quizzes, thirty-six hints
+and eighteen recipes connect packed source frames to a global header and variable
+records, then to descriptor ownership, short-write progress and success-only result
+publication. The attachment reuses the existing staging arena; old file/index state
+is invalid while encoding overwrites it. Caller context survives encoding failure,
+while temporary staging and working images may change. The pinned write service's
+one-byte lookahead is documented and checked without transferring that guard.
+
+The gate passes 830 simulator cases, rejects nineteen assembled faults and verifies
+seven ordinary callers. It accepts equivalent representations across three complete
+implementations, both native orders and normal/high address layouts. Private generated
+animations extend the published fixtures; exact maximum allocation/transfer boundaries
+use the larger normal layout. All eighteen recipes and an untouched control run
+directly and through the example caller. Successful host files are independently
+parsed, fully decoded and sought through at every target. All 200 tooling tests and
+62 course validation/build commands pass. The native reading copy has 101 observation
+passages and nineteen tagged tables. Revalidation after reload, timed playback,
+final video feedback/distributions and manuscript integration remain unfinished.
+Actual automated light-theme IDE figures and independent accessibility review remain
+pending. H.263 remains planning only until chapters 33 and 34 are complete; the
+substantive editing pass remains a separate future goal.
