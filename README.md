@@ -243,3 +243,21 @@ framebuffer comparisons, including both full-size modes, and two rejected inputs
 The final caller reports `PNG displayed.` after success. Final feedback packaging,
 PNG distributions, integration and actual IDE captures remain next. The main manuscript
 retains 32 packaged chapters; the substantial author editing pass remains deferred.
+
+
+The small lossless-video chapter now has a native reading draft at
+`drafts/lossless-video.tex`. It defines the MLV1 exercise format and explains full
+frames, XOR skip/change commands, record CRCs, validation before mutation, indexing,
+seeking, encoder choices and presentation deadlines. Four reproducible 64-by-64
+animations include unchanged frames, an all-pixel change and optional extra full
+frames. An independent host model checks 22 reference frames and every seek target,
+checks bitwise CRCs and rejects 74 malformed files.
+
+Six cumulative kernel edits, six quizzes, twelve hints and twenty-six recipes develop
+scalar/MSA native-word XOR and nonzero-word counting, including exact output aliases.
+Completed variants, cumulative calls and reused sessions pass 3944 simulator cases;
+eleven assembled faults are rejected and ten ordinary caller runs pass. For 4096
+words, these construction sources use 53269 scalar and 29721 MSA instructions; the
+text preserves that isolated boundary and does not claim a whole-codec speedup.
+All 141 public tests pass. Assembly file-codec construction, final feedback and
+distributions, integration and actual IDE captures remain unfinished.

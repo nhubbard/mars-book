@@ -810,3 +810,32 @@ Final feedback packaging, separate distributions, manuscript integration and act
 annotated IDE captures remain unfinished. The integrated manuscript still contains
 32 packaged chapters; video and APNG remain to be composed. The requested broad prose
 rewrite remains deferred until all chapter drafts exist.
+
+
+Chapter 34 now has a directly authored native reading composition. Its MLV1 exercise
+format fixes 64-by-64 geometry and describes full RGB frames, XOR skip/change commands,
+CRC coverage, bounds, periodic/optional full frames, validation before mutation,
+indexing, seeking, encoder passes, logical deadlines and performance boundaries.
+Worked native tables and a semantic timeline figure explain concrete payloads,
+frame offsets and replay paths. Four public fixture bundles provide exact PPM
+references without exposing a video decoder. The private independent host model
+checks all 22 reference frames and every seek target, bitwise CRCs, equivalent
+encodings, maximal payloads and 74 malformed files.
+
+The first six assembly construction steps develop a native-word XOR/count kernel,
+with six quizzes, twelve hints and twenty-six public recipes. Equivalent signed and
+unsigned extraction implementations, both byte orders, normal/high addresses, exact
+aliases, empty/invalid admission and cumulative direct/main calls pass 3944 simulator
+cases. Eleven assembled faults are rejected; ten ordinary caller runs print the
+correct counts. Reuse checks cover XOR involution and admission after earlier calls.
+For 4096 words the measured construction interval is 53269 scalar instructions and
+29721 MSA instructions, 44.2 percent fewer; file coding, CRC, printing and display
+are excluded, and observation NOPs remain included. A zero-group count shortcut is
+posed as a measured future experiment, not implemented or claimed as a speedup.
+
+All 141 public tests pass. This is a verified reading foundation and first kernel,
+not a completed assembly file encoder/decoder/seeker or playback implementation.
+Those construction stages, package feedback/distributions, integration and actual
+IDE captures remain open, as does APNG composition. The main manuscript still has
+32 packaged chapters. Earlier prose and source exports remain intact; the requested
+broad editing pass remains deferred.

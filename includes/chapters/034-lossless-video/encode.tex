@@ -1,0 +1,24 @@
+\section{Build the encoder in observable passes}
+Begin with an encoder that emits only full frames. Validate each source word's zero
+high byte, calculate the exact output count, and admit destination capacity before
+writing. Emit RGB bytes by extracting channels from numeric words, independent of
+the target's memory byte order. Write record headers and CRCs after their payload
+lengths are known. This establishes the file format without a previous-frame dependency.
+
+Next compute a delta word for every pixel and count the nonzero words. Find a maximal
+run of zero words, then a run of nonzero words, and write their skip/change pair and
+triples. Repeat from the resulting cursor. A long unchanged suffix becomes a final
+skip-only pair. Never advance by both a run count and its byte count: the cursor
+always counts pixels, while the payload cursor counts bytes.
+
+Measure the planned delta payload before publishing it. If it is no smaller than
+12\,288 bytes, choosing a full frame avoids a larger representation. Required
+periodic full frames remain mandatory regardless of the delta estimate. Additional
+full frames are legal, so equivalent encoders can make different choices while
+reconstructing identical animation frames. Keep a result count for bytes actually
+written, rather than returning the destination capacity.
+
+Use a scratch payload or an exact length pass so short output capacity is rejected
+before publication. Delay updating the encoder's previous frame and next sequence
+until the record has been successfully produced. A failed encode must not make the
+next attempt compare against an image that was never committed to the output stream.

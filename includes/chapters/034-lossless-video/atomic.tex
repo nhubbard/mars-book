@@ -1,0 +1,18 @@
+\section{Validate a record before changing the working image}
+The delta stream describes in-place updates, but an invalid command near its end
+must not leave a partly changed displayed frame. Make one pass that checks header,
+CRC, command progress, pixel extents and exact payload completion without writing
+pixels. Only after acceptance, replay the commands to apply their XOR values.
+The file and payload are immutable during these passes.
+
+A full frame also needs its exact length and CRC checked before its RGB samples are
+packed into the working words. The following apply pass then consists of bounded
+reads and stores whose windows have already been established. Saved registers and
+the caller's stack pointer remain part of each callable contract. Do not publish a
+new sequence index or deadline while an admission or checksum check can still fail.
+
+Opening a seekable file performs validation once for every record and builds its
+directory. Ordinary playback can reuse that validated immutable source. A standalone
+record-application check still needs to establish its own record validity when it
+accepts an untrusted record. Keep the cost of file validation separate from later
+seek and replay costs; an index is not evidence that opening the file was constant time.

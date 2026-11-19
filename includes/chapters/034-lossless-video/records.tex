@@ -1,0 +1,25 @@
+\section{Give each frame a bounded record}
+Each frame begins with a sixteen-byte header. The sequence starts at zero and
+increases by one. Kind zero is a full frame; kind one is an XOR delta. At sequence
+numbers divisible by the declared period, require a full frame. Additional full
+frames are permitted between those required positions.
+\Needspace{10\baselineskip}
+\begin{longtable}{p{18mm}p{43mm}p{85mm}}
+\toprule Offset & Field & Meaning \\\midrule
+0 & Kind, 1 byte & Zero for full RGB; one for a delta stream \\
+1 & Reserved, 3 bytes & All zero \\
+4 & Sequence, 4 bytes & Exact next frame index \\
+8 & Payload bytes, 4 bytes & Following payload extent \\
+12 & CRC-32, 4 bytes & CRC over header bytes 0--11 followed by payload \\\bottomrule
+\end{longtable}
+Check that a whole header remains before loading it. Compare payload length with the
+remaining file count by subtraction after that check. Also require at most 28\,672
+payload bytes. A full payload must contain exactly 12\,288 bytes. The CRC field itself
+is excluded from its CRC input. The file header is admitted by its value constraints;
+this format does not put it inside a frame CRC.
+
+After the declared number of records, require exact file completion. A valid prefix
+followed by an extra byte is not a complete \texttt{MLV1} file. Record offsets belong
+in the native directory, not inside a payload or a mutable global cursor shared by
+another playback session. Retain the file bytes unchanged while that directory is
+in use; editing or replacing the source requires validating a new directory.

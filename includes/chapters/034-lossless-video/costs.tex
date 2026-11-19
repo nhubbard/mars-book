@@ -1,0 +1,28 @@
+\section{Measure bytes per frame with the record overhead included}
+The moving fixture occupies 24\,795 bytes. Its two full payloads occupy 24\,576 bytes;
+the six delta payloads occupy 67. Eight record headers add 128 bytes and the file
+header adds 24. Compare this with eight full records: 98\,456 bytes. State whether a
+reported average includes the global header and record overhead.
+\Needspace{12\baselineskip}
+\begin{longtable}{p{13mm}p{24mm}p{23mm}p{30mm}p{30mm}}
+\toprule Frame & Kind & File offset & Payload bytes & Record bytes \\\midrule
+0 & Full & 24 & 12\,288 & 12\,304 \\
+1 & Delta & 12\,328 & 11 & 27 \\
+2 & Delta & 12\,355 & 24 & 40 \\
+3 & Delta & 12\,395 & 4 & 20 \\
+4 & Full & 12\,415 & 12\,288 & 12\,304 \\
+5 & Delta & 24\,719 & 17 & 33 \\
+6 & Delta & 24\,752 & 7 & 23 \\
+7 & Delta & 24\,775 & 4 & 20 \\\bottomrule
+\end{longtable}
+The all-change fixture uses one command to change every pixel. Its delta payload
+needs 12\,292 bytes: one four-byte pair plus 12\,288 XOR bytes. A full payload is four
+bytes smaller. Being temporally related does not guarantee that a delta representation
+saves space. The still fixture gives the opposite boundary: one full frame followed
+by three four-byte skip-only payloads.
+
+Separately measure instructions used to compute deltas, assemble commands, calculate
+CRCs, validate the file and seek to a target. A vector kernel can reduce delta work
+without changing the encoded size. Choosing more full frames can reduce replay work
+while increasing file size. Retain both observations rather than combining them into
+an unexplained claim that the codec is faster.

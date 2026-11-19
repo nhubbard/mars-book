@@ -1,0 +1,16 @@
+\section{Kernel step 1 Admit the count before dereferencing pointers}
+Fill \texttt{video\_admit}. The entry already selects scalar or MSA mode and starts with failure status one and count zero. Require the unsigned word count to be at most 4096. A high-bit register pattern is a large unsigned count, not a small negative loop bound.
+
+For count zero, branch directly to the supplied success path without checking or using the pointers. For a positive count, require all three addresses to be word-aligned. Combining their low bits before masking with three can check this condition together. Reject through \texttt{video\_return}; no private frame has been allocated by the supplied entry.
+
+At the worked checkpoint the count is five, all alignments are accepted, and no input or output byte has been accessed. Retain the mode in \texttt{\$t9}. Counts above the bound and invalid alignment return one and zero; an unfinished region instead returns development status four.
+
+\paragraph{Observe} Use \texttt{s01-1}; stop before \texttt{video\_admitted}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why does count zero return before pointer use?
+\begin{itemize}
+\item[A.] An empty computation has no input or output memory accesses.
+\item[B.] Every pointer is then automatically aligned.
+\item[C.] A zero word always means a black frame.
+\end{itemize}

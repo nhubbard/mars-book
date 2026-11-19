@@ -1,0 +1,16 @@
+\section{Recover a pixel with the same XOR operation}
+For a previous word $P$ and a current word $C$, define the delta $D=P\mathbin{\oplus}C$.
+Then $P\mathbin{\oplus}D=C$. A bit that did not change contributes zero to the delta.
+No color is approximated, and no information is discarded. For valid display words,
+the high byte remains zero in both the delta and the reconstructed result.
+
+In the moving fixture, the first pixel of frame zero is hexadecimal
+\texttt{0x000061C2}. Frame one changes only its red low bit, producing
+\texttt{0x000161C2}. Their XOR is \texttt{0x00010000}; its serialized delta triple
+is \texttt{01 00 00}. The next pixel remains \texttt{0x002586E7}, so its delta is
+zero and it can be covered by a skip.
+
+A zero delta and a zero-valued pixel are different facts. A black pixel may change
+to a nonblack pixel, and two identical nonblack pixels have zero delta. Change
+detection therefore compares the whole XOR word with zero. It does not compare the
+current pixel with black, count nonzero bytes, or count one change per vector.

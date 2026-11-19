@@ -1,0 +1,24 @@
+\section{Measure the isolated kernel before changing the codec}
+The verified construction sources produce the following entry-to-return counts for
+4096 native words. They retain the observation labels and their \texttt{nop}
+instructions. Input preparation, assembly, console printing, record encoding, CRCs
+and display timing are outside this interval.
+\Needspace{7\baselineskip}
+\begin{longtable}{p{30mm}p{30mm}p{38mm}p{43mm}}
+\toprule Mode & Native words & Simulated instructions & Instructions per word \\\midrule
+Scalar & 4096 & 53\,269 & 13.005 \\
+MSA & 4096 & 29\,721 & 7.256 \\\bottomrule
+\end{longtable}
+These versions use 44.2 percent fewer simulated instructions in MSA mode. The counts
+agree across both byte orders, both tested address layouts and two valid kernel
+implementations. Same, all-different, mixed and high-bit numeric patterns give the
+same counts for each mode because the baseline forms one Boolean per word without
+a data-dependent branch. This is a kernel observation, not a whole-video or elapsed-time
+speedup. A vector instruction can also require more simulator host work than a scalar
+instruction, so measure wall time separately when that question matters.
+
+A possible next experiment is to bypass four lane extractions when an entire result
+vector is zero. Measure both unchanged and all-changing input groups; a new branch
+can reduce work on one distribution and add work on another. Retain exact XOR values,
+changed counts, alias safety and bounds. Equivalent implementations are not required
+to reproduce these particular instruction totals.

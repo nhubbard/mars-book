@@ -1,0 +1,26 @@
+\section{Connect validation, replay and publication}
+Build the complete program in layers whose intermediate state is inspectable.
+First admit the file header, then scan complete record envelopes and CRCs. Validate
+all payload command streams and construct the directory without changing the display.
+Only an accepted file should publish its frame count, period, duration and directory
+count. A short directory destination must fail before any directory publication.
+
+Next implement a record-application routine. For a full frame, reconstruct 4096
+native display words from triples. For a delta, validate the command sequence, then
+apply its already bounded changes to the previous working frame. Advance sequence
+state only after successful application. Test a bad late command against a previously
+successful image, retaining its actual pixels and sequence rather than resetting them
+to a sentinel before the failure.
+
+Add seek by loading the chosen full frame and replaying through the target. Compare
+its exact words with sequential playback for every target in every public fixture.
+The index construction cost belongs to opening the file; replay cost belongs to the
+particular seek. Keep the file immutable across those operations, or rebuild the
+validated directory when the source changes.
+
+Finally connect the encoder and the presentation loop. Decode the encoder's result
+and compare every RGB byte with its input frames. A valid round trip alone does not
+prove the decoder rejects malformed files, so retain independent negative tests.
+Then compare the scalar and MSA delta stages on identical inputs, followed by
+whole-program size and work measurements. The first assembly checks here certify
+the XOR kernel, not yet this entire file-codec pipeline.

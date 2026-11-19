@@ -1,0 +1,18 @@
+\section{Keep file bytes and display words distinct}
+Each image contains 4096 pixels. Serialized RGB occupies 12\,288 bytes, with red,
+green and blue in that order. A decoded working frame contains 4096 native words
+of the form \texttt{0x00RRGGBB}, occupying 16\,384 bytes. The high byte is zero.
+Use a packed 64-word row stride for this working frame. Configure a display with
+64 logical pixels per row when observing it.
+
+The previous frame is state. A delta for frame six is interpreted against decoded
+frame five, not against the last full frame. Applying deltas five and six to full
+frame four reconstructs the same frame six obtained during ordinary playback.
+Skipping delta five would use the wrong previous pixels even if delta six itself
+were perfectly valid.
+
+Give file bytes, the frame directory, working image and any encoder scratch space
+separate declared windows. Retain full-width addresses. A word-aligned frame may
+begin four bytes past a sixteen-byte boundary; a vector loop must not silently add
+a stronger alignment requirement than its callable interface. File RGB triples
+remain byte-oriented in either target byte order.
