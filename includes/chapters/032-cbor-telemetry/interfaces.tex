@@ -1,0 +1,24 @@
+\section{Use five entries with distinct result meanings}
+\texttt{cbor\_head} takes a byte pointer in \texttt{a0} and unsigned available count in
+\texttt{a1}. On success, \texttt{v1} counts head bytes, \texttt{a2} gives the major type
+and \texttt{a3} holds the unsigned argument bits. The argument may use all sixty-four
+bits. Head success does not establish the payload or children. On failure, clear
+\texttt{v1}, \texttt{a2} and \texttt{a3}.
+
+\texttt{cbor\_skip} takes bytes and available count in the same first two registers,
+with inherited open-container depth in \texttt{a2}. Its successful \texttt{v1} is the
+complete byte extent of one supported item. It may leave a following item unread.
+\texttt{telemetry\_decode} takes bytes, an unsigned complete count and a flat-record
+destination in \texttt{a0} through \texttt{a2}. Its successful \texttt{v1} equals that
+complete input count, after the whole root and exact ending have passed.
+
+\texttt{telemetry\_bound} takes a flat-record pointer in \texttt{a0} and returns the
+exact deterministic output size in \texttt{v1}. \texttt{telemetry\_encode} takes a record,
+byte destination and unsigned capacity in \texttt{a0} through \texttt{a2}; successful
+\texttt{v1} is the complete written byte count. Neither entry reads optional metadata,
+because the flat interface does not retain it.
+
+All five return status zero in \texttt{v0} on success. Invalid or unsupported structure,
+field values or depth return one. The bounded input entries return two for an excessive
+selected count; encoding returns two for insufficient capacity. Every failure clears
+\texttt{v1}. There is no file-I/O status in these memory entries.

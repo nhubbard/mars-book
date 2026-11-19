@@ -464,3 +464,19 @@ The main manuscript now contains 31 packaged chapters. The next chapter is CBOR 
 four chapter drafts remain before the requested substantial editing pass. Actual IDE
 captures, remote policy enforcement and independent accessibility validation remain
 pending; four WAV capture plans are explicitly uncaptured.
+
+
+The CBOR telemetry reading foundation adds 25 directly authored native passages and
+five fixed public observation inputs. Its worked 52-byte record includes wider heads,
+reordered fields, a binary identifier and nested optional metadata; its deterministic
+required-field projection is 37 bytes. The local bounded profile distinguishes generic
+CBOR syntax from exercise policy, unsigned counter bits from signed readings, inherited
+container depth, per-map key identity and caller-visible atomic publication. Five entry
+contracts define head reading, skipping, decode, exact sizing and encode.
+
+Private host verification compares an independent model and cbor2 6.3.0 for 420 canonical
+records and 5040 equivalent encodings, with all 256 initial bytes, 75 truncated heads,
+78 rejected records, 5130 skip observations and exact input-budget boundaries. This is
+host evidence only. MIPS implementations, cumulative construction, public feedback and
+chapter032 archives remain next. The main manuscript retains 31 packaged chapters.
+Earlier exposition is unchanged; substantial rewriting remains deferred as requested.

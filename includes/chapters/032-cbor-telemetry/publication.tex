@@ -1,0 +1,16 @@
+\section{Finish validation before changing the caller's record}
+Keep candidate fields private until the root's pair count is exhausted, the required
+mask is complete and the cursor equals the complete supplied count. A private candidate
+can retain the counter, identifier and readings. Another correct approach can retain
+checked input slices and revisit them after full validation. Neither approach may
+publish a partial counter or length when a later check can still fail.
+
+For a failure observation, append one byte to the otherwise valid trace. All three
+required fields can be decoded, but the complete-input rule still fails. The caller's
+entire 176-byte record must retain its original bytes. Repeat with a nested optional
+map containing a duplicate key to make the failure occur during structural validation.
+
+On success, publish the sixteen-byte prefix, the used identifier bytes and the used
+sample slots. Preserve the unused tails. Input and output objects are disjoint and the
+input is read-only. Those ownership rules permit a second validation or copy pass
+without the first publication changing the bytes that pass will read.

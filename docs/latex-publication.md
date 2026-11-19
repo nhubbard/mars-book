@@ -385,3 +385,14 @@ PDFs retain tagged PDF 2.0 structure and embedded Minion Pro, Noto Sans Math and
 Mono, with no overfull boxes, missing characters or font-substitution warnings. These
 are structural/layout checks, not independent PDF/UA or assistive-technology validation.
 Build the assignment with `python3 tools/book.py build --entry drafts/pcm-wav-assignment.tex`.
+
+
+The standalone CBOR telemetry foundation builds from `drafts/cbor-telemetry.tex` as
+13 physical pages with 25 native passages, five semantic tables (15 header cells)
+and one native head-bit diagram with an alternative description. All pages were
+rendered and inspected; Minion Pro, Noto Sans Math and JetBrains Mono are embedded.
+The sources/scope section starts together on its own page. No overfull boxes, missing
+characters or font-substitution warnings are reported. This is a host-verified reading
+foundation with zero minted listings, not a completed simulator exercise. Actual
+IDE captures and independent PDF/UA or assistive-technology validation remain pending.
+The integrated manuscript remains at 31 packaged chapters and 1333 physical pages.

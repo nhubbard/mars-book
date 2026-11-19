@@ -1,0 +1,15 @@
+\section{Keep binary identifiers counted}
+The worked identifier contains three bytes: \texttt{00 ff 41}. Its input head is
+\texttt{58 03}; the preferred output head is \texttt{43}. Both give the same byte count.
+Copy exactly those three payload bytes. Applying a zero-terminated string operation
+would report an empty identifier because its first byte is zero.
+
+The bytes are also not a sequence of nested CBOR items. In the optional metadata,
+a two-byte string contains \texttt{80 ff}. Those bytes are ordinary payload even though
+they would have other meanings at an item boundary. After accepting its length and
+checking the remaining extent, advance across the payload as a bounded slice.
+
+Text strings are outside this exercise's subset. Rejecting a text-string head here
+is a local support decision, not a claim that text strings are malformed CBOR. The
+identifier's byte-string type is intentional: no UTF-8 validation, character count or
+terminating zero is needed to recover it.

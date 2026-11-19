@@ -1,0 +1,17 @@
+\section{Carry the parent's depth into a skipped value}
+The generic walker receives the number of containers already open outside its selected
+item. Starting at a standalone item gives inherited depth zero. Skipping a value inside
+the telemetry map gives inherited depth one. A primitive is allowed when eight parent
+containers are open; another array or map would create a ninth container and must fail,
+even if that new container is empty.
+
+The worked optional value is a map inside the root. Its array value is inside that map,
+so the three open containers are root map, optional map and array. A byte-string payload
+inside the array adds no container level. When that array finishes, resume the optional
+map's remaining pairs, then return to the root's next pair.
+
+A recursive implementation can retain parent cursor, remaining count and key mask in
+its invocation frame. An iterative implementation can retain equivalent state in an
+explicit bounded stack. Both must restore the parent's progress. Giving every optional
+value a fresh eight-level allowance would ignore the already open root and accept a
+record outside this contract.

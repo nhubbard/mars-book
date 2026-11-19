@@ -1,0 +1,28 @@
+\section{Establish the head width before reading its argument}
+The supported heads use the following additional-information values. The major-type
+bits remain in the initial byte; they are not part of the argument.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rrr}
+Additional information & Following argument bytes & Complete head bytes \\
+\hline
+0..23 & 0; value is inline & 1 \\
+24 & 1 & 2 \\
+25 & 2 & 3 \\
+26 & 4 & 5 \\
+27 & 8 & 9 \\
+\end{tabular}
+\end{center}
+
+After reading the initial byte, establish the required head size and compare it with
+the unsigned available count before loading any following argument byte. A count of
+one permits inspecting \texttt{1b}, but it does not permit reading the eight bytes that
+its lower field requests. Reject that truncated head without returning a partial
+argument to the caller.
+
+The head reader accepts a supported argument even when its representation is wider
+than necessary. Both \texttt{00} and \texttt{18 00} describe unsigned zero. Keeping the
+argument separate from its width lets the decoder accept those equivalent inputs,
+while the writer later chooses the shortest representation. The value twenty-four in
+the lower field is a width selector here, not an inline argument of twenty-four.

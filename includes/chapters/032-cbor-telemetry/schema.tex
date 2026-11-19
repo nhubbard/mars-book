@@ -1,0 +1,27 @@
+\section{Name the fields before interpreting their bytes}
+The telemetry schema is local to this exercise. Its outer value is a map with unsigned
+integer keys. Three fields are required, and each has a distinct interpretation.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rll}
+Key & Meaning & Accepted value \\
+\hline
+0 & Acquisition counter & Unsigned integer, all sixty-four bits \\
+1 & Device identifier & Byte string, zero through thirty-two bytes \\
+2 & Readings & Array of zero through sixty-four signed 16-bit integers \\
+3..7 & Optional metadata & A value within the bounded generic subset \\
+\end{tabular}
+\end{center}
+
+The counter is an unsigned acquisition value, not a calendar date. This chapter does
+not infer units or convert it to a wall clock. The identifier is binary: a zero byte
+inside it does not end the field. A reading is a signed integer code; the schema does
+not attach a temperature scale or perform a floating-point conversion.
+
+Accept each map key once, in any order. The outer map therefore has from three through
+eight pairs and must contain keys zero, one and two. Optional values must be structurally
+valid within this exercise's subset, but they are not copied into the flat record.
+The deterministic writer emits only the three required fields. This is a deliberate
+projection of the application record, so optional metadata is not promised a serialized
+round trip.

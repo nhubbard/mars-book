@@ -1,0 +1,28 @@
+\section{Publish values into a flat local record}
+The local record occupies 176 bytes and is eight-byte aligned. It is an application
+interface, not an on-disk structure. Its integer fields and signed sample slots use
+the simulator's little-endian byte order.
+
+\tagpdfsetup{table/header-rows={1}}
+\begin{center}
+\begin{tabular}{rll}
+Offset & Field & Storage \\
+\hline
+0 & Counter & Unsigned 64 bits \\
+8 & Identifier length & Unsigned 32 bits \\
+12 & Reading count & Unsigned 32 bits \\
+16 & Identifier & Room for thirty-two bytes \\
+48 & Readings & Room for sixty-four signed 16-bit codes \\
+\end{tabular}
+\end{center}
+
+For the trace, the length fields become three and ten. Copy the identifier into bytes
+sixteen through eighteen and the ten little-endian readings into bytes forty-eight
+through sixty-seven. Leave the unused identifier and reading tails unchanged. This
+makes a sentinel-filled output reveal an excessive copy or a routine that clears the
+whole object instead of writing its selected fields.
+
+No stored field points into the serialized input. The flat record can therefore be
+re-encoded after the input buffer has been reused. Its used identifier bytes and sample
+codes must remain intact; its unused tails have no value in the application schema and
+must not influence encoded output.

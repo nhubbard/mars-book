@@ -1,0 +1,17 @@
+\section{Reject impossible counts before reading pointers}
+The head reader accepts any unsigned available count. Zero fails with status one before
+pointer access. For a nonzero count, it reads the initial byte, establishes a head size
+from one through nine, and compares that size unsigned before reading argument bytes.
+A large available count does not make an unsupported type valid.
+
+The skipper first rejects an unsigned count above 1024 with status two, then rejects
+inherited depth above eight with status one, before pointer access. A zero count also
+fails with one. The decoder rejects counts above 1024 with two and below seven with
+one before reading either input or output. State these early checks in this order so
+an excessive count has a specified result even when another argument is also invalid.
+
+For a flat record, the bound and encoder first read the sixteen-byte counter/length
+prefix. Reject either length outside its field bound with status one before reading
+identifier or sample storage. Every bit pattern in the counter is permitted. An invalid
+length is not repaired by clipping it to the available room; doing so would encode a
+different record while reporting success.
