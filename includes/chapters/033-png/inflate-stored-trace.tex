@@ -1,0 +1,27 @@
+\section{Trace byte cursors separately from buffered bits}
+The worked stored stream occupies 46 bytes. Its first compressed byte is at offset
+two, and its checksum begins at offset 42. The following offsets are relative to the
+stream and output origins; helper argument cursors are separate from the retained
+state shown here.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{p{48mm}p{29mm}p{30mm}p{35mm}}
+\toprule Boundary & Next input offset & Buffered bits & Produced output bytes \\\midrule
+Initialized ranges & 2 & 0 & 0 \\
+Three-bit header consumed & 3 & 5 & 0 \\
+Stored alignment complete & 3 & 0 & 0 \\
+LEN and NLEN consumed & 7 & 0 & 0 \\
+Stored payload copied & 42 & 0 & 35 \\
+Exact end checks passed & 42 & 0 & 35 \\\bottomrule
+\end{longtable}
+A cursor at offset three does not mean all preceding bits were consumed: the header
+read leaves five bits in the reservoir. Stored alignment removes those buffered bits
+without consuming another byte. Conversely, reaching the output end says nothing by
+itself about the compressed cursor. In the extra-body fixture, output still reaches
+35 while the compressed end is 43; the unmatched byte prevents acceptance.
+
+The two-block fixture makes the final flag observable. Its first stored block produces
+seven row bytes and has final flag zero. Continue through \texttt{block\_done}: the
+next operation reads another block header rather than starting Adler verification.
+Only the final block proceeds to exact end checks. Empty stored blocks can take this
+same route without copying a byte.

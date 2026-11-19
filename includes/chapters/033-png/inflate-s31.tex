@@ -1,0 +1,13 @@
+\section{Step 31 Refill only from the compressed byte window}\label{png-inflate-s31}
+Implement \texttt{inflate\_refill} inside \texttt{read\_bits}. The requested bit count is in \texttt{\$a0}; internal callers request zero through sixteen. If the reservoir already contains enough bits, branch to \texttt{bits\_ready}. Otherwise require the input cursor before its compressed end, load one unsigned byte, shift it by the current available-bit count, combine it with the reservoir and add eight to that count. Advance the input cursor and repeat.
+
+The first request is three bits. Loading hexadecimal \texttt{01} leaves reservoir value one, eight available bits and next input offset three at \texttt{bits\_ready}. A zero-bit request must load nothing. The following extraction region still exits through development cleanup until the next edit.
+
+\paragraph{Observe} Use \texttt{s31-1}; stop before \texttt{bits\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} When does a zero-bit request require a refill?
+\begin{itemize}
+\item[A.] Always.
+\item[B.] Only before the first block.
+\item[C.] Never.
+\end{itemize}

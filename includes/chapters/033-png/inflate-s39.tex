@@ -1,0 +1,13 @@
+\section{Step 39 Require exact output and compressed-byte completion}\label{png-inflate-s39}
+Implement \texttt{inflate\_exact}. Require output cursor equal to expected output end and compressed cursor equal to the reserved trailer address. Fail if either differs. This check precedes checksum calculation over the expected output range.
+
+The two equalities mean different things. Too little output leaves bytes unproduced even if the workspace happens to contain a checksum collision. An extra compressed byte before the trailer means the selected stream contains unconsumed data even if the desired pixels could already be reconstructed. The worked input meets both equalities: offsets 35 and 42.
+
+\paragraph{Observe} Use \texttt{s39-1}; stop before \texttt{inflate\_exact\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Can matching Adler-32 replace the output-cursor equality?
+\begin{itemize}
+\item[A.] Yes, because checksums uniquely identify every byte sequence.
+\item[B.] No; checksum agreement does not establish how many bytes were produced.
+\item[C.] Yes, if the destination was prefilled.
+\end{itemize}

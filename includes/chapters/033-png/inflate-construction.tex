@@ -1,0 +1,38 @@
+\section{Add inflation while retaining the collector}
+Use \path{drafts/png-inflater-construction/attach.py} with your current completed
+collector program as \texttt{--source} and a fresh \texttt{--output}. It replaces the
+previous supplied temporary wrapper and appends unfinished inflater regions. It keeps
+your loader and collector instructions. If you changed that wrapper, reconcile it by
+hand; the helper refuses to discard an unrecognized implementation.
+
+The new wrapper retains the collector's private descriptor until it has passed the
+joined stream address and count to \texttt{png\_inflate}. The row-workspace address
+comes from decoder context offset 32. The predicted exact output count comes from
+collector descriptor offset 32; those equal offsets belong to different records and
+have different meanings. The wrapper checks that this count fits the actual row capacity
+at context offset 40. Stop at \texttt{inflate\_call} to inspect the four arguments and
+at \texttt{inflate\_return} to inspect the result. Final context outputs and framebuffer
+words remain unpublished at this stage.
+
+The next sixteen edits develop a complete stored-block path. Fixed and dynamic Huffman
+paths retain explicit development exits until their later construction steps. This
+intermediate program is therefore not a completed inflater submission. It can return
+success for a valid stored stream and development status for a Huffman block that it
+has not yet attempted to decode. The reserved block type is already a failure.
+
+The supplied 2048-byte frame leaves room for later call-private code tables. It saves
+\texttt{\$ra}, the eight saved registers and \texttt{\$fp} at offsets 64 through 136.
+The frame pointer identifies this call's private workspace. A scratch doubleword at
+offset zero retains a length or checksum across helper calls; offset 56 retains the
+advertised history-window size. The illustrated state uses \texttt{\$s0} for the next
+compressed byte, \texttt{\$s1} for the trailer's first byte, \texttt{\$s2}/\texttt{\$s3}
+for reservoir bits and their count, \texttt{\$s4}/\texttt{\$s5} for output cursor and
+expected end, \texttt{\$s6} for the current final flag, and \texttt{\$s7} for output
+start. These are checkpoint roles, not requirements on an equivalent final solution.
+
+Internal unfinished helpers unwind the owning inflater frame and return development
+status four with count zero. Call them through \texttt{png\_inflate} while constructing
+this sequence. A helper is not safe to enter on its own before its body is complete.
+The preparation helper retains instruction edits and selects the named input. Its
+fixture helper can write a PNG for the supplied program or a raw zlib stream for a
+direct-entry observation. Keep those two file formats distinct when choosing arguments.

@@ -714,3 +714,33 @@ and final-call construction, completed feedback, chapter distributions and actua
 captures remain pending. Earlier prose is retained for the later substantial editing
 pass; remote progression/hint enforcement and independent accessibility auditing remain
 unfinished. No MARS source or reference IntelliJ checkout was changed in this increment.
+
+
+The PNG reading now continues through sixteen stored-inflater edits, steps 28–43.
+Directly authored native passages explain separate compressed/output windows, reserved
+trailer bytes, bit refills and zero-bit requests, stored alignment, LEN/NLEN, dual copy
+bounds, final/nonfinal blocks, exact completion and Adler comparison. A native cursor
+trace separates next-byte position, buffered bits and produced rows. Sixteen quizzes,
+thirty-two hints and twenty-three public recipes accompany the prose. Attachment keeps
+student loader/collector edits and extra functions while replacing only the supplied
+temporary wrapper. Neither context outputs nor framebuffer words are published yet.
+
+The stored-only construction, batched-Adler alternative, two additional valid frame
+arrangements, and retained full inflater pass 2260 completed stored-domain cases across both byte
+orders and address layouts. Cumulative direct/caller checkpoints add 192 cases, repeated
+same-session bit probes add eight, and wrapper row-capacity/early-pointer checks add
+52, for 2512 simulator cases. Eleven assembled faults are rejected. The exact-output
+fault is rejected by the real Adler collision, in both byte orders. Relocated builders
+reproduce the checked sources, expected streams and checking scripts; receipts retain
+private adaptation provenance and exact hashes. No new grader operation was required:
+existing same-session callFunction supports the bit-probe sequence.
+
+All 113 public tests pass. Fixed/dynamic handlers remain explicit development exits in
+this intermediate construction, so stored success is not a completed inflater grade.
+The public fixture helper verifies the selected auto-compressed observation actually
+has a dynamic first block, rather than assuming every auto stream does. Huffman and
+row/packing construction, final feedback, chapter033 distributions and actual IDE
+captures remain next. The integrated manuscript retains 32 packaged chapters; video
+and APNG remain to be composed. The requested substantial prose revision stays deferred
+until the chapter drafts exist. Independent accessibility auditing and remote
+progression/hint enforcement remain unfinished. MARS and the reference IDE are unchanged.

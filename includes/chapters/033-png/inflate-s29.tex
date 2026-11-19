@@ -1,0 +1,13 @@
+\section{Step 29 Validate the zlib header and its advertised window}\label{png-inflate-s29}
+Implement \texttt{inflate\_header}. Read the first two bytes. Require compression method 8, a window code from zero through seven, a clear preset-dictionary flag, and a combined big-endian header divisible by 31. Retain $2^{8+\mathrm{windowCode}}$ at frame offset 56. A mismatch branches to \texttt{inflate\_bad}.
+
+The worked header is hexadecimal \texttt{78 01}. Its numerical value is 30721, or $31\times991$, and its window code seven advertises 32768 bytes. This advertised history bound matters later for match distances. It is not the compressed byte count or an instruction to allocate a new window.
+
+\paragraph{Observe} Use \texttt{s29-1}; stop before \texttt{inflate\_header\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} What does the window code bound?
+\begin{itemize}
+\item[A.] The number of bytes in IHDR.
+\item[B.] The permitted backward match distance.
+\item[C.] The framebuffer stride.
+\end{itemize}

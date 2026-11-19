@@ -1,0 +1,13 @@
+\section{Step 42 Compare the two checksum values}\label{png-inflate-s42}
+Fill \texttt{inflate\_checksum}. Reload the computed Adler from frame offset zero and compare it with the stored trailer value. A mismatch branches to \texttt{inflate\_bad}; equality reaches \texttt{inflate\_checksum\_ready}. Keep the output contents available for inspection after either result, but do not treat failed scratch output as decoded rows.
+
+Use the bad-Adler fixture after the ordinary input. Its PNG chunk CRCs are recomputed correctly, so collection succeeds and this comparison detects the stream failure. Container CRCs cover compressed bytes; Adler covers inflated bytes. Passing one domain does not remove the other check.
+
+\paragraph{Observe} Use \texttt{s42-1}; stop before \texttt{inflate\_checksum\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Why can the bad-Adler fixture reach the inflater?
+\begin{itemize}
+\item[A.] The host helper preserves valid PNG chunk CRCs around the changed zlib stream.
+\item[B.] The collector already decoded all rows.
+\item[C.] The final checksum is ignored for stored blocks.
+\end{itemize}

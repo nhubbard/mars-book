@@ -1,0 +1,13 @@
+\section{Step 30 Reserve the checksum bytes from the bit reader}\label{png-inflate-s30}
+Fill \texttt{inflate\_state}. Set compressed cursor to stream start plus two and compressed end to stream start plus input count minus four. Clear reservoir and available-bit count. Retain output start, current output cursor and expected output end, using full-width address arithmetic.
+
+For the worked stream the readable compressed region is $[2,42)$ relative to stream start. Bytes 42 through 45 are the checksum and must remain outside every bit refill. The output range is $[0,35)$. Advancing an input cursor does not advance the output cursor; a future compressed match can produce many bytes from a few encoded bits.
+
+\paragraph{Observe} Use \texttt{s30-1}; stop before \texttt{inflate\_state\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Where is the compressed-data end for a 46-byte zlib stream?
+\begin{itemize}
+\item[A.] At offset 46.
+\item[B.] At offset 42, before the checksum.
+\item[C.] At output offset 35.
+\end{itemize}
