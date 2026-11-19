@@ -206,17 +206,20 @@ completed; free-writing checks accept equivalent exact implementations. Instruct
 solutions and keys are separate and private. The four IDE capture plans are uncaptured.
 Substantive prose editing remains deferred until all 35 chapter drafts are complete.
 
-The PNG chapter has a native reading foundation at `drafts/png.tex`, with forty native
+The PNG chapter has a native reading foundation at `drafts/png.tex`, with sixty native
 reading and construction files, a pipeline figure, native tables, an actual IntelliJ-highlighted shuffle
 excerpt and reproducible RGB8 inputs. Two complete private prototypes now decode
 through framebuffer publication. Row checks cover scalar/MSA paths in both byte orders
 and address layouts (4400 cases); complete decoding adds 400 cases, including full
 512-by-512 output and late-failure preservation. Ten assembled faults are rejected.
 Measured complete calls on the repeated-row image fall from 37870732 to 18167820
-simulated instructions in MSA mode; the text records the input and boundary. All 100
+simulated instructions in MSA mode; the text records the input and boundary. All 106
 public tests pass. The MARS grader's byte-order option is committed separately with
 110 passing CLI tests. The supplied file caller and first ten construction steps now
 include nine editable loader regions, ten quizzes, twenty hints and fourteen observation
-recipes. Remaining decoder construction, final feedback, PNG distributions and actual
-IDE captures remain next. The main manuscript
+recipes. Seventeen further collector edits add twenty observation recipes, an exact
+chunk-cursor trace and connected boundary explanations. Both collector algorithms and
+the cumulative caller/checkpoints pass 2828 byte-order/address-layout cases; eight
+assembled regressions are rejected. Remaining inflater/row/packing construction, final
+feedback, PNG distributions and actual IDE captures remain next. The main manuscript
 retains 32 packaged chapters; the substantial author editing pass remains deferred.

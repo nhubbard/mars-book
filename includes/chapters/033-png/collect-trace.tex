@@ -1,0 +1,24 @@
+\section{Follow both cursors through the worked container}
+The following trace records a completed chunk's effect. File offsets are measured
+from the signature's first byte; the destination offset is measured from the selected
+compressed window's first byte. Neither origin is an absolute machine address.
+
+\Needspace{11\baselineskip}
+\begin{longtable}{p{20mm}p{19mm}p{22mm}p{24mm}p{26mm}p{30mm}}
+\toprule Chunk & File start & Payload bytes & Envelope end & File bytes after & Joined bytes after \\\midrule
+IHDR & 8 & 13 & 33 & 82 & 0 \\
+First IDAT & 33 & 1 & 46 & 69 & 1 \\
+Second IDAT & 46 & 45 & 103 & 12 & 46 \\
+IEND & 103 & 0 & 115 & 0 & 46 \\\bottomrule
+\end{longtable}
+For each row, envelope end equals file start plus payload bytes plus twelve. Only
+IDAT changes the compressed destination cursor. Its one-byte and forty-five-byte
+payloads therefore occupy adjacent destination ranges $[0,1)$ and $[1,46)$, although
+their file ranges are separated by a CRC, another length word and another type.
+
+At the first copy checkpoint, inspect destination byte zero: it is decimal 120,
+or hexadecimal \texttt{78}. Continue to the same checkpoint for the second IDAT;
+its first copied byte is decimal 1 at destination offset one. At the IEND handler,
+twelve file bytes remain. Its envelope ends exactly at the selected file boundary;
+the handler can establish this without advancing through the general next-chunk path.
+The row records that logical end, rather than requiring an extra parser iteration.

@@ -1,0 +1,13 @@
+\section{Step 24 Reserve destination bytes before copying}\label{png-collect-s24}
+Implement \texttt{collect\_idat}. Reject an IDAT after the sequence-ended bit is set. Compare its payload length with the remaining compressed capacity before any copy. On success subtract that length from capacity, add it to the joined count, set the IDAT-seen bit, and establish a payload cursor at current chunk plus eight.
+
+For the first worked IDAT the length is one: remaining capacity changes from 46 to 45, joined count from zero to one, and flags from one to five. A zero-length IDAT still belongs to the consecutive sequence but must branch to \texttt{collect\_copy\_ready} without reading a payload byte. Capacity is accounted in bytes, not whole chunks.
+
+\paragraph{Observe} Use \texttt{s24-1}; stop before 	exttt{collect\_idat\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} When must the capacity check occur?
+\begin{itemize}
+\item[A.] After the last payload store.
+\item[B.] Before the first payload store.
+\item[C.] Only when IEND is reached.
+\end{itemize}

@@ -1,0 +1,25 @@
+\section{Use later failures to check what was actually published}
+Prepare \texttt{s27-tight} from your completed collector and use the ordinary worked
+file. The file loader still succeeds with 115 bytes. The collector's selected compressed
+capacity is now 45. Its first IDAT can reserve and copy one byte; only 44 remain when
+the second IDAT requests 45. The call fails with status one and returned count zero.
+The destination may contain that first \texttt{78}; all four descriptor output fields
+must still be sentinels. A partial scratch prefix is not a successful joined stream.
+
+Next create \texttt{bad-crc.png} and use \texttt{s27-bad-crc}. Only the final stored
+IEND CRC has been damaged. Earlier chunks can already have produced all 46 compressed
+bytes, but the container still fails. Inspect the descriptor at
+\texttt{collector\_return}: no width, height or length output was committed. This is
+why the publication region belongs after IEND validation rather than inside IHDR.
+
+Finally create \texttt{idat-gap.png} and use \texttt{s27-idat-gap}. This input inserts
+a correctly checksummed tEXt between the two IDAT chunks. The metadata itself is
+skippable, but its position ends the consecutive IDAT sequence. The later IDAT must
+fail. Checking every CRC cannot replace checking chunk order.
+
+In the supplied program these are PNG-stage failures, so it prints
+\texttt{Invalid or unsupported PNG.} A successful collection instead reaches the
+still-unfinished inflater boundary and prints the development message. Neither path
+publishes framebuffer words or final decoder-context outputs. Inspect the collector's
+own status at its return checkpoint to distinguish its success from that later
+development status.

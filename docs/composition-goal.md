@@ -689,3 +689,28 @@ instruction measurements keep their original sources and boundary. Remaining dec
 construction, final feedback, package integration and actual IDE captures remain next.
 The integrated manuscript still contains 32 packaged chapters. Earlier prose is retained
 for the requested substantial editing pass after all chapter drafts are written.
+
+
+The PNG draft now continues through seventeen collector edits after its ten loader
+steps. Twenty public recipes and seventeen quizzes/hint pairs index directly authored
+native passages. A native header-tagged cursor table tracks the exact 115-byte input;
+connected boundary passages distinguish short compressed capacity, a bad final CRC and
+a correctly checksummed metadata gap between IDAT chunks. The attachment helper preserves
+student loader instructions and extra functions, refuses a changed decoder tail, and
+adds a temporary collector-only caller without completing any student region.
+
+The construction-compatible collector and original two-pass alternative pass 2608
+completed-interface cases across both byte orders and address layouts. Cumulative direct,
+helper and supplied-main observations add 168 cases, including an untouched control;
+partial-wrapper bounds, modes and early-count checks add 52, for 2828 simulator cases.
+Eight assembled faults are rejected. Relocated builders reproduce sources/checks and
+receipts pin the public controls and private dependencies. The new 128-byte illustrated
+frame and original 144-byte alternative both pass the same completed contract. Earlier
+collector and memory-decoder receipts keep their original measurement boundaries.
+
+All 106 public tests pass. This is still an unregistered PNG construction draft, outside
+the 32 packaged chapters in the main manuscript. Inflater, row reconstruction, packing
+and final-call construction, completed feedback, chapter distributions and actual IDE
+captures remain pending. Earlier prose is retained for the later substantial editing
+pass; remote progression/hint enforcement and independent accessibility auditing remain
+unfinished. No MARS source or reference IntelliJ checkout was changed in this increment.
