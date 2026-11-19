@@ -32,7 +32,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiDocumentManager
-import com.intellij.ui.SimpleColoredComponent
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.breakpoints.XBreakpointProperties
 import com.intellij.xdebugger.breakpoints.XBreakpointType
@@ -49,7 +48,6 @@ import java.nio.file.Path
 import java.nio.file.StandardOpenOption.CREATE_NEW
 import javax.imageio.ImageIO
 import javax.swing.JDialog
-import javax.swing.JLabel
 import javax.swing.JTree
 import javax.swing.SwingUtilities
 import kotlinx.coroutines.NonCancellable
@@ -116,7 +114,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             }
         })
         val source = withContext(Dispatchers.EDT) {
-            check(manager.debugSessions.isEmpty()) { "Use an idle, dedicated capture project" }
+            check(manager.debugSessions.none { !it.debugProcess.processHandler.isProcessTerminated }) { "Use an idle, dedicated capture project" }
             val themes = LafManager.getInstance()
             val light = themes.installedThemes.single { it.name == "IntelliJ Light" && !it.isDark }
             themes.autodetect = false
@@ -137,6 +135,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             check(document.text == String(bytes, Charsets.UTF_8)) { "The editor differs from the fixture" }
             document.modificationStamp
         }
+        val psi = readAction { checkNotNull(PsiDocumentManager.getInstance(project).getPsiFile(document)) }
+        withContext(Dispatchers.EDT) { DaemonCodeAnalyzer.getInstance(project).restart(psi, "Book capture observation") }
         val labelLine = figure.checkpointLine(String(bytes, Charsets.UTF_8))
         val line = readAction {
             (labelLine until document.lineCount).first { type.canPutAt(source, it, project) }
@@ -164,6 +164,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             }
             var previous: List<String>? = null
             var stable = 0
+            var reportedRows: List<String>? = null
             while (true) {
                 val ready = withContext(Dispatchers.EDT) {
                     check(document.modificationStamp == sourceStamp) { "Fixture edited during capture" }
@@ -185,10 +186,23 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         balloons.forEach { it.hide() }
                         return@withContext null
                     }
+                    lastObservedRows = visibleRows(frame).map { it.text }
+                    if (!figure.debuggerView.isEmpty) {
+                        val tree = selectDebuggerTree(captureComponents(frame).filterIsInstance<JTree>().filter { it.isShowing }.toList(), figure.debuggerView)
+                            ?: return@withContext null
+                        if (!applyDebuggerTreeView(tree, figure.debuggerView)) return@withContext null
+                    }
                     val rows = visibleRows(frame)
                     lastObservedRows = rows.map { it.text }
                     if (figure.expectedRows.any { expected -> rows.count { expected.matches(it.text) } != 1 }) return@withContext null
                     rows
+                }
+                if (reportedRows != lastObservedRows) {
+                    val progress = mapOf("figure" to figure.id, "observedDebuggerRows" to lastObservedRows)
+                    withContext(Dispatchers.IO) {
+                        Files.writeString(output.resolve(figure.id + "-progress.json"), GsonBuilder().setPrettyPrinting().create().toJson(progress))
+                    }
+                    reportedRows = lastObservedRows.toList()
                 }
                 val texts = ready?.map { it.text }
                 stable = if (texts != null && texts == previous) stable + 1 else 0
@@ -215,6 +229,13 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     writeAction { manager.breakpointManager.removeBreakpoint(breakpoint) }
                 }
             }
+            if (!project.isDisposed) withContext(NonCancellable) {
+                withTimeout(10_000) {
+                    while (withContext(Dispatchers.EDT) {
+                        !project.isDisposed && manager.debugSessions.any { it.sessionName == ownedSessionName && !it.debugProcess.processHandler.isProcessTerminated }
+                    }) delay(50)
+                }
+            }
         }
     }
 
@@ -235,12 +256,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             val visible = bounds.intersection(tree.visibleRect)
             if (visible.isEmpty) return@mapNotNull null
             val path = tree.getPathForRow(row)
-            val renderer = tree.cellRenderer.getTreeCellRendererComponent(tree, path.lastPathComponent, tree.isRowSelected(row), tree.isExpanded(row), tree.model.isLeaf(path.lastPathComponent), row, false)
-            val text = when (renderer) {
-                is SimpleColoredComponent -> renderer.getCharSequence(false).toString()
-                is JLabel -> renderer.text
-                else -> renderer.accessibleContext?.accessibleName.orEmpty()
-            }
+            val text = renderedDebuggerRow(tree, path)
             val screen = tree.locationOnScreen
             UiRow(text, Rectangle(screen.x + visible.x, screen.y + visible.y, visible.width, visible.height))
         }
@@ -298,6 +314,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "viewport" to mapOf("width" to image.width, "height" to image.height),
                 "visibleAnalysisIndicators" to emptyList<String>(),
                 "notificationBalloonsVisible" to 0,
+                "debuggerView" to figure.debuggerView,
                 "callouts" to snapshot.second, "observedDebuggerRows" to snapshot.third,
                 "sourceSha256" to figure.sourceSha256, "source" to figure.source,
                 "checkpoint" to figure.checkpoint, "sourceLine" to line + 1,

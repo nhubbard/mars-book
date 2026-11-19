@@ -91,8 +91,8 @@ implementation or authoring-plugin dependency.
 Earlier smoke images exposed a native analysis badge after a daemon-completion
 event. The current driver also checks visible editor labels and notification balloons,
 and the latest raw proof has neither. It does not draw a transient trainer highlight
-while taking the raw image. Vector/tool view selection and full chapter batches remain
-unfinished.
+while taking the raw image. Native debugger tree expansion and scrolling now capture the MSA word-lane view.
+Bitmap/memory tool selection and full chapter batches remain unfinished.
 
 ## Native annotation includes
 
@@ -122,3 +122,20 @@ embedded image pixel with the original and extract the typeset labels. Color and
 grayscale renders are reviewed separately. These checks do not certify PDF/UA
 compliance or complete the vector-lane teaching figure; no chapter figure plan has
 been marked verified from this pipeline proof.
+
+
+## Paired vector/count capture
+
+The separate authoring plugin now captures both the integer changed-word count and
+the expanded MSA word lanes for video step five. The fixture leaves later regions
+unfinished. The two images come from separate Debug launches of the same source,
+input recipe and checkpoint; receipts record the selected tree view and source digest.
+The XOR lanes are zero, `0x88`, zero and `0x10000`, with a changed-word count of two.
+The native renderer supplies the displayed labels used for exact tree selection.
+No simulator state or MARS debugger implementation is changed by the authoring driver.
+
+These raw images establish the missing lane observation. Their final native LaTeX
+composition, grayscale/print review and integration into the chapter remain pending.
+The existing package figure status therefore remains planned. The implementation,
+fixture preparation and capture receipts belong to the separate authoring and private
+instructor workspaces; MARS has no dependency on either.

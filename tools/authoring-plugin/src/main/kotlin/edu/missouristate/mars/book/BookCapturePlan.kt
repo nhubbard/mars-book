@@ -36,6 +36,7 @@ data class BookCaptureFigure(
     val expectedRows: List<BookExpectedRow> = emptyList(),
     val width: Int = 1280,
     val height: Int = 900,
+    val debuggerView: BookDebuggerTreeView = BookDebuggerTreeView(),
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
@@ -45,6 +46,7 @@ data class BookCaptureFigure(
         require(projectRoot.resolve(source).normalize().startsWith(projectRoot.normalize())) { "Source escapes fixture project" }
         require(width in 800..2560 && height in 600..1600) { "Unsupported viewport" }
         require(expectedRows.isNotEmpty()) { "A figure needs an observed debugger value" }
+        debuggerView.validate()
         expectedRows.forEach {
             require(it.label.isNotBlank() && it.contains.isNotEmpty() && it.contains.all(String::isNotBlank)) { "Empty UI assertion" }
         }
@@ -76,3 +78,22 @@ internal fun captureSha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-25
 /** Analysis notifications also contain in-memory editors that have no native filesystem path. */
 internal fun captureFileMatches(file: VirtualFile?, path: Path) =
     file != null && file.isInLocalFileSystem && file.path == path.toString()
+
+/** Native debugger tree names, relative to its hidden root; no simulator values are edited. */
+data class BookDebuggerTreeView(
+    val collapse: List<List<String>> = emptyList(),
+    val expand: List<List<String>> = emptyList(),
+    val reveal: List<String> = emptyList(),
+) {
+    fun validate() {
+        require(collapse.size + expand.size <= 32) { "Too many debugger view paths" }
+        val paths = collapse + expand + listOfNotNull(reveal.takeIf { it.isNotEmpty() })
+        require(paths.all { it.size in 1..8 && it.all(String::isNotBlank) }) { "Empty or excessive debugger view path" }
+        require(collapse.distinct().size == collapse.size && expand.distinct().size == expand.size) { "Duplicate debugger view path" }
+        require(collapse.none { closed -> (expand + listOfNotNull(reveal.takeIf { it.isNotEmpty() })).any { it.take(closed.size) == closed } }) {
+            "A collapsed ancestor cannot contain an expanded or revealed path"
+        }
+    }
+
+    val isEmpty get() = collapse.isEmpty() && expand.isEmpty() && reveal.isEmpty()
+}

@@ -90,10 +90,12 @@ MARS archive digest and installed authoring JAR digest. Native Swing bounds reso
 screenshot transport belongs to the external test process; this installed plugin uses
 JDK screen capture restricted to its own IDE root instead of depending on that transport.
 
-The first verified graphical smoke fixture uses video recipe `s05-1` and checks the
-actual changed-word count at `video_group_counted`. It demonstrates the automatic
-launch/assert/capture/receipt path. It does **not** complete the planned vector figure:
-MSA lane views, final print layout and native annotation rendering remain necessary.
+The current graphical fixture uses video recipe `s05-1` and fills only the first five
+construction regions. The next pointer-advance region remains unfinished. Two normal
+Debug launches stop at `video_group_counted`: one captures the integer count; the other
+expands the actual MSA register group, `$w2` and its 32-bit lane row. Receipts identify
+the common source/checkpoint and the separate views. Final native print composition
+and chapter integration remain necessary before this becomes a verified book figure.
 No figure plan is marked verified solely because this smoke batch succeeds. Run-only
 console capture, bitmap/memory view selection, stdin handling, full chapter batches and
 interactive quizzes/progression remain later work in this same separate plugin.
@@ -133,5 +135,32 @@ platform's internal analyzer-status classes. Notification balloons in the dedica
 capture instance are hidden through the public notification API without expiring the
 notifications. The gate checks for their return before and after capture. The latest
 private proof has a settled checkmark, a white register view and no overlay or balloon.
-Eleven Jupiter tests and the actual graphical batch cover this increment. The planned
-MSA lane view and full chapter capture batches remain incomplete.
+Sixteen Jupiter tests and the actual two-view graphical batch cover the current
+implementation. Full chapter capture batches and final print composition remain
+incomplete.
+
+
+### Native debugger view selection
+
+An optional `debuggerView` selects displayed tree paths relative to the debugger's
+hidden root. It uses the existing native renderer, expansion and scrolling APIs:
+
+```json
+{
+  "collapse": [["Integer registers"]],
+  "expand": [["MSA vector registers"], ["MSA vector registers", "$w2"]],
+  "reveal": ["MSA vector registers", "$w2", "32-bit integer lanes"]
+}
+```
+
+Paths must identify one native tree and one exact displayed name at each level.
+Missing asynchronous children are retried within the figure deadline; duplicate
+matches and contradictory collapse/expand paths fail. A model object's diagnostic
+`toString()` is not its displayed label. The driver reads the public cell renderer
+rather than depending on the debugger's internal node classes. Revealed rows must be
+fully visible before the normal value and stable-layout checks can pass.
+
+A batch waits for each owned Debug process to terminate before launching the next
+view. It also requests a new public daemon analysis pass for each view, including
+when two figures use the same unchanged source. Progress files contain diagnostic
+observed rows; only the final receipts and `batch-complete.json` attest completion.
