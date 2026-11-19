@@ -17,8 +17,9 @@ unset until a real capture resolves the native UI bounds.
 ## Capture driver contract
 
 The driver will be a separate authoring plugin depending on MARS and, where used, the
-IDE Features Trainer. It is not part of the published MARS plugin. The native driver
-is future work. Its repeatable job is to:
+IDE Features Trainer. It is not part of the published MARS plugin. An opt-in Debug batch now implements the launch, assertion and raw capture path in
+`tools/authoring-plugin`. Full chapter figure layouts and native print annotations
+remain unfinished. The complete workflow is to:
 
 1. Build and launch the dedicated upstream IDE instance with the actual Gradle tasks
    clean cleanSandbox runIde before every launch. Read upstream AGENTS.md first.
@@ -40,8 +41,9 @@ is future work. Its repeatable job is to:
 The authoring plugin should use native supported lesson and test/UI facilities.
 The outer launch script can select the capture batch and output location.
 Do not add a simulator-specific screenshot framework to the plugin without inspecting
-current IntelliJ facilities and establishing a gap. No automatic IDE launch or capture
-has occurred for this initial book package.
+current IntelliJ facilities and establishing a gap. The first video Debug smoke batch has exercised automatic launch, state assertions
+and capture. It does not complete the original console-package figures or the full
+PNG/video figure plans.
 
 ## Receipt and annotation interface
 
@@ -67,3 +69,20 @@ Add the receipt path and generated artifact to the figure plan. The package vali
 requires both for a verified figure. Uncaptured figures remain planned and appear as
 explicit placeholders in the book. The SVG is a Markdown preview. The print build must use the original PNG with native
 LaTeX/TikZ callouts, captions, and alternatives; see latex-publication.md.
+
+
+## Current implemented boundary
+
+The separate plugin's README documents its opt-in local plan and exact clean launch
+command. Only the generated private fixture is trusted in the dedicated authoring
+configuration when that explicit option is selected. Captures require source and
+rendered debugger assertions, completed highlighting and stable native bounds; source,
+window and suspension checks run again after the screen capture. A failed run retains
+diagnostics and never reports batch completion. A successful raw capture still needs
+editorial, grayscale and print-size review and native LaTeX annotation composition.
+
+The video `s05-1` smoke proves the real changed-word count and source stop. Its raw
+image is retained in the private instructor workspace. It does not show all vector
+lanes, is not substituted for the planned chapter figure, and has not changed any
+package figure from planned to verified. The main MARS plugin contains no capture
+implementation or authoring-plugin dependency.

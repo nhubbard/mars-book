@@ -7,10 +7,12 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.platform.testFramework.junit5.codeInsight.fixture.codeInsightFixture
 import com.intellij.platform.testFramework.junit5.codeInsight.fixture.codeInsightProjectFixture
 import com.intellij.testFramework.common.timeoutRunBlocking
 import com.intellij.testFramework.junit5.TestApplication
+import com.intellij.testFramework.LightVirtualFile
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -18,6 +20,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -26,6 +29,28 @@ import org.junit.jupiter.api.assertThrows
 class BookHighlightExporterTest {
     private val projectFixture = codeInsightProjectFixture()
     private val fixture by codeInsightFixture(projectFixture)
+
+    @Test
+    fun `capture analysis ignores unrelated in-memory editors`() {
+        assertFalse(captureFileMatches(null, Path.of("/tmp/kernel.asm")))
+        assertFalse(captureFileMatches(LightVirtualFile("AirPrompt.md", "# In-memory document"), Path.of("/tmp/kernel.asm")))
+    }
+
+    @Test
+    fun `capture analysis matches only its native fixture file`() = timeoutRunBlocking {
+        val path = Files.createTempFile("book-capture-file-", ".asm")
+        try {
+            withContext(Dispatchers.EDT) {
+                val file = checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path))
+                readAction {
+                    assertTrue(captureFileMatches(file, path))
+                    assertFalse(captureFileMatches(file, path.resolveSibling("different.asm")))
+                }
+            }
+        } finally {
+            Files.delete(path)
+        }
+    }
 
     @Test
     fun `captures actual lexer and semantic colors without changing the active scheme`() = timeoutRunBlocking {
