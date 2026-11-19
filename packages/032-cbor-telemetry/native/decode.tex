@@ -1,0 +1,17 @@
+\section{Dispatch fields without relying on their order}
+The root walker reads each key, checks it against the current map's mask and then
+processes its associated value. For key zero, require an unsigned counter. For key one,
+require a byte string within the identifier bound. For key two, require a bounded array
+whose members are signed sixteen-bit reading values. Values under keys three through
+seven go through the bounded generic walker with one inherited open container.
+
+The trace presents readings before identifier and counter. Keep candidate values and
+counts independently rather than assuming that an earlier field initialized state for
+a later one. A missing required key is an error even if another field supplied a
+plausible default value. Zero-length required fields still need their keys: an empty
+identifier is not the same observation as no identifier field.
+
+After accepting a value, resume at its first following byte and the next root pair.
+Validate optional values too. Accepting required readings does not authorize ignoring
+a malformed nested container that follows them, just as accepting WAV data did not
+authorize ignoring an invalid trailing chunk.

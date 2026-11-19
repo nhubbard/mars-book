@@ -34,8 +34,8 @@ active 288-byte frame and retained cursor/extent; it is not a standalone public 
 Step 55 has two recipes: short encode capacity and trailing-byte decode. Its per-recipe
 mode and return checkpoint are authoritative for the observation, even though the step
 introduces both in one passage. The second recipe does not reuse an already-decoded
-record. Capture plans are explicitly uncaptured. Public feedback exports, separate chapter distributions and actual IDE captures remain
-pending. Earlier prototype evidence proves those earlier sources, not these unfilled
+record. Capture plans are explicitly uncaptured. Public feedback and separate chapter distributions are verified drafts; actual IDE
+captures remain pending. Earlier prototype evidence proves those earlier sources, not these unfilled
 or partly filled construction files. The substantial rewrite remains deferred until
 all 35 chapter drafts exist.
 
@@ -54,6 +54,14 @@ private candidate bytes, output prefixes, saved state and subsequent development
 success results are checked. Both construction-compatible complete variants also pass
 16336 entry-contract cases. Twelve assembled regressions are rejected, 24 nested
 development cases pass and twelve actual outputs decode independently. These checks
-do not certify every possible input or complete the pending public feedback, chapter
-distributions, actual captures or accessibility review. Earlier prototype measurements
+do not certify every possible input or complete the pending actual captures, remote controls or accessibility review. Earlier prototype measurements
 retain their original sources and boundaries.
+
+The student package is packages/032-cbor-telemetry. Seven standalone completed domains
+contain 775 cases; 56 guided scripts contain 109 checkpoint cases. The completed checks
+pass on two algorithms at both layouts (3100 cases), and guided checks pass on cumulative
+and completed sources at both layouts (436 cases). The host model agrees with an
+independent oracle/library for 420 records and 5040 equivalent encodings. Twelve faulty
+programs and six unfinished controls are rejected. A valid larger frame and private
+constant pass another 1550 public cases. The archives retain exact native fragments;
+the private distribution embeds the exact student archive and its digest.

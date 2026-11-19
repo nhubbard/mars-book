@@ -1,0 +1,27 @@
+\section{Check the published bytes before the next call}
+For the worked input, successful decoding returns zero in \texttt{v0} and fifty-two
+in \texttt{v1}. At record offsets zero through seven, expect
+\texttt{08 07 06 05 04 03 02 01}. These are the counter's little-endian bytes, even
+though its incoming CBOR argument was big-endian. At offsets eight through fifteen,
+expect \texttt{03 00 00 00 0a 00 00 00}: an identifier length of three and a reading
+count of ten, each stored in four bytes.
+
+The identifier occupies offsets sixteen through eighteen and remains
+\texttt{00 ff 41}. The first three local samples, at offsets forty-eight through
+fifty-three, are \texttt{00 00 17 00 18 00}. Each now has a two-byte slot, including
+the values that occupied one byte on the wire. Minus one occupies \texttt{ff ff};
+minus 32768, the final sample, occupies \texttt{00 80}. With the supplied sentinel
+image, identifier storage at offsets nineteen through forty-seven and sample storage
+at offsets sixty-eight through 175 must still contain \texttt{a5}.
+
+Call the bound routine on that record. Its successful result is thirty-seven, which
+counts the encoded result rather than the local record or original input. Give the
+encoder exactly thirty-seven destination bytes and expect the same result count.
+An independent decode of those output bytes must recover the counter, identifier and
+ten readings just checked. It will find only three fields: optional key three has
+served its validation purpose and is not retained by the application record.
+
+Repeat decoding with a byte appended to the input. This time the decoder returns one
+and a zero result count. If the caller record started with sentinel bytes, every one
+of its 176 bytes must remain a sentinel. A plausible counter or correct sample prefix
+does not compensate for changing that record before the complete input has passed.

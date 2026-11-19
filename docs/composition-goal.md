@@ -554,3 +554,29 @@ prototype performance figures retain their earlier sources and measurement bound
 Public feedback export and separate chapter032 distributions remain next. Actual IDE
 captures, remote progression/hint enforcement and independent accessibility validation
 remain pending; prior prose is retained for the later substantial edit.
+
+
+CBOR telemetry is the thirty-second registered draft package and included native
+chapter. It retains 56 steps, 52 unfinished regions, 57 recipes, 56 quizzes and 112
+hints. Independently authored public feedback has seven completed domains (775 cases)
+and 56 standalone checkpoint files (109 cases). Both complete algorithms pass the
+completed feedback at both layouts (3100 cases); cumulative and completed guided
+sources pass all public checkpoints at both layouts (436 cases). The host model matches
+an independent oracle/library for 420 records and 5040 equivalent encodings. Twelve
+assembled faults and six unfinished controls are rejected. A valid 4096-byte private
+frame and separately placed constant pass another 1550 public cases, so final feedback
+does not impose the illustrated frame layout.
+
+The student archive contains 161 exact student-only files, including native assignment
+and reading fragments. Package metadata indexes steps and assets without duplicating
+the book prose or regenerating composition. Extracted checks pass 457 positive cases
+and reject 150 unfinished completed-interface cases. The relocated instructor command
+passes 4091 cases each on reference, alternative and larger-frame variants (12273
+cases), and refuses existing reports. The private ZIP embeds the exact student ZIP
+and pins its digest. The final native-only text refresh retains every tested executable
+file hash. Original private keys and solutions remain separate.
+
+The remaining chapter drafts are PNG, small lossless video and APNG. Actual light-theme
+captures, remote progression/hint enforcement and independent accessibility validation
+remain pending. Earlier chapter prose remains unchanged for the requested substantive
+edit after all chapter drafts exist.

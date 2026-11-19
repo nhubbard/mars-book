@@ -1,0 +1,17 @@
+\section{Assemble a wire argument in big-endian order}
+The counter's worked head is
+\texttt{1b 01 02 03 04 05 06 07 08}. Starting with zero, shift the accumulating
+sixty-four-bit argument left by eight and combine the next unsigned byte. After all
+eight bytes, its bit pattern is hexadecimal \texttt{0102030405060708}. A word-sized
+shift or accumulation would discard part of that pattern.
+
+The flat record uses the simulator's little-endian memory layout. Storing that same
+counter there produces bytes \texttt{08 07 06 05 04 03 02 01}. Neither sequence is an
+error: one belongs to the wire argument and the other to the local record. Convert at
+the boundary rather than treating a native doubleword load as a CBOR decoder.
+
+All sixty-four counter bits are significant. In particular, eight hexadecimal
+\texttt{ff} bytes form a valid unsigned counter even though a signed register display
+shows minus one. Width selection and range checks for unsigned arguments must preserve
+that interpretation. Identifier bytes are different: copy them in their existing order;
+they are not an integer field to reverse.

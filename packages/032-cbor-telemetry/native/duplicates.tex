@@ -1,0 +1,16 @@
+\section{Track key identity within each map}
+Use the decoded unsigned key to identify a field. Hexadecimal \texttt{00} and
+\texttt{18 00} are different byte sequences for the same key zero. Comparing their raw
+head bytes would miss a duplicate. With keys restricted to zero through seven, a
+per-map bit mask can record which values have appeared.
+
+The root encounters key three first, so its mask becomes hexadecimal \texttt{08}.
+The optional map starts with a separate zero mask. Its keys one and zero produce mask
+\texttt{03}; those keys do not conflict with keys one and zero that appear later in
+the root. After returning, the root still owns mask \texttt{08}, then accepts keys two,
+one and zero to reach \texttt{0f}.
+
+Before publication, require the root's three required bits to be set. A mask of
+\texttt{0b}, for example, includes keys zero, one and three but lacks the readings
+field at key two. Reject duplicates rather than silently choosing a first or last value.
+Reset the mask for each nested map and for every new top-level invocation.

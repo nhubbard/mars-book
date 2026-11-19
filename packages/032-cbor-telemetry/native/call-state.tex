@@ -1,0 +1,18 @@
+\section{Retain caller state and respect selected storage}
+Preserve all sixty-four bits of \texttt{s0} through \texttt{s7}, \texttt{fp} and
+\texttt{sp}, and return through the incoming \texttt{ra}. Temporary and argument
+registers may change, including the head reader's explicit results in \texttt{a2} and
+\texttt{a3}. No entry prints or performs file I/O. Private storage must retain live
+parent cursors, counts and masks across helper calls.
+
+Serialized and destination byte pointers may be unaligned. Flat-record pointers are
+eight-byte aligned. All caller objects are disjoint. Head reading stays within the
+accepted head bytes; skipping stays within its selected item, and decoding within the
+complete selected input. Failed decoding leaves every caller record byte unchanged.
+Successful decoding writes only its sixteen-byte prefix and active payload fields.
+
+Bound reads only the prefix and active sample slots. Encoding reads only the prefix,
+active identifier bytes and active sample slots, subject to its capacity preflight.
+Neither reads unused tails. Submission-owned constants and private frames do not
+expand any caller interval. Use sentinel-filled tails and unaligned byte arguments to
+observe those boundaries explicitly.

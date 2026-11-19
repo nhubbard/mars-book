@@ -436,3 +436,23 @@ measurement boundaries and verified cumulative scope. Six tables, 20 header cell
 one described native diagram and 56 tagged quiz lists remain present. Requested fonts
 remain embedded with no overflowing boxes, missing characters or font substitutions.
 These are structural/layout checks; independent accessibility validation remains pending.
+
+
+The packaged CBOR reading has 45 physical pages, seven semantic tables with 22 header
+cells, one described native diagram and 56 tagged quiz lists. Its first 41 rendered
+pages are pixel-identical to the previously reviewed cumulative draft; pages 42..45
+were inspected after adding feedback instructions and final scope. The native assignment
+has four pages and two tables with six header cells; every page was rendered and
+inspected. Minion Pro and JetBrains Mono remain embedded, with Noto Sans Math embedded
+where mathematical glyphs are used. No overfull boxes, missing characters or font
+substitution warnings are reported.
+
+The integrated main.pdf has 1378 physical pages and retains 792 IntelliJ-derived minted
+listings. All 45 new chapter page bodies match the standalone words and layout after
+normalizing the four-millimetre alternating binding margins; the maximum word-box
+deviation is 0.0122 points. Contents paragraph spacing is locally zero, keeping all
+32 chapter entries on two pages instead of leaving chapter32 alone on a third page.
+The contents pages were rendered and inspected. Earlier chapter prose is unchanged.
+These are visual and tagged-structure checks, not independent PDF/UA or assistive-
+technology validation. Build the native assignment with
+`python3 tools/book.py build --entry drafts/cbor-assignment.tex`.

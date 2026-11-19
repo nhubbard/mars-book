@@ -1,0 +1,23 @@
+\section{Give a sensor record a portable representation}
+The packet parser supplied a fixed layout, and the WAV reader discovered fields inside
+chunks. This project gives a record a representation whose individual values describe
+their own kind and extent. A receiver can find the next value without knowing its
+machine address or the compiler layout of a structure. The application still needs a
+schema: recognizing an integer does not tell the receiver whether it is a counter,
+a length or a measurement.
+
+Use CBOR to recover a bounded telemetry record, then write a deterministic encoding of
+its required fields. The new work is an item-head reader, a bounded walker for nested
+values, and a decoder that publishes a complete result only after validation. Keep
+transport separate. The five entries in this chapter operate on memory; a real file
+adapter can reuse the transfer work from the previous projects.
+
+Begin with the fixed trace produced by
+\path{fixtures/fixture.py}. Its input deliberately contains optional metadata
+and some wider argument representations than the output writer will choose. From the public book root, run
+\texttt{python3} \path{fixtures/fixture.py} \texttt{trace.cbor}.
+Use a fresh filename with \texttt{--record} to inspect its 176-byte local record image.
+The helper refuses an existing output. Compare
+the recovered record before comparing serialized bytes. Equality of the required
+application fields is the first observation; the writer's exact byte representation
+is a second, separately specified observation.
