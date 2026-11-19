@@ -1,0 +1,16 @@
+\section{Step 86 Retain mode, strides and success count}
+Fill \texttt{pack\_state}. Retain scalar/MSA mode in \texttt{\$v1} before reusing \texttt{\$t9} for destination stride in bytes. Retain the active success count $4wh$ in \texttt{\$t8}. Then arrange the loop arguments: \texttt{\$a0} remains at the source selector, \texttt{\$a1} becomes the current destination row start, \texttt{\$a2} becomes width, and \texttt{\$a3} becomes rows remaining.
+
+The worked direct call retains stride 68 and active count 40; the file caller retains stride 2048 and the same active count. Keep the full-width destination pointer when moving it between registers. A valid address can exceed 4 GiB even though the image dimensions are small.
+
+The supplied branch bypasses vector-mask loading in scalar mode. In MSA mode, mask construction and loading are still unfinished. A temporary development return is expected until those later regions are completed; it is distinct from the format or capacity failure result.
+
+\paragraph{Observe} Use \texttt{s86-1}; stop before \texttt{pack\_state\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Which count belongs in the success result?
+\begin{itemize}
+\item[A.] The destination allocation capacity.
+\item[B.] The compressed file length.
+\item[C.] The active pixel-byte count.
+\end{itemize}

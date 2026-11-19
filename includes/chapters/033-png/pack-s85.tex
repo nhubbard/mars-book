@@ -1,0 +1,16 @@
+\section{Step 85 Validate the exact read and write extents}
+Fill \texttt{pack\_windows}. Require the source count to equal $h(1+3w)$. The selectors remain in the reconstructed buffer, so its layout still includes one prefix byte per row. The exact count prevents a short final sample or an unexplained suffix from being silently accepted.
+
+For the framebuffer, require capacity of at least $4((h-1)s+w)$. The final active row ends after its own width, without requiring a trailing stride-sized gap. For the direct worked geometry, four row strides consume 272 bytes and the last two words consume eight more: the required extent is 280. Active pixels occupy only forty bytes across those rows.
+
+Compute these quantities after the dimension and stride bounds established in step 84. Compare the required destination extent with capacity using unsigned arithmetic, and reject before stores. At the checkpoint, the final too-small-capacity comparison is false. In the actual file caller the same calculation requires 8200 bytes, well within its declared 1 MiB. Later checks must still retain every padding byte.
+
+\paragraph{Observe} Use \texttt{s85-1}; stop before \texttt{pack\_windows\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} How many writable bytes does the worked stride-seventeen destination require?
+\begin{itemize}
+\item[A.] 40.
+\item[B.] 280.
+\item[C.] 340.
+\end{itemize}

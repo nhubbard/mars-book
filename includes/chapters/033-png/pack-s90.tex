@@ -1,0 +1,16 @@
+\section{Step 90 Write the four immutable shuffle masks}
+MSA packing turns sixteen RGB pixels into sixteen display words. Three input vectors hold 48 sample bytes; four output vectors hold 64 bytes. Fill the data region \texttt{pack\_masks} with four consecutive sixteen-byte selectors, keeping the \texttt{rgb\_shuffle} label and exactly 64 bytes.
+
+Derive each output word’s lanes as blue, green, red, zero. For output groups zero and one, number source bytes relative to input vector zero. For groups two and three, number them relative to vector one and vector two respectively, because the supplied shuffle operand pairs change. A selector with bit seven set generates zero; write its byte pattern as \texttt{-128} in the signed declaration.
+
+The earlier boundary example derives the second mask. Apply the same indexing to the other three rather than repeating that mask. At \texttt{pack\_masks\_ready}, inspect all 64 immutable bytes. This checkpoint occurs before loading them into vector registers. The width17 fixture begins with RGB bytes hexadecimal \texttt{00 61 C2}, so its first display word will be \texttt{0x000061C2}.
+
+\paragraph{Observe} Use \texttt{s90-1}; stop before \texttt{pack\_masks\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why are four masks needed for three input vectors?
+\begin{itemize}
+\item[A.] The output expands sixteen three-byte pixels into sixteen four-byte words.
+\item[B.] Each input vector contains four selectors.
+\item[C.] The target has four byte orders.
+\end{itemize}

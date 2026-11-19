@@ -783,3 +783,30 @@ publishing pixels. Packing/publication construction, final PNG feedback and
 distributions, actual IDE captures, video and APNG remain unfinished. The integrated
 manuscript still has 32 packaged chapters. Earlier prose and instruction measurements
 are preserved, with the substantial editing pass deferred as requested.
+
+
+The PNG functional construction now reaches step 100. Seventeen native passages
+complete scalar packing, immutable shuffle masks, bounded MSA packing, two diagnostic
+return observations and final context publication. Fifteen new editable regions,
+seventeen quizzes, thirty-four hints and twenty-seven public recipes accompany the
+text. A native active-row/extent table distinguishes forty active bytes from the
+worked destination's 280-byte minimal extent. A closing native section explains
+submission evidence, equivalent free-writing solutions and success/failure reuse.
+Earlier prose and instruction measurements are retained.
+
+The comprehensive gate passes 4036 simulator cases, rejects thirteen assembled
+faults and passes twelve actual-file runs. Packing domains cover both byte orders
+and both address layouts; completed decoders include equivalent word construction
+and a larger caller frame. Twenty-four six-call reuse cases (144 calls) preserve
+earlier published results across failure. Ten successful file runs compare exact
+framebuffers, including scalar/MSA full-size output; two malformed-file runs check
+the failure result. Untouched sparse framebuffer memory has no initialized words
+for the CLI dumper, so seeded native/cumulative/reuse checks supply failure-memory
+evidence. Existing grader memory-access APIs were sufficient; no MARS change was
+needed. All 133 public tests pass.
+
+The working caller now reports successful PNG display after final result publication.
+Final feedback packaging, separate distributions, manuscript integration and actual
+annotated IDE captures remain unfinished. The integrated manuscript still contains
+32 packaged chapters; video and APNG remain to be composed. The requested broad prose
+rewrite remains deferred until all chapter drafts exist.

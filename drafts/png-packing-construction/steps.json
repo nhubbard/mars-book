@@ -1,0 +1,616 @@
+{
+  "steps": [
+    {
+      "id": "s84",
+      "kind": "edit",
+      "region": "pack_admit",
+      "checkpoint": "pack_admitted",
+      "recipe": "s84-1",
+      "title": "Admit the destination geometry",
+      "quiz": {
+        "id": "png-s84-q1",
+        "question": "Why may stride exceed width?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It describes the distance between row starts, including padding."
+          },
+          {
+            "id": "B",
+            "text": "It includes compressed input bytes."
+          },
+          {
+            "id": "C",
+            "text": "It changes the RGB channel order."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s84-h1",
+          "text": "The descriptor stores native doublewords, unlike the PNG\u2019s big-endian byte fields."
+        },
+        {
+          "id": "png-s84-h2",
+          "text": "Check both the lower and upper stride limits before calculating byte extents."
+        }
+      ]
+    },
+    {
+      "id": "s85",
+      "kind": "edit",
+      "region": "pack_windows",
+      "checkpoint": "pack_windows_ready",
+      "recipe": "s85-1",
+      "title": "Validate the exact read and write extents",
+      "quiz": {
+        "id": "png-s85-q1",
+        "question": "How many writable bytes does the worked stride-seventeen destination require?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "40."
+          },
+          {
+            "id": "B",
+            "text": "280."
+          },
+          {
+            "id": "C",
+            "text": "340."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s85-h1",
+          "text": "Count the gaps before the last row, not after it."
+        },
+        {
+          "id": "png-s85-h2",
+          "text": "The source count includes selectors; active output bytes do not."
+        }
+      ]
+    },
+    {
+      "id": "s86",
+      "kind": "edit",
+      "region": "pack_state",
+      "checkpoint": "pack_state_ready",
+      "recipe": "s86-1",
+      "title": "Retain mode, strides and success count",
+      "quiz": {
+        "id": "png-s86-q1",
+        "question": "Which count belongs in the success result?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The destination allocation capacity."
+          },
+          {
+            "id": "B",
+            "text": "The compressed file length."
+          },
+          {
+            "id": "C",
+            "text": "The active pixel-byte count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s86-h1",
+          "text": "Preserve the mode before its incoming register becomes the byte stride."
+        },
+        {
+          "id": "png-s86-h2",
+          "text": "Width times height counts pixels; each display word consumes four bytes."
+        }
+      ]
+    },
+    {
+      "id": "s87",
+      "kind": "edit",
+      "region": "pack_cursor",
+      "checkpoint": "pack_cursor_ready",
+      "recipe": "s87-1",
+      "title": "Start a row after its retained selector",
+      "quiz": {
+        "id": "png-s87-q1",
+        "question": "What unit does the packing remainder use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Pixels."
+          },
+          {
+            "id": "B",
+            "text": "Individual RGB bytes."
+          },
+          {
+            "id": "C",
+            "text": "PNG chunks."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s87-h1",
+          "text": "Only the row prefix is skipped here."
+        },
+        {
+          "id": "png-s87-h2",
+          "text": "Keep the stable row start separate from the moving output-word cursor."
+        }
+      ]
+    },
+    {
+      "id": "s88",
+      "kind": "edit",
+      "region": "pack_pixel",
+      "checkpoint": "pack_pixel_written",
+      "recipe": "s88-1",
+      "title": "Assemble and store one numeric display word",
+      "quiz": {
+        "id": "png-s88-q1",
+        "question": "Which store preserves the numeric display-word interpretation in both byte orders?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A fixed sequence of little-endian byte stores."
+          },
+          {
+            "id": "B",
+            "text": "A native word store of the constructed value."
+          },
+          {
+            "id": "C",
+            "text": "A store of the selector followed by RGB."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s88-h1",
+          "text": "Use unsigned byte loads so a sample above 127 does not sign-extend."
+        },
+        {
+          "id": "png-s88-h2",
+          "text": "The channel shifts describe a numeric word, not a universal memory-byte sequence."
+        }
+      ]
+    },
+    {
+      "id": "s89",
+      "kind": "edit",
+      "region": "pack_row",
+      "checkpoint": "pack_row_advanced",
+      "recipe": "s89-1",
+      "title": "Advance by the destination row stride",
+      "quiz": {
+        "id": "png-s89-q1",
+        "question": "From which address is the next destination row derived?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The end of the active pixel row plus a full stride."
+          },
+          {
+            "id": "B",
+            "text": "The end of the compressed stream."
+          },
+          {
+            "id": "C",
+            "text": "The previous row start plus its declared stride."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s89-h1",
+          "text": "The moving word cursor and the stable row-start cursor have different roles."
+        },
+        {
+          "id": "png-s89-h2",
+          "text": "Return forty active bytes for the worked image, regardless of padding extent."
+        }
+      ]
+    },
+    {
+      "id": "s90",
+      "kind": "edit",
+      "region": "pack_masks",
+      "checkpoint": "pack_masks_ready",
+      "recipe": "s90-1",
+      "title": "Write the four immutable shuffle masks",
+      "quiz": {
+        "id": "png-s90-q1",
+        "question": "Why are four masks needed for three input vectors?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The output expands sixteen three-byte pixels into sixteen four-byte words."
+          },
+          {
+            "id": "B",
+            "text": "Each input vector contains four selectors."
+          },
+          {
+            "id": "C",
+            "text": "The target has four byte orders."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s90-h1",
+          "text": "Work from global sample indices and the specific right/left operand pair."
+        },
+        {
+          "id": "png-s90-h2",
+          "text": "Each output word needs three selected bytes followed by one zero lane."
+        }
+      ]
+    },
+    {
+      "id": "s91",
+      "kind": "edit",
+      "region": "pack_load_masks",
+      "checkpoint": "pack_masks_loaded",
+      "recipe": "s91-1",
+      "title": "Load reusable masks before the row loop",
+      "quiz": {
+        "id": "png-s91-q1",
+        "question": "Why keep a separate scratch shuffle destination?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It avoids reading any RGB data."
+          },
+          {
+            "id": "B",
+            "text": "The shuffle overwrites the destination that supplied its selectors."
+          },
+          {
+            "id": "C",
+            "text": "The masks depend on the current row\u2019s filter."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s91-h1",
+          "text": "The four table offsets are 0, 16, 32 and 48."
+        },
+        {
+          "id": "png-s91-h2",
+          "text": "Keep the address full-width even though the table itself is only 64 bytes."
+        }
+      ]
+    },
+    {
+      "id": "s92",
+      "kind": "edit",
+      "region": "pack_vector_bound",
+      "checkpoint": "pack_vector_ready",
+      "recipe": "s92-1",
+      "title": "Admit sixteen complete pixels",
+      "quiz": {
+        "id": "png-s92-q1",
+        "question": "How many input sample bytes must be available for one admitted group?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "16."
+          },
+          {
+            "id": "B",
+            "text": "32."
+          },
+          {
+            "id": "C",
+            "text": "48."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s92-h1",
+          "text": "This loop counts pixels, each with three source bytes."
+        },
+        {
+          "id": "png-s92-h2",
+          "text": "Do not lower the threshold merely because another scanline follows in memory."
+        }
+      ]
+    },
+    {
+      "id": "s93",
+      "kind": "edit",
+      "region": "pack_vector_load",
+      "checkpoint": "pack_inputs_loaded",
+      "recipe": "s93-1",
+      "title": "Load the three RGB input vectors",
+      "quiz": {
+        "id": "png-s93-q1",
+        "question": "Why can an input vector begin inside a pixel?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The later selectors identify exact byte positions across vectors."
+          },
+          {
+            "id": "B",
+            "text": "The missing channel is always zero."
+          },
+          {
+            "id": "C",
+            "text": "Vector loads discard incomplete pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s93-h1",
+          "text": "The group\u2019s first source address is already past the selector."
+        },
+        {
+          "id": "png-s93-h2",
+          "text": "Three complete byte-vector loads consume the same 48-byte window."
+        }
+      ]
+    },
+    {
+      "id": "s94",
+      "kind": "edit",
+      "region": "pack_shuffle_first",
+      "checkpoint": "pack_first_written",
+      "recipe": "s94-1",
+      "title": "Shuffle and write the first four words",
+      "quiz": {
+        "id": "png-s94-q1",
+        "question": "Which vector store matches the scalar numeric-word store?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A byte-vector store with a fixed byte order."
+          },
+          {
+            "id": "B",
+            "text": "A word-vector store."
+          },
+          {
+            "id": "C",
+            "text": "A halfword store of the red channel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s94-h1",
+          "text": "Byte selection builds the numeric word lanes; the store applies target word byte order."
+        },
+        {
+          "id": "png-s94-h2",
+          "text": "Copy the retained mask before using the scratch vector as the shuffle destination."
+        }
+      ]
+    },
+    {
+      "id": "s95",
+      "kind": "edit",
+      "region": "pack_shuffle_middle",
+      "checkpoint": "pack_middle_written",
+      "recipe": "s95-1",
+      "title": "Write both outputs that cross input boundaries",
+      "quiz": {
+        "id": "png-s95-q1",
+        "question": "For the second boundary shuffle, what is the mask\u2019s global-byte origin?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero."
+          },
+          {
+            "id": "B",
+            "text": "Thirty-two."
+          },
+          {
+            "id": "C",
+            "text": "Sixteen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s95-h1",
+          "text": "Identify the first input vector in each operand pair before deriving selectors."
+        },
+        {
+          "id": "png-s95-h2",
+          "text": "The two destination offsets are measured in output bytes, not input bytes."
+        }
+      ]
+    },
+    {
+      "id": "s96",
+      "kind": "edit",
+      "region": "pack_shuffle_last",
+      "checkpoint": "pack_last_written",
+      "recipe": "s96-1",
+      "title": "Write the final four words without a fourth load",
+      "quiz": {
+        "id": "png-s96-q1",
+        "question": "Does the last output require a fourth RGB input-vector load?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "No; the admitted 48 bytes already contain all sixteen pixels."
+          },
+          {
+            "id": "B",
+            "text": "Yes; output and input vector counts must match."
+          },
+          {
+            "id": "C",
+            "text": "Only in big-endian mode."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s96-h1",
+          "text": "Sixteen RGB pixels contain 48 bytes, not 64."
+        },
+        {
+          "id": "png-s96-h2",
+          "text": "The final mask\u2019s origin is the start of input vector two."
+        }
+      ]
+    },
+    {
+      "id": "s97",
+      "kind": "edit",
+      "region": "pack_vector_advance",
+      "checkpoint": "pack_vector_advanced",
+      "recipe": "s97-1",
+      "title": "Advance the whole group and finish its remainder",
+      "quiz": {
+        "id": "png-s97-q1",
+        "question": "After one sixteen-pixel group, how far does the destination cursor move?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "48 bytes."
+          },
+          {
+            "id": "B",
+            "text": "64 bytes."
+          },
+          {
+            "id": "C",
+            "text": "Sixteen bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s97-h1",
+          "text": "Input and output extents differ because packing expands each pixel by one byte."
+        },
+        {
+          "id": "png-s97-h2",
+          "text": "Leave the one-pixel remainder to the existing scalar pixel path."
+        }
+      ]
+    },
+    {
+      "id": "s98",
+      "kind": "observe",
+      "region": null,
+      "checkpoint": "publication_rows_return",
+      "recipe": "s98-1",
+      "title": "Trace a late validation failure before packing",
+      "quiz": {
+        "id": "png-s98-q1",
+        "question": "What must follow a reconstruction failure?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Attempt packing and ignore its result."
+          },
+          {
+            "id": "B",
+            "text": "Publish the dimensions but no byte count."
+          },
+          {
+            "id": "C",
+            "text": "Return before any packing call."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s98-h1",
+          "text": "Outer CRC and Adler checks do not validate filter selector values."
+        },
+        {
+          "id": "png-s98-h2",
+          "text": "Inspect the stage result at the return checkpoint before continuing the supplied branch."
+        }
+      ]
+    },
+    {
+      "id": "s99",
+      "kind": "observe",
+      "region": null,
+      "checkpoint": "publication_blit_return",
+      "recipe": "s99-1",
+      "title": "Trace packing success before context publication",
+      "quiz": {
+        "id": "png-s99-q1",
+        "question": "What is still unpublished at this checkpoint?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The three final context result fields."
+          },
+          {
+            "id": "B",
+            "text": "The already stored pixel words."
+          },
+          {
+            "id": "C",
+            "text": "The reconstructed row samples."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s99-h1",
+          "text": "Distinguish the local four-field packing descriptor from the caller\u2019s nine-field decoder context."
+        },
+        {
+          "id": "png-s99-h2",
+          "text": "The packer\u2019s active-byte result is already available; do not replace it with the destination extent."
+        }
+      ]
+    },
+    {
+      "id": "s100",
+      "kind": "edit",
+      "region": "publish_results",
+      "checkpoint": "publication_results_ready",
+      "recipe": "s100-1",
+      "title": "Publish results after the last successful stage",
+      "quiz": {
+        "id": "png-s100-q1",
+        "question": "Which value belongs at decoder-context offset 64?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The required padded destination extent."
+          },
+          {
+            "id": "B",
+            "text": "The successfully packed active pixel-byte count."
+          },
+          {
+            "id": "C",
+            "text": "The original file count."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "png-s100-h1",
+          "text": "The publication region is reached only after packing returns zero."
+        },
+        {
+          "id": "png-s100-h2",
+          "text": "Preserve the successful count while restoring the caller\u2019s machine state."
+        }
+      ]
+    }
+  ]
+}

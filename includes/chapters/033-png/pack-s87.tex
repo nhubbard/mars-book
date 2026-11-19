@@ -1,0 +1,16 @@
+\section{Step 87 Start a row after its retained selector}
+Fill \texttt{pack\_cursor}. Advance the source past one selector byte, copy the destination row start into \texttt{\$t0}, and copy width into \texttt{\$t1} as pixels remaining. The selector is retained in memory and is not interpreted by packing. Reconstruction has already established the sample values.
+
+At the first worked row, source now points to RGB bytes 10, 20, 30. Destination still names the first framebuffer word, and two pixels remain. At the next row, the same setup will skip its own selector. Do not skip a selector after every pixel or remove selectors from the source buffer.
+
+This loop counts pixels, while the Up reconstruction loop counted sample bytes. A scalar packing iteration consumes three source bytes and one destination word. A vector iteration will consume sixteen pixels at once, so its bounds must use the pixel count rather than the number of remaining bytes.
+
+\paragraph{Observe} Use \texttt{s87-1}; stop before \texttt{pack\_cursor\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What unit does the packing remainder use?
+\begin{itemize}
+\item[A.] Pixels.
+\item[B.] Individual RGB bytes.
+\item[C.] PNG chunks.
+\end{itemize}

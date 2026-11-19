@@ -1,0 +1,16 @@
+\section{Step 89 Advance by the destination row stride}
+Fill \texttt{pack\_row}. Advance the stable destination row start in \texttt{\$a1} by the retained byte stride and decrement rows remaining in \texttt{\$a3}. Leave the next-row test to the supplied continuation so the checkpoint is reached after the transition. The source already points at the next selector because the pixel loop consumed exactly three bytes per pixel.
+
+After the first direct worked row, the next destination begins at offset 68, not offset eight. Sixty intervening bytes belong to row padding. The file caller instead advances 2048 bytes. Do not advance from the moving end cursor \texttt{\$t0} by a full stride; that would add the active row width twice.
+
+After the final row, the supplied success path returns zero and the retained active count. Scalar packing is now complete. The whole program still has an unfinished result-publication region, so valid files report development status even though their pixel words can now be visible. Format and capacity errors still return failure before any framebuffer write.
+
+\paragraph{Observe} Use \texttt{s89-1}; stop before \texttt{pack\_row\_advanced}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} From which address is the next destination row derived?
+\begin{itemize}
+\item[A.] The end of the active pixel row plus a full stride.
+\item[B.] The end of the compressed stream.
+\item[C.] The previous row start plus its declared stride.
+\end{itemize}

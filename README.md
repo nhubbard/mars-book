@@ -206,14 +206,14 @@ completed; free-writing checks accept equivalent exact implementations. Instruct
 solutions and keys are separate and private. The four IDE capture plans are uncaptured.
 Substantive prose editing remains deferred until all 35 chapter drafts are complete.
 
-The PNG chapter has a native reading foundation at `drafts/png.tex`, with 123 native
+The PNG chapter has a native reading foundation at `drafts/png.tex`, with 143 native
 reading and construction files, a pipeline figure, native tables, an actual IntelliJ-highlighted shuffle
 excerpt and reproducible RGB8 inputs. Two complete private prototypes now decode
 through framebuffer publication. Row checks cover scalar/MSA paths in both byte orders
 and address layouts (4400 cases); complete decoding adds 400 cases, including full
 512-by-512 output and late-failure preservation. Ten assembled faults are rejected.
 Measured complete calls on the repeated-row image fall from 37870732 to 18167820
-simulated instructions in MSA mode; the text records the input and boundary. All 126
+simulated instructions in MSA mode; the text records the input and boundary. All 133
 public tests pass. The MARS grader's byte-order option is committed separately with
 110 passing CLI tests. The supplied file caller and first ten construction steps now
 include nine editable loader regions, ten quizzes, twenty hints and fourteen observation
@@ -234,6 +234,12 @@ predictors, bounded MSA Up groups and their tails. Nineteen public recipes and
 a native row-window table accompany the text. Three completed implementations,
 cumulative direct/caller observations, same-session reuse and full-size callers
 pass 2232 cases; nine assembled faults are rejected and twelve actual-file runs
-pass. Pixel-packing/publication construction, final feedback, PNG distributions
-and actual IDE captures remain next. The main manuscript
+pass. Seventeen final steps add scalar/MSA packing, a native destination-extent
+table, two diagnostic observations and final context publication, reaching 100
+construction steps. Fifteen new editable regions and twenty-seven recipes accompany
+the prose. Completed domains, cumulative calls and session reuse pass 4036 cases;
+thirteen assembled faults are rejected. Twelve real-file runs cover ten exact
+framebuffer comparisons, including both full-size modes, and two rejected inputs.
+The final caller reports `PNG displayed.` after success. Final feedback packaging,
+PNG distributions, integration and actual IDE captures remain next. The main manuscript
 retains 32 packaged chapters; the substantial author editing pass remains deferred.
