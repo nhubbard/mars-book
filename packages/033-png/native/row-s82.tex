@@ -1,0 +1,16 @@
+\section{Step 82 Add and store sixteen independent lanes}
+Fill \texttt{row\_vector\_body}. Load sixteen residual bytes and sixteen upper bytes, add the vectors with wrapping byte addition, and store the sixteen reconstructed samples. Advance both pointers by sixteen before the supplied loop returns to its bound check. Use \texttt{addv.b}; unsigned saturating addition would violate the scalar result.
+
+In the first up6 row, sixteen residuals of 250 are added to zero upper samples. At \texttt{row\_vector\_written}, those sixteen bytes are 250, the next two samples retain their incoming value 250, and both cursors have advanced sixteen bytes. On row one, the same operation adds ten to 250 and writes four in every processed lane.
+
+Each lane depends on the completed preceding row, so all sixteen additions can run together. That proof does not extend to the left predictors: the next pixel’s red sample may need a red sample just reconstructed inside the same group. Keep the existing scalar paths for those filters.
+
+\paragraph{Observe} Use \texttt{s82-1}; stop before \texttt{row\_vector\_written}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Which vector addition matches PNG byte restoration?
+\begin{itemize}
+\item[A.] Signed saturating addition.
+\item[B.] Unsigned saturating addition.
+\item[C.] Wrapping byte addition.
+\end{itemize}

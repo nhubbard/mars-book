@@ -79,13 +79,13 @@ class PngFoundationTests(unittest.TestCase):
             result = subprocess.run(command[:-1]+[str(bad),'--height','0'],capture_output=True,text=True)
             self.assertNotEqual(0,result.returncode); self.assertFalse(bad.exists())
 
-    def test_native_composition_is_direct_and_not_integrated_prematurely(self):
+    def test_native_composition_is_direct_and_integrated_after_packaging(self):
         paths = [p for p,_ in book.sources('drafts/png.tex') if p.parent.name == '033-png']
         expected = set((book.ROOT/'includes/chapters/033-png').glob('*.tex'))
         self.assertEqual(expected,set(paths)); self.assertEqual(len(paths),len(set(paths)))
         self.assertEqual('purpose',paths[1].stem); self.assertEqual('sources',paths[-1].stem)
         book.validate('drafts/png.tex')
-        self.assertNotIn('033-png',(book.ROOT/'main.tex').read_text())
+        self.assertIn('\\include{includes/chapters/033-png/chapter}',(book.ROOT/'main.tex').read_text())
 
     def test_adler_collision_does_not_establish_inflated_length(self):
         actual = b'A'

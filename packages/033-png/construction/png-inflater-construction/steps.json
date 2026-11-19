@@ -1,0 +1,597 @@
+{
+  "status": "Stored-block stage; Huffman paths retain development exits",
+  "steps": [
+    {
+      "id": "s28",
+      "region": "inflate_bounds",
+      "title": "Reject unsupported counts before pointer access",
+      "checkpoint": "inflate_bounds_ready",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why is six the minimum outer input count?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Two zlib header bytes and four checksum bytes require six bytes."
+          },
+          {
+            "id": "b",
+            "text": "Every supported stream produces six pixels."
+          },
+          {
+            "id": "c",
+            "text": "The bit reader always loads six bytes at once."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Keep input and output counts separate."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Use unsigned comparisons without narrowing the arguments."
+        }
+      ],
+      "recipes": [
+        "s28-1"
+      ]
+    },
+    {
+      "id": "s29",
+      "region": "inflate_header",
+      "title": "Validate the zlib header and its advertised window",
+      "checkpoint": "inflate_header_ready",
+      "quiz": {
+        "id": "q29",
+        "prompt": "What does the window code bound?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The number of bytes in IHDR."
+          },
+          {
+            "id": "b",
+            "text": "The permitted backward match distance."
+          },
+          {
+            "id": "c",
+            "text": "The framebuffer stride."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Check method, window code, flags and header check separately."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Retain the derived history limit for the later match decoder."
+        }
+      ],
+      "recipes": [
+        "s29-1"
+      ]
+    },
+    {
+      "id": "s30",
+      "region": "inflate_state",
+      "title": "Reserve the checksum bytes from the bit reader",
+      "checkpoint": "inflate_state_ready",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Where is the compressed-data end for a 46-byte zlib stream?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At offset 46."
+          },
+          {
+            "id": "b",
+            "text": "At offset 42, before the checksum."
+          },
+          {
+            "id": "c",
+            "text": "At output offset 35."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Use the input count to locate the trailer."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Use the expected output count only for the output end."
+        }
+      ],
+      "recipes": [
+        "s30-1"
+      ]
+    },
+    {
+      "id": "s31",
+      "region": "inflate_refill",
+      "title": "Refill only from the compressed byte window",
+      "checkpoint": "bits_ready",
+      "quiz": {
+        "id": "q31",
+        "prompt": "When does a zero-bit request require a refill?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Always."
+          },
+          {
+            "id": "b",
+            "text": "Only before the first block."
+          },
+          {
+            "id": "c",
+            "text": "Never."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Test available bits before loading another byte."
+        },
+        {
+          "id": "s31-h2",
+          "text": "The compressed end deliberately excludes the trailer."
+        }
+      ],
+      "recipes": [
+        "s31-1"
+      ]
+    },
+    {
+      "id": "s32",
+      "region": "inflate_extract",
+      "title": "Consume the low bits and retain the remainder",
+      "checkpoint": "inflate_bits_ready",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Does extracting three buffered bits advance the input cursor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, by three bytes."
+          },
+          {
+            "id": "b",
+            "text": "No; the earlier refill already consumed its byte."
+          },
+          {
+            "id": "c",
+            "text": "Yes, by one output pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Mask before shifting away the consumed field."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Update bit count independently from byte cursor."
+        }
+      ],
+      "recipes": [
+        "s32-1"
+      ]
+    },
+    {
+      "id": "s33",
+      "region": "inflate_dispatch",
+      "title": "Separate the final flag from the block type",
+      "checkpoint": "stored_block",
+      "quiz": {
+        "id": "q33",
+        "prompt": "What does field value one describe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A final stored block."
+          },
+          {
+            "id": "b",
+            "text": "A nonfinal fixed block."
+          },
+          {
+            "id": "c",
+            "text": "An already verified checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Separate one flag bit from the two type bits."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Do not treat an unfinished recognized handler as a malformed type."
+        }
+      ],
+      "recipes": [
+        "s33-1"
+      ]
+    },
+    {
+      "id": "s34",
+      "region": "inflate_align",
+      "title": "Discard stored-block padding before its length",
+      "checkpoint": "inflate_align_ready",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What happens to the byte cursor during alignment here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It advances by five."
+          },
+          {
+            "id": "b",
+            "text": "It moves back to the header."
+          },
+          {
+            "id": "c",
+            "text": "It stays at the next byte already selected by refill."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Discard buffered padding without rereading the header byte."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Keep alignment confined to stored blocks."
+        }
+      ],
+      "recipes": [
+        "s34-1"
+      ]
+    },
+    {
+      "id": "s35",
+      "region": "inflate_lengths",
+      "title": "Read LEN and NLEN as sixteen-bit fields",
+      "checkpoint": "inflate_lengths_ready",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What follows from LEN XOR NLEN equaling 65535?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "LEN is necessarily within the output capacity."
+          },
+          {
+            "id": "b",
+            "text": "The two stored length fields are complementary."
+          },
+          {
+            "id": "c",
+            "text": "The complete Adler checksum is correct."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Retain the first helper result before the second call overwrites it."
+        },
+        {
+          "id": "s35-h2",
+          "text": "The length fields use the ordinary low-bit reader, not big-endian assembly."
+        }
+      ],
+      "recipes": [
+        "s35-1"
+      ]
+    },
+    {
+      "id": "s36",
+      "region": "inflate_stored_bounds",
+      "title": "Check readable and writable payload extents",
+      "checkpoint": "inflate_stored_bounds_ready",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which bounds must be established before copying?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Only the source extent."
+          },
+          {
+            "id": "b",
+            "text": "Only the destination extent."
+          },
+          {
+            "id": "c",
+            "text": "Both source availability and destination space."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Compare lengths with remaining counts before forming copy loops."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Do not let a valid complement stand in for a window check."
+        }
+      ],
+      "recipes": [
+        "s36-1"
+      ]
+    },
+    {
+      "id": "s37",
+      "region": "inflate_copy",
+      "title": "Copy a stored payload exactly once",
+      "checkpoint": "inflate_copy_ready",
+      "quiz": {
+        "id": "q37",
+        "prompt": "How many bytes does an empty stored block copy?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Zero."
+          },
+          {
+            "id": "b",
+            "text": "One padding byte."
+          },
+          {
+            "id": "c",
+            "text": "Four checksum bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Test for the empty range before loading."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Advance the two byte cursors together for a stored payload."
+        }
+      ],
+      "recipes": [
+        "s37-1"
+      ]
+    },
+    {
+      "id": "s38",
+      "region": "inflate_block_done",
+      "title": "Continue nonfinal blocks without publishing success",
+      "checkpoint": "inflate_final_ready",
+      "quiz": {
+        "id": "q38",
+        "prompt": "What must survive a transition to another block?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The accumulated output cursor."
+          },
+          {
+            "id": "b",
+            "text": "The previous block length as the next length."
+          },
+          {
+            "id": "c",
+            "text": "A claim of final success."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Use the final flag retained when selecting this block."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Continue appending to the same output window."
+        }
+      ],
+      "recipes": [
+        "s38-1"
+      ]
+    },
+    {
+      "id": "s39",
+      "region": "inflate_exact",
+      "title": "Require exact output and compressed-byte completion",
+      "checkpoint": "inflate_exact_ready",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Can matching Adler-32 replace the output-cursor equality?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, because checksums uniquely identify every byte sequence."
+          },
+          {
+            "id": "b",
+            "text": "No; checksum agreement does not establish how many bytes were produced."
+          },
+          {
+            "id": "c",
+            "text": "Yes, if the destination was prefilled."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Check actual cursor positions, not just the requested counts."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Reject unread compressed bytes before treating the next four bytes as the trailer."
+        }
+      ],
+      "recipes": [
+        "s39-1"
+      ]
+    },
+    {
+      "id": "s40",
+      "region": "inflate_adler",
+      "title": "Compute Adler over the produced row range",
+      "checkpoint": "inflate_adler_ready",
+      "quiz": {
+        "id": "q40",
+        "prompt": "What does the Adler helper receive in its second argument here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The end address of the output range."
+          },
+          {
+            "id": "b",
+            "text": "The compressed count."
+          },
+          {
+            "id": "c",
+            "text": "The expected CRC."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Use the updated first sum when advancing the second."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Only produced output belongs in this checksum."
+        }
+      ],
+      "recipes": [
+        "s40-1"
+      ]
+    },
+    {
+      "id": "s41",
+      "region": "inflate_trailer",
+      "title": "Read the reserved checksum in PNG stream order",
+      "checkpoint": "inflate_trailer_ready",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Why not read the trailer with an ordinary native word load?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its four bytes are explicitly big-endian, independently of target order."
+          },
+          {
+            "id": "b",
+            "text": "Its checksum contains eight bytes."
+          },
+          {
+            "id": "c",
+            "text": "A native load always computes Adler automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Keep file byte order separate from native workspace fields."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The outer input bound and reserved end establish four readable trailer bytes."
+        }
+      ],
+      "recipes": [
+        "s41-1"
+      ]
+    },
+    {
+      "id": "s42",
+      "region": "inflate_checksum",
+      "title": "Compare the two checksum values",
+      "checkpoint": "inflate_checksum_ready",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Why can the bad-Adler fixture reach the inflater?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The host helper preserves valid PNG chunk CRCs around the changed zlib stream."
+          },
+          {
+            "id": "b",
+            "text": "The collector already decoded all rows."
+          },
+          {
+            "id": "c",
+            "text": "The final checksum is ignored for stored blocks."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Distinguish compressed-container checks from inflated-data checks."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Keep the failure return count zero even if row scratch contains all bytes."
+        }
+      ],
+      "recipes": [
+        "s42-1"
+      ]
+    },
+    {
+      "id": "s43",
+      "region": "inflate_publish",
+      "title": "Return the completed stored-stage result",
+      "checkpoint": "inflate_publish_ready",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Why does the whole program still print its development message?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The inflater returned the wrong count."
+          },
+          {
+            "id": "b",
+            "text": "Row reconstruction and framebuffer publication remain unfinished."
+          },
+          {
+            "id": "c",
+            "text": "A stored block cannot contain PNG row bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Inspect the inflater return before the wrapper advances to the next unfinished stage."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Do not award a completed inflater grade while Huffman paths are missing."
+        }
+      ],
+      "recipes": [
+        "s43-1"
+      ]
+    }
+  ]
+}

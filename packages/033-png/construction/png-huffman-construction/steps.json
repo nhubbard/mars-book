@@ -1,0 +1,1004 @@
+{
+  "status": "Full Huffman inflater construction; row stages and final feedback/distribution pending",
+  "steps": [
+    {
+      "id": "s44",
+      "region": "huff_fixed",
+      "title": "Initialize the fixed code lengths",
+      "checkpoint": "huff_fixed_ready",
+      "quiz": {
+        "id": "q44",
+        "prompt": "Which values are stored in the fixed length vector?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The output pixel values."
+          },
+          {
+            "id": "b",
+            "text": "The number of code bits assigned to each symbol."
+          },
+          {
+            "id": "c",
+            "text": "The compressed input addresses."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Write one byte per length, indexed by symbol."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Do not remove reserved fixed symbols from the table definition."
+        }
+      ],
+      "recipes": [
+        "s44-1"
+      ]
+    },
+    {
+      "id": "s45",
+      "region": "huff_tree_clear",
+      "title": "Clear one table before counting",
+      "checkpoint": "huff_tree_cleared",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Why clear the table on every build?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Counts belong to the new alphabet, not its predecessor."
+          },
+          {
+            "id": "b",
+            "text": "The source vector is always a string."
+          },
+          {
+            "id": "c",
+            "text": "A cleared count automatically gives every symbol a code."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Clear count words rather than the read-only format tables."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Retain separate cursors for input lengths and output counts."
+        }
+      ],
+      "recipes": [
+        "s45-1"
+      ]
+    },
+    {
+      "id": "s46",
+      "region": "huff_tree_count",
+      "title": "Count lengths without treating zero as a code",
+      "checkpoint": "huff_tree_counted",
+      "quiz": {
+        "id": "q46",
+        "prompt": "Does a zero length denote a zero-bit data code?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, one that produces a zero byte."
+          },
+          {
+            "id": "b",
+            "text": "Only in the fixed alphabet."
+          },
+          {
+            "id": "c",
+            "text": "No; that symbol is absent."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Validate before multiplying a length into a word offset."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Track declared slots and present symbols separately."
+        }
+      ],
+      "recipes": [
+        "s46-1"
+      ]
+    },
+    {
+      "id": "s47",
+      "region": "huff_tree_prefix",
+      "title": "Compute placement offsets and prefix space",
+      "checkpoint": "huff_tree_prefix_ready",
+      "quiz": {
+        "id": "q47",
+        "prompt": "What does placement offset 24 for length eight mean?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The input cursor is at byte 24."
+          },
+          {
+            "id": "b",
+            "text": "Twenty-four present symbols have shorter codes."
+          },
+          {
+            "id": "c",
+            "text": "Every eight-bit code has numerical value 24."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "An exclusive offset is measured before adding this length\u2019s count."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Use a separate signed prefix-space calculation to detect oversubscription."
+        }
+      ],
+      "recipes": [
+        "s47-1"
+      ]
+    },
+    {
+      "id": "s48",
+      "region": "huff_tree_shape",
+      "title": "Apply the permitted sparse-alphabet cases",
+      "checkpoint": "huff_tree_shape_ready",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Which incomplete data-alphabet case is permitted here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Any alphabet whose lengths are at most fifteen."
+          },
+          {
+            "id": "b",
+            "text": "Every alphabet with two symbols."
+          },
+          {
+            "id": "c",
+            "text": "A single present symbol with length one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "Keep strict code-length policy separate from data policies."
+        },
+        {
+          "id": "s48-h2",
+          "text": "An unused distance alphabet is different from an unused bit pattern in a one-code alphabet."
+        }
+      ],
+      "recipes": [
+        "s48-1"
+      ]
+    },
+    {
+      "id": "s49",
+      "region": "huff_tree_symbols",
+      "title": "Place symbols in length and numerical order",
+      "checkpoint": "huff_tree_symbols_ready",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Where is fixed literal zero in the ordered array?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At index zero."
+          },
+          {
+            "id": "b",
+            "text": "At index twenty-four."
+          },
+          {
+            "id": "c",
+            "text": "At its file byte offset."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Enumerating symbols upward supplies the tie-break order within a length."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Store symbol IDs as halfwords, not length bytes."
+        }
+      ],
+      "recipes": [
+        "s49-1"
+      ]
+    },
+    {
+      "id": "s50",
+      "region": "huff_symbol_state",
+      "title": "Start a symbol search at the shortest length",
+      "checkpoint": "huff_symbol_state_ready",
+      "quiz": {
+        "id": "q50",
+        "prompt": "Which state survives between symbol calls?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The unread bit reservoir."
+          },
+          {
+            "id": "b",
+            "text": "The previous symbol\u2019s accumulated code."
+          },
+          {
+            "id": "c",
+            "text": "A forced byte alignment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "Reset code-search variables without discarding unread input bits."
+        },
+        {
+          "id": "s50-h2",
+          "text": "Count zero is not a search length."
+        }
+      ],
+      "recipes": [
+        "s50-1"
+      ]
+    },
+    {
+      "id": "s51",
+      "region": "huff_symbol_refill",
+      "title": "Reuse buffered bits or refill one byte",
+      "checkpoint": "decode_has_byte",
+      "quiz": {
+        "id": "q51",
+        "prompt": "When should a symbol search discard the remaining header-byte bits?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Before every symbol."
+          },
+          {
+            "id": "b",
+            "text": "Before every eight-bit code."
+          },
+          {
+            "id": "c",
+            "text": "It should retain them and consume them in sequence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "Check the available count before a byte load."
+        },
+        {
+          "id": "s51-h2",
+          "text": "Use the same compressed end bound as the ordinary bit reader."
+        }
+      ],
+      "recipes": [
+        "s51-1"
+      ]
+    },
+    {
+      "id": "s52",
+      "region": "huff_symbol_step",
+      "title": "Compare a code in arrival order",
+      "checkpoint": "decode_found",
+      "quiz": {
+        "id": "q52",
+        "prompt": "What identifies a matching code at one length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Its difference from the first code lies within that length\u2019s count."
+          },
+          {
+            "id": "b",
+            "text": "Its numerical value equals the symbol number."
+          },
+          {
+            "id": "c",
+            "text": "Its bits are all zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s52-h1",
+          "text": "Huffman code order differs from an ordinary low-bit numerical field."
+        },
+        {
+          "id": "s52-h2",
+          "text": "Advance code length only after testing this length\u2019s range."
+        }
+      ],
+      "recipes": [
+        "s52-1"
+      ]
+    },
+    {
+      "id": "s53",
+      "region": "huff_symbol_found",
+      "title": "Look up the selected symbol ID",
+      "checkpoint": "huff_symbol_ready",
+      "quiz": {
+        "id": "q53",
+        "prompt": "Does every value returned by this helper represent a row byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, in every alphabet."
+          },
+          {
+            "id": "b",
+            "text": "No; the selected alphabet and caller determine its meaning."
+          },
+          {
+            "id": "c",
+            "text": "Only if the source address is aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s53-h1",
+          "text": "Keep the within-length rank separate from the final symbol ID."
+        },
+        {
+          "id": "s53-h2",
+          "text": "Use the array after the count words, not the count cursor itself."
+        }
+      ],
+      "recipes": [
+        "s53-1"
+      ]
+    },
+    {
+      "id": "s54",
+      "region": "huff_classify",
+      "title": "Separate literals, end-of-block and lengths",
+      "checkpoint": "emit_literal",
+      "quiz": {
+        "id": "q54",
+        "prompt": "What does symbol 256 do?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Writes byte zero to output."
+          },
+          {
+            "id": "b",
+            "text": "Ends this block and follows its completion path."
+          },
+          {
+            "id": "c",
+            "text": "Supplies a match distance."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s54-h1",
+          "text": "Classify before interpreting extra-bit tables."
+        },
+        {
+          "id": "s54-h2",
+          "text": "Keep end-of-block separate from the retained final-block flag."
+        }
+      ],
+      "recipes": [
+        "s54-1"
+      ]
+    },
+    {
+      "id": "s55",
+      "region": "huff_literal",
+      "title": "Emit one literal within the row window",
+      "checkpoint": "huff_literal_ready",
+      "quiz": {
+        "id": "q55",
+        "prompt": "What bounds a literal store?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The current output cursor must precede its expected end."
+          },
+          {
+            "id": "b",
+            "text": "The compressed cursor must equal the checksum address."
+          },
+          {
+            "id": "c",
+            "text": "The symbol must contain eight code bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s55-h1",
+          "text": "A literal\u2019s code length and its one-byte output size are different quantities."
+        },
+        {
+          "id": "s55-h2",
+          "text": "Reuse the existing exact-output check after the block ends."
+        }
+      ],
+      "recipes": [
+        "s55-1"
+      ]
+    },
+    {
+      "id": "s56",
+      "region": "huff_length",
+      "title": "Expand a length code and its extra bits",
+      "checkpoint": "huff_length_ready",
+      "quiz": {
+        "id": "q56",
+        "prompt": "What is the reconstructed length in this fixture?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "272 bytes."
+          },
+          {
+            "id": "b",
+            "text": "31 bytes."
+          },
+          {
+            "id": "c",
+            "text": "34 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s56-h1",
+          "text": "Validate the symbol before turning it into a table index."
+        },
+        {
+          "id": "s56-h2",
+          "text": "Preserve the base across a helper that returns through the same result register."
+        }
+      ],
+      "recipes": [
+        "s56-1"
+      ]
+    },
+    {
+      "id": "s57",
+      "region": "huff_distance_symbol",
+      "title": "Decode the separate distance alphabet",
+      "checkpoint": "huff_distance_symbol_ready",
+      "quiz": {
+        "id": "q57",
+        "prompt": "What does distance symbol zero select?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first distance-table entry, whose base is one."
+          },
+          {
+            "id": "b",
+            "text": "A distance of zero."
+          },
+          {
+            "id": "c",
+            "text": "End-of-block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s57-h1",
+          "text": "Use the distance table rather than decoding through the literal/length table."
+        },
+        {
+          "id": "s57-h2",
+          "text": "Bound reserved symbols before either lookup."
+        }
+      ],
+      "recipes": [
+        "s57-1"
+      ]
+    },
+    {
+      "id": "s58",
+      "region": "huff_distance_extra",
+      "title": "Construct the full backward distance",
+      "checkpoint": "huff_distance_ready",
+      "quiz": {
+        "id": "q58",
+        "prompt": "May a zero-extra-bit distance fetch a new input byte?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, every distance consumes a byte."
+          },
+          {
+            "id": "b",
+            "text": "No; the zero-bit read retains the input cursor."
+          },
+          {
+            "id": "c",
+            "text": "Only after a final block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s58-h1",
+          "text": "A table symbol and its reconstructed distance are distinct values."
+        },
+        {
+          "id": "s58-h2",
+          "text": "The ordinary zero-bit field returns zero without consuming input."
+        }
+      ],
+      "recipes": [
+        "s58-1"
+      ]
+    },
+    {
+      "id": "s59",
+      "region": "huff_match_bounds",
+      "title": "Admit a match before deriving copy addresses",
+      "checkpoint": "huff_match_bounds_ready",
+      "quiz": {
+        "id": "q59",
+        "prompt": "Which history bound is needed in addition to the advertised window?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Distance must fit bytes actually produced."
+          },
+          {
+            "id": "b",
+            "text": "Distance must equal the current source-file offset."
+          },
+          {
+            "id": "c",
+            "text": "Distance must divide the row width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s59-h1",
+          "text": "Check counts before subtracting a backward pointer."
+        },
+        {
+          "id": "s59-h2",
+          "text": "A large window does not create earlier output bytes."
+        }
+      ],
+      "recipes": [
+        "s59-1"
+      ]
+    },
+    {
+      "id": "s60",
+      "region": "huff_match_copy",
+      "title": "Copy forward through overlapping history",
+      "checkpoint": "huff_match_copied",
+      "quiz": {
+        "id": "q60",
+        "prompt": "Where does the second match byte come from here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A new compressed literal."
+          },
+          {
+            "id": "b",
+            "text": "The output byte produced by the first match iteration."
+          },
+          {
+            "id": "c",
+            "text": "The stored Adler trailer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s60-h1",
+          "text": "Overlapping matches depend on newly produced bytes."
+        },
+        {
+          "id": "s60-h2",
+          "text": "Keep compressed-input and history-copy cursors separate."
+        }
+      ],
+      "recipes": [
+        "s60-1"
+      ]
+    },
+    {
+      "id": "s61",
+      "region": "huff_dynamic_counts",
+      "title": "Read the three dynamic description counts",
+      "checkpoint": "huff_dynamic_counts_ready",
+      "quiz": {
+        "id": "q61",
+        "prompt": "What does the first decoded count describe?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The expected output byte count."
+          },
+          {
+            "id": "b",
+            "text": "The declared literal/length alphabet size."
+          },
+          {
+            "id": "c",
+            "text": "The number of PNG rows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s61-h1",
+          "text": "These three fields use ordinary low-bit numerical reads."
+        },
+        {
+          "id": "s61-h2",
+          "text": "Keep declared counts distinct from symbol-use restrictions."
+        }
+      ],
+      "recipes": [
+        "s61-1"
+      ]
+    },
+    {
+      "id": "s62",
+      "region": "huff_clear_alphabet",
+      "title": "Clear all nineteen possible code-length entries",
+      "checkpoint": "huff_alphabet_cleared",
+      "quiz": {
+        "id": "q62",
+        "prompt": "Why clear nineteen entries when only eighteen follow?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The untransmitted symbol must remain absent."
+          },
+          {
+            "id": "b",
+            "text": "The nineteenth entry is always a pixel byte."
+          },
+          {
+            "id": "c",
+            "text": "The input requires an extra padding length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s62-h1",
+          "text": "Reset absent entries before reading the advertised subset."
+        },
+        {
+          "id": "s62-h2",
+          "text": "Block-local mutable lengths must not inherit an earlier alphabet."
+        }
+      ],
+      "recipes": [
+        "s62-1"
+      ]
+    },
+    {
+      "id": "s63",
+      "region": "huff_read_alphabet",
+      "title": "Place the three-bit lengths by their permutation",
+      "checkpoint": "huff_alphabet_ready",
+      "quiz": {
+        "id": "q63",
+        "prompt": "Where is the first received length stored?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "At the slot for code-length symbol sixteen."
+          },
+          {
+            "id": "b",
+            "text": "At symbol zero\u2019s slot."
+          },
+          {
+            "id": "c",
+            "text": "At the row output cursor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s63-h1",
+          "text": "Use incoming position to index the order table, then use that symbol to index lengths."
+        },
+        {
+          "id": "s63-h2",
+          "text": "The three-bit value is a length, not a symbol ID."
+        }
+      ],
+      "recipes": [
+        "s63-1"
+      ]
+    },
+    {
+      "id": "s64",
+      "region": "huff_code_tree",
+      "title": "Build the alphabet that describes the data alphabets",
+      "checkpoint": "huff_code_tree_ready",
+      "quiz": {
+        "id": "q64",
+        "prompt": "What does this intermediate Huffman table decode?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Packed display words."
+          },
+          {
+            "id": "b",
+            "text": "Only backward distances."
+          },
+          {
+            "id": "c",
+            "text": "Lengths and repeat operators for the two data alphabets."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s64-h1",
+          "text": "Use strict policy for the code-length alphabet."
+        },
+        {
+          "id": "s64-h2",
+          "text": "Set one bounded combined range for both data alphabets."
+        }
+      ],
+      "recipes": [
+        "s64-1"
+      ]
+    },
+    {
+      "id": "s65",
+      "region": "huff_direct_length",
+      "title": "Distinguish a direct length from a repeat operator",
+      "checkpoint": "store_lengths",
+      "quiz": {
+        "id": "q65",
+        "prompt": "What does decoded symbol one mean in this table?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A literal data byte one."
+          },
+          {
+            "id": "b",
+            "text": "One code length whose value is one."
+          },
+          {
+            "id": "c",
+            "text": "A distance of one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s65-h1",
+          "text": "The selected table determines the meaning of a decoded symbol."
+        },
+        {
+          "id": "s65-h2",
+          "text": "Prepare a value and count; leave the bounded store to the shared region."
+        }
+      ],
+      "recipes": [
+        "s65-1"
+      ]
+    },
+    {
+      "id": "s66",
+      "region": "huff_store_lengths",
+      "title": "Bound each expansion before storing its bytes",
+      "checkpoint": "huff_lengths_stored",
+      "quiz": {
+        "id": "q66",
+        "prompt": "Which boundary limits a repeat expansion?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first alphabet boundary even when more declared entries remain."
+          },
+          {
+            "id": "b",
+            "text": "The current code\u2019s bit length."
+          },
+          {
+            "id": "c",
+            "text": "The end of the declared combined length vector."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s66-h1",
+          "text": "Compare the run count before adding or storing."
+        },
+        {
+          "id": "s66-h2",
+          "text": "Use one expansion loop for direct values and repeats."
+        }
+      ],
+      "recipes": [
+        "s66-1"
+      ]
+    },
+    {
+      "id": "s67",
+      "region": "huff_repeat16",
+      "title": "Repeat a previous length only when one exists",
+      "checkpoint": "huff_repeat16_ready",
+      "quiz": {
+        "id": "q67",
+        "prompt": "Can operation sixteen repeat a previous zero length?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Yes, when a previous expanded entry exists."
+          },
+          {
+            "id": "b",
+            "text": "No, it can repeat only nonzero lengths."
+          },
+          {
+            "id": "c",
+            "text": "Only in a fixed block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s67-h1",
+          "text": "Test predecessor existence before loading cursor minus one."
+        },
+        {
+          "id": "s67-h2",
+          "text": "Preserve the repeated value across the extra-bit read."
+        }
+      ],
+      "recipes": [
+        "s67-1"
+      ]
+    },
+    {
+      "id": "s68",
+      "region": "huff_repeat17",
+      "title": "Expand a short run of zero lengths",
+      "checkpoint": "huff_repeat17_ready",
+      "quiz": {
+        "id": "q68",
+        "prompt": "What is the largest run produced by operation seventeen?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Seven entries."
+          },
+          {
+            "id": "b",
+            "text": "Ten entries."
+          },
+          {
+            "id": "c",
+            "text": "Seventeen entries."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s68-h1",
+          "text": "Add the prescribed bias after reading the field."
+        },
+        {
+          "id": "s68-h2",
+          "text": "The common store still owns the remaining-capacity check."
+        }
+      ],
+      "recipes": [
+        "s68-1"
+      ]
+    },
+    {
+      "id": "s69",
+      "region": "huff_repeat18",
+      "title": "Expand a long run without bypassing the same bound",
+      "checkpoint": "huff_repeat18_ready",
+      "quiz": {
+        "id": "q69",
+        "prompt": "What does a run of 138 zeros populate?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The code-length vector."
+          },
+          {
+            "id": "b",
+            "text": "The framebuffer."
+          },
+          {
+            "id": "c",
+            "text": "The stored Adler checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s69-h1",
+          "text": "Code-length runs describe metadata rather than decoded image samples."
+        },
+        {
+          "id": "s69-h2",
+          "text": "Reuse the existing expansion bound instead of a second unchecked loop."
+        }
+      ],
+      "recipes": [
+        "s69-1"
+      ]
+    },
+    {
+      "id": "s70",
+      "region": "huff_end_code",
+      "title": "Require end-of-block before building the data tables",
+      "checkpoint": "huff_end_code_ready",
+      "quiz": {
+        "id": "q70",
+        "prompt": "Why require a code for symbol 256?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "It supplies the image width."
+          },
+          {
+            "id": "b",
+            "text": "Every compressed block needs an end-of-block symbol."
+          },
+          {
+            "id": "c",
+            "text": "It always emits 256 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s70-h1",
+          "text": "Check the literal/length portion rather than a distance entry."
+        },
+        {
+          "id": "s70-h2",
+          "text": "A complete prefix shape alone does not guarantee the required symbol is present."
+        }
+      ],
+      "recipes": [
+        "s70-1"
+      ]
+    }
+  ]
+}

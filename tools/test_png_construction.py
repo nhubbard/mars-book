@@ -61,4 +61,4 @@ class PngConstructionTests(unittest.TestCase):
             self.assertEqual(3,len(step['quiz']['choices']));self.assertEqual(2,len(step['hints']))
             for rid in step['recipes']:self.assertEqual(step['id'],recipes[rid]['step'])
             self.assertTrue((book.ROOT/'includes/chapters/033-png'/('load-'+step['id']+'.tex')).is_file())
-        self.assertNotIn('033-png',(book.ROOT/'main.tex').read_text())
+        self.assertIn('\\include{includes/chapters/033-png/chapter}',(book.ROOT/'main.tex').read_text())

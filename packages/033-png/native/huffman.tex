@@ -1,0 +1,21 @@
+\section{Construct bounded canonical tables}
+A Huffman code assigns a variable-length bit sequence to each symbol. A canonical
+assignment can be reconstructed from the code lengths and symbol order; the file
+does not need to store a pointer tree. Count symbols at each length, compute the
+first code for each length, and place symbols in increasing length and symbol order.
+Reject an assignment that asks for more codes than its prefix space can hold.
+
+Dynamic blocks first describe a smaller alphabet used to encode the literal/length
+and distance code lengths. Its repeat operators expand into the declared combined
+length vector. Operator 16 needs an earlier length to repeat; operators 17 and 18
+repeat zero. Check the expansion count before writing the vector, including repeats
+that cross from literal/length entries into distance entries. Require the end-of-block
+symbol to have a code. Bound code lengths and symbol counts before indexing tables.
+
+Not every incomplete tree is automatically invalid: DEFLATE permits special sparse
+cases, including a single distance code, and a literal-only block can have no used
+distance codes. Define and test these cases rather than rejecting every positive
+unused-prefix count or accepting every incomplete alphabet. The scalar smoke decoder
+is a comparison implementation; its table builder is not a substitute for auditing
+these format rules. Test table construction independently before combining it with
+row processing.

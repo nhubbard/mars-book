@@ -1,0 +1,17 @@
+\section{Step 10 Separate loading failures from PNG failures}\label{png-load-s10}
+Use the completed loader with the three boundary recipes: an empty file, a 116-byte file with capacity 115, and a missing path. Each returns status one and count zero. The empty and longer files each acquire and close a descriptor; the missing path acquires none. The longer file may leave its first 115 bytes in scratch storage, so failure does not promise that scratch is unchanged.
+
+Then use \texttt{partial.bin}, whose seventeen bytes fit the capacity. Loading succeeds even though a PNG decoder will later reject the truncated image. Keep this boundary visible when debugging: a file-operation failure and a format failure arise in different stages, and neither publishes pixels.
+
+Use \path{s10-empty}, \path{s10-long}, \path{s10-missing}, and \path{s10-partial}.
+
+Direct-entry checks stop before \texttt{function\_return}; with the supplied main, stop before \texttt{loader\_return}.
+
+\paragraph{Observe} Boundary failures retain zero returned count and release acquired descriptors. A short but nonempty file can load successfully while still failing PNG validation.
+
+\paragraph{Check} Which conclusion follows from loader success?
+\begin{itemize}
+\item[A.] The file is a supported PNG.
+\item[B.] A nonempty complete file fit the selected byte capacity.
+\item[C.] All framebuffer words have been written.
+\end{itemize}

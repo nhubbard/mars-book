@@ -1,0 +1,651 @@
+{
+  "status": "Collector construction draft; final feedback and distribution pending",
+  "steps": [
+    {
+      "id": "s11",
+      "region": "collect_bounds",
+      "title": "Reject impossible file counts before reading",
+      "checkpoint": "collect_bounds_ready",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which operation must wait until the outer count is accepted?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Reading the signature."
+          },
+          {
+            "id": "b",
+            "text": "Setting a failure return value."
+          },
+          {
+            "id": "c",
+            "text": "Comparing the count with eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Validate the length before following either input pointer."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Use an unsigned upper-bound comparison."
+        }
+      ],
+      "recipes": [
+        "s11-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s12",
+      "region": "collect_state",
+      "title": "Retain the two cursors and their remaining counts",
+      "checkpoint": "collect_state_ready",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What is read from descriptor offset zero?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first compressed byte."
+          },
+          {
+            "id": "b",
+            "text": "The caller-selected byte capacity."
+          },
+          {
+            "id": "c",
+            "text": "A PNG big-endian width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Retain the descriptor pointer separately from its capacity."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Native descriptor doublewords follow the selected target byte order."
+        }
+      ],
+      "recipes": [
+        "s12-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s13",
+      "region": "collect_be32",
+      "title": "Assemble four file bytes into one number",
+      "checkpoint": "collect_be32_ready",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why use unsigned byte loads here?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A file byte must contribute its value from 0 through 255."
+          },
+          {
+            "id": "b",
+            "text": "PNG fields use target byte order."
+          },
+          {
+            "id": "c",
+            "text": "Every PNG field is eight bytes wide."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Shift the accumulated value before combining the next byte."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Do not sign-extend a byte whose high bit is set."
+        }
+      ],
+      "recipes": [
+        "s13-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s14",
+      "region": "collect_signature",
+      "title": "Consume the eight-byte signature",
+      "checkpoint": "collect_signature_ready",
+      "quiz": {
+        "id": "q14",
+        "prompt": "When may the file cursor advance past the signature?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After checking only its first byte."
+          },
+          {
+            "id": "b",
+            "text": "After both four-byte comparisons succeed."
+          },
+          {
+            "id": "c",
+            "text": "After any helper returns a nonzero number."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Retain the original cursor across both helper calls."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Advance the cursor and remaining count by the same eight bytes."
+        }
+      ],
+      "recipes": [
+        "s14-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s15",
+      "region": "collect_envelope",
+      "title": "Prove that one complete chunk fits",
+      "checkpoint": "collect_envelope_ready",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What does the twelve-byte overhead contain?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The signature and four pixel bytes."
+          },
+          {
+            "id": "b",
+            "text": "Length, four type bytes and CRC."
+          },
+          {
+            "id": "c",
+            "text": "Only the CRC repeated three times."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Perform the minimum-size check before subtracting overhead."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Compare the decoded length against the remaining count, not the original file size."
+        }
+      ],
+      "recipes": [
+        "s15-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s16",
+      "region": "collect_type",
+      "title": "Validate the four type letters",
+      "checkpoint": "collect_type_ready",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which original type byte carries the reserved case bit?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first."
+          },
+          {
+            "id": "b",
+            "text": "The third."
+          },
+          {
+            "id": "c",
+            "text": "The last CRC byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "ASCII letter validation and case-bit meaning are separate checks."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Use the original third byte for the reserved-bit test."
+        }
+      ],
+      "recipes": [
+        "s16-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s17",
+      "region": "collect_crc",
+      "title": "Reuse the reflected CRC calculation",
+      "checkpoint": "collect_crc32_ready",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Which bytes does a zero count permit the CRC helper to read?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One terminator byte."
+          },
+          {
+            "id": "b",
+            "text": "None."
+          },
+          {
+            "id": "c",
+            "text": "The next chunk header."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "The CRC byte loop must test its count before a load."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Keep the reflected polynomial and final complement consistent with the earlier CRC chapter."
+        }
+      ],
+      "recipes": [
+        "s17-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s18",
+      "region": "collect_crc_check",
+      "title": "Check the type and payload together",
+      "checkpoint": "collect_crc_ready",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why retain the computed CRC before reading the stored CRC?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Both helpers return through the same result register."
+          },
+          {
+            "id": "b",
+            "text": "The stored CRC changes the file length."
+          },
+          {
+            "id": "c",
+            "text": "Native descriptor byte order determines CRC coverage."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "The CRC covers four type bytes plus the payload."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Preserve a helper result before calling another helper that uses the same result register."
+        }
+      ],
+      "recipes": [
+        "s18-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s19",
+      "region": "collect_dispatch",
+      "title": "Choose a type only after its CRC passes",
+      "checkpoint": "collect_ihdr",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why does a valid IDAT checksum not suffice before IHDR?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Chunk order is a separate format requirement."
+          },
+          {
+            "id": "b",
+            "text": "IDAT is always an unknown critical type."
+          },
+          {
+            "id": "c",
+            "text": "A checksum specifies the image dimensions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Recognize IHDR before applying the general header-seen requirement."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Keep type recognition separate from each handler\u2019s length and ordering checks."
+        }
+      ],
+      "recipes": [
+        "s19-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s20",
+      "region": "collect_ihdr",
+      "title": "Accept one bounded RGB header",
+      "checkpoint": "collect_ihdr_ready",
+      "quiz": {
+        "id": "q20",
+        "prompt": "When are parsed dimensions published in the descriptor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Immediately after reading width."
+          },
+          {
+            "id": "b",
+            "text": "After the whole accepted container reaches the publication region."
+          },
+          {
+            "id": "c",
+            "text": "Before checking IHDR length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Read dimensions as PNG fields and validate their numerical bounds."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Do not store successful output fields while later chunks can still fail."
+        }
+      ],
+      "recipes": [
+        "s20-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s21",
+      "region": "collect_next",
+      "title": "Advance one validated envelope",
+      "checkpoint": "collect_next_ready",
+      "quiz": {
+        "id": "q21",
+        "prompt": "How far does a chunk with one payload byte advance the file cursor?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One byte."
+          },
+          {
+            "id": "b",
+            "text": "Nine bytes."
+          },
+          {
+            "id": "c",
+            "text": "Thirteen bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "The next cursor follows the payload and its stored CRC."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Apply one extent to both the address and remaining count."
+        }
+      ],
+      "recipes": [
+        "s21-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s22",
+      "region": "collect_plte",
+      "title": "Admit only a well-formed optional palette",
+      "checkpoint": "collect_plte_ready",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What does a three-byte PLTE payload contain?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "One RGB palette entry."
+          },
+          {
+            "id": "b",
+            "text": "Three complete scanlines."
+          },
+          {
+            "id": "c",
+            "text": "A native doubleword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Check both the ordering flags and the payload length."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A multiple of three is not sufficient if the length is zero."
+        }
+      ],
+      "recipes": [
+        "s22-1"
+      ],
+      "fixture": "palette"
+    },
+    {
+      "id": "s23",
+      "region": "collect_ancillary",
+      "title": "Distinguish skippable metadata from excluded features",
+      "checkpoint": "collect_ancillary_ready",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What does an accepted non-IDAT chunk after IDAT establish?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "A later IDAT may restart the same consecutive group."
+          },
+          {
+            "id": "b",
+            "text": "The IDAT group has ended."
+          },
+          {
+            "id": "c",
+            "text": "Its payload must be decoded as pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Recognized but unsupported image features have explicit rejection rules."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Preserve the difference between \u201cIDAT has begun\u201d and \u201cits consecutive group has ended.\u201d"
+        }
+      ],
+      "recipes": [
+        "s23-1"
+      ],
+      "fixture": "metadata"
+    },
+    {
+      "id": "s24",
+      "region": "collect_idat",
+      "title": "Reserve destination bytes before copying",
+      "checkpoint": "collect_idat_ready",
+      "quiz": {
+        "id": "q24",
+        "prompt": "When must the capacity check occur?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "After the last payload store."
+          },
+          {
+            "id": "b",
+            "text": "Before the first payload store."
+          },
+          {
+            "id": "c",
+            "text": "Only when IEND is reached."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Reserve a whole admitted payload before entering its byte loop."
+        },
+        {
+          "id": "s24-h2",
+          "text": "An empty IDAT changes ordering state even though it copies no bytes."
+        }
+      ],
+      "recipes": [
+        "s24-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s25",
+      "region": "collect_copy",
+      "title": "Join payload bytes without their envelopes",
+      "checkpoint": "collect_copy_ready",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What follows the first copied 0x78 in the joined stream?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "The first IDAT CRC."
+          },
+          {
+            "id": "b",
+            "text": "The next IDAT payload byte 0x01."
+          },
+          {
+            "id": "c",
+            "text": "The next chunk length word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The compressed output contains payload bytes only."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Keep the destination cursor across chunks; reset the source payload cursor for each one."
+        }
+      ],
+      "recipes": [
+        "s25-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s26",
+      "region": "collect_iend",
+      "title": "Require a final empty IEND and enough joined bytes",
+      "checkpoint": "collect_iend_ready",
+      "quiz": {
+        "id": "q26",
+        "prompt": "What does collector success establish about DEFLATE?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Every compressed symbol has been decoded."
+          },
+          {
+            "id": "b",
+            "text": "The collected payload is ready for separate inflation checks."
+          },
+          {
+            "id": "c",
+            "text": "Its Adler checksum is necessarily valid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A valid IEND CRC does not excuse trailing selected bytes."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The six-byte minimum is a wrapper-size bound, not decompression."
+        }
+      ],
+      "recipes": [
+        "s26-1"
+      ],
+      "fixture": "worked"
+    },
+    {
+      "id": "s27",
+      "region": "collect_publish",
+      "title": "Publish the completed container result together",
+      "checkpoint": "collect_publish_ready",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why is the predicted inflated count 35 rather than 30?",
+        "choices": [
+          {
+            "id": "a",
+            "text": "Each of five rows includes one filter byte."
+          },
+          {
+            "id": "b",
+            "text": "Every RGB sample has a padding byte."
+          },
+          {
+            "id": "c",
+            "text": "The PNG signature has five bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Publish the result only after every admitted chunk has passed its checks."
+        },
+        {
+          "id": "s27-h2",
+          "text": "The inflated row still contains its selector byte."
+        }
+      ],
+      "recipes": [
+        "s27-1"
+      ],
+      "fixture": "worked"
+    }
+  ]
+}

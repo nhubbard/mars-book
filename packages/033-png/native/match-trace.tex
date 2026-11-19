@@ -1,0 +1,28 @@
+\section{Follow the history cursor through an overlap}
+Start with output \texttt{41 42}, the ASCII bytes A and B. A match of length seven
+and distance two reads from two bytes behind the growing output cursor. It appends
+\texttt{41 42 41 42 41 42 41}; the complete result is \texttt{ABABABABA}. The third
+copied byte comes from the first byte written by this same match. This dependence
+explains why the forward copy is part of the format's meaning.
+
+Keep three quantities separate: bytes produced so far, the match distance, and the
+match length. With two bytes produced, distance two is available, even though a
+length-seven match is longer than the current history. Capacity must accommodate all
+seven new bytes. Distance three fails before the first copy load because its source
+would precede the output start. Testing only the end destination cannot establish that
+the history source exists.
+
+The zlib header adds another distance bound. A stream advertising a 256-byte window
+cannot request distance 257 even after producing thousands of bytes. A stream with
+the largest permitted window can use distance 32768 once that much output exists.
+The format's distance code and extra bits give the requested distance; the header
+and current output position determine whether it is usable. Verify both bounds before
+forming the source address. They answer different questions.
+
+The dynamic header's length repeats have their own crossing rule. Literal/length and
+distance code lengths form one combined sequence before they are separated into two
+tables. For a declaration of 286 literal/length lengths and one distance length, a
+repeat can fill literal/length slots 284 and 285 and then distance slot zero. Do not
+reset the repeat count when the table kind changes. If the preceding length was zero,
+operator 16 may repeat that zero just as it may repeat a nonzero length. Check that the
+expanded run fits the combined count before storing any of its entries.

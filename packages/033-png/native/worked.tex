@@ -1,0 +1,25 @@
+\section{Trace all five rows}
+\Needspace{10\baselineskip}
+\begin{longtable}{p{11mm}p{17mm}p{54mm}p{65mm}}
+\toprule Row & Filter & Inflated sample residuals (decimal) & Reconstructed samples (decimal) \\\midrule
+0 & None & 10 20 30 40 50 60 & 10 20 30 40 50 60 \\
+1 & Up & 5 5 5 5 5 5 & 15 25 35 45 55 65 \\
+2 & Sub & 20 30 40 30 30 30 & 20 30 40 50 60 70 \\
+3 & Average & 15 20 25 18 18 18 & 25 35 45 55 65 75 \\
+4 & Paeth & 5 5 5 5 5 5 & 30 40 50 60 70 80 \\\bottomrule
+\end{longtable}
+For row two, the first red residual is 20 and has no left neighbor, so reconstructed
+red is 20. The second red residual is 30. Its left neighbor is now the reconstructed
+20, giving 50. Do not add the preceding blue byte, and do not use an unprocessed
+residual from the left pixel.
+
+For the second red sample of row three, $a=25$ and $b=50$. The predictor is
+$\lfloor75/2\rfloor=37$, and residual 18 restores 55. This also explains why reading
+the whole row into vector lanes and adding a vector of left residuals is incorrect:
+the left values needed for prediction may only become available during reconstruction.
+
+The compact RGB bytes for the first pixel are hexadecimal \texttt{0A 14 1E}.
+Its display word is \texttt{0x000A141E}. In little-endian memory that word occupies
+\texttt{1E 14 0A 00}; in big-endian memory it occupies \texttt{00 0A 14 1E}.
+The word's channel interpretation is unchanged. The test must compare the numerical
+framebuffer words, with byte-order-specific byte checks when examining raw memory.

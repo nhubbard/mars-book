@@ -1,0 +1,18 @@
+\section{Join payloads without inventing stream boundaries}
+An IDAT boundary is a boundary in the PNG container. It need not be a boundary between
+compressed blocks, Huffman symbols, scanlines or even checksum bytes. In the worked
+file, the first IDAT contains hexadecimal \texttt{78}, and the following IDAT starts
+with the second zlib header byte. A decoder that opens a new inflater for each chunk
+will reject this valid arrangement.
+
+After verifying each envelope and CRC, concatenate only its IDAT payload into a
+bounded compressed-data buffer. An empty IDAT contributes zero bytes but still has a
+type and a CRC. Continue tracking placement even when no bytes were appended. A
+non-IDAT chunk after the run makes a later IDAT invalid under this exercise's order
+rule. Do not append chunk lengths, names or CRCs to the compressed stream.
+
+The existing smoke decoder compacts payloads into the file buffer itself. That can
+be safe when the write cursor never overtakes unread input, but proving that invariant
+is additional work. Begin with distinct input and compressed workspace. An in-place
+version is a later comparison, with input-preservation expectations changed explicitly.
+It must not be graded against a contract that promises an unchanged source buffer.

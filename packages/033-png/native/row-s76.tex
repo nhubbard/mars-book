@@ -1,0 +1,16 @@
+\section{Step 76 Load neighbors from reconstructed samples}
+Fill \texttt{row\_neighbors}. Load the corresponding upper sample into \texttt{\$t4}. Initialize left and upper-left to zero in \texttt{\$t5} and \texttt{\$t6}. Determine the current sample’s offset from \texttt{\$a0}, the row’s first sample. For offsets below three, keep the two left values zero. Otherwise load left from destination minus three and upper-left from upper cursor minus three.
+
+The distance is three bytes because a red sample depends on red in the preceding pixel, green on green, and blue on blue. A load at minus one would connect different channels. The left load observes a sample already reconstructed by this loop; using its original residual would create a different recurrence.
+
+Branch to the supplied \texttt{row\_neighbors\_ready} checkpoint for the first three samples. For the first byte of the worked Up row, the neighbors are upper 10, left zero and upper-left zero. At later columns, all three registers contain unsigned byte values. Retain the full-width cursors; only the loaded sample values are eight bits.
+
+\paragraph{Observe} Use \texttt{s76-1}; stop before \texttt{row\_neighbors\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What is the left-neighbor distance in RGB8?
+\begin{itemize}
+\item[A.] One byte.
+\item[B.] Three bytes.
+\item[C.] One complete scanline.
+\end{itemize}

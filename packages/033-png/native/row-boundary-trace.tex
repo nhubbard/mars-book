@@ -1,0 +1,23 @@
+\section{Account for every sample window}
+For an Up row, both cursors consume the same number of sample bytes. The selector
+is outside this interval. The following extents describe a single RGB8 row:
+\Needspace{9\baselineskip}
+\begin{longtable}{p{20mm}p{30mm}p{30mm}p{30mm}p{30mm}}
+\toprule Width & Sample bytes & Full groups of 16 & Tail bytes & Full row bytes \\\midrule
+1 & 3 & 0 & 3 & 4 \\
+5 & 15 & 0 & 15 & 16 \\
+6 & 18 & 1 & 2 & 19 \\
+17 & 51 & 3 & 3 & 52 \\
+512 & 1536 & 96 & 0 & 1537 \\\bottomrule
+\end{longtable}
+At width five the total scanline happens to be sixteen bytes, but only fifteen
+belong to the sample interval. A sixteen-byte sample load would consume part of a
+neighboring object. At width 512, no scalar tail load is needed after the final group.
+These two boundaries explain why neither the full row length nor a nonzero remainder
+is the correct condition for admitting another vector.
+
+Use the completed-stage bad-selector recipes in both modes. The malformed selector
+is in the last row, so a check that only validates the first row cannot meet the
+unchanged-buffer guarantee. Valid Up inputs compare exact wrapping results. The
+caller still leaves its framebuffer and final context outputs unchanged; packing
+and publication are the next construction boundary.

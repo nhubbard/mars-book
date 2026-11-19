@@ -1,0 +1,16 @@
+\section{Step 81 Admit only a full Up vector}
+The MSA entry changes only the independent Up work. Sub, Average and Paeth keep their scalar dependencies. Fill \texttt{row\_vector\_bound}. Compute sample bytes remaining as exclusive end minus destination, then set \texttt{\$t4} to the unsigned result of comparing that amount with sixteen. The supplied branch sends short remainders to the scalar Up tail.
+
+Use the up6 fixture and MSA mode. Each row has eighteen sample bytes, so the first check admits one sixteen-byte group; after that group only two bytes remain. Width five has fifteen sample bytes and must enter the tail without a vector load. These are row bounds, even when the next selector and later samples happen to occupy readable memory.
+
+The first-row upper pointer still names the private zero row. A full sixteen-byte load is legal only when sixteen bytes remain in both sample windows. Their equal lengths and paired cursor movement establish the second bound; there is no need to read the next row to fill unused lanes.
+
+\paragraph{Observe} Use \texttt{s81-1}; stop before \texttt{row\_vector\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Does width five admit a full sixteen-byte Up group?
+\begin{itemize}
+\item[A.] Yes, because another row follows.
+\item[B.] No, its RGB sample extent is fifteen bytes.
+\item[C.] Yes, because a selector adds one byte.
+\end{itemize}

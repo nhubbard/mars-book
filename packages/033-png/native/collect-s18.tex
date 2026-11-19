@@ -1,0 +1,13 @@
+\section{Step 18 Check the type and payload together}\label{png-collect-s18}
+Fill \texttt{collect\_crc\_check}. Pass current chunk plus four and payload length plus four to the CRC helper. Save its computed result at frame offset 104 before calling the byte-assembly helper on the stored CRC at current chunk plus eight plus payload length. Compare the two numerical values and fail on a mismatch.
+
+For the worked IHDR, the covered range is seventeen bytes: its four type letters and thirteen payload bytes. The computed and stored values are both \texttt{0xE0D1AACB}. The length word and stored CRC are outside that range. The envelope check already proved that all these bytes lie inside the selected file window.
+
+\paragraph{Observe} Use \texttt{s18-1}; stop before \texttt{collect\_crc\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Why retain the computed CRC before reading the stored CRC?
+\begin{itemize}
+\item[A.] Both helpers return through the same result register.
+\item[B.] The stored CRC changes the file length.
+\item[C.] Native descriptor byte order determines CRC coverage.
+\end{itemize}

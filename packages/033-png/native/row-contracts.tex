@@ -1,0 +1,37 @@
+\section{Give reconstruction and packing separate windows}
+The reconstruction entry \texttt{png\_unfilter} receives the row-buffer address in
+\texttt{\$a0}, its exact byte count in \texttt{\$a1}, width in \texttt{\$a2}, and
+height in \texttt{\$a3}. Its MSA counterpart is \texttt{png\_unfilter\_msa}, with the
+same arguments and results. Both reconstruct samples in place. Keep every filter
+selector unchanged: row starts remain $1+3w$ bytes apart after reconstruction.
+For the worked image, the buffer still occupies 35 bytes; its six sample bytes per
+row change from residuals to RGB values.
+
+Check dimensions and the exact row count before reading the buffer. Then check every
+selector before changing any samples. A selector of five in the final row must not
+leave earlier rows reconstructed after failure. On success, return zero in
+\texttt{\$v0} and the original row-buffer count in \texttt{\$v1}. On failure,
+return one and zero, with the row buffer unchanged. This prevalidation gives the
+caller a useful stage boundary even though an earlier failed inflater may leave its
+own output partially written. Retain saved registers and the caller's stack pointer.
+
+Packing receives the reconstructed buffer and its exact count in \texttt{\$a0}
+and \texttt{\$a1}, the framebuffer address in \texttt{\$a2}, and an aligned native
+descriptor in \texttt{\$a3}. The descriptor contains four unsigned doublewords:
+width at offset zero, height at eight, stride in words at sixteen, and writable
+framebuffer capacity in bytes at twenty-four. Width and height are from 1 through
+512; stride is from width through 512. The framebuffer address must be word-aligned.
+The descriptor, source and destination are separate caller-owned objects.
+
+Require the exact source count $h(1+3w)$ and capacity of at least
+$4((h-1)s+w)$, where $s$ is the destination stride in words. For width two,
+height five and stride seventeen, this is 280 bytes. The five rows contain only
+40 active pixel bytes. Between successive active rows lie sixty padding bytes that
+belong to the caller. The last active row needs eight bytes, without an additional
+sixty-byte trailing gap. Requiring $4hs$ would incorrectly demand 340 bytes.
+
+Call \texttt{png\_blit} or \texttt{png\_blit\_msa}. Success returns zero and the
+active pixel-byte count $4wh$; failure returns one and zero and leaves the framebuffer
+unchanged. Preserve all row bytes, descriptor fields and row padding. Packing does
+not interpret the retained filter selectors: their numeric values no longer select
+an operation here. The row parser established that meaning before reconstruction.

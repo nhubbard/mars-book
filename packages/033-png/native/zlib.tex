@@ -1,0 +1,18 @@
+\section{Open the zlib wrapper}
+The first two stream bytes describe the compression method and window. Require
+DEFLATE, a permitted window size, a header divisible by 31 when interpreted as one
+big-endian 16-bit number, and no preset dictionary. Check available bytes before either
+header load. The last four bytes hold Adler-32 in big-endian order. Reserve them from
+the compressed-data window so bit refills cannot consume the checksum as block data.
+
+For the stored-block fixture the header is \texttt{78 01}. Its DEFLATE stream begins
+\texttt{01 23 00 DC FF}: a final stored block, length 35, and its 16-bit complement.
+The 35 row bytes follow, then Adler-32. That makes 46 zlib bytes. Splitting them into
+two IDAT chunks adds two twelve-byte chunk envelopes, so the complete worked PNG has
+115 bytes. The fixture tests assert these sizes and the exact row bytes.
+
+Adler-32 starts with $s_1=1$ and $s_2=0$. For each inflated byte $x$, update
+$s_1=(s_1+x)\bmod65521$, then $s_2=(s_2+s_1)\bmod65521$. Pack the final value as
+$(s_2\ll16)\mathbin{|}s_1$. Preserve the update order: the second sum uses the new
+first sum. Compare against the stored trailer only after producing exactly the
+expected number of row bytes and completing the compressed stream.

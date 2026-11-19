@@ -43,6 +43,8 @@ def validate(package_id):
         raise ValueError('Pin a full upstream commit')
     for name in [data['entry'], data['assignment'], data['figures'], *data['publicChecks']]:
         within(root, name)
+    if data.get('gradingHarness'):
+        within(root, data['gradingHarness'])
     seen = set()
     quiz_ids = set()
     if not data['steps']:
@@ -91,7 +93,8 @@ def student_files(root, data):
     files = set()
     for name in data['exports']:
         path = within(root, name)
-        files.update([path] if path.is_file() else [p for p in path.rglob('*') if p.is_file()])
+        candidates = [path] if path.is_file() else [p for p in path.rglob('*') if p.is_file()]
+        files.update(p for p in candidates if '__pycache__' not in p.parts and p.suffix not in {'.pyc', '.pyo'})
     return sorted(files)
 
 
@@ -147,7 +150,10 @@ def reading_segments(root, data, figure_ids=None):
 def grade(package_id, cli, source, java='java'):
     root, data = validate(package_id)
     for check in data['publicChecks']:
-        subprocess.run([java, '-jar', str(cli.resolve()), 'grade', str(root / check), str(source.resolve())], check=True)
+        command = [java, '-jar', str(cli.resolve()), 'grade', str(root / check), str(source.resolve())]
+        if data.get('gradingHarness'):
+            command.append(str(root / data['gradingHarness']))
+        subprocess.run(command, check=True)
 
 
 def main():

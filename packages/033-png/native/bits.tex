@@ -1,0 +1,22 @@
+\section{Separate bit fields from Huffman symbols}
+A bit reservoir holds unread compressed bits in a register. Track its count separately
+from the input cursor. To obtain an ordinary $n$-bit field, refill with bounded byte
+loads until at least $n$ bits are available, take the low $n$ bits and shift the
+reservoir right by $n$. The block header has a one-bit final flag and a two-bit type.
+Type zero is stored, one uses fixed Huffman codes, two supplies code lengths, and
+three is invalid. A nonfinal block continues into the next block header.
+
+Huffman symbols need a different interpretation of that arriving bit sequence.
+Code bits arrive in code order; do not read an entire code through the ordinary
+low-bit numerical helper and compare it directly with an unreversed canonical code.
+For a simple illustrative alphabet with codes \texttt{0}, \texttt{10}, \texttt{11},
+the sequence \texttt{1,0} selects the second symbol. The ordinary two-bit numerical
+interpretation of the same arrivals is one, not two. Keep bit arrival order and code
+numbering separate when writing the symbol decoder.
+
+A stored block discards the remaining bits of the current byte before reading its
+little-endian length and complement. A compressed block does not discard bits between
+symbols. Final block completion also does not authorize another input byte: account
+for unused bits already fetched, and reject extra compressed bytes under the exact
+stream contract. A refill strategy must not blur bytes in the reservoir with bytes
+not yet consumed from the input window.

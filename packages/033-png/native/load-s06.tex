@@ -1,0 +1,15 @@
+\section{Step 6 Probe after an exact fill}\label{png-load-s06}
+Use the 115-byte worked file with capacity 115. Once the main buffer fills, there is no room for a further byte there. Implement \texttt{load\_probe} by requesting one byte into the supplied private stack slot at offset 64. A nonzero result takes the failure-closing path: a positive result means extra data, and a negative result means an I/O failure. Zero continues to the EOF check.
+
+The selected capacity bounds the file, not merely the part the program chooses to keep. Without this probe, a valid 115-byte file and a longer file sharing that prefix would look the same to the loader. The probe destination must not be the byte immediately after the accepted buffer.
+
+Use \texttt{s06-1} and stop before \texttt{load\_probe\_ready}.
+
+\paragraph{Observe} The exact-fit file produces a one-byte request with result zero. The accepted 115 bytes and the following guard stay unchanged.
+
+\paragraph{Check} What does a probe result of one establish?
+\begin{itemize}
+\item[A.] The file was exactly one byte long.
+\item[B.] The current PNG has one image row.
+\item[C.] The file exceeds the selected capacity.
+\end{itemize}

@@ -306,3 +306,18 @@ every transferred byte at the full 7344152-byte capacity, including one-byte
 overflow, in both native orders. All 162 public tests pass. Seeking, encoding and
 playback remain unfinished; the final H.263 encoder is planning only until both
 PNG and lossless-video chapters are complete.
+
+The PNG initial chapter is now included in `main.tex` and exported as student package
+`033-png`. Its 90-page native reading has 100 steps, 97 unfinished regions, 100 quizzes,
+200 hints, six attachable construction stages and eight completed-interface feedback
+domains. Public feedback contains 452 cases; the instructor companion adds 1,944
+private cases, with separate test storage and no prescribed private frame offsets.
+Both complete implementations pass the extracted 2,396-case grading set. The public
+starter remains unfinished and the completed decoder and quiz keys remain private.
+All 168 tooling tests and 62 CI package validation/build commands pass. Tagged tables,
+figure descriptions, checkpoint text, embedded fonts and the rendered reading have
+been checked. These checks do not certify accessibility or student usability. Five
+actual IDE captures, remote progression/hint enforcement and independent accessibility
+review remain pending. Chapter 34 seeking, encoding, playback and final packaging are
+next. The H.263 capstone remains documented planning until chapters 33 and 34 are
+complete; the substantive edit remains a separate future goal.

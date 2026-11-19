@@ -1,0 +1,16 @@
+\section{Step 98 Trace a late validation failure before packing}
+This is an observation step, with no new editable region. Select \texttt{s98-1}, which uses a valid container and compressed stream but an invalid final filter selector. Stop at \texttt{publication\_rows\_return}, immediately after reconstruction returns.
+
+Expect failure status one and count zero. Reconstruction’s prevalidation leaves its entire row buffer at the inflated residual sequence, including every earlier row. The supplied next branch returns that failure to the caller. It must not build a display from those residuals merely because decompression succeeded.
+
+Observe that the framebuffer has received no stores and the three final context outputs retain their original bytes. This checks a boundary between stages, rather than just the final error message. The public wrapper contains no later fallible operation after successful packing; all format, selector and capacity decisions precede pixel publication.
+
+\paragraph{Observe} Use \texttt{s98-1}; stop before \texttt{publication\_rows\_return}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What must follow a reconstruction failure?
+\begin{itemize}
+\item[A.] Attempt packing and ignore its result.
+\item[B.] Publish the dimensions but no byte count.
+\item[C.] Return before any packing call.
+\end{itemize}

@@ -1,0 +1,43 @@
+\section{Continue from the loader into the container}
+Keep your completed loader. The attachment helper in
+\path{packages/033-png/construction/png-collector-construction/attach.py} replaces only the two original
+decoder stubs, adds a capacity control and appends the unfinished collector. It leaves
+your loader instructions intact and refuses an existing output. Run it with
+\texttt{--source} pointing to your current program and \texttt{--output} naming a new
+working file. A changed decoder tail must be reconciled by hand; the helper refuses
+to guess which of your functions it may discard.
+
+The temporary decoder constructs the collector's five-field descriptor on its own
+stack.
+
+Set \texttt{collector\_capacity} to 46 bytes for the worked
+image, within the actual compressed buffer capacity. Stop before
+\texttt{collector\_call} to inspect the four arguments. Stop before
+\texttt{collector\_return} to inspect the collector status and descriptor while that
+frame is still alive. The supplied program still prints the development message after
+successful collection, because it has not inflated or displayed the image. Both mode
+settings follow this same temporary path; there is no vector operation to compare yet.
+
+The collector has seventeen editable regions. Its supplied 128-byte frame saves
+\texttt{\$ra}, \texttt{\$s0} through \texttt{\$s7}, and \texttt{\$fp}. It reserves a
+native doubleword at frame offset 80 for the current payload length, at 88 for the type
+value and at 104 for the computed CRC. These locations are construction aids, not part
+of the public collector interface. Each helper is internal to this collector. Until
+filled, a helper leaves through \texttt{collect\_missing}, which restores the owning
+collector frame and returns development status four to its caller. Do not call an
+unfinished helper as a standalone function.
+
+Use \texttt{\$s0} for the current chunk address, \texttt{\$s1} for its remaining file
+bytes, \texttt{\$s2} for the next compressed destination byte, \texttt{\$s3} for its
+remaining capacity and \texttt{\$s4} for the descriptor. The construction uses
+\texttt{\$s5} as a bit set: 1 means IHDR has been accepted, 2 means PLTE has been
+accepted, 4 means the IDAT sequence has begun, and 8 means that sequence has ended.
+The dimensions stay in \texttt{\$s6}/\texttt{\$s7}; the joined length stays in
+\texttt{\$fp}. Preserve this state across helper calls. The completed-interface checks
+also accept other internal arrangements; these checkpoints follow the illustrated one.
+
+\Needspace{6\baselineskip}
+Prepare each named observation from the file containing your current edits. The
+collector preparation helper changes path and numeric controls, not instruction bodies.
+Its fixture helper creates each input at a fresh path. Keep the loader input capacity at 1 MiB; the new control selects a smaller compressed
+window in its separate allocation.

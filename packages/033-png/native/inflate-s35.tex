@@ -1,0 +1,14 @@
+\section{Step 35 Read LEN and NLEN as sixteen-bit fields}\label{png-inflate-s35}
+Implement \texttt{inflate\_lengths}. Request sixteen bits for LEN, retain it at frame offset zero, then request sixteen bits for NLEN. Their bitwise XOR must be 65535. Keep the recovered LEN available for the following bounds checks; a mismatch returns failure.
+
+The worked bytes are \texttt{23 00 DC FF}. The low-bit reader interprets LEN as 35 and NLEN as 65500. Their complement agreement detects a malformed stored header; it does not prove that 35 source or destination bytes remain. At \texttt{inflate\_lengths\_ready}, the input cursor is at offset seven, immediately before the payload.
+
+\paragraph{Observe} Use \texttt{s35-1}; stop before \texttt{inflate\_lengths\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\Needspace{8\baselineskip}
+\paragraph{Check} What follows from LEN XOR NLEN equaling 65535?
+\begin{itemize}
+\item[A.] LEN is necessarily within the output capacity.
+\item[B.] The two stored length fields are complementary.
+\item[C.] The complete Adler checksum is correct.
+\end{itemize}

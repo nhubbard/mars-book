@@ -1,0 +1,15 @@
+\section{Step 3 Acquire one read-only descriptor}\label{png-load-s03}
+Fill \texttt{load\_open}. Keep the path argument in \texttt{\$a0}, choose read-only flags zero, set the unused mode argument to zero, and issue syscall 13. A negative result branches to \texttt{load\_open\_failed}. Retain any successful descriptor in \texttt{\$s3}; do not replace it with the conventional value three.
+
+Stop at \texttt{load\_open\_ready}. At this point the routine owns a descriptor but has not loaded bytes. Continue once into the next unfinished region. Its supplied development exit closes that descriptor before returning status four. Earlier unfinished regions use the exit that owns no descriptor. This distinction keeps an incomplete program safe to run.
+
+Use \texttt{s03-1} and stop before \texttt{load\_open\_ready}.
+
+\paragraph{Observe} The checked fixture returns descriptor eleven. The next unfinished region closes that same descriptor and returns development status four.
+
+\paragraph{Check} Which descriptor should a later read use?
+\begin{itemize}
+\item[A.] Three, because it is the first conventional file descriptor.
+\item[B.] The byte count returned by the previous read.
+\item[C.] The successful value returned by this open.
+\end{itemize}

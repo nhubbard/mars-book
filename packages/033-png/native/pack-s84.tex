@@ -1,0 +1,16 @@
+\section{Step 84 Admit the destination geometry}
+Packing reads reconstructed RGB samples and writes native display words. The descriptor supplies dimensions, destination stride and writable capacity. These fields describe different quantities: width counts active pixels; stride counts words between row starts; capacity counts available bytes.
+
+Fill \texttt{pack\_admit}. Load the descriptor’s four unsigned doublewords into \texttt{\$t5} through \texttt{\$t8}: width, height, stride and capacity. Require dimensions from one through 512 and stride from width through 512. Require a word-aligned framebuffer address. Reject through \texttt{pack\_early} before any source load or destination store. Retain the mode arriving in \texttt{\$t9} for later setup.
+
+The worked direct-call example uses width two, height five, stride seventeen and capacity 280. The supplied file caller uses stride 512 and a 1 MiB framebuffer. Both geometries are valid; neither implies that every allocated word is part of the image. At this checkpoint, inspect the four descriptor values before expecting any pixels to change.
+
+\paragraph{Observe} Use \texttt{s84-1}; stop before \texttt{pack\_admitted}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why may stride exceed width?
+\begin{itemize}
+\item[A.] It describes the distance between row starts, including padding.
+\item[B.] It includes compressed input bytes.
+\item[C.] It changes the RGB channel order.
+\end{itemize}

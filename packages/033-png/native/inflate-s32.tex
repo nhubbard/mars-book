@@ -1,0 +1,13 @@
+\section{Step 32 Consume the low bits and retain the remainder}\label{png-inflate-s32}
+Fill \texttt{inflate\_extract}. Form a low-bit mask of $(1\ll n)-1$, select those bits into \texttt{\$v0}, shift the reservoir right by $n$, and subtract $n$ from the available count. Fall through to \texttt{inflate\_bits\_ready} and the supplied return.
+
+With reservoir one, eight available bits and request three, the returned field is one. Reservoir becomes zero and five bits remain. The input cursor is still at offset three: extracting bits already fetched must not load another byte. A zero request returns zero while retaining the reservoir and count. This numerical low-bit interpretation is for ordinary fields; Huffman code comparison will use its own ordering.
+
+\paragraph{Observe} Use \texttt{s32-1}; stop before \texttt{inflate\_bits\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Does extracting three buffered bits advance the input cursor?
+\begin{itemize}
+\item[A.] Yes, by three bytes.
+\item[B.] No; the earlier refill already consumed its byte.
+\item[C.] Yes, by one output pixel.
+\end{itemize}

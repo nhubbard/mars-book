@@ -1,0 +1,13 @@
+\section{Step 26 Require a final empty IEND and enough joined bytes}\label{png-collect-s26}
+Fill \texttt{collect\_iend}. Require payload length zero and exactly twelve remaining file bytes, so the IEND envelope consumes the complete selected window. Require that IDAT has been seen and that the joined payload contains at least six bytes. Any failure branches to \texttt{collect\_bad}.
+
+The worked IEND begins at offset 103. Its envelope is the final twelve bytes, and 46 joined bytes satisfy the minimum. These checks still do not validate the zlib header, compressed block grammar or Adler checksum. They establish a complete accepted PNG container whose compressed contents are ready for the next stage.
+
+\paragraph{Observe} Use \texttt{s26-1}; stop before \texttt{collect\_iend\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} What does collector success establish about DEFLATE?
+\begin{itemize}
+\item[A.] Every compressed symbol has been decoded.
+\item[B.] The collected payload is ready for separate inflation checks.
+\item[C.] Its Adler checksum is necessarily valid.
+\end{itemize}

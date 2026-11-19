@@ -1,0 +1,37 @@
+\section{Compare complete calls on the same image}
+The following counts cover one call to the complete private reference prototype,
+from its entry through return. They include chunk validation and bitwise CRC,
+DEFLATE table construction and decompression, Adler-32, row reconstruction, pixel
+packing and ordinary call overhead. They exclude assembly, file loading and caller
+inspection. Scalar and MSA modes use the same compressed input and the same ordinary
+address layout in the MARS64 grader. Both return exact independently decoded pixels.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{p{33mm}r r r p{34mm}}
+\toprule Image & Pixels & Scalar & MSA mode & Instructions/pixel\newline scalar / MSA \\\midrule
+$2\times5$, mixed filters & 10 & 26886 & 26866 & 2688.60 / 2686.60 \\
+$17\times5$, mixed filters & 85 & 72434 & 70505 & 852.16 / 829.47 \\
+$512\times5$, mixed filters & 2560 & 1176035 & 1113847 & 459.39 / 435.10 \\
+$512\times512$, repeated rows & 262144 & 37870732 & 18167820 & 144.47 / 69.30 \\\bottomrule
+\end{longtable}
+The five-row files use None, Up, Sub, Average and Paeth in order. Reproduce them with
+\path{packages/033-png/construction/png-fixtures/fixture.py}, specifying their width and
+\texttt{--compression auto}. The full-size input comes from
+\path{packages/033-png/construction/png-fixtures/gradient.py}. Its first row uses None. Every later row has
+identical RGB samples, so Up represents those samples with zero residuals. Each
+channel at column $x$ is $(37x+97c)\bmod256$, for channel numbers $c=0,1,2$.
+The checked file occupies 2854 bytes with host zlib 1.2.12; the measurement receipt
+pins its digest as well as the exact decoder and CLI sources.
+
+The full-size image spends much of its reconstruction work in Up, and its rows have
+no vector tail. The five-row images spend four of their five rows elsewhere, while
+the vector packing change still applies to every complete group of sixteen pixels.
+Compare the modes within each row of the table. Different rows change compression,
+filter distribution and fixed overhead as well as dimensions.
+
+The two-pixel image contains no complete vector group. Its small reduction comes from
+the specialized Up tail path, which also avoids the generic predictor dispatch.
+A lower total count alone does not establish that a vector addition executed.
+The counts describe these prototypes, including their bitwise chunk CRC; they are
+not measurements of the smoke viewer's table-driven CRC or elapsed launch time.
+No exact instruction count is an acceptance condition for equivalent student solutions.

@@ -1,0 +1,45 @@
+\section{Derive a shuffle across an input boundary}
+Number the 48 input bytes of a sixteen-pixel group from zero through 47. Pixel four
+uses red byte 12, green 13 and blue 14. Pixel five uses red 15, green 16 and blue 17,
+so it straddles the boundary between the first and second input vectors. The second
+output vector must contain words for pixels four through seven.
+
+\Needspace{9\baselineskip}
+\begin{longtable}{p{24mm}p{42mm}p{35mm}p{44mm}}
+\toprule Pixel & Global RGB byte indices & Output byte-lane sources & Shuffle selectors \\\midrule
+4 & 12, 13, 14 & 14, 13, 12, zero & 14, 13, 12, 128 \\
+5 & 15, 16, 17 & 17, 16, 15, zero & 17, 16, 15, 128 \\
+6 & 18, 19, 20 & 20, 19, 18, zero & 20, 19, 18, 128 \\
+7 & 21, 22, 23 & 23, 22, 21, zero & 23, 22, 21, 128 \\\bottomrule
+\end{longtable}
+For this shuffle, put the first input vector on the right and the second on the
+left. Selectors zero through fifteen select bytes of the right operand; sixteen
+through thirty-one select bytes of the left operand. Selector 17 therefore chooses
+lane one of the second vector, which is global byte 17. A selector with bit seven
+set produces zero. Store its byte pattern as \texttt{-128} in a signed
+\texttt{.byte} declaration; the control bits are hexadecimal \texttt{80}.
+
+After the complete-group bounds checks, let \texttt{\$a0} point to sample byte zero,
+\texttt{\$t0} to output word zero, and \texttt{\$w5} hold this second selector vector.
+The following excerpt writes output words four through seven:
+\MARSCodeLabel{One output vector spanning two input vectors}
+\begin{minted}[samepage=true]{mars-idea}
+ld.b $w0, 0($a0)
+ld.b $w1, 16($a0)
+move.v $w3, $w5
+vshf.b $w3, $w1, $w0
+st.w $w3, 16($t0)
+\end{minted}
+The destination initially supplies the selectors to \texttt{vshf.b}; afterward it
+contains shuffled data. Copying the retained mask into \texttt{\$w3} makes the mask
+available again on the next iteration. The four byte lanes B, G, R, zero form the
+numeric word \texttt{0x00RRGGBB}. The word store writes that value using the target's
+memory byte order. For \texttt{0x00112233}, the memory bytes are
+\texttt{33 22 11 00} in little-endian order and \texttt{00 11 22 33} in big-endian
+order. The displayed word value is the same in both cases.
+
+Derive the other three masks from the same global indices. The third output vector
+spans input vectors one and two, so subtract sixteen from its global byte indices
+before choosing between those operands. The fourth output vector uses only the last
+input vector. A complete group consumes 48 sample bytes and publishes 64 pixel bytes;
+advance each cursor by its own amount before testing for another sixteen pixels.

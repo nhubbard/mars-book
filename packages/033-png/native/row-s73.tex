@@ -1,0 +1,16 @@
+\section{Step 73 Construct the first row’s upper boundary}
+An ordinary row reads upper samples from a previously reconstructed row. Row zero has no such row. Give it a private row of zero bytes rather than loading memory before the caller’s buffer. This makes the first-row rule explicit and lets the byte predictor use the same upper-pointer interface on later rows.
+
+The supplied code reserves 1552 stack bytes and saves the original count at offset 1536. Fill \texttt{row\_zero}. Clear exactly the sample-row extent, using the six-byte length from \texttt{\$t0} for the worked image. The maximum extent is 1536 bytes, leaving the saved count separate. Use full-width pointer additions while walking this private region.
+
+Then retain the selected scalar/MSA mode in \texttt{\$v1}; arrange \texttt{\$a1} as rows remaining, \texttt{\$a2} as sample bytes per row, and \texttt{\$a3} as the zero-row address. Keep \texttt{\$a0} at the current selector. The checkpoint has five rows remaining and six sample bytes per row. The private frame is an illustration choice; completed alternatives may use another valid layout.
+
+\paragraph{Observe} Use \texttt{s73-1}; stop before \texttt{row\_zero\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why use a private zero row?
+\begin{itemize}
+\item[A.] It stores compressed history.
+\item[B.] It replaces every None row.
+\item[C.] It supplies defined upper neighbors for the first row.
+\end{itemize}

@@ -1,0 +1,13 @@
+\section{Step 40 Compute Adler over the produced row range}\label{png-inflate-s40}
+Implement internal \texttt{adler32}. The supplied caller gives it output start in \texttt{\$a0} and output end in \texttt{\$a1}; the second argument is an address, not a byte count. Start the first sum at one and the second at zero. For each unsigned output byte, update and reduce the first sum modulo 65521, then update and reduce the second sum using the new first sum. Pack second sum above first in the returned word.
+
+Each reduced sum stays below 65521. Adding one byte needs at most one subtraction for the first sum; adding the two reduced sums needs at most one subtraction for the second. The worked filtered bytes yield \texttt{0x2E0C023F} at \texttt{inflate\_adler\_ready}. An empty output range reads no bytes and returns one.
+
+\paragraph{Observe} Use \texttt{s40-1}; stop before \texttt{inflate\_adler\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} What does the Adler helper receive in its second argument here?
+\begin{itemize}
+\item[A.] The end address of the output range.
+\item[B.] The compressed count.
+\item[C.] The expected CRC.
+\end{itemize}

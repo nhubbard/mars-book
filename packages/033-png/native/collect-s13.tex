@@ -1,0 +1,13 @@
+\section{Step 13 Assemble four file bytes into one number}\label{png-collect-s13}
+Implement the internal \texttt{png\_be32} helper. Starting at \texttt{\$a0}, consume four bytes using unsigned byte loads. Begin the result at zero; for each byte shift the accumulated result left eight bits and combine the new byte. Advance the source by one and repeat exactly four times. Fall through to the supplied return after \texttt{collect\_be32\_ready}.
+
+For bytes \texttt{89 50 4E 47}, the successive unsigned hexadecimal values are \texttt{89}, \texttt{8950}, \texttt{89504E}, and \texttt{89504E47}. The same result is required in either target byte order. A native word load would instead interpret target order and would impose alignment assumptions. The helper does not establish its own four-byte bound; the collector must establish it before calling.
+
+\paragraph{Observe} Use \texttt{s13-1}; stop before \texttt{collect\_be32\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Why use unsigned byte loads here?
+\begin{itemize}
+\item[A.] A file byte must contribute its value from 0 through 255.
+\item[B.] PNG fields use target byte order.
+\item[C.] Every PNG field is eight bytes wide.
+\end{itemize}

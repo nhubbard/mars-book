@@ -1,0 +1,16 @@
+\section{Step 88 Assemble and store one numeric display word}
+Fill \texttt{pack\_pixel}. Load red, green and blue as unsigned bytes, combine them into $(R\ll16)\mathbin{|}(G\ll8)\mathbin{|}B$, and store that numeric word. Advance the RGB cursor by three, the destination cursor by four, and decrement pixels remaining. The supplied branch repeats until that row is complete.
+
+For the first worked pixel, decimal 10, 20, 30 become hexadecimal \texttt{0x000A141E}. A native word store writes bytes \texttt{1E 14 0A 00} in little-endian memory and \texttt{00 0A 14 1E} in big-endian memory. The displayed numeric word is identical. Do not reverse the input RGB bytes according to the target’s byte order: those are serialized byte samples.
+
+At \texttt{pack\_pixel\_written}, the first word is present, the source has advanced three sample bytes, and one worked pixel remains. Later rows are still unfinished. During construction, development status four may accompany partially written pixels; the completed failure contract applies to returned format/capacity failures, which must precede all stores.
+
+\paragraph{Observe} Use \texttt{s88-1}; stop before \texttt{pack\_pixel\_written}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Which store preserves the numeric display-word interpretation in both byte orders?
+\begin{itemize}
+\item[A.] A fixed sequence of little-endian byte stores.
+\item[B.] A native word store of the constructed value.
+\item[C.] A store of the selector followed by RGB.
+\end{itemize}

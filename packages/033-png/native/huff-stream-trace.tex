@@ -1,0 +1,54 @@
+\section{Trace a match without confusing its bits with its output}
+The fixed-match fixture produces 35 zero bytes. Its complete zlib stream is ten bytes:
+two wrapper bytes, four compressed bytes and four Adler bytes. The compressed fields
+occupy exactly 32 bits in this fixture.
+
+\Needspace{12\baselineskip}
+\begin{longtable}{p{40mm}p{22mm}p{26mm}p{29mm}p{27mm}}
+\toprule Boundary & New bits & Total bits & Next input offset & Output bytes \\\midrule
+Final fixed header & 3 & 3 & 3 & 0 \\
+Literal zero & 8 & 11 & 4 & 1 \\
+Length symbol 272 & 7 & 18 & 5 & 1 \\
+Length extra field 3 & 2 & 20 & 5 & 1 \\
+Distance symbol zero & 5 & 25 & 6 & 1 \\
+Zero distance extras & 0 & 25 & 6 & 1 \\
+Forward match copied & 0 & 25 & 6 & 35 \\
+End-of-block & 7 & 32 & 6 & 35 \\\bottomrule
+\end{longtable}
+Input offsets include the two zlib header bytes. A field can consume bits without
+advancing the next-byte cursor, and the history copy produces 34 bytes without consuming
+compressed bits. After end-of-block, the retained compressed cursor is at trailer
+offset six and the output cursor is at 35. The exact checks and checksum comparison
+can now follow the same path as a stored block.
+
+\section{Compare three descriptions of the same dynamic lengths}
+The three repeat fixtures reconstruct identical alphabets. Literal zero has length
+one, end-of-block and length symbol 257 have length two, and distance symbol zero has
+length one. Zero lengths between those present entries describe absent symbols.
+The following checkpoints occur before the prepared repeat has been stored.
+
+\Needspace{9\baselineskip}
+\begin{longtable}{p{27mm}p{25mm}p{27mm}p{24mm}p{36mm}}
+\toprule Operation & Cursor before & Extra field & Zero run & Cursor after store \\\midrule
+16 & 2 & 3 in two bits & 6 & 8 \\
+17 & 1 & 7 in three bits & 10 & 11 \\
+18 & 1 & 127 in seven bits & 138 & 139 \\\bottomrule
+\end{longtable}
+The rest of each description fills the combined range to 259 entries. At completion,
+indices 0, 256, 257 and 258 contain 1, 2, 2 and 1; indices 1 through 255 contain zero.
+Different encoded descriptions can therefore produce exactly the same tables and
+filtered output. This is one reason to grade behavior rather than one source listing.
+
+Try the malformed and mixed recipes after all regions are complete. A distance before
+available history, reserved data symbols, an initial previous-length repeat, an invalid
+prefix shape, a missing end code or a bad Adler must fail with zero returned count.
+The mixed stored/fixed input must succeed. Inspect scratch rows separately from final
+context outputs and framebuffer words: a failed call may leave a produced prefix in
+scratch, but the temporary whole program never publishes pixels.
+
+For a later optimization exercise, consider precomputing immutable fixed tables instead
+of reconstructing them for each fixed block. Keep dynamic tables private to the current
+call and retain every stream, history and output check. Compare identical output and
+measured instruction work including setup. The measurements elsewhere in this chapter
+retain their original sources and boundaries; they are not new results for this
+construction sequence.

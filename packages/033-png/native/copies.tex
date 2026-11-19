@@ -1,0 +1,19 @@
+\section{Copy matches from already produced output}
+A literal emits one byte. A length/distance pair copies a run from earlier output.
+Before the first copy load, require a positive distance that does not exceed the
+bytes already produced or the allowed history window. Require the length to fit the
+remaining output capacity. Reject reserved symbols before looking up extra-bit counts
+or base values. A malformed distance must fail before forming a readable history address.
+
+Overlapping matches are intentional. Suppose output currently ends in the single
+byte \texttt{41}. A match of length six and distance one appends six more \texttt{41}
+bytes. Each byte just written becomes the source for the next copy. A conventional
+backward overlap copy or a vector load of six as-yet-unwritten source bytes gives the
+wrong result. Start with a forward byte copy whose source cursor advances with its
+destination. Test distance one, distance smaller than length, and exact-history limits.
+
+Track the expected PNG row-buffer size independently from the number of bytes encoded
+by blocks. Both early end-of-block completion and an attempted extra output byte fail
+the exact-size contract. An output buffer with mapped padding does not make either
+operation correct. Later profiling may justify faster nonoverlapping matches, but
+that branch must retain the forward expansion behavior for short distances.

@@ -1,0 +1,36 @@
+\section{Make decompression an exact-size call}
+Call \texttt{png\_inflate} with the joined zlib stream address in \texttt{\$a0}, its
+unsigned byte count in \texttt{\$a1}, the row-workspace address in \texttt{\$a2}, and
+the exact expected output count in \texttt{\$a3}. For the worked image, the two counts
+are 46 and 35. They have different sources: the collector sums IDAT payload lengths,
+whereas the dimensions predict $h(1+3w)$ inflated bytes. Passing the compressed count
+as the expected row size would request eleven bytes that this image does not produce.
+
+A successful call returns zero in \texttt{\$v0} and the exact produced count in
+\texttt{\$v1}. Failure returns one and zero. Preserve the stream, saved registers and
+stack pointer. Output bytes inside the selected row workspace may change on failure;
+the caller must not reconstruct or display them after a nonzero status. Leave bytes
+outside that workspace unchanged. The stream, output and private stack storage must
+not overlap. Counts and addresses retain all 64 bits. There are no file operations
+or framebuffer writes in this entry.
+
+Require between six bytes and 1 MiB of input and at most 786944 expected output bytes.
+Reject a count outside these bounds before reading the stream. A zero expected count
+is useful for testing a valid compressed empty stream, although a supported PNG with
+positive dimensions always predicts some row bytes. The caller supplies readable input
+and writable output windows of the selected sizes. Bounds on their counts do not make
+an arbitrary pointer readable or allocate its destination automatically.
+
+Checksum agreement cannot replace a produced-byte count. One test stream expands to
+one ASCII A byte, while the caller requests 65522 bytes and initializes the workspace
+to decimal 165. Hashing that A followed by 65521 unchanged bytes of value 165 gives the
+same Adler-32 as hashing the A alone. The extra bytes were never produced by the
+stream. Compare the actual output cursor with the expected end before accepting the
+checksum; reading an untouched part of the workspace does not turn it into output.
+
+Use each call's own workspace for code lengths, counts and ordered symbols. A previous
+fixed block's table must not supply values for a later dynamic block, and a failed call
+must not leave parser state that changes a later call. Read-only base/extra-bit tables
+can be shared. A particular stack layout is an implementation choice; the interface
+specifies the source, output and returned state, rather than naming the reference
+implementation's private slots.

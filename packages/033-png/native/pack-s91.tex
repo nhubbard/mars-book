@@ -1,0 +1,16 @@
+\section{Step 91 Load reusable masks before the row loop}
+Fill \texttt{pack\_load\_masks}. Form the full-width \texttt{rgb\_shuffle} address and load its four sixteen-byte regions into \texttt{\$w4} through \texttt{\$w7}. Retain them across all pixel groups and rows of this packing call.
+
+The masks are immutable input to the shuffle operation. The destination of \texttt{vshf.b} initially contains its selectors, then becomes the shuffled result. Copy a retained mask into a scratch vector before each shuffle; using the retained mask register as the destination would destroy the selectors needed for the next group.
+
+At \texttt{pack\_masks\_loaded}, every byte lane in the four retained vectors must match its corresponding table byte. Loading once per call avoids repeating these four loads for every row. A completed alternative may arrange equivalent setup differently; the required result and memory bounds are unchanged.
+
+\paragraph{Observe} Use \texttt{s91-1}; stop before \texttt{pack\_masks\_loaded}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why keep a separate scratch shuffle destination?
+\begin{itemize}
+\item[A.] It avoids reading any RGB data.
+\item[B.] The shuffle overwrites the destination that supplied its selectors.
+\item[C.] The masks depend on the current row’s filter.
+\end{itemize}

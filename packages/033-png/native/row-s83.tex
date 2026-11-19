@@ -1,0 +1,16 @@
+\section{Step 83 Finish the Up tail without overreading}
+Fill \texttt{row\_up\_tail}. If the destination already equals the exclusive end, continue directly to row completion. Otherwise load one residual and one upper byte, add and store the low byte, advance both pointers, and repeat. Converge on \texttt{row\_up\_tail\_ready} once the entire remainder has been consumed. The supplied next label completes the row.
+
+For up6, two bytes remain after the vector group. At the first tail checkpoint all eighteen samples of row zero are 250, and both cursors are at their sample-window ends. The next row becomes eighteen samples of value four. The complete call returns zero and 38 bytes: two rows, each containing one retained selector and eighteen reconstructed samples.
+
+Repeat with widths one, five and seventeen. They give sample extents 3, 15 and 51, exposing a tail-only row, a boundary just below a vector, and three vectors followed by three bytes. Compare scalar and MSA outputs exactly. Counts and equal images are necessary, but the access checks must also establish that neither path reads a selector or the next row as spare vector lanes.
+
+\paragraph{Observe} Use \texttt{s83-1}; stop before \texttt{row\_up\_tail\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What must an empty Up tail do?
+\begin{itemize}
+\item[A.] Load one vector to discover its length.
+\item[B.] Reach row completion without a sample load.
+\item[C.] Overwrite the selector with zero.
+\end{itemize}

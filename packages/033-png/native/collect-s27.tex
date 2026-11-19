@@ -1,0 +1,13 @@
+\section{Step 27 Publish the completed container result together}\label{png-collect-s27}
+Implement \texttt{collect\_publish}. Store width, height, joined count and predicted inflated count at descriptor offsets 8, 16, 24 and 32. Compute the prediction as height times one plus three times width. Set returned count to the joined count and status to zero, then fall through to \texttt{collect\_publish\_ready} and the supplied restore.
+
+The worked outputs are 2, 5, 46 and 35. The capacity input at offset zero stays 46. These are native doubleword stores, so their memory byte order follows the target. With the supplied caller, stop at \texttt{collector\_return} before its private descriptor frame is released. The later development message remains expected because no inflater or framebuffer stage has run.
+
+\paragraph{Observe} Use \texttt{s27-1}; stop before \texttt{collect\_publish\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Why is the predicted inflated count 35 rather than 30?
+\begin{itemize}
+\item[A.] Each of five rows includes one filter byte.
+\item[B.] Every RGB sample has a padding byte.
+\item[C.] The PNG signature has five bytes.
+\end{itemize}

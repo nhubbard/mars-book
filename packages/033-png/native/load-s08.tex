@@ -1,0 +1,15 @@
+\section{Step 8 Release the acquired descriptor once}\label{png-load-s08}
+Fill \texttt{load\_close} with syscall 16 on the descriptor retained in \texttt{\$s3}. This path handles normal EOF, a failed read and a nonzero probe. Open failure bypasses it because no descriptor was acquired.
+
+Stop at \texttt{load\_close\_ready}. The file observation now has one close and no open descriptor. The remaining result region uses the development exit that does not close anything. The close service does not provide the loader's success result; that result still comes from the candidate and progress values retained by the routine.
+
+Use \texttt{s08-1} and stop before \texttt{load\_close\_ready}.
+
+\paragraph{Observe} The acquired descriptor is closed exactly once. The success candidate remains zero and the byte count remains 115.
+
+\paragraph{Check} Which path must avoid this close operation?
+\begin{itemize}
+\item[A.] The path where open returned a negative result.
+\item[B.] The path where the final read returned zero.
+\item[C.] The path where the file exactly filled capacity.
+\end{itemize}

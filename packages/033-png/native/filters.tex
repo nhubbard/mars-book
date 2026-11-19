@@ -1,0 +1,27 @@
+\section{Recover samples from residuals}
+Each inflated row starts with a filter selector from zero through four. The remaining
+bytes are residuals: differences from predicted sample values, reduced modulo 256.
+Reconstruction adds the same predictor back and keeps the low eight bits. Let $a$ be
+the already reconstructed sample three bytes to the left, $b$ the sample above, and
+$c$ the upper-left sample. Use zero when a neighbor does not exist. The three-byte
+spacing follows this chapter's RGB8 pixel format.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{p{18mm}p{28mm}p{104mm}}
+\toprule Selector & Name & Predictor added to the residual \\\midrule
+0 & None & Zero \\
+1 & Sub & $a$ \\
+2 & Up & $b$ \\
+3 & Average & $\lfloor(a+b)/2\rfloor$ \\
+4 & Paeth & One of $a$, $b$, $c$, selected by the distance rule \\\bottomrule
+\end{longtable}
+The predictor uses reconstructed neighbors, not their encoded residuals. Exclude the
+filter selector itself from sample indexing. If rows remain in the inflated buffer,
+the previous sample row begins one byte after its selector, and row starts are seven
+bytes apart in the worked image. If samples move into a compact RGB buffer instead,
+row starts are six bytes apart. Choose one representation before deriving addresses.
+
+For Average, widen the unsigned byte values before adding: $250+240=490$, so the
+predictor is 245. Wrapping the sum to a byte first would produce 117. Only the final
+residual-plus-predictor addition wraps to eight bits. This distinction is easy to lose
+when replacing scalar code with byte-lane operations.

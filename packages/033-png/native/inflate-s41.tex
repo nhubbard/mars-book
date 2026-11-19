@@ -1,0 +1,13 @@
+\section{Step 41 Read the reserved checksum in PNG stream order}\label{png-inflate-s41}
+Implement internal \texttt{inflate\_be32} using four unsigned byte loads and big-endian accumulation, as in your collector's field reader. The supplied call points at the reserved trailer. Preserve the computed Adler retained at frame offset zero while this helper returns the stored value through the same result register.
+
+The worked trailer is \texttt{2E 0C 02 3F}, so the stored numerical value is \texttt{0x2E0C023F} in either target byte order. It is not a native descriptor field. At \texttt{inflate\_trailer\_ready}, both independent values are available for comparison: one in the private frame and one in the result register.
+
+\paragraph{Observe} Use \texttt{s41-1}; stop before \texttt{inflate\_trailer\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Why not read the trailer with an ordinary native word load?
+\begin{itemize}
+\item[A.] Its four bytes are explicitly big-endian, independently of target order.
+\item[B.] Its checksum contains eight bytes.
+\item[C.] A native load always computes Adler automatically.
+\end{itemize}

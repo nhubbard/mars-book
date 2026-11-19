@@ -1,0 +1,5060 @@
+{
+  "formatVersion": 1,
+  "id": "033-png",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Decode PNG images",
+  "audience": "Students with basic programming and prior assembly/MSA experience",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "118b85dc831c6caced3f94e67228cb4e7fe809f5",
+    "memoryLayout": "Default classroom heap with separate grading storage",
+    "byteOrder": "little-endian",
+    "graderRequirements": [
+      "callFunction",
+      "readDataAddress",
+      "readBytes",
+      "traceMemoryAccesses",
+      "provideFiles",
+      "startAt",
+      "runUntil"
+    ]
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native per-step observations and public completed-stage feedback; automatic remote progression is pending"
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.tex",
+  "reading": "reading.json",
+  "gradingHarness": "checks/harness.asm",
+  "prerequisites": [
+    "Full-width memory windows and nested calls",
+    "CRC32, bounded variable-length parsing and bit operations",
+    "Native-word RGB packing and MSA loads/shuffles"
+  ],
+  "learningObjectives": [
+    "Validate PNG chunks before publishing metadata",
+    "Inflate stored/fixed/dynamic DEFLATE blocks into exact bounded output",
+    "Reconstruct all five PNG filters after complete selector validation",
+    "Pack numeric colors with exact stride/capacity bounds",
+    "Preserve visible outputs across rejected calls and compare equivalent scalar/vector results"
+  ],
+  "functionContract": {
+    "entries": [
+      "png_load",
+      "png_collect",
+      "png_inflate",
+      "png_unfilter",
+      "png_unfilter_msa",
+      "png_blit",
+      "png_blit_msa",
+      "png_decode",
+      "png_decode_msa"
+    ],
+    "statuses": {
+      "0": "success",
+      "1": "completed failure",
+      "4": "unfinished construction only"
+    },
+    "dimensions": [
+      1,
+      512
+    ],
+    "maxFileBytes": 1048576,
+    "maxInflatedBytes": 786944,
+    "profile": "Static noninterlaced RGB8 PNG, exact container and zlib completion",
+    "publication": "Complete failures retain framebuffer/context; scratch failure bytes may change within capacity",
+    "privateStack": "Valid supplied private storage; no required internal offsets"
+  },
+  "steps": [
+    {
+      "id": "s01",
+      "kind": "edit",
+      "region": "load_capacity",
+      "title": "Validate the selected byte capacity",
+      "checkpoint": "load_capacity_ready",
+      "quiz": {
+        "id": "q01",
+        "prompt": "Why must the capacity comparison retain all 64 bits?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The path is always more than four gigabytes long."
+          },
+          {
+            "id": "B",
+            "text": "A large count can have small low 32 bits."
+          },
+          {
+            "id": "C",
+            "text": "The PNG CRC is a 64-bit checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s01-h1",
+          "text": "Separate the selected count from the address of the selected window."
+        },
+        {
+          "id": "s01-h2",
+          "text": "A capacity of 4294967296 is outside the bound even though its low word is zero."
+        }
+      ],
+      "recipes": [
+        "s01-1",
+        "s01-wide"
+      ],
+      "content": "native/load-s01.tex",
+      "prerequisites": [],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_capacity_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s02",
+      "kind": "edit",
+      "region": "load_state",
+      "title": "Retain the destination and initialize progress",
+      "checkpoint": "load_state_ready",
+      "quiz": {
+        "id": "q02",
+        "prompt": "What does s2 count during the loading loop?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Bytes already stored in the selected file buffer."
+          },
+          {
+            "id": "B",
+            "text": "The file descriptor number."
+          },
+          {
+            "id": "C",
+            "text": "Pixels already displayed."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s02-h1",
+          "text": "Start the counter before the first read, rather than guessing the eventual file length."
+        },
+        {
+          "id": "s02-h2",
+          "text": "Only a positive read result increases s2."
+        }
+      ],
+      "recipes": [
+        "s02-1"
+      ],
+      "content": "native/load-s02.tex",
+      "prerequisites": [
+        "s01"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_state_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s03",
+      "kind": "edit",
+      "region": "load_open",
+      "title": "Acquire one read-only descriptor",
+      "checkpoint": "load_open_ready",
+      "quiz": {
+        "id": "q03",
+        "prompt": "Which descriptor should a later read use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Three, because it is the first conventional file descriptor."
+          },
+          {
+            "id": "B",
+            "text": "The byte count returned by the previous read."
+          },
+          {
+            "id": "C",
+            "text": "The successful value returned by this open."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s03-h1",
+          "text": "A successful open acquires a resource, rather than naming a fixed register convention."
+        },
+        {
+          "id": "s03-h2",
+          "text": "Retain the returned value before another syscall changes v0."
+        }
+      ],
+      "recipes": [
+        "s03-1"
+      ],
+      "content": "native/load-s03.tex",
+      "prerequisites": [
+        "s02"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_open_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s04",
+      "kind": "edit",
+      "region": "load_request",
+      "title": "Request the remaining writable suffix",
+      "checkpoint": "load_request_ready",
+      "quiz": {
+        "id": "q04",
+        "prompt": "Why is advancing by the requested count incorrect?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The descriptor must be incremented after each read."
+          },
+          {
+            "id": "B",
+            "text": "A read can return fewer bytes than requested."
+          },
+          {
+            "id": "C",
+            "text": "The file buffer contains four bytes per pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s04-h1",
+          "text": "Compare what was offered as writable space with what the service actually reports storing."
+        },
+        {
+          "id": "s04-h2",
+          "text": "The seventeenth byte is followed by untouched space, not by ninety-eight newly read bytes."
+        }
+      ],
+      "recipes": [
+        "s04-1"
+      ],
+      "content": "native/load-s04.tex",
+      "prerequisites": [
+        "s03"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_request_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s05",
+      "kind": "edit",
+      "region": "load_result",
+      "title": "Consume the read result",
+      "checkpoint": "load_progress_ready",
+      "quiz": {
+        "id": "q05",
+        "prompt": "What destination should the second request use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The original destination plus seventeen."
+          },
+          {
+            "id": "B",
+            "text": "The original destination plus 115."
+          },
+          {
+            "id": "C",
+            "text": "The path address plus seventeen."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s05-h1",
+          "text": "The next unread position follows the bytes actually copied."
+        },
+        {
+          "id": "s05-h2",
+          "text": "Capacity minus seventeen is 98, but that remaining count is not a destination address."
+        }
+      ],
+      "recipes": [
+        "s05-1"
+      ],
+      "content": "native/load-s05.tex",
+      "prerequisites": [
+        "s04"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_progress_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s06",
+      "kind": "edit",
+      "region": "load_probe",
+      "title": "Probe after an exact fill",
+      "checkpoint": "load_probe_ready",
+      "quiz": {
+        "id": "q06",
+        "prompt": "What does a probe result of one establish?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The file was exactly one byte long."
+          },
+          {
+            "id": "B",
+            "text": "The current PNG has one image row."
+          },
+          {
+            "id": "C",
+            "text": "The file exceeds the selected capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s06-h1",
+          "text": "The main destination was already full before this request."
+        },
+        {
+          "id": "s06-h2",
+          "text": "The byte exists after the accepted prefix, so this file cannot fit the selected window."
+        }
+      ],
+      "recipes": [
+        "s06-1"
+      ],
+      "content": "native/load-s06.tex",
+      "prerequisites": [
+        "s05"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_probe_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s07",
+      "kind": "edit",
+      "region": "load_eof",
+      "title": "Accept only a nonempty EOF",
+      "checkpoint": "load_eof_ready",
+      "quiz": {
+        "id": "q07",
+        "prompt": "Why is a zero read insufficient by itself for success?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The descriptor must have the numeric value zero."
+          },
+          {
+            "id": "B",
+            "text": "The file may have been empty from the start."
+          },
+          {
+            "id": "C",
+            "text": "PNG dimensions are always zero before decompression."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s07-h1",
+          "text": "Trace the first read of an empty file."
+        },
+        {
+          "id": "s07-h2",
+          "text": "A zero result identifies EOF; the progress count distinguishes empty from nonempty input."
+        }
+      ],
+      "recipes": [
+        "s07-1"
+      ],
+      "content": "native/load-s07.tex",
+      "prerequisites": [
+        "s06"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_eof_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s08",
+      "kind": "edit",
+      "region": "load_close",
+      "title": "Release the acquired descriptor once",
+      "checkpoint": "load_close_ready",
+      "quiz": {
+        "id": "q08",
+        "prompt": "Which path must avoid this close operation?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The path where open returned a negative result."
+          },
+          {
+            "id": "B",
+            "text": "The path where the final read returned zero."
+          },
+          {
+            "id": "C",
+            "text": "The path where the file exactly filled capacity."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s08-h1",
+          "text": "Ownership begins only after a successful open."
+        },
+        {
+          "id": "s08-h2",
+          "text": "A failed open supplies no descriptor for this routine to release."
+        }
+      ],
+      "recipes": [
+        "s08-1"
+      ],
+      "content": "native/load-s08.tex",
+      "prerequisites": [
+        "s07"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_close_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s09",
+      "kind": "edit",
+      "region": "load_publish",
+      "title": "Publish the completed loader result",
+      "checkpoint": "load_publish_ready",
+      "quiz": {
+        "id": "q09",
+        "prompt": "Why copy s2 into v1 before restoring s2?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The count becomes a path address during close."
+          },
+          {
+            "id": "B",
+            "text": "The restore code deletes the file."
+          },
+          {
+            "id": "C",
+            "text": "Restoring s2 recovers the caller's previous value."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s09-h1",
+          "text": "The saved register and the return register have different ownership at this boundary."
+        },
+        {
+          "id": "s09-h2",
+          "text": "The caller is entitled to its old s2 value and the newly returned byte count."
+        }
+      ],
+      "recipes": [
+        "s09-1"
+      ],
+      "content": "native/load-s09.tex",
+      "prerequisites": [
+        "s08"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "load_publish_ready",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s10",
+      "kind": "observe",
+      "region": null,
+      "title": "Separate loading failures from PNG failures",
+      "checkpoint": "function_return",
+      "quiz": {
+        "id": "q10",
+        "prompt": "Which conclusion follows from loader success?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The file is a supported PNG."
+          },
+          {
+            "id": "B",
+            "text": "A nonempty complete file fit the selected byte capacity."
+          },
+          {
+            "id": "C",
+            "text": "All framebuffer words have been written."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s10-h1",
+          "text": "The loader never examines the PNG signature or chunk names."
+        },
+        {
+          "id": "s10-h2",
+          "text": "Success establishes a byte window that the next stage must validate."
+        }
+      ],
+      "recipes": [
+        "s10-empty",
+        "s10-long",
+        "s10-missing",
+        "s10-partial"
+      ],
+      "content": "native/load-s10.tex",
+      "prerequisites": [
+        "s09"
+      ],
+      "stage": "png-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "function_return",
+        "completedStageCheck": "checks/loader.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s11",
+      "region": "collect_bounds",
+      "title": "Reject impossible file counts before reading",
+      "checkpoint": "collect_bounds_ready",
+      "quiz": {
+        "id": "q11",
+        "prompt": "Which operation must wait until the outer count is accepted?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Reading the signature."
+          },
+          {
+            "id": "B",
+            "text": "Setting a failure return value."
+          },
+          {
+            "id": "C",
+            "text": "Comparing the count with eight."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s11-h1",
+          "text": "Validate the length before following either input pointer."
+        },
+        {
+          "id": "s11-h2",
+          "text": "Use an unsigned upper-bound comparison."
+        }
+      ],
+      "recipes": [
+        "s11-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s11.tex",
+      "prerequisites": [
+        "s10"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_bounds_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s12",
+      "region": "collect_state",
+      "title": "Retain the two cursors and their remaining counts",
+      "checkpoint": "collect_state_ready",
+      "quiz": {
+        "id": "q12",
+        "prompt": "What is read from descriptor offset zero?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The first compressed byte."
+          },
+          {
+            "id": "B",
+            "text": "The caller-selected byte capacity."
+          },
+          {
+            "id": "C",
+            "text": "A PNG big-endian width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s12-h1",
+          "text": "Retain the descriptor pointer separately from its capacity."
+        },
+        {
+          "id": "s12-h2",
+          "text": "Native descriptor doublewords follow the selected target byte order."
+        }
+      ],
+      "recipes": [
+        "s12-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s12.tex",
+      "prerequisites": [
+        "s11"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_state_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s13",
+      "region": "collect_be32",
+      "title": "Assemble four file bytes into one number",
+      "checkpoint": "collect_be32_ready",
+      "quiz": {
+        "id": "q13",
+        "prompt": "Why use unsigned byte loads here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A file byte must contribute its value from 0 through 255."
+          },
+          {
+            "id": "B",
+            "text": "PNG fields use target byte order."
+          },
+          {
+            "id": "C",
+            "text": "Every PNG field is eight bytes wide."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s13-h1",
+          "text": "Shift the accumulated value before combining the next byte."
+        },
+        {
+          "id": "s13-h2",
+          "text": "Do not sign-extend a byte whose high bit is set."
+        }
+      ],
+      "recipes": [
+        "s13-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s13.tex",
+      "prerequisites": [
+        "s12"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_be32_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s14",
+      "region": "collect_signature",
+      "title": "Consume the eight-byte signature",
+      "checkpoint": "collect_signature_ready",
+      "quiz": {
+        "id": "q14",
+        "prompt": "When may the file cursor advance past the signature?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After checking only its first byte."
+          },
+          {
+            "id": "B",
+            "text": "After both four-byte comparisons succeed."
+          },
+          {
+            "id": "C",
+            "text": "After any helper returns a nonzero number."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s14-h1",
+          "text": "Retain the original cursor across both helper calls."
+        },
+        {
+          "id": "s14-h2",
+          "text": "Advance the cursor and remaining count by the same eight bytes."
+        }
+      ],
+      "recipes": [
+        "s14-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s14.tex",
+      "prerequisites": [
+        "s13"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_signature_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s15",
+      "region": "collect_envelope",
+      "title": "Prove that one complete chunk fits",
+      "checkpoint": "collect_envelope_ready",
+      "quiz": {
+        "id": "q15",
+        "prompt": "What does the twelve-byte overhead contain?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The signature and four pixel bytes."
+          },
+          {
+            "id": "B",
+            "text": "Length, four type bytes and CRC."
+          },
+          {
+            "id": "C",
+            "text": "Only the CRC repeated three times."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s15-h1",
+          "text": "Perform the minimum-size check before subtracting overhead."
+        },
+        {
+          "id": "s15-h2",
+          "text": "Compare the decoded length against the remaining count, not the original file size."
+        }
+      ],
+      "recipes": [
+        "s15-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s15.tex",
+      "prerequisites": [
+        "s14"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_envelope_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s16",
+      "region": "collect_type",
+      "title": "Validate the four type letters",
+      "checkpoint": "collect_type_ready",
+      "quiz": {
+        "id": "q16",
+        "prompt": "Which original type byte carries the reserved case bit?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The first."
+          },
+          {
+            "id": "B",
+            "text": "The third."
+          },
+          {
+            "id": "C",
+            "text": "The last CRC byte."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s16-h1",
+          "text": "ASCII letter validation and case-bit meaning are separate checks."
+        },
+        {
+          "id": "s16-h2",
+          "text": "Use the original third byte for the reserved-bit test."
+        }
+      ],
+      "recipes": [
+        "s16-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s16.tex",
+      "prerequisites": [
+        "s15"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_type_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s17",
+      "region": "collect_crc",
+      "title": "Reuse the reflected CRC calculation",
+      "checkpoint": "collect_crc32_ready",
+      "quiz": {
+        "id": "q17",
+        "prompt": "Which bytes does a zero count permit the CRC helper to read?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One terminator byte."
+          },
+          {
+            "id": "B",
+            "text": "None."
+          },
+          {
+            "id": "C",
+            "text": "The next chunk header."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s17-h1",
+          "text": "The CRC byte loop must test its count before a load."
+        },
+        {
+          "id": "s17-h2",
+          "text": "Keep the reflected polynomial and final complement consistent with the earlier CRC chapter."
+        }
+      ],
+      "recipes": [
+        "s17-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s17.tex",
+      "prerequisites": [
+        "s16"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_crc32_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s18",
+      "region": "collect_crc_check",
+      "title": "Check the type and payload together",
+      "checkpoint": "collect_crc_ready",
+      "quiz": {
+        "id": "q18",
+        "prompt": "Why retain the computed CRC before reading the stored CRC?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Both helpers return through the same result register."
+          },
+          {
+            "id": "B",
+            "text": "The stored CRC changes the file length."
+          },
+          {
+            "id": "C",
+            "text": "Native descriptor byte order determines CRC coverage."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s18-h1",
+          "text": "The CRC covers four type bytes plus the payload."
+        },
+        {
+          "id": "s18-h2",
+          "text": "Preserve a helper result before calling another helper that uses the same result register."
+        }
+      ],
+      "recipes": [
+        "s18-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s18.tex",
+      "prerequisites": [
+        "s17"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_crc_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s19",
+      "region": "collect_dispatch",
+      "title": "Choose a type only after its CRC passes",
+      "checkpoint": "collect_ihdr",
+      "quiz": {
+        "id": "q19",
+        "prompt": "Why does a valid IDAT checksum not suffice before IHDR?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Chunk order is a separate format requirement."
+          },
+          {
+            "id": "B",
+            "text": "IDAT is always an unknown critical type."
+          },
+          {
+            "id": "C",
+            "text": "A checksum specifies the image dimensions."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s19-h1",
+          "text": "Recognize IHDR before applying the general header-seen requirement."
+        },
+        {
+          "id": "s19-h2",
+          "text": "Keep type recognition separate from each handler\u2019s length and ordering checks."
+        }
+      ],
+      "recipes": [
+        "s19-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s19.tex",
+      "prerequisites": [
+        "s18"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_ihdr",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s20",
+      "region": "collect_ihdr",
+      "title": "Accept one bounded RGB header",
+      "checkpoint": "collect_ihdr_ready",
+      "quiz": {
+        "id": "q20",
+        "prompt": "When are parsed dimensions published in the descriptor?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Immediately after reading width."
+          },
+          {
+            "id": "B",
+            "text": "After the whole accepted container reaches the publication region."
+          },
+          {
+            "id": "C",
+            "text": "Before checking IHDR length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s20-h1",
+          "text": "Read dimensions as PNG fields and validate their numerical bounds."
+        },
+        {
+          "id": "s20-h2",
+          "text": "Do not store successful output fields while later chunks can still fail."
+        }
+      ],
+      "recipes": [
+        "s20-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s20.tex",
+      "prerequisites": [
+        "s19"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_ihdr_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s21",
+      "region": "collect_next",
+      "title": "Advance one validated envelope",
+      "checkpoint": "collect_next_ready",
+      "quiz": {
+        "id": "q21",
+        "prompt": "How far does a chunk with one payload byte advance the file cursor?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One byte."
+          },
+          {
+            "id": "B",
+            "text": "Nine bytes."
+          },
+          {
+            "id": "C",
+            "text": "Thirteen bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s21-h1",
+          "text": "The next cursor follows the payload and its stored CRC."
+        },
+        {
+          "id": "s21-h2",
+          "text": "Apply one extent to both the address and remaining count."
+        }
+      ],
+      "recipes": [
+        "s21-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s21.tex",
+      "prerequisites": [
+        "s20"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_next_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s22",
+      "region": "collect_plte",
+      "title": "Admit only a well-formed optional palette",
+      "checkpoint": "collect_plte_ready",
+      "quiz": {
+        "id": "q22",
+        "prompt": "What does a three-byte PLTE payload contain?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One RGB palette entry."
+          },
+          {
+            "id": "B",
+            "text": "Three complete scanlines."
+          },
+          {
+            "id": "C",
+            "text": "A native doubleword."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s22-h1",
+          "text": "Check both the ordering flags and the payload length."
+        },
+        {
+          "id": "s22-h2",
+          "text": "A multiple of three is not sufficient if the length is zero."
+        }
+      ],
+      "recipes": [
+        "s22-1"
+      ],
+      "fixture": "palette",
+      "kind": "edit",
+      "content": "native/collect-s22.tex",
+      "prerequisites": [
+        "s21"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_plte_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s23",
+      "region": "collect_ancillary",
+      "title": "Distinguish skippable metadata from excluded features",
+      "checkpoint": "collect_ancillary_ready",
+      "quiz": {
+        "id": "q23",
+        "prompt": "What does an accepted non-IDAT chunk after IDAT establish?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A later IDAT may restart the same consecutive group."
+          },
+          {
+            "id": "B",
+            "text": "The IDAT group has ended."
+          },
+          {
+            "id": "C",
+            "text": "Its payload must be decoded as pixels."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s23-h1",
+          "text": "Recognized but unsupported image features have explicit rejection rules."
+        },
+        {
+          "id": "s23-h2",
+          "text": "Preserve the difference between \u201cIDAT has begun\u201d and \u201cits consecutive group has ended.\u201d"
+        }
+      ],
+      "recipes": [
+        "s23-1"
+      ],
+      "fixture": "metadata",
+      "kind": "edit",
+      "content": "native/collect-s23.tex",
+      "prerequisites": [
+        "s22"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_ancillary_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s24",
+      "region": "collect_idat",
+      "title": "Reserve destination bytes before copying",
+      "checkpoint": "collect_idat_ready",
+      "quiz": {
+        "id": "q24",
+        "prompt": "When must the capacity check occur?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After the last payload store."
+          },
+          {
+            "id": "B",
+            "text": "Before the first payload store."
+          },
+          {
+            "id": "C",
+            "text": "Only when IEND is reached."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s24-h1",
+          "text": "Reserve a whole admitted payload before entering its byte loop."
+        },
+        {
+          "id": "s24-h2",
+          "text": "An empty IDAT changes ordering state even though it copies no bytes."
+        }
+      ],
+      "recipes": [
+        "s24-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s24.tex",
+      "prerequisites": [
+        "s23"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_idat_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s25",
+      "region": "collect_copy",
+      "title": "Join payload bytes without their envelopes",
+      "checkpoint": "collect_copy_ready",
+      "quiz": {
+        "id": "q25",
+        "prompt": "What follows the first copied 0x78 in the joined stream?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The first IDAT CRC."
+          },
+          {
+            "id": "B",
+            "text": "The next IDAT payload byte 0x01."
+          },
+          {
+            "id": "C",
+            "text": "The next chunk length word."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s25-h1",
+          "text": "The compressed output contains payload bytes only."
+        },
+        {
+          "id": "s25-h2",
+          "text": "Keep the destination cursor across chunks; reset the source payload cursor for each one."
+        }
+      ],
+      "recipes": [
+        "s25-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s25.tex",
+      "prerequisites": [
+        "s24"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_copy_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s26",
+      "region": "collect_iend",
+      "title": "Require a final empty IEND and enough joined bytes",
+      "checkpoint": "collect_iend_ready",
+      "quiz": {
+        "id": "q26",
+        "prompt": "What does collector success establish about DEFLATE?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every compressed symbol has been decoded."
+          },
+          {
+            "id": "B",
+            "text": "The collected payload is ready for separate inflation checks."
+          },
+          {
+            "id": "C",
+            "text": "Its Adler checksum is necessarily valid."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s26-h1",
+          "text": "A valid IEND CRC does not excuse trailing selected bytes."
+        },
+        {
+          "id": "s26-h2",
+          "text": "The six-byte minimum is a wrapper-size bound, not decompression."
+        }
+      ],
+      "recipes": [
+        "s26-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s26.tex",
+      "prerequisites": [
+        "s25"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_iend_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s27",
+      "region": "collect_publish",
+      "title": "Publish the completed container result together",
+      "checkpoint": "collect_publish_ready",
+      "quiz": {
+        "id": "q27",
+        "prompt": "Why is the predicted inflated count 35 rather than 30?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Each of five rows includes one filter byte."
+          },
+          {
+            "id": "B",
+            "text": "Every RGB sample has a padding byte."
+          },
+          {
+            "id": "C",
+            "text": "The PNG signature has five bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s27-h1",
+          "text": "Publish the result only after every admitted chunk has passed its checks."
+        },
+        {
+          "id": "s27-h2",
+          "text": "The inflated row still contains its selector byte."
+        }
+      ],
+      "recipes": [
+        "s27-1"
+      ],
+      "fixture": "worked",
+      "kind": "edit",
+      "content": "native/collect-s27.tex",
+      "prerequisites": [
+        "s26"
+      ],
+      "stage": "png-collector-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "collect_publish_ready",
+        "completedStageCheck": "checks/collect.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s28",
+      "region": "inflate_bounds",
+      "title": "Reject unsupported counts before pointer access",
+      "checkpoint": "inflate_bounds_ready",
+      "quiz": {
+        "id": "q28",
+        "prompt": "Why is six the minimum outer input count?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Two zlib header bytes and four checksum bytes require six bytes."
+          },
+          {
+            "id": "B",
+            "text": "Every supported stream produces six pixels."
+          },
+          {
+            "id": "C",
+            "text": "The bit reader always loads six bytes at once."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s28-h1",
+          "text": "Keep input and output counts separate."
+        },
+        {
+          "id": "s28-h2",
+          "text": "Use unsigned comparisons without narrowing the arguments."
+        }
+      ],
+      "recipes": [
+        "s28-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s28.tex",
+      "prerequisites": [
+        "s27"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_bounds_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s29",
+      "region": "inflate_header",
+      "title": "Validate the zlib header and its advertised window",
+      "checkpoint": "inflate_header_ready",
+      "quiz": {
+        "id": "q29",
+        "prompt": "What does the window code bound?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The number of bytes in IHDR."
+          },
+          {
+            "id": "B",
+            "text": "The permitted backward match distance."
+          },
+          {
+            "id": "C",
+            "text": "The framebuffer stride."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s29-h1",
+          "text": "Check method, window code, flags and header check separately."
+        },
+        {
+          "id": "s29-h2",
+          "text": "Retain the derived history limit for the later match decoder."
+        }
+      ],
+      "recipes": [
+        "s29-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s29.tex",
+      "prerequisites": [
+        "s28"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_header_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s30",
+      "region": "inflate_state",
+      "title": "Reserve the checksum bytes from the bit reader",
+      "checkpoint": "inflate_state_ready",
+      "quiz": {
+        "id": "q30",
+        "prompt": "Where is the compressed-data end for a 46-byte zlib stream?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At offset 46."
+          },
+          {
+            "id": "B",
+            "text": "At offset 42, before the checksum."
+          },
+          {
+            "id": "C",
+            "text": "At output offset 35."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s30-h1",
+          "text": "Use the input count to locate the trailer."
+        },
+        {
+          "id": "s30-h2",
+          "text": "Use the expected output count only for the output end."
+        }
+      ],
+      "recipes": [
+        "s30-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s30.tex",
+      "prerequisites": [
+        "s29"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_state_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s31",
+      "region": "inflate_refill",
+      "title": "Refill only from the compressed byte window",
+      "checkpoint": "bits_ready",
+      "quiz": {
+        "id": "q31",
+        "prompt": "When does a zero-bit request require a refill?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always."
+          },
+          {
+            "id": "B",
+            "text": "Only before the first block."
+          },
+          {
+            "id": "C",
+            "text": "Never."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s31-h1",
+          "text": "Test available bits before loading another byte."
+        },
+        {
+          "id": "s31-h2",
+          "text": "The compressed end deliberately excludes the trailer."
+        }
+      ],
+      "recipes": [
+        "s31-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s31.tex",
+      "prerequisites": [
+        "s30"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "bits_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s32",
+      "region": "inflate_extract",
+      "title": "Consume the low bits and retain the remainder",
+      "checkpoint": "inflate_bits_ready",
+      "quiz": {
+        "id": "q32",
+        "prompt": "Does extracting three buffered bits advance the input cursor?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, by three bytes."
+          },
+          {
+            "id": "B",
+            "text": "No; the earlier refill already consumed its byte."
+          },
+          {
+            "id": "C",
+            "text": "Yes, by one output pixel."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s32-h1",
+          "text": "Mask before shifting away the consumed field."
+        },
+        {
+          "id": "s32-h2",
+          "text": "Update bit count independently from byte cursor."
+        }
+      ],
+      "recipes": [
+        "s32-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s32.tex",
+      "prerequisites": [
+        "s31"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_bits_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s33",
+      "region": "inflate_dispatch",
+      "title": "Separate the final flag from the block type",
+      "checkpoint": "stored_block",
+      "quiz": {
+        "id": "q33",
+        "prompt": "What does field value one describe?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A final stored block."
+          },
+          {
+            "id": "B",
+            "text": "A nonfinal fixed block."
+          },
+          {
+            "id": "C",
+            "text": "An already verified checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s33-h1",
+          "text": "Separate one flag bit from the two type bits."
+        },
+        {
+          "id": "s33-h2",
+          "text": "Do not treat an unfinished recognized handler as a malformed type."
+        }
+      ],
+      "recipes": [
+        "s33-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s33.tex",
+      "prerequisites": [
+        "s32"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "stored_block",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s34",
+      "region": "inflate_align",
+      "title": "Discard stored-block padding before its length",
+      "checkpoint": "inflate_align_ready",
+      "quiz": {
+        "id": "q34",
+        "prompt": "What happens to the byte cursor during alignment here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It advances by five."
+          },
+          {
+            "id": "B",
+            "text": "It moves back to the header."
+          },
+          {
+            "id": "C",
+            "text": "It stays at the next byte already selected by refill."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s34-h1",
+          "text": "Discard buffered padding without rereading the header byte."
+        },
+        {
+          "id": "s34-h2",
+          "text": "Keep alignment confined to stored blocks."
+        }
+      ],
+      "recipes": [
+        "s34-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s34.tex",
+      "prerequisites": [
+        "s33"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_align_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s35",
+      "region": "inflate_lengths",
+      "title": "Read LEN and NLEN as sixteen-bit fields",
+      "checkpoint": "inflate_lengths_ready",
+      "quiz": {
+        "id": "q35",
+        "prompt": "What follows from LEN XOR NLEN equaling 65535?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "LEN is necessarily within the output capacity."
+          },
+          {
+            "id": "B",
+            "text": "The two stored length fields are complementary."
+          },
+          {
+            "id": "C",
+            "text": "The complete Adler checksum is correct."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s35-h1",
+          "text": "Retain the first helper result before the second call overwrites it."
+        },
+        {
+          "id": "s35-h2",
+          "text": "The length fields use the ordinary low-bit reader, not big-endian assembly."
+        }
+      ],
+      "recipes": [
+        "s35-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s35.tex",
+      "prerequisites": [
+        "s34"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_lengths_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s36",
+      "region": "inflate_stored_bounds",
+      "title": "Check readable and writable payload extents",
+      "checkpoint": "inflate_stored_bounds_ready",
+      "quiz": {
+        "id": "q36",
+        "prompt": "Which bounds must be established before copying?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the source extent."
+          },
+          {
+            "id": "B",
+            "text": "Only the destination extent."
+          },
+          {
+            "id": "C",
+            "text": "Both source availability and destination space."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s36-h1",
+          "text": "Compare lengths with remaining counts before forming copy loops."
+        },
+        {
+          "id": "s36-h2",
+          "text": "Do not let a valid complement stand in for a window check."
+        }
+      ],
+      "recipes": [
+        "s36-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s36.tex",
+      "prerequisites": [
+        "s35"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_stored_bounds_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s37",
+      "region": "inflate_copy",
+      "title": "Copy a stored payload exactly once",
+      "checkpoint": "inflate_copy_ready",
+      "quiz": {
+        "id": "q37",
+        "prompt": "How many bytes does an empty stored block copy?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero."
+          },
+          {
+            "id": "B",
+            "text": "One padding byte."
+          },
+          {
+            "id": "C",
+            "text": "Four checksum bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s37-h1",
+          "text": "Test for the empty range before loading."
+        },
+        {
+          "id": "s37-h2",
+          "text": "Advance the two byte cursors together for a stored payload."
+        }
+      ],
+      "recipes": [
+        "s37-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s37.tex",
+      "prerequisites": [
+        "s36"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_copy_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s38",
+      "region": "inflate_block_done",
+      "title": "Continue nonfinal blocks without publishing success",
+      "checkpoint": "inflate_final_ready",
+      "quiz": {
+        "id": "q38",
+        "prompt": "What must survive a transition to another block?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The accumulated output cursor."
+          },
+          {
+            "id": "B",
+            "text": "The previous block length as the next length."
+          },
+          {
+            "id": "C",
+            "text": "A claim of final success."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s38-h1",
+          "text": "Use the final flag retained when selecting this block."
+        },
+        {
+          "id": "s38-h2",
+          "text": "Continue appending to the same output window."
+        }
+      ],
+      "recipes": [
+        "s38-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s38.tex",
+      "prerequisites": [
+        "s37"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_final_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s39",
+      "region": "inflate_exact",
+      "title": "Require exact output and compressed-byte completion",
+      "checkpoint": "inflate_exact_ready",
+      "quiz": {
+        "id": "q39",
+        "prompt": "Can matching Adler-32 replace the output-cursor equality?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, because checksums uniquely identify every byte sequence."
+          },
+          {
+            "id": "B",
+            "text": "No; checksum agreement does not establish how many bytes were produced."
+          },
+          {
+            "id": "C",
+            "text": "Yes, if the destination was prefilled."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s39-h1",
+          "text": "Check actual cursor positions, not just the requested counts."
+        },
+        {
+          "id": "s39-h2",
+          "text": "Reject unread compressed bytes before treating the next four bytes as the trailer."
+        }
+      ],
+      "recipes": [
+        "s39-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s39.tex",
+      "prerequisites": [
+        "s38"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_exact_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s40",
+      "region": "inflate_adler",
+      "title": "Compute Adler over the produced row range",
+      "checkpoint": "inflate_adler_ready",
+      "quiz": {
+        "id": "q40",
+        "prompt": "What does the Adler helper receive in its second argument here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The end address of the output range."
+          },
+          {
+            "id": "B",
+            "text": "The compressed count."
+          },
+          {
+            "id": "C",
+            "text": "The expected CRC."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s40-h1",
+          "text": "Use the updated first sum when advancing the second."
+        },
+        {
+          "id": "s40-h2",
+          "text": "Only produced output belongs in this checksum."
+        }
+      ],
+      "recipes": [
+        "s40-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s40.tex",
+      "prerequisites": [
+        "s39"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_adler_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s41",
+      "region": "inflate_trailer",
+      "title": "Read the reserved checksum in PNG stream order",
+      "checkpoint": "inflate_trailer_ready",
+      "quiz": {
+        "id": "q41",
+        "prompt": "Why not read the trailer with an ordinary native word load?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its four bytes are explicitly big-endian, independently of target order."
+          },
+          {
+            "id": "B",
+            "text": "Its checksum contains eight bytes."
+          },
+          {
+            "id": "C",
+            "text": "A native load always computes Adler automatically."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s41-h1",
+          "text": "Keep file byte order separate from native workspace fields."
+        },
+        {
+          "id": "s41-h2",
+          "text": "The outer input bound and reserved end establish four readable trailer bytes."
+        }
+      ],
+      "recipes": [
+        "s41-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s41.tex",
+      "prerequisites": [
+        "s40"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_trailer_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s42",
+      "region": "inflate_checksum",
+      "title": "Compare the two checksum values",
+      "checkpoint": "inflate_checksum_ready",
+      "quiz": {
+        "id": "q42",
+        "prompt": "Why can the bad-Adler fixture reach the inflater?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The host helper preserves valid PNG chunk CRCs around the changed zlib stream."
+          },
+          {
+            "id": "B",
+            "text": "The collector already decoded all rows."
+          },
+          {
+            "id": "C",
+            "text": "The final checksum is ignored for stored blocks."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s42-h1",
+          "text": "Distinguish compressed-container checks from inflated-data checks."
+        },
+        {
+          "id": "s42-h2",
+          "text": "Keep the failure return count zero even if row scratch contains all bytes."
+        }
+      ],
+      "recipes": [
+        "s42-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s42.tex",
+      "prerequisites": [
+        "s41"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_checksum_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s43",
+      "region": "inflate_publish",
+      "title": "Return the completed stored-stage result",
+      "checkpoint": "inflate_publish_ready",
+      "quiz": {
+        "id": "q43",
+        "prompt": "Why does the whole program still print its development message?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The inflater returned the wrong count."
+          },
+          {
+            "id": "B",
+            "text": "Row reconstruction and framebuffer publication remain unfinished."
+          },
+          {
+            "id": "C",
+            "text": "A stored block cannot contain PNG row bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s43-h1",
+          "text": "Inspect the inflater return before the wrapper advances to the next unfinished stage."
+        },
+        {
+          "id": "s43-h2",
+          "text": "Do not award a completed inflater grade while Huffman paths are missing."
+        }
+      ],
+      "recipes": [
+        "s43-1"
+      ],
+      "kind": "edit",
+      "content": "native/inflate-s43.tex",
+      "prerequisites": [
+        "s42"
+      ],
+      "stage": "png-inflater-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "inflate_publish_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s44",
+      "region": "huff_fixed",
+      "title": "Initialize the fixed code lengths",
+      "checkpoint": "huff_fixed_ready",
+      "quiz": {
+        "id": "q44",
+        "prompt": "Which values are stored in the fixed length vector?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The output pixel values."
+          },
+          {
+            "id": "B",
+            "text": "The number of code bits assigned to each symbol."
+          },
+          {
+            "id": "C",
+            "text": "The compressed input addresses."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s44-h1",
+          "text": "Write one byte per length, indexed by symbol."
+        },
+        {
+          "id": "s44-h2",
+          "text": "Do not remove reserved fixed symbols from the table definition."
+        }
+      ],
+      "recipes": [
+        "s44-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s44.tex",
+      "prerequisites": [
+        "s43"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_fixed_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s45",
+      "region": "huff_tree_clear",
+      "title": "Clear one table before counting",
+      "checkpoint": "huff_tree_cleared",
+      "quiz": {
+        "id": "q45",
+        "prompt": "Why clear the table on every build?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Counts belong to the new alphabet, not its predecessor."
+          },
+          {
+            "id": "B",
+            "text": "The source vector is always a string."
+          },
+          {
+            "id": "C",
+            "text": "A cleared count automatically gives every symbol a code."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s45-h1",
+          "text": "Clear count words rather than the read-only format tables."
+        },
+        {
+          "id": "s45-h2",
+          "text": "Retain separate cursors for input lengths and output counts."
+        }
+      ],
+      "recipes": [
+        "s45-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s45.tex",
+      "prerequisites": [
+        "s44"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_tree_cleared",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s46",
+      "region": "huff_tree_count",
+      "title": "Count lengths without treating zero as a code",
+      "checkpoint": "huff_tree_counted",
+      "quiz": {
+        "id": "q46",
+        "prompt": "Does a zero length denote a zero-bit data code?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, one that produces a zero byte."
+          },
+          {
+            "id": "B",
+            "text": "Only in the fixed alphabet."
+          },
+          {
+            "id": "C",
+            "text": "No; that symbol is absent."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s46-h1",
+          "text": "Validate before multiplying a length into a word offset."
+        },
+        {
+          "id": "s46-h2",
+          "text": "Track declared slots and present symbols separately."
+        }
+      ],
+      "recipes": [
+        "s46-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s46.tex",
+      "prerequisites": [
+        "s45"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_tree_counted",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s47",
+      "region": "huff_tree_prefix",
+      "title": "Compute placement offsets and prefix space",
+      "checkpoint": "huff_tree_prefix_ready",
+      "quiz": {
+        "id": "q47",
+        "prompt": "What does placement offset 24 for length eight mean?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The input cursor is at byte 24."
+          },
+          {
+            "id": "B",
+            "text": "Twenty-four present symbols have shorter codes."
+          },
+          {
+            "id": "C",
+            "text": "Every eight-bit code has numerical value 24."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s47-h1",
+          "text": "An exclusive offset is measured before adding this length\u2019s count."
+        },
+        {
+          "id": "s47-h2",
+          "text": "Use a separate signed prefix-space calculation to detect oversubscription."
+        }
+      ],
+      "recipes": [
+        "s47-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s47.tex",
+      "prerequisites": [
+        "s46"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_tree_prefix_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s48",
+      "region": "huff_tree_shape",
+      "title": "Apply the permitted sparse-alphabet cases",
+      "checkpoint": "huff_tree_shape_ready",
+      "quiz": {
+        "id": "q48",
+        "prompt": "Which incomplete data-alphabet case is permitted here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Any alphabet whose lengths are at most fifteen."
+          },
+          {
+            "id": "B",
+            "text": "Every alphabet with two symbols."
+          },
+          {
+            "id": "C",
+            "text": "A single present symbol with length one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s48-h1",
+          "text": "Keep strict code-length policy separate from data policies."
+        },
+        {
+          "id": "s48-h2",
+          "text": "An unused distance alphabet is different from an unused bit pattern in a one-code alphabet."
+        }
+      ],
+      "recipes": [
+        "s48-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s48.tex",
+      "prerequisites": [
+        "s47"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_tree_shape_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s49",
+      "region": "huff_tree_symbols",
+      "title": "Place symbols in length and numerical order",
+      "checkpoint": "huff_tree_symbols_ready",
+      "quiz": {
+        "id": "q49",
+        "prompt": "Where is fixed literal zero in the ordered array?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At index zero."
+          },
+          {
+            "id": "B",
+            "text": "At index twenty-four."
+          },
+          {
+            "id": "C",
+            "text": "At its file byte offset."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s49-h1",
+          "text": "Enumerating symbols upward supplies the tie-break order within a length."
+        },
+        {
+          "id": "s49-h2",
+          "text": "Store symbol IDs as halfwords, not length bytes."
+        }
+      ],
+      "recipes": [
+        "s49-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s49.tex",
+      "prerequisites": [
+        "s48"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_tree_symbols_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s50",
+      "region": "huff_symbol_state",
+      "title": "Start a symbol search at the shortest length",
+      "checkpoint": "huff_symbol_state_ready",
+      "quiz": {
+        "id": "q50",
+        "prompt": "Which state survives between symbol calls?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The unread bit reservoir."
+          },
+          {
+            "id": "B",
+            "text": "The previous symbol\u2019s accumulated code."
+          },
+          {
+            "id": "C",
+            "text": "A forced byte alignment."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s50-h1",
+          "text": "Reset code-search variables without discarding unread input bits."
+        },
+        {
+          "id": "s50-h2",
+          "text": "Count zero is not a search length."
+        }
+      ],
+      "recipes": [
+        "s50-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s50.tex",
+      "prerequisites": [
+        "s49"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_symbol_state_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s51",
+      "region": "huff_symbol_refill",
+      "title": "Reuse buffered bits or refill one byte",
+      "checkpoint": "decode_has_byte",
+      "quiz": {
+        "id": "q51",
+        "prompt": "When should a symbol search discard the remaining header-byte bits?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Before every symbol."
+          },
+          {
+            "id": "B",
+            "text": "Before every eight-bit code."
+          },
+          {
+            "id": "C",
+            "text": "It should retain them and consume them in sequence."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s51-h1",
+          "text": "Check the available count before a byte load."
+        },
+        {
+          "id": "s51-h2",
+          "text": "Use the same compressed end bound as the ordinary bit reader."
+        }
+      ],
+      "recipes": [
+        "s51-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s51.tex",
+      "prerequisites": [
+        "s50"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "decode_has_byte",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s52",
+      "region": "huff_symbol_step",
+      "title": "Compare a code in arrival order",
+      "checkpoint": "decode_found",
+      "quiz": {
+        "id": "q52",
+        "prompt": "What identifies a matching code at one length?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its difference from the first code lies within that length\u2019s count."
+          },
+          {
+            "id": "B",
+            "text": "Its numerical value equals the symbol number."
+          },
+          {
+            "id": "C",
+            "text": "Its bits are all zero."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s52-h1",
+          "text": "Huffman code order differs from an ordinary low-bit numerical field."
+        },
+        {
+          "id": "s52-h2",
+          "text": "Advance code length only after testing this length\u2019s range."
+        }
+      ],
+      "recipes": [
+        "s52-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s52.tex",
+      "prerequisites": [
+        "s51"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "decode_found",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s53",
+      "region": "huff_symbol_found",
+      "title": "Look up the selected symbol ID",
+      "checkpoint": "huff_symbol_ready",
+      "quiz": {
+        "id": "q53",
+        "prompt": "Does every value returned by this helper represent a row byte?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, in every alphabet."
+          },
+          {
+            "id": "B",
+            "text": "No; the selected alphabet and caller determine its meaning."
+          },
+          {
+            "id": "C",
+            "text": "Only if the source address is aligned."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s53-h1",
+          "text": "Keep the within-length rank separate from the final symbol ID."
+        },
+        {
+          "id": "s53-h2",
+          "text": "Use the array after the count words, not the count cursor itself."
+        }
+      ],
+      "recipes": [
+        "s53-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s53.tex",
+      "prerequisites": [
+        "s52"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_symbol_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s54",
+      "region": "huff_classify",
+      "title": "Separate literals, end-of-block and lengths",
+      "checkpoint": "emit_literal",
+      "quiz": {
+        "id": "q54",
+        "prompt": "What does symbol 256 do?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Writes byte zero to output."
+          },
+          {
+            "id": "B",
+            "text": "Ends this block and follows its completion path."
+          },
+          {
+            "id": "C",
+            "text": "Supplies a match distance."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s54-h1",
+          "text": "Classify before interpreting extra-bit tables."
+        },
+        {
+          "id": "s54-h2",
+          "text": "Keep end-of-block separate from the retained final-block flag."
+        }
+      ],
+      "recipes": [
+        "s54-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s54.tex",
+      "prerequisites": [
+        "s53"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "emit_literal",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s55",
+      "region": "huff_literal",
+      "title": "Emit one literal within the row window",
+      "checkpoint": "huff_literal_ready",
+      "quiz": {
+        "id": "q55",
+        "prompt": "What bounds a literal store?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The current output cursor must precede its expected end."
+          },
+          {
+            "id": "B",
+            "text": "The compressed cursor must equal the checksum address."
+          },
+          {
+            "id": "C",
+            "text": "The symbol must contain eight code bits."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s55-h1",
+          "text": "A literal\u2019s code length and its one-byte output size are different quantities."
+        },
+        {
+          "id": "s55-h2",
+          "text": "Reuse the existing exact-output check after the block ends."
+        }
+      ],
+      "recipes": [
+        "s55-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s55.tex",
+      "prerequisites": [
+        "s54"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_literal_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s56",
+      "region": "huff_length",
+      "title": "Expand a length code and its extra bits",
+      "checkpoint": "huff_length_ready",
+      "quiz": {
+        "id": "q56",
+        "prompt": "What is the reconstructed length in this fixture?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "272 bytes."
+          },
+          {
+            "id": "B",
+            "text": "31 bytes."
+          },
+          {
+            "id": "C",
+            "text": "34 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s56-h1",
+          "text": "Validate the symbol before turning it into a table index."
+        },
+        {
+          "id": "s56-h2",
+          "text": "Preserve the base across a helper that returns through the same result register."
+        }
+      ],
+      "recipes": [
+        "s56-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s56.tex",
+      "prerequisites": [
+        "s55"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_length_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s57",
+      "region": "huff_distance_symbol",
+      "title": "Decode the separate distance alphabet",
+      "checkpoint": "huff_distance_symbol_ready",
+      "quiz": {
+        "id": "q57",
+        "prompt": "What does distance symbol zero select?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The first distance-table entry, whose base is one."
+          },
+          {
+            "id": "B",
+            "text": "A distance of zero."
+          },
+          {
+            "id": "C",
+            "text": "End-of-block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s57-h1",
+          "text": "Use the distance table rather than decoding through the literal/length table."
+        },
+        {
+          "id": "s57-h2",
+          "text": "Bound reserved symbols before either lookup."
+        }
+      ],
+      "recipes": [
+        "s57-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s57.tex",
+      "prerequisites": [
+        "s56"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_distance_symbol_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s58",
+      "region": "huff_distance_extra",
+      "title": "Construct the full backward distance",
+      "checkpoint": "huff_distance_ready",
+      "quiz": {
+        "id": "q58",
+        "prompt": "May a zero-extra-bit distance fetch a new input byte?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, every distance consumes a byte."
+          },
+          {
+            "id": "B",
+            "text": "No; the zero-bit read retains the input cursor."
+          },
+          {
+            "id": "C",
+            "text": "Only after a final block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s58-h1",
+          "text": "A table symbol and its reconstructed distance are distinct values."
+        },
+        {
+          "id": "s58-h2",
+          "text": "The ordinary zero-bit field returns zero without consuming input."
+        }
+      ],
+      "recipes": [
+        "s58-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s58.tex",
+      "prerequisites": [
+        "s57"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_distance_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s59",
+      "region": "huff_match_bounds",
+      "title": "Admit a match before deriving copy addresses",
+      "checkpoint": "huff_match_bounds_ready",
+      "quiz": {
+        "id": "q59",
+        "prompt": "Which history bound is needed in addition to the advertised window?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Distance must fit bytes actually produced."
+          },
+          {
+            "id": "B",
+            "text": "Distance must equal the current source-file offset."
+          },
+          {
+            "id": "C",
+            "text": "Distance must divide the row width."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s59-h1",
+          "text": "Check counts before subtracting a backward pointer."
+        },
+        {
+          "id": "s59-h2",
+          "text": "A large window does not create earlier output bytes."
+        }
+      ],
+      "recipes": [
+        "s59-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s59.tex",
+      "prerequisites": [
+        "s58"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_match_bounds_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s60",
+      "region": "huff_match_copy",
+      "title": "Copy forward through overlapping history",
+      "checkpoint": "huff_match_copied",
+      "quiz": {
+        "id": "q60",
+        "prompt": "Where does the second match byte come from here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A new compressed literal."
+          },
+          {
+            "id": "B",
+            "text": "The output byte produced by the first match iteration."
+          },
+          {
+            "id": "C",
+            "text": "The stored Adler trailer."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s60-h1",
+          "text": "Overlapping matches depend on newly produced bytes."
+        },
+        {
+          "id": "s60-h2",
+          "text": "Keep compressed-input and history-copy cursors separate."
+        }
+      ],
+      "recipes": [
+        "s60-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s60.tex",
+      "prerequisites": [
+        "s59"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_match_copied",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s61",
+      "region": "huff_dynamic_counts",
+      "title": "Read the three dynamic description counts",
+      "checkpoint": "huff_dynamic_counts_ready",
+      "quiz": {
+        "id": "q61",
+        "prompt": "What does the first decoded count describe?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The expected output byte count."
+          },
+          {
+            "id": "B",
+            "text": "The declared literal/length alphabet size."
+          },
+          {
+            "id": "C",
+            "text": "The number of PNG rows."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s61-h1",
+          "text": "These three fields use ordinary low-bit numerical reads."
+        },
+        {
+          "id": "s61-h2",
+          "text": "Keep declared counts distinct from symbol-use restrictions."
+        }
+      ],
+      "recipes": [
+        "s61-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s61.tex",
+      "prerequisites": [
+        "s60"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_dynamic_counts_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s62",
+      "region": "huff_clear_alphabet",
+      "title": "Clear all nineteen possible code-length entries",
+      "checkpoint": "huff_alphabet_cleared",
+      "quiz": {
+        "id": "q62",
+        "prompt": "Why clear nineteen entries when only eighteen follow?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The untransmitted symbol must remain absent."
+          },
+          {
+            "id": "B",
+            "text": "The nineteenth entry is always a pixel byte."
+          },
+          {
+            "id": "C",
+            "text": "The input requires an extra padding length."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s62-h1",
+          "text": "Reset absent entries before reading the advertised subset."
+        },
+        {
+          "id": "s62-h2",
+          "text": "Block-local mutable lengths must not inherit an earlier alphabet."
+        }
+      ],
+      "recipes": [
+        "s62-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s62.tex",
+      "prerequisites": [
+        "s61"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_alphabet_cleared",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s63",
+      "region": "huff_read_alphabet",
+      "title": "Place the three-bit lengths by their permutation",
+      "checkpoint": "huff_alphabet_ready",
+      "quiz": {
+        "id": "q63",
+        "prompt": "Where is the first received length stored?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At the slot for code-length symbol sixteen."
+          },
+          {
+            "id": "B",
+            "text": "At symbol zero\u2019s slot."
+          },
+          {
+            "id": "C",
+            "text": "At the row output cursor."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s63-h1",
+          "text": "Use incoming position to index the order table, then use that symbol to index lengths."
+        },
+        {
+          "id": "s63-h2",
+          "text": "The three-bit value is a length, not a symbol ID."
+        }
+      ],
+      "recipes": [
+        "s63-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s63.tex",
+      "prerequisites": [
+        "s62"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_alphabet_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s64",
+      "region": "huff_code_tree",
+      "title": "Build the alphabet that describes the data alphabets",
+      "checkpoint": "huff_code_tree_ready",
+      "quiz": {
+        "id": "q64",
+        "prompt": "What does this intermediate Huffman table decode?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Packed display words."
+          },
+          {
+            "id": "B",
+            "text": "Only backward distances."
+          },
+          {
+            "id": "C",
+            "text": "Lengths and repeat operators for the two data alphabets."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s64-h1",
+          "text": "Use strict policy for the code-length alphabet."
+        },
+        {
+          "id": "s64-h2",
+          "text": "Set one bounded combined range for both data alphabets."
+        }
+      ],
+      "recipes": [
+        "s64-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s64.tex",
+      "prerequisites": [
+        "s63"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_code_tree_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s65",
+      "region": "huff_direct_length",
+      "title": "Distinguish a direct length from a repeat operator",
+      "checkpoint": "store_lengths",
+      "quiz": {
+        "id": "q65",
+        "prompt": "What does decoded symbol one mean in this table?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A literal data byte one."
+          },
+          {
+            "id": "B",
+            "text": "One code length whose value is one."
+          },
+          {
+            "id": "C",
+            "text": "A distance of one."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s65-h1",
+          "text": "The selected table determines the meaning of a decoded symbol."
+        },
+        {
+          "id": "s65-h2",
+          "text": "Prepare a value and count; leave the bounded store to the shared region."
+        }
+      ],
+      "recipes": [
+        "s65-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s65.tex",
+      "prerequisites": [
+        "s64"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "store_lengths",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s66",
+      "region": "huff_store_lengths",
+      "title": "Bound each expansion before storing its bytes",
+      "checkpoint": "huff_lengths_stored",
+      "quiz": {
+        "id": "q66",
+        "prompt": "Which boundary limits a repeat expansion?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The first alphabet boundary even when more declared entries remain."
+          },
+          {
+            "id": "B",
+            "text": "The current code\u2019s bit length."
+          },
+          {
+            "id": "C",
+            "text": "The end of the declared combined length vector."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s66-h1",
+          "text": "Compare the run count before adding or storing."
+        },
+        {
+          "id": "s66-h2",
+          "text": "Use one expansion loop for direct values and repeats."
+        }
+      ],
+      "recipes": [
+        "s66-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s66.tex",
+      "prerequisites": [
+        "s65"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_lengths_stored",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s67",
+      "region": "huff_repeat16",
+      "title": "Repeat a previous length only when one exists",
+      "checkpoint": "huff_repeat16_ready",
+      "quiz": {
+        "id": "q67",
+        "prompt": "Can operation sixteen repeat a previous zero length?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, when a previous expanded entry exists."
+          },
+          {
+            "id": "B",
+            "text": "No, it can repeat only nonzero lengths."
+          },
+          {
+            "id": "C",
+            "text": "Only in a fixed block."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s67-h1",
+          "text": "Test predecessor existence before loading cursor minus one."
+        },
+        {
+          "id": "s67-h2",
+          "text": "Preserve the repeated value across the extra-bit read."
+        }
+      ],
+      "recipes": [
+        "s67-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s67.tex",
+      "prerequisites": [
+        "s66"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_repeat16_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s68",
+      "region": "huff_repeat17",
+      "title": "Expand a short run of zero lengths",
+      "checkpoint": "huff_repeat17_ready",
+      "quiz": {
+        "id": "q68",
+        "prompt": "What is the largest run produced by operation seventeen?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Seven entries."
+          },
+          {
+            "id": "B",
+            "text": "Ten entries."
+          },
+          {
+            "id": "C",
+            "text": "Seventeen entries."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s68-h1",
+          "text": "Add the prescribed bias after reading the field."
+        },
+        {
+          "id": "s68-h2",
+          "text": "The common store still owns the remaining-capacity check."
+        }
+      ],
+      "recipes": [
+        "s68-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s68.tex",
+      "prerequisites": [
+        "s67"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_repeat17_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s69",
+      "region": "huff_repeat18",
+      "title": "Expand a long run without bypassing the same bound",
+      "checkpoint": "huff_repeat18_ready",
+      "quiz": {
+        "id": "q69",
+        "prompt": "What does a run of 138 zeros populate?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The code-length vector."
+          },
+          {
+            "id": "B",
+            "text": "The framebuffer."
+          },
+          {
+            "id": "C",
+            "text": "The stored Adler checksum."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s69-h1",
+          "text": "Code-length runs describe metadata rather than decoded image samples."
+        },
+        {
+          "id": "s69-h2",
+          "text": "Reuse the existing expansion bound instead of a second unchecked loop."
+        }
+      ],
+      "recipes": [
+        "s69-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s69.tex",
+      "prerequisites": [
+        "s68"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_repeat18_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s70",
+      "region": "huff_end_code",
+      "title": "Require end-of-block before building the data tables",
+      "checkpoint": "huff_end_code_ready",
+      "quiz": {
+        "id": "q70",
+        "prompt": "Why require a code for symbol 256?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It supplies the image width."
+          },
+          {
+            "id": "B",
+            "text": "Every compressed block needs an end-of-block symbol."
+          },
+          {
+            "id": "C",
+            "text": "It always emits 256 bytes."
+          }
+        ]
+      },
+      "hints": [
+        {
+          "id": "s70-h1",
+          "text": "Check the literal/length portion rather than a distance entry."
+        },
+        {
+          "id": "s70-h2",
+          "text": "A complete prefix shape alone does not guarantee the required symbol is present."
+        }
+      ],
+      "recipes": [
+        "s70-1"
+      ],
+      "kind": "edit",
+      "content": "native/huff-s70.tex",
+      "prerequisites": [
+        "s69"
+      ],
+      "stage": "png-huffman-construction",
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "huff_end_code_ready",
+        "completedStageCheck": "checks/inflate.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s71",
+      "region": "row_shape",
+      "checkpoint": "row_shape_ready",
+      "recipe": "s71-1",
+      "title": "Admit a complete row shape",
+      "quiz": {
+        "id": "png-s71-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It establishes the permitted shape and bounds the arithmetic."
+          },
+          {
+            "id": "B",
+            "text": "It discovers the compression strategy."
+          },
+          {
+            "id": "C",
+            "text": "It changes the filter selectors."
+          }
+        ],
+        "prompt": "Why bound dimensions before calculating the predicted count?"
+      },
+      "hints": [
+        {
+          "id": "png-s71-h1",
+          "text": "Each scanline adds one byte beyond its RGB samples."
+        },
+        {
+          "id": "png-s71-h2",
+          "text": "Check width and height independently before computing h(1+3w)."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s71.tex",
+      "prerequisites": [
+        "s70"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s71-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_shape_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s72",
+      "region": "row_selectors",
+      "checkpoint": "row_selectors_ready",
+      "recipe": "s72-1",
+      "title": "Validate every selector before writing",
+      "quiz": {
+        "id": "png-s72-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the final selector."
+          },
+          {
+            "id": "B",
+            "text": "All row-buffer bytes."
+          },
+          {
+            "id": "C",
+            "text": "Only framebuffer padding."
+          }
+        ],
+        "prompt": "What must remain unchanged after a bad final selector?"
+      },
+      "hints": [
+        {
+          "id": "png-s72-h1",
+          "text": "A previous row may have a nonzero predictor even when its selector is valid."
+        },
+        {
+          "id": "png-s72-h2",
+          "text": "The validation pass reads row starts and performs no sample stores."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s72.tex",
+      "prerequisites": [
+        "s71"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s72-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_selectors_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s73",
+      "region": "row_zero",
+      "checkpoint": "row_zero_ready",
+      "recipe": "s73-1",
+      "title": "Construct the first row\u2019s upper boundary",
+      "quiz": {
+        "id": "png-s73-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It stores compressed history."
+          },
+          {
+            "id": "B",
+            "text": "It replaces every None row."
+          },
+          {
+            "id": "C",
+            "text": "It supplies defined upper neighbors for the first row."
+          }
+        ],
+        "prompt": "Why use a private zero row?"
+      },
+      "hints": [
+        {
+          "id": "png-s73-h1",
+          "text": "Upper samples must exist even for a first-row Up filter."
+        },
+        {
+          "id": "png-s73-h2",
+          "text": "Clear only the sample extent; preserve the separately saved original byte count."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s73.tex",
+      "prerequisites": [
+        "s72"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s73-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_zero_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s74",
+      "region": "row_cursor",
+      "checkpoint": "row_cursor_ready",
+      "recipe": "s74-1",
+      "title": "Separate selector and sample cursors",
+      "quiz": {
+        "id": "png-s74-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "At the corresponding previous sample, or the zero row."
+          },
+          {
+            "id": "B",
+            "text": "At the previous selector."
+          },
+          {
+            "id": "C",
+            "text": "At compressed input."
+          }
+        ],
+        "prompt": "Where does the upper cursor point?"
+      },
+      "hints": [
+        {
+          "id": "png-s74-h1",
+          "text": "Each row start includes one selector byte."
+        },
+        {
+          "id": "png-s74-h2",
+          "text": "The exclusive sample end is first sample plus 3w, not plus 1+3w."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s74.tex",
+      "prerequisites": [
+        "s73"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s74-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_cursor_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s75",
+      "region": "row_finish",
+      "checkpoint": "row_advance_ready",
+      "recipe": "s75-1",
+      "title": "Advance from one row to the next",
+      "quiz": {
+        "id": "png-s75-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The current row\u2019s first sample address."
+          },
+          {
+            "id": "B",
+            "text": "The current selector address."
+          },
+          {
+            "id": "C",
+            "text": "The end of compressed input."
+          }
+        ],
+        "prompt": "What becomes the next row\u2019s upper address?"
+      },
+      "hints": [
+        {
+          "id": "png-s75-h1",
+          "text": "The previous row\u2019s selector must not become an upper sample."
+        },
+        {
+          "id": "png-s75-h2",
+          "text": "Return the original complete row-buffer count, including selectors."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s75.tex",
+      "prerequisites": [
+        "s74"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s75-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_advance_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s76",
+      "region": "row_neighbors",
+      "checkpoint": "row_neighbors_ready",
+      "recipe": "s76-1",
+      "title": "Load neighbors from reconstructed samples",
+      "quiz": {
+        "id": "png-s76-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "One byte."
+          },
+          {
+            "id": "B",
+            "text": "Three bytes."
+          },
+          {
+            "id": "C",
+            "text": "One complete scanline."
+          }
+        ],
+        "prompt": "What is the left-neighbor distance in RGB8?"
+      },
+      "hints": [
+        {
+          "id": "png-s76-h1",
+          "text": "Follow one color channel across two adjacent pixels."
+        },
+        {
+          "id": "png-s76-h2",
+          "text": "Use the current sample offset to avoid reading before the first pixel."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s76.tex",
+      "prerequisites": [
+        "s75"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s76-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_neighbors_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s77",
+      "region": "row_store",
+      "checkpoint": "row_store_ready",
+      "recipe": "s77-1",
+      "title": "Restore and store one sample",
+      "quiz": {
+        "id": "png-s77-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "255."
+          },
+          {
+            "id": "B",
+            "text": "260."
+          },
+          {
+            "id": "C",
+            "text": "4."
+          }
+        ],
+        "prompt": "What is the restored byte for residual 10 and predictor 250?"
+      },
+      "hints": [
+        {
+          "id": "png-s77-h1",
+          "text": "The sum may be wider than the stored byte."
+        },
+        {
+          "id": "png-s77-h2",
+          "text": "Advance both sample cursors together after the store."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s77.tex",
+      "prerequisites": [
+        "s76"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s77-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_store_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s78",
+      "region": "row_left",
+      "checkpoint": "row_left_ready",
+      "recipe": "s78-1",
+      "title": "Select the Sub predictor",
+      "quiz": {
+        "id": "png-s78-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The preceding blue residual."
+          },
+          {
+            "id": "B",
+            "text": "The selector byte."
+          },
+          {
+            "id": "C",
+            "text": "The reconstructed sample of the same channel."
+          }
+        ],
+        "prompt": "Which left value does Sub use?"
+      },
+      "hints": [
+        {
+          "id": "png-s78-h1",
+          "text": "The common byte loop has already loaded the neighbors."
+        },
+        {
+          "id": "png-s78-h2",
+          "text": "Do not add the residual inside the predictor-selection region."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s78.tex",
+      "prerequisites": [
+        "s77"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s78-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_left_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s79",
+      "region": "row_average",
+      "checkpoint": "row_average_ready",
+      "recipe": "s79-1",
+      "title": "Average before reducing the sample",
+      "quiz": {
+        "id": "png-s79-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Before division."
+          },
+          {
+            "id": "B",
+            "text": "After the predictor has been computed and added to the residual."
+          },
+          {
+            "id": "C",
+            "text": "After either neighbor load."
+          }
+        ],
+        "prompt": "When may the Average sum be reduced to eight bits?"
+      },
+      "hints": [
+        {
+          "id": "png-s79-h1",
+          "text": "Two unsigned bytes can sum to more than 255."
+        },
+        {
+          "id": "png-s79-h2",
+          "text": "The right shift acts on the full nonnegative sum."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s79.tex",
+      "prerequisites": [
+        "s78"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s79-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_average_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s80",
+      "region": "row_paeth",
+      "checkpoint": "row_paeth_ready",
+      "recipe": "s80-1",
+      "title": "Implement Paeth with its specified ties",
+      "quiz": {
+        "id": "png-s80-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The selected neighboring byte."
+          },
+          {
+            "id": "B",
+            "text": "The estimate regardless of its distance."
+          },
+          {
+            "id": "C",
+            "text": "The sum of all three neighbors."
+          }
+        ],
+        "prompt": "What does Paeth return?"
+      },
+      "hints": [
+        {
+          "id": "png-s80-h1",
+          "text": "Compare three distances, keeping equality in the earlier candidate\u2019s favor."
+        },
+        {
+          "id": "png-s80-h2",
+          "text": "Converge on the checkpoint after placing the selected value in the common predictor register."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s80.tex",
+      "prerequisites": [
+        "s79"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s80-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_paeth_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s81",
+      "region": "row_vector_bound",
+      "checkpoint": "row_vector_ready",
+      "recipe": "s81-1",
+      "title": "Admit only a full Up vector",
+      "quiz": {
+        "id": "png-s81-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, because another row follows."
+          },
+          {
+            "id": "B",
+            "text": "No, its RGB sample extent is fifteen bytes."
+          },
+          {
+            "id": "C",
+            "text": "Yes, because a selector adds one byte."
+          }
+        ],
+        "prompt": "Does width five admit a full sixteen-byte Up group?"
+      },
+      "hints": [
+        {
+          "id": "png-s81-h1",
+          "text": "A selector is excluded from the sample extent."
+        },
+        {
+          "id": "png-s81-h2",
+          "text": "Use unsigned remaining-byte comparison rather than testing whether any bytes remain."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s81.tex",
+      "prerequisites": [
+        "s80"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s81-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_vector_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s82",
+      "region": "row_vector_body",
+      "checkpoint": "row_vector_written",
+      "recipe": "s82-1",
+      "title": "Add and store sixteen independent lanes",
+      "quiz": {
+        "id": "png-s82-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Signed saturating addition."
+          },
+          {
+            "id": "B",
+            "text": "Unsigned saturating addition."
+          },
+          {
+            "id": "C",
+            "text": "Wrapping byte addition."
+          }
+        ],
+        "prompt": "Which vector addition matches PNG byte restoration?"
+      },
+      "hints": [
+        {
+          "id": "png-s82-h1",
+          "text": "Use the same modulo-256 rule as the scalar byte store."
+        },
+        {
+          "id": "png-s82-h2",
+          "text": "Store only the admitted group, then advance both sample cursors equally."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s82.tex",
+      "prerequisites": [
+        "s81"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s82-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_vector_written",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s83",
+      "region": "row_up_tail",
+      "checkpoint": "row_up_tail_ready",
+      "recipe": "s83-1",
+      "title": "Finish the Up tail without overreading",
+      "quiz": {
+        "id": "png-s83-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Load one vector to discover its length."
+          },
+          {
+            "id": "B",
+            "text": "Reach row completion without a sample load."
+          },
+          {
+            "id": "C",
+            "text": "Overwrite the selector with zero."
+          }
+        ],
+        "prompt": "What must an empty Up tail do?"
+      },
+      "hints": [
+        {
+          "id": "png-s83-h1",
+          "text": "Test the exclusive end before the first scalar tail load."
+        },
+        {
+          "id": "png-s83-h2",
+          "text": "The completion checkpoint follows the loop; branch there when no samples remain."
+        }
+      ],
+      "kind": "edit",
+      "content": "native/row-s83.tex",
+      "prerequisites": [
+        "s82"
+      ],
+      "stage": "png-row-construction",
+      "recipes": [
+        "s83-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "row_up_tail_ready",
+        "completedStageCheck": "checks/rows.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s84",
+      "kind": "edit",
+      "region": "pack_admit",
+      "checkpoint": "pack_admitted",
+      "recipe": "s84-1",
+      "title": "Admit the destination geometry",
+      "quiz": {
+        "id": "png-s84-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It describes the distance between row starts, including padding."
+          },
+          {
+            "id": "B",
+            "text": "It includes compressed input bytes."
+          },
+          {
+            "id": "C",
+            "text": "It changes the RGB channel order."
+          }
+        ],
+        "prompt": "Why may stride exceed width?"
+      },
+      "hints": [
+        {
+          "id": "png-s84-h1",
+          "text": "The descriptor stores native doublewords, unlike the PNG\u2019s big-endian byte fields."
+        },
+        {
+          "id": "png-s84-h2",
+          "text": "Check both the lower and upper stride limits before calculating byte extents."
+        }
+      ],
+      "content": "native/pack-s84.tex",
+      "prerequisites": [
+        "s83"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s84-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_admitted",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s85",
+      "kind": "edit",
+      "region": "pack_windows",
+      "checkpoint": "pack_windows_ready",
+      "recipe": "s85-1",
+      "title": "Validate the exact read and write extents",
+      "quiz": {
+        "id": "png-s85-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "40."
+          },
+          {
+            "id": "B",
+            "text": "280."
+          },
+          {
+            "id": "C",
+            "text": "340."
+          }
+        ],
+        "prompt": "How many writable bytes does the worked stride-seventeen destination require?"
+      },
+      "hints": [
+        {
+          "id": "png-s85-h1",
+          "text": "Count the gaps before the last row, not after it."
+        },
+        {
+          "id": "png-s85-h2",
+          "text": "The source count includes selectors; active output bytes do not."
+        }
+      ],
+      "content": "native/pack-s85.tex",
+      "prerequisites": [
+        "s84"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s85-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_windows_ready",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s86",
+      "kind": "edit",
+      "region": "pack_state",
+      "checkpoint": "pack_state_ready",
+      "recipe": "s86-1",
+      "title": "Retain mode, strides and success count",
+      "quiz": {
+        "id": "png-s86-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The destination allocation capacity."
+          },
+          {
+            "id": "B",
+            "text": "The compressed file length."
+          },
+          {
+            "id": "C",
+            "text": "The active pixel-byte count."
+          }
+        ],
+        "prompt": "Which count belongs in the success result?"
+      },
+      "hints": [
+        {
+          "id": "png-s86-h1",
+          "text": "Preserve the mode before its incoming register becomes the byte stride."
+        },
+        {
+          "id": "png-s86-h2",
+          "text": "Width times height counts pixels; each display word consumes four bytes."
+        }
+      ],
+      "content": "native/pack-s86.tex",
+      "prerequisites": [
+        "s85"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s86-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_state_ready",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s87",
+      "kind": "edit",
+      "region": "pack_cursor",
+      "checkpoint": "pack_cursor_ready",
+      "recipe": "s87-1",
+      "title": "Start a row after its retained selector",
+      "quiz": {
+        "id": "png-s87-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Pixels."
+          },
+          {
+            "id": "B",
+            "text": "Individual RGB bytes."
+          },
+          {
+            "id": "C",
+            "text": "PNG chunks."
+          }
+        ],
+        "prompt": "What unit does the packing remainder use?"
+      },
+      "hints": [
+        {
+          "id": "png-s87-h1",
+          "text": "Only the row prefix is skipped here."
+        },
+        {
+          "id": "png-s87-h2",
+          "text": "Keep the stable row start separate from the moving output-word cursor."
+        }
+      ],
+      "content": "native/pack-s87.tex",
+      "prerequisites": [
+        "s86"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s87-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_cursor_ready",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s88",
+      "kind": "edit",
+      "region": "pack_pixel",
+      "checkpoint": "pack_pixel_written",
+      "recipe": "s88-1",
+      "title": "Assemble and store one numeric display word",
+      "quiz": {
+        "id": "png-s88-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A fixed sequence of little-endian byte stores."
+          },
+          {
+            "id": "B",
+            "text": "A native word store of the constructed value."
+          },
+          {
+            "id": "C",
+            "text": "A store of the selector followed by RGB."
+          }
+        ],
+        "prompt": "Which store preserves the numeric display-word interpretation in both byte orders?"
+      },
+      "hints": [
+        {
+          "id": "png-s88-h1",
+          "text": "Use unsigned byte loads so a sample above 127 does not sign-extend."
+        },
+        {
+          "id": "png-s88-h2",
+          "text": "The channel shifts describe a numeric word, not a universal memory-byte sequence."
+        }
+      ],
+      "content": "native/pack-s88.tex",
+      "prerequisites": [
+        "s87"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s88-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_pixel_written",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s89",
+      "kind": "edit",
+      "region": "pack_row",
+      "checkpoint": "pack_row_advanced",
+      "recipe": "s89-1",
+      "title": "Advance by the destination row stride",
+      "quiz": {
+        "id": "png-s89-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The end of the active pixel row plus a full stride."
+          },
+          {
+            "id": "B",
+            "text": "The end of the compressed stream."
+          },
+          {
+            "id": "C",
+            "text": "The previous row start plus its declared stride."
+          }
+        ],
+        "prompt": "From which address is the next destination row derived?"
+      },
+      "hints": [
+        {
+          "id": "png-s89-h1",
+          "text": "The moving word cursor and the stable row-start cursor have different roles."
+        },
+        {
+          "id": "png-s89-h2",
+          "text": "Return forty active bytes for the worked image, regardless of padding extent."
+        }
+      ],
+      "content": "native/pack-s89.tex",
+      "prerequisites": [
+        "s88"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s89-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_row_advanced",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s90",
+      "kind": "edit",
+      "region": "pack_masks",
+      "checkpoint": "pack_masks_ready",
+      "recipe": "s90-1",
+      "title": "Write the four immutable shuffle masks",
+      "quiz": {
+        "id": "png-s90-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The output expands sixteen three-byte pixels into sixteen four-byte words."
+          },
+          {
+            "id": "B",
+            "text": "Each input vector contains four selectors."
+          },
+          {
+            "id": "C",
+            "text": "The target has four byte orders."
+          }
+        ],
+        "prompt": "Why are four masks needed for three input vectors?"
+      },
+      "hints": [
+        {
+          "id": "png-s90-h1",
+          "text": "Work from global sample indices and the specific right/left operand pair."
+        },
+        {
+          "id": "png-s90-h2",
+          "text": "Each output word needs three selected bytes followed by one zero lane."
+        }
+      ],
+      "content": "native/pack-s90.tex",
+      "prerequisites": [
+        "s89"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s90-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_masks_ready",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s91",
+      "kind": "edit",
+      "region": "pack_load_masks",
+      "checkpoint": "pack_masks_loaded",
+      "recipe": "s91-1",
+      "title": "Load reusable masks before the row loop",
+      "quiz": {
+        "id": "png-s91-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It avoids reading any RGB data."
+          },
+          {
+            "id": "B",
+            "text": "The shuffle overwrites the destination that supplied its selectors."
+          },
+          {
+            "id": "C",
+            "text": "The masks depend on the current row\u2019s filter."
+          }
+        ],
+        "prompt": "Why keep a separate scratch shuffle destination?"
+      },
+      "hints": [
+        {
+          "id": "png-s91-h1",
+          "text": "The four table offsets are 0, 16, 32 and 48."
+        },
+        {
+          "id": "png-s91-h2",
+          "text": "Keep the address full-width even though the table itself is only 64 bytes."
+        }
+      ],
+      "content": "native/pack-s91.tex",
+      "prerequisites": [
+        "s90"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s91-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_masks_loaded",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s92",
+      "kind": "edit",
+      "region": "pack_vector_bound",
+      "checkpoint": "pack_vector_ready",
+      "recipe": "s92-1",
+      "title": "Admit sixteen complete pixels",
+      "quiz": {
+        "id": "png-s92-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "16."
+          },
+          {
+            "id": "B",
+            "text": "32."
+          },
+          {
+            "id": "C",
+            "text": "48."
+          }
+        ],
+        "prompt": "How many input sample bytes must be available for one admitted group?"
+      },
+      "hints": [
+        {
+          "id": "png-s92-h1",
+          "text": "This loop counts pixels, each with three source bytes."
+        },
+        {
+          "id": "png-s92-h2",
+          "text": "Do not lower the threshold merely because another scanline follows in memory."
+        }
+      ],
+      "content": "native/pack-s92.tex",
+      "prerequisites": [
+        "s91"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s92-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_vector_ready",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s93",
+      "kind": "edit",
+      "region": "pack_vector_load",
+      "checkpoint": "pack_inputs_loaded",
+      "recipe": "s93-1",
+      "title": "Load the three RGB input vectors",
+      "quiz": {
+        "id": "png-s93-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The later selectors identify exact byte positions across vectors."
+          },
+          {
+            "id": "B",
+            "text": "The missing channel is always zero."
+          },
+          {
+            "id": "C",
+            "text": "Vector loads discard incomplete pixels."
+          }
+        ],
+        "prompt": "Why can an input vector begin inside a pixel?"
+      },
+      "hints": [
+        {
+          "id": "png-s93-h1",
+          "text": "The group\u2019s first source address is already past the selector."
+        },
+        {
+          "id": "png-s93-h2",
+          "text": "Three complete byte-vector loads consume the same 48-byte window."
+        }
+      ],
+      "content": "native/pack-s93.tex",
+      "prerequisites": [
+        "s92"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s93-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_inputs_loaded",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s94",
+      "kind": "edit",
+      "region": "pack_shuffle_first",
+      "checkpoint": "pack_first_written",
+      "recipe": "s94-1",
+      "title": "Shuffle and write the first four words",
+      "quiz": {
+        "id": "png-s94-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A byte-vector store with a fixed byte order."
+          },
+          {
+            "id": "B",
+            "text": "A word-vector store."
+          },
+          {
+            "id": "C",
+            "text": "A halfword store of the red channel."
+          }
+        ],
+        "prompt": "Which vector store matches the scalar numeric-word store?"
+      },
+      "hints": [
+        {
+          "id": "png-s94-h1",
+          "text": "Byte selection builds the numeric word lanes; the store applies target word byte order."
+        },
+        {
+          "id": "png-s94-h2",
+          "text": "Copy the retained mask before using the scratch vector as the shuffle destination."
+        }
+      ],
+      "content": "native/pack-s94.tex",
+      "prerequisites": [
+        "s93"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s94-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_first_written",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s95",
+      "kind": "edit",
+      "region": "pack_shuffle_middle",
+      "checkpoint": "pack_middle_written",
+      "recipe": "s95-1",
+      "title": "Write both outputs that cross input boundaries",
+      "quiz": {
+        "id": "png-s95-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero."
+          },
+          {
+            "id": "B",
+            "text": "Thirty-two."
+          },
+          {
+            "id": "C",
+            "text": "Sixteen."
+          }
+        ],
+        "prompt": "For the second boundary shuffle, what is the mask\u2019s global-byte origin?"
+      },
+      "hints": [
+        {
+          "id": "png-s95-h1",
+          "text": "Identify the first input vector in each operand pair before deriving selectors."
+        },
+        {
+          "id": "png-s95-h2",
+          "text": "The two destination offsets are measured in output bytes, not input bytes."
+        }
+      ],
+      "content": "native/pack-s95.tex",
+      "prerequisites": [
+        "s94"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s95-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_middle_written",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s96",
+      "kind": "edit",
+      "region": "pack_shuffle_last",
+      "checkpoint": "pack_last_written",
+      "recipe": "s96-1",
+      "title": "Write the final four words without a fourth load",
+      "quiz": {
+        "id": "png-s96-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "No; the admitted 48 bytes already contain all sixteen pixels."
+          },
+          {
+            "id": "B",
+            "text": "Yes; output and input vector counts must match."
+          },
+          {
+            "id": "C",
+            "text": "Only in big-endian mode."
+          }
+        ],
+        "prompt": "Does the last output require a fourth RGB input-vector load?"
+      },
+      "hints": [
+        {
+          "id": "png-s96-h1",
+          "text": "Sixteen RGB pixels contain 48 bytes, not 64."
+        },
+        {
+          "id": "png-s96-h2",
+          "text": "The final mask\u2019s origin is the start of input vector two."
+        }
+      ],
+      "content": "native/pack-s96.tex",
+      "prerequisites": [
+        "s95"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s96-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_last_written",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s97",
+      "kind": "edit",
+      "region": "pack_vector_advance",
+      "checkpoint": "pack_vector_advanced",
+      "recipe": "s97-1",
+      "title": "Advance the whole group and finish its remainder",
+      "quiz": {
+        "id": "png-s97-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "48 bytes."
+          },
+          {
+            "id": "B",
+            "text": "64 bytes."
+          },
+          {
+            "id": "C",
+            "text": "Sixteen bytes."
+          }
+        ],
+        "prompt": "After one sixteen-pixel group, how far does the destination cursor move?"
+      },
+      "hints": [
+        {
+          "id": "png-s97-h1",
+          "text": "Input and output extents differ because packing expands each pixel by one byte."
+        },
+        {
+          "id": "png-s97-h2",
+          "text": "Leave the one-pixel remainder to the existing scalar pixel path."
+        }
+      ],
+      "content": "native/pack-s97.tex",
+      "prerequisites": [
+        "s96"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s97-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "pack_vector_advanced",
+        "completedStageCheck": "checks/pack.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s98",
+      "kind": "observe",
+      "region": null,
+      "checkpoint": "publication_rows_return",
+      "recipe": "s98-1",
+      "title": "Trace a late validation failure before packing",
+      "quiz": {
+        "id": "png-s98-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Attempt packing and ignore its result."
+          },
+          {
+            "id": "B",
+            "text": "Publish the dimensions but no byte count."
+          },
+          {
+            "id": "C",
+            "text": "Return before any packing call."
+          }
+        ],
+        "prompt": "What must follow a reconstruction failure?"
+      },
+      "hints": [
+        {
+          "id": "png-s98-h1",
+          "text": "Outer CRC and Adler checks do not validate filter selector values."
+        },
+        {
+          "id": "png-s98-h2",
+          "text": "Inspect the stage result at the return checkpoint before continuing the supplied branch."
+        }
+      ],
+      "content": "native/pack-s98.tex",
+      "prerequisites": [
+        "s97"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s98-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "publication_rows_return",
+        "completedStageCheck": "checks/decode.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s99",
+      "kind": "observe",
+      "region": null,
+      "checkpoint": "publication_blit_return",
+      "recipe": "s99-1",
+      "title": "Trace packing success before context publication",
+      "quiz": {
+        "id": "png-s99-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The three final context result fields."
+          },
+          {
+            "id": "B",
+            "text": "The already stored pixel words."
+          },
+          {
+            "id": "C",
+            "text": "The reconstructed row samples."
+          }
+        ],
+        "prompt": "What is still unpublished at this checkpoint?"
+      },
+      "hints": [
+        {
+          "id": "png-s99-h1",
+          "text": "Distinguish the local four-field packing descriptor from the caller\u2019s nine-field decoder context."
+        },
+        {
+          "id": "png-s99-h2",
+          "text": "The packer\u2019s active-byte result is already available; do not replace it with the destination extent."
+        }
+      ],
+      "content": "native/pack-s99.tex",
+      "prerequisites": [
+        "s98"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s99-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "publication_blit_return",
+        "completedStageCheck": "checks/decode.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    },
+    {
+      "id": "s100",
+      "kind": "edit",
+      "region": "publish_results",
+      "checkpoint": "publication_results_ready",
+      "recipe": "s100-1",
+      "title": "Publish results after the last successful stage",
+      "quiz": {
+        "id": "png-s100-q1",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The required padded destination extent."
+          },
+          {
+            "id": "B",
+            "text": "The successfully packed active pixel-byte count."
+          },
+          {
+            "id": "C",
+            "text": "The original file count."
+          }
+        ],
+        "prompt": "Which value belongs at decoder-context offset 64?"
+      },
+      "hints": [
+        {
+          "id": "png-s100-h1",
+          "text": "The publication region is reached only after packing returns zero."
+        },
+        {
+          "id": "png-s100-h2",
+          "text": "Preserve the successful count while restoring the caller\u2019s machine state."
+        }
+      ],
+      "content": "native/pack-s100.tex",
+      "prerequisites": [
+        "s99"
+      ],
+      "stage": "png-packing-construction",
+      "recipes": [
+        "s100-1"
+      ],
+      "completion": {
+        "type": "native-observation",
+        "checkpoint": "publication_results_ready",
+        "completedStageCheck": "checks/decode.kts",
+        "scope": "Compare the native Observe checkpoint during construction; run the completed stage after its regions are filled. Instructor cumulative checks are separate."
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/loader.kts",
+    "checks/collect.kts",
+    "checks/inflate.kts",
+    "checks/rows.kts",
+    "checks/pack.kts",
+    "checks/decode.kts",
+    "checks/reuse.kts",
+    "checks/caller.kts"
+  ],
+  "exports": [
+    "package.json",
+    "README.md",
+    "assignment.tex",
+    "starter",
+    "native",
+    "checks",
+    "captures",
+    "reading.json",
+    "construction",
+    "inputs.json",
+    "steps.json",
+    "grade.py"
+  ]
+}

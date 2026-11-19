@@ -1,0 +1,16 @@
+\section{Step 71 Admit a complete row shape}
+The inflater has produced a byte sequence, but that alone does not establish that the sequence consists of complete PNG scanlines. For RGB8, each scanline contains one selector followed by three bytes per pixel. Reconstruction receives the exact count, width and height through the interface above. Establish their relationship before reading the first selector.
+
+Fill \texttt{row\_shape}. Begin with failure results already supplied in \texttt{\$v0} and \texttt{\$v1}. Require each dimension to be from one through 512, using unsigned comparisons so a negative register pattern is rejected as a large value. Only after bounding the dimensions, compute sample bytes per row in \texttt{\$t0}, full row bytes in \texttt{\$t1}, and predicted total in \texttt{\$t2}. Require the supplied count to equal the prediction. Branch to \texttt{row\_early} on failure.
+
+For the worked image, retain 6, 7 and 35 in those three temporaries. No row-buffer load is needed to prove this shape. The bounded dimensions also explain why these products fit; merely switching an unchecked multiplication to a wider instruction would not establish that the resulting count is acceptable.
+
+\paragraph{Observe} Use \texttt{s71-1}; stop before \texttt{row\_shape\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} Why bound dimensions before calculating the predicted count?
+\begin{itemize}
+\item[A.] It establishes the permitted shape and bounds the arithmetic.
+\item[B.] It discovers the compression strategy.
+\item[C.] It changes the filter selectors.
+\end{itemize}

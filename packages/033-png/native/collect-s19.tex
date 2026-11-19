@@ -1,0 +1,13 @@
+\section{Step 19 Choose a type only after its CRC passes}\label{png-collect-s19}
+Implement \texttt{collect\_dispatch}. Decode the four type letters into a number, retain it at frame offset 88, and recognize IHDR, IDAT, IEND and PLTE. IHDR selects \texttt{collect\_ihdr}. For every other type, require the IHDR-seen flag before selecting its handler. Unrecognized types fall through to the ancillary-policy region.
+
+The first worked type selects \texttt{collect\_ihdr} while the flag set is zero. An IDAT encountered before IHDR must fail even if its CRC is valid. Matching a familiar four-byte number does not establish that the chunk is permitted at the current position.
+
+\paragraph{Observe} Use \texttt{s19-1}; stop before \texttt{collect\_ihdr}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} Why does a valid IDAT checksum not suffice before IHDR?
+\begin{itemize}
+\item[A.] Chunk order is a separate format requirement.
+\item[B.] IDAT is always an unknown critical type.
+\item[C.] A checksum specifies the image dimensions.
+\end{itemize}

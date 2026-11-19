@@ -1,0 +1,16 @@
+\section{Step 72 Validate every selector before writing}
+A selector tells reconstruction which predictor was used on a row. Values zero through four are supported. A failure in the last row must leave every sample unchanged, including samples in earlier valid rows. That requirement determines the order of work: scan the selectors first, then reconstruct.
+
+Fill \texttt{row\_selectors}. Start a cursor in \texttt{\$t3} at the row buffer and a remaining-row count in \texttt{\$t4} at height. Load one unsigned selector, reject values at least five, advance by the full row width from \texttt{\$t1}, and repeat exactly height times. Do not scan sample bytes as though each were a selector.
+
+The worked selector sequence is 0, 2, 1, 3, 4 at byte offsets 0, 7, 14, 21 and 28. At the checkpoint the cursor is buffer plus 35, the remaining count is zero, and all 35 buffer bytes still match the inflater output. Later, use the bad-selector recipe: its last selector is five, while its PNG CRCs and zlib checksum are valid. That separates a reconstruction failure from an earlier parser failure.
+
+\paragraph{Observe} Use \texttt{s72-1}; stop before \texttt{row\_selectors\_ready}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} What must remain unchanged after a bad final selector?
+\begin{itemize}
+\item[A.] Only the final selector.
+\item[B.] All row-buffer bytes.
+\item[C.] Only framebuffer padding.
+\end{itemize}

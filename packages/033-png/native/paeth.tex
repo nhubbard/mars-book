@@ -1,0 +1,18 @@
+\section{Resolve Paeth ties in the specified order}
+Compute $p=a+b-c$ in signed widened arithmetic. Find the absolute distances from $p$
+to $a$, $b$ and $c$. Choose $a$ if its distance is no greater than both others;
+otherwise choose $b$ if its distance is no greater than $c$'s; otherwise choose $c$.
+The order matters when distances tie. The predictor is an existing neighbor value,
+not the estimate $p$ itself.
+
+For $a=200$, $b=40$, $c=100$, the estimate is 140. The distances are 60, 100 and 40,
+so the predictor is 100. A residual of 200 reconstructs $(200+100)\bmod256=44$.
+For $a=0$, $b=3$, $c=2$, the estimate is one. Left and upper-left
+distances tie at one; select the left value, zero. For $a=3$, $b=0$, $c=2$,
+upper and upper-left distances tie at one; select the upper value, zero. Keep these intermediate calculations wider than a byte.
+
+An algebraic optimization can compute the same distances as
+$|b-c|$, $|a-c|$ and $|a+b-2c|$. Derive this by substituting for $p$, then preserve
+the same comparison order. Check all triples of selected boundary samples and
+random triples against the straightforward formula before using the rearrangement.
+Saving an addition is useful only when the tie and signedness behavior remains exact.

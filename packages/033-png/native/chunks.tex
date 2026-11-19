@@ -1,0 +1,25 @@
+\section{Read the envelope before interpreting its payload}
+The eight signature bytes are hexadecimal \texttt{89 50 4E 47 0D 0A 1A 0A}. After them,
+a chunk begins with a big-endian length. The length counts only payload bytes. For
+IHDR, that length is thirteen, so the complete chunk occupies 25 bytes. The next
+chunk begins at file offset 33: eight signature bytes plus those 25 bytes.
+
+\Needspace{10\baselineskip}
+\begin{longtable}{p{24mm}p{35mm}p{91mm}}
+\toprule Part & Byte count & Interpretation \\\midrule
+Length & 4 & Unsigned, big-endian payload size \\
+Type & 4 & Four ASCII letters; included in CRC \\
+Payload & Declared length & Chunk-specific data; included in CRC \\
+CRC & 4 & Big-endian stored CRC of type and payload \\\bottomrule
+\end{longtable}
+A big-endian field is a byte convention, independent of the simulator's memory byte
+order. Assemble its numerical value from individual bytes. For example,
+\texttt{00 00 02 00} means 512 in either target byte order. Validate that value as a
+count before using it as a dimension. A machine word load from the file may be both
+unaligned and interpreted in the wrong byte order.
+
+The type's first letter distinguishes critical from ancillary chunks through its
+ASCII case bit. Test this property only after checking that the bytes are letters.
+A matching name alone does not establish legal placement: a second IHDR still fails.
+Maintain explicit state for header seen, palette seen, IDAT not started/open/closed,
+and IEND reached. Test the transition before processing a known chunk's payload.

@@ -1,0 +1,21 @@
+\section{Vectorize only independent work}
+For an Up row, each residual needs only the reconstructed byte directly above it.
+After the preceding row is complete, sixteen lanes can load residuals and upper
+samples, apply wrapping byte addition, and store sixteen reconstructed bytes.
+\texttt{addv.b} provides the modulo-256 addition; saturating addition would change
+bright samples. Process only complete sixteen-byte groups and finish with a scalar
+tail. The first row uses zero upper samples, including in the tail.
+
+RGB packing has a different geometry: sixteen pixels contain 48 input bytes and need
+64 output bytes. Three input vectors must feed four output vectors. Derive each
+shuffle selector from its source byte index and its output channel; insert zero for
+the high byte of every output word. Check word values in both memory byte orders.
+Widths 15, 16 and 17 expose missing or overlapping tails; width one exposes an
+unconditional vector load immediately.
+
+Sub has a dependency within a row. Its second pixel depends on the reconstructed
+first pixel, not merely on an input vector already in memory. A parallel prefix
+method is possible, but requires a separate derivation for the three interleaved
+channel chains and the carry from the preceding group. Retain scalar Sub while
+measuring the independent Up and packing changes. Average and Paeth also consume
+left reconstructed values; do not apply the Up transformation to them.

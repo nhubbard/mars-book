@@ -1,0 +1,13 @@
+\section{Step 34 Discard stored-block padding before its length}\label{png-inflate-s34}
+Fill \texttt{inflate\_align}. Clear both reservoir and available-bit count before the stored block's length reads. This discards the unused high bits of the byte containing its header. The byte cursor already points to the next whole byte and must not be advanced again.
+
+The first header read left five padding bits buffered. After alignment, both reservoir fields are zero while the input cursor stays at offset three. Those discarded bits can be nonzero; they are alignment padding, not length bits. Fixed and dynamic blocks will not take this stored-only alignment path.
+
+\paragraph{Observe} Use \texttt{s34-1}; stop before \texttt{inflate\_align\_ready}. Inspect the state described above, then continue to the next unfinished boundary.
+
+\paragraph{Check} What happens to the byte cursor during alignment here?
+\begin{itemize}
+\item[A.] It advances by five.
+\item[B.] It moves back to the header.
+\item[C.] It stays at the next byte already selected by refill.
+\end{itemize}

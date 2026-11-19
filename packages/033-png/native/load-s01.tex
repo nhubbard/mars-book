@@ -1,0 +1,15 @@
+\section{Step 1 Validate the selected byte capacity}\label{png-load-s01}
+At \texttt{loader\_call}, \texttt{\$a0} points to the path, \texttt{\$a1} points to writable file storage, and \texttt{\$a2} is its selected byte capacity. Implement \texttt{load\_capacity}: initialize failure status one and result count zero, then reject zero or an unsigned capacity above 1048576. Branch to \texttt{load\_early} on either failure. Let a supported capacity fall through to the supplied frame setup. No path read or file operation belongs before these checks.
+
+Use the exact-fit recipe with capacity 115. Also try the wide-count recipe, whose value is decimal 4294967296. That value is a count; its low word happens to be zero. Comparing a narrowed value would discard the reason it exceeds the limit.
+
+Use \texttt{s01-1} and stop before \texttt{load\_capacity\_ready}.
+
+\paragraph{Observe} The supported case reaches load\_capacity\_ready with a2 equal to 115. The wide count returns status one and count zero without opening a file.
+
+\paragraph{Check} Why must the capacity comparison retain all 64 bits?
+\begin{itemize}
+\item[A.] The path is always more than four gigabytes long.
+\item[B.] A large count can have small low 32 bits.
+\item[C.] The PNG CRC is a 64-bit checksum.
+\end{itemize}
