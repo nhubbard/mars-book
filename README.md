@@ -206,14 +206,14 @@ completed; free-writing checks accept equivalent exact implementations. Instruct
 solutions and keys are separate and private. The four IDE capture plans are uncaptured.
 Substantive prose editing remains deferred until all 35 chapter drafts are complete.
 
-The PNG chapter has a native reading foundation at `drafts/png.tex`, with seventy-eight native
+The PNG chapter has a native reading foundation at `drafts/png.tex`, with 108 native
 reading and construction files, a pipeline figure, native tables, an actual IntelliJ-highlighted shuffle
 excerpt and reproducible RGB8 inputs. Two complete private prototypes now decode
 through framebuffer publication. Row checks cover scalar/MSA paths in both byte orders
 and address layouts (4400 cases); complete decoding adds 400 cases, including full
 512-by-512 output and late-failure preservation. Ten assembled faults are rejected.
 Measured complete calls on the repeated-row image fall from 37870732 to 18167820
-simulated instructions in MSA mode; the text records the input and boundary. All 113
+simulated instructions in MSA mode; the text records the input and boundary. All 120
 public tests pass. The MARS grader's byte-order option is committed separately with
 110 passing CLI tests. The supplied file caller and first ten construction steps now
 include nine editable loader regions, ten quizzes, twenty hints and fourteen observation
@@ -224,6 +224,11 @@ assembled regressions are rejected. Sixteen further edits develop the stored-blo
 inflater, with a native byte/bit trace and twenty-three recipes. Its scalar and batched
 Adler variants, two additional valid frame arrangements, the retained full inflater
 comparison and cumulative
-checks pass 2512 cases; eleven assembled faults are rejected. Huffman/row/packing
-construction, final feedback, PNG distributions and actual IDE captures remain next. The main manuscript
+checks pass 2512 cases; eleven assembled faults are rejected. Twenty-seven more steps
+complete fixed and dynamic Huffman construction, including canonical tables, bounded
+bit decoding, overlapping matches and all three length-repeat operations. Thirty-five
+public recipes accompany native frame, rank and bit-cursor tables. Completed variants,
+cumulative checkpoints and same-session checks pass 6868 simulator cases; fourteen
+assembled faults are rejected and ten actual-file runs pass. Row/packing construction,
+final feedback, PNG distributions and actual IDE captures remain next. The main manuscript
 retains 32 packaged chapters; the substantial author editing pass remains deferred.

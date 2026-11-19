@@ -1,0 +1,14 @@
+\section{Step 51 Reuse buffered bits or refill one byte}\label{png-huff-s51}
+Implement \texttt{huff\_symbol\_refill}. If unread bits remain, select \texttt{decode\_has\_byte}. Otherwise require an input byte before the reserved trailer, load it into the reservoir, advance the compressed cursor and set available bits to eight. The symbol reader consumes one arriving bit at a time.
+
+The first fixed symbol starts with five bits already buffered after the block header, so its first visit to this checkpoint performs no new load. Once those bits are exhausted, the same loop must refill before consuming another. It must never obtain that byte from the four reserved checksum bytes.
+
+\paragraph{Observe} Use \texttt{s51-1}; stop before \texttt{decode\_has\_byte}. Inspect the state described above before continuing.
+
+\Needspace{7\baselineskip}
+\paragraph{Check} When should a symbol search discard the remaining header-byte bits?
+\begin{itemize}
+\item[A.] Before every symbol.
+\item[B.] Before every eight-bit code.
+\item[C.] It should retain them and consume them in sequence.
+\end{itemize}

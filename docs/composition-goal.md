@@ -744,3 +744,21 @@ captures remain next. The integrated manuscript retains 32 packaged chapters; vi
 and APNG remain to be composed. The requested substantial prose revision stays deferred
 until the chapter drafts exist. Independent accessibility auditing and remote
 progression/hint enforcement remain unfinished. MARS and the reference IDE are unchanged.
+
+
+The PNG construction now reaches step 70. Twenty-seven newly authored native passages
+develop fixed lengths, canonical counts and symbol rank, code-bit arrival, literal and
+match bounds, forward overlapping copies, dynamic alphabets and repeat expansion.
+Native frame, canonical-rank and bit-cursor tables support the explanations; twenty-seven
+quizzes, fifty-four hints and thirty-five recipes accompany the construction. Earlier
+prose and measurements are retained. Fixed and dynamic development exits are replaced
+only when students attach the new unfinished stage to their own work.
+
+The comprehensive private gate passes 6868 simulator cases across byte orders and
+ordinary/above-4-GiB layouts, rejects fourteen assembled faults, and passes ten actual
+file runs. It includes five completed implementations/frame arrangements, all cumulative
+direct/caller observations and six-call same-session success/failure sequences. Host
+zlib, an independent bit-position oracle and image decoding verify the public fixtures.
+All 120 public tests pass. Row/packing construction, final feedback, PNG distributions,
+actual captures, video and APNG remain unfinished; 32 packaged chapters remain integrated.
+The requested major prose editing pass remains deferred until all drafts exist.
