@@ -2,7 +2,9 @@ package edu.missouristate.mars.book
 
 import com.google.gson.GsonBuilder
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.debugger.ui.DebuggerContentInfo.VARIABLES_CONTENT
 import com.intellij.execution.RunManager
+import com.intellij.execution.ui.RunContentManager
 import com.intellij.execution.configurations.ConfigurationType
 import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
@@ -49,6 +51,8 @@ import java.nio.file.StandardOpenOption.CREATE_NEW
 import javax.imageio.ImageIO
 import javax.swing.JDialog
 import javax.swing.JTree
+import javax.swing.JTable
+import javax.swing.JTextField
 import javax.swing.SwingUtilities
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Dispatchers
@@ -144,10 +148,14 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val breakpoint = writeAction { addBreakpoint(project, type, source, line) }
         var ownedSessionName: String? = null
         var lastObservedRows = emptyList<String>()
+        var memoryAddressRequested = false
+        var lastObservedTabs = emptyList<String>()
         try {
             withContext(Dispatchers.EDT) {
                 val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
-                frame.setSize(figure.width, figure.height)
+                val screen = frame.graphicsConfiguration.bounds
+                require(figure.width <= screen.width && figure.height <= screen.height) { "Requested viewport exceeds its screen" }
+                frame.setBounds(screen.x + (screen.width - figure.width) / 2, screen.y + (screen.height - figure.height) / 2, figure.width, figure.height)
                 frame.toFront()
                 val runManager = RunManager.getInstance(project)
                 val runType = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
@@ -165,6 +173,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             var previous: List<String>? = null
             var stable = 0
             var reportedRows: List<String>? = null
+            var reportedTabs: List<String>? = null
             while (true) {
                 val ready = withContext(Dispatchers.EDT) {
                     check(document.modificationStamp == sourceStamp) { "Fixture edited during capture" }
@@ -186,6 +195,30 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         balloons.forEach { it.hide() }
                         return@withContext null
                     }
+                    val descriptor = RunContentManager.getInstance(project).findContentDescriptor(
+                        DefaultDebugExecutor.getDebugExecutorInstance(), session.debugProcess.processHandler,
+                    ) ?: return@withContext null
+                    val ui = descriptor.runnerLayoutUi ?: return@withContext null
+                    lastObservedTabs = ui.contents.map { it.displayName }
+                    val content = if (figure.memoryView != null) ui.findContent("MarsMipsMemory")
+                        else ui.findContent(VARIABLES_CONTENT) ?: ui.contents.singleOrNull { isRegisterCaptureTab(it.displayName) }
+                    if (content == null) return@withContext null
+                    if (!content.component.isShowing) {
+                        ui.selectAndFocus(content, false, true)
+                        return@withContext null
+                    }
+                    figure.memoryView?.let { view ->
+                        if (!configureBottomCaptureHeight(content.component, view.minimumHeight)) return@withContext null
+                        if (!memoryAddressRequested) {
+                            val address = content.preferredFocusableComponent as? JTextField
+                                ?: error("The native memory tab does not expose its address field")
+                            if (!address.isEnabled) return@withContext null
+                            address.text = view.address
+                            address.postActionEvent()
+                            memoryAddressRequested = true
+                            return@withContext null
+                        }
+                    }
                     lastObservedRows = visibleRows(frame).map { it.text }
                     if (!figure.debuggerView.isEmpty) {
                         val tree = selectDebuggerTree(captureComponents(frame).filterIsInstance<JTree>().filter { it.isShowing }.toList(), figure.debuggerView)
@@ -197,12 +230,13 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     if (figure.expectedRows.any { expected -> rows.count { expected.matches(it.text) } != 1 }) return@withContext null
                     rows
                 }
-                if (reportedRows != lastObservedRows) {
-                    val progress = mapOf("figure" to figure.id, "observedDebuggerRows" to lastObservedRows)
+                if (reportedRows != lastObservedRows || reportedTabs != lastObservedTabs) {
+                    val progress = mapOf("figure" to figure.id, "observedDebuggerRows" to lastObservedRows, "observedDebuggerTabs" to lastObservedTabs)
                     withContext(Dispatchers.IO) {
                         Files.writeString(output.resolve(figure.id + "-progress.json"), GsonBuilder().setPrettyPrinting().create().toJson(progress))
                     }
                     reportedRows = lastObservedRows.toList()
+                    reportedTabs = lastObservedTabs.toList()
                 }
                 val texts = ready?.map { it.text }
                 stable = if (texts != null && texts == previous) stable + 1 else 0
@@ -248,9 +282,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             .mapNotNull { it.balloon }.filterNot { it.isDisposed }.distinct()
     }
 
-    private data class UiRow(val text: String, val bounds: Rectangle)
-
-    private fun visibleRows(root: Component): List<UiRow> = captureComponents(root).filterIsInstance<JTree>().filter { it.isShowing }.flatMap { tree ->
+    private fun visibleRows(root: Component): List<BookUiRow> = captureComponents(root).filterIsInstance<JTree>().filter { it.isShowing }.flatMap { tree ->
         (0 until tree.rowCount).mapNotNull { row ->
             val bounds = tree.getRowBounds(row) ?: return@mapNotNull null
             val visible = bounds.intersection(tree.visibleRect)
@@ -258,15 +290,22 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             val path = tree.getPathForRow(row)
             val text = renderedDebuggerRow(tree, path)
             val screen = tree.locationOnScreen
-            UiRow(text, Rectangle(screen.x + visible.x, screen.y + visible.y, visible.width, visible.height))
+            BookUiRow(text, Rectangle(screen.x + visible.x, screen.y + visible.y, visible.width, visible.height))
+        }
+    }.toList() + captureComponents(root).filterIsInstance<JTable>().filter { it.isShowing }.flatMap { table ->
+        val screen = table.locationOnScreen
+        renderedMemoryRows(table).map { row ->
+            BookUiRow(row.text, Rectangle(screen.x + row.bounds.x, screen.y + row.bounds.y, row.bounds.width, row.bounds.height),
+                row.cells.mapValues { (_, cell) -> Rectangle(screen.x + cell.x, screen.y + cell.y, cell.width, cell.height) })
         }
     }.toList()
 
-    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<UiRow>, line: Int, sourceStamp: Long, sourceUrl: String) {
+    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String) {
         val snapshot = withContext(Dispatchers.EDT) {
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             val root = frame.rootPane
             val viewport = Rectangle(root.locationOnScreen, root.size)
+            requireVisibleCaptureViewport(viewport, frame.graphicsConfiguration.bounds)
             val theme = checkNotNull(LafManager.getInstance().currentUIThemeLookAndFeel)
             check(theme.name == "IntelliJ Light" && !theme.isDark)
             val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
@@ -275,7 +314,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             check(captureBalloons(project).isEmpty()) { "Notification appeared before screenshot" }
             val callouts = figure.expectedRows.map { expected ->
                 val row = rows.single { expected.matches(it.text) }
-                mapOf("label" to expected.label, "box" to captureBox(row.bounds, viewport), "observedText" to row.text)
+                mapOf("label" to expected.label, "box" to captureBox(expected.column?.let { checkNotNull(row.cells[it]) } ?: row.bounds, viewport),
+                    "observedText" to row.text, "column" to expected.column)
             }.toMutableList()
             LearningUiHighlightingManager.clearHighlights()
             val point = editor.logicalPositionToXY(LogicalPosition(line, 0))
@@ -314,7 +354,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "viewport" to mapOf("width" to image.width, "height" to image.height),
                 "visibleAnalysisIndicators" to emptyList<String>(),
                 "notificationBalloonsVisible" to 0,
-                "debuggerView" to figure.debuggerView,
+                "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView,
                 "callouts" to snapshot.second, "observedDebuggerRows" to snapshot.third,
                 "sourceSha256" to figure.sourceSha256, "source" to figure.source,
                 "checkpoint" to figure.checkpoint, "sourceLine" to line + 1,

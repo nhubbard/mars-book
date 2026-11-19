@@ -37,6 +37,7 @@ data class BookCaptureFigure(
     val width: Int = 1280,
     val height: Int = 900,
     val debuggerView: BookDebuggerTreeView = BookDebuggerTreeView(),
+    val memoryView: BookMemoryView? = null,
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
@@ -47,7 +48,11 @@ data class BookCaptureFigure(
         require(width in 800..2560 && height in 600..1600) { "Unsupported viewport" }
         require(expectedRows.isNotEmpty()) { "A figure needs an observed debugger value" }
         debuggerView.validate()
+        memoryView?.validate()
+        require(memoryView == null || memoryView.minimumHeight <= height - 200) { "Leave room for the source editor" }
+        require(memoryView == null || debuggerView.isEmpty) { "Choose a memory view or a register-tree view for each raw capture" }
         expectedRows.forEach {
+            require(it.column == null || (memoryView != null && it.column in listOf("Address", "Bytes", "ASCII", "Words"))) { "A cell callout requires a native memory column" }
             require(it.label.isNotBlank() && it.contains.isNotEmpty() && it.contains.all(String::isNotBlank)) { "Empty UI assertion" }
         }
     }
@@ -61,7 +66,7 @@ data class BookCaptureFigure(
     }
 }
 
-data class BookExpectedRow(val label: String = "", val contains: List<String> = emptyList()) {
+data class BookExpectedRow(val label: String = "", val contains: List<String> = emptyList(), val column: String? = null) {
     fun matches(text: String) = contains.all { it in text }
 }
 
@@ -96,4 +101,13 @@ data class BookDebuggerTreeView(
     }
 
     val isEmpty get() = collapse.isEmpty() && expand.isEmpty() && reveal.isEmpty()
+}
+
+
+/** A read-only native memory-tab navigation request, resolved before the launch. */
+data class BookMemoryView(val address: String = "", val minimumHeight: Int = 400) {
+    fun validate() {
+        require(minimumHeight in 200..600) { "Unsupported memory-view height" }
+        require(address.matches(Regex("0x[0-9a-fA-F]{1,16}"))) { "Use an unsigned hexadecimal memory address" }
+    }
 }

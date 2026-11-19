@@ -92,7 +92,7 @@ Earlier smoke images exposed a native analysis badge after a daemon-completion
 event. The current driver also checks visible editor labels and notification balloons,
 and the latest raw proof has neither. It does not draw a transient trainer highlight
 while taking the raw image. Native debugger tree expansion and scrolling now capture the MSA word-lane view.
-Bitmap/memory tool selection and full chapter batches remain unfinished.
+Bitmap tool selection and full chapter batches remain unfinished. Native memory table selection and cell callouts are implemented.
 
 ## Native annotation includes
 
@@ -155,3 +155,12 @@ and crop bounds. The package exporter relocates image references without composi
 or rewriting native book prose. A changed native composition requires renewed review
 and updated approval metadata. This gate complements visual review; it cannot
 independently establish the truth of an observed UI state or PDF/UA conformance.
+
+
+The authoring driver also supports the existing native Memory tab. Addresses and
+expected rows are derived from the actual private fixture through the public grader,
+then asserted against rendered table text. Optional cell callouts preserve readable
+print crops without weakening the complete-row assertions. The dedicated frame must
+fit its physical display, and the bottom pane is sized through the public native
+splitter before capture. The successful step-36 batch includes directory, context
+and register views; capture success alone does not promote its chapter figure.

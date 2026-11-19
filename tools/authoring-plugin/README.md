@@ -97,7 +97,7 @@ expands the actual MSA register group, `$w2` and its 32-bit lane row. Receipts i
 the common source/checkpoint and the separate views. The native print composition is now integrated as the verified step-five book
 figure, with the original captures retained alongside editable LaTeX annotations.
 No figure plan is marked verified solely because this smoke batch succeeds. Run-only
-console capture, bitmap/memory view selection, stdin handling, full chapter batches and
+console capture, bitmap view selection, stdin handling, full chapter batches and
 interactive quizzes/progression remain later work in this same separate plugin.
 
 API contracts were inspected in the pinned read-only checkout: `ProjectActivity`,
@@ -135,7 +135,7 @@ platform's internal analyzer-status classes. Notification balloons in the dedica
 capture instance are hidden through the public notification API without expiring the
 notifications. The gate checks for their return before and after capture. The latest
 private proof has a settled checkmark, a white register view and no overlay or balloon.
-Sixteen Jupiter tests and the actual two-view graphical batch cover the current
+Twenty-four Jupiter tests and the actual vector and three-view index batches cover the current
 implementation. Full chapter capture batches remain incomplete. The step-five native composition
 has passed color/grayscale review; independent accessibility review remains pending.
 
@@ -164,3 +164,33 @@ A batch waits for each owned Debug process to terminate before launching the nex
 view. It also requests a new public daemon analysis pass for each view, including
 when two figures use the same unchanged source. Progress files contain diagnostic
 observed rows; only the final receipts and `batch-complete.json` attest completion.
+
+
+### Native memory capture
+
+An optional `memoryView` selects MARS's existing Memory tab for the owned Debug
+process. Its `address` is an unsigned hexadecimal value resolved from the actual
+prepared fixture; `minimumHeight` defaults to 400 pixels. Row assertions still match
+one complete visible rendered row. An optional `column` of Address, Bytes, ASCII or
+Words resolves the annotation rectangle to that cell. The row's source address and
+bytes can therefore be checked while a print panel enlarges only its word cells.
+The driver does not read simulator memory directly or import MARS implementation
+classes. The current private fixture derives addresses and expected bytes through
+the existing public grading API before launching the IDE.
+
+`RunContentManager.findContentDescriptor` identifies the owned process. Its public
+`RunnerLayoutUi` selects the existing MARS content, and the standard public Variables
+content ID returns to the register view. This avoids the obsolete session UI and
+run-content getters. Native bundle escaping is handled when matching the combined
+Threads & Variables title used by another platform layout. Captures must fit entirely
+inside their actual screen; requested frames are centered before capture.
+
+The public `ToolWindow` interface has no setter for a docked pane's height. The
+authoring plugin operates the existing public `ThreeComponentsSplitter` containing
+the bottom tool window, retaining room for the source editor. It changes no platform
+implementation and references no internal pane class. Table rows must be fully
+visible horizontally and vertically; clipped values cannot pass their assertions.
+The native layout and API contracts were inspected in the read-only pinned checkout,
+and the exact installed plugin passed dependency-resolved Plugin Verifier checks.
+The actual index batch captures directory rows, context rows and a return to the
+register tab. Its native book composition and publication are tracked separately.

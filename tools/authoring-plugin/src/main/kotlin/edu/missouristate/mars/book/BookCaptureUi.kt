@@ -1,10 +1,15 @@
 package edu.missouristate.mars.book
 
+import com.intellij.openapi.ui.ThreeComponentsSplitter
 import com.intellij.ui.SimpleColoredComponent
+import com.intellij.util.ui.UIUtil
 import java.awt.Component
 import java.awt.Container
+import java.awt.Rectangle
 import javax.swing.JLabel
 import javax.swing.JTree
+import javax.swing.JTable
+import javax.swing.SwingUtilities
 import javax.swing.tree.TreePath
 
 internal fun captureComponents(root: Component): Sequence<Component> = sequence {
@@ -79,4 +84,44 @@ internal fun renderedDebuggerRow(tree: JTree, path: TreePath): String {
         is JLabel -> renderer.text
         else -> renderer.accessibleContext?.accessibleName.orEmpty()
     }
+}
+
+
+internal data class BookUiRow(val text: String, val bounds: Rectangle, val cells: Map<String, Rectangle> = emptyMap())
+
+/** Read the native cell renderer; model diagnostics need not equal the displayed value. */
+internal fun renderedMemoryRows(table: JTable): List<BookUiRow> {
+    if ((0 until table.columnCount).map(table::getColumnName) != listOf("Address", "Bytes", "ASCII", "Words")) return emptyList()
+    return (0 until table.rowCount).mapNotNull { row ->
+        val bounds = table.getCellRect(row, 0, true).union(table.getCellRect(row, table.columnCount - 1, true))
+        if (!table.visibleRect.contains(bounds)) return@mapNotNull null
+        val text = (0 until table.columnCount).joinToString(" | ") { column ->
+            val renderer = table.prepareRenderer(table.getCellRenderer(row, column), row, column)
+            when (renderer) {
+                is SimpleColoredComponent -> renderer.getCharSequence(false).toString()
+                is JLabel -> renderer.text
+                else -> renderer.accessibleContext?.accessibleName.orEmpty()
+            }
+        }
+        BookUiRow(text, bounds, (0 until table.columnCount).associate { table.getColumnName(it) to table.getCellRect(row, it, true) })
+    }
+}
+
+
+internal fun isRegisterCaptureTab(title: String): Boolean =
+    title == "Threads & Variables" || UIUtil.replaceMnemonicAmpersand(title) == "Threads & Variables"
+
+internal fun requireVisibleCaptureViewport(viewport: Rectangle, screen: Rectangle) {
+    require(viewport.width > 0 && viewport.height > 0 && screen.contains(viewport)) { "Capture window extends beyond its screen" }
+}
+
+
+/** ToolWindow has no docked-height setter; resize its existing public bottom splitter. */
+internal fun configureBottomCaptureHeight(component: Component, minimumHeight: Int): Boolean {
+    if (component.height >= minimumHeight) return true
+    val splitter = generateSequence(component.parent) { it.parent }.filterIsInstance<ThreeComponentsSplitter>()
+        .firstOrNull { it.orientation && it.lastComponent?.let { bottom -> SwingUtilities.isDescendingFrom(component, bottom) } == true }
+        ?: error("Native bottom tool-window splitter unavailable")
+    splitter.lastSize += minimumHeight - component.height
+    return false
 }
