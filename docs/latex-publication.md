@@ -456,3 +456,7 @@ The contents pages were rendered and inspected. Earlier chapter prose is unchang
 These are visual and tagged-structure checks, not independent PDF/UA or assistive-
 technology validation. Build the native assignment with
 `python3 tools/book.py build --entry drafts/cbor-assignment.tex`.
+
+The exported CBOR step fragments were normalized for trailing whitespace. All 45
+standalone pages were rendered again and are pixel-identical; all tested executable
+files retain their prior hashes. The final student archive digest is pinned privately.
