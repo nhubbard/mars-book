@@ -78,7 +78,7 @@ disables project trust. Every graphical launch still executes the actual three t
 The driver selects IntelliJ Light and its light editor scheme, hides the project pane,
 opens the source with the current nonblocking editor API, installs the native MARS
 line breakpoint and launches its normal Debug configuration. Public daemon events
-establish completed highlighting; unrelated in-memory editors are ignored. The driver
+observe completed analysis passes; unrelated in-memory editors are ignored. The driver
 waits for the expected source stop, visible values and stable rendered rows. It refuses
 an edited fixture, ambiguous row match, clipped callout, changed capture window,
 resumed session or existing output. Per-figure and batch deadlines bound failed waits;
@@ -127,3 +127,10 @@ uses. Experimental public APIs are permitted on the pinned target. Metadata insp
 uses `PluginDetailsService`; the activity receives its own descriptor through
 `PluginAware`. The paired input follows the official
 [Plugin Verifier input contract](https://github.com/JetBrains/intellij-plugin-verifier#plugin-path-specification).
+
+
+Visual review of the current smoke image still shows the editor's “Analyzing” badge.
+The daemon-event gate therefore does not yet establish that the visible progress
+indicator has settled. Add that visible readiness check before accepting final book
+figures. The scalar register/source assertions remain independently verified; the
+smoke image is retained privately and no chapter figure is marked complete.

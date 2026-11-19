@@ -86,3 +86,10 @@ image is retained in the private instructor workspace. It does not show all vect
 lanes, is not substituted for the planned chapter figure, and has not changed any
 package figure from planned to verified. The main MARS plugin contains no capture
 implementation or authoring-plugin dependency.
+
+
+The current private smoke image still contains the native editor analysis badge.
+Daemon completion events alone do not establish its visible settled state. Final
+book capture acceptance must check that indicator as well as the source/value
+assertions. This is an explicit remaining driver/UI check, alongside vector/tool
+view selection and native annotations.
