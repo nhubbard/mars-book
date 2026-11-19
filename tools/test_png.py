@@ -81,7 +81,15 @@ class PngFoundationTests(unittest.TestCase):
 
     def test_native_composition_is_direct_and_not_integrated_prematurely(self):
         paths = [p for p,_ in book.sources('drafts/png.tex') if p.parent.name == '033-png']
-        self.assertEqual(21,len(paths)); self.assertEqual(21,len(set(paths)))
+        self.assertEqual(24,len(paths)); self.assertEqual(24,len(set(paths)))
         self.assertEqual('purpose',paths[1].stem); self.assertEqual('sources',paths[-1].stem)
         self.assertEqual(0,len(book.validate('drafts/png.tex')))
         self.assertNotIn('033-png',(book.ROOT/'main.tex').read_text())
+
+    def test_adler_collision_does_not_establish_inflated_length(self):
+        actual = b'A'
+        padded = actual+bytes([165])*65521
+        self.assertEqual(65522,len(padded))
+        self.assertEqual(zlib.adler32(actual),zlib.adler32(padded))
+        self.assertNotEqual(actual,padded)
+        self.assertEqual(1,len(zlib.decompress(zlib.compress(actual))))

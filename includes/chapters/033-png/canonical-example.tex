@@ -1,0 +1,33 @@
+\section{Decode a small complete alphabet}
+Consider a dynamic literal/length alphabet in which only three symbols have codes.
+The literal for ASCII A, symbol 65, has length one. End-of-block symbol 256 and length
+symbol 257 each have length two. Every other literal/length symbol has length zero.
+Zero means absent; it is not an additional code whose length is zero bits.
+
+\Needspace{9\baselineskip}
+\begin{longtable}{p{23mm}p{42mm}p{25mm}p{55mm}}
+\toprule Symbol & Meaning & Code length & Canonical code bits \\\midrule
+65 & Literal A & 1 & \texttt{0} \\
+256 & End of block & 2 & \texttt{10} \\
+257 & Match length 3 & 2 & \texttt{11} \\\bottomrule
+\end{longtable}
+There is one code of length one and two of length two. Start the first one-bit code
+at zero. After assigning it, shift the next available code left by one, giving binary
+\texttt{10} as the first two-bit code. Assign symbols of equal length in numerical
+symbol order, so 256 receives \texttt{10} and 257 receives \texttt{11}. The resulting
+codes cover both halves of the one-bit prefix space: \texttt{0} is a leaf, while
+\texttt{1} leads to the two remaining leaves.
+
+Now give the distance alphabet only symbol zero, with length one and code bit
+\texttt{0}. Its value means distance one. Data symbols A, length 3, distance 1,
+end-of-block arrive as code sequences \texttt{0}, \texttt{11}, \texttt{0}, \texttt{10}.
+The output is four A bytes. Length symbol 257 and distance symbol zero need no extra
+bits. The code sequences here are the data part after the dynamic header and table
+lengths; they are not a complete standalone compressed stream.
+
+The single distance code deliberately leaves one one-bit pattern unused. Accept that
+permitted sparse case, but reject an attempt to decode its unused pattern. If both A
+and end-of-block instead had length two, two of four two-bit patterns would be unused;
+that is an invalid incomplete literal/length alphabet for this decoder. A literal-only
+block can have an empty distance alphabet because it never requests a match. Missing
+end-of-block is an error even when the remaining literal codes form a complete tree.

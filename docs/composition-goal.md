@@ -618,3 +618,26 @@ This is chunk collection evidence only; new inflate/unfilter/blit assembly, cumu
 construction, feedback and separate PNG archives remain next. Actual captures and
 independent accessibility review remain pending. The main manuscript retains 32
 packaged chapters; earlier chapter prose remains retained for the later editing pass.
+
+
+The PNG reading now adds three directly authored native passages: an exact-size
+inflater interface, a complete small canonical alphabet and a forward match trace.
+Two private inflater variants adapt the retained scalar smoke decoder into callable
+MIPS64 entries with full-width saves, recoverable failure and per-call mutable tables.
+They pass 324 cases each at normal and above-4-GiB addresses (1296 simulator cases),
+including the actual PNG teaching streams, stored/fixed/dynamic blocks, 15-bit codes,
+maximum distance 32768, overlapping matches, sparse distance alphabets, cross-alphabet
+repeats, window bounds, mixed blocks and exact stream/output completion. Ten separately
+assembled regressions are rejected. Relocated builders reproduce the checked sources,
+Kotlin checks and host observations byte-for-byte.
+
+An independent bit-position model provides expectations. Host zlib 1.2.12 is also
+compared; its rejection of 32 unused distance lengths and acceptance of a match beyond
+an advertised 256-byte window are recorded differences, not substituted format rules.
+The exact-output regression exposed a missing case in the earlier domain: Adler-32
+can match after 65521 repeated padding bytes. The new native explanation and public
+numerical test distinguish this checksum observation from produced-byte accounting.
+All 94 public tests pass. Row reconstruction/blitting, cumulative student construction,
+public/private final feedback, chapter033 archives and actual captures remain next.
+The integrated manuscript retains 32 packaged chapters; the later substantial editing
+pass remains deferred. Independent PDF accessibility validation remains pending.
