@@ -1,5 +1,6 @@
 """A student figure cannot silently substitute images, state, or native annotations."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -45,6 +46,14 @@ class CompositeCaptureTests(unittest.TestCase):
                 if change=='empty':receipt['parts']=[]
                 else:receipt['panels']=receipt['panels'][:1]
                 with self.assertRaises(ValueError):self.validate(receipt)
+
+    def test_optional_raw_receipt_digest_binds_additional_observation_metadata(self):
+        receipt=copy.deepcopy(self.receipt)
+        part=receipt['parts'][0];path=self.root/Path(self.figure['receipt']).parent/part['receipt']
+        part['receiptSha256']=hashlib.sha256(path.read_bytes()).hexdigest()
+        self.validate(receipt)
+        raw=json.loads(path.read_text());raw['stdout']='forged observation';path.write_text(json.dumps(raw))
+        with self.assertRaisesRegex(ValueError,'Raw capture receipt changed'):self.validate(receipt)
 
     def test_unknown_or_downgraded_receipt_format_fails(self):
         for key,value in [('formatVersion',1),('kind','unrecognized')]:
@@ -96,5 +105,21 @@ class CompositeCaptureTests(unittest.TestCase):
                 if change=='unused-part':receipt['panels']=[p for p in receipt['panels'] if p['part']=='counter']
                 with self.assertRaises(ValueError):self.validate(receipt)
 
+
+class CaptureModeTests(unittest.TestCase):
+    def test_editor_requires_no_process_and_Run_requires_exact_native_evidence(self):
+        course.validate_capture_mode({'captureMode':'editor'},dict(mode='editor',stdout='',stderr=''))
+        figure=dict(captureMode='run',expectedStdout='Answer: 41\n',standardInput='20\n')
+        raw=dict(mode='run',stdout='Answer: 41\n',stderr='',exitCode=0,standardInput='20\n',inputMethod='Native console typing and Enter handlers')
+        course.validate_capture_mode(figure,raw)
+        for key,value in [('stdout','Answer: 42\n'),('stderr','error'),('exitCode',1),('standardInput','21\n'),('inputMethod','painted echo'),('mode','debug')]:
+            with self.subTest(key=key):
+                with self.assertRaises(ValueError):course.validate_capture_mode(figure,dict(raw,**{key:value}))
+        for key,value in [('exitCode',0),('stdout','text'),('stderr','error'),('standardInput','20\n')]:
+            with self.subTest(editor=key):
+                editor_raw=dict(mode='editor',stdout='',stderr='');editor_raw[key]=value
+                with self.assertRaises(ValueError):course.validate_capture_mode({'captureMode':'editor'},editor_raw)
+        with self.assertRaises(ValueError):course.validate_capture_mode({'captureMode':'unknown'},raw)
+        with self.assertRaises(ValueError):course.validate_capture_mode({'captureMode':'run'},raw)
 
 if __name__=='__main__':unittest.main()

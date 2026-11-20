@@ -33,6 +33,21 @@ def package_path(package_id):
 
 
 
+def validate_capture_mode(figure, raw):
+    """Presentation figures attest native editor/Run observations instead of a Debug stop."""
+    mode = figure.get('captureMode', 'debug')
+    if mode not in ('debug', 'editor', 'run') or raw.get('mode', 'debug') != mode:
+        raise ValueError('Capture mode differs')
+    if mode == 'editor':
+        if raw.get('exitCode') is not None or raw.get('standardInput') is not None or raw.get('stdout') != '' or raw.get('stderr') != '':
+            raise ValueError('Editor capture must have no process input or output')
+    elif mode == 'run':
+        if raw.get('exitCode') != 0 or raw.get('stderr') != '' or raw.get('stdout') != figure.get('expectedStdout') or raw.get('standardInput') != figure.get('standardInput'):
+            raise ValueError('Completed Run input, output or exit differs')
+        if not figure.get('expectedStdout') or not figure.get('standardInput') or raw.get('inputMethod') != 'Native console typing and Enter handlers':
+            raise ValueError('Run capture needs native input and output evidence')
+
+
 def validate_composite_capture(root, figure, receipt):
     """Validate native multi-view figures without treating a rendered preview as a raw capture."""
     from annotate import validate_capture
@@ -47,7 +62,11 @@ def validate_composite_capture(root, figure, receipt):
     for part in receipt['parts']:
         if not re.fullmatch(r'[a-z][a-z0-9-]*', part['id']) or part['id'] in parts:
             raise ValueError('Invalid or duplicate composite part')
-        raw = read_json(within(root, str(parent / part['receipt'])))
+        raw_path = within(root, str(parent / part['receipt']))
+        if part.get('receiptSha256') and hashlib.sha256(raw_path.read_bytes()).hexdigest() != part['receiptSha256']:
+            raise ValueError('Raw capture receipt changed after review')
+        raw = read_json(raw_path)
+        validate_capture_mode(figure, raw)
         validate_capture(within(root, str(parent / part['image'])), raw)
         if raw.get('visibleAnalysisIndicators') != [] or raw.get('notificationBalloonsVisible') != 0:
             raise ValueError('Composite capture was not visibly settled')

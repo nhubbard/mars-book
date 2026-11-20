@@ -268,3 +268,22 @@ details from one actual screenshot; the other plates combine separately captured
 views of the same source and checkpoint.
 The private evidence records intentional termination of the dedicated IDE after
 batch completion; the resulting Gradle process exit is not reported as a passed build.
+
+
+## Completed first-program figure set
+
+The console calculation chapter now has five reviewed native figures. One unchanged
+starter-editor capture shows the two insertion regions and supplied exit. A normal
+Run capture uses native console typing and Enter handlers; observed input 20 produces
+exact stdout ending in answer 41, empty stderr and exit zero. Three Debug captures
+show input 20 and actual Step Over transitions to 40 and 41. The two batches retain
+their separate pinned capture-driver revisions and source digests.
+
+The five editable LaTeX includes have eleven numbered details, captions and alternative
+descriptions. Original images, native bounds, exact text/value observations and reviewed
+color/grayscale previews are retained under `book/captures/001-console-calculation`.
+The exporter copies those assets and changes only image-path prefixes in native figure
+exports. It rejects changed compositions without renewed review and preserves edited
+exports. Student validation also binds the raw-receipt digest and distinguishes an idle
+editor, completed native Run and paused Debug state. These checks do not certify PDF/UA
+compliance or finish the earlier chapter figure backlog.
