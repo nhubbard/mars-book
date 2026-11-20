@@ -1,0 +1,7 @@
+# Verified native VM figures
+
+Four native LaTeX plates combine twenty original IntelliJ Light captures at vm_ready: countdown halt, budget exhaustion, capacity failure and invalid-target validation before a zero budget. Twenty-four explanations distinguish native work from retired guest instructions, validation faults from execution PC, physical stack cells from the live prefix, selected capacity from backing allocation and descriptor publication from later caller result stores.
+
+An independent decoded-record Python model with unbounded checked arithmetic verifies the histories. Every one of 448 caller-data bytes is checked initially, at call entry, at return and after exit. Exact chosen-reference store histories protect immutable bytecode, descriptor inputs, other arenas, capacity boundaries and guards. Unspecified inactive capacity cells are fixture observations, not equivalent-solution grading requirements. Native mutations reject same-value protected writes and suffix reads.
+
+The driver remains in the separate authoring plugin depending on MARS. Every class and resource byte matches its retained 68-test and complete paired API evidence. The installed JAR differs only in the manifest Build-JVM field, independently documented in private evidence. This chapter's actual graphical batch is independently verified. Original PNG pixels remain unchanged; all four color/grayscale proofs and native coordinate, font and tagging checks pass. Independent accessibility review remains open.

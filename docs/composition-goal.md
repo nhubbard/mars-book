@@ -2100,3 +2100,17 @@ The separate authoring plugin is unchanged. Exact source inventory, build/wrappe
 Reviewed figure sets now cover chapters 1–17 and 33–35. Chapters 18–32 retain 61 planned figures across 15 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
 
 The integrated chapter 17 build contains 1,769 manuscript pages.
+
+## Chapter 18 illustrated draft
+
+Four actual light-mode IDE plates explain countdown halt, budget exhaustion, capacity failure and invalid-target validation before a zero budget. Twenty unchanged photographs support twenty-four native explanations. The standalone chapter has 65 pages. The figures distinguish guest retirement from native work, validation fault from execution PC, live stack depth from physical cells, selected capacity from backing storage and descriptor publication from later caller stores.
+
+An independent decoded-record Python model verifies every one of 448 caller-data bytes at initialization, call entry, return and exit, exact chosen-reference stores and bounded reads. Five host tests include all 65,536 two-byte images at zero budget, signed immediates, checked arithmetic boundaries, stack effects and diagnostic priority. Three native mutations reject same-value program and out-of-capacity stores and a suffix overread. Initial rejected preparation retained privately expected one eight-byte sd notice; the corrected assertion binds the actual two four-byte notices without changing the simulator or teaching source.
+
+Fresh complete grading passes 33,134 positive executions, 40 cumulative programs with 58 observations and 51 quiz keys. Twenty-five rejection runs yield 7,182 expected failures. Both implementations, wide data, reused-image sequences and a legal submission-owned constant read pass. Coverage remains bounded rather than exhaustive over all 64-byte images, stack contents and signed-word operands.
+
+The unchanged separate authoring driver depends on MARS. Exact source, build/wrapper and byte-identical installed classes/resources bind reuse of its 68 Jupiter tests and complete paired API evidence; only the Build-JVM manifest field differs. The new graphical batch independently runs clean cleanSandbox runIde and verifies twenty native captures. Original pixels, exact annotation coordinates, fonts, semantic descriptions and all four color/grayscale proofs pass. Original chapter prose and human passages are preserved.
+
+Reviewed figure sets now cover chapters 1–18 and 33–35. Chapters 19–32 retain 57 planned figures across 14 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+The integrated chapter 18 build contains 1,772 manuscript pages.
