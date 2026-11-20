@@ -691,3 +691,29 @@ actual IDE figures remain unfinished. No MARS or authoring-plugin source changes
 or graphical IDE launches occur in this increment. The separate authoring plugin
 continues to declare its MARS dependency. Independent accessibility review and
 later substantive editing remain open.
+
+
+## Complete H.263 clip driver and file-error grading
+
+Native steps 111–120 complete the student-facing clip loop: bounded short reads,
+guarded short writes, accepted-reference publication, exact EOF and owned-descriptor
+cleanup. The new exclusive-directory workflow generates raw samples, runs the
+actual student MIPS source and independently decodes its output. The chapter has
+117 pages and 120 observations/quizzes. All 340 public tooling tests pass.
+
+Both drivers pass 74 public cases; an independent layout and focused private probes
+exercise real late child failures and incorrect I/O/publication behavior. Targeted
+write failures in either output use a backward-compatible grader addition in MARS
+commit 6c66f101, tested by all 122 CLI Jupiter tests. This is a grader capability;
+no simulator arithmetic or instruction semantics changed. The commit is local and
+is not pushed as part of the book publication.
+
+Actual eight-picture encoders produce 2212/5101 bytes and execute
+95583213/98072067 guest instructions, including guarded I/O and cleanup. Both
+independently decode with maximum local difference two; whole fresh CLI observations
+are about 7–8 seconds. A 44-picture 8.8088-second clip also independently decodes,
+including temporal-reference wraparound. The eight-picture default is retained.
+Final chapter distributions and actual IDE figures remain unfinished. Capture
+implementation stays in the separate authoring plugin depending on MARS; no plugin
+source or GUI launch changes occur here. Independent accessibility review and later
+substantive editing remain separate.

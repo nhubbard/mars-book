@@ -1,0 +1,138 @@
+\section{Turn complete pictures into a complete clip}
+A complete picture in memory is not yet a complete output file. The clip driver
+owns the input descriptor, the encoded-stream descriptor and a reconstruction
+trace descriptor. It reads one complete raw picture, invokes the picture entry,
+writes both results and only then advances its accepted-picture history.
+The reconstruction file is an inspection aid for this assignment; ordinary H.263
+players consume the encoded stream alone.
+
+Use two reconstruction buffers. Before the first picture there is no accepted
+reference, so the picture request uses reference pointer zero and INTRA mode.
+The first completed reconstruction may be placed in either buffer. After its
+output writes succeed, that buffer becomes the accepted reference and the other
+becomes the next private destination. Continue exchanging their roles after each
+accepted picture. A failed second output must not promote the staged destination.
+
+Do not read the complete clip into a growing array. Reuse one 38\,016-byte raw
+input buffer, the two reconstructed pictures, the existing picture workspace
+and one encoded-picture buffer. This bounds working memory independently of
+whether the input contains two or two hundred pictures. The encoded file can
+grow across pictures without changing the one-picture staging contract.
+
+\section{Repeat short operations until a complete transfer is accepted}
+A file read requests a maximum number of bytes; a positive result can be smaller.
+For an exact picture load, keep a destination cursor and remaining count. Request
+at most 4096 bytes, advance by the \emph{returned} positive count, subtract the
+same count and repeat until the remaining count reaches zero. Zero before that
+point means premature end of file; a negative result means an input error.
+Neither permits encoding the partially filled raw buffer.
+
+Use the same returned-count rule for writes. A positive short write accepts
+only that prefix. Retain the unaccepted suffix and retry it. A nonpositive result
+ends the operation with failure rather than spinning or claiming that all requested
+bytes were written. Successful completion of the encoded write still precedes
+the reconstruction write and reference promotion.
+
+The current MARS educational write syscall reads the requested range and one
+additional guard byte before calling the output service. Keep that read inside
+mapped private storage. The worked helper stages at most 4096 output bytes in a
+4097-byte scratch window, writes a zero guard after the staged range and requests
+only the actual output count. That guard is not file content. A positive short
+write advances the original source by the accepted count; the next attempt stages
+the still-unaccepted suffix. This preserves bounded accesses without imposing an
+extra readable byte on the caller's picture buffers.
+
+Keep nested-call state in saved registers or stack records. A descriptor is an
+integer returned by open, not a fixed constant such as three. Close every descriptor
+successfully opened by this call on every return path. An output-open failure
+can occur after the input has opened; cleanup must still close the input. Do not
+close an unowned negative descriptor or the process's standard streams.
+
+\section{Distinguish accepted progress from whole-clip success}
+A useful failure result reports the last accepted picture, while still marking
+the entire clip as failed. The progress record has three native-endian doublewords:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0 & Accepted pictures & Both required writes completed for each\\
+8 & Accepted encoded bytes & Sum for those pictures only\\
+16 & Accepted reference & Pointer to the last such reconstruction; zero initially
+\end{tabular}
+\end{center}
+Initialize this record only after complete metadata and path admission. Update
+all three fields after each accepted picture. A later input error, output error
+or picture-child failure retains that accepted prefix and its reference samples.
+The destination buffer for the rejected picture may already contain private work.
+
+Consider a first encoded picture of 696 bytes followed by another picture. If
+the second stream write accepts ten bytes and then fails, the stream contains
+706 bytes, but accepted encoded bytes remain 696. If the second stream write
+finishes and its reconstruction write then fails, the file can contain a complete
+second encoded picture that is nevertheless unaccepted by this driver. Its
+progress must still name the first reconstruction.
+
+After all requested pictures, read one extra input byte to require exact EOF.
+A positive result reveals trailing input; a negative result is still an input
+error. These cases can occur after every picture output has been accepted.
+The progress count then equals the requested count, but overall status is failure.
+A nonzero status means the run is not a finished clip, regardless of how much of
+its output prefix can be decoded. Files already written are not rolled back.
+
+\section{Pass an explicit clip request}
+Implement \texttt{h263\_encode\_clip} with an eight-byte-aligned 104-byte request
+in \texttt{\$a0} and an eight-byte-aligned 24-byte progress result in
+\texttt{\$a1}. Fields are unsigned native-endian doublewords:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0, 8, 16 & Input, stream, reconstruction paths & Distinct nonempty NUL-terminated names\\
+24 & Pictures & One through 299\\
+32 & Clock step & One through 255 baseline ticks\\
+40 & Quantizer & One through 31\\
+48 & Arithmetic mode & Zero scalar; one MSA\\
+56 & Raw input buffer & 38\,016 active bytes\\
+64, 72 & Reconstruction A, B & 38\,016 active bytes each\\
+80 & Picture workspace & Sixteen-byte-aligned 169\,088-byte arena\\
+88 & Encoded-picture buffer & 131\,072 active bytes\\
+96 & Reserved & Zero
+\end{tabular}
+\end{center}
+Require $N\times T\times1001\leq300\,000$, where $N$ is picture count and $T$
+is clock step. Validate each bounded factor before multiplying. This is the
+same ten-second limit used by the generator, including the final picture hold.
+The baseline clock never exceeds thirty pictures per second.
+
+Each path supplies a mapped 4096-byte window with its first NUL no later than
+byte 4095. Validate all record/data extents and controls before scanning paths;
+then reject empty, unterminated or equal path names before opening anything.
+Compare path contents, not just their pointers. Do not truncate an input by opening
+the same name for output through a different string buffer. The preparation helper
+uses printable ASCII names for the current byte-oriented syscall string ABI.
+
+All required extents are mapped and non-wrapping. Request, progress, paths,
+buffers, workspace and private stack are disjoint. Preserve request/path bytes,
+saved GPRs and the incoming sixteen-byte-aligned stack pointer. Supply 65\,536
+private stack bytes. Raw, reconstruction, workspace and encoded buffers are
+working storage and may change after valid admission, including on failure.
+The accepted reference named by progress must still contain its last accepted
+picture after a later failure.
+
+Return status zero and accepted-picture count on success. Invalid arguments
+return one/zero without changing progress, opening files or touching data buffers.
+For admitted calls, the following statuses return the actual accepted count and
+retain the corresponding progress record:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rl}
+\textbf{Status} & \textbf{Meaning}\\
+2 & A required file could not be opened\\
+3 & Read error, incomplete picture or trailing input\\
+4 & Picture child failed or returned an invalid byte count\\
+5 & A required output write failed
+\end{tabular}
+\end{center}
+The supplied unfinished clip entry uses development status seven. The nested
+picture entry has its own status meanings; the driver maps any failed child to
+its clip-level status four. All opened descriptors are closed before returning.

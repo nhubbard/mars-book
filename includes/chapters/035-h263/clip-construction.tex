@@ -1,0 +1,158 @@
+\section{Step 111 Admit the clip before opening files}\label{h263-clip-s01}
+Check aligned request/result records and all non-wrapping extents. Admit bounded
+picture count, clock step, quantizer and mode; then evaluate the duration product.
+Scan each bounded path, reject empty or unterminated names and compare all three
+pairs for equality. Leave progress untouched on rejection. Only after these checks
+initialize the accepted count, byte total and reference pointer to zero.
+
+\paragraph{Observe} Two different path pointers can still contain the same filename.
+\Needspace{8\baselineskip}
+\paragraph{Check} What prevents an output open from truncating the input?
+\begin{itemize}
+\item[A.] Comparing admitted path contents before opening files.
+\item[B.] Assuming different pointer values imply different names.
+\item[C.] Choosing descriptor three in advance.
+\end{itemize}
+
+\section{Step 112 Own each successful descriptor}\label{h263-clip-s02}
+Initialize owned-descriptor fields to a negative sentinel. Open the input for
+reading, then both outputs for writing, storing each actual returned descriptor.
+On an open failure, enter cleanup with only the successfully acquired descriptors.
+The same cleanup path handles later transfer or child failures. Preserve the
+intended return status across close syscalls.
+
+\paragraph{Observe} If the third open fails, the first two descriptors still require closing.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which descriptor is owned?
+\begin{itemize}
+\item[A.] Every integer from zero through thirty-one.
+\item[B.] Only a nonnegative descriptor actually returned by this call's successful open.
+\item[C.] The input path pointer.
+\end{itemize}
+
+\section{Step 113 Load exactly one raw picture}\label{h263-clip-s03}
+Read at most 4096 bytes per request into the reusable raw buffer. Advance the
+cursor and reduce the remaining count by the returned positive count. Continue
+until all 38\,016 bytes are present. On early EOF or a negative read, report input
+failure without invoking the picture encoder for this partial buffer.
+
+\paragraph{Observe} A read returning 137 bytes accepts exactly 137 even when 4096 were requested.
+\Needspace{8\baselineskip}
+\paragraph{Check} What advances the destination cursor?
+\begin{itemize}
+\item[A.] Always 4096 bytes.
+\item[B.] The complete picture size on the first call.
+\item[C.] The actual positive return count.
+\end{itemize}
+
+\section{Step 114 Construct the next picture request}\label{h263-clip-s04}
+Use no reference for picture zero and the accepted reconstructed reference for
+later pictures. Select the other reconstruction buffer as destination. Reset the
+private picture context to zero used bits, supply the fixed workspace and encoded
+buffer, and pass quantizer/mode. Compute temporal reference as picture index times
+clock step modulo 256. Use GFID zero for the initial I and one for later P pictures.
+
+\paragraph{Observe} Picture index two at step six has temporal reference twelve, regardless of output byte length.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which reference enters a P-picture?
+\begin{itemize}
+\item[A.] The last accepted reconstruction.
+\item[B.] Whatever remains in the raw input buffer from a previous read.
+\item[C.] The current destination before its first block is written.
+\end{itemize}
+
+\section{Step 115 Check the complete picture child result}\label{h263-clip-s05}
+Invoke the picture encoder and test its status before any file write. A failed
+child maps to clip status four. A successful byte count must be nonzero and within
+the derived 105\,070-byte picture bound. Retain the returned count across nested
+write-helper calls; neither an overwritten return register nor caller capacity
+is a substitute for actual encoded length.
+
+\paragraph{Observe} A child returning success with byte count zero does not describe a complete picture.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which count is written to the stream?
+\begin{itemize}
+\item[A.] The entire 131072-byte capacity.
+\item[B.] The admitted complete child byte count.
+\item[C.] The size of all three raw planes.
+\end{itemize}
+
+\section{Step 116 Write the encoded bytes with guarded short-I/O handling}\label{h263-clip-s06}
+Stage a bounded chunk and its guard byte, then invoke the write syscall with only
+the real chunk length. A positive short result advances the original source by
+that count, leaving the suffix for another attempt. Reject nonpositive progress.
+Keep the accepted-picture record unchanged until both required outputs finish.
+
+\paragraph{Observe} The scratch guard is readable by the syscall but never part of the requested file payload.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must remain pending after a short write?
+\begin{itemize}
+\item[A.] A duplicate of the already accepted prefix.
+\item[B.] Only the next picture header.
+\item[C.] The unaccepted suffix of the current output.
+\end{itemize}
+
+\section{Step 117 Accept reconstruction before swapping buffers}\label{h263-clip-s07}
+After the stream write succeeds, write all 38\,016 reconstruction bytes with the
+same exact-transfer rule. Only after that succeeds promote this destination to
+accepted reference, select the other buffer for the next destination, increment
+accepted pictures and add the encoded byte count to the accepted total. Publish
+those values in the progress record.
+
+\paragraph{Observe} A reconstruction-write failure can leave a second encoded picture in the file while only one picture is accepted.
+\Needspace{8\baselineskip}
+\paragraph{Check} When does the destination become the reference?
+\begin{itemize}
+\item[A.] After both complete output writes are accepted.
+\item[B.] After its first row is reconstructed.
+\item[C.] Immediately after a stream open succeeds.
+\end{itemize}
+
+\section{Step 118 Require exact EOF and close owned files}\label{h263-clip-s08}
+Repeat until the requested picture count is accepted, then probe one extra input
+byte. Accept only zero as exact EOF. A positive or negative result reports input
+failure while retaining accepted progress. Close all owned descriptors on this
+path and on every error path, exactly once each. Do not infer final success merely
+from a progress count that happens to equal the requested count.
+
+\paragraph{Observe} An EOF-probe error after two accepted pictures returns input failure with progress count two.
+\Needspace{8\baselineskip}
+\paragraph{Check} What establishes overall success?
+\begin{itemize}
+\item[A.] A nonempty stream file alone.
+\item[B.] All required work, exact EOF and successful return status zero.
+\item[C.] Any progress value greater than zero.
+\end{itemize}
+
+\section{Step 119 Exercise real file errors without host files}\label{h263-clip-s09}
+Run the 74 public cases. The grader supplies isolated in-memory files with short
+reads/writes, missing paths, descriptor exhaustion and independently targeted
+output failures. It decodes every accepted picture and checks levels, motion and
+reconstruction using the actual accepted reference. Failure cases check progress,
+reference retention and descriptor cleanup. The path-specific failure option
+requires the MARS grader revision identified in this package.
+
+\paragraph{Observe} A later encoded-write failure must not be hidden by a previous reconstruction write failing first.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why target one output path at a time?
+\begin{itemize}
+\item[A.] To make all writes succeed regardless of return counts.
+\item[B.] To require a private descriptor number.
+\item[C.] To exercise each failure boundary independently with the real encoder.
+\end{itemize}
+
+\section{Step 120 Run and independently decode the generated clip}\label{h263-clip-s10}
+Compose your completed picture dependency, then use the public run helper with
+a new output directory. It generates the raw input, retains your source instructions,
+executes the real MIPS program and passes the resulting stream/reconstruction to
+the independent checker. Inspect the saved report and compare both accurate
+implementations. Keep finite guest counts separate from whole-process wall time.
+
+\paragraph{Observe} The guarded public reference driver still produces the same 2212-byte stream; its additional I/O work changes the guest count.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does the host preparation script generate?
+\begin{itemize}
+\item[A.] Raw digital input samples and run controls, not the encoded target solution.
+\item[B.] The completed MIPS encoder implementation.
+\item[C.] An all-INTRA substitute for the submitted program.
+\end{itemize}
