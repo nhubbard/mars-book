@@ -1738,3 +1738,28 @@ Reviewed figure sets now exist for chapters 1–4 and 33–35. Chapters 5–32 r
 substantive editing is the separate future goal. The full initial book goal stays
 active. No MARS source changed; authoring implementation remains in its separate
 plugin depending on MARS.
+
+
+## Reviewed seven-segment counter figures
+
+Chapter 5 now contains four reviewed native LaTeX IDE figures with thirteen
+numbered details from nine original light-theme Debug images. Together with the
+existing captioned segment diagram, the 26-page chapter distinguishes a table
+index, a glyph mask and a device address; shows the boundary before and after
+the first byte store; selects A with a native conditional breakpoint; and explains
+why the final F remains visible after the counters reach the end of the range.
+Original screenshots, state receipts and editable annotations are exported in the
+student archive. All 374 public tooling tests pass.
+
+Both equivalent completed counters, ten cumulative programs and seventeen quiz
+keys pass. Final grading records 339 passing cases and twenty-two expected
+rejections across the fault controls and unfinished starter. The integrated
+manuscript has 1,729 pages. Screenshot implementation remains entirely in the
+separate authoring plugin, which declares its dependency on MARS. Forty-two
+Jupiter tests and independent native-state/photo checks accompany the capture
+driver; no MARS source was changed.
+
+Reviewed figure sets now exist for chapters 1–5 and 33–35. Chapters 6–32 retain
+107 planned figures across 27 sets. Independent accessibility review remains
+open, and substantive editing is the separate future goal. The full initial
+book composition and capture goal remains active.

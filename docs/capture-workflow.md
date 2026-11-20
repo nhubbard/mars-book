@@ -352,3 +352,28 @@ halves, complete eight-byte fields, the limits of word-formatting services and t
 word/doubleword sum at bit 31. Color/grayscale proof review and native font, tag and
 original-pixel checks pass. Capture implementation remains in the separate plugin
 depending on MARS. Independent accessibility review remains open.
+
+
+## Seven-segment counter figures
+
+Chapter 5 uses nine native Debug views from the separate authoring plugin. The
+four plates show the boundary before the first byte store, the first completed
+zero glyph, the eleventh displayed boundary for A, and the completed default range
+retaining F. A native conditional breakpoint selects `$s2 == 10`; the driver reads
+that condition back, and composite validation binds it across both views.
+
+Digital Lab checks the selected execution, both mask descriptions, sixteen painted
+segment states including decimal points, the photographed states, disabled timer
+and unpressed keypad. The independent core oracle checks the exact sixteen byte
+transactions to the fixed right port and rejects writes to the protected table
+and inputs, including writes later restored. Color similarity is used only to
+classify each segment as on or off; the checks do not claim exact RGB equality.
+
+The accepted capture batch and rejected viewport/selector diagnostic attempts are
+retained privately. Forty-two Jupiter tests and public API verification accompany
+the driver. Native annotations, descriptions and numbered legends are editable
+LaTeX; original PNGs and state receipts are included with the student package.
+Proofs are checked for embedded fonts, tagged descriptions, original image pixels
+and single-page layout, then inspected in color and grayscale. The existing
+captioned segment diagram remains figure 5.1, followed by the four IDE figures.
+Independent accessibility review remains open.
