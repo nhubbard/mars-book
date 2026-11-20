@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–10 and 33–35 have reviewed figure sets.
-Chapters 11–32 retain 87 planned figures across 22 sets. The manuscript has
-1,746 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–21 and 33–35 have reviewed figure sets.
+Chapters 22–32 retain 44 planned figures across 11 sets. The manuscript has
+1,782 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2142,3 +2142,15 @@ The unchanged authoring plugin depends on MARS. Source/build and identical class
 Reviewed figure sets now cover chapters 1–20 and 33–35. Chapters 21–32 retain 49 planned figures across 12 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
 
 The integrated chapter 20 build contains 1,778 manuscript pages.
+
+## Chapter 21 illustrated draft
+
+Five actual light-mode IDE plates explain impulse return, caller publication, negative halfway rounding, a clipped endpoint and a wide MSA reduction. Twenty-four unchanged captures support thirty native explanations. The 62-page standalone chapter distinguishes exact accumulation, one rounding after summation, saturation, live returns and later caller stores. Its exact body text and positions match the integrated 1,782-page manuscript, allowing only the binding offset.
+
+An independent Fraction quotient/remainder oracle checks all 488 caller bytes at initialization, call entry, the selected internal reduction boundary, return, publication and exit. Four host tests include every remainder at eight signed boundaries, history orientation and wide extrema. Five native mutations reject same-value protected writes, logical suffix reads, word narrowing and a lost rounding bias that leaves endpoint bytes unchanged but changes clipping. The wide fixture reaches an exact sum of 2^33 before scaling, with two 64-bit MSA lanes of 2^32.
+
+Fresh complete verification passes 26,014 successful checks, 36 partial programs with 66 observations in two contexts and 47 quiz keys. Twenty-seven rejection runs yield 10,222 expected failures. Four bounded position/coefficient domains each cover all 65,536 input codes, with 256 extreme-sign masks and random scenes; this is not exhaustive coverage of all input and coefficient combinations. Both implementations, wide-address calls, all 65 chunk cuts and repeated sequences pass. The independent renderer extracted from the student archive reproduces all six published WAV hashes for both implementations; live playback is not claimed.
+
+The separate authoring plugin depends on MARS and remains unchanged. Exact source/build and class/resource evidence bind reuse of 68 Jupiter tests and complete paired API verification. The new batch runs the actual clean cleanSandbox runIde tasks and verifies 24 native captures. All five color/grayscale proofs, coordinates, original pixels, fonts and tagged descriptions pass. Named LaTeX saveboxes hold the annotated details. A guarded bootstrap reproduces the new fixtures in isolation and refuses edited source; native composition remains directly editable. Publication replaces only five planned native figures and two factual status passages, preserving all other graded archive bytes.
+
+Reviewed figure sets now cover chapters 1–21 and 33–35. Chapters 22–32 retain 44 planned figures across 11 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.

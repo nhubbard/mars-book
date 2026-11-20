@@ -1,0 +1,9 @@
+# Verified native FIR figures
+
+Five light-mode IDE plates combine twenty-four unchanged captures with thirty native explanations. They cover the impulse return and saved results, a negative halfway case, the same stored endpoint after clipping, and the guided kernel's exact pre-round accumulator beyond word range. The wide figure includes scalar and 64-bit integer-lane details at fir_round; its counters are initialized rather than completed returns.
+
+Independent exact rational rounding selects ties toward positive infinity before saturation. Complete 488-byte images and bounded accesses protect the input history/new-sample window, eight coefficients, output, guards and caller metadata. Four host tests cover all fractional remainders at selected signed boundaries, history order, wide extrema and retained histories. Five native mutations reject protected writes, suffix reads, word narrowing and a lost rounding bias that changes clipping without changing the stored endpoint.
+
+The unchanged capture driver is the separate authoring plugin depending on MARS. Source/build and byte-identical classes/resources bind reuse of 68 Jupiter tests and complete paired API reports. The installed JAR matches the preceding captured binary exactly. No new Jupiter invocation is claimed. All five color/grayscale proofs, native coordinates, original embedded pixels, fonts and descriptions pass; the temporary bootstrap reproduction matches every directly edited figure. Independent accessibility review remains open.
+
+The complete native chapter is exported here. Illustration publication replaces only five exact planned placeholders and two factual capture-status passages. Other native prose, graded programs, construction recipes, approved public checks, quizzes and the independent public listening renderer/audio remain protected by comparison with the exact graded archive.
