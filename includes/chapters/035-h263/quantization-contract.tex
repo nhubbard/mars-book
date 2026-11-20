@@ -1,0 +1,59 @@
+\section{Return levels and reconstructed coefficients together}
+Implement \texttt{h263\_quantize8}. Pass a mapped eight-byte-aligned 32-byte
+request in \texttt{\$a0} and a mapped sixteen-byte-aligned 256-byte result in
+\texttt{\$a1}. The request contains unsigned native-endian doublewords:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0 & Coefficient pointer & Two-byte-aligned, 128 active bytes\\
+8 & Quantizer parameter & 1 through 31\\
+16 & INTRA selector & 0 INTER; 1 INTRA\\
+24 & Arithmetic mode & 0 scalar; 1 MSA reconstruction
+\end{tabular}
+\end{center}
+The input contains 64 signed halfwords in natural row-major coefficient order.
+Every value must be in $[-2048,2047]$. Input, request and result are disjoint.
+Their complete extents must be mapped and must not wrap the address space.
+Supply a sixteen-byte-aligned stack and valid private space. Preserve saved
+general registers, the incoming stack pointer and every input/request byte.
+Vector registers are caller-saved.
+
+Validate record alignment and extents, input alignment and extent, and every
+full-width control before reading coefficient samples. Invalid metadata returns
+\texttt{\$v0}=1 and \texttt{\$v1}=0, retaining the complete result and avoiding
+sample reads. After valid metadata, inspect the signed coefficient domain. An
+invalid sample returns status two and count zero, also retaining the result.
+Reads needed to discover that invalid sample are permitted.
+
+On success, the first 128 result bytes hold 64 signed halfword levels. For INTRA,
+the first halfword instead holds the unsigned DC code as a positive number from
+1 through 255, excluding 128. The next 128 bytes hold 64 signed reconstructed
+coefficients ready for the inverse transform. Return status zero and a count of
+nonzero ordinary levels, excluding INTRA DC. The count can therefore be zero
+for an INTRA block whose reconstructed DC is nonzero. It is a coefficient count,
+not a coded-block-pattern mask or a promise about the final number of bits.
+
+Mode zero uses scalar arithmetic throughout. Mode one retains scalar level
+selection and uses MSA lanes for ordinary inverse quantization. Each mode obeys
+the same exact exercise policy. Behavioral grading checks outputs and state;
+matching outputs alone does not demonstrate that a submission used MSA. Inspect
+that instructional objective separately when assessing the vector implementation.
+
+Start with \path{drafts/h263-quantization-construction/main.asm}. Prepare another
+observation while preserving your instructions and coefficient data:
+\begin{verbatim}
+python3 drafts/h263-quantization-construction/prepare.py \
+    --source my-quantizer.asm --quant 8 --intra 1 \
+    --mode 1 --output quantizer-q8.asm
+\end{verbatim}
+The helper changes the typed request controls and refuses an existing output.
+The provided caller aligns its stack, installs the input pointer and calls your
+entry. At \texttt{quant\_caller\_return}, the result is complete and return
+registers still contain status and count. Named status/count fields are copied
+by subsequent instructions. The completed default prints 255 and exits zero;
+the unfinished entry reports development status four and exits one.
+
+A successful printed first value checks only one code. Use the public checker to
+inspect every level and reconstructed coefficient, as well as preserved memory
+and registers. Keep natural order here; scan order and bit emission come later.

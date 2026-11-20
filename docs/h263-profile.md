@@ -100,8 +100,15 @@ error limits pass; a wrong signed bias fails every full cohort. This proves the
 tested inverses, not complete-stream conformance. Sixteen completed ordinary
 callers cover both directions, modes and flat/worked inputs.
 
-Quantization is next, followed by local
-reconstruction, bit writing and baseline picture/macroblock syntax. Keep the
+Quantization now has a verified callable exercise: a stated signed-magnitude
+forward policy capped at 127, separate INTRA DC mapping and exact baseline
+reconstruction/clipping. Both traversal orders pass 2044 private cases across all
+31 parameters; three layouts pass 204 public cases. Five wrong bodies and the
+unfinished starter are rejected. Eight completed ordinary callers and all 276
+public tooling tests pass. The native chapter has 62 pages and sixty construction
+observations/quizzes. Exact exercise levels do not constrain legal full-encoder
+choices. Local reconstruction is next, followed by bit writing and baseline
+picture/macroblock syntax. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
 checks, failure/publication contracts and equivalent valid encoders. Do not accept

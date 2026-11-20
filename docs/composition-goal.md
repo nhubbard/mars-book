@@ -1450,3 +1450,30 @@ encoder benchmark. Whole-encoder measurement still decides the ordinary clip siz
 Quantization, closed reconstruction, complete baseline syntax/output, independent
 full-stream grading and chapter distributions/captures remain open. Independent
 accessibility review and later substantive editing remain separate.
+
+
+## H.263 quantization and coefficient reconstruction
+
+The native chapter now has 62 pages and sixty construction observations/quizzes.
+Steps 51–60 distinguish a reproducible forward level-selection policy from the
+normative decoder reconstruction, derive the dead zone and parity adjustment,
+explain separate INTRA DC codes and counts, bound scalar/MSA lane widths, and
+prepare the connection to the local inverse. Three new tagged tables bring the
+chapter to seventeen tables/63 header cells; the four described native figures
+remain. The new prose is ordinary editable LaTeX, not generated metadata.
+
+Both forward and reverse traversal implementations pass 2044 private cases each,
+covering all 31 quantizer parameters, both block types/modes/byte orders, signed
+extremes and validation/publication boundaries. Three implementation layouts pass
+204 public cases each. Five wrong implementations and the unfinished starter are
+rejected. Eight completed ordinary callers pass with warnings treated as errors,
+and a complete prepared working source passes public feedback with protected
+reports. All 276 public tooling tests pass. The independent host model is checked
+for every ordinary coefficient/parameter pair and every INTRA DC input.
+
+Exact forward output is a kernel teaching contract, not a restriction on complete
+encoders' legal level choices. Full-stream grading must retain equivalent solutions.
+No MARS or authoring-plugin source changed, no IDE launch occurred and no new
+screenshot is claimed. Closed-loop target reconstruction, syntax/output, whole-encoder
+quality/performance grading and chapter distributions/captures remain unfinished.
+Independent accessibility review and substantive editing remain separate.
