@@ -1414,3 +1414,39 @@ Forward/inverse transforms, quantization, closed reconstruction, baseline syntax
 independent complete-stream grading and chapter captures/distributions remain
 open. The book goal remains active; independent accessibility review and later
 substantive editing are still separate work.
+
+## H.263 forward and inverse transforms
+
+The native chapter now has 52 pages and fifty construction observations/quizzes.
+New text explains orthonormal normalization without an INTRA level shift, natural
+coefficient order, signed matrix constants, transposed unrounded word intermediates,
+doubleword second products, one final signed descale and direction-specific clipping.
+Three new tables and a described scale-flow figure bring the chapter to fourteen
+tables, 51 header cells and four figures. One new listing comes from the actual
+separate IntelliJ authoring plugin; all 769 previous export records are identical.
+
+Reference scale-65536 and alternative scale-32768 bodies pass the full actual
+target inverse accuracy gate in both modes and byte orders: 480000 blocks from
+six Annex A cohorts per configuration, plus 48 exact-zero calls. All peak, per-position
+and overall MSE/bias limits pass. The worst observed overall MSE is 0.0016640625
+for the reference and 0.0026171875 for the alternative, below 0.02. An actual
+wrong-bias inverse fails every full cohort. These checks do not use the student
+forward transform to construct the independent reference. They retain generator
+state, reference rounding, data/source hashes and complete target logs.
+
+The finite interface checker accepts one-unit accuracy rather than exact private
+coefficient bits. Two bodies pass 156 private cases each; three layouts pass 96
+public cases, including a 4-KiB frame. Five wrong bodies and the unfinished starter
+fail. The original finite receipt had 148 cases; added lower-domain checks are
+retained in a separate 156-case result with the prior script snapshot preserved.
+Sixteen completed ordinary callers cover directions/modes and flat/worked inputs;
+two unfinished callers report their development status. Complete prepared working
+source passes public feedback, and existing reports are protected. All 267 public
+tooling and 28 authoring Jupiter tests pass. No graphical IDE launch or new
+screenshot is claimed.
+
+The inverse gate's elapsed host time includes script/runtime/edits and is not an
+encoder benchmark. Whole-encoder measurement still decides the ordinary clip size.
+Quantization, closed reconstruction, complete baseline syntax/output, independent
+full-stream grading and chapter distributions/captures remain open. Independent
+accessibility review and later substantive editing remain separate.

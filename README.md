@@ -505,3 +505,13 @@ retain caller output after private writes. Twenty completed ordinary callers
 exercise five vectors in both modes. All 259 public tooling tests pass. The
 ordinary entry explicitly aligns its stack, matching the grading precondition.
 Transform/quantization, local reconstruction and full H.263 output remain unfinished.
+
+The transform step extends chapter 35 to 52 native pages and fifty construction
+observations/quizzes. It explains DCT normalization, signed fixed-point widths,
+unrounded transposed intermediates, final descaling and inverse accuracy. Both
+precisions, modes and byte orders passed 480000 actual target inverse blocks plus
+48 zero calls; a deliberately wrong rounding bias failed every full cohort.
+Two bodies pass 156 private finite cases each, and three layouts pass the 96
+public cases. All 267 public tooling tests and 28 authoring Jupiter tests pass.
+The new listing uses actual IntelliJ highlighting; prior exports are unchanged.
+Quantization, local reconstruction and complete H.263 output remain unfinished.

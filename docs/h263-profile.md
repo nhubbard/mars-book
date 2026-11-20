@@ -22,7 +22,7 @@ limited sample ranges and 12:11 sample aspect ratio. Timing is exact integer
 baseline clock steps. The candidate default is eight pictures at 5000/1001 Hz,
 1.6016 s including the final picture hold. Input limits remain at most 30 pictures/s
 and ten seconds. That default must be revisited after whole-encoder measurement;
-current measurements cover SAD, bounded search and prediction kernels, not a
+current measurements cover SAD, search, prediction and transform kernels, not a
 complete encoder.
 
 The first callable contract is exact scalar/MSA 16-by-16 SAD with independent
@@ -90,7 +90,17 @@ starter are rejected. Twenty ordinary completed callers exercise five signed
 vectors in both modes. The default returns total 2976; odd (-1,-1) returns 5788
 and zero returns 9072. These are prediction/residual results, not encoded output.
 
-Transform/quantization is next, followed by local
+Forward/inverse transforms now use a signed halfword interface with bounded
+coefficient/residual output, private staging and an independent floating reference.
+Two accurate precisions are accepted: reference scale 65536 and alternative
+32768. Each passes 156 private finite cases; three layouts pass 96 public cases.
+The full target inverse accuracy gate passes all six Annex A cohorts for each
+body/mode/byte-order combination: 480000 blocks and 48 exact-zero calls. All five
+error limits pass; a wrong signed bias fails every full cohort. This proves the
+tested inverses, not complete-stream conformance. Sixteen completed ordinary
+callers cover both directions, modes and flat/worked inputs.
+
+Quantization is next, followed by local
 reconstruction, bit writing and baseline picture/macroblock syntax. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
