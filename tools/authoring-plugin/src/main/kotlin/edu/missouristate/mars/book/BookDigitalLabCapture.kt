@@ -98,11 +98,9 @@ internal fun bookLabDiagnostics(root: JComponent): List<String> = listOf("Digita
         }
     }.toList()
 
-/** Select only the capture-owned execution through the native public renderer. */
+/** Select only one capture-owned execution, ignoring unrelated native settings controls. */
 internal fun selectBookToolExecution(components: List<Component>, execution: String): String? {
-    @Suppress("UNCHECKED_CAST")
-    val selector = components.filterIsInstance<JComboBox<*>>().singleOrNull() as? JComboBox<Any> ?: return null
-    fun label(index: Int): String {
+    fun label(selector: JComboBox<Any>, index: Int): String {
         val rendered = selector.renderer.getListCellRendererComponent(JList<Any>(), selector.getItemAt(index), index, false, false)
         return captureComponents(rendered).mapNotNull {
             when (it) {
@@ -112,7 +110,16 @@ internal fun selectBookToolExecution(components: List<Component>, execution: Str
             }
         }.joinToString(" ")
     }
-    val owned = (0 until selector.itemCount).singleOrNull { label(it).startsWith("$execution (#") } ?: return null
+    // Cache views also contain geometry and replacement controls. Identify the execution
+    // by its displayed label, rejecting duplicate matches before changing any selection.
+    val matches = components.filterIsInstance<JComboBox<*>>().flatMap { component ->
+        @Suppress("UNCHECKED_CAST")
+        val selector = component as JComboBox<Any>
+        (0 until selector.itemCount).mapNotNull { index ->
+            if (label(selector, index).startsWith("$execution (#")) selector to index else null
+        }
+    }
+    val (selector, owned) = matches.singleOrNull() ?: return null
     if (selector.selectedIndex != owned) { selector.selectedIndex = owned; return null }
-    return label(owned)
+    return label(selector, owned)
 }

@@ -140,6 +140,18 @@ implementation. Full chapter capture batches remain incomplete. The step-five na
 has passed color/grayscale review; independent accessibility review remains pending.
 
 
+### Native tool execution selection
+
+Tool-view capture identifies the owned execution through the native dropdown's public
+cell renderer. Other dropdowns, such as cache geometry and replacement controls, do
+not affect selection. Exactly one displayed execution item must match across the
+view: duplicate items in one dropdown or matches in multiple dropdowns reject the
+observation before changing any selection. Changing to the owned execution requires
+a subsequent observation before capture can proceed. Jupiter tests cover unrelated
+settings controls, missing and ambiguous executions, and rendered labels that differ
+from the underlying model text. This selection support alone does not implement or
+verify cache-view figure capture.
+
 ### Native debugger view selection
 
 An optional `debuggerView` selects displayed tree paths relative to the debugger's
