@@ -21,7 +21,7 @@ data class BookBitmapView(
     val screenChannelTolerance: Int = 0,
 ) {
     fun validate(projectRoot: Path) {
-        require(screenChannelTolerance in 0..3) { "Unsupported screen-color tolerance" }
+        require(screenChannelTolerance in 0..8) { "Unsupported screen-color tolerance" }
         require(columns in 1..1920 && rows in 1..1080) { "Unsupported bitmap dimensions" }
         require(address.matches(Regex("0x[0-9a-fA-F]{1,16}"))) { "Use a hexadecimal bitmap address" }
         val start = address.substring(2).toLongOrNull(16)

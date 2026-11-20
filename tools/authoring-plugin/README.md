@@ -229,3 +229,11 @@ an optional `initial=true` source-header setting. Initialized pixels are capture
 before execution without simulated memory-access events. The default remains
 write capture. These are general display features; screenshot orchestration and
 all book-specific classes remain solely in this dependent authoring plugin.
+
+The optional photograph bound accepts values from zero through eight. It still
+defaults to exact comparison. The mandatory-full encoder fixture uses six after
+retained native- and logical-resolution captures measured that maximum on its
+darker palette. The earlier decoder fixture retains its bound of three. Neither
+setting relaxes the exact address, tooltip RGB, native rendering, or independent
+encoded-byte checks. A bound is explicit per fixture; successful raw receipts retain
+the actual histogram rather than claiming exact photograph colors.

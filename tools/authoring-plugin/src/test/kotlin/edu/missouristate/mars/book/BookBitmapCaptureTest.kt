@@ -112,7 +112,10 @@ class BookBitmapCaptureTest {
     @Test fun `rejects unsafe or ambiguous bitmap plans`() {
         val figure = BookCaptureFigure("bitmap-frame", "main.asm", "a".repeat(64), "ready", bitmapView = view)
         figure.validate(project)
-        for (invalid in listOf(view.copy(screenChannelTolerance = -1), view.copy(screenChannelTolerance = 4), view.copy(columns = 0), view.copy(rows = 1081), view.copy(address = "0x10010001"),
+        view.copy(screenChannelTolerance = 3).validate(project)
+        view.copy(screenChannelTolerance = 6).validate(project)
+        view.copy(screenChannelTolerance = 8).validate(project)
+        for (invalid in listOf(view.copy(screenChannelTolerance = -1), view.copy(screenChannelTolerance = 9), view.copy(columns = 0), view.copy(rows = 1081), view.copy(address = "0x10010001"),
             view.copy(address = "0xffffffffffffffff"), view.copy(address = "10010004"), view.copy(expectedRgb = "../frame.rgb"),
             view.copy(expectedRgb = "/tmp/frame.rgb"), view.copy(expectedRgb = ""), view.copy(rgbSha256 = ""), view.copy(label = ""))) {
             assertThrows<IllegalArgumentException> { invalid.validate(project) }
