@@ -2088,3 +2088,15 @@ The teaching source annotation now enables the existing initial=true option, so 
 Reviewed figure sets now cover chapters 1–16 and 33–35. Chapters 17–32 retain 65 planned figures across 16 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
 
 The integrated chapter 16 build contains 1,766 manuscript pages.
+
+## Chapter 17 illustrated draft
+
+Four actual light-mode IDE plates explain precedence success, a missing group close, literal overflow before unary evaluation and a zero denominator after a successful group. Twelve unchanged photographs support sixteen native explanations. The standalone chapter has 58 pages. The independent host model uses Pratt binding powers and unbounded arithmetic with eager signed-word checks; it agrees with the core on the status-dependent second result and each specified diagnostic position. All 224 data bytes are checked initially, at call entry, return and exit. Evaluator reads fit the logical slice; no caller-data stores occur before return, and only the caller subsequently publishes two result words.
+
+Four model tests cover precedence, associativity, signed division, error priority, checked literals, accepted whitespace, zero bytes and retained native observations. Two core mutations reject a same-value input write and a suffix overread. Complete grading runs fresh development checks, both implementations, wide data, repeated calls and a legal submission-owned constant read. It records 23,887 positive case executions, 34 cumulative programs with 46 intermediate observations and 45 quiz keys. The starter and nineteen faulty variants yield 3,112 expected failures. Coverage is bounded and is not claimed exhaustive over every 64-byte input or signed-word operand.
+
+The separate authoring plugin is unchanged. Exact source inventory, build/wrapper content and installed JAR identity bind reuse of its 68 Jupiter tests and complete paired API evidence. The new twelve-panel graphical batch independently runs the actual clean cleanSandbox runIde tasks and checks native state before and after each photograph. Original pixels, exact annotation coordinates, embedded fonts, semantic descriptions and all four color/grayscale proofs pass verification. Original chapter prose and human passages are preserved.
+
+Reviewed figure sets now cover chapters 1–17 and 33–35. Chapters 18–32 retain 61 planned figures across 15 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+The integrated chapter 17 build contains 1,769 manuscript pages.
