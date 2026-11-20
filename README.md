@@ -766,3 +766,21 @@ remain private. Capture tooling stays in the separate authoring plugin depending
 on MARS. The unchanged driver reuses its exact 49-test/API evidence; this increment
 changes no MARS or authoring-plugin source. Independent accessibility review and
 later substantive editing remain open.
+
+
+## Illustrated sorting chapter
+
+The sorting chapter has four reviewed native LaTeX IDE figures from twelve verified
+light-theme screenshots, with sixteen numbered explanations. Its 36 pages retain
+the leaf-call and idealized bar diagrams. The figures explain signed array bytes,
+height `value+5`, the two different first exchanges and the final phase/count.
+The last insertion frame repeats the sorted bars while changing phase to completion;
+its hexadecimal count 0x11 is explained as seventeen exchanges.
+
+Both completed implementations pass public/private sorting, independent renderer
+and measured-workload checks. Fourteen cumulative programs and twenty-seven quiz
+keys pass. Grading records 3,594 passing cases and 583 expected rejected cases;
+all 377 public tooling tests pass. Student materials retain original images and
+state receipts alongside native annotations. Instructor solutions and keys remain
+private. Capture tooling stays in the separate authoring plugin depending on MARS.
+Independent accessibility review and later substantive editing remain open.

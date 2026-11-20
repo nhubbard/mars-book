@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–8 and 33–35 have reviewed figure sets.
-Chapters 9–32 retain 95 planned figures across 24 sets. The manuscript has
-1,740 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–9 and 33–35 have reviewed figure sets.
+Chapters 10–32 retain 91 planned figures across 23 sets. The manuscript has
+1,743 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -1856,3 +1856,39 @@ The integrated manuscript has 1,740 pages. Reviewed figure sets now cover
 chapters 1–8 and 33–35; chapters 9–32 retain 95 planned figures across 24 sets.
 Substantive editing remains the separate later goal. The full initial book
 composition and capture goal remains active.
+
+
+## Reviewed sorting figures
+
+Chapter 9 contains four reviewed native LaTeX IDE figures with sixteen numbered
+explanations from twelve actual light-theme captures. Its leaf-call and idealized
+bar diagrams remain figures 9.1 and 9.2; actual IDE figures are 9.3–9.6. The
+36-page chapter shows the initial signed bars, first insertion exchange, first
+selection exchange and final insertion publication. The annotations connect
+little-endian array words, algorithm/phase/exchange metadata and complete pixel
+frames. They explain the offset height encoding, adjacent versus suffix-minimum
+exchanges, the pre-redraw boundary, and hexadecimal 0x11 as seventeen exchanges.
+
+Both completed implementations pass public/private sorting, independent renderer
+and measured-workload checks. Fourteen cumulative programs and twenty-seven quiz
+keys pass. Final grading records 3,594 passing cases and 583 expected rejected
+cases across faulty variants and unfinished starter controls. All 377 public
+tooling tests pass. The capture oracle independently checks both complete exchange
+histories, every framebuffer word and exact data-store prefixes. Native cells,
+paint and photographic colors are verified with zero channel tolerance. The
+selection fixture changes only the documented selector word; no instruction
+text or original image pixels were changed.
+
+Color and grayscale proofs, embedded fonts and tagged figure descriptions pass.
+The first tall proofs are retained privately; accepted figures use tighter gaps
+and a smaller bitmap without shrinking explanatory text or code. Student exports
+retain original images, exact state receipts and editable native annotations.
+Capture implementation stays in the separate authoring plugin depending on MARS.
+The unchanged driver retains its exact source/binary binding to 49 passing Jupiter
+tests and compatible public API evidence. No MARS or authoring-plugin source
+changed in this publication step.
+
+The integrated manuscript has 1,743 pages. Reviewed figure sets now cover
+chapters 1–9 and 33–35; chapters 10–32 retain 91 planned figures across 23 sets.
+Independent accessibility review remains open. Substantive editing is the separate
+later goal, and the full initial composition/capture goal remains active.

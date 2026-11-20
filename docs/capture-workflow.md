@@ -460,3 +460,32 @@ remains in the separate authoring plugin depending on MARS. The actual clean
 cleanSandbox runIde launch used the same exact driver bound to the retained 49-test
 and public API evidence; these unchanged tests were reused, not rerun. Independent
 accessibility review remains open after automated tag/font/pixel and print checks.
+
+
+## Sorting exchange figures
+
+Chapter 9 uses twelve actual Debug views: three raw parts for each of four native
+figures. Values and publication metadata are separate memory views, with a full
+eight-by-eight bitmap. The next instruction is the native leaf return at sort_ready.
+Conditions select the initial publication (`$s6 == 0`), first completed exchange
+(`$s6 == 1`) and final insertion publication (`$s2 == 8`). The last condition
+distinguishes completion from the preceding seventeenth-exchange frame. Every
+composite binds all three parts to one exact source hash, line and condition.
+
+Insertion uses the unchanged reference. Selection changes only its documented
+algorithm data word from zero to one. The independent model verifies all seventeen
+insertion and five selection exchanges, both the pre-redraw and completed-frame
+boundaries, all 64 frame words and ordered stores to the declared data image.
+Array updates do not immediately change the published count or old frame. Native
+tooltip coordinates/addresses/colors, native paint and photo centers are all checked
+with zero screen-channel tolerance. Altered images and conditions are rejected.
+
+Four native editable LaTeX figures have sixteen numbered explanations, signed-word
+examples, native coordinate labels and semantic descriptions. The two existing
+chapter diagrams remain native. Accepted one-page proofs and full chapter pages
+are reviewed in color and grayscale. Rejected tall proofs are retained privately;
+original PNG pixels are unchanged. The source/state receipts and original images
+are exported with student-safe native annotations. Screenshot code remains only
+in the separate authoring plugin depending on MARS; no plugin source changed. Its
+previous 49-test/API evidence is reused with exact unchanged-source/binary hashes.
+Independent accessibility review remains open after automated tag/font/pixel checks.
