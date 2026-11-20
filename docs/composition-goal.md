@@ -1718,3 +1718,23 @@ still have 115 planned figures across 29 chapter sets. Independent accessibility
 review remains open, and substantive editing remains the separate future goal.
 The full initial composition/capture goal stays active. Screenshot implementation
 remains in the separate authoring plugin depending on MARS.
+
+
+## Reviewed bit-inspector chapter figures
+
+Chapter 4 has four reviewed native LaTeX figures with thirteen numbered details
+from six original light-theme IDE images. The 26-page chapter contrasts sign and
+zero extension, complete doubleword stores, word formatting and the signed-word
+arithmetic boundary. The existing native extension diagram is retained. The
+separate authoring plugin now captures completed programs that need no keyboard
+input, with exact output and exit evidence. Interactive captures still require
+native prompt/input evidence. All 37 Jupiter and 373 public tooling tests pass.
+
+Both equivalent bit inspectors, eleven cumulative programs and sixteen quiz keys
+pass. Grading records 303 passing cases and nineteen rejected cases across the
+fault and unfinished controls. The integrated manuscript has 1,725 pages.
+Reviewed figure sets now exist for chapters 1–4 and 33–35. Chapters 5–32 retain
+111 planned figures across 28 sets. Independent accessibility review remains open;
+substantive editing is the separate future goal. The full initial book goal stays
+active. No MARS source changed; authoring implementation remains in its separate
+plugin depending on MARS.

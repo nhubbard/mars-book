@@ -328,3 +328,27 @@ after a comprehension-question list. Figure descriptions, native captions and te
 legends remain editable in the chapter includes; source images and resolved bounds
 are exported with the student package. Capture implementation remains in the separate
 authoring plugin depending on MARS. Independent accessibility review remains open.
+
+
+## Completed bit-inspector figure set
+
+Chapter 4 has four reviewed native LaTeX figures with thirteen numbered details
+from six unchanged light-theme IDE images. Five Debug views establish sign/zero
+extension and full-width stores for the all-one and 0x7fffffff samples. A completed
+native Run establishes the exact four-line report without keyboard input. The
+separate authoring plugin now supports input-free Run captures while retaining
+strict prompt/native-input evidence for interactive examples. Student validation
+rejects an invented keyboard event on an input-free Run.
+
+The first capture recipe left the fourth register below the viewport; it remains
+private rejected evidence. The accepted batch reveals the last required register,
+bringing the adjacent group into view. All actual state and source assertions are
+unchanged. The independent verifier binds the full process output, successful exit,
+console text and UTF-16 callout ranges as well as the Debug source/value observations.
+Thirty-seven Jupiter tests and public API verification accompany the driver.
+
+The editable captions and legends explain equal low words with different high
+halves, complete eight-byte fields, the limits of word-formatting services and the
+word/doubleword sum at bit 31. Color/grayscale proof review and native font, tag and
+original-pixel checks pass. Capture implementation remains in the separate plugin
+depending on MARS. Independent accessibility review remains open.
