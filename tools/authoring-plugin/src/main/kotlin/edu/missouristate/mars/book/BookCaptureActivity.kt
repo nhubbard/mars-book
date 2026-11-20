@@ -103,6 +103,10 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val bytes = withContext(Dispatchers.IO) { Files.readAllBytes(path) }
         check(captureSha256(bytes) == figure.sourceSha256) { "Fixture changed: ${figure.id}" }
         check(!Files.exists(output.resolve(figure.id + ".png")) && !Files.exists(output.resolve(figure.id + ".json"))) { "Existing capture refused" }
+        if (figure.mode != "debug") {
+            captureBookPresentation(project, plan, figure, output, descriptor)
+            return
+        }
         val expectedBitmap = withContext(Dispatchers.IO) { figure.bitmapView?.load(Path.of(plan.projectRoot)) }
         val manager = XDebuggerManager.getInstance(project)
         val analysisReady = AtomicBoolean(false)

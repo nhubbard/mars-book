@@ -41,15 +41,28 @@ data class BookCaptureFigure(
     val bitmapView: BookBitmapView? = null,
     val standardInput: String? = null,
     val stepFrom: List<String> = emptyList(),
+    val mode: String = "debug",
+    val editorCallouts: List<BookTextCallout> = emptyList(),
+    val runView: BookRunView? = null,
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
         require(sourceSha256.matches(Regex("[a-f0-9]{64}"))) { "A fixture digest is required" }
-        require(checkpoint.matches(Regex("[A-Za-z_][A-Za-z_0-9]*"))) { "Invalid checkpoint label" }
+        require(mode in listOf("debug", "editor", "run")) { "Unknown capture mode" }
+        require(if (mode == "debug") checkpoint.matches(Regex("[A-Za-z_][A-Za-z_0-9]*")) else checkpoint.isEmpty()) { "Invalid checkpoint for capture mode" }
         require(source.isNotBlank() && !Path.of(source).isAbsolute) { "Source must be relative to the fixture project" }
         require(projectRoot.resolve(source).normalize().startsWith(projectRoot.normalize())) { "Source escapes fixture project" }
         require(width in 800..2560 && height in 600..1600) { "Unsupported viewport" }
-        require(expectedRows.isNotEmpty() || bitmapView != null) { "A figure needs an observed debugger value or bitmap" }
+        if (mode == "debug") {
+            require(expectedRows.isNotEmpty() || bitmapView != null) { "A figure needs an observed debugger value or bitmap" }
+            require(editorCallouts.isEmpty() && runView == null) { "Debug views use native debugger assertions" }
+        } else {
+            require(expectedRows.isEmpty() && bitmapView == null && memoryView == null && debuggerView.isEmpty && stepFrom.isEmpty()) { "Presentation captures cannot request Debug navigation" }
+            if (mode == "editor") require(editorCallouts.isNotEmpty() && runView == null && standardInput == null) { "An editor capture needs source callouts only" }
+            else require(runView != null && editorCallouts.isEmpty() && standardInput != null) { "A Run capture needs input and an output contract" }
+        }
+        editorCallouts.forEach { it.validate() }
+        runView?.validate()
         standardInput?.let(::validateBookStandardInput)
         require(stepFrom.size <= 32 && stepFrom.all { it.matches(Regex("[A-Za-z_][A-Za-z_0-9]*")) }) { "Invalid Debug step checkpoints" }
         require(stepFrom.distinct().size == stepFrom.size && checkpoint !in stepFrom) { "Debug steps need distinct checkpoints before the final stop" }
@@ -125,4 +138,30 @@ internal fun validateBookStandardInput(input: String) {
     require(input.length in 1..1024 && input.endsWith("\n") && input.all { it == '\n' || it == '\t' || it.code in 32..126 }) {
         "Capture input must be bounded, newline-terminated ASCII"
     }
+}
+
+data class BookTextCallout(val label: String = "", val text: String = "") {
+    fun validate() {
+        require(label.isNotBlank() && text.isNotBlank() && text.length <= 8192) { "Missing or excessive text callout" }
+    }
+}
+
+data class BookRunView(
+    val prompt: String = "",
+    val stdout: String = "",
+    val consoleText: String = "",
+    val callouts: List<BookTextCallout> = emptyList(),
+) {
+    fun validate() {
+        require(prompt.isNotBlank() && stdout.startsWith(prompt) && stdout.length <= 32768) { "Run needs an exact bounded output contract" }
+        require(consoleText.startsWith(prompt) && consoleText.length <= 32768 && callouts.isNotEmpty()) { "Run needs rendered console assertions" }
+        callouts.forEach { it.validate() }
+    }
+}
+
+internal fun uniqueBookTextRange(source: String, text: String): IntRange {
+    require(text.isNotBlank()) { "Empty text target" }
+    val start = source.indexOf(text)
+    require(start >= 0 && source.indexOf(text, start + 1) < 0) { "Text target must identify one exact occurrence" }
+    return start until start + text.length
 }

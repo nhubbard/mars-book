@@ -262,3 +262,26 @@ all pseudo-instructions are single machine instructions. Four additional Jupiter
 tests cover exact input bytes, stream lifetime, rejected input/processes, broken
 pipes and distinct step-boundary validation. The graphical fixture separately
 verifies actual input consumption and native stepping.
+
+
+### Starter editor and completed Run captures
+
+`mode: "editor"` observes exact, unique `editorCallouts` in an unchanged source
+editor without creating an execution process. `mode: "run"` requires `standardInput`
+and a `runView` with the expected prompt, exact process stdout, rendered console
+prefix and text callouts. Neither mode can request debugger rows, steps or memory.
+
+The Run driver subscribes to the public execution lifecycle before launch and
+collects stdout/stderr from only its owned process. After the prompt is visible,
+it uses the console editor's native typing and Enter handlers. Those handlers
+perform the actual echo and input delivery. Capture requires exit zero, exact
+stdout, empty stderr, flushed console output, unique visible text ranges and stable
+native bounds. The same source, text and bounds are checked after photography.
+
+The inspected pinned API sources are `ExecutionListener`, `RunContentDescriptor`,
+`ConsoleView`, `TypedAction`, `EditorActionManager` and the native console handlers.
+The installed implementation uses their public contracts; it does not access the
+internal `ConsoleViewImpl` class. Original PNGs and observed UTF-16 text ranges
+remain separate from subsequent native LaTeX annotations. Four additional Jupiter
+tests cover mode isolation, required output evidence, bounded callouts and exact
+unique editor offsets, including supplementary Unicode characters.
