@@ -113,8 +113,16 @@ Two accurate precisions/traversals pass 368 private cases; three layouts pass
 144 public cases. Eight named repeated-call cases use actual prior output as
 prediction, and 24 child-failure probes retain caller output. Eight ordinary
 composed callers and all 286 public tooling tests pass. The chapter now has
-71 pages and seventy construction observations/quizzes. Picture ownership,
-bit writing and baseline picture/macroblock syntax remain next. Keep the
+71 pages and seventy construction observations/quizzes. Bounded bit output now
+adds a verified context/append contract, exact MSB-first replacement, empty writes,
+capacity preflight and explicit alignment, bringing the chapter to 79 pages and
+eighty observations/quizzes. Both schedules pass 1632 private cases; three layouts
+pass 160 public cases. Four repeated-chain cases and all 294 public tooling tests
+pass. A named unaligned 32-bit append costs 656 per-bit versus 189 byte-fragment
+instructions, including admission/commit; this is not whole-encoder timing.
+Four target header-packing cases agree with the independent header inspector,
+without claiming complete-stream conformance. Picture ownership, coefficient and
+baseline picture/macroblock syntax remain next. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
 checks, failure/publication contracts and equivalent valid encoders. Do not accept

@@ -1,0 +1,209 @@
+\section{Step 71 Separate byte capacity from bit position}\label{h263-writer-s01}
+Load the three context doublewords and keep their units distinct. Check context
+alignment and its non-wrapping extent before reading fields. Validate capacity,
+buffer extent and used-bit range before deriving an output byte address. Use
+full-width address arithmetic for the buffer plus byte index.
+
+\paragraph{Observe} An eight-byte arena has sixty-four bit positions. A count
+of eight means one byte is committed, not the entire arena.
+\Needspace{8\baselineskip}
+\paragraph{Check} What unit does the mutable context counter use?
+\begin{itemize}
+\item[A.] Bits already committed to the stream.
+\item[B.] Capacity measured in native words.
+\item[C.] Video pictures per second.
+\end{itemize}
+
+\section{Step 72 Validate the field value and width}\label{h263-writer-s02}
+Reject a width greater than 32 before using it as a variable shift count. Then
+check that shifting the unsigned value right by the declared width leaves zero.
+For width zero, this checks the complete value directly. Keep both arguments
+full width; a large value or width can have a small plausible low word.
+
+\paragraph{Observe} Value 256 does not fit a declared width of eight. Value zero
+with width zero is a legal empty field; value one with width zero is invalid.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why reject high bits instead of silently masking them?
+\begin{itemize}
+\item[A.] It changes the memory byte order.
+\item[B.] It catches a malformed field before corrupting its intended syntax.
+\item[C.] It permits widths greater than 32.
+\end{itemize}
+
+\section{Step 73 Admit the complete field before touching output}\label{h263-writer-s03}
+After checking the existing used count, subtract it from eight times capacity.
+Compare the complete requested width with that remaining count. Return status
+two before buffer reads or writes if the field does not fit. Preserve all context
+fields on rejection. A valid empty append needs no output access or counter store.
+
+\paragraph{Observe} With one byte of capacity and seven used bits, a one-bit
+append fits exactly. A two-bit append retains the old byte and old count.
+\Needspace{8\baselineskip}
+\paragraph{Check} What happens when a valid field exceeds remaining space?
+\begin{itemize}
+\item[A.] Write the fitting prefix and return success.
+\item[B.] Advance the count without writing bytes.
+\item[C.] Return status two without accessing the buffer.
+\end{itemize}
+
+\section{Step 74 Emit the highest selected bit first}\label{h263-writer-s04}
+For the initial scalar loop, begin with source shift $n-1$. Extract one unsigned
+bit, derive destination byte $p/8$ and bit position $7-(p\bmod8)$, and place it
+there. Advance the local bit cursor and move to the next lower source bit until
+all requested bits are consumed.
+
+The initial empty-width return must precede the loop, so there is no source
+shift of minus one. The first emitted bit belongs to the declared field, which
+can contain leading zeros even when the numerical value is small.
+
+\paragraph{Observe} Value five with width five emits \texttt{00101}, not just
+\texttt{101} and not the eight-byte native representation of five.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which source bit is emitted first for width $n>0$?
+\begin{itemize}
+\item[A.] Bit $n-1$ of the right-aligned value.
+\item[B.] Always bit zero.
+\item[C.] The highest bit of the native address.
+\end{itemize}
+
+\section{Step 75 Replace the selected destination bits}\label{h263-writer-s05}
+Load the touched byte unsigned. Clear the selected destination bit with an
+inverted mask, then OR in the shifted replacement bit. Store a byte. This handles
+both replacement values while preserving the old stream prefix and unused suffix.
+Do not clear the entire byte when appending inside it.
+
+\paragraph{Observe} Writing a zero over an old one changes that bit. OR without
+clearing would leave the old one in place.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why is an OR-only append incorrect?
+\begin{itemize}
+\item[A.] It cannot write a one.
+\item[B.] It cannot clear an old one when the new bit is zero.
+\item[C.] It always reverses native byte order.
+\end{itemize}
+
+\section{Step 76 Commit the cursor after successful output}\label{h263-writer-s06}
+Keep the advancing cursor local until all field bits have been stored. Then write
+it to context offset sixteen and return the appended width. Keep the buffer
+pointer and byte capacity unchanged. No counter write is needed for an empty
+append.
+
+This ordering is a boundary for the admitted operation. It does not promise
+recovery from an asynchronous simulator interruption or an invalid unmapped
+pointer that violated caller obligations.
+
+\paragraph{Observe} After a successful nine-bit append at used count three,
+the context count is twelve and the returned append count is nine.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which quantity belongs in the successful return count?
+\begin{itemize}
+\item[A.] Byte capacity.
+\item[B.] The numerical field value.
+\item[C.] The declared width just appended.
+\end{itemize}
+
+\section{Step 77 Observe repeated appends through the caller}\label{h263-writer-s07}
+Start with \path{drafts/h263-bit-writer-construction/main.asm}. Its first call
+appends value five in three bits, and its second appends decimal nineteen in five
+bits to the same context. The complete byte is \texttt{10110011}, hexadecimal
+\texttt{B3}, or decimal 179. The count is eight.
+
+At \texttt{writer\_caller\_return}, before its first instruction, the second
+append has completed. Return status is zero and appended count five, while the
+named status/count fields have not yet received their copies. The ordinary caller
+prints 179 and exits zero after resuming. An unfinished entry reports development
+status four and exits one.
+
+\paragraph{Observe} The second call continues from bit three; it does not
+replace the entire first byte or start a new byte automatically.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which byte results from fields \texttt{101} and \texttt{10011}?
+\begin{itemize}
+\item[A.] \texttt{10110011}.
+\item[B.] \texttt{00000101} only.
+\item[C.] Two unrelated native doublewords.
+\end{itemize}
+
+\section{Step 78 Combine the next byte fragment}\label{h263-writer-s08}
+Replace the single-bit loop with a byte-fragment loop while retaining the same
+contract. Take at most the remaining positions in the destination byte. Extract
+that many next high source bits, position them with a mask, and perform one
+read-modify-write. Advance the local cursor by the fragment width.
+
+For an unaligned 32-bit field, five fragments suffice. Preserve the old suffix
+of the final byte. A whole-word load extending beyond the touched byte range
+would violate this exercise's access contract even if it looked faster.
+
+\paragraph{Observe} Both schedules produce identical stream bytes. The wider
+fragment reduces repeated byte accesses without changing field order.
+\Needspace{8\baselineskip}
+\paragraph{Check} How many bytes can an unaligned 32-bit append touch?
+\begin{itemize}
+\item[A.] Always exactly four.
+\item[B.] At most five.
+\item[C.] Thirty-two native doublewords.
+\end{itemize}
+
+\section{Step 79 Check boundaries before comparing work}\label{h263-writer-s09}
+Run public feedback on your current source:
+\begin{verbatim}
+python3 drafts/h263-bit-writer-construction/grade.py \
+    my-writer.asm --cli /path/to/mars-cli.jar \
+    --report writer-results.json
+\end{verbatim}
+The checker constructs an independent bit sequence and compares the affected
+bytes. It checks both simulator byte orders, every starting bit offset, representative
+widths including zero and 32, exact fits, insufficient capacity, wide malformed
+controls, guarded context and the maximum-capacity endpoint. Read/write traces
+reject access outside bytes touched by the field.
+
+Measure entry-to-return instruction work for the same value, width and initial
+cursor in both implementations. Include validation, loop branches, byte accesses
+and the committed count update. This local work comparison is not a whole-encoder
+wall-time measurement or a grading threshold.
+
+For the named all-one 32-bit field starting at bit three, the tested bit-at-a-time
+entry executes 656 instructions and the byte-fragment entry executes 189, including
+admission and the final counter store. Both simulator byte orders give the same
+counts. This saves 467 instructions for that append; it does not measure an entire
+coefficient event, file write or encoder launch. Different valid implementations
+need not reproduce these counts.
+
+\paragraph{Observe} A bit-at-a-time implementation remains valid after the
+byte-fragment implementation is introduced. Correct output does not require a
+particular instruction count or private label.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must match when comparing the two schedules?
+\begin{itemize}
+\item[A.] Only their scratch-register names.
+\item[B.] The host computer's display theme.
+\item[C.] Field value, width, initial bit cursor and complete measured boundary.
+\end{itemize}
+
+\section{Step 80 Append alignment bits explicitly}\label{h263-writer-s10}
+Prepare a crossing observation without changing your instructions:
+\begin{verbatim}
+python3 drafts/h263-bit-writer-construction/prepare.py \
+    --source my-writer.asm --first 5 --first-width 3 \
+    --second 419 --second-width 9 --output crossing.asm
+\end{verbatim}
+The two fields commit twelve bits and leave bytes \texttt{BA 35}; the low four
+bits are retained unused storage. To reach the next byte boundary where the
+syntax requires zero stuffing, append value zero with width four. This produces
+\texttt{BA 30} and count sixteen. In general, the required zero-bit count is
+$(8-(p\bmod8))\bmod8$. An already aligned stream needs zero additional bits.
+
+Keep alignment decisions in the syntax writer. Picture start codes require their
+specified alignment, but ordinary adjacent fields must not acquire arbitrary
+padding. The next coefficient and macroblock stages will use this append entry
+with their own lengths, admission and publication rules.
+
+\paragraph{Observe} Capacity and unused storage do not decide syntax. Explicit
+padding changes both the byte bits and the committed count.
+\Needspace{8\baselineskip}
+\paragraph{Check} When should ordinary field appends insert padding automatically?
+\begin{itemize}
+\item[A.] Never; the syntax layer requests any required alignment bits.
+\item[B.] After every field regardless of its syntax.
+\item[C.] Whenever an unused buffer byte is nonzero.
+\end{itemize}

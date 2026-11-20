@@ -1510,3 +1510,35 @@ This completes the callable eight-by-eight local path. Picture ownership,
 macroblock/bitstream syntax, file output, whole-encoder quality/interoperability/
 performance checks, chapter distributions and actual IDE figures remain unfinished.
 Independent accessibility review and later substantive editing remain separate.
+
+
+## Bounded H.263 bit output
+
+The native chapter now has 79 pages and eighty construction observations/quizzes.
+Steps 71–80 develop field width/value admission, MSB-first order, exact partial-byte
+replacement, complete-field capacity preflight, empty writes, cursor commit,
+repeated appends, byte-fragment optimization and explicit syntax-layer alignment.
+Two additional native tables bring it to twenty-two tables/79 tagged header cells.
+The four described native figures remain; no chapter screenshot is claimed.
+
+Both per-bit and byte-fragment bodies pass 1632 private cases covering every width
+0..32, every starting offset, zero/one/mixed patterns and both byte orders. Three
+layouts pass 160 public cases. Four repeated-chain cases test crossing, zero padding,
+empty writes, capacity failure and a retry using the retained context. Five wrong
+bodies and the unfinished starter are rejected. Twelve completed/failure ordinary
+caller variants plus the unfinished caller pass their expected outcomes. A prepared
+working source passes feedback with report protection; all 294 public tooling tests
+pass. Four additional target header-packing cases agree with the independent
+baseline header inspector; these inspect headers, not complete-stream conformance.
+
+The named unaligned all-one 32-bit append measures 656 entry-to-return instructions
+per bit versus 189 per byte fragment in either byte order. This is function work,
+not host time or whole-encoder throughput. Different schedules and private frames
+remain valid. No MSA is required for serial bit output. Multi-field structures still
+need their own capacity preflight or staging; field-level atomicity is not enough.
+
+No MARS or authoring-plugin source changed and no GUI launch occurred. The authoring
+plugin remains separate and depends on MARS. Picture ownership, coefficient and
+macroblock syntax, file output, whole-encoder quality/interoperability/performance,
+chapter distributions and actual captures remain unfinished. Independent accessibility
+review and substantive editing remain separate.
