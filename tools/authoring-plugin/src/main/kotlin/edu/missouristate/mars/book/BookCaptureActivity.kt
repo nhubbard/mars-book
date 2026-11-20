@@ -240,7 +240,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                             if (position.line != reverseLine) return@withContext null
                             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
                             val candidates = captureComponents(frame).filterIsInstance<ActionToolbar>().flatMap { toolbar ->
-                                (toolbar.actions + toolbar.actionGroup.getChildren(null)).filter { it.templatePresentation.text == "Backstep Instruction" }.map { toolbar to it }
+                                toolbar.actions.filter { it.templatePresentation.text == "Backstep Instruction" }.map { toolbar to it }
                             }.distinctBy { it.second }.toList()
                             val (toolbar, action) = candidates.singleOrNull() ?: return@withContext null
                             backstepCallback = ActionManager.getInstance().tryToExecute(action, null, toolbar.component, "MarsBookCapture", false)
