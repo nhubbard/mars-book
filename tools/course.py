@@ -72,13 +72,27 @@ def validate_composite_capture(root, figure, receipt):
     """Validate native multi-view figures without treating a rendered preview as a raw capture."""
     from annotate import validate_capture
 
-    if receipt.get('formatVersion') != 2 or receipt.get('kind') != 'native-composite':
+    comparison = receipt.get('formatVersion') == 3 and receipt.get('kind') == 'native-comparison'
+    if not comparison and (receipt.get('formatVersion') != 2 or receipt.get('kind') != 'native-composite'):
         raise ValueError('Unsupported native composite receipt')
+    source_keys = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'breakpointCondition', 'backstepFrom', 'observedBackstep')
+    sessions = receipt.get('sessions', {})
+    if comparison:
+        if not isinstance(sessions, dict) or not 2 <= len(sessions) <= 8:
+            raise ValueError('Comparison needs two or more declared sessions')
+        for name, state in sessions.items():
+            if not re.fullmatch(r'[a-z][a-z0-9-]*', name) or not isinstance(state, dict) or set(state) != set(source_keys):
+                raise ValueError('Comparison session needs complete source-bound state')
+            if not isinstance(state['sourceSha256'], str) or not re.fullmatch(r'[a-f0-9]{64}', state['sourceSha256']) or not isinstance(state['source'], str) or not state['source']:
+                raise ValueError('Comparison session needs source identity')
+    elif sessions or any('session' in part for part in receipt['parts']):
+        raise ValueError('Session groups require an explicit comparison receipt')
     if receipt.get('figure') != figure['id']:
         raise ValueError('Composite figure identity differs')
     parent = Path(figure['receipt']).parent
     parts = {}
     shared = receipt['sharedState']
+    observed_sessions = set()
     for part in receipt['parts']:
         if not re.fullmatch(r'[a-z][a-z0-9-]*', part['id']) or part['id'] in parts:
             raise ValueError('Invalid or duplicate composite part')
@@ -92,12 +106,23 @@ def validate_composite_capture(root, figure, receipt):
             raise ValueError('Composite capture was not visibly settled')
         if any(raw.get(key) != value for key, value in shared.items()):
             raise ValueError('Composite captures differ from their shared state')
+        if comparison:
+            session = part.get('session')
+            if not isinstance(session, str) or session not in sessions:
+                raise ValueError('Comparison part needs a declared session')
+            if any(raw.get(key) != value for key, value in sessions[session].items()):
+                raise ValueError('Comparison part differs from its session state')
+            observed_sessions.add(session)
         parts[part['id']] = raw
     if not 1 <= len(parts) <= 8 or len(receipt['panels']) < 2 or shared.get('checkpoint') != figure['checkpoint']:
         raise ValueError('Composite needs at least two panels at the declared checkpoint')
     identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'breakpointCondition', 'backstepFrom', 'observedBackstep', 'publicCommit',
                   'upstreamCommit', 'upstreamDirtyFiles', 'ideBuild', 'captureDriverSha256',
                   'marsPluginArchiveSha256', 'locale', 'scale')
+    if comparison and observed_sessions != set(sessions):
+        raise ValueError('Comparison contains an unused session')
+    if comparison:
+        identities = tuple(key for key in identities if key not in source_keys)
     first = next(iter(parts.values()))
     if any(any(raw.get(key) != first.get(key) for key in identities) for raw in parts.values()):
         raise ValueError('Composite views have different source or runtime provenance')
@@ -183,7 +208,7 @@ def validate(package_id):
             receipt = read_json(within(root, figure['receipt']))
             if receipt['theme'] != figure['theme'] or receipt['assertionsPassed'] is not True:
                 raise ValueError('Capture receipt does not attest to required state')
-            if figure.get('captureFormat') == 'native-composite' or receipt.get('formatVersion') == 2 or receipt.get('kind') == 'native-composite':
+            if figure.get('captureFormat') in ('native-composite', 'native-comparison') or receipt.get('formatVersion') in (2, 3) or receipt.get('kind') in ('native-composite', 'native-comparison'):
                 validate_composite_capture(root, figure, receipt)
     for name in data['exports']:
         path = within(root, name)
