@@ -2114,3 +2114,17 @@ The unchanged separate authoring driver depends on MARS. Exact source, build/wra
 Reviewed figure sets now cover chapters 1–18 and 33–35. Chapters 19–32 retain 57 planned figures across 14 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
 
 The integrated chapter 18 build contains 1,772 manuscript pages.
+
+## Chapter 19 illustrated draft
+
+Four actual light-mode IDE plates explain completed packing, completed expansion, the full preview and a nine-pixel vector-plus-tail run. Eighteen unchanged photographs support twenty-two native explanations. The standalone chapter has 60 pages. The figures distinguish pixel counts from byte lengths, numerical RGB565 fields from low-byte-first storage, expanded component triples from four-byte display cells, and completed black pixels from untouched zero padding. The view paragraph now acknowledges actual captures; human passages and remaining prose are preserved.
+
+An independent bit-string oracle selects and cyclically repeats retained fields. All 848 bytes are checked initially, at pack entry/return, unpack entry/return, preview completion and exit. Bounded function histories protect input, suffixes, guards, other buffers and constant masks; exact caller histories verify result publication and selected preview stores. Four host tests cover every RGB565 word and low-bit bucket, channel boundaries, exact repetition rather than ideal rescaling, all counts and retained core histories. Four native mutations reject same-value protected writes and suffix reads. A rejected pre-execution preparation with missing Kotlin token spacing is retained privately.
+
+Fresh complete grading passes 17,346 positive case executions, 39 cumulative programs with 47 observations, 47 ordinary caller scenes and 49 quiz keys. Twenty-two rejection runs yield 5,140 expected failing cases. Both implementations, wide data, repeated sequences and equivalent implementations pass. Coverage includes all RGB565 words and two bounded 65,536-case RGB888 families; it does not cover all 16,777,216 RGB888 inputs or all multi-pixel arrangements.
+
+The separate authoring driver is unchanged and depends on MARS. Its source/build inventory and identical class/resource bytes bind reuse of 68 Jupiter tests and complete paired API evidence. The installed JAR exactly matches the previous captured binary; its retained comparison to the original tested archive differs only in Build-JVM metadata. The new graphical batch independently runs the actual clean tasks and verifies eighteen native captures. Every native bitmap cell and tooltip is exact; photograph-only ICC tolerance remains bounded at three channel levels. All four color/grayscale proofs, coordinates, original pixels, fonts and tagged descriptions pass. MARS and unrelated edits are preserved.
+
+Reviewed figure sets now cover chapters 1–19 and 33–35. Chapters 20–32 retain 53 planned figures across 13 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+The integrated chapter 19 build contains 1,775 manuscript pages.
