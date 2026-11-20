@@ -2128,3 +2128,17 @@ The separate authoring driver is unchanged and depends on MARS. Its source/build
 Reviewed figure sets now cover chapters 1–19 and 33–35. Chapters 20–32 retain 53 planned figures across 13 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
 
 The integrated chapter 19 build contains 1,775 manuscript pages.
+
+## Chapter 20 illustrated draft
+
+Four actual light-mode IDE plates explain the saturating return, wrapping return, completed comparison and a nine-sample vector-plus-tail run. Eighteen unchanged photographs support twenty-two native explanations. The standalone chapter has 51 pages. The figures show why exact endpoint sums do not count as clipping, how low sixteen bits differ from saturation, and why the live wrapping second return can be zero while the saved saturation clipping count remains six.
+
+The independent host model uses unbounded signed sums, median saturation and signed modulo interpretation. All 820 caller bytes are checked initially, at mix entry/return, wrap entry/return, comparison and exit. Bounded function histories protect logical slices and exact caller histories separate return values from later stores. Four host tests cover every possible exact sum, all halfword encodings, strict endpoints, all eight-lane clipping masks and retained native evidence. Four native mutations reject invisible protected stores and suffix reads. These disjoint capture fixtures supplement the full grader's alias coverage.
+
+Fresh full verification passes 26,278 successful checks, thirty cumulative programs, forty-eight observations in isolated and actual-caller contexts, and forty quiz keys. The starter and twenty-two faulty variants yield 12,268 expected failures in twenty-three rejection runs. Coverage includes all 131,071 exact signed-halfword sums, each first sample paired with five fixed second samples and all 256 clipping masks. It does not exhaust all 4,294,967,296 input pairs or multi-sample arrangements. Both implementations generate matching listening fixtures; the extracted student renderer reproduces all twelve published WAV hashes and scene metadata. Live audio-device playback is not claimed.
+
+The unchanged authoring plugin depends on MARS. Source/build and identical classes/resources bind reuse of 68 Jupiter tests and complete paired API evidence; the actual installed JAR matches the previous captured binary. The new graphical batch independently runs clean cleanSandbox runIde and verifies eighteen captures. All native frame/crop, original-pixel, font, tagged-description and color/grayscale checks pass. The student package already exports the complete native chapter, so publication migrates only verified planned placeholders and two factual status passages. Graded programs, checks, quizzes, audio and other native prose remain protected. Human passages and remaining chapter prose are preserved.
+
+Reviewed figure sets now cover chapters 1–20 and 33–35. Chapters 21–32 retain 49 planned figures across 12 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+The integrated chapter 20 build contains 1,778 manuscript pages.
