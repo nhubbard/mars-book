@@ -1,8 +1,9 @@
 # Full chapter composition goal
 
 Latest verified capture status: chapters 1–23 and 33–35 have reviewed figure sets.
-Chapters 24–32 retain 36 planned figures across 9 sets. The manuscript has
-1,787 pages. Independent accessibility review remains open; substantive editing
+Three additional CRC figures are reviewed; its fourth figure remains planned.
+Chapters 24–32 retain 33 planned figures across 9 sets. The manuscript has
+1,790 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2184,3 +2185,15 @@ Reviewed figure sets cover chapters 1–23 and 33–35. Chapters 24–32 retain 
 
 The integrated chapter 23 build contains 1,787 manuscript pages. Its full body
 glyphs and positions match the 74-page standalone edition, allowing the binding offset.
+
+## Chapter 24 partly illustrated draft
+
+Three actual light-mode IDE plates explain changed-bit raw state, all 256 table entries and an open descriptor between real three-byte reads. Eighteen native captures pass verification; fourteen originals support sixteen native explanations. The standalone chapter has 49 pages. The fourth planned figure, a missing-path/read-failure comparison with descriptor cleanup, remains planned because supported IDE injection is not yet available.
+
+Independent polynomial long division and explicit bit reversal check complete 5860-byte images and every caller-data notice. Four host tests cover all octets at three seeds against zlib, table linearity and split raw-state composition. Six native mutations reject protected same-value writes, a mapped suffix read, an omitted final table entry, missing guest close and premature final complementation. Real capacity three makes the normal host file match the illustrated first chunk; both successful and missing-path ordinary CLI dumps agree in every caller byte.
+
+Fresh grading passes 7,855 successful cases across 131 runs, 24 intermediate programs, 52 published observations in two contexts and 34 quiz keys. The starter and 25 faulty variants produce 784 expected failures in 26 rejection runs. Both implementations also pass eight ordinary-host-file runs. The private domain covers all octets at three seeds, prefixes through 33 bytes at five seeds, all 256 capacities on two files, selected errors/offsets and 4096-byte files. It is not exhaustive over byte sequences.
+
+The separate authoring plugin and MARS are unchanged. Exact source/build/class identities bind retained 68-test Jupiter and complete paired API evidence. The native table and streaming prose were edited directly after the guarded bootstrap; final color and grayscale proofs pass. A public, generic I/O customization proposal remains unapplied pending the user's scope decision, keeping all capture/trainer implementation outside MARS. Human passages and remaining chapter prose are preserved.
+
+Complete reviewed sets still cover chapters 1–23 and 33–35. Three CRC figures are additionally reviewed. Thirty-three planned figures remain across chapters 24–32, including the one CRC comparison. Independent accessibility review and the later separate editing goal remain open.

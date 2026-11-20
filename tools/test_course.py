@@ -114,7 +114,9 @@ class PackageTests(unittest.TestCase):
         self.assertEqual([s['id'] for s in steps], [s['id'] for s in data['steps']])
         native = course.ROOT / 'includes/chapters/024-crc32'
         for path in native.glob('*.tex'):
-            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+            expected = path.read_text().replace('book/captures/024-crc32/',
+                                                'packages/024-crc32/captures/').encode()
+            self.assertEqual(expected, (root / 'native' / path.name).read_bytes())
         names = re.findall(r'\\input\{includes/chapters/024-crc32/([^}]+)\}',
                            (native / 'chapter.tex').read_text())
         reading = course.reading_segments(root, data)
