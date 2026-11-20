@@ -9,7 +9,7 @@ class PngPackageTests(unittest.TestCase):
  def test_native_reading_order_and_steps_are_exact(self):
   root,m=course.validate(ID);native=ROOT/'includes/chapters'/ID;expected=re.findall(r'\\input\{includes/chapters/'+ID+r'/([^}]+)\}',(native/'chapter.tex').read_text());steps={s['id']:Path(s['content']).stem for s in m['steps']};segments=course.reading_segments(root,m);actual=[steps[s['step']]if s['kind']=='step'else Path(s['content']).stem for s in segments if s['kind']!='figure'];self.assertEqual(expected,actual);self.assertEqual(100,len(m['steps']));self.assertEqual(m['steps'],json.loads((root/'steps.json').read_text())['steps']);self.assertEqual(97,sum(s['kind']=='edit'for s in m['steps']));self.assertEqual(97,len(re.findall(r'^# BEGIN ',(root/m['entry']).read_text(),re.M)))
   for p in native.glob('*.tex'):
-   text=p.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native');text=re.sub(r'drafts/(png-[a-z-]+)',lambda match:'packages/'+ID+'/construction/'+match[1],text);self.assertEqual(text,(root/'native'/p.name).read_text())
+   text=p.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native').replace('book/captures/'+ID,'packages/'+ID+'/captures');text=re.sub(r'drafts/(png-[a-z-]+)',lambda match:'packages/'+ID+'/construction/'+match[1],text);self.assertEqual(text,(root/'native'/p.name).read_text())
  def test_completed_checks_and_drafting_assets_are_exact(self):
   root,m=course.validate(ID);self.assertEqual(8,len(m['publicChecks']));self.assertEqual(200,sum(len(s['hints'])for s in m['steps']))
   for p in(ROOT/'drafts/png-feedback/checks').glob('*'):
@@ -40,9 +40,14 @@ class PngPackageTests(unittest.TestCase):
    if path.name=='package.json'and path.parent.name==ID:m['gradingHarness']='../escape.asm'
    return m
   with patch('course.read_json',side_effect=read),self.assertRaises(ValueError):course.validate(ID)
- def test_capture_plans_do_not_claim_images(self):
+ def test_capture_plans_require_actual_reviewed_evidence(self):
   root,m=course.validate(ID);plans=json.loads((root/m['figures']).read_text())['figures'];self.assertEqual(5,len(plans));recipes={r['id']for r in json.loads((root/'inputs.json').read_text())['recipes']}
-  for p in plans:self.assertEqual('planned',p['captureStatus']);self.assertEqual('IntelliJ Light',p['theme']);self.assertIn(p['recipe'],recipes);self.assertNotIn('artifact',p);self.assertNotIn('receipt',p)
+  self.assertEqual(5,sum(plan['captureStatus']=='verified'for plan in plans))
+  for plan in plans:
+   self.assertIn(plan['captureStatus'],('planned','verified'));self.assertEqual('IntelliJ Light',plan['theme']);self.assertIn(plan['recipe'],recipes)
+   if plan['captureStatus']=='planned':self.assertNotIn('artifact',plan);self.assertNotIn('receipt',plan)
+   else:
+    self.assertTrue((root/plan['artifact']).is_file());self.assertTrue((root/plan['receipt']).is_file());self.assertTrue((root/plan['nativeAnnotations']).is_file())
  def test_capture_checkpoints_follow_the_actual_caller_recipes(self):
   root,m=course.validate(ID);plans=json.loads((root/m['figures']).read_text())['figures']
   recipes={r['id']:r for r in json.loads((root/'inputs.json').read_text())['recipes']}

@@ -40,8 +40,9 @@ observable accesses, permitting equivalent solutions.
 
 Twenty-eight public recipes accompany seventeen quizzes and thirty-four progressive
 hints. Answers, completed algorithms and private checks remain in the instructor
-repository. Final chapter feedback, student/instructor distributions and actual
-annotated light-theme IDE captures remain pending even after functional completion.
+repository. The complete `033-png` package supplies final chapter feedback,
+student/instructor distributions and reviewed annotated light-theme IDE figures.
+Independent accessibility review and remote progression remain open.
 
 The additional `s100-display` recipe selects `FRAME_STRIDE=2` in the provided
 caller. It changes only that constant and the existing numeric/path controls,

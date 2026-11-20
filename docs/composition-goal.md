@@ -1232,3 +1232,43 @@ The five PNG capture plans and earlier chapter plans remain incomplete. H.263 is
 still planning only while the chapter 33/34 priority is completed. Independent
 accessibility review remains pending; substantive editing is the separate future
 goal requested by the author.
+
+
+## Complete PNG IDE figure set
+
+The five PNG plans are now actual native LaTeX plates, numbered 33.2–33.6 after
+the existing pipeline diagram. Thirteen Debug views capture the EOF caller,
+accepted container descriptor, first Up tail, sixteen packed words plus a scalar
+remainder, and completed image publication. The separate authoring plugin performs
+the captures through MARS's normal Debug configuration. Its exact installed artifact
+passes public-API verification and 28 Jupiter tests; MARS contains no capture code
+or reverse dependency. No upstream source change was needed.
+
+The added `s100-display` recipe uses the same 2-by-5 PNG with a two-pixel destination
+stride. The default named stride remains 512; its assembled text and data are
+byte-identical to the preceding caller. Sixteen actual-caller checks cover both
+implementations, execution modes and byte orders, compact success and rejected
+short strides. The bitmap shows five decoded rows and three unused black rows.
+All sixteen native address/color and painted-pixel checks are exact. The retained
+screen photograph differs in one cell by 1/255 in a channel; its independently
+recorded photograph check is separate from numeric decoder correctness.
+
+Native annotations explain memory tables whose aligned rows begin before a
+context field. Captures and screenshots were not altered to make the fields align.
+Every plate is reviewed in color and grayscale, with original pixels preserved
+in the PDFs. Bootstrap tools refuse edited native compositions. Exported packages
+copy these native includes and reviewed assets without regenerating prose.
+
+The PNG chapter has 97 pages, 100 observations, 200 hints, 17 tagged tables, 68 header
+cells and six described figures. All 97 chapter body pages match the 1587-page
+manuscript in words and coordinates; all 96 running headers per document are checked.
+All 227 public tooling tests pass. The 253-file student package and separate private
+checks pass 7188 cases across three equivalent implementations. The unfinished
+starter and three assembled faults are rejected. Final proof-number and documentation
+revisions preserve every executable, check, recipe and raw-capture byte from the
+retained graded archive. Seven focused private rejection tests and five bitmap
+alteration controls also pass.
+
+All five PNG and six video figure plans are now verified. Earlier chapter figure
+plans and independent accessibility review remain open. H.263 remains the next
+initial chapter; substantive editing is the separate later goal.

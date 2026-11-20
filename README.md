@@ -437,7 +437,7 @@ rejects both unfinished starters and five assembled faults. Extracted runners pa
 real-clock callers produce files that an independent decoder recovers to all eight
 original frames.
 
-All 225 public tooling tests and 28 authoring-plugin Jupiter tests pass. The native
+All 227 public tooling tests and 28 authoring-plugin Jupiter tests pass. The native
 video reading has 112 pages, with 122 observations, 22 tagged tables, 79 header cells
 and seven described native figures. Six are actual automated light-theme IDE plates;
 the other is the native seek diagram. Source images remain unannotated, with native
@@ -445,8 +445,17 @@ LaTeX callouts and semantic descriptions. The build rejects oversized floats as 
 as overflows, missing glyphs and font substitutions. These checks do not certify
 PDF/UA compliance or student usability.
 
-Chapters 33 and 34 have initial native text/packages in the manuscript. All six
-video figure plans are verified; the five PNG figure plans remain incomplete.
-Earlier chapter capture plans and independent accessibility review are also open.
-H.263 stays at the documented planning stage until the chapter 33/34 priority is
-complete. Substantive editing remains the separate future goal requested by the author.
+Chapters 33 and 34 have initial native text/packages in the manuscript. All five
+PNG and all six video figure plans are verified, with original light-theme IDE
+screenshots, native LaTeX annotations and retained receipts. The PNG chapter has
+97 pages, 100 construction observations, 17 tagged tables, 68 header cells and six
+figures including its pipeline diagram. All 97 body pages match the 1587-page
+manuscript in text and position. Its 253-file student package and separate private
+materials pass 7188 grading cases across three valid implementations; the unfinished
+starter and three assembled faults are rejected.
+
+The screenshot implementation remains in the separate authoring plugin depending
+on MARS. Earlier chapter capture plans and independent accessibility review remain
+open. H.263 is the next initial chapter draft; its restricted interoperable profile
+and Python-generated QCIF input constraints remain documented. Substantive editing
+is the separate future goal requested by the author.

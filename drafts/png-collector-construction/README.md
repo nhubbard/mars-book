@@ -32,7 +32,8 @@ collector returns one/zero for these inputs while retaining descriptor sentinels
 compressed scratch may contain a prefix. The temporary decoder returns development
 status after collector success and publishes no pixels or final context outputs.
 
-Inflater/reconstruction/packing construction, completed public feedback, final private
-grading, distributions and actual IDE captures remain pending. Instructor solutions,
+Inflater, reconstruction and packing construction follow this stage. The complete
+`033-png` package supplies final feedback, distributions and reviewed IDE figures.
+Instructor solutions,
 quiz keys, alternatives and private cases stay in the private repository. No remote
 progression or hint enforcement is implemented by these scripts.

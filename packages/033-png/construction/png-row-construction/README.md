@@ -32,5 +32,6 @@ and inflated length but an invalid final row selector.
 Nineteen recipes include thirteen construction observations and six completed-stage
 boundaries. Quiz choices and two progressive hints per step are public; answers
 and private grading cases remain in the instructor repository. Row success is
-separate from whole-program success. Packing, final feedback, distributions and
-actual annotated IDE captures remain pending.
+separate from whole-program success. Packing follows this stage. The complete
+`033-png` package supplies final feedback, distributions and reviewed annotated IDE
+figures.

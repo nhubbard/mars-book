@@ -220,3 +220,26 @@ reject. The gate now rejects them. The earlier record plate and the two affected
 new plates were resized and rebuilt; their numeric panels and native explanations
 remain readable. Full chapter integration and the independent accessibility review
 are distinct checks. The capture plugin remains separate from MARS.
+
+
+## Completed PNG capture set
+
+The PNG batch has thirteen native Debug views for its five figure plans. It uses
+the normal caller return for EOF and the lesson's final publication boundary.
+The first is a real `dla`, so receipt verification checks the first instruction
+after the unique source label instead of assuming every checkpoint is a `nop`.
+Core file-service checks establish descriptor cleanup; a buffer photograph does not.
+
+Memory pages start on sixteen-byte boundaries. The collector descriptor begins
+four bytes into its first displayed row, and the decoder context begins eight
+bytes into its row. Native legends identify the leading words and fields spanning
+rows. Review both actual addresses and field offsets before composing a crop.
+The compact final-image recipe changes only a supplied stride constant, retains
+student instruction text and decodes the original worked PNG. The two-column,
+eight-row view includes three unused rows explicitly identified in its description.
+
+Five native plates and their color/grayscale proofs are reviewed. Each retains
+its original raw screenshots, source/recipe/checkpoint receipts and native editable
+annotations. All five PNG and six video plans are verified; earlier chapter plans
+and independent accessibility review remain open. The authoring plugin is separate
+from MARS and depends on the published MARS plugin.

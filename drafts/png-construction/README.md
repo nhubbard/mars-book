@@ -21,7 +21,8 @@ so partial-file load success is separate from PNG format validation. Do not crea
 `missing.png` for the missing-file recipe. Launch with the project as the working
 directory. The supplied bitmap directive selects the first heap allocation, which is
 the 512-by-512 framebuffer. Both source and scratch are separate later parts of that
-allocation. No screenshot has been captured for this foundation.
+allocation. The complete `033-png` package includes the reviewed EOF caller figure;
+this foundation still leaves decoder stages unfinished.
 
 Prepare controls from **your current source**, preserving all instruction edits:
 

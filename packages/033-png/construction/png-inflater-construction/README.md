@@ -37,5 +37,6 @@ Internal incomplete helpers unwind the owning inflater frame. Enter through
 `png_inflate` while constructing them; standalone helper entry requires a completed
 body and its declared state. Scratch rows may contain a produced prefix on failure or
 development return, but outside-window bytes remain caller-owned. Instructor solutions
-and checking cases remain private. Huffman construction, row stages, final grading,
-distributions, actual screenshots and remote progression/hint control remain pending.
+and checking cases remain private. Huffman and row construction follow this stage.
+The complete `033-png` package supplies final feedback, distributions and reviewed IDE
+figures. Remote progression and hint enforcement remain unimplemented.

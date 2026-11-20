@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Export native chapter33 and exercise assets; never compose prose from metadata."""
-import importlib.util,json,re,shutil
+import hashlib,importlib.util,json,re,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];ID='033-png';PACKAGE=ROOT/'packages'/ID;NATIVE=ROOT/'includes/chapters'/ID
 STAGES=[('png-construction','load',1,10,'loader'),('png-collector-construction','collect',11,27,'collect'),('png-inflater-construction','inflate',28,43,'inflate'),('png-huffman-construction','huff',44,70,'inflate'),('png-row-construction','row',71,83,'rows'),('png-packing-construction','pack',84,100,'pack')]
@@ -28,7 +28,7 @@ def build():
   if path.is_file():shutil.copyfile(path,PACKAGE/'checks'/path.name)
  shutil.copyfile(ROOT/'drafts/png-feedback/grade.py',PACKAGE/'grade.py');shutil.copyfile(ROOT/'drafts/png-feedback/README.md',PACKAGE/'README.md')
  for path in NATIVE.glob('*.tex'):
-  text=path.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native')
+  text=path.read_text().replace('includes/chapters/'+ID,'packages/'+ID+'/native').replace('book/captures/'+ID,'packages/'+ID+'/captures')
   text=re.sub(r'drafts/(png-[a-z-]+)',lambda m:'packages/'+ID+'/construction/'+m[1],text)
   (PACKAGE/'native'/path.name).write_text(text)
  (PACKAGE/'assignment.tex').write_text('% Native assignment fragment; compose with the book preamble.\n\\input{packages/'+ID+'/native/assignment}\n')
@@ -51,7 +51,24 @@ def build():
   selected=[r for r in inputs if r['id']==recipe]
   assert len(selected)==1 and recipe in next(s for s in steps if s['id']==step)['recipes']
   assert checkpoint==selected[0].get('callerCheckpoint',selected[0]['checkpoint'])
-  plans.append(dict(id=ident,step=step,recipe=recipe,checkpoint=checkpoint,theme='IntelliJ Light',captureStatus='planned',caption=caption,alt='Planned '+', '.join(panes)+' view at '+checkpoint+'. No screenshot has been captured.',nativeAnnotations='Pending actual capture coordinates and semantic descriptions'))
+  plans.append(dict(id=ident,step=step,recipe=recipe,stage=selected[0]['stage'],checkpoint=checkpoint,theme='IntelliJ Light',captureStatus='planned',caption=caption,alt='Planned '+', '.join(panes)+' view at '+checkpoint+'. No screenshot has been captured.',nativeAnnotations='Pending actual capture coordinates and semantic descriptions'))
+ approved=ROOT/'book/captures'/ID
+ if (approved/'figures.json').exists():
+  captured=json.loads((approved/'figures.json').read_text())['figures'];seen=set()
+  for figure in captured:
+   assert figure['id']not in seen,'Duplicate approved capture';seen.add(figure['id']);canonical=next(f for f in plans if f['id']==figure['id'])
+   assert all(figure[k]==canonical[k]for k in('id','step','recipe','stage','checkpoint','theme')),'Approved figure differs from canonical recipe'
+   for name in('artifact','receipt'):
+    relative=Path(figure[name]);assert not relative.is_absolute()and'..'not in relative.parts,'Unsafe approved asset'
+   folder=Path(figure['receipt']).parent;assert folder==Path(figure['artifact']).parent
+   source=approved/folder;assert source.is_dir()and not source.is_symlink()
+   for path in source.rglob('*'):assert not path.is_symlink(),'Symlink approved asset'
+   dest=PACKAGE/'captures'/folder;shutil.copytree(source,dest,dirs_exist_ok=True)
+   receipt=json.loads((dest/Path(figure['receipt']).name).read_text())
+   native=NATIVE/Path(figure['nativeAnnotations']).name
+   assert hashlib.sha256(native.read_bytes()).hexdigest()==receipt['nativeSourceSha256'],'Native composition changed since review'
+   receipt['nativeExportSha256']=hashlib.sha256((PACKAGE/figure['nativeAnnotations']).read_bytes()).hexdigest();write(dest/Path(figure['receipt']).name,receipt)
+   canonical.update(figure,artifact='captures/'+figure['artifact'],receipt='captures/'+figure['receipt'])
  write(PACKAGE/'captures/plan.json',dict(figures=plans))
  reading=[]
  for name in re.findall(r'\\input\{includes/chapters/'+ID+r'/([^}]+)\}',(NATIVE/'chapter.tex').read_text()):

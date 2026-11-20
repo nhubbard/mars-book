@@ -39,6 +39,7 @@ Neither final decoder context fields nor framebuffer words are published yet.
 
 Illustrated checkpoints use the shown registers and private table layout. Behavioral
 checking of complete implementations accepts equivalent algorithms and valid private
-frame arrangements. Instructor solutions and keys remain private. Row construction,
-completed public feedback, final grading/distributions, actual IDE screenshots and
-remote progression/hint enforcement remain unfinished.
+frame arrangements. Instructor solutions and keys remain private. Row construction
+follows this stage; the complete `033-png` package supplies final feedback,
+distributions and reviewed IDE figures. Remote progression and hint enforcement
+remain unimplemented.

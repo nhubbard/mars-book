@@ -3,7 +3,7 @@
 This is the student package for chapter 33. Read the native chapter for the accepted
 PNG subset and its exact interfaces. It assumes the earlier assembly, memory,
 checksum and vector work. The publication source remains ordinary native LaTeX;
-exercise metadata indexes the steps and planned assets without composing prose.
+exercise metadata indexes the steps and reviewed assets without composing prose.
 
 Guided work begins with `construction/png-construction/main.asm`. Copy it to a
 working source and retain that source as you fill each stage. The six stage folders
@@ -49,6 +49,7 @@ public control labels for caller feedback.
 Instructor materials, keys, completed MIPS implementations and private grading
 remain in the separate private distribution. Instructors can specify hint,
 progression and mode policies; remote enforcement is not implemented. Five actual
-light-theme IDE figures and an independent accessibility audit remain pending.
+light-theme IDE figures now include native annotations and retained receipts. An
+independent accessibility audit remains pending.
 The native fragments use book-repository paths when composed into the publication.
 Substantive editorial work is a separate future goal.
