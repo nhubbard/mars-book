@@ -542,3 +542,36 @@ No MARS or authoring-plugin source changed, no IDE launch occurred and no new
 screenshot is claimed. Closed-loop target reconstruction, syntax/output, whole-encoder
 quality/performance grading and chapter distributions/captures remain unfinished.
 Independent accessibility review and substantive editing remain separate.
+
+
+## Integrated H.263 block reconstruction
+
+The native chapter now has 71 pages and seventy construction observations/quizzes.
+Steps 61–70 join signed input gathering, forward transform, level selection, exact
+inverse quantization, accurate inverse transform and scalar/MSA signed pixel
+addition/clipping. Worked constant blocks show the loss explicitly: 130 predicted
+from 128 reconstructs 131 at Q=8; the next current 132 must predict from that
+reconstruction. Three new native tables bring the chapter to twenty tables and
+72 tagged header cells. The four described figures remain native, not screenshots.
+
+Both integrated bodies pass 368 private cases, covering five Q values, both block
+types/modes/endians, mixed signs, both sample clippers and independent strides.
+Three layouts pass 144 public cases. Eight named repeated-call cases copy actual
+prior pixels into the next prediction; 24 implementation-specific injected child
+failures retain every caller-result byte after private child work. Five wrong
+bodies and the unfinished parent fail. Eight completed composed ordinary callers
+pass warnings-as-errors assembly and CLI execution; public feedback accepts a prepared full
+working source and protects existing reports. All 286 public tooling tests pass.
+
+The checker permits prior one-unit transform accuracy, checks coefficient
+reconstruction exactly from actual selected levels, independently checks the
+inverse of that block and requires exact clipped final sums. Equivalent accurate
+precisions, iteration orders and private frames remain valid. Student-owned
+composition/preparation helpers retain instructions and refuse existing files;
+they supply no solution. Screenshot automation stays in the separate plugin that
+depends on MARS. No MARS/plugin source changed and no GUI capture is claimed.
+
+This completes the callable eight-by-eight local path. Picture ownership,
+macroblock/bitstream syntax, file output, whole-encoder quality/interoperability/
+performance checks, chapter distributions and actual IDE figures remain unfinished.
+Independent accessibility review and later substantive editing remain separate.

@@ -1,0 +1,206 @@
+\section{Step 61 Preflight two independent windows}\label{h263-block-s01}
+Validate the current window using extent $7s+8$, then the prediction window
+using its own stride for INTER. Check all controls and reserved fields before
+reading either window. For INTRA, require zero prediction fields and omit that
+window entirely. The last active byte is determined by the last row, not by a
+rounded allocation size.
+
+\paragraph{Observe} A current stride of nine and prediction stride of seventeen
+are legal together. Neither row's padding is part of the input.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which prediction stride applies during INTER admission?
+\begin{itemize}
+\item[A.] The independent prediction stride in the request.
+\item[B.] Always the current stride.
+\item[C.] Always the full QCIF width.
+\end{itemize}
+
+\section{Step 62 Gather signed transform input}\label{h263-block-s02}
+Read current bytes as unsigned values. For INTER, read matching prediction bytes
+and subtract prediction from current in a signed general register. For INTRA,
+use zero prediction, leaving absolute current values. Store tight signed halfwords
+in a private transform-input array and retain tight halfword prediction values
+for the later reconstruction addition.
+
+The subtraction range $[-255,255]$ fits the forward transform's admitted domain.
+INTRA values 0 through 255 also fit. Avoid an unsigned-byte subtraction that
+would replace a negative residual with its wrapped representation.
+
+\paragraph{Observe} Current five predicted from ten produces signed residual
+minus five; it remains negative when loaded as a halfword.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why use zero prediction for INTRA input here?
+\begin{itemize}
+\item[A.] INTRA stores only motion vectors.
+\item[B.] Its transform describes absolute samples in this baseline path.
+\item[C.] It changes the quantizer parameter to zero.
+\end{itemize}
+
+\section{Step 63 Call the forward transform privately}\label{h263-block-s03}
+Build the earlier transform request in aligned private storage, using input
+stride sixteen, direction zero and the selected arithmetic mode. Point output
+to a separate private coefficient block. Save the return address and any values
+needed across the call according to the register contract.
+
+Inspect the child status before using its output. On failure, restore saved
+state and return parent status two, retaining every byte of caller output.
+Do not interpret a nonzero child status as a coefficient count.
+
+\paragraph{Observe} The constant residual two produces DC sixteen in the named
+trace. That coefficient block is still private and is not the final result.
+\Needspace{8\baselineskip}
+\paragraph{Check} What direction belongs in this first transform request?
+\begin{itemize}
+\item[A.] Inverse.
+\item[B.] Picture playback.
+\item[C.] Forward.
+\end{itemize}
+
+\section{Step 64 Quantize and retain the ordinary count}\label{h263-block-s04}
+Build the quantizer request from the private forward block, parameter, block type
+and mode. Its output supplies the selected-level and reconstructed-coefficient
+arrays. Save the returned ordinary nonzero count in private storage before
+calling the inverse, which uses the same return registers for its own result.
+
+The count excludes INTRA DC. It is useful for later coding decisions, but it
+is not a six-block coded-pattern mask and does not yet describe the emitted bits.
+
+\paragraph{Observe} The default INTER block selects ordinary DC level one and
+returns ordinary nonzero count one.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why save the quantizer count across the next call?
+\begin{itemize}
+\item[A.] The inverse call can replace the return registers.
+\item[B.] It is the picture's byte stride.
+\item[C.] The count changes the current source bytes in place.
+\end{itemize}
+
+\section{Step 65 Invert the reconstructed coefficient block}\label{h263-block-s05}
+Point the inverse-transform request at the second quantizer output array.
+Use direction one, stride sixteen and the selected mode. Its output is a third
+private array of signed spatial halfwords. Check status again before reconstruction.
+
+A pointer to the original forward block can look plausible because it has the
+same size and element type. Verify the actual address in the request. Bypassing
+inverse quantization would let the encoder retain information that was removed
+from its transmitted representation.
+
+\paragraph{Observe} Default reconstructed DC 23 yields inverse residual three;
+using original DC sixteen would incorrectly produce residual two instead.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which array supplies this inverse request?
+\begin{itemize}
+\item[A.] Original raw pixel bytes.
+\item[B.] Reconstructed coefficients derived from selected levels.
+\item[C.] Unquantized forward coefficients.
+\end{itemize}
+
+\section{Step 66 Add prediction before sample clipping}\label{h263-block-s06}
+For scalar reconstruction, load each inverse result as a signed halfword and its
+retained prediction as a nonnegative halfword. Add in a signed register, clamp
+the complete sum to zero through 255, then store a byte in the private pixel
+array. INTRA uses the retained zero prediction through the same arithmetic.
+
+Keep this final sample clipping separate from the inverse's signed nine-bit
+clipping and the coefficient's twelve-bit clipping. Each boundary represents a
+different quantity.
+
+\paragraph{Observe} A predicted five plus inverse residual minus ten stores zero.
+Clipping the residual to zero first would incorrectly store five.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which operation occurs first for an INTER pixel?
+\begin{itemize}
+\item[A.] Narrow the signed residual to an unsigned byte.
+\item[B.] Clip the residual alone to the final pixel range.
+\item[C.] Add signed residual to prediction in a sufficient width.
+\end{itemize}
+
+\section{Step 67 Perform bounded vector sample reconstruction}\label{h263-block-s07}
+In mode one, load eight inverse and eight prediction halfwords from aligned
+private arrays. Add halfword lanes, apply signed maximum with zero and signed
+minimum with 255, and store exactly eight pixel bytes. A straightforward taught
+version stores the clipped vector temporarily and extracts its native halfwords
+for byte stores; another correct packing schedule is acceptable.
+
+The sum bound $[-256,510]$ establishes that an ordinary halfword addition is
+safe before clipping. This argument depends on the earlier inverse contract.
+Test mixed signs and positions rather than only a constant vector.
+
+\paragraph{Observe} The scalar and vector paths preserve signed inverse values
+in the diagnostic array while producing clipped pixel bytes in the final array.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must happen before narrowing a lane to a pixel byte?
+\begin{itemize}
+\item[A.] Clip the complete signed sum to 0 through 255.
+\item[B.] Discard all negative inverse outputs before adding prediction.
+\item[C.] Replace the selected levels with raw pixels.
+\end{itemize}
+
+\section{Step 68 Publish a complete block result}\label{h263-block-s08}
+After every dependency and pixel operation succeeds, copy the selected levels,
+reconstructed coefficients, inverse values and final pixels into the caller's
+448-byte record. Return the saved ordinary count. A child can fail after writing
+its own private output; none of that work authorizes an early public store.
+
+Stop the ordinary caller at \texttt{block\_caller\_return}, before its first
+instruction. The complete record and return registers are ready, but named
+status/count fields still contain their old values. The default prints first
+pixel 131 and exits zero after the caller resumes.
+
+\paragraph{Observe} The default successful count is one. INTRA input 128 instead
+produces DC code 255, reconstructed DC 1024, pixels 128 and ordinary count zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} What survives a failed inverse child?
+\begin{itemize}
+\item[A.] A partially replaced caller record.
+\item[B.] Every old caller-result byte, with parent failure status two.
+\item[C.] A successful status because forward transform already completed.
+\end{itemize}
+
+\section{Step 69 Check the actual selected-level reconstruction}\label{h263-block-s09}
+Run the public feedback on a source containing your block entry and completed
+transform/quantizer dependencies:
+\begin{verbatim}
+python3 drafts/h263-reconstruction-construction/grade.py \
+    my-block.asm --cli /path/to/mars-cli.jar \
+    --report block-results.json
+\end{verbatim}
+Compare every stage, not just the first final pixel. The checker accepts the
+permitted forward and inverse accuracy while requiring exact level-to-coefficient
+and inverse-to-pixel consistency. It also checks wide pointers, independent
+strides, input-read bounds, output guards and saved state.
+
+The statistical inverse gate remains a separate prerequisite. An implementation
+that passes one constant block can still have a normalization, transpose or bias
+error elsewhere.
+
+\paragraph{Observe} Two independently accurate precisions and another traversal
+order can satisfy the same block interface without sharing every rounded coefficient.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why reconstruct the reference inverse from returned levels?
+\begin{itemize}
+\item[A.] It forces every encoder to emit the host encoder's bits.
+\item[B.] It avoids checking quantization entirely.
+\item[C.] It checks the actual representation this block selected.
+\end{itemize}
+
+\section{Step 70 Retain reconstructed pixels for the next prediction}\label{h263-block-s10}
+Use the first reconstructed block as prediction for a second call in the same
+session. With constant current 132 and prior reconstruction 131, observe zero
+ordinary levels and reconstructed pixels 131 at $Q=8$. Check that the second
+call builds fresh requests and counts rather than reusing stale values.
+
+The next picture-level integration must copy each completed block into its proper
+Y, Cb or Cr plane and publish the new reference only after the picture succeeds.
+Keeping the block result correct is necessary, but does not itself implement
+picture ownership, file output, a coded macroblock or a conforming stream.
+
+\paragraph{Observe} Reusing raw 130 instead of reconstructed 131 changes the
+second residual and loses synchronization with a decoder's available reference.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which stored pixels can become the next reference?
+\begin{itemize}
+\item[A.] The completed locally reconstructed picture.
+\item[B.] The raw input regardless of quantization loss.
+\item[C.] Any half-written pixel array after a child failure.
+\end{itemize}

@@ -107,8 +107,14 @@ reconstruction/clipping. Both traversal orders pass 2044 private cases across al
 unfinished starter are rejected. Eight completed ordinary callers and all 276
 public tooling tests pass. The native chapter has 62 pages and sixty construction
 observations/quizzes. Exact exercise levels do not constrain legal full-encoder
-choices. Local reconstruction is next, followed by bit writing and baseline
-picture/macroblock syntax. Keep the
+choices. A complete callable block path now joins those entries and publishes selected
+levels, reconstructed coefficients, signed inverse output and clipped pixels.
+Two accurate precisions/traversals pass 368 private cases; three layouts pass
+144 public cases. Eight named repeated-call cases use actual prior output as
+prediction, and 24 child-failure probes retain caller output. Eight ordinary
+composed callers and all 286 public tooling tests pass. The chapter now has
+71 pages and seventy construction observations/quizzes. Picture ownership,
+bit writing and baseline picture/macroblock syntax remain next. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
 checks, failure/publication contracts and equivalent valid encoders. Do not accept
