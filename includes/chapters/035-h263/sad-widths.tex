@@ -1,0 +1,54 @@
+\section{Choose accumulator widths from a bound}
+A sample is in $[0,255]$, so a difference magnitude is at most 255. One full row
+can contribute $16\times255=4080$, and a full block can contribute
+$256\times255=65\,280$. A signed halfword cannot hold that final total. A byte
+accumulator can wrap even sooner: sixteen contributions of 255 sum to 4080,
+whose low byte is 240.
+
+For the vector path, take unsigned absolute differences in byte lanes. Then widen
+pairs before accumulating across rows. One adjacent pair contributes at most 510
+per row; across sixteen rows, its halfword lane is bounded by 8160. Eight such
+lanes cover the whole block. Reducing them through wider word and doubleword
+lanes avoids losing the carries needed for the final sum.
+
+\begin{table}[htbp]
+\centering
+\caption{Bounds for the chosen reduction. A lane's interpretation changes at each widening.}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrr}
+\toprule
+Quantity & Lanes & Maximum per lane\\
+\midrule
+One row's byte differences & 16 & 255\\
+One row's adjacent-pair sums & 8 & 510\\
+Sixteen accumulated rows & 8 & 8160\\
+Word reduction & 4 & 16\,320\\
+Doubleword reduction & 2 & 32\,640\\
+Final scalar total & 1 & 65\,280\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Using the same source twice for \texttt{hadd\_u.h} combines the adjacent byte
+values into halfwords. Accumulate those halfwords with \texttt{addv.h}. After the
+sixteen rows, reduce with \texttt{hadd\_u.w} and \texttt{hadd\_u.d}, extract the
+two doubleword lanes and add them in a general register. These operations are
+integer operations; a floating-point rounding mode is not part of the SAD metric.
+
+For example, with row samples already in \texttt{\$w0} and \texttt{\$w1},
+and a previously zeroed halfword accumulator in \texttt{\$w4}, the row contribution is:
+\begin{minted}[samepage=true]{mars-idea}
+    asub_u.b $w2, $w0, $w1
+    hadd_u.h $w3, $w2, $w2
+    addv.h $w4, $w4, $w3
+\end{minted}
+The first instruction keeps sixteen magnitudes in byte lanes. The second produces
+eight pair sums, and the third retains contributions from earlier rows. The vector
+register numbers are choices for this example, not requirements of the interface.
+
+Both input vectors undergo the same lane mapping. Reversing the lane order
+consistently does not change the final sum, but reading an extra byte or switching
+to signed sample differences does. Test zero against 255: unsigned difference
+magnitudes are 255, while interpreting the latter byte as signed minus one would
+produce the wrong metric. All-zero, all-maximum and equal-window cases are useful
+because a wrapped result can look plausible on ordinary pictures.

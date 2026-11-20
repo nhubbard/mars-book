@@ -1,0 +1,28 @@
+\section{Encode pictures that another program can decode}
+The previous chapter defined both sides of a small lossless format. Here, the
+output must follow a format implemented elsewhere. A file extension and a familiar
+start code are insufficient: another decoder must recover the intended pictures,
+in the intended order, from your emitted syntax. Keep that independent decoder
+outside the MARS implementation and outside your own reconstruction code.
+
+Build an encoder for a restricted baseline H.263 stream. The input is a short,
+script-generated QCIF sequence of raw samples. The target output uses I-pictures
+and P-pictures, with optional coding modes disabled. An I-picture establishes a
+reference without an earlier picture; a P-picture can describe predictions and
+residuals relative to the preceding reconstructed reference. This profile uses
+neither the earlier chapter's XOR commands nor a private teaching container.
+
+The new difficulty is controlled loss. A quantized block usually reconstructs to
+values different from its input. Measure that error, but keep its meaning separate
+from malformed syntax, incorrect memory bounds or a wrong prediction reference.
+A successfully decoded file can still contain poor pictures. Conversely, two
+valid encoders can choose different predictions and produce different bytes for
+similar pictures. Final feedback must examine syntax, reconstruction and quality,
+rather than require one reference bitstream.
+
+Begin with the input layout and an exact block-comparison kernel. The kernel is
+small enough to inspect completely, yet it will be called repeatedly during motion
+search. Then connect prediction, transform, quantization, local reconstruction and
+bit writing. Students are expected to know MSA instructions already; the questions
+here concern which values belong in their lanes and which bounds make their use
+correct.

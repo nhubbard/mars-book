@@ -1,0 +1,62 @@
+\section{Define one exact block-comparison entry}
+The sum of absolute differences, or SAD, measures a candidate block with
+\[
+ S=\sum_{y=0}^{15}\sum_{x=0}^{15}\left|C_{y,x}-R_{y,x}\right|.
+\]
+Here $C$ is the current input window and $R$ is a reference candidate. A smaller
+sum means closer sample values for this metric. It does not yet account for the
+bits needed to encode the candidate's motion vector or residual. Keep the metric
+exact before using it inside a more complicated selection rule.
+
+Implement \texttt{h263\_sad16} and \texttt{h263\_sad16\_msa} with the same interface.
+\texttt{\$a0} and \texttt{\$a1} are byte addresses of the two top-left samples.
+\texttt{\$a2} and \texttt{\$a3} are their independent byte strides. This kernel
+accepts strides from 16 through 4096, inclusive. The caller supplies sixteen
+mapped active samples in each of sixteen rows. The inputs may overlap or be the
+same window; the kernel never writes them.
+
+On success, return status zero in \texttt{\$v0} and the exact sum in
+\texttt{\$v1}. Invalid strides or a wrapping address window return one and zero
+without reading either input. Preserve the usual saved general registers and
+the stack pointer. Do not narrow a pointer to 32 bits. Byte pointers need not be
+word- or vector-aligned, and both target byte orders must give the same SAD.
+
+The minimal contiguous extent of one window is $15s+16$ bytes for stride $s$.
+There are fifteen row advances before the final sixteen samples. That expression
+does not grant permission to read padding between rows. Validate the stride first;
+then compute the extent in full-width registers and check that its exclusive end
+does not wrap below its start. For stride 176 the extent is 2656 bytes, but only
+256 sample bytes are read from each input.
+
+The provided caller is \path{drafts/h263-sad-construction/main.asm}. Its two
+entries initially return development status four. Prepare a worked copy from your
+current source using \path{drafts/h263-sad-construction/prepare.py}. Select mode
+zero for scalar or one for MSA. The helper installs two actual luma windows from
+the generated pattern while retaining the complete instruction section. It does
+not fill a function body. Existing output files are refused.
+
+Use the supplied caller as a working file and pass its current path explicitly:
+\begin{verbatim}
+python3 drafts/h263-sad-construction/prepare.py \
+    --source my-sad.asm --mode 0 \
+    --output worked-scalar.asm
+\end{verbatim}
+Use mode one and a different output path for the MSA observation. These commands
+prepare examples; they do not complete a function or run the full codec.
+
+For completed entries, run the public feedback helper against your current source:
+\begin{verbatim}
+python3 drafts/h263-sad-construction/grade.py my-sad.asm \
+    --cli /path/to/mars-cli.jar --report sad-results.json
+\end{verbatim}
+Replace the CLI path with the actual MARS archive. The 32 cases use separate
+high-address input arenas and 16\,384 bytes of valid private stack storage. They
+check arithmetic, active-row reads, input preservation and the callable result;
+they do not require the pictured register allocation or a fixed instruction count.
+A report path must be new. Development status four fails a completed-entry check.
+
+Each arena has sixteen leading guard bytes, the 2656-byte window extent and
+sixteen trailing guard bytes. The caller passes the address after the leading
+guard. Its worked result is 7872 in either mode once the kernel is complete.
+The arrays use signed \texttt{.byte} literals where necessary to avoid assembler
+warnings. Their eight-bit patterns are unchanged; load them as unsigned samples.

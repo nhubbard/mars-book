@@ -1,0 +1,40 @@
+\section{Predict from the picture the decoder will have}
+Suppose an input sample is 100, but a quantized representation reconstructs it as
+98. In the next picture, the desired sample is 104. If the encoder predicts from
+its original 100, it computes a residual of four. A decoder holding 98 adds that
+four and obtains 102. Both sides used correct addition; they used different
+references.
+
+Using the reconstructed reference instead gives a residual of six. In this
+arithmetic example, adding six to 98 yields 104 on both sides. Quantizing that
+residual may introduce a further error, but the encoder must reconstruct that
+error locally as well. The example omits transform and quantization deliberately
+to isolate the reference mismatch. It does not claim that every residual will
+be represented without loss.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,font=\small},node distance=6mm,alt={The encoder forms a residual from the current picture and a prediction, transforms and quantizes it, and sends coded symbols. A local reconstruction path inverse-quantizes and inverse-transforms the same coefficients, adds the prediction, clips samples and stores the next reference picture.}]
+\node (input) {current samples and prediction\\form a signed residual};
+\node[below=of input] (forward) {transform and quantize\\choose coded coefficients};
+\node[below=of forward] (inverse) {local inverse quantization\\and inverse transform};
+\node[below=of inverse] (reference) {add prediction and clip\\store reconstructed reference};
+\draw[-{Latex}] (input)--(forward);
+\draw[-{Latex}] (forward)--(inverse);
+\draw[-{Latex}] (inverse)--(reference);
+\end{tikzpicture}
+\caption{The local reconstruction path determines future prediction inputs.}
+\end{figure}
+
+Retain separate current-input and reconstructed-reference buffers. A candidate
+comparison reads the current input and a region of the reference. It does not
+replace either buffer. Prediction and residual formation then use the selected
+candidate. Only the completed local reconstruction becomes the reference for a
+later picture. This ownership distinction will matter when a file write fails
+or an output buffer runs out of capacity.
+
+An independent host decoder checks the emitted stream, while the encoder's own
+reconstruction checks its prediction loop. Do not make the host encoder's private
+mode choices the definition of a correct student result. The current host fixture
+round trip establishes the input and external tools; it is not evidence that a
+MIPS encoder or a future inverse transform is already correct.

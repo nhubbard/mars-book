@@ -437,7 +437,7 @@ rejects both unfinished starters and five assembled faults. Extracted runners pa
 real-clock callers produce files that an independent decoder recovers to all eight
 original frames.
 
-All 227 public tooling tests and 28 authoring-plugin Jupiter tests pass. The native
+All 241 public tooling tests and 28 authoring-plugin Jupiter tests pass. The native
 video reading has 112 pages, with 122 observations, 22 tagged tables, 79 header cells
 and seven described native figures. Six are actual automated light-theme IDE plates;
 the other is the native seek diagram. Source images remain unannotated, with native
@@ -456,6 +456,24 @@ starter and three assembled faults are rejected.
 
 The screenshot implementation remains in the separate authoring plugin depending
 on MARS. Earlier chapter capture plans and independent accessibility review remain
-open. H.263 is the next initial chapter draft; its restricted interoperable profile
-and Python-generated QCIF input constraints remain documented. Substantive editing
+open. H.263 has an opening initial chapter draft; its restricted interoperable
+profile and Python-generated QCIF input constraints remain documented. Substantive editing
 is the separate future goal requested by the author.
+
+
+Chapter 35 now has an opening native draft in `drafts/h263.tex`, with thirteen
+pages covering raw QCIF input, exact timing, reconstructed references and ten SAD
+construction steps/quizzes. The Python fixture generates eight planar Y/Cb/Cr
+pictures at 5000/1001 pictures/s, with a defined duration of 1.6016 seconds. A strict
+independent host baseline H.263 encode/decode preflight recovered all eight pictures
+from 2194 coded bytes; it is not a student encoder implementation.
+
+The first scalar/MSA SAD kernel has a runnable unfinished caller, instruction-
+preserving input preparation and 32 public completed-entry feedback cases. Larger
+private checks pass 104 cases per implementation and reject four wrong kernels.
+Public feedback accepts two references and a valid independent 4-KiB-frame layout,
+rejecting the starter and three arithmetic/access faults. The MSA listing uses the
+actual IntelliJ highlighter; all 767 prior records remain identical and one is added.
+Motion search, transforms, quantization, reconstruction, bitstream emission and
+full chapter grading/distribution/captures remain unfinished. The complete book
+goal remains active; substantive editing has not begun.

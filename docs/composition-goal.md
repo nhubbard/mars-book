@@ -1272,3 +1272,51 @@ alteration controls also pass.
 All five PNG and six video figure plans are now verified. Earlier chapter figure
 plans and independent accessibility review remain open. H.263 remains the next
 initial chapter; substantive editing is the separate later goal.
+
+
+## H.263 opening foundation
+
+With the PNG/video releases and all eleven figure plans completed first, chapter
+35 is now a native opening draft, registered as `text-draft-in-progress` with no
+completed package claim. Its thirteen pages explain the raw planar QCIF layout,
+exact baseline cadence, reconstructed-reference loop, integer range proof and ten
+SAD construction observations/quizzes. A native reconstruction diagram and two
+tables have descriptions/header tags. Questions and their choices stay together.
+The one MSA listing comes from the actual IntelliJ highlighter; 767 prior exports
+are identical, one new export is added and the MARS archive digest is refreshed.
+
+The generator's candidate workload is eight pictures (304128 raw bytes) at
+5000/1001 pictures/s, lasting 1.6016 seconds including the final picture hold.
+Integer duration admission enforces ten seconds; the accepted cadence stays below
+30 pictures/s. No third-party image generator or synthetic codec wrapper is used.
+The host baseline encode/decode proof recovered all eight QCIF pictures from
+2194 coded bytes with expected temporal references. Per-plane quality observations
+and tool provenance are retained privately. This establishes the host fixture,
+not a complete student MIPS encoder.
+
+Two scalar/MSA SAD implementations pass 104 exact arithmetic/access cases each,
+including both byte orders, wide and unaligned addresses, independent strides,
+aliases, maximal unsigned differences and rejected wrapping windows. Four wrong
+kernels are rejected. The additional alias case prevents equating windows solely
+because their starting pointers match when their row strides differ. Reference
+entry-to-return counts are 3245 scalar and 207 MSA; the alternative MSA uses 239.
+These are named kernel instruction counts, not wall time or required solution counts.
+
+The public caller prints 7872 in both completed modes; unfinished modes print the
+development message and exit one. Its data-only preparation preserves student
+instructions and existing output files. Public feedback supplies 32 completed-entry
+cases, separate high-address arenas, a 16-KiB private stack and protected reports.
+Three valid implementations pass, including independent 4-KiB frames; the starter
+and three arithmetic/access faults are rejected. All 241 public tooling tests and
+28 authoring Jupiter tests pass. No graphical IDE launch or H.263 screenshot is
+claimed by this foundation.
+
+The duplicate-input experiment records a further reconstruction distinction:
+raw pictures five and six are identical, yet the host's decoded pictures differ.
+The current raw/reconstructed-reference SAD at (16,32) is 896. Later skip checks
+must not infer an exact reconstructed match from input hashes alone. The default
+workload remains provisional until whole-encoder measurement. Motion search,
+transform/quantization, local reconstruction, complete baseline syntax, I/O,
+end-to-end interoperability/quality grading and chapter distribution/captures
+remain unfinished. Earlier chapter figures and independent accessibility review
+are still open; substantive editing is a separate later goal.

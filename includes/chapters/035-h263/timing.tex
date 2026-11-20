@@ -1,0 +1,36 @@
+\section{Keep picture time separate from frame count}
+This baseline exercise uses a clock of $30\,000/1001$ ticks per second. Choosing
+one picture every six ticks gives $5000/1001$ pictures per second, approximately
+4.995. Calling this exactly five frames per second would lose a small but real
+part of the timing contract. Likewise, the baseline clock is approximately 29.97,
+not exactly 30.
+
+The candidate default contains eight pictures, with temporal references
+0, 6, 12, 18, 24, 30, 36 and 42. Its raw file occupies 304\,128 bytes. The fixture
+assigns one six-tick display interval to each supplied picture, including the
+last, for a total duration of $1001/625$ seconds, or 1.6016 seconds. The last
+picture's start time is earlier than that duration. Do not confuse the time of
+the last start with the duration after its final display interval.
+
+Temporal references wrap modulo 256. Compute them from the picture index and
+the selected tick step, rather than treating the encoded eight-bit field as a
+permanently increasing integer. The accompanying fixture description retains
+the cadence needed to interpret these values. An elementary stream is not a
+container with arbitrary timestamp records.
+
+The input ceilings are QCIF, at most 30 pictures per second and at most ten
+seconds. Those are limits rather than a request to use 300 pictures for every
+test. With the selected baseline clock, 300 one-tick pictures would occupy
+10.01 seconds under this fixture's duration definition. The largest accepted
+one-tick sequence is therefore 299 pictures. At six ticks per picture, 49 pictures
+fit and 50 do not. The generator checks this using integer arithmetic:
+\[
+  N\,d\,1001 \leq 300\,000,
+\]
+where $N$ is the picture count and $d$ is the number of ticks per picture. No
+rounded floating-point duration is used to admit the input.
+
+Keep the eight-picture workload provisional until the completed MARS encoder has
+been measured. A small raw file does not establish a short execution time. Motion
+search may compare many candidate blocks for every macroblock, and transform
+work remains even when the emitted stream is short.
