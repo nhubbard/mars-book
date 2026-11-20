@@ -109,6 +109,19 @@ class BookMarsBotCaptureTest {
     }
 
     @Test
+    fun `detail evidence translates board coordinates through an offset capture window`() {
+        val component = board(square); val observed = checkNotNull(observeBookBotBoard(component, square))
+        val viewport = Rectangle(30, 40, 800, 800)
+        val image = BufferedImage(800, 800, BufferedImage.TYPE_INT_RGB)
+        val graphics = image.createGraphics()
+        try { graphics.translate(70, 160); component.paint(graphics) } finally { graphics.dispose() }
+        val evidence = observed.screenEvidence(image, viewport)
+        val detail = observed.projection.detailRectangle()
+        assertEquals(mapOf("x" to 70 + detail.x, "y" to 160 + detail.y, "width" to detail.width, "height" to detail.height), evidence["detailBox"])
+        assertEquals(mapOf("x" to 70, "y" to 160, "width" to 420, "height" to 400), evidence["boardBox"])
+    }
+
+    @Test
     fun `native tool binds execution position controls rate and port descriptions`() {
         val root = JPanel()
         val selector = object : JComboBox<String>(arrayOf("Other (#1)", "Book figure: bot (#2)")) { override fun isShowing() = true }

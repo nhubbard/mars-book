@@ -97,9 +97,10 @@ internal data class BookObservedBotBoard(val bounds: Rectangle, val projection: 
             check(isBookBotInk(rgb)) { "A photographed trail sample is missing" }
             mapOf("x" to relative.x + sample.x, "y" to relative.y + sample.y, "nativeRgb" to sample.nativeRgb, "screenRgb" to rgb)
         }
+        val detail = projection.detailRectangle().also { it.translate(bounds.x, bounds.y) }
         return mapOf("boardBox" to captureBox(bounds, viewport), "worldSize" to 512,
             "plot" to mapOf("left" to projection.left, "top" to projection.top, "side" to projection.side),
-            "detailBox" to captureBox(Rectangle(projection.detailRectangle()).apply { translate(bounds.x, bounds.y) }, viewport),
+            "detailBox" to captureBox(detail, viewport),
             "visibleTrailSamples" to evidence, "unexpectedNativeInk" to 0, "unexpectedScreenInk" to 0,
             "markerOcclusionExcluded" to true, "borderExcludedFromUnexpectedInk" to 2)
     }
