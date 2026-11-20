@@ -49,6 +49,7 @@ data class BookCaptureFigure(
     val editorCallouts: List<BookTextCallout> = emptyList(),
     val runView: BookRunView? = null,
     val cacheView: BookCacheView? = null,
+    val valueBase: String? = null,
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
@@ -78,6 +79,10 @@ data class BookCaptureFigure(
         require(stepFrom.distinct().size == stepFrom.size && checkpoint !in stepFrom) { "Debug steps need distinct checkpoints before the final stop" }
         breakpointCondition?.let { require(mode == "debug" && stepFrom.isEmpty() && it.isNotBlank() && it.length <= 256 && '\n' !in it) { "Invalid native breakpoint condition" } }
         backstepFrom?.let { require(mode == "debug" && stepFrom.isEmpty() && breakpointCondition == null && it != checkpoint && it.matches(Regex("[A-Za-z_][A-Za-z_0-9]*"))) { "Backstep needs one distinct native starting checkpoint" } }
+        valueBase?.let {
+            require(it in listOf("hex", "decimal")) { "Unknown register value base" }
+            require(mode == "debug" && expectedRows.isNotEmpty() && memoryView == null && bitmapView == null && marsBotView == null && digitalLabView == null && cacheView == null) { "Value-base selection requires a dedicated register view" }
+        }
         cacheView?.validate()
         require(cacheView == null || (marsBotView == null && digitalLabView == null && bitmapView == null && memoryView == null && debuggerView.isEmpty && expectedRows.isEmpty())) { "Capture the cache in its own raw view" }
         marsBotView?.validate()

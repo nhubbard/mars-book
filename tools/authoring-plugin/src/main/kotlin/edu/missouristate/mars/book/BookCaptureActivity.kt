@@ -272,6 +272,9 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     }
                     val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
                     if (!frame.isActive || Window.getWindows().any { it is JDialog && it.isModal && it.isShowing }) return@withContext null
+                    figure.valueBase?.let { base ->
+                        if (!configureBookValueBase(frame, base)) return@withContext null
+                    }
                     val balloons = captureBalloons(project)
                     if (balloons.isNotEmpty()) {
                         balloons.forEach { it.hide() }
@@ -486,6 +489,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
                 callouts += lab.rows.map { row -> mapOf("label" to row.text, "observedText" to row.text, "box" to captureBox(row.bounds, viewport)) }
             }
+            figure.valueBase?.let { observeBookValueBase(frame, it) }
             LearningUiHighlightingManager.clearHighlights()
             if (expectedBitmap == null) {
                 checkNotNull(editor)
@@ -513,6 +517,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         var labEvidence: Map<String, Any>? = null
         var botEvidence: Map<String, Any>? = null
         var cacheEvidence: Map<String, Any>? = null
+        var valueBaseEvidence: Map<String, Any>? = null
         withContext(Dispatchers.EDT) {
             val session = checkNotNull(XDebuggerManager.getInstance(project).currentSession)
             check(session.isSuspended && session.sessionName == "Book figure: " + figure.id)
@@ -574,6 +579,9 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 labEvidence = mapOf("left" to view.left, "right" to view.right, "selectedExecution" to lab.selectedExecution,
                     "timerRemaining" to 0, "pressedKeys" to emptyList<String>(), "samples" to lab.screenEvidence(image, snapshot.first))
             }
+            figure.valueBase?.let { base ->
+                valueBaseEvidence = observeBookValueBase(checkNotNull(WindowManager.getInstance().getFrame(project)), base)
+            }
             check(captureBalloons(project).isEmpty()) { "Notification appeared during screenshot" }
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             check(frame.isActive && Rectangle(frame.rootPane.locationOnScreen, frame.rootPane.size) == snapshot.first) { "Capture window changed" }
@@ -592,6 +600,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "notificationBalloonsVisible" to 0,
                 "standardInput" to figure.standardInput, "standardInputDelivered" to (figure.standardInput?.let { true }),
                 "observedSteps" to observedSteps, "backstepFrom" to figure.backstepFrom, "observedBackstep" to observedBackstep,
+                "valueBase" to figure.valueBase, "observedValueBase" to valueBaseEvidence,
                 "cacheView" to figure.cacheView, "observedCache" to cacheEvidence,
                 "marsBotView" to figure.marsBotView, "observedMarsBot" to botEvidence,
                 "digitalLabView" to figure.digitalLabView, "observedDigitalLab" to labEvidence, "breakpointCondition" to nativeCondition,

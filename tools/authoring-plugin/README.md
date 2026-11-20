@@ -331,3 +331,19 @@ is bound to 63 passing Jupiter tests and compatible dependency-resolved IntelliJ
 2026.3 verification. The batch used the real `clean cleanSandbox runIde` tasks.
 Four reviewed native LaTeX plates retain the original images and editable callouts;
 independent accessibility review and interactive progression remain open.
+
+### Native register value base
+
+An optional Debug `valueBase` of `hex` or `decimal` is restricted to dedicated
+register captures. The driver finds the native Hexadecimal MARS Values toggle in
+the toolbar's materialized `DefaultActionGroup` children and uses the public
+`ToggleAction` selected-state contract. It never expands dynamic action groups or
+calls the override-only `ActionGroup.getChildren(AnActionEvent)` method. The pinned
+IntelliJ implementation explicitly supports `getChildActionsOrStubs()` for this
+inspection; native debugger settings are registered in a materialized gear group.
+
+A change requires a later observation after the normal MARS views rebuild. Expected
+rendered register rows still have to match. The native toggle state is checked again
+before and after the photograph and recorded alongside the requested base. Missing
+or ambiguous matching toggles cannot pass. No MARS setting service or implementation
+class is imported, and no simulator register, memory or execution state is edited.
