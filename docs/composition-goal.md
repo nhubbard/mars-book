@@ -2074,3 +2074,17 @@ Reviewed figure sets now cover chapters 1–15 and 33–35. Chapters 16–32 ret
 The chapter 15 verification pass also fixes demonstrated cross-document reference invalidation in the native PDF build helper. LuaLaTeX's own recorder identifies the current document's auxiliary dependencies; four regression tests distinguish required chapter/contents invalidation from unrelated output changes. A corrected native proof converges in two passes while the previously started manuscript build remains active.
 
 The integrated chapter 15 build contains 1,762 manuscript pages.
+
+## Chapter 16 illustrated draft
+
+Four actual light-mode IDE plates explain left clipping, full placement, top-right clipping and bottom-left clipping. Twelve original photographs support sixteen native explanations and dashed logical-frame outlines. The standalone chapter has 31 pages. All 2212 data bytes are checked at initialization, call entry, return and exit in all four fixtures. Exact initialization, visible opaque stores and caller result publication are distinguished; source reads cover exactly visible cells and selected descriptors. Four independent geometry tests and three native mutation tests protect clipping, padding, physical origin and full-word transparency.
+
+Full grading passes 31,275 positive checks, 16 cumulative student programs and 25 quiz keys. The starter and 16 faulty variants yield 1,709 expected failures. Both implementations, wide pointers and equivalent same-value store elision pass. The geometry matrix includes 7,220 cases per implementation and is not claimed exhaustive across all coordinate, stride and color combinations.
+
+Native bitmap diagnostics were added only to the separate authoring plugin and pass 68 Jupiter tests. Complete paired verification resolves the actual local MARS dependency and reports compatibility with nineteen experimental public API usages and no internal or override-only issues. The immutable verified driver archive matches the installed capture JAR. Every IDE attempt runs the actual clean cleanSandbox runIde tasks; rejected preparations and graphical attempts remain private. MARS code and unrelated edits are preserved.
+
+The teaching source annotation now enables the existing initial=true option, so the unwritten initialized guard is visible. Complete grading is rerun against the committed corrected student and instructor sources. All 128 native cells and tooltips match exactly. A screenshot-only tolerance of three channel levels is justified by retained macOS ICC diagnostics; no core or native-rendering tolerance is introduced. Original PNG pixels remain unchanged in the PDF. Native coordinate, outline, tagging and font checks pass, and all four color/grayscale proofs are reviewed. The view paragraph documents initial pixels and the actual return boundary; human passages and other chapter prose remain unchanged.
+
+Reviewed figure sets now cover chapters 1–16 and 33–35. Chapters 17–32 retain 65 planned figures across 16 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+The integrated chapter 16 build contains 1,766 manuscript pages.

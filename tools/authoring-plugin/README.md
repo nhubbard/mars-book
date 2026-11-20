@@ -354,3 +354,5 @@ The exact installed JAR is bound to all 67 passing Jupiter tests and compatible
 pinned dependency-resolved API evidence. Four reviewed native LaTeX figures retain
 the original photographs, numeric receipts and twelve editable explanations.
 Independent accessibility review and interactive lesson progression remain open.
+
+Chapter 16 adds progress diagnostics for native bitmap editor selection, canvas size, tooltip values and painted-pixel mismatches. Diagnostics preserve all existing rejection conditions and pass a new Jupiter test; the full suite now has 68 tests. The completed paired local-archive verifier reports compatibility with nineteen experimental public API usages and no internal or override-only issues. Complete verification must use an immutable authoring ZIP copy outside build before any clean task; a prior attempt failed when clean removed the verifier's input ZIP. The accepted installed JAR is bound to that immutable archive.

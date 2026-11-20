@@ -1,0 +1,7 @@
+# Verified native clipping figures
+
+Four native LaTeX plates use twelve original IntelliJ Light captures at blit_ready. Each plate combines the next source instruction, signed return values, the complete physical Bitmap view and destination memory. Sixteen explanations distinguish visible and opaque counts, clipping origins, separate strides, full-word transparency and preserved allocation padding. A native dashed outline marks the eight-by-six logical frame within the sixteen-column physical display.
+
+The source annotation uses the supported initial=true option so the leading guard is seeded from initialized memory. The physical view omits the final padding word and trailing guard; a complete 2212-byte core oracle checks those and every other data byte at initialization, call entry, return and exit. Native bitmap pixels and tooltips match all 128 modeled RGB cells exactly. A screenshot-only tolerance of three channel levels accommodates the retained macOS ICC conversion diagnostics; memory and native rendering remain exact. Original PNG pixels are unchanged in the PDF.
+
+Automation is implemented only in the separate MARS Book Authoring plugin, which depends on MARS. Its 68 Jupiter tests and paired local-plugin API verification pass. All four color/grayscale proof plates are reviewed; automated tagging, coordinate and font checks pass. Independent accessibility review remains open.
