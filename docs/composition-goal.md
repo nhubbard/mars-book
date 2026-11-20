@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–6 and 33–35 have reviewed figure sets.
-Chapters 7–32 retain 103 planned figures across 26 sets. The manuscript has
-1,733 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–7 and 33–35 have reviewed figure sets.
+Chapters 8–32 retain 99 planned figures across 25 sets. The manuscript has
+1,736 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -1791,5 +1791,35 @@ on MARS; no MARS source changed. Forty-nine Jupiter tests accompany that driver.
 
 The integrated manuscript has 1,733 pages. Reviewed figure sets now cover chapters
 1–6 and 33–35; chapters 7–32 retain 103 planned figures across 26 sets. Independent
+accessibility review remains open, and substantive editing remains the separate
+later goal. The full initial book composition and capture goal remains active.
+
+
+## Reviewed integer line figures
+
+Chapter 7 contains four reviewed native LaTeX IDE figures with fifteen numbered
+explanations from eight actual light-theme captures. The retained geometric line
+diagram is figure 7.1; native screenshots follow as figures 7.2–7.5. The 33-page
+chapter distinguishes the first painted cell, the first completed coordinate
+update, the third sample after an x-only update and the completed six-cell overlay.
+External coordinate labels are native annotations; no original screenshot pixels
+were changed. Captions explain the running error, the saved doubled error and
+terminal scratch values at their precise instruction boundaries.
+
+Both equivalent completed programs pass every grid endpoint pair, as well as
+additional color and preservation cases. Thirteen cumulative programs and
+twenty-four quiz keys pass. Final grading records 8,267 passing cases and
+fifty-eight expected rejections across fault and starter controls. All 377 public
+tooling tests pass. Source-state receipts, conditional-stop evidence, original
+images and directly editable native annotations are included with student materials.
+
+The separate authoring plugin and its exact tested binary are unchanged. Their
+49 passing Jupiter tests and pinned API verification were reused with explicit
+source/binary hash provenance; the actual clean cleanSandbox runIde launch rebuilt
+the same driver. No MARS source changed. Independent photo checks require all
+64 cells, exact tooltip addresses and colors, and zero photographic color error.
+
+The integrated manuscript has 1,736 pages. Reviewed figure sets now cover chapters
+1–7 and 33–35; chapters 8–32 retain 99 planned figures across 25 sets. Independent
 accessibility review remains open, and substantive editing remains the separate
 later goal. The full initial book composition and capture goal remains active.

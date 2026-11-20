@@ -407,3 +407,29 @@ Native figure tags, embedded fonts and unchanged original image pixels are check
 then all color and grayscale proofs are reviewed. Captions, legends and annotations
 remain directly editable LaTeX. The existing coordinate diagram remains figure
 6.1, followed by the four IDE figures. Independent accessibility review remains open.
+
+
+## Integer line figures
+
+Chapter 7 uses eight native Debug views from the unchanged line reference: a
+register/source view and a complete eight-by-eight bitmap view at each of four
+boundaries. The first painted sample and the first completed update deliberately
+have the same framebuffer. The third sample is selected by the native condition
+`$s0 == 3`; the terminal scratch value is retained rather than described as a new
+endpoint calculation.
+
+The independent core oracle checks every framebuffer word, exact sparse word-store
+prefixes, input/guard preservation and phase-specific error/register values. Native
+tooltips bind all 64 cell coordinates, addresses and RGB values. Native paint and
+photographic centers are exact, with zero screen-channel tolerance. Altered pixels,
+metadata and conditions are rejected independently. External coordinate labels are
+editable LaTeX annotations; the original screenshots are neither redrawn nor changed.
+
+No authoring code or plugin binary changed. Exact source and archive hashes bind
+the capture to the existing 49 passing Jupiter tests and compatible public API
+report; this reuse is recorded explicitly. The new dedicated launch still runs
+the actual clean cleanSandbox runIde tasks, and the rebuilt installed driver must
+match that tested binary. Implementation remains in the separate authoring plugin
+depending on MARS. Native tags, fonts, original embedded pixels, and complete color
+and grayscale proofs are checked before publication. Independent accessibility
+review remains open.
