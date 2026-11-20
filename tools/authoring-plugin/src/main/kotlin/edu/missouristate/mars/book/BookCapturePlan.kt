@@ -50,6 +50,7 @@ data class BookCaptureFigure(
     val runView: BookRunView? = null,
     val cacheView: BookCacheView? = null,
     val valueBase: String? = null,
+    val fileFixture: BookFileFixture? = null,
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
@@ -83,6 +84,7 @@ data class BookCaptureFigure(
             require(it in listOf("hex", "decimal")) { "Unknown register value base" }
             require(mode == "debug" && expectedRows.isNotEmpty() && memoryView == null && bitmapView == null && marsBotView == null && digitalLabView == null && cacheView == null) { "Value-base selection requires a dedicated register view" }
         }
+        fileFixture?.let { require(mode == "debug") { "File fixtures require a Debug capture" }; it.validate() }
         cacheView?.validate()
         require(cacheView == null || (marsBotView == null && digitalLabView == null && bitmapView == null && memoryView == null && debuggerView.isEmpty && expectedRows.isEmpty())) { "Capture the cache in its own raw view" }
         marsBotView?.validate()

@@ -13,6 +13,7 @@ import com.intellij.ide.plugins.PluginDetailsService
 import com.intellij.ide.ui.LafManager
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationsManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionToolbar
 import com.intellij.openapi.util.ActionCallback
@@ -186,6 +187,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val originalFiles = withContext(Dispatchers.EDT) { FileEditorManager.getInstance(project).openFiles.toSet() }
         var ownedBitmapFile: VirtualFile? = null
         var lastObservedTabs = emptyList<String>()
+        val fileBinding = figure.fileFixture?.let { project.service<BookFileFixtureRegistry>().prepare(path, figure.sourceSha256, it) }
         try {
             withContext(Dispatchers.EDT) {
                 val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
@@ -406,21 +408,33 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             }
             throw error
         } finally {
-            withContext(NonCancellable + Dispatchers.EDT) {
-                analysisConnection.disconnect()
-                if (!project.isDisposed) {
-                    manager.debugSessions.filter { it.sessionName == ownedSessionName }.forEach { it.stop() }
-                    LearningUiHighlightingManager.clearHighlights()
-                    val editors = FileEditorManager.getInstance(project)
-                    editors.openFiles.filter { it !in originalFiles && it.name == "Bitmap Display — " + source.name }.forEach(editors::closeFile)
-                    writeAction { manager.breakpointManager.removeBreakpoint(breakpoint) }
+            try {
+                withContext(NonCancellable + Dispatchers.EDT) {
+                    analysisConnection.disconnect()
+                    if (!project.isDisposed) {
+                        manager.debugSessions.filter { it.sessionName == ownedSessionName }.forEach { it.stop() }
+                        LearningUiHighlightingManager.clearHighlights()
+                        val editors = FileEditorManager.getInstance(project)
+                        editors.openFiles.filter { it !in originalFiles && it.name == "Bitmap Display — " + source.name }.forEach(editors::closeFile)
+                        writeAction { manager.breakpointManager.removeBreakpoint(breakpoint) }
+                    }
                 }
-            }
-            if (!project.isDisposed) withContext(NonCancellable) {
-                withTimeout(10_000) {
-                    while (withContext(Dispatchers.EDT) {
-                        !project.isDisposed && manager.debugSessions.any { it.sessionName == ownedSessionName && !it.debugProcess.processHandler.isProcessTerminated }
-                    }) delay(50)
+                if (!project.isDisposed) withContext(NonCancellable) {
+                    withTimeout(10_000) {
+                        while (withContext(Dispatchers.EDT) {
+                            !project.isDisposed && manager.debugSessions.any { it.sessionName == ownedSessionName && !it.debugProcess.processHandler.isProcessTerminated }
+                        }) delay(50)
+                    }
+                }
+            } finally {
+                fileBinding?.let { binding ->
+                    try {
+                        val evidence = binding.snapshot()
+                        check(evidence.disposed) { "Native execution did not dispose its file fixture" }
+                        withContext(NonCancellable + Dispatchers.IO) {
+                            Files.writeString(output.resolve(figure.id + "-io-closed.json"), GsonBuilder().setPrettyPrinting().create().toJson(evidence) + "\n", CREATE_NEW)
+                        }
+                    } finally { binding.close() }
                 }
             }
         }
@@ -615,6 +629,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     "exactTooltipPixels" to it.colors.size, "exactRenderedPixels" to it.colors.size,
                     "screenChannelTolerance" to it.view.screenChannelTolerance, "screen" to screenEvidence) },
                 "callouts" to snapshot.second, "observedDebuggerRows" to snapshot.third,
+                "fileFixture" to figure.fileFixture?.let { project.service<BookFileFixtureRegistry>().snapshot(Path.of(plan.projectRoot).resolve(figure.source)) },
                 "sourceSha256" to figure.sourceSha256, "source" to figure.source,
                 "checkpoint" to figure.checkpoint, "sourceLine" to line + 1,
                 "ideBuild" to ApplicationInfo.getInstance().build.asString(),

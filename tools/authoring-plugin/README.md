@@ -356,3 +356,31 @@ the original photographs, numeric receipts and twelve editable explanations.
 Independent accessibility review and interactive lesson progression remain open.
 
 Chapter 16 adds progress diagnostics for native bitmap editor selection, canvas size, tooltip values and painted-pixel mismatches. Diagnostics preserve all existing rejection conditions and pass a new Jupiter test; the full suite now has 68 tests. The completed paired local-archive verifier reports compatibility with nineteen experimental public API usages and no internal or override-only issues. Complete verification must use an immutable authoring ZIP copy outside build before any clean task; a prior attempt failed when clean removed the verifier's input ZIP. The accepted installed JAR is bound to that immutable archive.
+
+## Read-only file fixtures for authoring captures
+
+A Debug figure may opt into `fileFixture` with one guest path, input octets, a positive
+maximum read size, an optional failure offset, missing-path behavior and the exact
+expected open/read/close operations. This is an explicit in-memory fixture, not an
+ordinary host-file photograph. The controller binds it to the exact source digest
+for one capture, and the public MARS I/O customizer supplies fresh descriptor and
+cursor state. Unregistered projects and sources retain their default environment.
+An ambiguous second launch of the same registered capture is refused.
+
+Before photographing the checkpoint, the driver requires the exact operation list
+and no open descriptors. Lifetime cleanup has its own evidence and cannot count as
+a guest close. After stopping its native Debug process, the controller writes a
+separate `-io-closed.json` receipt proving disposal without leaked guest descriptors.
+Source edits, unexpected operations, incomplete execution and existing outputs fail
+the capture. No simulator memory or register values are changed by the driver.
+
+The fixture and its registry are entirely in this separate plugin. MARS supplies
+only the general public `MarsSyscallEnvironmentCustomizer` extension point. The
+MARS distribution has no authoring classes or Features Trainer dependency.
+
+For complete local API verification, supply both immutable plugin archives to the
+Plugin Verifier's supported `@file` list. Verify that the dependency tree resolves
+the exact MARS version and that compatibility, internal and override-only problem
+files are absent. The default single-plugin `verifyPlugin` task cannot resolve an
+unpublished MARS dependency from Marketplace. Never hide that gap with external
+class prefixes or ignored compatibility problems.
