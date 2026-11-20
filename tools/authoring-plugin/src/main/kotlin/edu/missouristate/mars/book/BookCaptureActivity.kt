@@ -270,6 +270,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         return@withContext emptyList<BookUiRow>()
                     }
                     figure.digitalLabView?.let { view ->
+                        if (visibleAnalysisIndicators(frame).isNotEmpty()) return@withContext null
                         val tool = ToolWindowManager.getInstance(project).getToolWindow("MARS Tools") ?: return@withContext null
                         if (!tool.isVisible) { tool.show(); return@withContext null }
                         val content = tool.contentManager.contents.singleOrNull { it.displayName == "Digital Lab Sim" } ?: return@withContext null

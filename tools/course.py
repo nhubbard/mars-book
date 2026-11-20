@@ -80,7 +80,7 @@ def validate_composite_capture(root, figure, receipt):
         parts[part['id']] = raw
     if not 1 <= len(parts) <= 8 or len(receipt['panels']) < 2 or shared.get('checkpoint') != figure['checkpoint']:
         raise ValueError('Composite needs at least two panels at the declared checkpoint')
-    identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'publicCommit',
+    identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'breakpointCondition', 'publicCommit',
                   'upstreamCommit', 'upstreamDirtyFiles', 'ideBuild', 'captureDriverSha256',
                   'marsPluginArchiveSha256', 'locale', 'scale')
     first = next(iter(parts.values()))

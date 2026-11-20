@@ -1,6 +1,7 @@
 package edu.missouristate.mars.book
 
 import com.intellij.util.ui.JBUI
+import com.intellij.ui.SimpleColoredComponent
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
 import javax.swing.JButton
@@ -59,7 +60,13 @@ internal fun observeBookDigitalLab(root: JComponent, view: BookDigitalLabView, e
     val selector = components.filterIsInstance<JComboBox<*>>().singleOrNull() as? JComboBox<Any> ?: return null
     fun label(index: Int): String {
         val rendered = selector.renderer.getListCellRendererComponent(JList<Any>(), selector.getItemAt(index), index, false, false)
-        return captureComponents(rendered).filterIsInstance<JLabel>().joinToString(" ") { it.text.orEmpty() }
+        return captureComponents(rendered).mapNotNull {
+            when (it) {
+                is JLabel -> it.text
+                is SimpleColoredComponent -> it.getCharSequence(false).toString()
+                else -> null
+            }
+        }.joinToString(" ")
     }
     val owned = (0 until selector.itemCount).singleOrNull { label(it).startsWith("$execution (#") } ?: return null
     if (selector.selectedIndex != owned) { selector.selectedIndex = owned; return null }

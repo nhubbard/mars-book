@@ -1,6 +1,7 @@
 package edu.missouristate.mars.book
 
 import com.intellij.util.ui.JBUI
+import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import java.awt.Color
 import java.awt.Graphics
 import java.awt.Point
@@ -76,6 +77,7 @@ class BookDigitalLabCaptureTest {
     fun `whole native view selects its owned run and requires idle connected controls`() {
         val root = JPanel()
         val selector = object : JComboBox<String>(arrayOf("Other (#1)", "Book figure: lab (#2)")) { override fun isShowing() = true }
+        selector.renderer = textListCellRenderer { it: String -> it }
         val disconnect = object : JButton("Disconnect") { override fun isShowing() = true }
         val timer = object : JEditorPane() {
             override fun isShowing() = true
