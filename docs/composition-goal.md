@@ -1,5 +1,11 @@
 # Full chapter composition goal
 
+Latest verified capture status: chapters 1–6 and 33–35 have reviewed figure sets.
+Chapters 7–32 retain 103 planned figures across 26 sets. The manuscript has
+1,733 pages. Independent accessibility review remains open; substantive editing
+is the separate later goal. The chronological milestones below retain earlier
+progress snapshots.
+
 Author the complete instructional text for the increasingly difficult projects in the
 35-project roadmap. The reader understands basic programming and is learning assembly
 and machine representation. A chapter must contain its explanations and worked reasoning;
@@ -1763,3 +1769,27 @@ Reviewed figure sets now exist for chapters 1–5 and 33–35. Chapters 6–32 r
 107 planned figures across 27 sets. Independent accessibility review remains
 open, and substantive editing is the separate future goal. The full initial
 book composition and capture goal remains active.
+
+
+## Reviewed MarsBot square figures
+
+Chapter 6 now contains four reviewed native LaTeX IDE figures with fifteen
+numbered explanations from eight original light-theme Debug images. The existing
+coordinate diagram remains figure 6.1. The 29-page chapter explains the stopped
+east and south corners, a complete closed trail with final controls, and the actual
+native backstep through the first movement-stop store. Status and enlarged trail
+crops sit beside one another so the register text remains legible on a single
+figure page. No source pixels or default sixteen-unit fixture were changed.
+
+Both equivalent completed programs, twelve cumulative lesson programs and twenty
+quiz keys pass. Final grading records 527 passing cases and thirty-eight expected
+rejections across the faulty variants and unfinished starter. All 377 public
+tooling tests pass. Student materials retain the original photographs, source-state
+receipts, real reverse-action evidence and directly editable native annotations.
+Screenshot implementation remains in the separate authoring plugin depending
+on MARS; no MARS source changed. Forty-nine Jupiter tests accompany that driver.
+
+The integrated manuscript has 1,733 pages. Reviewed figure sets now cover chapters
+1–6 and 33–35; chapters 7–32 retain 103 planned figures across 26 sets. Independent
+accessibility review remains open, and substantive editing remains the separate
+later goal. The full initial book composition and capture goal remains active.

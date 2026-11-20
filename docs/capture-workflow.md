@@ -377,3 +377,33 @@ Proofs are checked for embedded fonts, tagged descriptions, original image pixel
 and single-page layout, then inspected in color and grayscale. The existing
 captioned segment diagram remains figure 5.1, followed by the four IDE figures.
 Independent accessibility review remains open.
+
+
+## MarsBot square figures
+
+Chapter 6 uses eight native Debug views from the separate authoring plugin. Four
+plates explain the east corner, south corner, completed square and the real reverse
+transition through the first movement-stop store. The unchanged reference uses a
+16-unit side and 64 instructions per tick on the native 512-unit board. Verified
+detail regions enlarge original screenshot pixels in LaTeX; the complete original
+board image is retained, and no substitute plot is rendered for a screenshot.
+
+The independent core oracle checks corner states, complete continuous trails,
+registers, protected inputs and read-only coordinate feedback. Native UI checks
+bind the selected execution, position, heading, pen, movement and clock fields.
+Photographic checks require visible trail coverage and reject unexpected dark ink,
+with the marker occlusion and outer two-pixel border exclusions recorded explicitly.
+
+A reverse capture supplies `backstepFrom` and its final `checkpoint`. The driver
+uses the public toolbar action list and `ActionManager.tryToExecute` to invoke the
+actual Backstep Instruction action, waits for completion, and verifies the returned
+source position. Receipts preserve both source boundaries. Student validation
+rejects missing, invented or inconsistent reverse-action evidence. No manual action
+group expansion or internal debugger implementation is used.
+
+Forty-nine Jupiter tests and 377 public tooling tests accompany the capture path.
+Rejected API and coordinate-translation attempts remain private diagnostic evidence.
+Native figure tags, embedded fonts and unchanged original image pixels are checked,
+then all color and grayscale proofs are reviewed. Captions, legends and annotations
+remain directly editable LaTeX. The existing coordinate diagram remains figure
+6.1, followed by the four IDE figures. Independent accessibility review remains open.
