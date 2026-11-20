@@ -59,7 +59,12 @@ data class BookCaptureFigure(
         } else {
             require(expectedRows.isEmpty() && bitmapView == null && memoryView == null && debuggerView.isEmpty && stepFrom.isEmpty()) { "Presentation captures cannot request Debug navigation" }
             if (mode == "editor") require(editorCallouts.isNotEmpty() && runView == null && standardInput == null) { "An editor capture needs source callouts only" }
-            else require(runView != null && editorCallouts.isEmpty() && standardInput != null) { "A Run capture needs input and an output contract" }
+            else {
+                val view = requireNotNull(runView) { "A Run capture needs an output contract" }
+                require(editorCallouts.isEmpty()) { "Run captures use console callouts" }
+                if (standardInput == null) require(view.prompt.isEmpty() && view.consoleText == view.stdout) { "Input-free Run must display exactly its output without a prompt or input echo" }
+                else require(view.prompt.isNotBlank()) { "Interactive Run needs a prompt before native input" }
+            }
         }
         editorCallouts.forEach { it.validate() }
         runView?.validate()
@@ -153,7 +158,7 @@ data class BookRunView(
     val callouts: List<BookTextCallout> = emptyList(),
 ) {
     fun validate() {
-        require(prompt.isNotBlank() && stdout.startsWith(prompt) && stdout.length <= 32768) { "Run needs an exact bounded output contract" }
+        require(stdout.isNotEmpty() && stdout.startsWith(prompt) && stdout.length <= 32768) { "Run needs an exact bounded output contract" }
         require(consoleText.startsWith(prompt) && consoleText.length <= 32768 && callouts.isNotEmpty()) { "Run needs rendered console assertions" }
         callouts.forEach { it.validate() }
     }

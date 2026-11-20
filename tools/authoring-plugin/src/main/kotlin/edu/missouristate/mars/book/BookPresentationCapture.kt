@@ -155,7 +155,7 @@ internal suspend fun captureBookPresentation(project: Project, plan: BookCapture
                     val context = DataManager.getInstance().getDataContext(console.preferredFocusableComponent ?: console.component)
                     val editor = CommonDataKeys.EDITOR.getData(context) ?: return@withContext null
                     val view = checkNotNull(figure.runView)
-                    if (!inputSubmitted) {
+                    if (figure.standardInput != null && !inputSubmitted) {
                         check(!handler.isProcessTerminated) { "Run ended before input" }
                         if (stdout.toString() != view.prompt || !editor.document.text.endsWith(view.prompt)) return@withContext null
                         editor.caretModel.moveToOffset(editor.document.textLength)

@@ -30,6 +30,19 @@ class BookPresentationPlanTest {
     }
 
     @Test
+    fun `input-free Run has exact output without an invented prompt or echo`() {
+        val report = BookRunView(stdout = "signed: -1\n", consoleText = "signed: -1\n", callouts = listOf(BookTextCallout("Signed value", "signed: -1")))
+        val automatic = run.copy(standardInput = null, runView = report)
+        automatic.validate(root)
+        for (bad in listOf(automatic.copy(runView = report.copy(prompt = "signed: ")),
+                           automatic.copy(runView = report.copy(consoleText = "signed: -1\nextra echo")),
+                           automatic.copy(standardInput = ""),
+                           run.copy(runView = view.copy(prompt = "")))) {
+            assertThrows<IllegalArgumentException> { bad.validate(root) }
+        }
+    }
+
+    @Test
     fun `exact text targets use UTF16 editor offsets and reject missing or ambiguous text`() {
         assertEquals(3..8, uniqueBookTextRange("😀\nanswer\n", "answer"))
         for (target in listOf("", " ", "missing", "same")) {
@@ -39,7 +52,7 @@ class BookPresentationPlanTest {
 
     @Test
     fun `Run needs bounded stdout rendered text and at least one meaningful callout`() {
-        for (bad in listOf(view.copy(prompt = ""), view.copy(stdout = "wrong prompt"), view.copy(consoleText = "wrong prompt"),
+        for (bad in listOf(view.copy(stdout = ""), view.copy(stdout = "wrong prompt"), view.copy(consoleText = "wrong prompt"),
                            view.copy(stdout = "Prompt: " + "1".repeat(32768)), view.copy(consoleText = "Prompt: " + "1".repeat(32768)),
                            view.copy(callouts = emptyList()), view.copy(callouts = listOf(BookTextCallout("", "value"))),
                            view.copy(callouts = listOf(BookTextCallout("Value", ""))),

@@ -44,8 +44,13 @@ def validate_capture_mode(figure, raw):
     elif mode == 'run':
         if raw.get('exitCode') != 0 or raw.get('stderr') != '' or raw.get('stdout') != figure.get('expectedStdout') or raw.get('standardInput') != figure.get('standardInput'):
             raise ValueError('Completed Run input, output or exit differs')
-        if not figure.get('expectedStdout') or not figure.get('standardInput') or raw.get('inputMethod') != 'Native console typing and Enter handlers':
-            raise ValueError('Run capture needs native input and output evidence')
+        if not figure.get('expectedStdout'):
+            raise ValueError('Run capture needs exact output evidence')
+        if figure.get('standardInput') is None:
+            if raw.get('inputMethod') is not None:
+                raise ValueError('Input-free Run cannot claim keyboard input')
+        elif not figure.get('standardInput') or raw.get('inputMethod') != 'Native console typing and Enter handlers':
+            raise ValueError('Interactive Run capture needs native input evidence')
 
 
 def validate_composite_capture(root, figure, receipt):
