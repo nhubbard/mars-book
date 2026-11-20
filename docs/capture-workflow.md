@@ -287,3 +287,25 @@ exports. It rejects changed compositions without renewed review and preserves ed
 exports. Student validation also binds the raw-receipt digest and distinguishes an idle
 editor, completed native Run and paused Debug state. These checks do not certify PDF/UA
 compliance or finish the earlier chapter figure backlog.
+
+
+## Completed single-pixel figure set
+
+The second chapter has three reviewed native LaTeX figures, with nine numbered
+details from six unchanged native IDE images. The source stop, increasing-address
+byte row and display/register views establish the word store, byte update and
+completed load separately. All eight original capture views remain in the private
+evidence batch; the six used in print are exported with their exact raw receipts.
+
+The display uses normal write-driven updates. Only the upper-left cell receives a
+store. The other three cells remain black even though the adjacent word has a data
+initializer. The legends give the RGB fields numerically, identify the neighboring
+word and the trailing padding, and distinguish the current instruction from the
+instruction that has just executed. Color and grayscale proofs were inspected.
+
+The existing reviewed-figure exporter now accepts a validated package identity,
+retains edited native exports and changes only the image-path prefix during export.
+Chapter 2 validation binds every raw receipt and unchanged PNG. The authoring plugin
+remains a separate plugin depending on MARS; no authoring implementation is included in
+MARS. These print and structure checks do not certify PDF/UA compliance. Independent
+accessibility review and the remaining chapter figure backlog are still open.

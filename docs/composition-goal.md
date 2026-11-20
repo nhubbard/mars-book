@@ -1682,3 +1682,20 @@ separate authoring plugin depending on MARS. No graphical IDE launch or main-plu
 source change occurred in this packaging step. Independent accessibility review
 and later substantive editing remain open. The required grader revision 6c66f101
 is still a local MARS commit and is not pushed by book publication.
+
+
+## Reviewed single-pixel chapter figures
+
+Chapter 2 now includes three reviewed native LaTeX plates with nine numbered details.
+The 18-page chapter uses unchanged light-theme IDE images, semantic descriptions,
+text legends and captions to explain the word store, byte update and completed load.
+The student archive retains the editable annotations and original capture receipts.
+Both equivalent implementations and all six incremental programs pass their checks;
+three faulty submissions and the unfinished starter are rejected. All 370 public
+tooling tests pass. The integrated manuscript has 1,719 pages.
+
+Complete reviewed figure sets now exist for chapters 1, 2, 33, 34 and 35. The remaining
+30 chapters have 119 planned figures. Independent accessibility review remains open,
+and substantive editing is the separate future goal. These remaining requirements
+keep the full initial composition/capture goal active. The screenshot implementation
+continues to live in the separate authoring plugin depending on MARS.
