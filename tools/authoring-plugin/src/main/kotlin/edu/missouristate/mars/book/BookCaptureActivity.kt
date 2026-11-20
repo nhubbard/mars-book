@@ -275,6 +275,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         val content = tool.contentManager.contents.singleOrNull { it.displayName == "Digital Lab Sim" } ?: return@withContext null
                         if (tool.contentManager.selectedContent != content) { tool.contentManager.setSelectedContent(content, false); return@withContext null }
                         ToolWindowManager.getInstance(project).getToolWindow("Debug")?.takeIf { it.isVisible }?.let { it.hide(); return@withContext null }
+                        lastObservedRows = bookLabDiagnostics(content.component)
                         return@withContext observeBookDigitalLab(content.component, view, "Book figure: " + figure.id)?.rows
                     }
                     val descriptor = RunContentManager.getInstance(project).findContentDescriptor(
@@ -320,6 +321,16 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     }
                     reportedRows = lastObservedRows.toList()
                     reportedTabs = lastObservedTabs.toList()
+                }
+                if (figure.digitalLabView != null && ready == null && lastObservedRows.firstOrNull() == "Digital Lab diagnostics") {
+                    val diagnostic = output.resolve(figure.id + "-unaccepted-diagnostic.png")
+                    if (!withContext(Dispatchers.IO) { Files.exists(diagnostic) }) {
+                        val bounds = withContext(Dispatchers.EDT) {
+                            val root = checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane
+                            Rectangle(root.locationOnScreen, root.size)
+                        }
+                        withContext(Dispatchers.IO) { Files.newOutputStream(diagnostic, CREATE_NEW).use { check(ImageIO.write(Robot().createScreenCapture(bounds), "png", it)) } }
+                    }
                 }
                 val texts = ready?.map { it.text }
                 stable = if (texts != null && texts == previous) stable + 1 else 0

@@ -81,3 +81,24 @@ internal fun observeBookDigitalLab(root: JComponent, view: BookDigitalLabView, e
         listOf(BookUiRow("Counter interrupt off", bounds(timer)), BookUiRow("No pressed key; 16 enabled keys", keypad))
     return BookObservedDigitalLab(rows, label(owned), displays.flatMap { it.second })
 }
+
+/** Diagnostic observations are retained only for an unaccepted authoring attempt. */
+internal fun bookLabDiagnostics(root: JComponent): List<String> = listOf("Digital Lab diagnostics") +
+    captureComponents(root).filterIsInstance<JComponent>().filter { it.isShowing }.mapNotNull { component ->
+        val name = component.accessibleContext?.accessibleName
+        when {
+            component is JComboBox<*> -> "Selector: ${component.selectedItem}; items=${component.itemCount}"
+            component is JEditorPane -> "Text: ${component.document.getText(0, component.document.length).trim()}"
+            component is JToggleButton -> "Key: ${component.text}; enabled=${component.isEnabled}; pressed=${component.isSelected}"
+            component is JButton && !component.text.isNullOrEmpty() -> "Button: ${component.text}; enabled=${component.isEnabled}"
+            name?.startsWith("Left display") == true || name?.startsWith("Right display") == true -> {
+                val image = BufferedImage(component.width, component.height, BufferedImage.TYPE_INT_RGB)
+                val graphics = image.createGraphics()
+                try { component.paint(graphics) } finally { graphics.dispose() }
+                "$name; size=${component.width}x${component.height}; tooltip=${component.toolTipText}; colors=" +
+                    bookLabSegmentCenters.joinToString(",") { (x, y) -> "%06x".format(image.getRGB(JBUI.scale(x), JBUI.scale(y)) and 0xffffff) }
+            }
+            component is JLabel && !component.text.isNullOrBlank() -> "Label: ${component.text}"
+            else -> null
+        }
+    }.toList()
