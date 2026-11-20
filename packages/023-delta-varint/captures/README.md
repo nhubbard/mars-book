@@ -1,0 +1,3 @@
+# Verified delta codec figures
+
+Four native LaTeX figures use twenty-one original light-mode screenshots with twenty-six numbered explanations. They distinguish atomic capacity exhaustion, a private decoder scan, malformed encoding, reconstructed range and six-dataset size results. Original PNGs and complete asserted return/status observations remain unchanged; native crops omit unrelated argument rows. Failure and size comparisons explicitly declare their source-state groups and common runtime provenance. Source and font/tagging/coordinate receipts accompany the reviewed color/grayscale proofs. The separate authoring plugin depends on MARS and is not part of the student plugin. Independent accessibility review and later substantive editing remain open.

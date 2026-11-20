@@ -23,7 +23,10 @@ class PackageTests(unittest.TestCase):
         self.assertEqual([s['id'] for s in steps], [s['id'] for s in data['steps']])
         native = course.ROOT / 'includes/chapters/023-delta-varint'
         for path in native.glob('*.tex'):
-            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+            # Student-native figures resolve their original PNGs inside the package.
+            expected = path.read_text().replace('book/captures/023-delta-varint/',
+                                                'packages/023-delta-varint/captures/').encode()
+            self.assertEqual(expected, (root / 'native' / path.name).read_bytes())
         names = re.findall(r'\\input\{includes/chapters/023-delta-varint/([^}]+)\}',
                            (native / 'chapter.tex').read_text())
         reading = course.reading_segments(root, data)

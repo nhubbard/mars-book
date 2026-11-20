@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–22 and 33–35 have reviewed figure sets.
-Chapters 23–32 retain 40 planned figures across 10 sets. The manuscript has
-1,784 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–23 and 33–35 have reviewed figure sets.
+Chapters 24–32 retain 36 planned figures across 9 sets. The manuscript has
+1,787 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2169,3 +2169,18 @@ Reviewed figure sets cover chapters 1–22 and 33–35. Chapters 23–32 retain 
 
 The integrated chapter 22 build contains 1,784 manuscript pages. Its complete body
 glyphs and positions match the 64-page standalone edition, allowing the binding offset.
+
+## Chapter 23 illustrated draft
+
+Four actual IDE plates explain item-atomic capacity exhaustion, a private decoder scan before commitment, malformed versus reconstructed-range failures, and all six deterministic byte-size results. Twenty-one unchanged captures support twenty-six native explanations. The standalone chapter has 74 pages. Counts retain their direction-dependent units, and output bytes outside the committed prefix remain untouched even when they lie inside capacity.
+
+An independent mathematical signed mapping, quotient/remainder base-128 representation and canonical-shortest check establish exact results. Complete 424-byte images and ordered caller-data histories cover initialization, entry, the selected internal boundary, return, publication and exit. Four host tests cover every signed-halfword round trip, signed-word endpoint transitions, all octets and fifth-byte gates, atomic capacity cuts and the six datasets. Five native mutations reject silent protected stores, a logical suffix read, noncanonical commitment and reconstruction narrowed before its range check.
+
+Fresh full grading passes 40,703 successful cases across 95 grading runs, fifty intermediate programs, 84 published observations in two contexts and sixty quiz keys. The starter and 21 faulty variants yield 11,236 expected failures in 22 rejection runs. Both implementations, full-width pointers, signed loads followed by masks, submission-owned constants, repeated calls and extracted student checks pass. The private domain covers every pair of 21 selected signed endpoints at nine capacities, all octets at three capacities and selected fifth-byte tails/prefixes; it is not exhaustive over all word pairs or sequences.
+
+The separate authoring plugin depends on MARS and remains unchanged. Its exact source/build/class inventory binds reuse of 68 Jupiter tests and complete paired API verification. The new batch independently runs clean cleanSandbox runIde and verifies all twenty-one captures. Native crop edits keep counts and status distinct, and comparison receipts retain each fixture state. All eight final color/grayscale proofs pass; the initial bootstrap refuses edited native source. Human passages and remaining chapter prose are preserved.
+
+Reviewed figure sets cover chapters 1–23 and 33–35. Chapters 24–32 retain 36 planned figures across nine sets. Independent accessibility review remains open, and substantive editing remains the separate later goal.
+
+The integrated chapter 23 build contains 1,787 manuscript pages. Its full body
+glyphs and positions match the 74-page standalone edition, allowing the binding offset.
