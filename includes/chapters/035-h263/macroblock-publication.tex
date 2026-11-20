@@ -1,0 +1,76 @@
+\section{Stage the complete result before publishing it}
+Six successful block calls are needed for one complete macroblock result.
+Writing each result straight into the caller's buffer exposes a partially updated
+macroblock if a later call fails. Instead, reserve private space for all six
+records, populate those records, and copy them to the caller after success.
+The dependency's output pointer must refer to the private record while it runs.
+
+A reference frame plan uses 144 bytes for a request copy, 64 for one reusable
+block request and 1152 for staged results, plus saved state. Record the ownership
+of each region. A nested predictor can allocate its own frame below the current
+stack pointer; that space must not overlap your live records. The public harness
+provides 16\,384 bytes of private stack and checks its outer guards. Its size
+permits other valid frame arrangements.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,font=\small},node distance=6mm,alt={The macroblock routine first validates its request and all six planes. It then forms six prediction and residual records in private storage. If a block predictor fails, it returns failure while retaining the caller's old output. After all six succeed, it copies the complete records into the caller's output and returns success.}]
+\node (admit) {validate request and all six planes};
+\node[below=of admit] (stage) {produce six records\\in private storage};
+\node[below=of stage] (publish) {after all succeed, copy 1152 bytes\\and return success};
+\draw[-{Latex}] (admit)--(stage);
+\draw[-{Latex}] (stage)--(publish);
+\end{tikzpicture}
+\caption{Private staging keeps a failed macroblock from publishing partial records.}
+\end{figure}
+
+The guarantee is evaluated when the function returns. A 1152-byte copy consists
+of multiple stores; it does not provide hardware-atomic visibility to concurrent
+readers. With the caller's valid mapped output and ordinary single-threaded
+simulator use, all successful records are available at the return boundary.
+
+\section{Observe one complete raw macroblock}
+Use \path{drafts/h263-macroblock-construction/main.asm}. Carry in your completed
+eight-by-eight predictor and retain one ordinary main entry. The supplied
+macroblock entry and predictor initially return development status four.
+Prepare a new file from your current working source:
+\begin{verbatim}
+python3 drafts/h263-macroblock-construction/prepare.py \
+    --source my-macroblock.asm --mode 1 --dx -2 --dy -2 \
+    --output worked-macroblock.asm
+\end{verbatim}
+Preparation installs two full raw QCIF pictures and selects the mode and signed
+displacement. It leaves every instruction byte unchanged and refuses an existing
+output. The ordinary caller initializes all six plane pointers at runtime, using
+25344-byte Y and 6336-byte chroma plane sizes. Its current origin is $(16,32)$.
+The supplied program entry first rounds its stack pointer down to a sixteen-byte
+boundary. MARS's legacy initial stack value is not a promise of that alignment.
+The entry uses a full-width mask of $-16$ before the first nested call; its
+terminal syscall exits the program after the observation. Keep an already aligned
+caller's stack unchanged across the callable routine itself.
+
+Unlike the earlier block helper, it does not calculate individual block pointers
+or fractional phases for the target routine.
+
+For the generated pictures, the component sums are:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrr}
+\textbf{Displacement} & \textbf{Four Y blocks} & \textbf{Cb} & \textbf{Cr} & \textbf{Total}\\
+$(-2,-2)$ & 2976 & 0 & 0 & 2976\\
+$(-1,-1)$ & 5208 & 232 & 348 & 5788\\
+$(0,0)$ & 7872 & 480 & 720 & 9072
+\end{tabular}
+\end{center}
+The first row agrees with the selected luma SAD, but that agreement alone does
+not prove correct chroma handling: its two chroma residuals happen to be zero.
+The odd displacement exercises half-sample chroma phases and distinguishes the
+two chroma planes. Its Cb and Cr sums differ because their sample values differ.
+
+The completed default worked caller prints \texttt{2976} and exits zero.
+At \texttt{macro\_caller\_return}, before its first instruction, all six records
+are already published and return registers are zero and 2976. The caller has not
+yet copied those registers into its named status and total fields. Try the odd
+and zero displacements as separate prepared files; their totals are 5788 and 9072.
+This observation still uses raw pictures to isolate integration. The eventual
+encoder must supply its locally reconstructed reference planes.

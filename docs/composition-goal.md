@@ -1379,3 +1379,38 @@ These are finite kernel work observations, not wall time or completed encoding.
 Macroblock orchestration, transform/quantization, local reconstruction, baseline
 syntax, independent full-stream grading and chapter captures/distributions remain
 open. Independent accessibility review and substantive editing remain separate.
+
+## Target-side six-block H.263 prediction
+
+The native chapter now has 41 pages and forty construction observations/quizzes.
+Steps 31–40 explain a complete macroblock request, six independent strides,
+preflight of every plane before pixels, luma/chroma child geometry, private
+records, combined SAD and return-boundary publication. Three new tagged tables
+and a described native staging figure bring the chapter to eleven tables,
+41 header cells and three figures. Native prose remains authoritative.
+
+The student stage prepares full raw QCIF pictures while preserving instructions;
+the target derives all child addresses/phases itself. Twenty completed ordinary
+callers exercise five signed vectors in both modes. Default (-2,-2) returns 2976;
+(-1,-1) returns 5788 and zero returns 9072, with distinct Y/Cb/Cr component sums.
+The ordinary entry now explicitly aligns the stack before nested calls: an
+aligned offset cannot correct an unaligned stack base. The failed preflight that
+exposed the legacy initial alignment is retained privately.
+
+Two equivalent bodies, one traversing blocks in reverse, pass 212 private cases
+each. Three layouts pass the 64 public cases, including independent 4-KiB frames.
+Eight implementation-specific probes inject failure at the third child after
+private writes and retain every caller result byte. Five wrong bodies and the
+unfinished starter fail completed feedback. The harness retains full-sized
+wide-address guard arenas, using doubleword fills to stay within the existing
+assembly-work budget; it does not weaken checking or require a core API change.
+All 259 public tooling tests pass. No authoring-plugin code changed and no
+graphical IDE launch or new screenshot is claimed.
+
+The named mixed-pattern macroblock measures 11447 scalar versus 5525 MSA-mode
+instructions from outer entry through return, including staging/publication.
+These are finite work observations, not whole-encoder timing or grading counts.
+Forward/inverse transforms, quantization, closed reconstruction, baseline syntax,
+independent complete-stream grading and chapter captures/distributions remain
+open. The book goal remains active; independent accessibility review and later
+substantive editing are still separate work.

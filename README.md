@@ -495,3 +495,13 @@ an independent stack layout are also accepted. Thirty real six-block windows
 cover five signed motion vectors. All 253 public tooling tests and 28 authoring
 Jupiter tests pass; the new listing uses the actual IntelliJ highlighter. Full
 encoder orchestration, transform/quantization, reconstruction and output remain open.
+
+The six-block target-side prediction step extends chapter 35 to 41 pages and
+forty construction observations/quizzes. It derives all luma/chroma origins in
+assembly, preserves independent plane strides and stages six records before
+publishing the complete result. Two bodies pass 212 private cases each; public
+feedback accepts three layouts across 64 cases. Eight later-child failure probes
+retain caller output after private writes. Twenty completed ordinary callers
+exercise five vectors in both modes. All 259 public tooling tests pass. The
+ordinary entry explicitly aligns its stack, matching the grading precondition.
+Transform/quantization, local reconstruction and full H.263 output remain unfinished.

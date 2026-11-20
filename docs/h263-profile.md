@@ -72,11 +72,25 @@ origin plus phase one. Public feedback has 96 cases. Two primary bodies pass 184
 private cases each; an additional coalesced-read version passes all 184 and
 three bodies pass public feedback. Thirty host-positioned real windows cover
 six blocks and five vectors, with 120 cases per primary implementation. These
-checks do not prove target-side macroblock orchestration or local reconstruction.
+positioned-window checks cover the block kernel; the subsequent target-side
+coordination checks below cover macroblock origins and publication. Local
+reconstruction remains unfinished.
 Five wrong kernels and the unfinished starter are rejected. Per-sample signed
 residuals and the exact pre-quantization reconstruction identity are checked.
 
-Macroblock orchestration and transform/quantization are next, followed by local
+Target-side six-block prediction now derives all Y/Cb/Cr origins from complete
+plane pointers and six independent strides. It stages six 192-byte records and
+publishes 1152 bytes only after every child succeeds. All plane extents are
+validated before pixels; failed child status two retains caller output. The
+ordinary program entry aligns the stack before passing aligned private records.
+Two bodies, including reverse block order, pass 212 private cases each; three
+layouts pass 64 public cases each. Eight implementation-specific probes verify
+later-child failure after private writes. Five wrong bodies and the unfinished
+starter are rejected. Twenty ordinary completed callers exercise five signed
+vectors in both modes. The default returns total 2976; odd (-1,-1) returns 5788
+and zero returns 9072. These are prediction/residual results, not encoded output.
+
+Transform/quantization is next, followed by local
 reconstruction, bit writing and baseline picture/macroblock syntax. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
