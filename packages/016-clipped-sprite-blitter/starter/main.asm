@@ -1,4 +1,4 @@
-# mars:tool bitmap width=128 height=64 unitWidth=8 unitHeight=8 base=static_data
+# mars:tool bitmap width=128 height=64 unitWidth=8 unitHeight=8 base=static_data initial=true
 .data
 bitmap_origin: .word 0x00444444
 frame_a: .space 512
