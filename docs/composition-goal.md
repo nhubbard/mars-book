@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–21 and 33–35 have reviewed figure sets.
-Chapters 22–32 retain 44 planned figures across 11 sets. The manuscript has
-1,782 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–22 and 33–35 have reviewed figure sets.
+Chapters 23–32 retain 40 planned figures across 10 sets. The manuscript has
+1,784 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2154,3 +2154,18 @@ Fresh complete verification passes 26,014 successful checks, 36 partial programs
 The separate authoring plugin depends on MARS and remains unchanged. Exact source/build and class/resource evidence bind reuse of 68 Jupiter tests and complete paired API verification. The new batch runs the actual clean cleanSandbox runIde tasks and verifies 24 native captures. All five color/grayscale proofs, coordinates, original pixels, fonts and tagged descriptions pass. Named LaTeX saveboxes hold the annotated details. A guarded bootstrap reproduces the new fixtures in isolation and refuses edited source; native composition remains directly editable. Publication replaces only five planned native figures and two factual status passages, preserving all other graded archive bytes.
 
 Reviewed figure sets now cover chapters 1–21 and 33–35. Chapters 22–32 retain 44 planned figures across 11 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+## Chapter 22 illustrated draft
+
+Four actual IDE plates explain scalar completion, zero-reduction initialization, retained partial sums at the second reduction-tile visit and the complete-call cache comparison. Nineteen native light-mode captures are verified; fifteen unchanged originals support eighteen native explanations. The 64-page chapter distinguishes signed doublewords from stored words, a nonempty result from an empty reduction, and memory notices from completed simulator instructions.
+
+An independent mathematical product and OrderedDict LRU model check complete 4508-byte images and every notice address, width, direction and hit. The model includes aligned stack saves/restores, descriptor loads, exact selected matrix slices and caller-only count publication. Four host tests cover every dimension 0..4 and tile edge 1..8, both schedules, clipped edges, zero reduction, empty output, wide results and known cache conflicts. Five native mutations reject silent protected writes, suffix reads, zero-reduction reads, half-width output and discarded partial sums.
+
+Fresh full grading passes 24,846 successful cases across 92 grading runs, with 42 intermediate programs, 58 published observations in two launch contexts and fifty quiz keys. The starter and twenty faulty variants yield 2,019 expected failures in 21 rejection runs. Both implementations, full-width pointers, repeated calls, submission-owned constants, signed-word products and byte-sized output stores pass. The private shape domain covers every dimension triple 0..16 at one deterministic tile plus all tile values 1..8 on four wide-sum shapes; it is not every shape/tile/pattern combination.
+
+The separate authoring plugin depends on MARS and remains unchanged. Exact source/build/class identities bind reuse of its 68-test Jupiter and complete paired public API evidence. The new capture batch independently runs clean cleanSandbox runIde and passes nineteen native observations. A new tested comparison receipt format retains each scalar/tiled fixture state explicitly while requiring common runtime provenance and preserving ordinary composite restrictions. All four native color/grayscale proofs pass. Human passages and remaining chapter prose are preserved.
+
+Reviewed figure sets cover chapters 1–22 and 33–35. Chapters 23–32 retain forty planned figures across ten sets. Independent accessibility review remains open, and substantive editing remains the separate later goal.
+
+The integrated chapter 22 build contains 1,784 manuscript pages. Its complete body
+glyphs and positions match the 64-page standalone edition, allowing the binding offset.

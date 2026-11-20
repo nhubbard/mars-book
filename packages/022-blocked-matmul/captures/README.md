@@ -1,0 +1,3 @@
+# Verified matrix figures
+
+Four native LaTeX figures use fifteen original light-mode screenshots selected from nineteen verified IDE captures. Eighteen numbered explanations distinguish exact doublewords, caller publication, zero reduction, retained partial sums and cold-cache counters. Raw PNGs are unchanged; coordinate receipts and rendered native proofs accompany them. The cache comparison explicitly declares separate scalar and tiled source sessions while requiring identical runtime provenance. The separate authoring plugin depends on MARS and is not part of the student MARS plugin. Independent accessibility review and later substantive editing remain open.
