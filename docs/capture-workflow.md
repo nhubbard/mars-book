@@ -309,3 +309,22 @@ Chapter 2 validation binds every raw receipt and unchanged PNG. The authoring pl
 remains a separate plugin depending on MARS; no authoring implementation is included in
 MARS. These print and structure checks do not certify PDF/UA compliance. Independent
 accessibility review and the remaining chapter figure backlog are still open.
+
+
+## Completed sprite-row figure set
+
+Chapter 3 has four reviewed native LaTeX plates, with thirteen numbered details
+from nine unchanged IDE images. The stops show the first unsigned row load, the
+completed bit reversal before its byte store, the first drawn row, and the completed
+eight-row frame. Both bitmap views verify all 128 cells against independent Python
+models, including the seven unprocessed black rows in the first-row view. Native
+paint, tooltip and actual photograph checks pass with zero channel tolerance.
+
+The legends distinguish a memory-table row from a display row, identify the source
+and output byte ranges and both canaries, and explain the display hover outline.
+Color and grayscale proofs and all 29 chapter pages were inspected. Explicit
+paragraph boundaries around the new floats preserve paragraph and section tags
+after a comprehension-question list. Figure descriptions, native captions and text
+legends remain editable in the chapter includes; source images and resolved bounds
+are exported with the student package. Capture implementation remains in the separate
+authoring plugin depending on MARS. Independent accessibility review remains open.

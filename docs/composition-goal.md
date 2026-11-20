@@ -1699,3 +1699,22 @@ Complete reviewed figure sets now exist for chapters 1, 2, 33, 34 and 35. The re
 and substantive editing is the separate future goal. These remaining requirements
 keep the full initial composition/capture goal active. The screenshot implementation
 continues to live in the separate authoring plugin depending on MARS.
+
+
+## Reviewed sprite-row chapter figures
+
+Chapter 3 now has four reviewed native LaTeX figures with thirteen numbered details
+from nine unchanged light-theme IDE images. The 29-page chapter develops the first
+unsigned row load, exact eight-bit reversal, first drawn row and completed sprite.
+The existing native bit-order diagram is retained. Figure captions, descriptions,
+text legends and screenshot crops are directly editable LaTeX; the student package
+retains their original image and state receipts. All 370 public tooling tests pass.
+The chapter checks both equivalent implementations, fifteen incremental programs,
+twenty quiz keys, faulty/starter controls and the stated guest-instruction counts.
+The integrated manuscript has 1,722 pages.
+
+Reviewed figure sets now exist for chapters 1, 2, 3, 33, 34 and 35. Chapters 4–32
+still have 115 planned figures across 29 chapter sets. Independent accessibility
+review remains open, and substantive editing remains the separate future goal.
+The full initial composition/capture goal stays active. Screenshot implementation
+remains in the separate authoring plugin depending on MARS.
