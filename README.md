@@ -485,3 +485,13 @@ data-only preparation and 56 public completed-entry cases. Two traversals pass
 wrong searches and the unfinished starter. All 247 public tooling tests pass.
 The verified worked result is displacement (-2,-2), SAD 2976 and 25 candidates.
 This extends the opening material; the complete H.263 encoder is still unfinished.
+
+Chapter 35 now extends to 32 native pages and thirty construction observations
+and quizzes. The new prediction/residual stage explains exact baseline rounding,
+signed chroma origins, eight-sample access footprints and signed halfword output.
+It includes an unfinished Run/Debug caller and 96 public feedback cases. Two
+primary bodies pass 184 private cases each; a safe coalesced-read variant and
+an independent stack layout are also accepted. Thirty real six-block windows
+cover five signed motion vectors. All 253 public tooling tests and 28 authoring
+Jupiter tests pass; the new listing uses the actual IntelliJ highlighter. Full
+encoder orchestration, transform/quantization, reconstruction and output remain open.

@@ -1,0 +1,73 @@
+\section{Define an eight-by-eight prediction boundary}
+Implement \texttt{h263\_predict8}. It accepts a pointer to an eight-byte-aligned
+64-byte request in \texttt{\$a0} and a pointer to a sixteen-byte-aligned 192-byte
+output record in \texttt{\$a1}. Each request field is an unsigned native-endian
+64-bit quantity. This record describes one already positioned block; it contains
+no motion-vector syntax.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Byte offset} & \textbf{Field} & \textbf{Meaning or range}\\
+0 & Current pointer & Top-left current sample\\
+8 & Reference pointer & Integer origin before interpolation\\
+16 & Current stride & 8 through 4096 bytes\\
+24 & Reference stride & $8+p_x$ through 4096 bytes\\
+32 & $p_x$ & 0 or 1\\
+40 & $p_y$ & 0 or 1\\
+48 & Mode & 0 scalar; 1 MSA\\
+56 & Reserved & Zero
+\end{tabular}
+\end{center}
+The caller supplies mapped current samples in eight rows and mapped reference
+samples in the required halo. Their byte pointers may be unaligned and the two
+read-only inputs may overlap, including with different strides. The output is
+disjoint from the inputs and request. Preserve saved general registers, the stack
+pointer, the request and every input byte.
+
+Validate record alignment and non-wrapping 64-/192-byte extents before request
+reads. Then validate all fields and the minimal image extents
+$7s_C+8$ and $(7+p_y)s_R+8+p_x$ before reading pixels. Use full-width field and
+address arithmetic. On invalid arguments return \texttt{\$v0}=1 and
+\texttt{\$v1}=0, with no pixel reads or output changes. The caller's mapped-memory
+preconditions do not require the function to probe arbitrary unmapped addresses.
+
+On success, write the following complete output and return zero in
+\texttt{\$v0}. Return $\sum |e|$ in \texttt{\$v1}, an unsigned value from zero
+through 16\,320. This score summarizes the residual magnitudes; it does not
+replace the signed residual array.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Byte range} & \textbf{Contents} & \textbf{Layout}\\
+0--63 & Predicted samples & Eight tight rows of eight unsigned bytes\\
+64--191 & Signed residuals & Eight tight rows of eight native-endian halfwords
+\end{tabular}
+\end{center}
+A residual's byte offset is $64+2(8y+x)$. Prediction row stride is eight bytes;
+residual row stride is sixteen. Those output strides are independent of both
+input strides. A whole-vector halfword store fits one residual row. A whole-vector
+byte load does not generally fit one eight-sample input row. Gather active bytes
+into halfword lanes, or use another proven access arrangement. Coalescing adjacent
+tight rows is permitted when every accessed byte belongs to the admitted footprint.
+
+Use \path{drafts/h263-prediction-construction/main.asm} as the new ordinary caller.
+Its unfinished entry returns development status four. Prepare a worked copy from
+your current source:
+\begin{verbatim}
+python3 drafts/h263-prediction-construction/prepare.py \
+    --source my-prediction.asm --mode 1 \
+    --phase-x 1 --phase-y 1 --output worked-prediction.asm
+\end{verbatim}
+The helper installs Cb samples from raw pictures one and zero, using current
+origin $(8,16)$ and reference origin $(7,15)$ with stride 88. It preserves every
+instruction byte and refuses an existing output path. The default half-sample
+phases correspond to full-luma displacement $(-1,-1)$. This data preparation
+isolates interpolation; the final encoder must calculate origins itself and
+use its locally reconstructed reference.
+
+The first current sample is 128. Its four reference neighbours are 128, 128,
+128 and 96, so prediction is 120 and residual is eight. The completed default
+caller prints \texttt{120 8 232}, where 232 is the block's residual SAD.
+At \texttt{prediction\_caller\_return}, before the caller stores returned
+registers, the output record is already complete and \texttt{\$v0}=0,
+\texttt{\$v1}=232. The named status/SAD fields are still awaiting those copies.

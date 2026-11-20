@@ -1,0 +1,222 @@
+\section{Step 21 Split a signed chroma displacement}\label{h263-prediction-s01}
+Work through both components of $(-1,-1)$ before writing a prediction loop.
+Divide the chroma displacement into an integer origin and a half-sample phase.
+Keep the signed source value in a full-width register. Arithmetic shift by one
+rounds a negative odd value down; masking its low bit yields phase one.
+
+Apply the origin shift to the chroma macroblock coordinate, then form the byte
+address with the chroma stride. The phase does not change the integer address
+again. The public preparation helper supplies these already positioned windows;
+you will retain this calculation in the eventual macroblock caller.
+
+\paragraph{Observe} Luma component $-1$ gives origin shift $-1$, phase one.
+Component $+1$ gives origin shift zero, phase one. Both use interpolation, but
+start from different integer samples.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which decomposition represents a chroma shift of $-0.5$?
+\begin{itemize}
+\item[A.] Origin zero and phase one.
+\item[B.] Origin $-1$ and phase one.
+\item[C.] Origin $-1$ and phase zero.
+\end{itemize}
+
+\section{Step 22 Admit the interpolation footprint}\label{h263-prediction-s02}
+Validate the request and result records, then the fields and image extents.
+Determine the reference width and height from the phase bits: either eight or
+nine in each dimension. Check the reference stride against that width. Stride
+eight is valid for phase zero horizontally, but cannot hold nine distinct active
+samples in one row when the horizontal phase is one.
+
+A halo is input data supplied by the caller. It is not permission to read all
+bytes between active rows. Keep result bytes unchanged on every argument
+rejection. Returning invalid status after a speculative vector read is too late.
+
+\paragraph{Observe} Phases $(1,1)$ require nine reference samples in each of
+nine rows. The current footprint remains eight by eight.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is the minimal reference extent for diagonal prediction?
+\begin{itemize}
+\item[A.] $8s_R+9$ bytes, spanning nine active rows.
+\item[B.] Eight bytes in total.
+\item[C.] The size of the full output record.
+\end{itemize}
+
+\section{Step 23 Copy the integer prediction first}\label{h263-prediction-s03}
+Begin scalar mode with phases zero. For each active position, load the current
+and reference samples as unsigned bytes. Copy the reference value to the predicted
+byte area, subtract it from the current value and store the difference as a
+halfword. Advance each input row by its own stride, while using tight output rows.
+
+Equal inputs should produce predicted samples equal to the current samples and
+sixty-four zero residuals. Current zero against reference 255 should produce
+sixty-four residuals of $-255$, not wrapped byte values of one.
+
+\paragraph{Observe} The negative maximum-difference case returns SAD 16\,320.
+Its residual halfwords remain negative when inspected as signed values.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which value belongs in a residual when current is zero and prediction is 255?
+\begin{itemize}
+\item[A.] Positive 255.
+\item[B.] Unsigned byte one.
+\item[C.] Signed halfword $-255$.
+\end{itemize}
+
+\section{Step 24 Add one fractional axis}\label{h263-prediction-s04}
+For horizontal phase one, load $A$ and $B$, add them in a width that holds 510,
+add one and shift right by one. For vertical phase one, use $A$ and $C$ instead.
+Only one neighbour direction is active in each of these cases. Do not load the
+unused lower or right neighbour merely because the memory happens to be mapped.
+
+Use an odd sum to check rounding. Samples 100 and 101 predict 101. Truncating
+the average predicts 100 instead, changing both the stored prediction and the
+residual. These errors can accumulate in the later reconstruction loop.
+
+\paragraph{Observe} The worked caller with phases $(1,0)$ or $(0,1)$ prints
+\texttt{128 0 112}. Its first sample is unchanged, but the block has nonzero
+residuals elsewhere.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is the baseline average of 100 and 101 at a half-sample position?
+\begin{itemize}
+\item[A.] 100, always rounding down.
+\item[B.] 101, after adding one before division by two.
+\item[C.] 201, without division.
+\end{itemize}
+
+\section{Step 25 Round a diagonal prediction once}\label{h263-prediction-s05}
+For two active phases, load all four neighbours and form their sum before adding
+two and shifting by two. Retain the unrounded intermediate. Do not reuse a helper
+that has already rounded a horizontal average unless it preserves the information
+needed for the final exact result.
+
+Check the four-neighbour counterexample from the figure, then a high-valued
+pattern. A sum of four 255s is 1020 and still predicts 255 after the bias and shift.
+Both examples distinguish the width of a sample from the width of an intermediate.
+
+\paragraph{Observe} With three zeros and one one, diagonal prediction is zero.
+Two rounds of upward pair averaging would incorrectly produce one.
+\Needspace{8\baselineskip}
+\paragraph{Check} When is the diagonal rounding bias applied?
+\begin{itemize}
+\item[A.] Once, after summing all four neighbours.
+\item[B.] Separately after every addition.
+\item[C.] Only after the signed residual has been clipped to a byte.
+\end{itemize}
+
+\section{Step 26 Gather eight samples without overreading}\label{h263-prediction-s06}
+Implement an MSA row with eight halfword lanes. Load active bytes with unsigned
+scalar loads and insert their values into the corresponding lanes. Repeat for
+each neighbour vector that the chosen phases require. Every lane must be written
+before an operation reads that vector; inactive neighbour vectors need not be
+initialized because their branches must not consume them.
+
+This arrangement uses vector arithmetic without pretending that an eight-sample
+row occupies sixteen input bytes. A different implementation may coalesce tight
+rows or stage a bounded tile. Verify the complete access footprint, including
+its final row. Safe access is part of the result contract, not an optional cost
+of making the arithmetic faster.
+
+\paragraph{Observe} For a padded row, the implementation reads only eight
+current samples and the selected eight or nine reference columns. A tight-row
+coalesced load is valid only when all of its bytes are active samples.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why can a sixteen-byte load be wrong for this current row?
+\begin{itemize}
+\item[A.] MSA cannot calculate unsigned values.
+\item[B.] All byte pointers must be sixteen-byte aligned.
+\item[C.] The load can include padding or samples outside the admitted footprint.
+\end{itemize}
+
+\section{Step 27 Keep interpolation and residual lanes wide}\label{h263-prediction-s07}
+Apply the phase-specific arithmetic to the halfword neighbour vectors. A rounded
+unsigned average is sufficient for one fractional axis. The diagonal path sums
+four inputs and performs one rounded shift. Subtract the predicted halfwords
+from the current halfwords, preserving signed difference bit patterns.
+
+Store the eight residual halfwords as one complete sixteen-byte output row.
+Extract and store the eight predicted bytes without overwriting neighbouring
+output data. Writing sixteen prediction bytes for an eight-byte row can corrupt
+a residual row that was already produced, even if the extra write remains inside
+the overall record.
+
+\paragraph{Observe} Byte orders change the two memory bytes of a signed
+halfword, but not its decoded value or the predicted sample sequence.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which width holds a diagonal neighbour sum before rounding?
+\begin{itemize}
+\item[A.] An unsigned halfword, whose range includes 1020.
+\item[B.] A byte, because each input fits a byte.
+\item[C.] A one-bit phase field.
+\end{itemize}
+
+\section{Step 28 Accumulate a score without erasing signs}\label{h263-prediction-s08}
+Form a separate magnitude vector from the signed residual vector. Accumulate
+those magnitudes in halfwords across the eight rows, then widen and reduce to
+the scalar return value. Each lane accumulates at most $8\times255=2040$;
+the full block reaches 16\,320. Keep the stored signed residuals unchanged.
+
+Check $P+e=C$ independently at every output position. This catches reversed
+subtraction even when the absolute sum still agrees. It also catches a misplaced
+halfword or an incorrect native-endian store that a total alone could hide.
+
+\paragraph{Observe} Positive and negative maximum-difference blocks have the
+same SAD, but their residual arrays have opposite signs.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why does a correct SAD not prove a correct residual array?
+\begin{itemize}
+\item[A.] SAD specifies the required motion-vector syntax.
+\item[B.] Taking magnitudes removes the direction of every difference.
+\item[C.] Signed halfwords cannot be read in both byte orders.
+\end{itemize}
+
+\section{Step 29 Return a complete block to the caller}\label{h263-prediction-s09}
+Publish success after all sixty-four predictions and residuals are stored.
+Return the magnitude sum, restore the outer caller's saved state and stop at its
+continuation in Debug. Inspect the first predicted byte, the first signed
+halfword at result offset 64 and the two return registers before continuing.
+
+Prepare the four phase combinations as separate new files. The default diagonal
+example prints \texttt{120 8 232}; the integer example prints \texttt{128 0 0}.
+They share origins but choose different interpolation positions. The samples
+come from raw Cb planes for this arithmetic observation; the completed encoder
+must supply its locally reconstructed reference.
+
+\paragraph{Observe} Development status four prints the unfinished message and
+exits one. Completed scalar and MSA modes produce the same records and successful
+exit status for each worked phase pair.
+\Needspace{8\baselineskip}
+\paragraph{Check} At the caller return boundary, what is already complete?
+\begin{itemize}
+\item[A.] A conforming whole-video output file.
+\item[B.] The future quantized coefficient stream.
+\item[C.] This block's prediction/residual record and returned status/SAD.
+\end{itemize}
+
+\section{Step 30 Check every sample before measuring work}\label{h263-prediction-s10}
+Run completed feedback against your current source:
+\begin{verbatim}
+python3 drafts/h263-prediction-construction/grade.py \
+    my-prediction.asm --cli /path/to/mars-cli.jar \
+    --report prediction-results.json
+\end{verbatim}
+The 96 public cases cover all phases, both modes and byte orders, positive and
+negative extremes, equal samples, mixed patterns, a diagonal rounding counterexample
+and invalid requests. The checker calculates every expected sample independently,
+checks signed residuals and the exact reconstruction identity, and verifies input,
+request, output-guard and saved-state contracts. Reports require new paths.
+
+Measure from entry through return, including admission, gathers, arithmetic,
+stores and reduction. Counting vector arithmetic alone omits the cost of placing
+samples into lanes. Preserve the same footprint and exact rounding when optimizing.
+The returned score and instruction count describe this block, not a completed
+encoder's quality or speed.
+
+\paragraph{Observe} A safe alternative can use different rounding instructions
+or a larger private frame. It must retain the same sample results and bounded
+accesses. Later transform work will consume the signed halfwords produced here.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must a faster gather preserve?
+\begin{itemize}
+\item[A.] The reference solution's exact scratch-register names.
+\item[B.] Every required sample and the admitted access footprint.
+\item[C.] Only the final absolute sum, regardless of signed residuals.
+\end{itemize}

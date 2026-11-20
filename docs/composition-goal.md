@@ -1347,3 +1347,35 @@ from the later locally reconstructed encoder reference. No graphical IDE launch
 or new screenshot is claimed. Prediction, residual transforms/quantization,
 local reconstruction, complete baseline syntax and full-encoder interoperability
 grading still need implementation and prose; the original book goal remains active.
+
+## H.263 prediction and signed residuals
+
+The native chapter now has 32 pages and thirty construction observations/quizzes.
+New exposition explains signed residual widths and their exact pre-quantization
+reconstruction identity, default H.263 half-sample interpolation, a diagonal
+double-rounding counterexample, negative odd chroma origins and six transform
+blocks per macroblock. A described native figure and four new tables bring the
+chapter to two figures, eight tables and thirty tagged header cells. The new MSA
+listing is exported by the actual separate authoring plugin; all 768 previous
+highlight records are unchanged and one is added.
+
+The student stage has an ordinary unfinished caller, instruction-preserving
+raw-Cb preparation and 96 public completed-entry cases. Two primary solutions pass
+184 private cases each, including all phases and both byte orders. A safe load
+coalescing two tight rows also passes, demonstrating that access checks accept
+valid spans across row boundaries. Public feedback accepts three layouts, including
+a 4-KiB private frame. Five assembled faults and the unfinished starter fail.
+The worked default prints 120 8 232; integer phases print 128 0 0. All 253 public
+tooling tests and 28 authoring Jupiter tests pass. No graphical IDE launch or
+new screenshot is claimed.
+
+Thirty real host-positioned Y/Cb/Cr windows cover six blocks and five signed
+vectors, adding 120 checks per primary body. Four luma residual sums agree with
+2976 for the earlier selected vector and 7872 at zero. This validates the block
+kernel on those inputs; target macroblock orchestration is still unfinished.
+The named diagonal mixed-pattern kernel measures 2525 scalar instructions and
+1090 reference MSA instructions, including admission, gathers, stores and reduction.
+These are finite kernel work observations, not wall time or completed encoding.
+Macroblock orchestration, transform/quantization, local reconstruction, baseline
+syntax, independent full-stream grading and chapter captures/distributions remain
+open. Independent accessibility review and substantive editing remain separate.

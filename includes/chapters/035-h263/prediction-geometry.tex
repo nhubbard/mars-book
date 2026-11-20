@@ -1,0 +1,136 @@
+\section{Keep the signed residual, not just its magnitude}
+SAD discards the sign of every difference because it needs a comparison score.
+A transform needs the differences themselves. If a current sample is 90 and its
+prediction is 100, its residual is $90-100=-10$. A residual of $+10$ would tell
+the decoder to increase the prediction instead. Keep $e=C-P$ in signed storage;
+use $|e|$ only when calculating a score.
+
+Eight-bit input samples lie between zero and 255. A prediction formed from those
+samples remains in that range, and a residual lies between $-255$ and $255$.
+A signed byte cannot hold that whole interval. A signed halfword can. Store
+sixty-four halfwords for an eight-by-eight residual block, in row-major order,
+without clipping or taking magnitudes. Later transform and quantization stages
+will change its representation. They do not justify discarding its sign now.
+
+Before quantization, $P+e=C$ exactly. Check this identity at every sample, not
+only through a block checksum. Different wrong residuals can have the same total
+magnitude. This exact reconstruction is a diagnostic for the current arithmetic;
+it is not a promise that the eventual compressed picture will be lossless.
+
+\section{Use the same interpolation as the decoder}
+Let $A$ be the integer-position reference sample at the supplied pointer, $B$
+its right neighbour, $C$ the sample below it and $D$ the sample below-right.
+The two phase bits $p_x,p_y$ select integer or half-sample positions. For this
+baseline profile, use
+\[
+\begin{array}{ll}
+P_{0,0}=A,&P_{1,0}=\lfloor(A+B+1)/2\rfloor,\\[3pt]
+P_{0,1}=\lfloor(A+C+1)/2\rfloor,&
+P_{1,1}=\lfloor(A+B+C+D+2)/4\rfloor.
+\end{array}
+\]
+These are the default rounding rules in H.263 clause 6.1.2, with the profile's
+rounding control equal to zero. Each output pixel applies the same selected
+formula at its own reference origin. Phase one means half of a sample interval,
+not an extra whole-sample displacement.
+
+Sum the four diagonal neighbours before rounding. Two rounded pair averages,
+followed by another rounded average, can produce a different answer. With
+$A=B=C=0$ and $D=1$, the prescribed diagonal value is
+$\lfloor(1+2)/4\rfloor=0$. Averaging the two rows with upward rounding gives zero
+and one, and averaging those results with upward rounding gives one.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[every node/.style={font=\small},alt={Four reference samples surround a half-sample position: the top-left, top-right and bottom-left samples are zero; the bottom-right sample is one. Summing once and adding two before division by four predicts zero at the centre. Rounding the two rows separately and then averaging would incorrectly predict one.}]
+\draw[gray] (0,0) rectangle (4,2);
+\draw[dashed,gray] (0,1)--(4,1) (2,0)--(2,2);
+\node[fill=white] at (0,2) {$A=0$};
+\node[fill=white] at (4,2) {$B=0$};
+\node[fill=white] at (0,0) {$C=0$};
+\node[fill=white] at (4,0) {$D=1$};
+\node[draw,fill=white,align=center] at (2,1) {half-sample position\\$P=0$};
+\end{tikzpicture}
+\caption{A one-sample difference exposes double rounding in diagonal prediction.}
+\end{figure}
+
+The four-neighbour sum is at most 1020; adding its rounding bias gives at most
+1022. Unsigned halfword lanes therefore have enough range for the entire sum.
+Byte addition would lose information before the division. For eight adjacent
+outputs, gather the eight unsigned neighbours into halfword lanes of each input
+vector. With current samples in \texttt{\$w0} and neighbours $A,B,C,D$ in
+\texttt{\$w1} through \texttt{\$w4}, a diagonal arithmetic segment is:
+\begin{minted}{mars-idea}
+addv.h $w5, $w1, $w2
+addv.h $w6, $w3, $w4
+addv.h $w5, $w5, $w6
+srlri.h $w5, $w5, 2
+subv.h $w6, $w0, $w5
+\end{minted}
+The rounded logical shift adds the single required bias before shifting by two.
+The final halfword subtraction keeps signed residual bit patterns, including
+negative values. A separate magnitude calculation can accumulate SAD without
+changing those residuals.
+
+\section{Derive chroma origins with signed arithmetic}
+The search result is expressed in full luma pixels. In the selected profile,
+its chroma displacement is half that value. A full-pixel luma displacement of
+one therefore needs a half-sample chroma phase. The standard's quarter-position
+modification does not introduce another case here: the chosen full-pixel luma
+search produces only integer or half-sample chroma positions.
+
+For either signed component $d$, split $d/2$ into an integer origin shift $q$ and
+a phase $p$ with
+\[
+q=\lfloor d/2\rfloor,\qquad p=d-2q.
+\]
+The phase is zero or one, even for negative $d$. Arithmetic right shift by one
+forms $q$ for a full-width signed register; its low bit supplies $p$. Signed
+integer division that truncates toward zero does not give this decomposition
+for a negative odd value.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrr}
+\textbf{Luma $d$} & \textbf{Chroma $d/2$} & \textbf{Origin $q$} & \textbf{Phase $p$}\\
+$-2$ & $-1$ & $-1$ & 0\\
+$-1$ & $-0.5$ & $-1$ & 1\\
+0 & 0 & 0 & 0\\
+1 & 0.5 & 0 & 1\\
+2 & 1 & 1 & 0
+\end{tabular}
+\end{center}
+At a macroblock whose luma origin is $(16,32)$, the chroma origin is $(8,16)$.
+Luma displacement $(-1,-1)$ selects chroma origin $(7,15)$ with phases $(1,1)$.
+The top-left prediction then uses the four surrounding chroma samples. Using
+origin $(8,16)$ with the same phases would instead select the wrong positive
+half-sample displacement.
+
+\section{Keep six transform blocks distinct}
+A sixteen-by-sixteen luma macroblock contains four eight-by-eight luma blocks.
+Its two eight-by-eight chroma blocks bring the total to six. Use the following
+order when preparing the later coefficient stage:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Block} & \textbf{Plane} & \textbf{Offset within that plane's macroblock}\\
+0 & Y & $(0,0)$\\
+1 & Y & $(8,0)$\\
+2 & Y & $(0,8)$\\
+3 & Y & $(8,8)$\\
+4 & Cb & $(0,0)$\\
+5 & Cr & $(0,0)$
+\end{tabular}
+\end{center}
+For the four luma blocks, apply the selected full-pixel displacement and use
+phases zero. Add the block's local offset to both current and reference origins.
+For Cb and Cr, derive $q_x,q_y,p_x,p_y$ once from the same luma vector, then use
+the appropriate chroma plane and stride. The two planes share geometry, not sample
+values. Do not reuse the Cb pointer for Cr.
+
+A fractional phase needs an extra reference neighbour: the active footprint is
+$(8+p_x)$ columns by $(8+p_y)$ rows. This is nine by nine for diagonal prediction.
+The original sixteen-by-sixteen luma search bounds keep the corresponding chroma
+neighbours within the picture for aligned macroblock origins in this restricted
+full-pixel search. A general caller of the following kernel must still supply
+its stated mapped footprint. The kernel does not infer picture geometry from a
+pointer or manufacture missing border samples.

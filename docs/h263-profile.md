@@ -22,7 +22,8 @@ limited sample ranges and 12:11 sample aspect ratio. Timing is exact integer
 baseline clock steps. The candidate default is eight pictures at 5000/1001 Hz,
 1.6016 s including the final picture hold. Input limits remain at most 30 pictures/s
 and ten seconds. That default must be revisited after whole-encoder measurement;
-current measurements cover only the first SAD kernel.
+current measurements cover SAD, bounded search and prediction kernels, not a
+complete encoder.
 
 The first callable contract is exact scalar/MSA 16-by-16 SAD with independent
 16..4096-byte strides, unaligned byte pointers, valid read-only aliases, complete
@@ -64,7 +65,18 @@ are checked in both byte orders. Private references measure 82312 scalar versus
 6412 MSA instructions for the named interior shifted-pattern search; these are
 search entry-to-return observations, not a completed encoder benchmark.
 
-Prediction is next, followed by transform/quantization, local
+Baseline eight-by-eight prediction and signed residuals now cover all four
+phases, exact default rounding and bounded halo reads. Full-pixel luma motion
+may need half-sample chroma prediction; negative odd components require a floored
+origin plus phase one. Public feedback has 96 cases. Two primary bodies pass 184
+private cases each; an additional coalesced-read version passes all 184 and
+three bodies pass public feedback. Thirty host-positioned real windows cover
+six blocks and five vectors, with 120 cases per primary implementation. These
+checks do not prove target-side macroblock orchestration or local reconstruction.
+Five wrong kernels and the unfinished starter are rejected. Per-sample signed
+residuals and the exact pre-quantization reconstruction identity are checked.
+
+Macroblock orchestration and transform/quantization are next, followed by local
 reconstruction, bit writing and baseline picture/macroblock syntax. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
