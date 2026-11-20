@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–24 and 33–35 have reviewed figure sets.
-Chapters 25–32 retain 32 planned figures across 8 sets. The manuscript has
-1,791 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–25 and 33–35 have reviewed figure sets.
+Chapters 26–32 retain 28 planned figures across 7 sets. The manuscript has
+1,794 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2204,3 +2204,13 @@ The fourth CRC figure now compares missing-path status one with read-error statu
 All four native plates are reviewed in color and grayscale. Nineteen original screenshots supply twenty-two native explanations. The 50-page CRC chapter has matching body glyphs and positions in the 1,791-page manuscript, apart from its expected binding offset. All eight chapter/manuscript figure placements are reviewed. Final exports preserve the previously graded assembly, checkers, steps and quizzes; only figure placeholders, capture metadata and one exact publication-status passage change.
 
 Complete reviewed sets cover chapters 1–24 and 33–35. Thirty-two planned figures remain across chapters 25–32. Independent accessibility review and the separate substantive editing goal remain open.
+
+## Completed SHA-256 figure set
+
+The eighteen-view native batch verifies the full schedule, first compression round, completed final padding block and ordinary host-file digest. Four native plates use all eighteen originals with twenty-two explanations. Complete 6320-byte states and exact native access histories distinguish source byte order, numeric word storage, working registers before feed-forward, original counts before padding, untouched output and caller-only status publication. The ordinary 65-byte file uses capacity seven; its digest and complete final host image match independent calculations. Five model and nine meaningful assembly mutation tests pass.
+
+Fresh grading against a frozen public revision passes 9,896 positive cases across 173 runs, all 38 cumulative programs, 58 recipes, 43 exported guided checks and 47 quiz keys. The starter and 33 faulty variants produce 2,311 expected failing cases in 34 rejection runs. Six ordinary host-file controls pass. Source/build/class identity binds retained 78-test Jupiter and complete paired API evidence; no new Jupiter invocation is claimed. The actual clean cleanSandbox runIde batch has its own closed verification.
+
+All four final color and grayscale proofs, original image pixels, coordinate frames, embedded fonts and tagged descriptions pass. Proof numbering 25.2–25.5 accounts for the existing native padding diagram. The 72-page chapter matches its placement in the 1,794-page manuscript apart from the expected binding offset; all eight figure placements are reviewed. Export parity permits only the literal capture-asset path relocation. The native bootstrap refuses edited TeX.
+
+Complete reviewed sets cover chapters 1–25 and 33–35. Twenty-eight planned figures remain across chapters 26–32. Independent accessibility review and the separate substantive editing goal remain open.

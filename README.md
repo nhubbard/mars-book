@@ -135,7 +135,8 @@ The [SHA-256 chapter](drafts/sha256.tex) includes 47 steps, 38 cumulative code e
 six supplied entry/exit pairs, 47 quizzes, 94 hints and 58 exact recipes. Its student
 package has 43 guided checks and completed-interface checks; private materials retain
 implementations, additional grading cases and explanatory quiz feedback. It is included
-in the main manuscript as chapter 25. Four IDE figure slots remain plans.
+in the main manuscript as chapter 25. Four reviewed IDE figures now distinguish source
+bytes, schedule words, working state, final padding and ordinary file output.
 
 ## Author the book
 
@@ -870,3 +871,5 @@ Chapter 22 now has four annotated light-mode IDE figures for scalar completion, 
 Chapter 23 now has four annotated light-mode IDE figures explaining item-atomic capacity exhaustion, private scan versus commitment, malformed encoding versus reconstructed range, and all six published dataset sizes. Twenty-one unchanged captures support twenty-six native explanations. Fresh full grading passes 40,703 successful cases, fifty intermediate programs, 84 published observations in two contexts and sixty quiz keys; 22 rejection runs produce 11,236 expected failures. The standalone chapter has 74 pages. Independent accessibility review and later substantive editing remain open.
 
 Chapter 24 now has four reviewed native IDE figures explaining a changed input bit, complete 256-entry table initialization, raw state between real three-byte file reads, and missing-path versus later read-failure cleanup. Twenty-four raw views are verified across two batches; nineteen originals appear in twenty-two numbered details. The 50-page chapter retains 7,855 successful grading cases, 24 intermediate programs, 52 observations in two contexts and 34 quiz keys. Twenty-six rejection runs yield 784 expected failures, and both implementations pass eight ordinary-host-file runs. The failure comparison uses explicit in-memory I/O fixtures in the separate authoring plugin, with exact guest operation history and separate post-execution disposal receipts. Independent accessibility review and later substantive editing remain open.
+
+Chapter 25 now has four reviewed native IDE figures, using eighteen unchanged light-theme screenshots and twenty-two numbered explanations. Fresh verification passes 9,896 positive cases across 173 grading runs, 38 cumulative programs, 58 observation recipes, 43 exported guided checks and 47 quiz keys. The starter and 33 faulty variants produce 2,311 expected failing cases in 34 rejection runs; six ordinary host-file controls also pass. The separate unchanged authoring plugin reuses exact source/build/class-bound 78-test Jupiter and complete paired API evidence. Independent accessibility review and later substantive editing remain open.
