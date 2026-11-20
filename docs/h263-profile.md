@@ -149,3 +149,28 @@ Native book includes remain authoritative. No build regenerates chapter prose
 from metadata. Future screenshots must be real light-theme IDE captures by the
 separate authoring plugin depending on MARS, with retained receipts and native
 LaTeX annotations. None is claimed for chapter 35 yet.
+
+
+## Complete restricted-baseline H.263 macroblocks
+
+Steps 91–100 now compose macroblock type, presence flags, normalized half-sample
+motion differences and all required block payloads. Native chapter 35 has 98 pages,
+one hundred observations/quizzes, 31 tagged tables/116 header cells and four
+described native figures. The new workflow carries the student's completed
+coefficient emitter and writer forward without publishing target solutions.
+
+Two instructor implementations pass 8638 private cases each, including all 4096
+selected/predictor component pairs in both byte orders. Three layouts pass 116
+public cases. Eight endpoint cases, four retained-context chains and twenty
+forced child-failure cases pass. Five incorrect bodies and the unfinished entry
+are rejected. Fourteen ordinary prepared/composed callers pass expected execution;
+all 316 public tooling tests pass. Numeric facts for 92 MCBPC/CBPY/MVD entries
+match an independent codec's tables. Semantic grading accepts legal differences
+in compact/escape coding and skip selection.
+
+Picture ownership/publication, file output, independent whole-stream decoding,
+quality and performance, final chapter archives and actual IDE figures remain
+unfinished. MARS and authoring-plugin source are unchanged in this increment.
+The separate authoring plugin declares its MARS dependency; no GUI launch or
+capture is claimed. Independent accessibility review and later substantive editing
+remain separate.

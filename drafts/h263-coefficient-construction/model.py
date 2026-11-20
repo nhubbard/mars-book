@@ -24,8 +24,9 @@ def encode(levels,intra=False,compact=True):
         else:bits+='0000011'+str(last)+format(run,'06b')+format(level&255,'08b')
     return bits
 
-def decode(bits,intra=False):
-    if type(intra)is not bool or any(c not in '01'for c in bits):raise ValueError('Use a bit string and Boolean INTRA')
+def decode_prefix(bits,intra=False,ac_present=True):
+    """Decode one block prefix using its enclosing coded-block presence flag."""
+    if type(intra)is not bool or type(ac_present)is not bool or any(c not in '01'for c in bits):raise ValueError('Use a bit string and Boolean selectors')
     pos=0;levels=[0]*64;index=0 if intra else -1
     def take(width):
         nonlocal pos
@@ -35,9 +36,9 @@ def decode(bits,intra=False):
         dc=take(8)
         if dc in(0,128):raise ValueError('Forbidden INTRA DC code')
         levels[0]=dc
-    last_seen=False;have_events=False
-    while pos<len(bits):
-        have_events=True;prefix='';event=None
+    if not ac_present:return levels,pos
+    while True:
+        prefix='';event=None
         for _ in range(12):
             prefix+=str(take(1))
             if prefix=='0000011':
@@ -50,9 +51,10 @@ def decode(bits,intra=False):
         last,run,level=event;index+=run+1
         if index>=64:raise ValueError('Run exceeds block')
         levels[SCAN[index]]=level
-        if last:
-            last_seen=True
-            if pos!=len(bits):raise ValueError('Trailing bits after LAST')
-            break
-    if have_events and not last_seen:raise ValueError('Missing LAST')
+        if last:return levels,pos
+
+
+def decode(bits,intra=False):
+    levels,consumed=decode_prefix(bits,intra,len(bits)>(8 if intra else 0))
+    if consumed!=len(bits):raise ValueError('Trailing bits after LAST')
     return levels

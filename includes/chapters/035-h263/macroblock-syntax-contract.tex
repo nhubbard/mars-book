@@ -1,0 +1,71 @@
+\section{Expose one complete restricted-baseline macroblock}
+Implement \texttt{h263\_emit\_macroblock}. Pass an eight-byte-aligned mapped
+80-byte request in \texttt{\$a0}. Its fields are native-endian doublewords;
+motion and predictor components are signed, while other fields are unsigned.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0 & Six-block level pointer & 768 tight bytes, two-byte aligned\\
+8 & Writer-context pointer & Earlier eight-byte-aligned 24-byte context\\
+16 & Picture type & 0 I; 1 P\\
+24 & INTRA selector & 0 INTER; 1 INTRA\\
+32, 40 & Selected motion $x,y$ & Half-sample components, $-32$ through 31\\
+48, 56 & Predictor $x,y$ & Same signed units and range\\
+64 & Allow skip & 0 coded; 1 permits eligible skipped coding\\
+72 & Reserved & Zero
+\end{tabular}
+\end{center}
+The six arrays are consecutive 128-byte natural-order level blocks. All ordinary
+levels lie in $[-127,127]$. For INTRA, index zero of every block instead holds
+DC code one through 255, excluding 128. I-picture requests require INTRA. INTRA
+requests require all four vector fields zero. INTER requests may use any admitted
+selected/predictor components; picture geometry and predictor derivation belong
+to the caller, which must supply a legal prediction for the actual picture.
+
+The writer context retains its earlier one-MiB capacity bound. Request, levels,
+context and output are disjoint, mapped and non-wrapping. Preserve request and
+level bytes, context pointer/capacity, saved general registers and incoming stack
+pointer. Supply an aligned stack with private space; vector registers are
+caller-saved. This function changes no reconstructed picture or motion-history
+array. The picture controller will update those only after accepting the encoded
+macroblock or picture.
+
+Malformed metadata or a forbidden level anywhere in the six blocks returns status
+one/count zero. Metadata rejection precedes all level reads; level validation
+reads are permitted after admitted metadata. No caller-buffer access or state
+change occurs on either rejection. If the complete chosen representation does not
+fit, return status two/count zero, also before caller-buffer access. Child failure
+returns status three/count zero with caller bytes and context unchanged.
+
+On success, append exactly one supported macroblock, retain bits outside it, commit
+the used count and return status zero with appended bit count in \texttt{\$v1}.
+The payload has no arbitrary padding or macroblock stuffing. Quantizer-change types,
+four-vector modes and optional annex syntax are outside this entry. The selected
+picture quantizer remains in force. Allow-skip zero requires coded output. With
+allow-skip one, a zero-motion, zero-level INTER request in a P-picture may use
+COD one or an equivalent coded INTER representation; both remain valid.
+
+Use \path{drafts/h263-macroblock-syntax/main.asm}. Complete the entry, then carry
+in the completed coefficient emitter, its required code data and bit writer.
+The provided composition helper accepts the earlier working format and retains
+the macroblock caller and entry before its dependency marker:
+\begin{verbatim}
+python3 drafts/h263-macroblock-syntax/compose.py \
+    --source my-macroblock.asm --coefficients my-coefficients.asm \
+    --output joined-macroblock.asm
+python3 drafts/h263-macroblock-syntax/prepare.py \
+    --source joined-macroblock.asm --picture 0 --intra 1 \
+    --mask 0 --used 3 --output intra-dc-only.asm
+\end{verbatim}
+Both helpers refuse an existing output. Preparation changes supplied levels and
+controls while retaining all instructions and numeric tables. The default I-INTRA
+observation has six DC codes 255 and no AC events. Its MCBPC uses one bit, CBPY
+four, and the DC fields forty-eight: 53 appended bits. At initial used count
+three, it ends on a byte boundary and prints 53 before exiting zero.
+
+At \texttt{syntax\_caller\_return}, before the first caller instruction, output,
+context and return registers are complete; the named status/bit-count fields
+still hold their previous values. Inspect the decoded type, flags, motion and
+all six recovered blocks as well as the final count. A correct bit count alone
+cannot distinguish a swapped chroma flag from a correct payload.
