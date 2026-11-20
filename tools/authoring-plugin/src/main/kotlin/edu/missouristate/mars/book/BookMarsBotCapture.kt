@@ -12,6 +12,7 @@ import javax.swing.JLabel
 import javax.swing.JTextField
 import kotlin.math.ceil
 import kotlin.math.hypot
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /** Integer world coordinates, distinct from the board's scaled screen coordinates. */
@@ -56,6 +57,14 @@ internal class BookBotProjection(val width: Int, val height: Int, val view: Book
         val a = vertex(0.0, -7.0); val b = vertex(5.0, 5.0); val c = vertex(-5.0, 5.0)
         moveTo(a.first, a.second); lineTo(b.first, b.second); lineTo(c.first, c.second); closePath()
     }
+    fun detailRectangle(): Rectangle {
+        val points = view.trailVertices.map(::project) + project(BookBotPoint(view.x, view.y))
+        val x = floor(points.minOf { it.first } - JBUI.scale(10)).toInt()
+        val y = floor(points.minOf { it.second } - JBUI.scale(10)).toInt()
+        val right = ceil(points.maxOf { it.first } + JBUI.scale(10)).toInt()
+        val bottom = ceil(points.maxOf { it.second } + JBUI.scale(10)).toInt()
+        return Rectangle(x, y, right - x, bottom - y).intersection(Rectangle(0, 0, width, height))
+    }
     fun markerAt(x: Double, y: Double) = marker.intersects(x - 1, y - 1, 2.0, 2.0)
     fun distance(x: Double, y: Double) = segments.minOf { it.ptSegDist(x, y) }
     fun outsideTrailInk(image: BufferedImage): Int {
@@ -90,6 +99,7 @@ internal data class BookObservedBotBoard(val bounds: Rectangle, val projection: 
         }
         return mapOf("boardBox" to captureBox(bounds, viewport), "worldSize" to 512,
             "plot" to mapOf("left" to projection.left, "top" to projection.top, "side" to projection.side),
+            "detailBox" to captureBox(Rectangle(projection.detailRectangle()).apply { translate(bounds.x, bounds.y) }, viewport),
             "visibleTrailSamples" to evidence, "unexpectedNativeInk" to 0, "unexpectedScreenInk" to 0,
             "markerOcclusionExcluded" to true, "borderExcludedFromUnexpectedInk" to 2)
     }

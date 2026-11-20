@@ -60,6 +60,9 @@ class BookMarsBotCaptureTest {
         assertTrue(p.markerAt(marker.first, marker.second))
         assertFalse(p.markerAt(200.0, 200.0))
         assertTrue(p.visibleCenters().isNotEmpty())
+        assertTrue(p.detailRectangle().contains(18, 8))
+        assertTrue(p.detailRectangle().contains(30, 8))
+        assertEquals(0, BookBotProjection(400, 400, square).detailRectangle().x)
     }
 
     @Test
@@ -125,6 +128,9 @@ class BookMarsBotCaptureTest {
         assertNull(observeBookMarsBot(root, east, "Book figure: bot"))
         val observed = checkNotNull(observeBookMarsBot(root, east, "Book figure: bot"))
         assertEquals(4, observed.rows.size)
+        val detail = observed.board.projection.detailRectangle()
+        assertTrue(Rectangle(0, 0, 420, 400).contains(detail))
+        assertTrue(detail.width < 100 && detail.height < 100)
         assertNotNull(observed.board)
         assertNull(observeBookMarsBot(root, east, "Unowned"))
         for (mutation in listOf<() -> Unit>({ status.text = "Position (15, 0)" }, { movement.text = "Pen up   Stopped" },

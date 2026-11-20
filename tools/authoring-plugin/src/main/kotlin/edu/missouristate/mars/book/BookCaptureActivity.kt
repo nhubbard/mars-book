@@ -463,6 +463,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
                 val bot = checkNotNull(observeBookMarsBot(checkNotNull(content).component, view, "Book figure: " + figure.id))
                 callouts += bot.rows.map { row -> mapOf("label" to row.text, "observedText" to row.text, "box" to captureBox(row.bounds, viewport)) }
+                val detail = Rectangle(bot.board.projection.detailRectangle()).apply { translate(bot.board.bounds.x, bot.board.bounds.y) }
+                callouts += mapOf("label" to "Trail detail region", "derivedFrom" to "native-board-projection", "box" to captureBox(detail, viewport))
             }
             figure.digitalLabView?.let { view ->
                 val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
@@ -537,6 +539,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 val bot = checkNotNull(observeBookMarsBot(checkNotNull(content).component, view, "Book figure: " + figure.id))
                 check(bot.rows.map { it.text } == snapshot.third) { "MarsBot changed during capture" }
                 bot.rows.forEachIndexed { index, row -> check(captureBox(row.bounds, snapshot.first) == snapshot.second[index]["box"]) { "MarsBot bounds changed during capture" } }
+                val detail = Rectangle(bot.board.projection.detailRectangle()).apply { translate(bot.board.bounds.x, bot.board.bounds.y) }
+                check(captureBox(detail, snapshot.first) == snapshot.second[4]["box"]) { "MarsBot detail bounds changed during capture" }
                 botEvidence = bot.board.screenEvidence(image, snapshot.first) + mapOf("selectedExecution" to bot.selectedExecution)
             }
             figure.digitalLabView?.let { view ->
