@@ -138,7 +138,7 @@ The paired views now form the native step-five chapter figure in
 `includes/chapters/034-lossless-video/fig-vector-count.tex`. Its original PNGs and
 receipts are retained under `book/captures/034-lossless-video`, alongside the reviewed
 preview and crop metadata. The native figure has been reviewed in color and grayscale.
-`video-vector-count`, `video-record-publication` and `video-index-publication` are verified; three other video captures remain planned.
+All six video capture plans are now verified; PNG and earlier chapter capture plans remain incomplete.
 Completed fixture source remains private. MARS has no dependency on the book or
 authoring plugin.
 
@@ -197,3 +197,26 @@ bytes. Native LaTeX explains the initialized-picture requirement and the one-bit
 red change that cannot be judged from print. The screen-color histogram is retained
 separately in the raw receipt. Color/grayscale review and unchanged embedded-image
 checks pass; other chapter captures and independent accessibility review remain open.
+
+
+## Completed video capture set
+
+The final batch captures ten native views for independent seek, mandatory full-record
+selection, and completed playback. Each source has its own independent pixel and
+publication oracle. The playback oracle uses scripted time; the actual IDE uses the
+real clock. Its context view observed eight accepted pictures, eight late intervals,
+132 ms maximum lateness and logical duration 320 ms. Other launches may differ.
+The independent verifier checks those fields rather than assuming zero lateness.
+
+The darker encoder-source palette measured a photograph difference of at most 6/255
+per channel at both logical and native resolution. Only that fixture uses six; the
+other video fixtures retain three. Exact tooltip addresses/RGB and native painted
+pixels remain mandatory, and raw PNGs are never recolored. The plan's optional photo
+bound is capped at eight, with zero as its default. The native plates have been
+reviewed in color and grayscale. Original screenshot pixels are retained in the PDFs.
+
+Print review exposed oversized-float warnings that the former build gate did not
+reject. The gate now rejects them. The earlier record plate and the two affected
+new plates were resized and rebuilt; their numeric panels and native explanations
+remain readable. Full chapter integration and the independent accessibility review
+are distinct checks. The capture plugin remains separate from MARS.

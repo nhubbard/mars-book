@@ -428,28 +428,25 @@ assignment explains how the two early threads join, how to retain prior edits,
 which observations belong to each stage, and how to run completed feedback.
 Data-only example compaction preserves instruction text and supported input limits.
 
-The exact relocated student archive contains 254 files and eleven public domains
+The relocated student archive now contains 308 files and eleven public domains
 with 258 cases. Private checks and 122 quiz keys remain in the instructor repository.
 The completed package gate passes 6,264 cases across three implementations, including
 one with submission-owned constants and additional 4,096-byte entry frames. It
-rejects both unfinished starters and five assembled faults, including ignored path
-arguments, source-stride errors, short-write progress and signed lateness ordering.
-Extracted runners pass 92 public and six selected private cases and refuse existing
-reports without changing them. Two ordinary real-clock callers produce files that
-an independent host decoder recovers to all eight original frames.
+rejects both unfinished starters and five assembled faults. Extracted runners pass
+92 public and six selected private cases and protect existing reports. Two ordinary
+real-clock callers produce files that an independent decoder recovers to all eight
+original frames.
 
-All 215 public tooling tests, seven highlighter tests, 64 package validation/build
-commands and seventeen native-composition workflow validations pass. The reading
-has 101 pages and the assignment has three; the integrated manuscript has 1,569
-pages. All 101 video body pages match the standalone text and coordinates. The
-first 95 reading pages match the earlier rendered pages exactly; fresh contact sheets,
-enlarged closing pages, the standalone assignment, contents and chapter boundary
-were inspected. Fonts are embedded with Unicode maps. The chapter retains 122
-observation passages, 22 tagged tables, 79 header cells and one described native
-figure. These checks do not certify PDF/UA compliance or student usability.
+All 225 public tooling tests and 28 authoring-plugin Jupiter tests pass. The native
+video reading has 112 pages, with 122 observations, 22 tagged tables, 79 header cells
+and seven described native figures. Six are actual automated light-theme IDE plates;
+the other is the native seek diagram. Source images remain unannotated, with native
+LaTeX callouts and semantic descriptions. The build rejects oversized floats as well
+as overflows, missing glyphs and font substitutions. These checks do not certify
+PDF/UA compliance or student usability.
 
-Chapters 33 and 34 now have initial native text/packages in the manuscript. Their
-five PNG and six video light-theme IDE figures remain uncaptured; independent
-accessibility review remains pending. H.263 stays at the documented planning stage
-until the preceding chapter work is complete. Substantive editing remains the
-separate future goal requested by the author.
+Chapters 33 and 34 have initial native text/packages in the manuscript. All six
+video figure plans are verified; the five PNG figure plans remain incomplete.
+Earlier chapter capture plans and independent accessibility review are also open.
+H.263 stays at the documented planning stage until the chapter 33/34 priority is
+complete. Substantive editing remains the separate future goal requested by the author.

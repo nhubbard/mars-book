@@ -5,6 +5,30 @@ Use \texttt{s56-1} and stop before \texttt{seek\_published}.
 
 \paragraph{Observe} At \texttt{seek\_published}, the ordinary example publishes target six, start four and replay count three. After return, repeat with extra-full: pixels match while start becomes five and replay count two. A later invalid target retains that actual successful image and all previously published outputs.
 
+The replay count includes its starting full record. For target six, the ordinary
+fixture applies records four, five and six: one full record followed by two deltas.
+It does not apply six deltas from frame zero. In the extra-full control, record five
+is also a full record, so the same target picture needs only records five and six.
+The picture is unchanged by that representation choice; the published replay start
+and count describe how this call obtained it.
+
+For the bitmap observation, select the active destination at
+\texttt{seek\_frame} plus four, beyond its leading guard. Use a custom display base,
+512 by 512 display units and eight-unit pixels. Configure the entry-file header
+before Debug so the display observes the complete destination copy. This path writes
+every RGB word, so it does not require the initialized-picture option used for the
+earlier one-pixel delta. Stop at \texttt{seek\_published}, then inspect the bitmap
+and \texttt{seek\_context} in separate views.
+
+Figure~\ref{fig:video-independent-seek} shows target six, replay start four and
+count three. The first context pair retains scratch capacity; the next pairs publish
+the target and replay boundary. Read each 64-bit value as a low/high pair of 32-bit
+words in this little-endian run. The success return count is \texttt{0x4000} image
+bytes, not the number of replayed records.
+
+\input{packages/034-lossless-video/native/fig-independent-seek}
+\clearpage
+
 \paragraph{Check} What does the replay count measure?
 \begin{enumerate}[label=\Alph*.]
 \item Milliseconds of playback.

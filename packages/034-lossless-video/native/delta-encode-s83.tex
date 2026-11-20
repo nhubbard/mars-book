@@ -5,6 +5,38 @@ Use \texttt{s83-1} and stop before \texttt{dr\_full\_return}.
 
 \paragraph{Observe} Use the sequence-zero recipe for \texttt{dr\_full\_return}. It produces a 12\,304-byte full record without reading old image contents or touching XOR scratch. The all-change and tie recipes reach the same branch after measuring candidate deltas.
 
+Sequence zero must be independently decodable. Even though the supplied
+\texttt{few} pair differs at only four pixels, this recipe requires a full record.
+Its 12\,288 RGB payload bytes need the sixteen-byte header as well, producing
+12\,304 bytes in total. Choosing the shorter delta at this boundary would change
+the file's required starting state.
+
+Inspect \texttt{delta\_output} plus three in the Memory tab's Bytes column.
+The three leading \texttt{a5} guard bytes precede the record; they are not part of
+its header. Kind zero and sequence zero are followed by payload length
+\texttt{00 00 30 00}. The CRC is \texttt{1d 19 6e 30}, and the packed payload begins
+\texttt{12 34 57}. Those three bytes represent the first numeric source word,
+\texttt{0x00123457}. A little-endian native word would instead occupy memory as
+\texttt{57 34 12 00}; the wire format still stores red, green and blue in that order.
+Using the Bytes column keeps these two interpretations distinct.
+
+To display the source picture, configure a custom Bitmap Display at
+\texttt{delta\_source} plus four before launching Debug. Use 512 by 512 display
+units, eight-unit pixels and \texttt{initial=true}. Here the source is initialized
+in \texttt{.data} and remains read-only, so a write-only display would stay black.
+The full encoder copies that source into the previous-image arena for a later call;
+it does not need to form the candidate XOR image for this mandatory full record.
+
+Figure~\ref{fig:video-record-selection} connects the source picture, record bytes,
+shared context and return count. The context view shows kind zero and count
+\texttt{0x3010}, with input pointers, capacity and the reserved pattern retained.
+Also inspect context offset eight: its next sequence is now one. That field is
+outside the cropped context detail. The parent is paused after its delegated call
+and before \texttt{dr\_full\_return}'s \texttt{nop}.
+
+\input{packages/034-lossless-video/native/fig-record-selection}
+\clearpage
+
 \Needspace{8\baselineskip}
 \paragraph{Check} What does the shared full encoder update on success?
 \begin{enumerate}[label=\Alph*.]

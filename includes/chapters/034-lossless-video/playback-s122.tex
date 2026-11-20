@@ -5,7 +5,32 @@ On a completed failure, leave the external context unchanged and return status o
 
 Use \texttt{s122-1} and stop before \texttt{vp\_published}.
 
-\paragraph{Observe} Exact default playback publishes eight accepted frames, zero late intervals, zero maximum lateness and logical duration 320.
+\paragraph{Observe} The exact scripted-clock observation publishes eight accepted frames, zero late intervals, zero maximum lateness and logical duration 320.
+
+The scripted clock establishes an exact schedule for the construction check.
+A real clock also measures time spent executing the decoder, updating the display,
+and waiting for the host to run the process. A sleep can return after its requested
+interval. Consequently, real Debug launches need not report zero lateness even when
+the playback routine is correct. Keep the scheduled duration separate from observed
+lateness; do not replace the clock result to make the display match the scripted case.
+
+For the actual IDE observation, configure the custom bitmap base at
+\texttt{playback\_frame} plus four with a 512 by 512 display and eight-unit pixels.
+Each accepted picture is copied into this destination. Stop before
+\texttt{vp\_published} and inspect context offsets 48, 56, 64 and 72. They contain
+accepted pictures, late intervals, maximum lateness in milliseconds, and scheduled
+logical duration. The final return count in \texttt{\$v1} is a number of pictures;
+it is not the image byte count returned by the record and seek routines.
+
+Figure~\ref{fig:video-playback-progress} records a real-clock run with eight
+accepted pictures, eight late intervals, maximum lateness 132\,ms and logical
+duration 320\,ms. Another launch may report different lateness. The context panel
+contains the timing observation; its accompanying source and bitmap views come
+from separate launches. The fixed schedule remains eight intervals of forty
+milliseconds, regardless of how long those launches take on the host.
+
+\input{includes/chapters/034-lossless-video/fig-playback-progress}
+\clearpage
 
 \Needspace{8\baselineskip}
 \paragraph{Check} When do the four final context outputs change?

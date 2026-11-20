@@ -1190,3 +1190,45 @@ unchanged; four native Figures have descriptions. The new plate is chapter page 
 (printed manuscript page 1490). The index plate is now figure 34.4 on chapter page
 38; its standalone preview has been renumbered and rechecked without altering any
 original debugger pixels.
+
+
+## Complete lossless-video IDE figure set
+
+All six chapter-34 figure plans now have verified actual IDE captures and native
+LaTeX annotations. The final ten-view batch supplies independent seek, mandatory
+full-record selection and completed playback. Private CLI oracles check every RGB
+word, the complete mandatory full record/CRC and published context fields. The
+actual IDE playback uses real time: its context view observed eight accepted
+pictures, eight late intervals, maximum lateness 132 ms and logical duration 320 ms.
+The scripted oracle remains a separate exact-clock check. Native words, byte-order
+interpretation and that distinction are explained beside the new plates.
+
+The darker source palette measured a screen-photograph channel difference of at
+most six at both native and logical resolution. Only that fixture uses six; other
+video fixtures retain three. The optional bound is capped at eight, with zero as
+default. Exact native addresses, RGB values and painted pixels remain mandatory.
+The separate authoring plugin passes 28 Jupiter tests and its exact installed
+artifact passes public-API verification. No MARS source change was needed this turn.
+All seven unrelated MARS working-tree file digests remain unchanged.
+
+Print review exposed oversized-float warnings that the former build gate accepted.
+The gate now rejects the real failing example. The earlier record plate and affected
+new plates were resized, the byte-column crop excludes clipped neighboring text,
+and duplicate new exposition no longer creates a nearly blank page. All revised
+plates pass native structure/font checks and exact original-image embedding checks,
+with color and grayscale review. The composition bootstrap refuses existing native
+includes; manuscript prose remains directly editable LaTeX.
+
+The completed video draft has 112 pages and all 122 observations. Its seven described
+Figures include the six IDE plates and native seek diagram. All 22 tagged tables
+and 79 header cells remain. All 112 body pages match the 1580-page manuscript in
+text and coordinates, and all 111 running headers per version are checked. The
+308-file student package passes all 225 public tooling tests and the 6264-case
+three-implementation gate; five assembled faults and both unfinished starters are
+rejected. Instructor solutions, keys and private checks remain separate. The final
+public revision and passing CI are pinned in the private release records.
+
+The five PNG capture plans and earlier chapter plans remain incomplete. H.263 is
+still planning only while the chapter 33/34 priority is completed. Independent
+accessibility review remains pending; substantive editing is the separate future
+goal requested by the author.
