@@ -281,6 +281,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         return@withContext null
                     }
                     if (expectedBitmap != null) {
+                        lastObservedRows = listOf("Waiting for bitmap editor; open files: " + editors.openFiles.joinToString { it.name })
                         val bitmapFile = ownedBitmapFile ?: editors.openFiles.singleOrNull {
                             it !in originalFiles && it.name == "Bitmap Display — " + source.name
                         }?.also { ownedBitmapFile = it } ?: return@withContext null
@@ -294,8 +295,12 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                             visible.forEach { it.hide() }
                             return@withContext null
                         }
+                        lastObservedRows = listOf("Waiting for selected native bitmap canvas")
                         val canvas = selectedBitmapCanvas(project) ?: return@withContext null
-                        if (observeBookBitmap(canvas, expectedBitmap) == null) return@withContext null
+                        val diagnostics = mutableListOf<String>()
+                        val observed = observeBookBitmap(canvas, expectedBitmap, diagnostics)
+                        lastObservedRows = diagnostics
+                        if (observed == null) return@withContext null
                         return@withContext emptyList<BookUiRow>()
                     }
                     figure.marsBotView?.let { view ->

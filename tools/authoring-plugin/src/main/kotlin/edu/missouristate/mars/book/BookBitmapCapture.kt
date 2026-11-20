@@ -94,25 +94,40 @@ internal data class BookBitmapScreenEvidence(
 )
 
 /** Read only public Swing rendering/tooltip contracts; no MARS implementation classes or memory reads. */
-internal fun observeBookBitmap(canvas: JComponent, expected: BookExpectedBitmap): BookObservedBitmap? {
-    if (canvas.width <= 0 || canvas.height <= 0) return null
+internal fun observeBookBitmap(
+    canvas: JComponent,
+    expected: BookExpectedBitmap,
+    diagnostics: MutableList<String>? = null,
+): BookObservedBitmap? {
+    diagnostics?.clear()
+    fun reject(reason: String): BookObservedBitmap? {
+        diagnostics?.add(reason)
+        return null
+    }
+    if (canvas.width <= 0 || canvas.height <= 0) return reject("Bitmap canvas has no size: ${canvas.width} by ${canvas.height}")
     fun tooltip(x: Int, y: Int) = canvas.getToolTipText(MouseEvent(canvas, MouseEvent.MOUSE_MOVED, 0, 0, x, y, 0, false))
     val horizontal = (0 until canvas.width).filter { tooltip(it, canvas.height / 2) != null }
     val vertical = (0 until canvas.height).filter { tooltip(canvas.width / 2, it) != null }
-    if (horizontal.isEmpty() || vertical.isEmpty()) return null
+    if (horizontal.isEmpty() || vertical.isEmpty()) return reject("No native bitmap tooltips in canvas ${canvas.width} by ${canvas.height}")
     val bounds = Rectangle(horizontal.first(), vertical.first(), horizontal.last() - horizontal.first() + 1, vertical.last() - vertical.first() + 1)
-    if (bounds.width < expected.view.columns * 4 || bounds.height < expected.view.rows * 4) return null
+    if (bounds.width < expected.view.columns * 4 || bounds.height < expected.view.rows * 4) return reject("Native bitmap bounds $bounds are too small for ${expected.view.columns} by ${expected.view.rows} cells")
     val observed = BookObservedBitmap(bounds, expected.view.columns, expected.view.rows)
     val pattern = Regex("""\((\d+), (\d+)\) · 0x([0-9a-fA-F]+) · #([0-9a-fA-F]{6})""")
     for (index in expected.colors.indices) {
         val point = observed.center(index)
-        val match = pattern.matchEntire(tooltip(point.x, point.y) ?: return null) ?: return null
+        val actual = tooltip(point.x, point.y)
+        val match = actual?.let(pattern::matchEntire)
+            ?: return reject("Unrecognized native tooltip at expected cell $index: $actual")
         val (column, row, address, rgb) = match.destructured
         if (column.toInt() != index % expected.view.columns || row.toInt() != index / expected.view.columns ||
-            address.toLongOrNull(16) != expected.address + index * 4L || rgb.toInt(16) != expected.colors[index]) return null
+            address.toLongOrNull(16) != expected.address + index * 4L || rgb.toInt(16) != expected.colors[index]) {
+            return reject("Native cell $index mismatch: $actual; expected (${index % expected.view.columns}, ${index / expected.view.columns}) at 0x${(expected.address + index * 4L).toString(16)} RGB #%06x".format(expected.colors[index]))
+        }
     }
     val painted = BufferedImage(canvas.width, canvas.height, BufferedImage.TYPE_INT_RGB)
     val graphics = painted.createGraphics()
     try { canvas.paint(graphics) } finally { graphics.dispose() }
-    return observed.takeIf { it.matches(painted, expected) }
+    if (!observed.matches(painted, expected)) return reject("Native painted RGB differs from verified tooltip colors")
+    diagnostics?.add("Verified ${expected.colors.size} native cells in $bounds")
+    return observed
 }

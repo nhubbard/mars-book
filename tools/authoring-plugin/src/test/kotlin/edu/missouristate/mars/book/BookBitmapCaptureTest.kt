@@ -123,4 +123,25 @@ class BookBitmapCaptureTest {
         assertThrows<IllegalArgumentException> { figure.copy(memoryView = BookMemoryView("0x10010004")).validate(project) }
         assertThrows<IllegalArgumentException> { figure.copy(expectedRows = listOf(BookExpectedRow("value", listOf("v0")))).validate(project) }
     }
+    @Test fun `reports native bitmap mismatches without accepting them`() {
+        val expected = expected()
+        val canvas = Canvas(expected)
+        val diagnostics = mutableListOf<String>()
+        assertTrue(observeBookBitmap(canvas, expected, diagnostics) != null)
+        assertTrue(diagnostics.single().startsWith("Verified 4 native cells"))
+        canvas.wrongTooltipColor = true
+        assertNull(observeBookBitmap(canvas, expected, diagnostics))
+        assertTrue(diagnostics.single().startsWith("Native cell 0 mismatch:"))
+        canvas.wrongTooltipColor = false
+        canvas.wrongPaintColor = true
+        assertNull(observeBookBitmap(canvas, expected, diagnostics))
+        assertEquals("Native painted RGB differs from verified tooltip colors", diagnostics.single())
+        canvas.noTooltip = true
+        assertNull(observeBookBitmap(canvas, expected, diagnostics))
+        assertTrue(diagnostics.single().startsWith("No native bitmap tooltips"))
+        canvas.setSize(0, 0)
+        assertNull(observeBookBitmap(canvas, expected, diagnostics))
+        assertTrue(diagnostics.single().startsWith("Bitmap canvas has no size"))
+    }
+
 }
