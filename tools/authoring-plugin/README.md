@@ -237,3 +237,28 @@ darker palette. The earlier decoder fixture retains its bound of three. Neither
 setting relaxes the exact address, tooltip RGB, native rendering, or independent
 encoded-byte checks. A bound is explicit per fixture; successful raw receipts retain
 the actual histogram rather than claiming exact photograph colors.
+
+
+### Console input and genuine Debug steps
+
+A Debug fixture can supply `standardInput`, bounded to 1024 newline-terminated ASCII
+characters. The driver writes it once through the owned process handler's public
+standard-input stream on the I/O dispatcher and flushes without closing that stream.
+It does not change simulator registers or memory. This is fixture input delivery;
+console echo and Run-only screenshots require their own native UI observations.
+
+An optional `stepFrom` list identifies successive source labels at which the owned
+Debug session must be suspended before each public `XDebugSession.stepOver(true)`
+request. The initial breakpoint is placed at the first such label. Capture still
+requires the declared final `checkpoint` and all exact visible-value assertions.
+For the console example, stepping from `calculate` and then `after_addu` reaches
+`report`. These are actual Debug steps through the illustrated real instructions.
+Receipts retain the supplied input and each observed pre-step source boundary.
+
+The current API contracts were inspected in the read-only IntelliJ 2026.3 source:
+`ProcessHandler.getProcessInput`, `isStartNotified` and `XDebugSession.stepOver`.
+The boolean step argument ignores unrelated breakpoints; it does not claim that
+all pseudo-instructions are single machine instructions. Four additional Jupiter
+tests cover exact input bytes, stream lifetime, rejected input/processes, broken
+pipes and distinct step-boundary validation. The graphical fixture separately
+verifies actual input consumption and native stepping.

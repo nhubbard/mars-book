@@ -39,6 +39,8 @@ data class BookCaptureFigure(
     val debuggerView: BookDebuggerTreeView = BookDebuggerTreeView(),
     val memoryView: BookMemoryView? = null,
     val bitmapView: BookBitmapView? = null,
+    val standardInput: String? = null,
+    val stepFrom: List<String> = emptyList(),
 ) {
     fun validate(projectRoot: Path) {
         require(id.matches(Regex("[a-z][a-z0-9-]*"))) { "Invalid figure ID" }
@@ -48,6 +50,9 @@ data class BookCaptureFigure(
         require(projectRoot.resolve(source).normalize().startsWith(projectRoot.normalize())) { "Source escapes fixture project" }
         require(width in 800..2560 && height in 600..1600) { "Unsupported viewport" }
         require(expectedRows.isNotEmpty() || bitmapView != null) { "A figure needs an observed debugger value or bitmap" }
+        standardInput?.let(::validateBookStandardInput)
+        require(stepFrom.size <= 32 && stepFrom.all { it.matches(Regex("[A-Za-z_][A-Za-z_0-9]*")) }) { "Invalid Debug step checkpoints" }
+        require(stepFrom.distinct().size == stepFrom.size && checkpoint !in stepFrom) { "Debug steps need distinct checkpoints before the final stop" }
         debuggerView.validate()
         memoryView?.validate()
         bitmapView?.validate(projectRoot)
@@ -60,11 +65,11 @@ data class BookCaptureFigure(
         }
     }
 
-    fun checkpointLine(text: String): Int {
+    fun checkpointLine(text: String, label: String = checkpoint): Int {
         val matches = text.lines().mapIndexedNotNull { index, line ->
-            index.takeIf { Regex("^\\s*${Regex.escape(checkpoint)}\\s*:").containsMatchIn(line) }
+            index.takeIf { Regex("^\\s*${Regex.escape(label)}\\s*:").containsMatchIn(line) }
         }
-        require(matches.size == 1) { "Checkpoint must identify one source label: $checkpoint" }
+        require(matches.size == 1) { "Checkpoint must identify one source label: $label" }
         return matches.single()
     }
 }
@@ -112,5 +117,12 @@ data class BookMemoryView(val address: String = "", val minimumHeight: Int = 400
     fun validate() {
         require(minimumHeight in 200..600) { "Unsupported memory-view height" }
         require(address.matches(Regex("0x[0-9a-fA-F]{1,16}"))) { "Use an unsigned hexadecimal memory address" }
+    }
+}
+
+/** A bounded ASCII fixture is sent through the process input, without changing registers or memory. */
+internal fun validateBookStandardInput(input: String) {
+    require(input.length in 1..1024 && input.endsWith("\n") && input.all { it == '\n' || it == '\t' || it.code in 32..126 }) {
+        "Capture input must be bounded, newline-terminated ASCII"
     }
 }

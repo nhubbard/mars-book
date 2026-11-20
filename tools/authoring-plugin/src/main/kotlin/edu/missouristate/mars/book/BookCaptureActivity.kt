@@ -3,6 +3,7 @@ package edu.missouristate.mars.book
 import com.google.gson.GsonBuilder
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.debugger.ui.DebuggerContentInfo.VARIABLES_CONTENT
+import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.RunManager
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.execution.configurations.ConfigurationType
@@ -148,7 +149,15 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val line = readAction {
             (labelLine until document.lineCount).first { type.canPutAt(source, it, project) }
         }
-        val breakpoint = writeAction { addBreakpoint(project, type, source, line) }
+        val stepLines = readAction {
+            figure.stepFrom.map { label ->
+                val labelStart = figure.checkpointLine(String(bytes, Charsets.UTF_8), label)
+                (labelStart until document.lineCount).first { type.canPutAt(source, it, project) }
+            }
+        }
+        val breakpoint = writeAction { addBreakpoint(project, type, source, stepLines.firstOrNull() ?: line) }
+        var inputDelivered = figure.standardInput == null
+        val observedSteps = mutableListOf<Map<String, Any>>()
         var ownedSessionName: String? = null
         var lastObservedRows = emptyList<String>()
         var memoryAddressRequested = false
@@ -181,6 +190,16 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             var reportedRows: List<String>? = null
             var reportedTabs: List<String>? = null
             while (true) {
+                if (!inputDelivered) {
+                    val inputProcess = withContext(Dispatchers.EDT) {
+                        manager.currentSession?.takeIf { it.sessionName == ownedSessionName }
+                            ?.debugProcess?.processHandler?.takeIf { it.isStartNotified && !it.isProcessTerminated }
+                    }
+                    if (inputProcess != null) {
+                        withContext(Dispatchers.IO) { deliverBookStandardInput(inputProcess, checkNotNull(figure.standardInput)) }
+                        inputDelivered = true
+                    }
+                }
                 val ready = withContext(Dispatchers.EDT) {
                     check(document.modificationStamp == sourceStamp) { "Fixture edited during capture" }
                     if (analysisReady.get()) sourceAnalysisVerified = true
@@ -194,7 +213,16 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     if (session.sessionName != ownedSessionName || !session.isSuspended) return@withContext null
                     check(!session.debugProcess.processHandler.isProcessTerminated) { "Debugger terminated before capture" }
                     val position = session.currentPosition ?: return@withContext null
-                    if (position.file != source || position.line != line) return@withContext null
+                    if (position.file != source) return@withContext null
+                    if (observedSteps.size < stepLines.size) {
+                        val index = observedSteps.size
+                        if (position.line == stepLines[index]) {
+                            session.stepOver(true)
+                            observedSteps.add(mapOf("fromCheckpoint" to figure.stepFrom[index], "sourceLine" to position.line + 1))
+                        }
+                        return@withContext null
+                    }
+                    if (position.line != line) return@withContext null
                     val editors = FileEditorManager.getInstance(project)
                     if (expectedBitmap == null) {
                         val editor = editors.selectedTextEditor
@@ -278,7 +306,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 stable = if (texts != null && texts == previous) stable + 1 else 0
                 previous = texts
                 if (ready != null && stable >= 2) {
-                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap)
+                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap, observedSteps.toList())
                     break
                 }
                 delay(200)
@@ -342,7 +370,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         }
     }.toList()
 
-    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?) {
+    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?, observedSteps: List<Map<String, Any>>) {
         val snapshot = withContext(Dispatchers.EDT) {
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             val root = frame.rootPane
@@ -439,6 +467,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "viewport" to mapOf("width" to image.width, "height" to image.height),
                 "visibleAnalysisIndicators" to emptyList<String>(),
                 "notificationBalloonsVisible" to 0,
+                "standardInput" to figure.standardInput, "standardInputDelivered" to (figure.standardInput?.let { true }),
+                "observedSteps" to observedSteps,
                 "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView, "bitmapView" to figure.bitmapView,
                 "observedBitmap" to expectedBitmap?.let { mapOf("columns" to it.view.columns, "rows" to it.view.rows,
                     "address" to it.view.address, "rgbSha256" to it.view.rgbSha256, "verifiedPixels" to it.colors.size,
@@ -459,4 +489,13 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
             Files.writeString(output.resolve(figure.id + ".json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt) + "\n", CREATE_NEW)
         }
     }
+}
+
+/** Uses the same public input stream as IntelliJ's console worker; never close a live process's stdin. */
+internal fun deliverBookStandardInput(process: ProcessHandler, input: String) {
+    validateBookStandardInput(input)
+    check(process.isStartNotified && !process.isProcessTerminated) { "Capture process is not running" }
+    val stream = checkNotNull(process.processInput) { "Capture process has no standard input" }
+    stream.write(input.toByteArray(Charsets.US_ASCII))
+    stream.flush()
 }
