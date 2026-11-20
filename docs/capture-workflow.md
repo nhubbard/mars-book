@@ -243,3 +243,23 @@ its original raw screenshots, source/recipe/checkpoint receipts and native edita
 annotations. All five PNG and six video plans are verified; earlier chapter plans
 and independent accessibility review remain open. The authoring plugin is separate
 from MARS and depends on the published MARS plugin.
+
+
+## H.263 raw capture batch
+
+The separate authoring plugin has captured sixteen native views for the six planned
+H.263 figures: SAD, selected motion, prediction and residuals, block reconstruction,
+coefficient bits, and accepted clip progress. Each private worked caller first passes
+a CLI checkpoint oracle. The complete clip oracle also passes independent FFmpeg
+decoding; both files written by the actual IDE match that oracle byte for byte.
+
+The batch uses the current MARS plugin without adding authoring classes to it. Its
+receipts retain the exact source stop, visible values, IntelliJ Light theme, original
+PNG digest, resolved callout bounds and plugin provenance. Twenty-eight Jupiter tests
+and dependency-resolved Plugin Verifier checks accompany the batch. Raw overview
+inspection found no transient overlay or unrelated project in the retained views.
+
+These are raw captures. The six public plans remain planned until editable native
+LaTeX annotations, readable crops and color/grayscale print proofs are reviewed.
+The private evidence records intentional termination of the dedicated IDE after
+batch completion; the resulting Gradle process exit is not reported as a passed build.
