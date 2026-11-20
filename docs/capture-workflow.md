@@ -433,3 +433,30 @@ match that tested binary. Implementation remains in the separate authoring plugi
 depending on MARS. Native tags, fonts, original embedded pixels, and complete color
 and grayscale proofs are checked before publication. Independent accessibility
 review remains open.
+
+
+## Life generation figures
+
+Chapter 8 uses twelve native Debug captures from an unchanged reference: register,
+published-generation memory and full eight-by-eight bitmap views at each of four
+boundaries. The first boundary is seed_copied. Three visits to generation_ready
+use native conditions `$s3 == 0`, `$s3 == 1` and `$s3 == 2`. A condition is bound
+to every part of each composite, so the repeated source line and the repeated
+horizontal image cannot substitute for a generation identity.
+
+The independent core oracle checks both complete padded boards, all 64 frame
+words, guards and protected inputs at eight boundaries, including the completed
+sweeps and pointer swaps between publications. Its exact ordered store prefixes
+reject even temporary or same-value protected stores. The last prefix has 387
+stores. Native tooltips, paint and photographic centers independently verify every
+cell with zero screen-channel tolerance. Altered conditions and photos are rejected.
+
+Four native LaTeX figures provide sixteen numbered explanations and native coordinate
+labels outside unchanged original screenshots. The 36-page chapter preserves its
+two existing diagrams. Student exports retain original images and state receipts
+alongside editable native annotations. Minion Pro, Noto Sans Math and the actual
+IntelliJ-derived listing highlighter remain unchanged. The capture implementation
+remains in the separate authoring plugin depending on MARS. The actual clean
+cleanSandbox runIde launch used the same exact driver bound to the retained 49-test
+and public API evidence; these unchanged tests were reused, not rerun. Independent
+accessibility review remains open after automated tag/font/pixel and print checks.

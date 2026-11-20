@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–7 and 33–35 have reviewed figure sets.
-Chapters 8–32 retain 99 planned figures across 25 sets. The manuscript has
-1,736 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–8 and 33–35 have reviewed figure sets.
+Chapters 9–32 retain 95 planned figures across 24 sets. The manuscript has
+1,740 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -1823,3 +1823,36 @@ The integrated manuscript has 1,736 pages. Reviewed figure sets now cover chapte
 1–7 and 33–35; chapters 8–32 retain 99 planned figures across 25 sets. Independent
 accessibility review remains open, and substantive editing remains the separate
 later goal. The full initial book composition and capture goal remains active.
+
+
+## Reviewed Life generation figures
+
+Chapter 8 contains four reviewed native LaTeX IDE figures with sixteen numbered
+explanations from twelve actual light-theme captures. The retained halo and
+oscillator diagrams are figures 8.1 and 8.4; screenshots appear as figures 8.2,
+8.3, 8.5 and 8.6. The 36-page chapter shows the initialized board before rendering,
+then the three publications of a two-update blinker run. Register pointers, working
+counters, published generation bytes and complete raster cells have separate
+annotations. Captions distinguish a pointer swap from the later completed render
+and publication, and distinguish identical images at generations zero and two.
+
+Both equivalent completed programs, fifteen cumulative programs and twenty-eight
+quiz keys pass. Final grading records 1,894 passing cases and fifty-six expected
+rejections across faulty variants and the unfinished starter. All 377 public
+tooling tests pass. The independent capture oracle checks both entire padded
+boards, all 64 framebuffer words, every protected input and guard, and the exact
+387-store sequence at eight computation/publication boundaries. Six deliberately
+faulty programs, altered screenshot pixels and incorrect generation conditions
+are rejected. The original source and screenshot pixels are unchanged.
+
+The separate authoring plugin still depends on MARS. Its exact tested source and
+binary hashes bind reuse of the existing 49 passing Jupiter tests and compatible
+public API report; the actual clean cleanSandbox runIde launch rebuilt the same
+driver. No MARS or authoring-plugin source changed. Native tags, embedded fonts,
+original pixel images, color/grayscale proofs and complete chapter integration
+are checked. Independent accessibility review remains open.
+
+The integrated manuscript has 1,740 pages. Reviewed figure sets now cover
+chapters 1–8 and 33–35; chapters 9–32 retain 95 planned figures across 24 sets.
+Substantive editing remains the separate later goal. The full initial book
+composition and capture goal remains active.

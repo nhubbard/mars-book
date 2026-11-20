@@ -747,3 +747,22 @@ separate authoring plugin depending on MARS. No graphical IDE launch or main-plu
 source change occurred in this packaging step. Independent accessibility review
 and later substantive editing remain open. The required grader revision 6c66f101
 is still a local MARS commit and is not pushed by book publication.
+
+
+## Illustrated Life chapter
+
+The Life chapter now contains four reviewed native LaTeX IDE figures from twelve
+verified light-theme screenshots, with sixteen numbered explanations. The complete
+chapter is 36 pages and retains its halo and oscillator diagrams. It connects
+source location, current/destination pointers, working counters, the memory
+publication and the displayed frame at each boundary. The same horizontal image
+at generations zero and two is explicitly distinguished by its execution state.
+
+Both equivalent implementations, fifteen cumulative programs and twenty-eight
+quiz keys pass. Grading records 1,894 passing cases and fifty-six expected
+rejections. All 377 public tooling tests pass. Student materials include the
+original images, native source and bound receipts; instructor checks and keys
+remain private. Capture tooling stays in the separate authoring plugin depending
+on MARS. The unchanged driver reuses its exact 49-test/API evidence; this increment
+changes no MARS or authoring-plugin source. Independent accessibility review and
+later substantive editing remain open.
