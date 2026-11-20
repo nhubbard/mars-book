@@ -40,6 +40,8 @@ data class BookCaptureFigure(
     val memoryView: BookMemoryView? = null,
     val digitalLabView: BookDigitalLabView? = null,
     val breakpointCondition: String? = null,
+    val marsBotView: BookMarsBotView? = null,
+    val backstepFrom: String? = null,
     val bitmapView: BookBitmapView? = null,
     val standardInput: String? = null,
     val stepFrom: List<String> = emptyList(),
@@ -56,10 +58,10 @@ data class BookCaptureFigure(
         require(projectRoot.resolve(source).normalize().startsWith(projectRoot.normalize())) { "Source escapes fixture project" }
         require(width in 800..2560 && height in 600..1600) { "Unsupported viewport" }
         if (mode == "debug") {
-            require(expectedRows.isNotEmpty() || bitmapView != null || digitalLabView != null) { "A figure needs an observed debugger value or bitmap" }
+            require(expectedRows.isNotEmpty() || bitmapView != null || digitalLabView != null || marsBotView != null) { "A figure needs an observed debugger value or bitmap" }
             require(editorCallouts.isEmpty() && runView == null) { "Debug views use native debugger assertions" }
         } else {
-            require(expectedRows.isEmpty() && digitalLabView == null && breakpointCondition == null && bitmapView == null && memoryView == null && debuggerView.isEmpty && stepFrom.isEmpty()) { "Presentation captures cannot request Debug navigation" }
+            require(expectedRows.isEmpty() && marsBotView == null && backstepFrom == null && digitalLabView == null && breakpointCondition == null && bitmapView == null && memoryView == null && debuggerView.isEmpty && stepFrom.isEmpty()) { "Presentation captures cannot request Debug navigation" }
             if (mode == "editor") require(editorCallouts.isNotEmpty() && runView == null && standardInput == null) { "An editor capture needs source callouts only" }
             else {
                 val view = requireNotNull(runView) { "A Run capture needs an output contract" }
@@ -74,6 +76,9 @@ data class BookCaptureFigure(
         require(stepFrom.size <= 32 && stepFrom.all { it.matches(Regex("[A-Za-z_][A-Za-z_0-9]*")) }) { "Invalid Debug step checkpoints" }
         require(stepFrom.distinct().size == stepFrom.size && checkpoint !in stepFrom) { "Debug steps need distinct checkpoints before the final stop" }
         breakpointCondition?.let { require(mode == "debug" && stepFrom.isEmpty() && it.isNotBlank() && it.length <= 256 && '\n' !in it) { "Invalid native breakpoint condition" } }
+        backstepFrom?.let { require(mode == "debug" && stepFrom.isEmpty() && breakpointCondition == null && it != checkpoint && it.matches(Regex("[A-Za-z_][A-Za-z_0-9]*"))) { "Backstep needs one distinct native starting checkpoint" } }
+        marsBotView?.validate()
+        require(marsBotView == null || (digitalLabView == null && expectedRows.isEmpty() && memoryView == null && bitmapView == null && debuggerView.isEmpty)) { "Capture MarsBot in its own raw view" }
         digitalLabView?.validate()
         require(digitalLabView == null || (expectedRows.isEmpty() && memoryView == null && bitmapView == null && debuggerView.isEmpty)) { "Capture Digital Lab in its own raw view" }
         debuggerView.validate()

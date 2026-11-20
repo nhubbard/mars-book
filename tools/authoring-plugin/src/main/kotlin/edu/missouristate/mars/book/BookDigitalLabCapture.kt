@@ -2,6 +2,7 @@ package edu.missouristate.mars.book
 
 import com.intellij.util.ui.JBUI
 import com.intellij.ui.SimpleColoredComponent
+import java.awt.Component
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
 import javax.swing.JButton
@@ -56,20 +57,7 @@ internal fun observeBookLabDisplay(component: JComponent, name: String, mask: In
 
 internal fun observeBookDigitalLab(root: JComponent, view: BookDigitalLabView, execution: String): BookObservedDigitalLab? {
     val components = captureComponents(root).filter { it.isShowing }.toList()
-    @Suppress("UNCHECKED_CAST")
-    val selector = components.filterIsInstance<JComboBox<*>>().singleOrNull() as? JComboBox<Any> ?: return null
-    fun label(index: Int): String {
-        val rendered = selector.renderer.getListCellRendererComponent(JList<Any>(), selector.getItemAt(index), index, false, false)
-        return captureComponents(rendered).mapNotNull {
-            when (it) {
-                is JLabel -> it.text
-                is SimpleColoredComponent -> it.getCharSequence(false).toString()
-                else -> null
-            }
-        }.joinToString(" ")
-    }
-    val owned = (0 until selector.itemCount).singleOrNull { label(it).startsWith("$execution (#") } ?: return null
-    if (selector.selectedIndex != owned) { selector.selectedIndex = owned; return null }
+    val selectedExecution = selectBookToolExecution(components, execution) ?: return null
     if (components.filterIsInstance<JButton>().none { it.text == "Disconnect" && it.isEnabled }) return null
     val displays = listOf("Left" to view.left, "Right" to view.right).map { (name, mask) ->
         val target = components.filterIsInstance<JComponent>().singleOrNull {
@@ -86,7 +74,7 @@ internal fun observeBookDigitalLab(root: JComponent, view: BookDigitalLabView, e
     val keypad = keys.map(::bounds).reduce { a, b -> a.union(b) }
     val rows = displays.map { (component, _) -> BookUiRow(component.accessibleContext.accessibleName, bounds(component)) } +
         listOf(BookUiRow("Counter interrupt off", bounds(timer)), BookUiRow("No pressed key; 16 enabled keys", keypad))
-    return BookObservedDigitalLab(rows, label(owned), displays.flatMap { it.second })
+    return BookObservedDigitalLab(rows, selectedExecution, displays.flatMap { it.second })
 }
 
 /** Diagnostic observations are retained only for an unaccepted authoring attempt. */
@@ -109,3 +97,22 @@ internal fun bookLabDiagnostics(root: JComponent): List<String> = listOf("Digita
             else -> null
         }
     }.toList()
+
+/** Select only the capture-owned execution through the native public renderer. */
+internal fun selectBookToolExecution(components: List<Component>, execution: String): String? {
+    @Suppress("UNCHECKED_CAST")
+    val selector = components.filterIsInstance<JComboBox<*>>().singleOrNull() as? JComboBox<Any> ?: return null
+    fun label(index: Int): String {
+        val rendered = selector.renderer.getListCellRendererComponent(JList<Any>(), selector.getItemAt(index), index, false, false)
+        return captureComponents(rendered).mapNotNull {
+            when (it) {
+                is JLabel -> it.text
+                is SimpleColoredComponent -> it.getCharSequence(false).toString()
+                else -> null
+            }
+        }.joinToString(" ")
+    }
+    val owned = (0 until selector.itemCount).singleOrNull { label(it).startsWith("$execution (#") } ?: return null
+    if (selector.selectedIndex != owned) { selector.selectedIndex = owned; return null }
+    return label(owned)
+}

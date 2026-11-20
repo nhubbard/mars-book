@@ -13,6 +13,9 @@ import com.intellij.ide.plugins.PluginDetailsService
 import com.intellij.ide.ui.LafManager
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationsManager
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionToolbar
+import com.intellij.openapi.util.ActionCallback
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
@@ -161,13 +164,21 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 (labelStart until document.lineCount).first { type.canPutAt(source, it, project) }
             }
         }
+        val reverseLine = readAction {
+            figure.backstepFrom?.let { label ->
+                val labelStart = figure.checkpointLine(String(bytes, Charsets.UTF_8), label)
+                (labelStart until document.lineCount).first { type.canPutAt(source, it, project) }
+            }
+        }
         val breakpoint = writeAction {
-            addBreakpoint(project, type, source, stepLines.firstOrNull() ?: line).also { breakpoint ->
+            addBreakpoint(project, type, source, reverseLine ?: stepLines.firstOrNull() ?: line).also { breakpoint ->
                 figure.breakpointCondition?.let { breakpoint.conditionExpression = XDebuggerUtil.getInstance().createExpression(it, null, null, EvaluationMode.EXPRESSION) }
             }
         }
         var inputDelivered = figure.standardInput == null
         val observedSteps = mutableListOf<Map<String, Any>>()
+        var backstepCallback: ActionCallback? = null
+        var observedBackstep: Map<String, Any>? = null
         var ownedSessionName: String? = null
         var lastObservedRows = emptyList<String>()
         var memoryAddressRequested = false
@@ -224,6 +235,21 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     check(!session.debugProcess.processHandler.isProcessTerminated) { "Debugger terminated before capture" }
                     val position = session.currentPosition ?: return@withContext null
                     if (position.file != source) return@withContext null
+                    if (reverseLine != null) {
+                        if (backstepCallback == null) {
+                            if (position.line != reverseLine) return@withContext null
+                            val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
+                            val candidates = captureComponents(frame).filterIsInstance<ActionToolbar>().flatMap { toolbar ->
+                                (toolbar.actions + toolbar.actionGroup.getChildren(null)).filter { it.templatePresentation.text == "Backstep Instruction" }.map { toolbar to it }
+                            }.distinctBy { it.second }.toList()
+                            val (toolbar, action) = candidates.singleOrNull() ?: return@withContext null
+                            backstepCallback = ActionManager.getInstance().tryToExecute(action, null, toolbar.component, "MarsBookCapture", false)
+                            observedBackstep = mapOf("fromCheckpoint" to checkNotNull(figure.backstepFrom), "sourceLine" to position.line + 1, "actionText" to "Backstep Instruction")
+                            return@withContext null
+                        }
+                        check(!backstepCallback.isRejected) { "Native Backstep Instruction action was rejected" }
+                        if (!backstepCallback.isDone) return@withContext null
+                    }
                     if (observedSteps.size < stepLines.size) {
                         val index = observedSteps.size
                         if (position.line == stepLines[index]) {
@@ -268,6 +294,16 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         val canvas = selectedBitmapCanvas(project) ?: return@withContext null
                         if (observeBookBitmap(canvas, expectedBitmap) == null) return@withContext null
                         return@withContext emptyList<BookUiRow>()
+                    }
+                    figure.marsBotView?.let { view ->
+                        if (visibleAnalysisIndicators(frame).isNotEmpty()) return@withContext null
+                        val tool = ToolWindowManager.getInstance(project).getToolWindow("MARS Tools") ?: return@withContext null
+                        if (!tool.isVisible) { tool.show(); return@withContext null }
+                        val content = tool.contentManager.contents.singleOrNull { it.displayName == "MarsBot" } ?: return@withContext null
+                        if (tool.contentManager.selectedContent != content) { tool.contentManager.setSelectedContent(content, false); return@withContext null }
+                        ToolWindowManager.getInstance(project).getToolWindow("Debug")?.takeIf { it.isVisible }?.let { it.hide(); return@withContext null }
+                        lastObservedRows = bookBotDiagnostics(content.component)
+                        return@withContext observeBookMarsBot(content.component, view, "Book figure: " + figure.id)?.rows
                     }
                     figure.digitalLabView?.let { view ->
                         if (visibleAnalysisIndicators(frame).isNotEmpty()) return@withContext null
@@ -323,7 +359,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     reportedRows = lastObservedRows.toList()
                     reportedTabs = lastObservedTabs.toList()
                 }
-                if (figure.digitalLabView != null && ready == null && lastObservedRows.firstOrNull() == "Digital Lab diagnostics") {
+                if (ready == null && ((figure.digitalLabView != null && lastObservedRows.firstOrNull() == "Digital Lab diagnostics") || (figure.marsBotView != null && lastObservedRows.firstOrNull() == "MarsBot diagnostics"))) {
                     val diagnostic = output.resolve(figure.id + "-unaccepted-diagnostic.png")
                     if (!withContext(Dispatchers.IO) { Files.exists(diagnostic) }) {
                         val bounds = withContext(Dispatchers.EDT) {
@@ -339,7 +375,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 if (ready != null && stable >= 2) {
                     val nativeCondition = withContext(Dispatchers.EDT) { breakpoint.conditionExpression?.expression }
                     check(nativeCondition == figure.breakpointCondition) { "Native breakpoint condition changed" }
-                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap, observedSteps.toList(), nativeCondition)
+                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap, observedSteps.toList(), nativeCondition, observedBackstep?.plus("toSourceLine" to (line + 1)))
                     break
                 }
                 delay(200)
@@ -403,7 +439,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         }
     }.toList()
 
-    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?, observedSteps: List<Map<String, Any>>, nativeCondition: String?) {
+    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?, observedSteps: List<Map<String, Any>>, nativeCondition: String?, observedBackstep: Map<String, Any>?) {
         val snapshot = withContext(Dispatchers.EDT) {
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             val root = frame.rootPane
@@ -423,6 +459,11 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 mapOf("label" to expected.label, "box" to captureBox(expected.column?.let { checkNotNull(row.cells[it]) } ?: row.bounds, viewport),
                     "observedText" to row.text, "column" to expected.column)
             }.toMutableList()
+            figure.marsBotView?.let { view ->
+                val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
+                val bot = checkNotNull(observeBookMarsBot(checkNotNull(content).component, view, "Book figure: " + figure.id))
+                callouts += bot.rows.map { row -> mapOf("label" to row.text, "observedText" to row.text, "box" to captureBox(row.bounds, viewport)) }
+            }
             figure.digitalLabView?.let { view ->
                 val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
                 val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
@@ -453,6 +494,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val image = screenImages.first() as BufferedImage
         var screenEvidence: BookBitmapScreenEvidence? = null
         var labEvidence: Map<String, Any>? = null
+        var botEvidence: Map<String, Any>? = null
         withContext(Dispatchers.EDT) {
             val session = checkNotNull(XDebuggerManager.getInstance(project).currentSession)
             check(session.isSuspended && session.sessionName == "Book figure: " + figure.id)
@@ -490,6 +532,13 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     error("Captured pixels differ from the independently checked frame")
                 }
             }
+            figure.marsBotView?.let { view ->
+                val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
+                val bot = checkNotNull(observeBookMarsBot(checkNotNull(content).component, view, "Book figure: " + figure.id))
+                check(bot.rows.map { it.text } == snapshot.third) { "MarsBot changed during capture" }
+                bot.rows.forEachIndexed { index, row -> check(captureBox(row.bounds, snapshot.first) == snapshot.second[index]["box"]) { "MarsBot bounds changed during capture" } }
+                botEvidence = bot.board.screenEvidence(image, snapshot.first) + mapOf("selectedExecution" to bot.selectedExecution)
+            }
             figure.digitalLabView?.let { view ->
                 val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
                 val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
@@ -515,7 +564,8 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "visibleAnalysisIndicators" to emptyList<String>(),
                 "notificationBalloonsVisible" to 0,
                 "standardInput" to figure.standardInput, "standardInputDelivered" to (figure.standardInput?.let { true }),
-                "observedSteps" to observedSteps,
+                "observedSteps" to observedSteps, "backstepFrom" to figure.backstepFrom, "observedBackstep" to observedBackstep,
+                "marsBotView" to figure.marsBotView, "observedMarsBot" to botEvidence,
                 "digitalLabView" to figure.digitalLabView, "observedDigitalLab" to labEvidence, "breakpointCondition" to nativeCondition,
                 "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView, "bitmapView" to figure.bitmapView,
                 "observedBitmap" to expectedBitmap?.let { mapOf("columns" to it.view.columns, "rows" to it.view.rows,

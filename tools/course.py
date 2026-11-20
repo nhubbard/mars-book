@@ -38,6 +38,21 @@ def validate_capture_mode(figure, raw):
     mode = figure.get('captureMode', 'debug')
     if mode not in ('debug', 'editor', 'run') or raw.get('mode', 'debug') != mode:
         raise ValueError('Capture mode differs')
+    expected_reverse = figure.get('backstepFrom')
+    observed_reverse = raw.get('observedBackstep')
+    if raw.get('backstepFrom') != expected_reverse:
+        raise ValueError('Native backstep starting checkpoint differs')
+    if expected_reverse is None:
+        if observed_reverse is not None:
+            raise ValueError('Unexpected native backstep observation')
+    else:
+        if mode != 'debug' or not isinstance(expected_reverse, str) or not re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', expected_reverse):
+            raise ValueError('Invalid native backstep contract')
+        if not isinstance(observed_reverse, dict) or observed_reverse.get('fromCheckpoint') != expected_reverse or observed_reverse.get('actionText') != 'Backstep Instruction':
+            raise ValueError('Missing actual native Backstep Instruction observation')
+        before, after = observed_reverse.get('sourceLine'), observed_reverse.get('toSourceLine')
+        if type(before) is not int or type(after) is not int or before <= 0 or after <= 0 or before == after or after != raw.get('sourceLine'):
+            raise ValueError('Native backstep source boundaries differ')
     if mode == 'editor':
         if raw.get('exitCode') is not None or raw.get('standardInput') is not None or raw.get('stdout') != '' or raw.get('stderr') != '':
             raise ValueError('Editor capture must have no process input or output')
@@ -80,7 +95,7 @@ def validate_composite_capture(root, figure, receipt):
         parts[part['id']] = raw
     if not 1 <= len(parts) <= 8 or len(receipt['panels']) < 2 or shared.get('checkpoint') != figure['checkpoint']:
         raise ValueError('Composite needs at least two panels at the declared checkpoint')
-    identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'breakpointCondition', 'publicCommit',
+    identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'breakpointCondition', 'backstepFrom', 'observedBackstep', 'publicCommit',
                   'upstreamCommit', 'upstreamDirtyFiles', 'ideBuild', 'captureDriverSha256',
                   'marsPluginArchiveSha256', 'locale', 'scale')
     first = next(iter(parts.values()))
