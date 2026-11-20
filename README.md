@@ -876,3 +876,6 @@ Chapter 25 now has four reviewed native IDE figures, using eighteen unchanged li
 
 
 Chapter 26 now has four reviewed native IDE figures explaining scalar quarter-round publication, the first double-round, vector lane selection and a 65-byte XOR across two counters. Seventeen unchanged screenshots support twenty-one native explanations. Fresh grading passes 5,748 positive case executions across 165 runs, 36 intermediate programs, 54 recipes, 40 exported guided checks and 42 quiz keys. The starter and 35 faulty variants yield 972 expected failures in 36 rejection runs. The standalone chapter has 61 pages. Independent accessibility review and later substantive editing remain open.
+
+
+Chapter 27 now has four reviewed native IDE figures explaining the full product accumulator and carry, the 129th sum bit, private reduction before publication and modular-power output before frame restoration. Sixteen unchanged screenshots support twenty-three explanations. Fresh grading passes 3,912 positive cases across 163 runs, 35 intermediate programs, 43 recipes, 35 exported guided checks and 42 quiz keys. The starter and 25 faulty variants produce 542 expected failures across 26 rejection runs. The standalone chapter has 64 pages. Independent accessibility review and later substantive editing remain open.

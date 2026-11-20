@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–26 and 33–35 have reviewed figure sets.
-Chapters 27–32 retain 24 planned figures across 6 sets. The manuscript has
-1,797 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–27 and 33–35 have reviewed figure sets.
+Chapters 28–32 retain 20 planned figures across 5 sets. The manuscript has
+1,799 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2225,3 +2225,16 @@ Independent bit-permutation arithmetic matches RFC 8439 quarter-round, block and
 Native color/grayscale review caught an overlapping screenshot header. The layout check now reconstructs full cropped-image bounds rather than checking only the boxed values; it rejects the original layout and accepts the corrected one. The vector annotations were shortened without reducing vector image or type size. Exact image pixels, frame coordinates, embedded fonts and semantic descriptions pass. The native bootstrap refuses edited TeX. The 61-page chapter and 1,797-page manuscript retain separate integration receipts. Exact distribution comparison permits only explicit figure replacements, literal asset-path relocation, capture artifacts and factual status changes. Independent accessibility review remains open; later substantive editing is a separate goal.
 
 Complete reviewed figure sets now cover chapters 1–26 and 33–35. Twenty-four planned figures remain across chapters 27–32.
+
+
+## RSA arithmetic figures and fresh package verification
+
+Four native figures use sixteen unchanged light-theme IDE captures and twenty-three explanations. The product example separates the full 64-bit accumulator from its stored low limb and carry. Modular addition keeps the 129th bit visible even when the stored sum is below the modulus. Reduction separates its private remainder from untouched caller output. Modular power shows all sixteen result bytes before restoring its outer frame. The pre-existing limb diagram remains Figure 27.1; the IDE figures are 27.2–27.5.
+
+Seven independent integer-model tests and twelve assembled fault controls pass. Full 776-byte caller images protect every arena, suffix and control. Exact caller/workspace access schedules, declared private arithmetic values, protected workspace and restored full registers are checked separately. Saved return-address bytes and unused active-stack padding are outside the complete-image claim. The initial power schedule wrongly interleaved its two loads and stores; retained diagnostics show the corrected load-load-store-store sequence. Actual numerical results were unaffected.
+
+Fresh grading against a frozen public revision passes 3,912 positive cases across 163 runs, 35 intermediate programs, 43 recipes, 35 exported guided checks and 42 quiz keys. The unfinished starter and 25 mutants yield 542 expected failures across 26 rejection runs. Exact archive comparison protects all graded files, permitting only figure placeholders, capture metadata/assets and one factual status passage.
+
+All four proofs pass full-image overlap, embedded-pixel, coordinate, font and tagging checks, with color/grayscale review. Native edits clarify cross-row private-value boundaries and keep the modular-power equation together. The existing privacy assertion mistook a public photograph named private.png for instructor material; it now checks forbidden path components and private grading filenames explicitly. Native snapshots relocate only literal asset prefixes. The guarded bootstrap refuses edited TeX. The 64-page chapter and 1,799-page manuscript retain separate integration receipts. Independent accessibility review and later substantive editing remain open.
+
+Reviewed sets now cover chapters 1–27 and 33–35. Twenty planned figures remain across chapters 28–32.

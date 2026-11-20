@@ -52,7 +52,9 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(36, sum(step['completion']['type'] == 'cli-grade' for step in data['steps']))
         native = course.ROOT / 'includes/chapters/027-rsa-arithmetic'
         for path in native.glob('*.tex'):
-            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+            expected = path.read_text().replace('book/captures/027-rsa-arithmetic/',
+                                                'packages/027-rsa-arithmetic/captures/').encode()
+            self.assertEqual(expected, (root / 'native' / path.name).read_bytes())
         names = re.findall(r'\\input\{includes/chapters/027-rsa-arithmetic/([^}]+)\}', (native / 'chapter.tex').read_text())
         reading = json.loads((root / 'reading.json').read_text())['segments']
         actual = [row['step'] if row['kind'] == 'step' else row['figure'] if row['kind'] == 'figure' else Path(row['typesetting']['nativeLatex']).stem for row in reading]
@@ -62,7 +64,14 @@ class PackageTests(unittest.TestCase):
             if step['completion']['type'] == 'cli-grade':
                 self.assertIn(step['completion']['check'], exported)
                 self.assertNotIn('case("prepared ', (root / step['completion']['check']).read_text())
-        self.assertFalse(any('quiz-key' in name or '/private' in name or '/reference/' in name for name in exported))
+        # This public photograph depicts stack-private arithmetic; it is not a private check.
+        self.assertIn('captures/f03/private.png', exported)
+        self.assertFalse(any(
+            'quiz-key' in name or
+            any(part in {'private', 'instructor', 'reference', 'solutions'} for part in Path(name).parts) or
+            Path(name).name == 'private.kts' or Path(name).name.startswith('private-cases')
+            for name in exported
+        ))
         self.assertEqual(35, len(list((root / 'checks/construction').glob('*.kts'))))
         self.assertEqual(9, len(data['publicChecks']))
         self.assertIn('readBytes(address,length)', data['environment']['graderRequirements'])
