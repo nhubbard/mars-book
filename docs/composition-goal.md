@@ -2058,3 +2058,19 @@ The separate authoring plugin remains unchanged and depends on MARS. The accepte
 Reviewed figure sets now cover chapters 1–14 and 33–35. Chapters 15–32 retain 73 planned figures across 18 sets. Independent accessibility review remains open. Substantive editing remains a separate later goal.
 
 The integrated chapter 14 build contains 1,759 manuscript pages.
+
+## Chapter 15 illustrated draft
+
+Four actual light-mode IDE plates explain a pending four-byte lead, a finished five-scalar stream, an impossible continuation and truncation detected by an empty final call. Twelve unchanged screenshots support sixteen native LaTeX explanations. The standalone chapter has 43 pages. All 244 data bytes are verified at initialization and all four call boundaries in each of three fixtures, together with per-call logical read windows and exact stores. Terminal refusal preserves scanner state and reads only its status word; empty-final detection reads no input and malformed detection reads no rejected suffix.
+
+The independent host oracle computes whether a prefix's possible scalar interval intersects the legal scalar set, then uses Python strict decoding for completed scalars. Python incremental decoding alone can defer some impossible-prefix errors and is not used as the sole acceptance oracle. Six model tests cover every one- and two-byte scalar prefix, all 1,024 partitions of the default stream, boundary scalar values, malformed positions, truncation and terminal refusal. Three core mutation tests detect empty-input reads, reads beyond the detecting byte and terminal writes followed by restoration.
+
+Complete grading passes 189,831 positive cases, 22 cumulative student programs and 34 quiz keys. The starter and 25 faulty variants yield 3,364 expected failures. Both reference implementations cover every two-byte input and all 1,112,064 legal Unicode scalar values; relocated addresses above four GiB and a legal saved-register stack frame also pass.
+
+The separate authoring plugin remains unchanged and depends on MARS. Exact source inventory, build/wrapper and installed JAR identity bind reuse of 67 passing Jupiter tests and compatible API evidence. The accepted twelve-capture batch independently runs the actual clean cleanSandbox runIde tasks. Native annotation coordinates, original image pixels, embedded fonts, tagged descriptions and all four color/grayscale proofs pass verification. Original chapter prose, human passages and figure labels remain unchanged.
+
+Reviewed figure sets now cover chapters 1–15 and 33–35. Chapters 16–32 retain 69 planned figures across 17 sets. Independent accessibility review remains open, and substantive editing remains a separate later goal.
+
+The chapter 15 verification pass also fixes demonstrated cross-document reference invalidation in the native PDF build helper. LuaLaTeX's own recorder identifies the current document's auxiliary dependencies; four regression tests distinguish required chapter/contents invalidation from unrelated output changes. A corrected native proof converges in two passes while the previously started manuscript build remains active.
+
+The integrated chapter 15 build contains 1,762 manuscript pages.
