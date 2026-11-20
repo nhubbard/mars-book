@@ -1,0 +1,162 @@
+\section{Step 101 Admit a complete picture request}\label{h263-picture-s01}
+Check all controls and complete mapped extents before reading current or reference
+samples. Check the initial context cursor is zero. An I-picture has no reference
+input; reject a nonzero reference field rather than silently choosing a different
+interpretation. Retain the caller's output pointers separately from workspace
+pointers so nested calls cannot accidentally publish early.
+
+\paragraph{Observe} A high-word mode value whose low bits are one still fails the full-width selector check.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which input is absent for an I-picture?
+\begin{itemize}
+\item[A.] The old reconstructed reference.
+\item[B.] The current raw picture.
+\item[C.] All three current planes.
+\end{itemize}
+
+\section{Step 102 Write the picture header into the private context}\label{h263-picture-s02}
+Initialize a private writer context over the encoded staging arena at cursor zero.
+Emit the 22-bit picture start code, eight-bit temporal reference, thirteen-bit
+baseline PTYPE, five-bit quantizer and zero CPM/PEI fields. Select PTYPE from the
+admitted picture control. Check every child return even though the derived arena
+bound makes capacity failure unexpected for a correct implementation.
+
+\paragraph{Observe} The baseline PTYPE values here are 4160 for I and 4176 for P.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which context receives the header first?
+\begin{itemize}
+\item[A.] The caller context with its count already committed.
+\item[B.] The private workspace context.
+\item[C.] The previous picture reference.
+\end{itemize}
+
+\section{Step 103 Begin a row with the right predictor state}\label{h263-picture-s03}
+Start row zero immediately after the picture header. For every later row, align
+with zero stuffing and emit GBSC, row number, GFID and the unchanged quantizer.
+Reset both left-vector components to zero. Do not insert a separate group-zero
+header. Keep GFID supplied by the clip controller rather than deriving it from
+the row or temporal reference.
+
+\paragraph{Observe} The first macroblock of every explicit row group has predictor zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does an unchanged PTYPE require of GFID?
+\begin{itemize}
+\item[A.] A change at every macroblock.
+\item[B.] The row number modulo four.
+\item[C.] The same value as the preceding picture.
+\end{itemize}
+
+\section{Step 104 Search the reconstructed reference}\label{h263-picture-s04}
+For a P-picture, position current luma at the macroblock origin and pass the
+complete old reconstructed Y plane to the earlier bounded search. Use radius two,
+current/reference stride 176 and the selected arithmetic mode. Retain the signed
+full-pixel result across prediction and block calls. An I-picture skips this
+search and uses INTRA blocks.
+
+\paragraph{Observe} A search result of minus one pixel becomes minus two at the syntax boundary.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which plane supplies reference samples?
+\begin{itemize}
+\item[A.] The preceding locally reconstructed Y plane.
+\item[B.] The preceding raw input Y plane.
+\item[C.] The partially written current reconstruction.
+\end{itemize}
+
+\section{Step 105 Build six prediction records}\label{h263-picture-s05}
+Use complete current and reference Y/Cb/Cr origins and their tight strides in
+the six-block predictor request. Pass the selected full-pixel displacement and
+current luma origin. Check its return before consuming any prediction record.
+For INTRA, pass zero prediction pointer and stride to the block encoder instead
+of pretending that an uninitialized prediction record is a zero block.
+
+\paragraph{Observe} Odd whole-luma-pixel motion can require chroma interpolation.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is the tight chroma-plane stride?
+\begin{itemize}
+\item[A.] 176 bytes.
+\item[B.] 88 bytes.
+\item[C.] Six block records.
+\end{itemize}
+
+\section{Step 106 Collect levels and position reconstructed pixels}\label{h263-picture-s06}
+Visit all six blocks. Derive the current plane position from row, column and
+block number, then invoke the complete block encoder. Copy its 128-byte selected
+level array into the corresponding macroblock level record. Copy its sixty-four
+reconstructed bytes as eight rows into the private destination plane. Advance
+each destination row by 176 for Y or 88 for chroma.
+
+\paragraph{Observe} The second Y block starts eight bytes to the right, not sixty-four bytes after the first picture origin.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which block output is copied into the new picture?
+\begin{itemize}
+\item[A.] The selected levels as raw bytes.
+\item[B.] The forward coefficients.
+\item[C.] The clipped reconstructed pixels.
+\end{itemize}
+
+\section{Step 107 Emit macroblock syntax and retain actual motion}\label{h263-picture-s07}
+Build the syntax request from all six selected level arrays. Use twice the
+selected full-pixel displacement and the left predictor in half-sample units.
+Permit skip only through the established syntax contract. After success, retain
+the actual selected vector for the next column. Never update the left predictor
+to the normalized vector difference: those values serve different purposes.
+
+\paragraph{Observe} A skipped macroblock retains actual vector zero even after a nonzero left vector.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which vector becomes the next left candidate?
+\begin{itemize}
+\item[A.] The actual encoded vector.
+\item[B.] The MVD table index.
+\item[C.] The raw unwrapped difference.
+\end{itemize}
+
+\section{Step 108 Publish both complete picture results}\label{h263-picture-s08}
+After column ten, advance the row; after row eight, append final zero alignment.
+Read the complete private byte count and compare it with caller capacity. On
+success copy the used stream window and full reconstruction, then commit the
+context count. On any earlier failure return zero byte count and retain both
+caller arenas. Workspace is deliberately disposable on rejection.
+
+\paragraph{Observe} A capacity-zero call may perform private encoding work but changes neither published output.
+\Needspace{8\baselineskip}
+\paragraph{Check} When does the caller used count change?
+\begin{itemize}
+\item[A.] Immediately after the picture start code.
+\item[B.] After both final output copies succeed.
+\item[C.] Before validating the reference extent.
+\end{itemize}
+
+\section{Step 109 Decode and reconstruct the public cases}\label{h263-picture-s09}
+Run the 54 public cases on the completed composition. The checker decodes every
+header and macroblock, independently repeats the bounded search and computes
+floating transform references. It checks the actual selected levels and the
+published reconstruction with the established one-unit block accuracy allowance.
+It accepts different legal entropy codes and skip choices, private frames and
+accurate alternative transforms. It also checks rejection, saved state and guards
+in both byte orders.
+
+\paragraph{Observe} The moving-pattern case contains ninety nonzero selected vectors, making a constant-zero motion shortcut observable.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does the picture checker compare?
+\begin{itemize}
+\item[A.] Only the picture start code.
+\item[B.] Only the printed byte count.
+\item[C.] Decoded motion/levels, accurate reconstruction and state effects.
+\end{itemize}
+
+\section{Step 110 Keep clip publication separate from picture publication}\label{h263-picture-s10}
+The next outer loop reads one complete raw picture, invokes this entry, writes
+the encoded bytes and then swaps old/new reference buffers only after accepted
+output. The tested full-clip experiment also writes reconstruction planes for
+comparison with an independent decoder. A file failure can leave a partial file,
+so the loop must stop and report failure rather than treating that file as a
+finished clip. Picture memory publication alone does not establish file acceptance.
+
+\paragraph{Observe} All eight proposed pictures encode and independently decode without requiring an all-INTRA substitute.
+\Needspace{8\baselineskip}
+\paragraph{Check} When may the outer loop swap its reference buffers?
+\begin{itemize}
+\item[A.] After the completed picture and required output writes are accepted.
+\item[B.] As soon as the first block is reconstructed.
+\item[C.] Before reading the current raw picture.
+\end{itemize}

@@ -1,0 +1,107 @@
+\section{Use a reconstructed picture as the next reference}
+The completed macroblock emitter knows how to serialize a selected vector and
+six blocks. It does not know where the blocks belong in a picture. The picture
+controller supplies that geometry and the order of operations. Its input is one
+complete raw QCIF picture, plus the preceding locally reconstructed picture for
+a P-picture. Its two outputs are an encoded picture and a new reconstruction.
+Neither output is the original raw input with a different name.
+
+Use raster order: nine macroblock rows, with eleven macroblocks in each row.
+For row $r$ and column $c$, the luma origin is $(16c,16r)$ and the chroma origin
+is $(8c,8r)$. Four luma blocks cover the sixteen-by-sixteen region; one block
+covers each chroma plane. Together the $99\times6$ blocks cover exactly
+$99\times6\times64=38\,016$ active samples. This equality also checks that a
+controller has neither omitted nor duplicated any output samples.
+
+An I-picture selects INTRA for every macroblock in this controller. For a
+P-picture, perform the earlier bounded search against the \emph{reconstructed}
+reference, form six prediction records, and encode all six INTER blocks.
+This is a stated teaching policy, not a requirement that every H.263 encoder
+must use INTER for every P-picture macroblock. An independent encoder can select
+INTRA inside a P-picture. Our earlier macroblock entry supports that syntax;
+this controller deliberately develops one mode-selection policy at a time.
+
+For each completed block, retain its selected levels for macroblock syntax and
+copy its reconstructed pixels into the private destination picture. Copy each
+row to the plane's stride, rather than placing every sixty-four-byte block
+consecutively in the image. Consecutive block records are a working layout;
+consecutive picture samples are a different layout.
+
+\section{Make group boundaries part of the predictor design}
+The general baseline vector predictor is the component-wise median of the left,
+above and above-right candidates, with the border rules of clause 6.1.1 applied
+in order. INTRA and skipped neighbours contribute zero. An unavailable left
+candidate contributes zero. At the top of the picture, or the top of a GOB whose
+header is nonempty, the two upper candidates become the left candidate. An
+above-right position beyond the picture's right edge then becomes zero.
+
+A QCIF group of blocks contains one macroblock row. This controller emits a
+nonempty GOB header for rows one through eight. Row zero has no separate GOB
+header: its picture header already establishes the first group. Each row therefore
+starts with a zero predictor. Later macroblocks in that row use the actual vector
+of the preceding macroblock. At the right edge the median of left, left and zero
+is still left. This row-based state follows the general rule; it is not a
+replacement predictor that a decoder must be told to understand.
+
+Before a GOB start code, insert fewer than eight zero stuffing bits to reach a
+byte boundary. Emit these fields in order:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrl}
+\textbf{Field} & \textbf{Bits} & \textbf{Value here}\\
+GBSC & 17 & One, as a seventeen-bit code\\
+GN & 5 & Current row, one through eight\\
+GFID & 2 & The supplied picture identity\\
+GQUANT & 5 & The picture quantizer, unchanged
+\end{tabular}
+\end{center}
+GFID is the same in every group of one picture. Without extended PTYPE, it stays
+the same when PTYPE stays the same and changes when PTYPE changes. A clip with
+one I-picture followed by P-pictures can use zero for the first picture and one
+for every later picture. It must not alternate GFID merely because a new picture
+has begun. The caller tracks that history and supplies the identity.
+
+After emitting a macroblock, retain its selected actual vector for the next
+column. The syntax request uses twice the full-pixel displacement. A skip is
+possible only with actual vector zero and no residual, so retaining that vector
+also records the correct skipped-neighbour candidate. Reset both components when
+starting the next explicit GOB row.
+
+\section{Stage a complete picture before publication}
+The destination reconstruction must not become the reference while its lower
+rows are still uninitialized. Use separate old-reference and new-picture storage.
+Likewise, a syntax failure near the last macroblock must not leave a short picture
+advertised as a completed output.
+
+The controller receives a caller-owned workspace with two private regions:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrl}
+\textbf{Offset} & \textbf{Bytes} & \textbf{Purpose}\\
+0 & 131\,072 & Encoded-picture staging arena\\
+131\,072 & 38\,016 & New reconstructed Y, Cb and Cr planes
+\end{tabular}
+\end{center}
+Its total is 169\,088 bytes. This workspace may change during a failed call;
+it is not either published result. The old reference remains read-only throughout.
+Stack storage holds the search, prediction, block and syntax records, not another
+whole picture. Supply at least 65\,536 bytes of private stack for this composition.
+
+The largest supported INTER macroblock has 8487 payload bits. Ninety-nine such
+payloads, fifty picture-header bits, eight group headers with at most seven
+stuffing bits each, and final byte alignment fit within 105\,070 bytes. The
+131\,072-byte staging arena therefore admits the complete supported picture.
+This bound concerns one picture; it is not a limit on the whole video file.
+
+The stage starts at bit count zero. There is no need to clear all 131\,072 bytes
+first: every published bit is supplied by a field, a macroblock or explicit zero
+alignment. Earlier bit writers preserve bytes outside their touched windows, but
+those bytes are never published as part of the picture. This avoids a repeated
+large initialization while keeping output deterministic.
+
+After all dependencies succeed, append zero alignment to the next byte boundary.
+Compare the complete staged byte count with caller capacity. Only then copy the
+encoded bytes and all 38\,016 reconstructed samples into the caller's two output
+areas. Commit the caller's used-bit count last. These final mapped-memory copies
+have no fallible children. An output-file write is a later operation and needs its
+own acceptance check before the outer clip loop swaps its reference buffers.

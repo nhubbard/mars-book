@@ -666,3 +666,28 @@ unfinished. MARS and authoring-plugin source are unchanged in this increment.
 The separate authoring plugin declares its MARS dependency; no GUI launch or
 capture is claimed. Independent accessibility review and later substantive editing
 remain separate.
+
+
+## Complete H.263 picture controller and actual MIPS stream proof
+
+Native steps 101–110 join the tested kernels into raster-ordered QCIF pictures,
+with explicit row GOB headers, reconstructed references, half-sample motion syntax,
+private complete-picture staging and final output publication. The chapter now has
+107 pages and 110 observations/quizzes. A 54-case public checker independently
+decodes every macroblock, repeats the search and checks selected levels and accurate
+reconstruction, accepting equivalent entropy codes, skip choices and transforms.
+
+Two actual MIPS encoders independently decode all eight Python-generated pictures.
+The reference/alternative produce 2212/5101 bytes and execute 93429640/95888083 guest
+instructions. Maximum local-versus-independent-decoder difference is two sample
+values for each. One initial reference fresh CLI run takes about 6.7 seconds,
+including JVM, assembly, simulation and real file I/O. The eight-picture default
+is retained; these are whole-process observations, not isolated core throughput.
+All 328 public tooling tests pass. Instructor implementations, late-child probes
+and complete real-file driver evidence remain private.
+
+Student clip-driver construction, file-failure grading, chapter archives and
+actual IDE figures remain unfinished. No MARS or authoring-plugin source changes
+or graphical IDE launches occur in this increment. The separate authoring plugin
+continues to declare its MARS dependency. Independent accessibility review and
+later substantive editing remain open.
