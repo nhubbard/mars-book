@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–25 and 33–35 have reviewed figure sets.
-Chapters 26–32 retain 28 planned figures across 7 sets. The manuscript has
-1,794 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–26 and 33–35 have reviewed figure sets.
+Chapters 27–32 retain 24 planned figures across 6 sets. The manuscript has
+1,797 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2214,3 +2214,14 @@ Fresh grading against a frozen public revision passes 9,896 positive cases acros
 All four final color and grayscale proofs, original image pixels, coordinate frames, embedded fonts and tagged descriptions pass. Proof numbering 25.2–25.5 accounts for the existing native padding diagram. The 72-page chapter matches its placement in the 1,794-page manuscript apart from the expected binding offset; all eight figure placements are reviewed. Export parity permits only the literal capture-asset path relocation. The native bootstrap refuses edited TeX.
 
 Complete reviewed sets cover chapters 1–25 and 33–35. Twenty-eight planned figures remain across chapters 26–32. Independent accessibility review and the separate substantive editing goal remain open.
+
+
+## ChaCha20 figures and fresh package verification
+
+Four native figures use seventeen unchanged light-mode IDE captures and twenty-one explanations. The scalar examples distinguish register completion from publication and a double-round from its subsequent loop decrement. The vector example explains rightmost lane zero and separately retained original rows. The 65-byte XOR example shows the second counter's single output byte and untouched destination suffix. The pre-existing lane diagram remains Figure 26.3.
+
+Independent bit-permutation arithmetic matches RFC 8439 quarter-round, block and full cipher vectors. Six host-model tests and twelve assembled fault controls pass. All 8564 public data bytes and their complete access histories are checked at entry, checkpoint, return, caller publication and exit; the vector stop checks all 32 lanes in eight registers. Fresh full grading passes 5,748 positive executions across 165 runs with 36 intermediate programs, 54 observation recipes, 40 exported guided checks and 42 quiz keys. The starter and 35 mutants produce 972 expected failures across 36 rejection runs. A frozen public worktree and exclusive reports retain the exact graded student bytes.
+
+Native color/grayscale review caught an overlapping screenshot header. The layout check now reconstructs full cropped-image bounds rather than checking only the boxed values; it rejects the original layout and accepts the corrected one. The vector annotations were shortened without reducing vector image or type size. Exact image pixels, frame coordinates, embedded fonts and semantic descriptions pass. The native bootstrap refuses edited TeX. The 61-page chapter and 1,797-page manuscript retain separate integration receipts. Exact distribution comparison permits only explicit figure replacements, literal asset-path relocation, capture artifacts and factual status changes. Independent accessibility review remains open; later substantive editing is a separate goal.
+
+Complete reviewed figure sets now cover chapters 1–26 and 33–35. Twenty-four planned figures remain across chapters 27–32.

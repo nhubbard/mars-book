@@ -73,7 +73,9 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(40, sum(step['completion']['type'] == 'cli-grade' for step in data['steps']))
         native = course.ROOT / 'includes/chapters/026-chacha20'
         for path in native.glob('*.tex'):
-            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+            expected = path.read_text().replace('book/captures/026-chacha20/',
+                                                'packages/026-chacha20/captures/').encode()
+            self.assertEqual(expected, (root / 'native' / path.name).read_bytes())
         names = re.findall(r'\\input\{includes/chapters/026-chacha20/([^}]+)\}', (native / 'chapter.tex').read_text())
         reading = json.loads((root / 'reading.json').read_text())['segments']
         actual = [row['step'] if row['kind'] == 'step' else row['figure'] if row['kind'] == 'figure' else Path(row['typesetting']['nativeLatex']).stem for row in reading]
