@@ -569,3 +569,25 @@ and display-toggle observations are rejected by retained tests. Four native plat
 retain original pixels, source labels, numeric/coordinate equivalents and twelve
 explanations; complete color/grayscale proofs and frame/heading placement are checked.
 Independent accessibility review remains open.
+
+### Packet parser: logical input windows and output preservation
+
+The accepted chapter 13 batch contains twelve actual native panels for three figures.
+Each combines hexadecimal arguments/results, signed-decimal results, mapped input and
+output-record bytes at parse_ready. Default source is unchanged; variants change only
+available 12 to 11 or trailer 26 to 27. No instruction bodies change.
+
+An independent model checks wire fields and checksum residues. The oracle checks all
+324 data bytes before execution, after parser return and after exit. Reads stay within
+the logical input prefix or the caller's available word. The exact store history is
+four record words on success and empty on failure, followed only by caller result
+stores. The doubleword store is represented by two four-byte notifications; complete
+bytes are also checked. Silent mapped overreads and restored failed writes are rejected.
+
+The authoring source/build identity is unchanged from the 67-test native display-base
+batch. Exact hashes bind reuse of its tests/API reports, while the accepted graphical
+run has its own real clean/cleanSandbox/runIde log and verification. Rejected preparation
+attempts remain private and are not accepted screenshots. Three native editable plates
+have fifteen explanations, complete descriptions, paired native bases and explicit
+address/byte interpretations. Color/grayscale proofs, fonts, unchanged pixels and all
+annotation frames are checked. Independent accessibility review remains open.

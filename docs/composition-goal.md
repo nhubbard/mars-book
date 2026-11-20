@@ -2007,3 +2007,42 @@ overlap. Original chapter prose and human passages were not regenerated.
 The integrated manuscript has 1,753 pages. Reviewed figure sets now cover chapters 1–12 and 33–35. Chapters 13–32 retain 79 planned
 figures across 20 sets. Independent accessibility review remains open. Substantive editing
 is the separate later goal; the full initial composition/capture goal remains active.
+
+## Reviewed binary packet-parser figures
+
+Chapter 13 contains three reviewed native LaTeX IDE figures with fifteen numbered
+explanations from twelve actual light-mode panels. The 31-page chapter retains its
+input-window diagram as figure 13.1; actual figures 13.2–13.4 show default success,
+an incomplete prefix and checksum failure. Native hexadecimal registers and signed-decimal
+results accompany mapped input and record bytes. Legends identify the exact record
+range and distinguish neighboring padding/guards from fields.
+
+Independent wire decoding checks big-endian fields and the modulo-256 checksum.
+The default returns twelve bytes, input plus eight and record `[1,4660,3,254]`.
+An eleven-byte prefix excludes the mapped checksum byte and returns -1; trailer
+`1b` instead of `1a` returns -6. Both failure cases have null payload pointers and
+no record stores. All 324 data bytes are checked before execution, at return and
+after exit, with exact logical read bounds and ordered writes. Retained tests reject
+a mapped trailer overread and temporary failed stores restored before return.
+
+Complete grading records 32,168 positive cases and 2,004 expected rejected cases
+across the starter and fourteen faulty variants. Fifteen intermediate programs and
+24 quiz keys pass. Both implementations, wide-address calls and an equivalent version
+using signed payload loads pass. Native completed-instruction/read counts remain
+separate from memory notifications: the caller's doubleword store produces two
+four-byte notifications, while its complete eight-byte value is checked independently.
+
+The separate authoring plugin is unchanged. Exact source inventory, build/wrapper bytes
+and installed JAR bind reuse of its 67 passing Jupiter tests and compatible API evidence.
+The accepted graphical batch independently ran `clean cleanSandbox runIde` and passed
+all native checks. Rejected preparation attempts and the first print-scaling proofs
+remain private. No MARS source changed; unrelated edits retain their recorded hashes.
+
+Original pixels remain unchanged inside the PDF. Native descriptions, numeric legends,
+font embedding, exact annotation coordinates and color/grayscale proofs are checked.
+Register crops normalize scale and exclude neighboring-row fragments. The original
+chapter prose and human passages were not regenerated; existing figure labels remain.
+
+The integrated manuscript has 1,756 pages. Reviewed figure sets now cover chapters 1–13 and 33–35. Chapters 14–32 retain 76 planned
+figures across 19 sets. Independent accessibility review remains open. Substantive editing
+is the separate later goal; the full initial composition/capture goal remains active.

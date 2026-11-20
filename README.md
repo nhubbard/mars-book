@@ -833,3 +833,18 @@ The separate authoring plugin passes 67 Jupiter tests and pinned compatibility c
 Original images, numeric receipts and editable native annotations accompany the student
 materials; instructor keys and checks remain private. Independent accessibility review
 and later substantive editing remain open.
+
+
+Chapter 13 now has three reviewed native LaTeX figures from twelve actual light-mode
+panels, with fifteen numbered explanations. Its 31 pages retain the input-window diagram
+and connect native signed statuses/full pointers, mapped bytes, wire field order and
+output-record layout. The short-prefix figure shows why a visible mapped checksum byte
+is still unavailable to the parser. The checksum failure explains zero record stores,
+which is stronger than preserving the final bytes.
+
+Complete grading records 32,168 positive cases and 2,004 expected rejected cases across
+the starter and fourteen faulty variants, plus fifteen intermediate programs and 24 quiz
+keys. Both implementations, full-width pointers and an equivalent signed-payload-load
+variation pass. Independent capture checks cover all 324 data bytes at three boundaries,
+logical read windows and exact stores. The unchanged separate authoring driver retains
+its exact 67-test/API binding. Independent accessibility review and later editing remain open.
