@@ -1,9 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–23 and 33–35 have reviewed figure sets.
-Three additional CRC figures are reviewed; its fourth figure remains planned.
-Chapters 24–32 retain 33 planned figures across 9 sets. The manuscript has
-1,790 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–24 and 33–35 have reviewed figure sets.
+Chapters 25–32 retain 32 planned figures across 8 sets. The manuscript has
+1,791 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2197,3 +2196,11 @@ Fresh grading passes 7,855 successful cases across 131 runs, 24 intermediate pro
 The separate authoring plugin and MARS are unchanged. Exact source/build/class identities bind retained 68-test Jupiter and complete paired API evidence. The native table and streaming prose were edited directly after the guarded bootstrap; final color and grayscale proofs pass. A public, generic I/O customization proposal remains unapplied pending the user's scope decision, keeping all capture/trainer implementation outside MARS. Human passages and remaining chapter prose are preserved.
 
 Complete reviewed sets still cover chapters 1–23 and 33–35. Three CRC figures are additionally reviewed. Thirty-three planned figures remain across chapters 24–32, including the one CRC comparison. Independent accessibility review and the later separate editing goal remain open.
+
+## Completed CRC figure set
+
+The fourth CRC figure now compares missing-path status one with read-error status two after four consumed bytes. Six actual native light-theme views are verified through the separate authoring plugin and the actual clean cleanSandbox runIde tasks. Exact file operations prove guest close before the screenshot; a separate receipt proves later lifetime disposal. Four assembly mutation tests and four forged-receipt tests protect that distinction. The authoring plugin passes 78 Jupiter tests and complete paired public API verification. The approved MARS change is only the general public I/O hook; its full 895-test check and required coverage gates pass. No authoring or trainer code enters MARS.
+
+All four native plates are reviewed in color and grayscale. Nineteen original screenshots supply twenty-two native explanations. The 50-page CRC chapter has matching body glyphs and positions in the 1,791-page manuscript, apart from its expected binding offset. All eight chapter/manuscript figure placements are reviewed. Final exports preserve the previously graded assembly, checkers, steps and quizzes; only figure placeholders, capture metadata and one exact publication-status passage change.
+
+Complete reviewed sets cover chapters 1–24 and 33–35. Thirty-two planned figures remain across chapters 25–32. Independent accessibility review and the separate substantive editing goal remain open.

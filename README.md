@@ -129,7 +129,7 @@ and PNG chunk reuse. Its prototype checks use explicit in-memory files, short re
 and read failures. Its cumulative lesson has 34 steps, 24 edits, seven supplied
 excerpts, 34 quizzes, 68 hints and 52 exact recipes. It is included in the
 main manuscript as chapter 24, with public guided/final checks and separate archives.
-Actual IDE figures remain pending.
+All four planned IDE figures now have reviewed native annotations.
 
 The [SHA-256 chapter](drafts/sha256.tex) includes 47 steps, 38 cumulative code edits,
 six supplied entry/exit pairs, 47 quizzes, 94 hints and 58 exact recipes. Its student
@@ -869,4 +869,4 @@ Chapter 22 now has four annotated light-mode IDE figures for scalar completion, 
 
 Chapter 23 now has four annotated light-mode IDE figures explaining item-atomic capacity exhaustion, private scan versus commitment, malformed encoding versus reconstructed range, and all six published dataset sizes. Twenty-one unchanged captures support twenty-six native explanations. Fresh full grading passes 40,703 successful cases, fifty intermediate programs, 84 published observations in two contexts and sixty quiz keys; 22 rejection runs produce 11,236 expected failures. The standalone chapter has 74 pages. Independent accessibility review and later substantive editing remain open.
 
-Chapter 24 now has three reviewed native IDE figures explaining a changed input bit, complete 256-entry table initialization and raw state between real three-byte file reads. Eighteen native captures are verified; fourteen originals appear in sixteen numbered details. Fresh grading passes 7,855 successful cases, 24 intermediate programs, 52 observations in two contexts and 34 quiz keys. Twenty-six rejection runs yield 784 expected failures, and both implementations pass eight ordinary-host-file runs. The 49-page chapter remains partly illustrated: its injected read-failure comparison is still planned. Independent accessibility review and later substantive editing remain open.
+Chapter 24 now has four reviewed native IDE figures explaining a changed input bit, complete 256-entry table initialization, raw state between real three-byte file reads, and missing-path versus later read-failure cleanup. Twenty-four raw views are verified across two batches; nineteen originals appear in twenty-two numbered details. The 50-page chapter retains 7,855 successful grading cases, 24 intermediate programs, 52 observations in two contexts and 34 quiz keys. Twenty-six rejection runs yield 784 expected failures, and both implementations pass eight ordinary-host-file runs. The failure comparison uses explicit in-memory I/O fixtures in the separate authoring plugin, with exact guest operation history and separate post-execution disposal receipts. Independent accessibility review and later substantive editing remain open.
