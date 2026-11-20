@@ -13,7 +13,7 @@ def load(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 ATTACH=load('test_pack_attach',D/'attach.py');PREP=load('test_pack_prep',D/'prepare.py');FIX=load('test_pack_fixture',D/'fixtures.py')
 def source():
- return '.data\nimage_path: .asciiz "image.png"\n    .space 118\nimage_path_end:\nvector_mode: .word 1\nfile_capacity: .dword 1048576\ncollector_capacity: .dword 46\n.text\n'+(ROOT/'drafts/png-row-construction/wrapper.asm').read_text()+'png_unfilter:\n    nop\npng_unfilter_msa:\n    nop\nstudent_extra:\n    daddiu $t0, $t0, 23\n'
+ return '.eqv FRAME_STRIDE 512\n.data\nimage_path: .asciiz "image.png"\n    .space 118\nimage_path_end:\nvector_mode: .word 1\nfile_capacity: .dword 1048576\ncollector_capacity: .dword 46\n.text\n'+(ROOT/'drafts/png-row-construction/wrapper.asm').read_text()+'png_unfilter:\n    nop\npng_unfilter_msa:\n    nop\nstudent_extra:\n    daddiu $t0, $t0, 23\n'
 class PackingConstructionTests(unittest.TestCase):
  def test_attachment_preserves_all_student_functions(self):
   old=source();text=ATTACH.attach(old);self.assertIn(old[old.index('png_unfilter:\n'):],text);self.assertEqual(1,text.count('png_decode_msa:'));self.assertEqual(1,text.count('rgb_shuffle:'));self.assertIn('jal png_blit_msa',text);self.assertIn('# BEGIN publish_results',text)
@@ -22,10 +22,20 @@ class PackingConstructionTests(unittest.TestCase):
    with self.subTest(old=old[-40:]),self.assertRaises(ValueError):ATTACH.attach(old)
   with self.assertRaises(ValueError):ATTACH.attach(ATTACH.attach(source()))
  def test_observation_controls_keep_every_instruction(self):
-  src=ATTACH.attach(source());code=src.split('\n.text\n')[1];recipes=json.loads((D/'inputs.json').read_text())['recipes'];self.assertEqual(27,len(recipes))
+  src=ATTACH.attach(source());code=src.split('\n.text\n')[1];recipes=json.loads((D/'inputs.json').read_text())['recipes'];self.assertEqual(28,len(recipes))
   for r in recipes:
    text=PREP.prepare(src,r);self.assertEqual(code,text.split('\n.text\n')[1]);self.assertIn('.byte '+','.join(str(v)for v in r['path'].encode()+b'\0'),text);self.assertIn(r['checkpoint']+':',text)
   with self.assertRaises(ValueError):PREP.prepare(source(),recipes[0])
+ def test_compact_stride_changes_only_the_provided_constant(self):
+  src=ATTACH.attach(source());recipes=json.loads((D/'inputs.json').read_text())['recipes']
+  recipe=next(r for r in recipes if r['id']=='s100-display')
+  base=PREP.prepare(src,dict(recipe,**{'frameStride':'512'}));compact=PREP.prepare(src,recipe)
+  self.assertEqual(base.replace('.eqv FRAME_STRIDE 512','.eqv FRAME_STRIDE 2'),compact)
+  self.assertEqual(src.split('\n.text\n')[1],compact.split('\n.text\n')[1])
+  for stride in ('0','513','01','-1',2):
+   with self.subTest(stride=stride),self.assertRaises(ValueError):PREP.prepare(src,dict(recipe,frameStride=stride))
+  for broken in (src.replace('.eqv FRAME_STRIDE 512',''),src.replace('.eqv FRAME_STRIDE 512','.eqv FRAME_STRIDE 512\n.eqv FRAME_STRIDE 512')):
+   with self.assertRaises(ValueError):PREP.prepare(broken,recipe)
  def test_fixtures_have_exact_rgb_geometry_and_valid_wrappers(self):
   for name in FIX.NAMES:
    m=FIX.material(name);self.assertEqual(3*m['width']*m['height'],len(m['rgb']));self.assertEqual((1+3*m['width'])*m['height'],len(m['filtered']));data=m['png'];at=8;joined=b'';kinds=[]

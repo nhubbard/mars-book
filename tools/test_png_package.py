@@ -50,7 +50,7 @@ class PngPackageTests(unittest.TestCase):
             'png-container-fields':('s27-1','collect_publish_ready'),
             'png-row-reconstruction':('s83-1','row_up_tail_ready'),
             'png-vector-packing':('s97-1','pack_vector_advanced'),
-            'png-final-publication':('s100-1','publication_results_ready')}
+            'png-final-publication':('s100-display','publication_results_ready')}
   self.assertEqual(expected,{p['id']:(p['recipe'],p['checkpoint'])for p in plans})
   for plan in plans:
    recipe=recipes[plan['recipe']]

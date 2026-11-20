@@ -46,7 +46,7 @@ def build():
   ('png-container-fields','s27','s27-1','collect_publish_ready','Inspect accepted dimensions and joined/inflated counts before decompression.',['editor','registers','memory']),
   ('png-row-reconstruction','s83','s83-1','row_up_tail_ready','Compare reconstructed row bytes and the retained filter selectors.',['editor','registers','memory']),
   ('png-vector-packing','s97','s97-1','pack_vector_advanced','Inspect sixteen packed pixels and the scalar remainder.',['editor','registers','memory']),
-  ('png-final-publication','s100','s100-1','publication_results_ready','Show final width, height and active bytes beside the displayed image.',['editor','registers','bitmap'])]:
+  ('png-final-publication','s100','s100-display','publication_results_ready','Show final width, height and active bytes beside the displayed image.',['editor','registers','bitmap'])]:
   # A normal IDE launch follows the supplied caller, not a direct-grading sentinel.
   selected=[r for r in inputs if r['id']==recipe]
   assert len(selected)==1 and recipe in next(s for s in steps if s['id']==step)['recipes']

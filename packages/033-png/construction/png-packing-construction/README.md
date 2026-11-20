@@ -38,7 +38,16 @@ alignment, byte orders and addresses above 4 GiB. Checkpoints illustrate particu
 scratch registers; free-writing acceptance uses the public callable contracts and
 observable accesses, permitting equivalent solutions.
 
-Twenty-seven public recipes accompany seventeen quizzes and thirty-four progressive
+Twenty-eight public recipes accompany seventeen quizzes and thirty-four progressive
 hints. Answers, completed algorithms and private checks remain in the instructor
 repository. Final chapter feedback, student/instructor distributions and actual
 annotated light-theme IDE captures remain pending even after functional completion.
+
+The additional `s100-display` recipe selects `FRAME_STRIDE=2` in the provided
+caller. It changes only that constant and the existing numeric/path controls,
+retaining the entire instruction section. The input is still the worked 2-by-5
+PNG. With a two-column, eight-row Bitmap Display (64-by-256 display units,
+32-by-32 pixels), the five image rows are followed by three unused black rows.
+The default constant remains 512, and `s100-1` does not change it. This display
+layout is part of the public arbitrary-stride contract; it is not a capture hook
+in MARS. The authoring plugin records the actual framebuffer base separately.

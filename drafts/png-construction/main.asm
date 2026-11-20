@@ -1,5 +1,6 @@
 # Open with MARS Run or Debug after creating image.png beside this project.
 # mars:tool bitmap width=1024 height=1024 unitWidth=2 unitHeight=2 base=heap
+.eqv FRAME_STRIDE 512
 .eqv FRAME_BYTES 1048576
 .eqv FILE_BYTES 1048576
 .eqv COMPRESSED_BYTES 1048576
@@ -50,7 +51,7 @@ main:
     sd $s2, 16($t0)
     sd $s3, 24($t0)
     dla $t0, png_context
-    li $t1, 512
+    li $t1, FRAME_STRIDE
     sd $t1, 0($t0)
     dli $t1, FRAME_BYTES
     sd $t1, 8($t0)
