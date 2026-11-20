@@ -544,3 +544,28 @@ The PDF gate rejects heading/panel intersections; retained rejected proofs test 
 Color and grayscale reviews remain distinct from independent accessibility review.
 The exact installed driver passed 63 Jupiter tests and the pinned compatibility check;
 MARS contains no authoring classes and its unrelated edits are unchanged.
+
+### Fixed-point ball: published motion and native register bases
+
+The chapter 12 batch contains eight actual panels: raw-state memory and a complete
+bitmap for each of floor, nearest and tick-five reflection, plus hexadecimal and
+signed-decimal overflow registers. Native `$s5 == 0` or `$s5 == 5` conditions select
+the exact complete publication before its supplied marker executes. Independent
+folded-coordinate and quantization models agree with both full histories, all frame
+words and exact ordered stores. The overflow path has no animation-data accesses.
+
+An optional `valueBase` selects a dedicated register view through the existing native
+Hexadecimal MARS Values toggle. The separate authoring plugin inspects supported
+materialized DefaultActionGroup children and uses public ToggleAction state APIs.
+It neither expands dynamic action groups nor calls override-only action methods.
+After a format change it waits for rebuilt native views and matching displayed rows.
+The native toggle is observed before/after capture and recorded in the receipt.
+MARS implementation classes and simulator-state mutation are unnecessary.
+
+The exact installed driver is bound to 67 passing Jupiter tests and compatible pinned
+API verification. All three bitmap receipts check every logical cell against exact
+native tooltip, paint and photograph values. Altered white-cell photos, tick conditions
+and display-toggle observations are rejected by retained tests. Four native plates
+retain original pixels, source labels, numeric/coordinate equivalents and twelve
+explanations; complete color/grayscale proofs and frame/heading placement are checked.
+Independent accessibility review remains open.

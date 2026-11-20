@@ -347,3 +347,10 @@ rendered register rows still have to match. The native toggle state is checked a
 before and after the photograph and recorded alongside the requested base. Missing
 or ambiguous matching toggles cannot pass. No MARS setting service or implementation
 class is imported, and no simulator register, memory or execution state is edited.
+
+The chapter 12 graphical trial now verifies eight native panels, including both
+hexadecimal and signed-decimal overflow views at the same fixture/checkpoint.
+The exact installed JAR is bound to all 67 passing Jupiter tests and compatible
+pinned dependency-resolved API evidence. Four reviewed native LaTeX figures retain
+the original photographs, numeric receipts and twelve editable explanations.
+Independent accessibility review and interactive lesson progression remain open.

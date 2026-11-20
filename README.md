@@ -817,3 +817,19 @@ starter and eleven faulty variants; thirteen intermediate programs and 28 quiz k
 The separate authoring plugin's native cache observer passes 63 Jupiter tests and the
 pinned IntelliJ compatibility check. Independent accessibility review and later substantive
 editing remain open.
+
+
+Chapter 12 now contains four reviewed native LaTeX figures from eight actual light-mode
+panels, with twelve numbered explanations. They compare floor/nearest display choices
+for unchanged raw state, preserve the overshoot in the first vertical reflection, and
+show the overflow results in both native hexadecimal and signed-decimal register views.
+The chapter is 42 pages and retains its reflection and quantization diagrams.
+
+Independent host/core checks agree on both nine-publication histories, every frame word
+and all 639 stores per run. Complete grading passes 42,218 valid-program cases, rejects
+812 cases across the starter and eighteen faulty variants, checks sixteen intermediate
+programs and thirty quiz keys, and confirms the expected native ADD overflow exception.
+The separate authoring plugin passes 67 Jupiter tests and pinned compatibility checks.
+Original images, numeric receipts and editable native annotations accompany the student
+materials; instructor keys and checks remain private. Independent accessibility review
+and later substantive editing remain open.

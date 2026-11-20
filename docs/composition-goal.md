@@ -1970,3 +1970,40 @@ human passages were not regenerated.
 The integrated manuscript has 1,750 pages. Reviewed figure sets now cover chapters 1–11 and 33–35. Chapters 12–32 retain 83 planned
 figures across 21 sets. Independent accessibility review remains open. Substantive editing
 is the separate later goal; the full initial composition/capture goal remains active.
+
+## Reviewed fixed-point ball figures
+
+Chapter 12 now contains four reviewed native LaTeX IDE figures with twelve numbered
+explanations from eight actual light-mode panels. The 42-page chapter retains its
+reflection and quantization diagrams as figures 12.1 and 12.2. Actual IDE figures
+12.3–12.6 connect published raw words, fixed-point scale, quantized cells and the
+separate overflow experiment. The latter uses both native hexadecimal and signed-decimal
+register views, with the native display-toggle state checked before/after photography.
+
+Independent unfolded-coordinate reflection and quantization models agree with both
+complete nine-publication histories. Every raw field/register, framebuffer word and
+ordered 639-store sequence is checked, along with immutable seeds, options, spare
+frame and guards. Floor and nearest keep identical raw motion while choosing IDs
+9 and 17 initially. The first vertical reflection publishes raw `(1280,1536,192,-320)`
+at tick five, selecting `(5,6)`, ID 53. Overshoot is preserved. The overflow path
+never accesses animation data; a separate trapping ADD experiment raises the expected
+arithmetic-overflow exception.
+
+Complete grading records 42,218 valid-program passes and 812 expected rejected cases
+across the starter and eighteen faulty variants. Sixteen intermediate programs and
+thirty quiz keys pass. Final distribution checks preserve the exact graded inputs
+when adding illustration exports; instructor keys and private checks remain separate.
+The authoring-only display selector uses supported materialized DefaultActionGroup
+children and ToggleAction state APIs. All 67 Jupiter tests and pinned dependency-resolved
+compatibility checks pass. The actual batch used `clean cleanSandbox runIde`; MARS
+source and its unrelated edits are unchanged.
+
+Native captions, coordinate labels, semantic descriptions and editable frames are checked
+against original receipts. All original screenshot pixels remain unchanged inside the
+PDF. Every logical bitmap cell matches its expected tooltip, native paint and photograph
+sample exactly. Color and grayscale proofs are reviewed; headings and panels do not
+overlap. Original chapter prose and human passages were not regenerated.
+
+The integrated manuscript has 1,753 pages. Reviewed figure sets now cover chapters 1–12 and 33–35. Chapters 13–32 retain 79 planned
+figures across 20 sets. Independent accessibility review remains open. Substantive editing
+is the separate later goal; the full initial composition/capture goal remains active.
