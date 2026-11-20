@@ -1,0 +1,26 @@
+\section{Step 59 Exercise boundaries and equivalent schedules}\label{h263-quant-s09}
+Run the public feedback against your working source:
+\begin{verbatim}
+python3 construction/h263-quantization-construction/grade.py \
+    my-quantizer.asm --cli /path/to/mars-cli.jar \
+    --report quantizer-results.json
+\end{verbatim}
+The public cases test three quantizer parameters, both block types, modes and
+byte orders, several input patterns, invalid fields, domain failures and state
+preservation. Input begins at an address aligned for a halfword but not a vector,
+so a direct vector load from the caller needs its own alignment reasoning.
+Staging levels privately avoids that input alignment issue in the taught path.
+
+Try another iteration order or private frame. Results and access boundaries
+must stay the same. A different schedule is acceptable; the final exercise
+contract does not require the reference's labels or scratch registers.
+
+\paragraph{Observe} Successful feedback checks all 128 output halfwords. It
+also verifies that a late invalid coefficient leaves the complete result unchanged.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does exact kernel output agreement establish?
+\begin{itemize}
+\item[A.] The whole stream is already conforming H.263.
+\item[B.] Every complete encoder must choose these same forward levels.
+\item[C.] The tested kernel follows this exercise's quantization policy.
+\end{itemize}

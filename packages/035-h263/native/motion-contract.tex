@@ -1,0 +1,67 @@
+\section{Pass a search request without hiding its state}
+Implement \texttt{h263\_search16}. Its first argument, \texttt{\$a0}, points to
+an eight-byte-aligned request containing eight native-endian, unsigned 64-bit
+fields. The second, \texttt{\$a1}, points to an eight-byte-aligned, writable
+24-byte result area. Native endian means the simulator's selected target byte
+order; these in-memory records are not H.263 file syntax.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Byte offset} & \textbf{Field} & \textbf{Meaning or range}\\
+0 & Current pointer & Top-left sample of the current block\\
+8 & Reference pointer & Top-left sample of the reference plane\\
+16 & Current stride & 16 through 4096 bytes\\
+24 & Reference stride & 176 through 4096 bytes\\
+32 & $x$ & Current picture coordinate, 0 through 160\\
+40 & $y$ & Current picture coordinate, 0 through 128\\
+48 & Radius & 0, 1 or 2 full pixels\\
+56 & Comparison mode & 0 scalar; 1 MSA
+\end{tabular}
+\end{center}
+The caller supplies mapped records, mapped current samples and all 176 active
+samples in every row of the reference plane. The result area must not overlap
+the request or either input. The two read-only inputs may overlap each other.
+They may have different strides, even if their starting pointers are equal.
+
+Validate record alignment and non-wrapping record extents before reading the
+request. Validate all fields, the current minimal extent $15s_C+16$ and the
+reference minimal extent $143s_R+176$ before reading any pixels. The larger
+reference extent describes the plane supplied by this interface; it does not
+authorize reading its padding. An exclusive end that wraps is invalid. Stride,
+coordinate, radius and mode checks must examine the whole 64-bit field, so a
+large value cannot pass because its low word resembles a small valid value.
+
+On success, return \texttt{\$v0}=0 and the number of unique admitted candidates
+in \texttt{\$v1}. Write signed 64-bit $d_x$ at result offset zero, signed
+64-bit $d_y$ at offset eight, and unsigned 64-bit SAD at offset sixteen.
+On invalid arguments, return one and zero without reading pixels or changing
+any result byte. Request reads needed for validation are allowed; reading a
+pixel speculatively before validation is not. Mapped-memory preconditions are
+supplied by the caller, rather than discovered by probing arbitrary addresses.
+
+Preserve saved general registers, the stack pointer, the request and both
+inputs. Scratch registers and vector registers may change. A nested SAD call
+can overwrite the return-address register and its argument registers. Store
+long-lived search state in saved registers or a valid stack frame, and restore
+the caller's state before returning. The public harness provides 16\,384 bytes
+of private stack; it does not prescribe your frame size or local labels.
+
+The ordinary Run/Debug caller is
+\path{construction/h263-motion-construction/main.asm}. Carry your completed SAD entries
+into this new working source; retain one ordinary main entry. The supplied search
+and SAD bodies return development status four until replaced. The caller installs
+its two pointer fields at runtime, then calls the search. Its named data fields
+retain the returned status and candidate count for inspection.
+
+Prepare a worked copy from your current source, preserving its instructions:
+\begin{verbatim}
+python3 construction/h263-motion-construction/prepare.py \
+    --source my-search.asm --mode 1 \
+    --output worked-search.asm
+\end{verbatim}
+Mode zero chooses scalar comparisons. The completed worked caller prints
+\texttt{-2 -2 2976} and exits successfully. Before completion, its development
+message and failing exit status are expected. At the breakpoint
+\texttt{motion\_caller\_return}, before the first store sequence executes, the
+result record is already complete and the returned registers are zero and 25.
+The caller has not yet copied those registers to its named status/count fields.

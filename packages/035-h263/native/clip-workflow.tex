@@ -1,0 +1,60 @@
+\section{Prepare and run your completed composition}
+The working file is \path{construction/h263-clip-construction/main.asm}. Complete the
+clip entry and its helpers, then carry forward your complete picture group:
+\begin{verbatim}
+python3 construction/h263-clip-construction/compose.py \
+    --source my-clip.asm --picture my-picture.asm \
+    --output joined-clip.asm
+python3 construction/h263-clip-construction/grade.py \
+    joined-clip.asm --java /path/to/java \
+    --cli /path/to/mars-cli.jar --report clip-feedback.json
+python3 construction/h263-clip-construction/run.py \
+    joined-clip.asm --java /path/to/java \
+    --cli /path/to/mars-cli.jar --output-dir run-eight
+\end{verbatim}
+Composition and reports require new paths. The run directory must not already
+exist. It receives generated \path{clip.yuv}, metadata, your prepared
+\path{main.asm}, real \path{encoded.263}, \path{reconstructed.yuv}, execution log
+and verification report. No host encoder supplies your output. FFmpeg is used
+only as an independent decoder/checker after the MIPS program finishes.
+
+For an IDE observation without automatic CLI execution, run
+\path{prepare.py} instead, with the same source and new output directory.
+Open its prepared working file and use the ordinary MARS Run/Debug actions.
+At \texttt{clip\_caller\_return}, before its first store, the returned status,
+accepted count and progress record are complete. Named caller status/count fields
+still have their old values. Step across those stores, then inspect the progress
+pointer and its reconstructed samples. A successful default caller prints eight.
+Run the stream checker separately on the files it produced.
+
+The guarded reference driver executes 95\,583\,213 guest instructions for eight
+pictures, compared with 98\,072\,067 for the alternate driver and its accurate
+alternate dependencies. Their stream sizes remain 2212 and 5101 bytes, and both
+independently decode all eight pictures with maximum local/decoder difference two.
+These counts include actual reads, guarded write copies and cleanup. They differ
+from the preliminary picture experiment's simpler proof driver; they measure
+this completed student-facing composition. Wall times remain whole-process
+observations with uncontrolled host load, not core-only throughput.
+
+\section{Vary a tested dimension and explain the result}
+Keep the standard profile fixed while exploring one variable at a time:
+\begin{enumerate}
+\item Compare scalar and MSA arithmetic with the same clip, quantizer and entropy
+policy. Verify both complete streams and compare guest work before interpreting
+any wall-time difference.
+\item Vary the quantizer while retaining each implementation's exact local
+reconstruction loop. Record stream size and per-picture/plane error. A quality
+failure is meaningful even when syntax still decodes.
+\item Compare compact and escape-only coefficient representations on the same
+selected levels. Separate the savings in emitted bits from lookup and bit-packing
+work; neither a shorter stream nor fewer instructions proves the other.
+\item Modify the Python generator to add a documented texture or motion pattern,
+retaining QCIF planar input, clock limits and bounded clip duration. Recheck
+quality, inverse accuracy prerequisites and total execution time before assigning
+the new fixture to a class.
+\end{enumerate}
+For each experiment retain exact source, input and tool hashes, the full stream
+check and the named measurement boundary. Do not change the expected result to
+match an unverified implementation. Guided construction and free-writing solutions
+share the stated interfaces and semantic acceptance; private source layout and
+exact legal entropy bytes are not the definition of correctness.

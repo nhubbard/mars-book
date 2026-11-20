@@ -1,0 +1,22 @@
+\section{Step 5 Compare a whole row with MSA}\label{h263-sad-s05}
+Start the MSA entry with the same admission checks and row count. Zero its wide
+lane accumulator once for the whole block. For each row, load exactly sixteen
+bytes from each active start and form unsigned byte difference magnitudes with
+\texttt{asub\_u.b}. Keep the input samples and the byte differences conceptually
+separate: their bit widths agree, but their meanings do not.
+
+There is no scalar remainder within a sixteen-sample row. Do not load a second
+vector to make an unaligned address convenient. A byte-form MSA load is permitted
+at the supplied unaligned byte pointer; its entire sixteen-byte access must still
+fit the active row.
+
+\paragraph{Observe} The first worked row's magnitudes consist of eight 144s and
+eight 132s by increasing sample address. All-zero against all-255 input produces
+sixteen magnitudes of 255.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is wrong with using \texttt{asub\_s.b} here?
+\begin{itemize}
+\item[A.] It always changes the memory byte order.
+\item[B.] It interprets samples above 127 as negative values.
+\item[C.] It returns a floating-point result.
+\end{itemize}

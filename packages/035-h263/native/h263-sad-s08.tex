@@ -1,0 +1,21 @@
+\section{Step 8 Reduce the accumulated lanes}\label{h263-sad-s08}
+Reduce the eight halfwords into four words, then into two doublewords. Extract
+both doublewords into general registers and add them. The final sum includes all
+sixteen rows and all sixteen columns. Returning one doubleword alone would retain
+only part of the block, even if that partial sum looks reasonable.
+
+The two wide partials are bounded by 32\,640 each. A doubleword extraction cannot
+turn either into a negative value. Keep the return count in a full-width general
+register so its representation is unambiguous at the callable boundary. Compare
+both target byte orders: a consistent permutation of byte positions can leave a
+sum unchanged, while an incorrect extraction or missed half still fails.
+
+\paragraph{Observe} Maximum-difference inputs return 65\,280. The worked windows
+return 7872, and identical windows return zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does the final scalar addition combine?
+\begin{itemize}
+\item[A.] Two partial sums covering the complete block together.
+\item[B.] The addresses of the two source buffers.
+\item[C.] Two competing motion vectors.
+\end{itemize}

@@ -1,0 +1,61 @@
+\section{Locate a sample before comparing blocks}
+The generator writes one byte per sample in three consecutive planes: Y, Cb and
+Cr. Y describes luma; Cb and Cr describe color differences. A raw frame has no
+signature, width field or row delimiters. Its interpretation comes from the
+accompanying description, not from inspecting the first few bytes.
+
+The luma plane is 176 by 144 samples. Each chroma plane is 88 by 72 samples, giving
+4:2:0 sampling. Store rows from top to bottom and samples from left to right, without
+padding. These dimensions determine the offsets in Table~\ref{tab:h263-planes}.
+The ordering is planar: the first Cb byte follows the last Y byte. It is not an
+interleaved sequence of Y, Cb and Cr triples.
+
+\begin{table}[htbp]
+\centering
+\caption{One raw QCIF frame. Offsets and strides are bytes.}\label{tab:h263-planes}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrrr}
+\toprule
+Plane & Offset & Width & Height & Stride\\
+\midrule
+Y & 0 & 176 & 144 & 176\\
+Cb & 25\,344 & 88 & 72 & 88\\
+Cr & 31\,680 & 88 & 72 & 88\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+One frame occupies $176\times144+2(88\times72)=38\,016$ bytes. For frame index
+$f$, its first byte is at file offset $38\,016f$. Within that frame, a Y sample
+at column $x$ and row $y$ is at offset $176y+x$. For the corresponding chroma
+region, use coordinates $\lfloor x/2\rfloor$ and $\lfloor y/2\rfloor$, the chroma
+stride 88 and the appropriate plane offset. Each byte remains an independent
+sample in either target byte order. Byte order matters later when you store
+halfword coefficients or emit multi-bit fields.
+
+For example, the Y sample at $(16,32)$ in picture one is at file offset
+$38\,016+32\times176+16=43\,664$. Its position within the frame is 5648. Do not
+add a chroma offset to that luma address. The first SAD exercise compares the
+16-by-16 Y windows at this position in pictures one and zero. Moving between
+window rows still advances 176 bytes, although each comparison consumes only
+sixteen samples.
+
+Generate the inputs with
+\path{construction/h263-fixtures/fixture.py}, using a fresh output directory. For example, from the book source root:
+\begin{verbatim}
+python3 construction/h263-fixtures/fixture.py \
+    --output-dir work/qcif
+\end{verbatim}
+The output
+contains \path{clip.yuv} and \path{clip.json}. The description records offsets,
+strides, exact timing and hashes for the file and every frame. The sample pattern
+has a stationary tiled background and a moving 32-by-32 square. Its rectangle
+edges are aligned to chroma sample boundaries. Picture six repeats picture five,
+so the sequence includes a genuine unchanged-picture case.
+
+The generated values stay within the selected nominal ranges: 16--235 for Y and
+16--240 for Cb and Cr, with neutral chroma 128. These are input-generation choices.
+The SAD entry still accepts every unsigned byte value from zero through 255; its
+arithmetic must remain correct outside the pattern's narrower range. QCIF uses a
+12:11 sample aspect ratio for display. The raw storage dimensions remain 176 by
+144; display scaling must not change the samples supplied to the encoder.

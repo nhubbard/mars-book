@@ -1,0 +1,109 @@
+\section{Expose forward and inverse transforms through one entry}
+Implement \texttt{h263\_transform8}. Pass an eight-byte-aligned 48-byte request
+in \texttt{\$a0} and a sixteen-byte-aligned 128-byte output record in
+\texttt{\$a1}. Request fields are unsigned native-endian doublewords:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Byte offset} & \textbf{Field} & \textbf{Meaning or range}\\
+0 & Input pointer & Two-byte-aligned signed halfwords\\
+8 & Input stride & Even byte count, 16 through 4096\\
+16 & Direction & 0 forward; 1 inverse\\
+24 & Mode & 0 scalar; 1 MSA arithmetic\\
+32, 40 & Reserved fields & Both zero
+\end{tabular}
+\end{center}
+The caller supplies eight active halfwords in each of eight mapped rows. The
+minimal extent is $7s+16$ bytes. Input need not be sixteen-byte aligned. Output
+is disjoint from the request and input. Supply a sixteen-byte-aligned stack and
+valid private space, preserving saved general registers and the incoming stack
+pointer when returning.
+
+Validate record alignment and non-wrapping extents, input alignment, stride,
+direction, mode, reserved fields and the non-wrapping input extent before sample
+reads. Invalid metadata returns status one and count zero without reading input
+samples or changing output. Then validate all sixty-four signed sample values.
+Forward input must lie in $[-256,255]$; inverse input in $[-2048,2047]$.
+An out-of-domain sample returns status two and count zero, retaining output.
+Sample reads needed for this second validation phase are permitted.
+
+On success, return \texttt{\$v0}=0 and \texttt{\$v1}=64. Write sixty-four signed
+native-endian halfwords in eight tight rows of sixteen bytes. Forward order is
+$F[v,u]$; inverse order is $f[y,x]$. Preserve all input and request bytes. Stage
+results privately until validation and computation complete, so the caller's
+record is unchanged after either kind of rejection.
+
+A completed forward result must be within one coefficient unit of the independent
+floating-point reference, with the stated clipping. The inverse also requires
+one-unit sample accuracy in finite checks, exact zeros for a zero block, and the
+separate Annex A accuracy gate described below. Different accurate transforms
+need not produce identical samples at every rounding boundary. The public cases
+do not substitute for the statistical inverse accuracy test.
+
+Use \path{construction/h263-transform-construction/main.asm}. The provided matrices are
+input data for the taught algorithm; a valid alternative may use its own tables
+or factorization. Prepare a new working observation without replacing instructions:
+\begin{verbatim}
+python3 construction/h263-transform-construction/prepare.py \
+    --source my-transform.asm --mode 1 --direction 0 \
+    --pattern flat --output forward-flat.asm
+\end{verbatim}
+Direction zero selects forward, one inverse. The flat forward input contains 128
+at every sample and its first output is DC 1024. The flat inverse input contains
+DC 1024 and no AC terms; its first output is 128. Both completed callers return
+count 64 and exit zero. The unfinished entry reports development status four.
+
+The worked forward input is an actual eight-by-eight luma residual from the
+previous generated pictures, using current origin $(16,32)$ and reference
+$(14,30)$. Its first output coefficient is approximately $-192$.
+Worked inverse input combines DC 1024 with several small AC terms; its first
+spatial output is approximately 137. A valid implementation may differ by one
+at the allowed rounding boundary. The helper installs inputs and typed controls,
+retains the complete instruction section and refuses an existing output file.
+It does not compute a target function body.
+
+At \texttt{transform\_caller\_return}, before the first caller instruction,
+the output is complete and return registers contain zero and 64. The named
+status and count fields have not yet received their copies. Inspect the whole
+block as signed halfwords; the ordinary printed first value is only a convenient
+observation, not the complete accuracy check.
+
+\section{Check inverse accuracy independently}
+An inverse can agree closely with its own forward transform while both use the
+wrong normalization. Use an independent reference to test the inverse alone.
+H.263 Annex A specifies three 10\,000-block input constructions, their sign-reversed
+counterparts, a reference forward/inverse calculation and several error measures.
+The reference construction uses at least 64-bit floating-point arithmetic; it
+also includes source ranges wider than this exercise's normal forward input.
+The student forward entry is not used to manufacture the inverse's expected data.
+
+For each output position, measure peak error, mean squared error and signed mean
+error across a cohort. Also measure overall mean squared and signed mean errors.
+A zero coefficient block must reconstruct exactly zero. The prescribed generator's
+32-bit state and its reset/continuation convention must be recorded with the data.
+The retained check uses initial seed one, continuous state across the three base
+ranges and the same saved samples negated for each counterpart.
+
+The actual target runs covered both implementations, both modes and both byte
+orders: 480\,000 inverse blocks and 48 additional zero calls. Every cohort passed.
+The table gives the worst observed values across those runs for each precision:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrr}
+\textbf{Measure} & \textbf{Limit} & \textbf{Scale $2^{16}$} & \textbf{Scale $2^{15}$}\\
+Peak magnitude & 1 & 1 & 1\\
+MSE per position & 0.06 & 0.0028 & 0.0037\\
+Overall MSE & 0.02 & 0.0016640625 & 0.0026171875\\
+Mean magnitude per position & 0.015 & 0.0012 & 0.0015\\
+Overall mean magnitude & 0.0015 & 0.000025 & 0.0000390625
+\end{tabular}
+\end{center}
+Here mean magnitude means the absolute value of the signed mean error, not the
+mean absolute error. Keep those statistics distinct. The latter would be a
+different measure and cannot replace the prescribed bias checks.
+
+These are inverse-transform accuracy results. They do not establish quantization,
+bitstream syntax, final video quality or complete encoder speed. The instructor
+accuracy runner retains input hashes, target sources, byte order, mode and all
+cohort metrics. The public finite feedback remains useful while constructing the
+function, and the full gate is required before using the inverse in reconstruction.

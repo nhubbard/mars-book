@@ -1,0 +1,19 @@
+\section{Step 28 Accumulate a score without erasing signs}\label{h263-prediction-s08}
+Form a separate magnitude vector from the signed residual vector. Accumulate
+those magnitudes in halfwords across the eight rows, then widen and reduce to
+the scalar return value. Each lane accumulates at most $8\times255=2040$;
+the full block reaches 16\,320. Keep the stored signed residuals unchanged.
+
+Check $P+e=C$ independently at every output position. This catches reversed
+subtraction even when the absolute sum still agrees. It also catches a misplaced
+halfword or an incorrect native-endian store that a total alone could hide.
+
+\paragraph{Observe} Positive and negative maximum-difference blocks have the
+same SAD, but their residual arrays have opposite signs.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why does a correct SAD not prove a correct residual array?
+\begin{itemize}
+\item[A.] SAD specifies the required motion-vector syntax.
+\item[B.] Taking magnitudes removes the direction of every difference.
+\item[C.] Signed halfwords cannot be read in both byte orders.
+\end{itemize}

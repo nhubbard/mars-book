@@ -1,0 +1,23 @@
+\section{Step 26 Gather eight samples without overreading}\label{h263-prediction-s06}
+Implement an MSA row with eight halfword lanes. Load active bytes with unsigned
+scalar loads and insert their values into the corresponding lanes. Repeat for
+each neighbour vector that the chosen phases require. Every lane must be written
+before an operation reads that vector; inactive neighbour vectors need not be
+initialized because their branches must not consume them.
+
+This arrangement uses vector arithmetic without pretending that an eight-sample
+row occupies sixteen input bytes. A different implementation may coalesce tight
+rows or stage a bounded tile. Verify the complete access footprint, including
+its final row. Safe access is part of the result contract, not an optional cost
+of making the arithmetic faster.
+
+\paragraph{Observe} For a padded row, the implementation reads only eight
+current samples and the selected eight or nine reference columns. A tight-row
+coalesced load is valid only when all of its bytes are active samples.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why can a sixteen-byte load be wrong for this current row?
+\begin{itemize}
+\item[A.] MSA cannot calculate unsigned values.
+\item[B.] All byte pointers must be sixteen-byte aligned.
+\item[C.] The load can include padding or samples outside the admitted footprint.
+\end{itemize}

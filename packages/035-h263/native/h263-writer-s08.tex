@@ -1,0 +1,19 @@
+\section{Step 78 Combine the next byte fragment}\label{h263-writer-s08}
+Replace the single-bit loop with a byte-fragment loop while retaining the same
+contract. Take at most the remaining positions in the destination byte. Extract
+that many next high source bits, position them with a mask, and perform one
+read-modify-write. Advance the local cursor by the fragment width.
+
+For an unaligned 32-bit field, five fragments suffice. Preserve the old suffix
+of the final byte. A whole-word load extending beyond the touched byte range
+would violate this exercise's access contract even if it looked faster.
+
+\paragraph{Observe} Both schedules produce identical stream bytes. The wider
+fragment reduces repeated byte accesses without changing field order.
+\Needspace{8\baselineskip}
+\paragraph{Check} How many bytes can an unaligned 32-bit append touch?
+\begin{itemize}
+\item[A.] Always exactly four.
+\item[B.] At most five.
+\item[C.] Thirty-two native doublewords.
+\end{itemize}

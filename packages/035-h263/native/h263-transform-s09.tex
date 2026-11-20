@@ -1,0 +1,29 @@
+\section{Step 49 Compare with an independent finite reference}\label{h263-transform-s09}
+Run public feedback against your current source:
+\begin{verbatim}
+python3 construction/h263-transform-construction/grade.py \
+    my-transform.asm --cli /path/to/mars-cli.jar \
+    --report transform-results.json
+\end{verbatim}
+The 96 cases check both directions, modes and byte orders, mixed and extreme
+patterns, exact zeros, padded/wide strides and rejected metadata or sample domains.
+The reference computes floating-point matrix products independently of the
+provided fixed-point tables. It checks every output, source access, saved state
+and guard, accepting an accurate alternative precision or private frame.
+Reports require a new path.
+
+Try both flat and worked ordinary callers. A single printed first coefficient
+is useful for debugging but does not test sixty-four positions. At the return
+breakpoint, inspect the whole signed halfword block and the count before the
+caller replaces return registers with syscall arguments.
+
+\paragraph{Observe} Finite checks accept both supplied accurate precisions.
+They reject wrong signed products, narrow second products, incorrect scaling,
+wrong intermediate placement and omitted sample-domain checks.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why use an independent reference instead of only a round trip?
+\begin{itemize}
+\item[A.] A round trip guarantees every coefficient convention is correct.
+\item[B.] The reference must copy the student's intermediate registers.
+\item[C.] A forward and inverse pair can share the same normalization error.
+\end{itemize}

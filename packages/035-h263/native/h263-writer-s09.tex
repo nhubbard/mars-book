@@ -1,0 +1,35 @@
+\section{Step 79 Check boundaries before comparing work}\label{h263-writer-s09}
+Run public feedback on your current source:
+\begin{verbatim}
+python3 construction/h263-bit-writer-construction/grade.py \
+    my-writer.asm --cli /path/to/mars-cli.jar \
+    --report writer-results.json
+\end{verbatim}
+The checker constructs an independent bit sequence and compares the affected
+bytes. It checks both simulator byte orders, every starting bit offset, representative
+widths including zero and 32, exact fits, insufficient capacity, wide malformed
+controls, guarded context and the maximum-capacity endpoint. Read/write traces
+reject access outside bytes touched by the field.
+
+Measure entry-to-return instruction work for the same value, width and initial
+cursor in both implementations. Include validation, loop branches, byte accesses
+and the committed count update. This local work comparison is not a whole-encoder
+wall-time measurement or a grading threshold.
+
+For the named all-one 32-bit field starting at bit three, the tested bit-at-a-time
+entry executes 656 instructions and the byte-fragment entry executes 189, including
+admission and the final counter store. Both simulator byte orders give the same
+counts. This saves 467 instructions for that append; it does not measure an entire
+coefficient event, file write or encoder launch. Different valid implementations
+need not reproduce these counts.
+
+\paragraph{Observe} A bit-at-a-time implementation remains valid after the
+byte-fragment implementation is introduced. Correct output does not require a
+particular instruction count or private label.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must match when comparing the two schedules?
+\begin{itemize}
+\item[A.] Only their scratch-register names.
+\item[B.] The host computer's display theme.
+\item[C.] Field value, width, initial bit cursor and complete measured boundary.
+\end{itemize}

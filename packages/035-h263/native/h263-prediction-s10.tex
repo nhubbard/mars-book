@@ -1,0 +1,29 @@
+\section{Step 30 Check every sample before measuring work}\label{h263-prediction-s10}
+Run completed feedback against your current source:
+\begin{verbatim}
+python3 construction/h263-prediction-construction/grade.py \
+    my-prediction.asm --cli /path/to/mars-cli.jar \
+    --report prediction-results.json
+\end{verbatim}
+The 96 public cases cover all phases, both modes and byte orders, positive and
+negative extremes, equal samples, mixed patterns, a diagonal rounding counterexample
+and invalid requests. The checker calculates every expected sample independently,
+checks signed residuals and the exact reconstruction identity, and verifies input,
+request, output-guard and saved-state contracts. Reports require new paths.
+
+Measure from entry through return, including admission, gathers, arithmetic,
+stores and reduction. Counting vector arithmetic alone omits the cost of placing
+samples into lanes. Preserve the same footprint and exact rounding when optimizing.
+The returned score and instruction count describe this block, not a completed
+encoder's quality or speed.
+
+\paragraph{Observe} A safe alternative can use different rounding instructions
+or a larger private frame. It must retain the same sample results and bounded
+accesses. Later transform work will consume the signed halfwords produced here.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must a faster gather preserve?
+\begin{itemize}
+\item[A.] The reference solution's exact scratch-register names.
+\item[B.] Every required sample and the admitted access footprint.
+\item[C.] Only the final absolute sum, regardless of signed residuals.
+\end{itemize}

@@ -1,0 +1,62 @@
+\section{Expose one complete picture as a callable boundary}
+Implement \texttt{h263\_encode\_picture}, receiving an eight-byte-aligned 96-byte
+request in \texttt{\$a0}. Every field is an unsigned native-endian doubleword:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0 & Current picture & Tight 38\,016-byte Y/Cb/Cr input\\
+8 & Reference picture & Same layout for P; zero for I\\
+16 & New reconstruction & Writable 38\,016-byte output\\
+24 & Writer context & Earlier aligned 24-byte record\\
+32 & Workspace & Sixteen-byte-aligned private arena\\
+40 & Workspace capacity & At least 169\,088 bytes\\
+48 & Picture selector & Zero I; one P\\
+56 & Temporal reference & Zero through 255\\
+64 & Quantizer & One through 31\\
+72 & Arithmetic mode & Zero scalar; one MSA\\
+80 & GFID & Zero through three\\
+88 & Reserved & Zero
+\end{tabular}
+\end{center}
+The writer context's used count must initially be zero. Capacity is at most one
+MiB, and its buffer may start at any byte address. It need not hold the entire
+worst case; insufficient capacity is a normal rejected result. Both output
+areas, request, context, workspace and private stack are disjoint from one
+another and from input extents. Read-only current and reference may overlap.
+All required mapped extents must be non-wrapping. Only the first 169\,088 workspace
+bytes belong to this entry even when more are supplied.
+
+Validate request/context/workspace alignments, complete extents and full-width
+controls before any picture or workspace access. I-picture reference is zero;
+an I-call must not access a reference picture. Preserve request, input pictures,
+context pointer/capacity, saved GPRs and incoming aligned stack pointer. Vector
+registers are caller-saved. The public harness provides 65\,536 private stack bytes.
+
+Return status zero and encoded byte count on success. Publish exactly those
+stream bytes, the complete reconstruction and used count equal to eight times
+the byte count. Return one/zero for invalid metadata, two/zero when the complete
+chosen picture exceeds caller capacity, and three/zero after a failed child.
+Every failure retains both caller output areas and the context. Workspace and
+private stack may change after valid admission. The starter's development status
+four is not a completed result.
+
+Use \path{construction/h263-picture-construction/main.asm}. The ordinary caller owns
+constant 128-valued planes and a fresh writer context. Complete the picture entry,
+then carry in your completed search, six-block predictor, block encoder and
+macroblock syntax groups, including their children and data. The composition
+helper accepts the earlier working formats and refuses an existing output:
+\begin{verbatim}
+python3 construction/h263-picture-construction/compose.py \
+    --source my-picture.asm --search my-search.asm \
+    --prediction my-macroblock-prediction.asm \
+    --block my-block.asm --syntax my-macroblock-syntax.asm \
+    --output joined-picture.asm
+\end{verbatim}
+The preparation helper changes only the supplied constant planes and controls.
+For a P-picture observation use \texttt{--picture 1 --tr 6 --gfid 1}. At
+\texttt{picture\_caller\_return}, before its first instruction, stream, reconstruction,
+context and returned registers are complete, while named status/byte fields still
+hold their previous values. The default I-picture occupies 696 bytes with the
+selected compact tables; an all-zero-residual P-picture can occupy 48 bytes with
+skips. Equivalent coded macroblocks can increase the latter length.

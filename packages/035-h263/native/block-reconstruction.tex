@@ -1,0 +1,156 @@
+\section{Join the coefficient path to the pixel path}
+A local reconstruction must follow the representation the decoder receives.
+The forward transform's coefficients describe the source block, but quantization
+has already replaced them with selected levels. Reconstruct those levels before
+calling the inverse. For an INTER block, add its inverse residual to the same
+prediction used to form the original residual. For an INTRA block, the inverse
+already describes absolute samples; its prediction is zero.
+
+Write the current sample as $S_i$, prediction as $P_i$ and inverse output as $D_i$.
+The transform input is $S_i-P_i$ for INTER and $S_i$ for INTRA. The reconstructed
+pixel is
+\[
+ X_i=\begin{cases}
+ \operatorname{clip}_{[0,255]}(D_i)&\text{INTRA},\\
+ \operatorname{clip}_{[0,255]}(P_i+D_i)&\text{INTER}.
+ \end{cases}
+\]
+The addition precedes final sample clipping. If prediction is 250 and the signed
+inverse residual is 20, their sum is 270 and the stored sample is 255. A byte
+addition would wrap to fourteen. If prediction is five and the residual is
+minus ten, clipping the residual to zero first would incorrectly keep five;
+the complete signed sum is minus five and the correct stored sample is zero.
+
+The inverse's signed output lies in $[-256,255]$, and prediction lies in
+$[0,255]$. Their sum therefore lies in $[-256,510]$, which fits a signed halfword.
+This bound permits ordinary halfword vector addition followed by signed minimum
+and maximum operations. It does not permit byte wrapping. Store pixels as bytes
+only after clipping the signed sum.
+
+\section{Follow a constant block through every representation}
+Use current samples 130, prediction samples 128 and $Q=8$. The constant residual
+is two. Its forward DC is sixteen and all AC terms are zero. The exercise's
+ordinary quantizer chooses level one, which reconstructs as coefficient 23.
+An accurate inverse produces three at each position, so the final block contains
+131. Local reconstruction has changed the source by one even though prediction,
+transform and arithmetic were implemented correctly.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\textbf{Boundary} & \textbf{First value} & \textbf{Representation}\\
+Current input & 130 & Unsigned sample byte\\
+Prediction & 128 & Unsigned sample byte\\
+Transform input & 2 & Signed residual halfword\\
+Forward DC & 16 & Transform coefficient\\
+Selected DC level & 1 & Ordinary INTER level\\
+Reconstructed DC & 23 & Inverse-transform coefficient\\
+Inverse residual & 3 & Signed spatial halfword\\
+Reconstructed sample & 131 & Clipped unsigned pixel
+\end{tabular}
+\end{center}
+This named trace is an observation of the tested transform implementations.
+Other accurate transforms need not produce identical results at every rounding
+boundary. Behavioral checks must allow their documented accuracy while ensuring
+that each implementation reconstructs its own selected levels consistently.
+
+For the next block, let current samples be 132 and use the preceding reconstruction
+131 as prediction. Residual one has DC eight, which falls into the dead zone at
+$Q=8$. All levels become zero, the inverse residual is zero, and the new
+reconstructed block remains 131. An encoder can retain a visible error while
+still keeping its local decoder synchronized.
+
+Predicting that second block from the old raw 130 gives a different path:
+residual two, DC sixteen, level one and inverse residual three. A local encoder
+that adds three to raw 130 obtains 133, while a decoder holding reconstructed
+131 adds three and obtains 134. The loss itself is expected; this disagreement
+between references is an implementation error.
+
+\section{Make a complete block result inspectable}
+Implement \texttt{h263\_encode\_block8}. Its name describes the transform and
+local reconstruction stage; it does not emit a bitstream. Pass an eight-byte-aligned
+64-byte request in \texttt{\$a0} and a sixteen-byte-aligned 448-byte result in
+\texttt{\$a1}. Request fields are unsigned native-endian doublewords:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0, 8 & Current pointer, stride & Eight active bytes per row\\
+16, 24 & Prediction pointer, stride & INTER only; both zero for INTRA\\
+32 & Quantizer parameter & 1 through 31\\
+40 & Block type & 0 INTER; 1 INTRA\\
+48 & Arithmetic mode & 0 scalar; 1 MSA\\
+56 & Reserved & Zero
+\end{tabular}
+\end{center}
+There are eight rows. Active strides range from eight through 4096 bytes,
+independently; pointers need no alignment beyond byte addressability. The two
+read-only inputs may alias. All mapped extents must be non-wrapping, and output
+is disjoint from inputs and request. INTRA prediction fields are both zero and
+no prediction samples are read. Supply a sixteen-byte-aligned stack with private
+space. Preserve saved general registers, the incoming stack pointer, input bytes
+and request bytes. Vector registers are caller-saved.
+
+Validate every record, extent, stride and full-width field before input samples.
+Invalid metadata returns status one and count zero without sample reads or result
+writes. A failed transform or quantizer child returns status two and count zero;
+input reads and private work already performed are permitted, but the entire
+caller result remains unchanged. Preserve the incoming return address across
+nested calls.
+
+Successful output contains four consecutive arrays:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrl}
+\textbf{Offset} & \textbf{Bytes} & \textbf{Meaning}\\
+0 & 128 & Selected levels, including separate INTRA DC code\\
+128 & 128 & Reconstructed coefficients from those levels\\
+256 & 128 & Signed inverse spatial output\\
+384 & 64 & Reconstructed pixel bytes
+\end{tabular}
+\end{center}
+Halfwords are native-endian and in natural row-major order. Return status zero
+and the nonzero ordinary-level count from quantization. INTRA DC is excluded
+from that count. Stage all arrays privately and publish them together only after
+every dependency succeeds. The arrays expose each boundary during construction;
+a later production path may consume staged coefficients and pixels without
+retaining this complete teaching record.
+
+\section{Retain accuracy without requiring private transform bits}
+Carry your completed transform tables and \texttt{h263\_transform8} and
+\texttt{h263\_quantize8} entries into
+\path{construction/h263-reconstruction-construction/main.asm}, replacing the dependency
+stubs. Retain their helpers and required data. Check the prior standalone contracts
+and the inverse accuracy gate before using those routines here.
+For the provided working formats, the composition helper carries your own entries
+and their data into a new file. Keep helpers after their entry labels. It preserves
+the block caller and entry before the dependency marker and refuses an existing
+output. Custom source layouts can be joined manually; the final interface does
+not require the helper.
+\begin{verbatim}
+python3 construction/h263-reconstruction-construction/compose.py \
+    --source my-block.asm --transform my-transform.asm \
+    --quantizer my-quantizer.asm --output joined-block.asm
+python3 construction/h263-reconstruction-construction/prepare.py \
+    --source joined-block.asm --current 130 --prediction 128 \
+    --quant 8 --intra 0 --mode 1 --output block-trace.asm
+\end{verbatim}
+Preparation changes the supplied constant samples and request controls, retaining
+all instructions. To observe INTRA reconstruction of 128, select current 128
+and INTRA one. Both tools require new output paths.
+
+The public block checker computes an independent floating forward reference.
+For each coefficient, it allows the selected level to come from a coefficient
+within the earlier one-unit accuracy allowance. It then checks reconstructed
+coefficients exactly against the actual returned levels. It calculates an
+independent inverse from that reconstructed block and permits one-unit spatial
+accuracy, while requiring final pixels to equal the clipped sum of the actual
+returned inverse and prediction. Thus alternative transform rounding does not
+become a false private-bit requirement, and a self-consistent but wrong scale
+cannot evade the independent transform checks.
+
+This integration check supplements the earlier function contracts and full
+inverse accuracy gate. It does not replace them or establish full-stream quality.
+The complete encoder will later need an independent decoder and inter-picture
+checks using reconstructed references. A single correct block is not proof that
+an entire reconstructed picture is committed at the right time.

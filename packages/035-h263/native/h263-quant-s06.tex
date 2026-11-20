@@ -1,0 +1,22 @@
+\section{Step 56 Establish lane widths before vectorizing}\label{h263-quant-s06}
+Keep level selection scalar initially. The scalar path already handles the
+single DC exception and the positive division. The mode-one path can then
+reconstruct eight ordinary levels at once in halfword lanes.
+
+For a legal ordinary magnitude at most 127, the largest un-clipped positive
+reconstruction is $31(2\cdot127+1)=7905$. It fits a signed halfword. Even a
+temporary DC code 255 processed by the same vector loop produces magnitude at
+most 15841, also within that width; its result must be replaced by the special
+DC reconstruction. These bounds justify halfword multiplication here. They would
+not justify halfword products in the earlier transform's second pass.
+
+\paragraph{Observe} Every intermediate magnitude in this vector reconstruction
+fits the chosen lane width before clipping. This is an arithmetic bound, not an
+assumption that the multiplication saturates.
+\Needspace{8\baselineskip}
+\paragraph{Check} What permits halfword multiplication in this stage?
+\begin{itemize}
+\item[A.] Every video operation uses bytes.
+\item[B.] MSA automatically widens every product.
+\item[C.] The legal input ranges bound the complete intermediate below 32768.
+\end{itemize}

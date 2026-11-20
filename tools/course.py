@@ -108,6 +108,11 @@ def validate(package_id):
         within(root, name)
     if data.get('gradingHarness'):
         within(root, data['gradingHarness'])
+    harnesses = data.get('checkHarnesses', {})
+    if not isinstance(harnesses, dict) or not set(harnesses).issubset(data['publicChecks']):
+        raise ValueError('Per-check harnesses must name declared public checks')
+    for harness in harnesses.values():
+        within(root, harness)
     seen = set()
     quiz_ids = set()
     if not data['steps']:
@@ -216,8 +221,9 @@ def grade(package_id, cli, source, java='java'):
     root, data = validate(package_id)
     for check in data['publicChecks']:
         command = [java, '-jar', str(cli.resolve()), 'grade', str(root / check), str(source.resolve())]
-        if data.get('gradingHarness'):
-            command.append(str(root / data['gradingHarness']))
+        harness = data.get('checkHarnesses', {}).get(check, data.get('gradingHarness'))
+        if harness:
+            command.append(str(root / harness))
         subprocess.run(command, check=True)
 
 

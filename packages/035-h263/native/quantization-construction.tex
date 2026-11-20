@@ -1,0 +1,218 @@
+\section{Step 51 Name the two output representations}\label{h263-quant-s01}
+Reserve separate 128-byte arrays for levels and reconstructed coefficients in a
+private frame. The public result will contain both, but no public stores should
+occur while metadata or sample-domain validation can still fail. Preserve the
+saved registers you use and restore the caller's stack on every return path.
+
+Keep the result pointer separate from the current input cursor. Both point at
+halfwords, which makes an accidental pointer substitution plausible. Name their
+roles in comments and inspect their addresses before debugging arithmetic.
+
+\paragraph{Observe} The result has 256 active bytes. Neither private array
+is a picture buffer, and neither stores final unsigned pixels.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which array is ready to feed the inverse transform?
+\begin{itemize}
+\item[A.] The reconstructed coefficient array.
+\item[B.] The array of transmitted levels without inverse quantization.
+\item[C.] The eight-bit DC code by itself.
+\end{itemize}
+
+\section{Step 52 Admit complete controls before samples}\label{h263-quant-s02}
+Load each request field as a doubleword. Check $1\leq Q\leq31$ and both binary
+selectors before using them. An unsigned comparison of $Q-1$ with 31 can perform
+the range check, including rejection of zero and large values whose low word
+looks valid. Check pointer alignment and non-wrapping extents before dereferencing
+samples. Mapped storage and disjointness are caller obligations.
+
+Only after admission should you read signed halfwords. Validate all values against
+$[-2048,2047]$. You may compute private levels as you validate, because an invalid
+late sample still leaves public output untouched. Do not publish those partial
+results.
+
+\paragraph{Observe} Quantizer zero is rejected before any division or sample
+read. A bad final coefficient returns status two with all 256 result bytes intact.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why retain the full quantizer field during admission?
+\begin{itemize}
+\item[A.] It contains a video frame rate.
+\item[B.] A large invalid value can have the same low word as eight.
+\item[C.] It permits division by zero.
+\end{itemize}
+
+\section{Step 53 Select ordinary levels from magnitudes}\label{h263-quant-s03}
+For an ordinary coefficient, form its nonnegative magnitude in a general register.
+The most negative legal value is $-2048$, so its magnitude is 2048 and fits easily
+in a word or doubleword. Divide this magnitude by the validated positive $2Q$,
+cap at 127, and restore the original sign. Keep a zero quotient as zero.
+
+Computing a magnitude first makes the dead zone symmetric. Arithmetic-shifting a
+negative coefficient is not an interchangeable replacement for division of its
+magnitude: a shift rounds negative values downward. The policy requires truncation
+of the nonnegative quotient before restoring the sign.
+
+\paragraph{Observe} At $Q=8$, coefficients 15 and $-15$ both become zero;
+16 becomes one and $-16$ becomes minus one.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is the level selected for $C=-15$ at $Q=8$?
+\begin{itemize}
+\item[A.] $-1$.
+\item[B.] 15.
+\item[C.] Zero.
+\end{itemize}
+
+\section{Step 54 Encode INTRA DC separately}\label{h263-quant-s04}
+When INTRA is selected and the coefficient index is zero, use the eight-unit DC
+policy instead. Add four, divide downward by eight, and clamp the selected $d$
+to 1 through 254. An arithmetic right shift by three gives the stated downward
+rounding for the signed numerator. Replace selected $d=128$ with code 255 in
+the level record. Keep the distinction between selected $d$ and stored code.
+
+Do not increment the ordinary nonzero count for this entry. Continue with the
+ordinary policy for indices 1 through 63. In INTER mode, index zero follows the
+ordinary policy and participates in the count.
+
+\paragraph{Observe} INTRA coefficient 1024 stores code 255. An INTRA zero
+block still stores DC code one, with ordinary nonzero count zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} What reconstructed coefficient does DC code 255 represent?
+\begin{itemize}
+\item[A.] 1024.
+\item[B.] 255.
+\item[C.] 2040.
+\end{itemize}
+
+\section{Step 55 Reconstruct scalar magnitudes and signs}\label{h263-quant-s05}
+Read each ordinary level from the private record. For zero, store zero directly.
+For a nonzero value, calculate $Q(2|L|+1)$, subtract one if $Q$ is even, then
+restore the level's sign. Clip the signed result to $[-2048,2047]$ and store it
+in the private reconstruction array.
+
+For INTRA DC, translate code 255 back to selected $d=128$, then multiply $d$ by
+eight. This result bypasses the ordinary formula. You may process a placeholder
+at index zero in a common loop if you replace it correctly before publication;
+the public record must contain the special result.
+
+\paragraph{Observe} At $Q=8$, levels one and minus one reconstruct 23 and
+minus 23. Level zero reconstructs zero, not seven.
+\Needspace{8\baselineskip}
+\paragraph{Check} When is the even-parameter subtraction applied?
+\begin{itemize}
+\item[A.] After adding a predicted pixel.
+\item[B.] To the positive nonzero magnitude before restoring the sign.
+\item[C.] To the final pointer.
+\end{itemize}
+
+\section{Step 56 Establish lane widths before vectorizing}\label{h263-quant-s06}
+Keep level selection scalar initially. The scalar path already handles the
+single DC exception and the positive division. The mode-one path can then
+reconstruct eight ordinary levels at once in halfword lanes.
+
+For a legal ordinary magnitude at most 127, the largest un-clipped positive
+reconstruction is $31(2\cdot127+1)=7905$. It fits a signed halfword. Even a
+temporary DC code 255 processed by the same vector loop produces magnitude at
+most 15841, also within that width; its result must be replaced by the special
+DC reconstruction. These bounds justify halfword multiplication here. They would
+not justify halfword products in the earlier transform's second pass.
+
+\paragraph{Observe} Every intermediate magnitude in this vector reconstruction
+fits the chosen lane width before clipping. This is an arithmetic bound, not an
+assumption that the multiplication saturates.
+\Needspace{8\baselineskip}
+\paragraph{Check} What permits halfword multiplication in this stage?
+\begin{itemize}
+\item[A.] Every video operation uses bytes.
+\item[B.] MSA automatically widens every product.
+\item[C.] The legal input ranges bound the complete intermediate below 32768.
+\end{itemize}
+
+\section{Step 57 Restore vector signs and exact zeros}\label{h263-quant-s07}
+Derive an all-zero or all-one halfword sign mask by arithmetic-shifting the signed
+level fifteen places. XOR with that mask and subtract the mask to obtain its
+magnitude. Apply the nonzero reconstruction arithmetic, then use the same XOR
+and subtraction to restore signs.
+
+Construct an equality mask for original zero levels and clear those lanes after
+the formula. Without that mask, every zero lane acquires $Q$ or $Q-1$. Clamp
+signed lanes to the coefficient limits. Load and store exactly the eight groups
+that cover each 128-byte private array; no tail or neighbour data is needed.
+
+\paragraph{Observe} Mixed positive, negative and zero lanes agree with the
+scalar reconstruction at every position, not just in their sum.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why retain the original zero-level mask?
+\begin{itemize}
+\item[A.] The nonzero formula would otherwise turn zero into a nonzero value.
+\item[B.] Zero levels use a different memory byte order.
+\item[C.] It replaces the input pointer check.
+\end{itemize}
+
+\section{Step 58 Publish both completed arrays}\label{h263-quant-s08}
+Replace the INTRA DC reconstruction after the common vector loop if necessary.
+Then copy both private arrays into the caller's result and return the ordinary
+nonzero count. The selected level at coefficient zero can change this count only
+in INTER mode.
+
+Use the supplied default through the ordinary caller. Stop at the return label
+before its first instruction and inspect the two arrays as signed halfwords.
+The DC code 255 is stored as a positive halfword value, so it remains legible
+alongside the signed ordinary levels. Byte packing belongs to the later bit writer.
+
+\paragraph{Observe} The default returns status zero, ordinary nonzero count
+seven, first stored code 255 and first reconstructed coefficient 1024.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which value is excluded from the INTRA nonzero count?
+\begin{itemize}
+\item[A.] Every negative AC level.
+\item[B.] The separate INTRA DC code.
+\item[C.] Every coefficient in a chroma block.
+\end{itemize}
+
+\section{Step 59 Exercise boundaries and equivalent schedules}\label{h263-quant-s09}
+Run the public feedback against your working source:
+\begin{verbatim}
+python3 construction/h263-quantization-construction/grade.py \
+    my-quantizer.asm --cli /path/to/mars-cli.jar \
+    --report quantizer-results.json
+\end{verbatim}
+The public cases test three quantizer parameters, both block types, modes and
+byte orders, several input patterns, invalid fields, domain failures and state
+preservation. Input begins at an address aligned for a halfword but not a vector,
+so a direct vector load from the caller needs its own alignment reasoning.
+Staging levels privately avoids that input alignment issue in the taught path.
+
+Try another iteration order or private frame. Results and access boundaries
+must stay the same. A different schedule is acceptable; the final exercise
+contract does not require the reference's labels or scratch registers.
+
+\paragraph{Observe} Successful feedback checks all 128 output halfwords. It
+also verifies that a late invalid coefficient leaves the complete result unchanged.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does exact kernel output agreement establish?
+\begin{itemize}
+\item[A.] The whole stream is already conforming H.263.
+\item[B.] Every complete encoder must choose these same forward levels.
+\item[C.] The tested kernel follows this exercise's quantization policy.
+\end{itemize}
+
+\section{Step 60 Feed reconstruction from reconstructed coefficients}\label{h263-quant-s10}
+The next connection is from the second output array to the inverse-transform
+entry. For INTER, add each signed inverse residual to its predicted sample in a
+wide signed value, then clip the sum to 0 through 255. For INTRA, clip the inverse
+output directly to the sample range. Keep these final pixel operations outside
+the quantizer: its reconstruction values are still transform coefficients.
+
+Retain both arrays until coefficient coding and local reconstruction have consumed
+them. Coding will read the selected levels; the local picture path will read
+the reconstructed coefficients. Later prediction must use that locally reconstructed
+picture, including the changes caused by quantization and final clipping.
+
+\paragraph{Observe} A coefficient of 16 at $Q=8$ becomes reconstructed
+coefficient 23. Feeding 16 to the inverse would bypass the very loss the decoder sees.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which coefficient block must the local inverse consume?
+\begin{itemize}
+\item[A.] The inverse-quantized block derived from the transmitted levels.
+\item[B.] The original forward block regardless of selected levels.
+\item[C.] The preceding raw picture's bytes reinterpreted as halfwords.
+\end{itemize}

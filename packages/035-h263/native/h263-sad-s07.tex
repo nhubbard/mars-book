@@ -1,0 +1,20 @@
+\section{Step 7 Advance rows without extending the reads}\label{h263-sad-s07}
+After each vector row, advance the two row-start addresses by their own strides
+and reduce the remaining-row count. Continue for sixteen rows. The loaded width
+is sixteen bytes, but the worked row advance is 176 bytes. Those values agree
+only for a tightly packed block copy, which this caller does not supply.
+
+Do not clear the accumulator inside the loop. Equal inputs then hide the error,
+because every row contributes zero. Use a maximum-difference block and the worked
+moving-square block to expose lost earlier contributions. Keep the final row's
+access bounded even if the next scratch pointer would never be dereferenced.
+
+\paragraph{Observe} Each input generates sixteen full-width sample loads. No
+load includes a seventeenth sample, a padding byte or the following row.
+\Needspace{8\baselineskip}
+\paragraph{Check} How many row-vector loads does this block need in total?
+\begin{itemize}
+\item[A.] Sixteen, shared between both inputs.
+\item[B.] Thirty-two, sixteen from each input.
+\item[C.] Two, one from each whole frame.
+\end{itemize}

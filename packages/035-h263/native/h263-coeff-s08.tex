@@ -1,0 +1,19 @@
+\section{Step 88 Emit into a private byte window}\label{h263-coeff-s08}
+Copy the touched destination bytes into private storage. Initialize a private
+writer context at the caller's bit offset modulo eight. Emit every planned field
+through your completed bit writer and check each child status. If a child fails,
+return status three without any caller output or counter store.
+
+After all children succeed, copy back only touched bytes, retaining their old
+prefix/suffix bits, then commit the caller's total bit count. Save and restore
+the return address across nested calls.
+
+\paragraph{Observe} A late child can fail after earlier private fields were written.
+The old public stream must still be intact.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why is restoring only the old public count insufficient?
+\begin{itemize}
+\item[A.] The count is a pixel pointer.
+\item[B.] Earlier public appends may already have replaced buffer bits.
+\item[C.] LAST fields are always native doublewords.
+\end{itemize}

@@ -1,0 +1,20 @@
+\section{Step 33 Validate every plane before starting Y}\label{h263-macroblock-s03}
+Check all six plane strides and non-wrapping extents. Select width 176 and height
+144 for Y, width 88 and height 72 for each chroma plane. Validate each current and
+reference stride independently. A shared numerical value in the worked caller
+is an example, not permission to ignore a field.
+
+Finish this preflight before calling the first block predictor. Otherwise an
+invalid reference Cr stride could be discovered only after Y has already been
+read and written. Status one requires no pixel reads, even when the invalid
+field occurs at the end of the request.
+
+\paragraph{Observe} Setting only the final reference Cr stride to zero returns
+one and zero, retaining the entire old output and leaving all image traces empty.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which extent belongs to an 88-by-72 chroma plane?
+\begin{itemize}
+\item[A.] $143s+176$, copied from Y.
+\item[B.] $72s+88$, with an extra row advance.
+\item[C.] $71s+88$, with 71 advances before the last active row.
+\end{itemize}

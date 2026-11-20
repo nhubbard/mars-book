@@ -1,0 +1,28 @@
+\section{Step 19 Run independent search feedback}\label{h263-motion-s09}
+Run the completed-entry checks against your working source:
+\begin{verbatim}
+python3 construction/h263-motion-construction/grade.py \
+    my-search.asm --cli /path/to/mars-cli.jar \
+    --report search-results.json
+\end{verbatim}
+The 56 public cases cover both comparison modes and both byte orders, all four
+movement quadrants, clipped corners, radius zero, maximal differences, two kinds
+of ties and rejected requests. The checker computes every candidate score from
+its own input bytes. It checks the selected result, candidate count, input and
+request preservation, permitted pixel accesses, saved registers and result guards.
+A new report path is required.
+
+Use failures to identify the boundary that differs. A correct SAD with the wrong
+sign can still locate the wrong reference block. A correct interior search can
+still overread a corner. An implementation may choose its own traversal and
+frame layout; it must satisfy these observable conditions.
+
+\paragraph{Observe} Development status four fails completed feedback. A reverse
+traversal with the correct explicit tie key can pass the same cases.
+\Needspace{8\baselineskip}
+\paragraph{Check} What makes a different traversal an equivalent solution?
+\begin{itemize}
+\item[A.] It uses the reference implementation's private labels.
+\item[B.] It has the same instruction count.
+\item[C.] It returns the specified result and preserves the same boundaries.
+\end{itemize}

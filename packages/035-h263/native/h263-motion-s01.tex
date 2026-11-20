@@ -1,0 +1,22 @@
+\section{Step 11 Preserve the search across a nested call}\label{h263-motion-s01}
+Begin with a frame sketch. Mark where you will retain the caller's return address,
+the request values, the result pointer, the candidate coordinates and the current
+best result. A candidate comparison reuses four argument registers, so the
+original request pointer cannot remain live only in \texttt{\$a0}. The SAD entry
+also has no obligation to preserve your scratch registers.
+
+Write the prologue and matching epilogue before the loops. Check their saved
+register addresses and keep the stack suitably aligned. Return through the saved
+caller continuation, rather than through the continuation written by the last
+nested call. Do not use an unallocated area below the stack pointer for locals.
+
+\paragraph{Observe} A valid radius-zero request makes one nested comparison.
+The function returns to its outer caller with the original saved registers and
+stack pointer, even though \texttt{\$ra} changed during the comparison.
+\Needspace{8\baselineskip}
+\paragraph{Check} Where can a candidate coordinate safely remain across SAD?
+\begin{itemize}
+\item[A.] In any scratch register, because the caller used it first.
+\item[B.] In a preserved register or an allocated stack local.
+\item[C.] Only in an input pixel byte.
+\end{itemize}

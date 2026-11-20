@@ -1,0 +1,21 @@
+\section{Step 60 Feed reconstruction from reconstructed coefficients}\label{h263-quant-s10}
+The next connection is from the second output array to the inverse-transform
+entry. For INTER, add each signed inverse residual to its predicted sample in a
+wide signed value, then clip the sum to 0 through 255. For INTRA, clip the inverse
+output directly to the sample range. Keep these final pixel operations outside
+the quantizer: its reconstruction values are still transform coefficients.
+
+Retain both arrays until coefficient coding and local reconstruction have consumed
+them. Coding will read the selected levels; the local picture path will read
+the reconstructed coefficients. Later prediction must use that locally reconstructed
+picture, including the changes caused by quantization and final clipping.
+
+\paragraph{Observe} A coefficient of 16 at $Q=8$ becomes reconstructed
+coefficient 23. Feeding 16 to the inverse would bypass the very loss the decoder sees.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which coefficient block must the local inverse consume?
+\begin{itemize}
+\item[A.] The inverse-quantized block derived from the transmitted levels.
+\item[B.] The original forward block regardless of selected levels.
+\item[C.] The preceding raw picture's bytes reinterpreted as halfwords.
+\end{itemize}

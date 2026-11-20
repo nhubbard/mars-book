@@ -154,7 +154,8 @@ class PackageTests(unittest.TestCase):
                 text = (root / step['content']).read_text()
                 native = Path(step['content']).suffix == '.tex'
                 prompt = step['quiz']['prompt']
-                self.assertIn(latex(prompt) if native else prompt, text)
+                native_quiz=step['quiz'].get('format')=='latex'
+                self.assertIn(prompt if native_quiz else latex(prompt) if native else prompt, text)
                 if native and r'\begin{enumerate}[label=\Alph*.]' in text:
                     quiz = text.split(r'\begin{enumerate}[label=\Alph*.]', 1)[1].split(r'\end{enumerate}', 1)[0]
                     items = [item.strip() for item in quiz.split(r'\item')[1:]]
@@ -164,7 +165,7 @@ class PackageTests(unittest.TestCase):
                 else:
                     for choice in step['quiz']['choices']:
                         if native:
-                            self.assertIn(r'\item['+choice['id'].upper()+'.] '+latex(choice['text']), text)
+                            self.assertIn(r'\item['+choice['id'].upper()+'.] '+(choice['text']if native_quiz else latex(choice['text'])), text)
                         else:
                             self.assertIn(f"**{choice['id'].upper()}** {choice['text']}", text)
 

@@ -1,0 +1,21 @@
+\section{Step 38 Handle a failed child without publishing}\label{h263-macroblock-s08}
+Inspect the child status before adding its score or proceeding to another block.
+If it is nonzero, return dependency status two and total zero. Restore saved state
+and leave the caller's output untouched. The child may have changed its private
+record before reporting failure; those bytes are not a complete macroblock result.
+
+A completed outer routine with the supplied unfinished child is a useful
+integration observation. It should report block prediction failure, rather than
+pretend the child's development value is a valid SAD. Restore the completed child
+before expecting the ordinary success checks to pass.
+
+\paragraph{Observe} A failure on a later child retains the old caller output,
+even after earlier private records were successfully produced. Argument rejection
+still uses status one and occurs before any child pixel work.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does dependency status two imply about earlier input reads?
+\begin{itemize}
+\item[A.] Earlier successful child calls may already have read their inputs.
+\item[B.] The function never read its request.
+\item[C.] The caller's first three output records must be overwritten.
+\end{itemize}

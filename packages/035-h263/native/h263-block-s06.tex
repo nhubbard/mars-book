@@ -1,0 +1,19 @@
+\section{Step 66 Add prediction before sample clipping}\label{h263-block-s06}
+For scalar reconstruction, load each inverse result as a signed halfword and its
+retained prediction as a nonnegative halfword. Add in a signed register, clamp
+the complete sum to zero through 255, then store a byte in the private pixel
+array. INTRA uses the retained zero prediction through the same arithmetic.
+
+Keep this final sample clipping separate from the inverse's signed nine-bit
+clipping and the coefficient's twelve-bit clipping. Each boundary represents a
+different quantity.
+
+\paragraph{Observe} A predicted five plus inverse residual minus ten stores zero.
+Clipping the residual to zero first would incorrectly store five.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which operation occurs first for an INTER pixel?
+\begin{itemize}
+\item[A.] Narrow the signed residual to an unsigned byte.
+\item[B.] Clip the residual alone to the final pixel range.
+\item[C.] Add signed residual to prediction in a sufficient width.
+\end{itemize}

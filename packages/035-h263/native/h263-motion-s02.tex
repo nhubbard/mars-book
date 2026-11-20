@@ -1,0 +1,20 @@
+\section{Step 12 Admit the complete request before pixels}\label{h263-motion-s02}
+Check the two record pointers, then load the eight request fields. Keep invalid
+status as the provisional return. Validate the fields and both image extents
+before entering a candidate loop. A request with a valid current window but an
+invalid reference stride must fail without reading either image.
+
+Use unsigned range checks for unsigned fields. Values such as
+$2^{32}+2$ are not radius two. Address additions must detect carry out of the
+64-bit address range; merely using a doubleword instruction does not detect it.
+Leave the output record unchanged on every rejection path.
+
+\paragraph{Observe} Radius three, reference stride 175 and an unaligned result
+pointer each return status one, candidate count zero and the original result bytes.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which read is permitted while rejecting a bad mode field?
+\begin{itemize}
+\item[A.] The mapped request field needed to inspect that mode.
+\item[B.] The first reference vector, to see whether the image looks usable.
+\item[C.] An arbitrary address beyond the reference plane.
+\end{itemize}

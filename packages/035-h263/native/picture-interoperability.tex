@@ -1,0 +1,39 @@
+\section{Check an actual MIPS-produced clip with another decoder}
+The first complete target experiment uses the generated eight-picture fixture,
+quantizer eight, full-pixel radius two and the reconstructed-reference loop.
+Its reference implementation produced 2212 bytes and executed 93\,429\,640 guest
+instructions, including the ordinary driver's real file operations. One fresh
+CLI invocation took about 6.7 seconds on the author's machine. That wall time
+includes JVM setup, assembly, simulation, file input/output and shutdown. It is
+not an isolated core instruction-rate measurement or an IntelliJ launch timing.
+
+A separate FFmpeg decoder recovers all eight QCIF pictures. A complete host
+syntax reader checks every picture/group header, actual motion, block payload
+and byte alignment. The local reconstruction and independent decoder differ by
+at most two sample values over this clip; independent inverse-transform rounding
+can produce small differences that propagate through predicted pictures. Exact
+pixel identity with one decoder implementation is therefore not the general
+grading rule.
+
+Use the stream checker on actual files produced by your completed clip driver:
+\begin{verbatim}
+python3 construction/h263-picture-construction/check_stream.py \
+    --stream run/encoded.263 --input run/clip.yuv \
+    --reconstruction run/reconstructed.yuv \
+    --frames 8 --tick-step 6 --report stream-results.json
+\end{verbatim}
+It requires a new report path and an installed FFmpeg. The check validates the
+chapter's explicit-row-GOB profile, picture count and temporal references, then
+uses an independent strict decoder. It compares decoded samples with both source
+and local reconstruction. The current clip gate requires at least 35 dB PSNR in
+each non-identical picture plane and at most sixteen sample values of local
+difference. These tolerances are acceptance limits, not an expected target error;
+the tested default is appreciably better. The standalone transform/quantizer and
+inverse accuracy gates remain required, so a loose clip-level drift limit does
+not replace mathematical accuracy checks.
+
+The measured eight-picture case completes in seconds, so it remains the default
+fixture. Retain the ten-second and thirty-picture-per-second input limits, but
+measure any longer or denser class assignment before adopting it. A small file
+with a valid first header is not sufficient evidence: inspect every picture,
+exercise real inter-picture motion and retain quality and work measurements.

@@ -1,0 +1,19 @@
+\section{Step 48 Clip the transform result, then publish}\label{h263-transform-s08}
+Clip forward coefficients to the exercise's twelve-bit range, or inverse output
+to its signed nine-bit range. Store the sixty-four signed halfwords privately,
+then copy the completed 128-byte output to the caller. Return successful count
+64 only after publication. Keep every caller byte unchanged on rejection.
+
+Do not clip inverse output to unsigned picture bytes here. INTER reconstruction
+still needs to add prediction to the signed inverse residual before final sample
+clipping. Quantization and reconstruction will make that next boundary explicit.
+
+\paragraph{Observe} Inverse clipping can return negative values down to $-256$.
+The flat inverse observation returns 128 at every position.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why must a negative inverse residual survive this function?
+\begin{itemize}
+\item[A.] It may need to reduce the later predicted sample.
+\item[B.] It is an output pointer.
+\item[C.] H.263 stores every reconstructed picture sample as a negative number.
+\end{itemize}

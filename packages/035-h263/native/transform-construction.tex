@@ -1,0 +1,217 @@
+\section{Step 41 Locate DC without centering INTRA samples}\label{h263-transform-s01}
+Begin with the flat forward observation. Predict the DC value from the basis
+normalization before writing a loop: each dimension contributes its constant
+basis factor, giving DC eight times the constant sample. A block filled with
+128 therefore has DC 1024. Its AC terms vanish because their signed basis values
+cancel over a constant row or column.
+
+Keep this distinct from an INTER residual that happens to be zero. The transform
+entry accepts signed sample values, and its caller decides whether they represent
+INTRA samples or prediction residuals. Do not insert an unrequested level shift
+inside the transform to make the two cases look alike.
+
+\paragraph{Observe} Flat forward output begins with 1024. Zero input has all
+sixty-four outputs exactly zero in either direction.
+\Needspace{8\baselineskip}
+\paragraph{Check} What should happen to a constant INTRA block of value 128 here?
+\begin{itemize}
+\item[A.] Subtract 128 and force all coefficients to zero.
+\item[B.] Produce DC 1024 with zero AC coefficients.
+\item[C.] Treat each input byte as an already coded coefficient.
+\end{itemize}
+
+\section{Step 42 Admit metadata, then signed samples}\label{h263-transform-s02}
+Check the record pointers and typed request before reading sample memory.
+The input pointer needs halfword alignment; the input stride must be even and
+at least sixteen bytes. The output pointer needs sixteen-byte alignment.
+Validate the full-width direction and mode fields and both reserved fields.
+
+Then read the sixty-four signed halfwords and validate their direction-specific
+ranges. You can copy admitted values into a tight private block during this scan.
+A late out-of-range value must not leave a partial result in caller memory.
+Return sample-domain status two separately from metadata status one.
+
+\paragraph{Observe} Stride seventeen is rejected before samples. A forward
+sample of 256 is rejected after permitted sample reads, retaining the output.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which load preserves a negative halfword residual's meaning?
+\begin{itemize}
+\item[A.] A signed halfword load.
+\item[B.] An unsigned byte load of only its first byte.
+\item[C.] A pointer load used as a coefficient.
+\end{itemize}
+
+\section{Step 43 Choose the basis for the direction}\label{h263-transform-s03}
+Select the forward basis or its transpose once from the validated direction.
+Keep the halfword and word table pointers paired: they contain the same numerical
+constants at different element widths. The inverse uses transposed basis rows;
+it does not reverse a frequency array or negate all AC coefficients.
+
+Inspect an asymmetric row and an asymmetric coefficient impulse. Either can
+expose a table-orientation error hidden by a constant block. Keep vertical and
+horizontal coefficient indices explicit in your address calculations.
+
+\paragraph{Observe} The constant forward/inverse pair checks normalization,
+while the off-axis impulse and mixed pattern check orientation.
+\Needspace{8\baselineskip}
+\paragraph{Check} What changes in the taught inverse direction?
+\begin{itemize}
+\item[A.] Every coefficient becomes unsigned.
+\item[B.] Both passes are skipped.
+\item[C.] The selected basis is transposed.
+\end{itemize}
+
+\section{Step 44 Accumulate the first signed dot products}\label{h263-transform-s04}
+For each input row and each basis row, multiply eight signed halfwords and add
+the products. In scalar mode use full-width products and sums. In MSA mode,
+\texttt{dotp\_s.w} combines pairs into four signed words; widen and reduce those
+four words before storing the row result.
+
+The input and basis signs both matter. An unsigned dot product can produce a
+large positive result from a negative residual or basis constant. The final
+value fits a signed word by the width proof, but the computation still needs
+all eight products and their signs.
+
+\paragraph{Observe} A negative constant block has a negative DC coefficient.
+The MSA first-pass sum agrees with the scalar sum before any descaling.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why does the signed form of the dot product matter?
+\begin{itemize}
+\item[A.] It controls the memory byte order.
+\item[B.] Both samples and basis constants can be negative.
+\item[C.] It automatically quantizes the coefficients.
+\end{itemize}
+
+\section{Step 45 Store unrounded intermediates transposed}\label{h263-transform-s05}
+Store the first-pass word at transposed offset $4(8u+y)$. A row of this private
+buffer then contains the eight intermediate values needed by one second-pass
+dot product. Its byte stride is thirty-two, while the staged halfword input's
+stride is sixteen.
+
+Do not shift away the sixteen fractional bits yet. The second basis multiplication
+will add another sixteen. A premature shift changes the two-dimensional result
+and can introduce bias even when a round trip looks reasonable.
+
+\paragraph{Observe} The intermediate buffer contains 64 signed words, or 256
+bytes. Its values are not yet final coefficients or reconstructed samples.
+\Needspace{8\baselineskip}
+\paragraph{Check} What scale remains in each stored first-pass sum?
+\begin{itemize}
+\item[A.] $2^{16}$, retained for the second pass.
+\item[B.] No scale, after every row is rounded to a byte.
+\item[C.] The source picture's display aspect ratio.
+\end{itemize}
+
+\section{Step 46 Widen the second products to doublewords}\label{h263-transform-s06}
+The second pass multiplies signed intermediate words by signed word copies of
+the basis constants. Use doubleword products and accumulators. In MSA mode,
+two four-word vector pairs cover the eight terms; signed doubleword dot products
+produce four wide partial sums in total.
+
+Combine every partial sum before rounding. Keeping only one doubleword or using
+word-result dot products loses information. Because the intermediate is already
+wide, this error can be much larger than a one-unit rounding difference.
+
+\paragraph{Observe} Each private source row is thirty-two bytes. Two bounded
+sixteen-byte loads cover it exactly, with no padding or extra neighbour rows.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which result width is required for second-pass products?
+\begin{itemize}
+\item[A.] A byte, because final pixels use bytes.
+\item[B.] A halfword, because original samples used halfwords.
+\item[C.] A signed doubleword.
+\end{itemize}
+
+\section{Step 47 Apply one signed descale}\label{h263-transform-s07}
+Add the positive $2^{31}$ bias to the full second-pass sum, then perform the
+arithmetic shift by thirty-two bits. Keep both operations full width. Check a
+negative value independently; a logical right shift has a different meaning.
+The bias must not become a negative sign-extended word when loaded.
+
+This is the taught scale-$2^{16}$ implementation's convention. If you choose
+another accurate precision, update the basis, bias and shift together. The
+alternative scale-$2^{15}$ implementation uses $2^{29}$ and a thirty-bit shift.
+Its accuracy evidence is separate from a claim of identical bit patterns.
+
+\paragraph{Observe} With the stated tie rule, a value of $-0.75$ rounds to $-1$
+and a value of $-0.5$ rounds to zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} What goes wrong with a logical shift of a negative accumulator?
+\begin{itemize}
+\item[A.] It supplies an extra reference sample.
+\item[B.] It treats the high sign bits as a large positive value.
+\item[C.] It changes an eight-by-eight block into a sixteen-by-sixteen block.
+\end{itemize}
+
+\section{Step 48 Clip the transform result, then publish}\label{h263-transform-s08}
+Clip forward coefficients to the exercise's twelve-bit range, or inverse output
+to its signed nine-bit range. Store the sixty-four signed halfwords privately,
+then copy the completed 128-byte output to the caller. Return successful count
+64 only after publication. Keep every caller byte unchanged on rejection.
+
+Do not clip inverse output to unsigned picture bytes here. INTER reconstruction
+still needs to add prediction to the signed inverse residual before final sample
+clipping. Quantization and reconstruction will make that next boundary explicit.
+
+\paragraph{Observe} Inverse clipping can return negative values down to $-256$.
+The flat inverse observation returns 128 at every position.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why must a negative inverse residual survive this function?
+\begin{itemize}
+\item[A.] It may need to reduce the later predicted sample.
+\item[B.] It is an output pointer.
+\item[C.] H.263 stores every reconstructed picture sample as a negative number.
+\end{itemize}
+
+\section{Step 49 Compare with an independent finite reference}\label{h263-transform-s09}
+Run public feedback against your current source:
+\begin{verbatim}
+python3 construction/h263-transform-construction/grade.py \
+    my-transform.asm --cli /path/to/mars-cli.jar \
+    --report transform-results.json
+\end{verbatim}
+The 96 cases check both directions, modes and byte orders, mixed and extreme
+patterns, exact zeros, padded/wide strides and rejected metadata or sample domains.
+The reference computes floating-point matrix products independently of the
+provided fixed-point tables. It checks every output, source access, saved state
+and guard, accepting an accurate alternative precision or private frame.
+Reports require a new path.
+
+Try both flat and worked ordinary callers. A single printed first coefficient
+is useful for debugging but does not test sixty-four positions. At the return
+breakpoint, inspect the whole signed halfword block and the count before the
+caller replaces return registers with syscall arguments.
+
+\paragraph{Observe} Finite checks accept both supplied accurate precisions.
+They reject wrong signed products, narrow second products, incorrect scaling,
+wrong intermediate placement and omitted sample-domain checks.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why use an independent reference instead of only a round trip?
+\begin{itemize}
+\item[A.] A round trip guarantees every coefficient convention is correct.
+\item[B.] The reference must copy the student's intermediate registers.
+\item[C.] A forward and inverse pair can share the same normalization error.
+\end{itemize}
+
+\section{Step 50 Pass the inverse accuracy gate}\label{h263-transform-s10}
+After finite checks pass, run the complete instructor accuracy gate on the target
+inverse. Retain its data hashes, rounding convention, byte order, mode and per-cohort
+metrics. Compare all five limits and exact zeros. An acceptable peak error does
+not establish an acceptable mean error or bias.
+
+Measure transform work separately from the host accuracy runner. The runner
+includes reference data preparation, script compilation, state edits and many
+function calls. For entry-to-return instruction work, include validation, staging,
+both passes, reduction, clipping and publication. Do not count only the vector
+dot products and call that the cost of a whole transform.
+
+\paragraph{Observe} All eight body/mode/byte-order combinations passed the six
+prescribed cohorts. Different valid output rounding choices still need their own
+accuracy check before entering the reconstruction loop.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which claim follows from passing this gate?
+\begin{itemize}
+\item[A.] The complete H.263 encoder is already interoperable.
+\item[B.] The tested inverse meets the measured Annex A accuracy requirements.
+\item[C.] Quantization is lossless for every video.
+\end{itemize}

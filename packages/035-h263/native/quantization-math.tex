@@ -1,0 +1,116 @@
+\section{Choose which coefficient information to retain}
+The transform has rearranged the block's information. Quantization now discards
+some of it. A quantizer maps several possible coefficient values to one integer
+level. The decoder receives that level and reconstructs one coefficient value;
+it cannot infer which original value produced it. This is where the encoder's
+local reconstruction begins to differ deliberately from the source.
+
+Use $C$ for a forward coefficient, $L$ for its transmitted level, $Q$ for the
+quantizer parameter and $R$ for its reconstructed coefficient. Keeping these
+names separate matters: a level is not an inverse-transform input until it has
+been inverse-quantized. Likewise, an INTRA DC code byte is not the coefficient
+1024 that the transform expects for a flat block of sample value 128.
+
+For this construction exercise, choose the reproducible forward policy
+\[
+ m=\min\left(127,\left\lfloor\frac{|C|}{2Q}\right\rfloor\right),
+ \qquad L=\begin{cases}-m&C<0,\\m&C\geq0.\end{cases}
+\]
+Here $1\leq Q\leq31$. The cap keeps ordinary nonzero levels within the baseline
+signed range $[-127,127]$. Zero is represented by omission when coefficients
+are eventually coded. It is still stored explicitly in this exercise's array.
+A coefficient with magnitude below $2Q$ maps to zero. That interval around zero
+is the \emph{dead zone}: small changes inside it do not survive the quantizer.
+At $Q=8$, both 15 and $-15$ disappear, while 16 and $-16$ become 1 and $-1$.
+
+This forward policy is a teaching choice, not a decoder requirement. A complete
+encoder can choose other legal levels to trade picture error against stream size.
+The kernel exercise checks the stated policy so that intermediate observations
+are reproducible. Later whole-encoder grading must allow other choices when the
+stream meets its syntax, reconstruction, quality and inter-picture requirements.
+
+Baseline reconstruction has a fixed meaning. An ordinary zero level reconstructs
+zero. For a nonzero level, form a positive magnitude, restore its sign, then clip:
+\[
+ a=Q(2|L|+1)-e,\qquad
+ e=\begin{cases}1&Q\text{ even},\\0&Q\text{ odd},\end{cases}
+ \qquad R=\operatorname{clip}_{[-2048,2047]}\!\left(\operatorname{sign}(L)a\right).
+\]
+Do not evaluate this nonzero expression for $L=0$: at $Q=8$ it would manufacture
+seven where there should be zero. Do not apply the even-$Q$ adjustment after
+restoring the sign. A negative level must receive the same positive magnitude
+as its positive counterpart before the sign is applied.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrl}
+\textbf{$Q$} & \textbf{$C$} & \textbf{$L$} & \textbf{$R$} & \textbf{What happened}\\
+8 & 15 & 0 & 0 & Dead-zone removal\\
+8 & 16 & 1 & 23 & Even-parameter adjustment\\
+8 & $-16$ & $-1$ & $-23$ & Sign restored after magnitude\\
+8 & 32 & 2 & 39 & Next retained level\\
+7 & 16 & 1 & 21 & Odd parameter, no subtraction\\
+1 & 2047 & 127 & 255 & Level cap limits reconstruction
+\end{tabular}
+\end{center}
+The last row exposes a limitation of the chosen forward policy at very small
+parameters: a large coefficient is capped even though the original coefficient
+fits the transform's twelve-bit domain. Increasing detail retention cannot be
+reasoned about from $Q$ alone when a level cap is active. Do not use a successful
+kernel test as evidence that every parameter gives acceptable video quality.
+
+\section{Give baseline INTRA DC its own path}
+For an INTRA block, coefficient zero describes the block's absolute average.
+Use a separate eight-unit reconstruction spacing. In this exercise, select
+\[
+ d=\operatorname{clip}_{[1,254]}\!\left(\left\lfloor\frac{C+4}{8}\right\rfloor\right),
+ \qquad R_{\mathrm{DC}}=8d.
+\]
+The stored DC code is $d$, except that $d=128$ is stored as 255. Thus code 255
+means reconstructed coefficient 1024, not 2040. Neither code zero nor code 128
+is emitted. The ordinary $Q$ formula still applies to the other 63 coefficients.
+For an INTER block, coefficient zero uses that ordinary formula too.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrr}
+\textbf{INTRA $C[0]$} & \textbf{Selected $d$} & \textbf{Stored DC code} & \textbf{$R[0]$}\\
+0 & 1 & 1 & 8\\
+1016 & 127 & 127 & 1016\\
+1020 & 128 & 255 & 1024\\
+1024 & 128 & 255 & 1024\\
+2047 & 254 & 254 & 2032
+\end{tabular}
+\end{center}
+The first row is intentional. The lowest baseline INTRA DC reconstruction is
+eight. It is not an ordinary zero coefficient. An all-zero INTRA input can
+therefore retain a nonzero reconstructed DC while having no coded AC levels.
+That distinction will determine how block-presence flags are formed later.
+
+\section{Trace the first row before writing vector code}
+With $Q=8$ and INTRA enabled, use the supplied input beginning
+\[
+ (1024,15,16,-16,31,32,-32,2047).
+\]
+The two records begin
+\[
+ \begin{aligned}
+  L&=(255,0,1,-1,1,2,-2,127,\ldots),\\
+  R&=(1024,0,23,-23,23,39,-39,2039,\ldots).
+ \end{aligned}
+\]
+The next coefficient, $-2048$, becomes
+level $-127$ and reconstructed coefficient $-2039$. There are seven nonzero AC
+levels in the supplied complete block. The DC code is excluded from that count.
+
+Write down both records. If you inspect the first array as coefficients, the
+flat block appears to have DC 255. If you feed the second array directly to a
+bit writer, its values exceed the ordinary level range. The two arrays belong
+to different sides of the quantization boundary even though both use halfword
+storage in the program.
+
+Inverse quantization does not recover the original coefficients. Its purpose is
+to reproduce the coefficient block that a conforming decoder will use. The local
+inverse transform must consume this reconstructed block. Using the original
+forward block would make the encoder predict from pictures that the decoder
+never reconstructed.

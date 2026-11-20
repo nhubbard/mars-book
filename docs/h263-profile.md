@@ -225,3 +225,33 @@ Final chapter distributions and actual IDE figures remain unfinished. Capture
 implementation stays in the separate authoring plugin depending on MARS; no plugin
 source or GUI launch changes occur here. Independent accessibility review and later
 substantive editing remain separate.
+
+
+## H.263 chapter distributions
+
+Package 035-h263 is registered alongside the preceding 34 projects. It exports
+all 120 native construction steps, twelve retained working stages, thirteen
+callable entries, a free-writing shell and an actual generated-input run workflow.
+The student archive contains 1196 public cases and no completed target assembly
+or answer keys. The instructor distribution adds 31 public/private domains with
+15636 cases per implementation, 120 explanations and 240 progressive hints.
+
+Relocated archives verify 32468 positive cases across reference, alternative and
+independent frames, reject both unfinished starters, and independently decode
+both actual eight-picture runs. Thirty-two extracted helper entrypoints resolve
+their local imports. The full inverse-accuracy runner and exact prior reference
+body/constants/core provenance remain separate mandatory evidence; new submitted
+transforms must run the full gate. All 355 public Python tests pass.
+
+The course runner supports a matching harness per check, retaining the simulator's
+existing assembly-work and wide-data limits. Native export preserves the directly
+edited book source and cross-reference labels, refuses to replace edited exports,
+and retains reviewed capture state. The chapter is 118 pages, its assignment two
+pages, and the complete manuscript 1705 pages. The existing Minion Pro/Noto Sans
+Math/IntelliJ-exported code setup is unchanged.
+
+Six H.263 IDE figures remain explicitly planned; capture tooling stays in the
+separate authoring plugin depending on MARS. No graphical IDE launch or main-plugin
+source change occurred in this packaging step. Independent accessibility review
+and later substantive editing remain open. The required grader revision 6c66f101
+is still a local MARS commit and is not pushed by book publication.

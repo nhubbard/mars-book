@@ -1,0 +1,228 @@
+\section{Step 11 Preserve the search across a nested call}\label{h263-motion-s01}
+Begin with a frame sketch. Mark where you will retain the caller's return address,
+the request values, the result pointer, the candidate coordinates and the current
+best result. A candidate comparison reuses four argument registers, so the
+original request pointer cannot remain live only in \texttt{\$a0}. The SAD entry
+also has no obligation to preserve your scratch registers.
+
+Write the prologue and matching epilogue before the loops. Check their saved
+register addresses and keep the stack suitably aligned. Return through the saved
+caller continuation, rather than through the continuation written by the last
+nested call. Do not use an unallocated area below the stack pointer for locals.
+
+\paragraph{Observe} A valid radius-zero request makes one nested comparison.
+The function returns to its outer caller with the original saved registers and
+stack pointer, even though \texttt{\$ra} changed during the comparison.
+\Needspace{8\baselineskip}
+\paragraph{Check} Where can a candidate coordinate safely remain across SAD?
+\begin{itemize}
+\item[A.] In any scratch register, because the caller used it first.
+\item[B.] In a preserved register or an allocated stack local.
+\item[C.] Only in an input pixel byte.
+\end{itemize}
+
+\section{Step 12 Admit the complete request before pixels}\label{h263-motion-s02}
+Check the two record pointers, then load the eight request fields. Keep invalid
+status as the provisional return. Validate the fields and both image extents
+before entering a candidate loop. A request with a valid current window but an
+invalid reference stride must fail without reading either image.
+
+Use unsigned range checks for unsigned fields. Values such as
+$2^{32}+2$ are not radius two. Address additions must detect carry out of the
+64-bit address range; merely using a doubleword instruction does not detect it.
+Leave the output record unchanged on every rejection path.
+
+\paragraph{Observe} Radius three, reference stride 175 and an unaligned result
+pointer each return status one, candidate count zero and the original result bytes.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which read is permitted while rejecting a bad mode field?
+\begin{itemize}
+\item[A.] The mapped request field needed to inspect that mode.
+\item[B.] The first reference vector, to see whether the image looks usable.
+\item[C.] An arbitrary address beyond the reference plane.
+\end{itemize}
+
+\section{Step 13 Clip signed displacement intervals}\label{h263-motion-s03}
+Compute the four interval bounds from the validated coordinates and radius.
+The lower bounds may be negative, so store and compare them as signed values.
+The picture coordinates obtained after adding a displacement must remain within
+the valid top-left ranges. Keep the right and bottom limits at 160 and 128,
+which already account for the sixteen-sample block size.
+
+Test a corner before an interior block. At the upper-left corner and radius two,
+negative displacements disappear. At the lower-right corner, positive ones
+disappear. A radius-one interior block has nine candidates; it is a different
+geometry from the radius-two corner even though the count agrees.
+
+\paragraph{Observe} Counts are 25 for an interior radius-two search, 15 at one
+straight edge, nine at a corner and one for radius zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why is a top-left reference coordinate of 175 invalid?
+\begin{itemize}
+\item[A.] Byte 175 can never be mapped.
+\item[B.] Every motion vector must be zero.
+\item[C.] A sixteen-sample block starting there extends past the picture width.
+\end{itemize}
+
+\section{Step 14 Compare the zero candidate once}\label{h263-motion-s04}
+Initialize the best score above the SAD maximum, then evaluate zero displacement.
+Build its reference pointer from the plane origin and the current picture
+coordinates. Supply the current pointer unchanged. Pass each stride separately
+to the selected comparison mode. Retain the score and zero displacement as the
+first completed best result.
+
+If your later rectangle traversal includes $(0,0)$, skip that one entry because
+it has already been considered. The successful candidate count describes unique
+admitted positions. It does not include an extra visit for initialization.
+Equivalent implementations may compute this count from the interval lengths.
+
+\paragraph{Observe} The worked zero candidate has score 7872. Flat equal images
+have score zero and ultimately retain displacement $(0,0)$.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is a safe initial best-score sentinel?
+\begin{itemize}
+\item[A.] Zero, because SAD is nonnegative.
+\item[B.] 65\,536, which exceeds the maximum possible block SAD.
+\item[C.] The current image address.
+\end{itemize}
+
+\section{Step 15 Form each candidate from the plane origin}\label{h263-motion-s05}
+For every remaining admitted $(d_x,d_y)$, form $(x+d_x,y+d_y)$ first, then its
+byte offset using the reference stride. Add that offset to the reference plane
+pointer. Recomputing from the origin avoids carrying a pointer from the end of
+one candidate's sixteen rows into the next candidate.
+
+For the worked position $(16,32)$ and displacement $(-2,-2)$, the candidate begins
+at $(14,30)$. With stride 176, its offset is $30\times176+14=5294$ bytes from the
+reference origin. Its last row begins another $15\times176=2640$ bytes later.
+The current pointer continues to identify the original current block.
+
+\paragraph{Observe} A load from the candidate's first row reads reference
+samples 14 through 29 of row 30. It reads no column from the following row.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which pointer changes when selecting a new candidate?
+\begin{itemize}
+\item[A.] The reference window pointer derived from the plane origin.
+\item[B.] Both image pointers by the same displacement.
+\item[C.] The result pointer by sixteen rows.
+\end{itemize}
+
+\section{Step 16 Update the best result without changing ties}\label{h263-motion-s06}
+Compare a completed SAD with the current best. In centre-first, increasing-row
+order, replace only for a strictly smaller value. Copy both displacement
+components whenever you replace the score. Updating the score alone leaves a
+plausible number attached to the wrong reference block.
+
+Check a periodic pattern as well as a flat one. A checker pattern and its
+opposite can have several equally good nonzero displacements while the zero
+candidate is worse. The correct choice then uses increasing vertical and
+horizontal displacement. A reverse traversal needs an explicit equal-score
+comparison to produce that same choice.
+
+\paragraph{Observe} With the public opposite checker patterns at $(16,32)$,
+radius two selects $(-1,-2)$ with score zero. Flat equal inputs select $(0,0)$.
+\Needspace{8\baselineskip}
+\paragraph{Check} What happens if equal scores always replace the best?
+\begin{itemize}
+\item[A.] SAD becomes negative.
+\item[B.] The vector registers become read-only.
+\item[C.] Traversal order can incorrectly replace the specified preferred tie.
+\end{itemize}
+
+\section{Step 17 Finish the rectangle without crossing an edge}\label{h263-motion-s07}
+Advance the horizontal coordinate through its inclusive interval. At its end,
+reset it to the first horizontal bound and advance the vertical coordinate.
+Stop after the final admitted row. A signed negative loop coordinate needs a
+signed comparison; interpreting it as an unsigned address-sized integer changes
+the ordering.
+
+A zero score is already minimal, but an early exit still has to preserve the
+tie rule and return the full unique candidate count. For this first implementation,
+finish the small rectangle. Later work can reduce comparisons while retaining
+the complete observable contract.
+
+\paragraph{Observe} A radius-zero request neither repeats its centre nor enters
+a nonexistent next row. The corner cases never read outside the clipped union.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does the returned candidate count describe?
+\begin{itemize}
+\item[A.] The number of scratch registers used.
+\item[B.] The number of unique positions admitted by the clipped search.
+\item[C.] The number of output bytes.
+\end{itemize}
+
+\section{Step 18 Publish one complete result}\label{h263-motion-s08}
+Keep the provisional best state private until the search succeeds. Then store
+both signed displacement components and the SAD into the three result fields.
+Publish success and the candidate count in the return registers, restore the
+outer caller's state and return. Negative displacements use full-width signed
+representations; a 32-bit zero-extended negative value is not the required
+64-bit result.
+
+The result is a candidate decision, not an already coded motion-vector
+difference. Prediction from neighbouring macroblocks, vector units and variable
+length coding remain separate later responsibilities. Keeping these boundaries
+visible makes the first result inspectable before a bitstream exists.
+
+\paragraph{Observe} The worked caller's result record contains $-2$, $-2$ and
+2976. Its returned count is 25 in both scalar and MSA modes.
+\Needspace{8\baselineskip}
+\paragraph{Check} What may an invalid request publish in the result area?
+\begin{itemize}
+\item[A.] Nothing; every existing result byte must remain unchanged.
+\item[B.] A partially updated displacement.
+\item[C.] A success score with an invalid status.
+\end{itemize}
+
+\section{Step 19 Run independent search feedback}\label{h263-motion-s09}
+Run the completed-entry checks against your working source:
+\begin{verbatim}
+python3 construction/h263-motion-construction/grade.py \
+    my-search.asm --cli /path/to/mars-cli.jar \
+    --report search-results.json
+\end{verbatim}
+The 56 public cases cover both comparison modes and both byte orders, all four
+movement quadrants, clipped corners, radius zero, maximal differences, two kinds
+of ties and rejected requests. The checker computes every candidate score from
+its own input bytes. It checks the selected result, candidate count, input and
+request preservation, permitted pixel accesses, saved registers and result guards.
+A new report path is required.
+
+Use failures to identify the boundary that differs. A correct SAD with the wrong
+sign can still locate the wrong reference block. A correct interior search can
+still overread a corner. An implementation may choose its own traversal and
+frame layout; it must satisfy these observable conditions.
+
+\paragraph{Observe} Development status four fails completed feedback. A reverse
+traversal with the correct explicit tie key can pass the same cases.
+\Needspace{8\baselineskip}
+\paragraph{Check} What makes a different traversal an equivalent solution?
+\begin{itemize}
+\item[A.] It uses the reference implementation's private labels.
+\item[B.] It has the same instruction count.
+\item[C.] It returns the specified result and preserves the same boundaries.
+\end{itemize}
+
+\section{Step 20 Measure search work at its own boundary}\label{h263-motion-s10}
+Count instructions from search entry through the return to the ordinary caller.
+This includes request validation, candidate setup, nested SAD work, selection
+and restoration. Compare the same input and radius in scalar and MSA modes.
+Do not multiply the earlier kernel count and report that product as a measured
+whole-search count: it omits the work that surrounds each comparison.
+
+The public feedback reports completed instruction counts for its named inputs.
+A small caller with radius zero exposes fixed search overhead; an interior
+radius-two case adds candidate work; a corner exposes clipping. Retain correctness
+and access checks while comparing these results. The count measures simulator
+instruction work, not host cycles, a video frame rate or completed encoder time.
+
+\paragraph{Observe} Record the count and candidate geometry together. Replacing
+SAD with a faster correct MSA body can reduce comparison work while leaving the
+same displacement, score and candidate count.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which measurement includes search setup and restoration?
+\begin{itemize}
+\item[A.] The file size of the generated raw fixture.
+\item[B.] A trace covering search entry through return to its caller.
+\item[C.] The SAD kernel count alone, without entering search.
+\end{itemize}

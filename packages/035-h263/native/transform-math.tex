@@ -1,0 +1,132 @@
+\section{Change the representation of an eight-by-eight block}
+Prediction leaves sixty-four signed residuals for each block. A discrete cosine
+transform, or DCT, expresses their spatial pattern as sixty-four frequency
+coefficients. This is still a block of numbers. Compression will require the
+later quantization and coding stages; changing representation alone does not
+produce a smaller H.263 file.
+
+Write a spatial sample as $f[y,x]$ and a coefficient as $F[v,u]$. The first
+coefficient index is vertical frequency, the second horizontal frequency.
+Define the orthonormal basis
+\[
+ B[k,n]=\gamma_k\cos\!\left(\frac{(2n+1)k\pi}{16}\right),\qquad
+ \gamma_0=\frac{1}{\sqrt8},\quad \gamma_k=\frac12\ (k>0).
+\]
+Then the forward transform is
+\[
+ F[v,u]=\sum_{y=0}^{7}\sum_{x=0}^{7}B[v,y]f[y,x]B[u,x].
+\]
+The inverse uses the transposed basis in each matrix pass:
+\[
+ f[y,x]=\sum_{v=0}^{7}\sum_{u=0}^{7}B[v,y]F[v,u]B[u,x].
+\]
+The formulas look similar because the basis is orthonormal. The placement of
+indices decides which row or column is used. An asymmetric input is useful for
+checking that orientation; a constant block cannot expose every transpose error.
+
+A block filled with 128 has DC coefficient $F[0,0]=1024$ and zero AC coefficients.
+DC describes the constant component; the other coefficients describe changing
+patterns. An inverse block containing only DC 1024 reconstructs 128 at every
+position. For baseline INTRA work, transform the sample values directly. Do not
+silently subtract 128 because a different image codec used that convention.
+For an INTER block, transform the signed residuals produced by prediction.
+
+Keep coefficients in natural row-major order at this boundary. Zigzag order,
+quantization, the special baseline INTRA DC representation and coded coefficient
+syntax are later operations. Mixing them into the first transform makes a wrong
+matrix orientation harder to distinguish from a wrong scan order.
+
+\section{Carry the fractional scale through both passes}
+The supplied constants are integers
+$A[k,n]=\lfloor 2^{16}B[k,n]+0.5\rfloor$. Although the scale has sixteen
+fractional bits, these particular basis values fit signed halfwords: the largest
+magnitude is 32\,138. Store a halfword table for the first pass and a word table
+with the same signed values for the second. The transpose tables represent the
+inverse direction; they are not another normalization.
+
+First transform each input row. Preserve its unrounded sum, still scaled by
+$2^{16}$, in a signed word. Store these intermediates transposed, so the column
+needed by the second pass becomes one contiguous row of eight words. For the
+forward direction, write
+\[
+ T[u,y]=\sum_{x=0}^{7}f[y,x]A[u,x].
+\]
+The second sum is
+\[
+ S[v,u]=\sum_{y=0}^{7}T[u,y]A[v,y].
+\]
+It carries scale $2^{32}$. Descale once after this sum. Rounding the first pass
+back to sample-sized integers discards information before the other dimension
+has been transformed.
+
+The inverse uses the same two-pass structure with $A^T$. Its admitted coefficient
+magnitude reaches 2048, so use that larger input bound when proving storage widths.
+The following conservative bounds also cover the smaller forward input domain:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\textbf{Value} & \textbf{Magnitude bound} & \textbf{Storage}\\
+Basis constant & 32\,138 & Signed halfword\\
+Input & 2048 & Signed halfword\\
+First-pass sum & $8\times2048\times32\,138=526\,548\,992$ & Signed word\\
+Second-pass sum & Less than $2^{47}$ & Signed doubleword
+\end{tabular}
+\end{center}
+A first-pass signed halfword dot product can therefore widen into words.
+The second pass must widen signed word products into doublewords. A word multiply
+there would discard high product bits even though each input word individually
+fits. Keep the bias addition and final shift in full-width registers too.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,font=\small},node distance=6mm,alt={A transform starts with signed halfword samples or coefficients. The first basis pass produces unrounded signed words scaled by two to the sixteenth and stores them transposed. The second pass accumulates signed doublewords scaled by two to the thirty-second. One final rounding and clipping step produces the output halfwords.}]
+\node (input) {signed halfword input};
+\node[below=of input] (first) {first pass: unrounded words\\store transposed, scale $2^{16}$};
+\node[below=of first] (second) {second pass: doubleword sums\\scale $2^{32}$};
+\node[below=of second] (result) {round once, clip, publish\\signed halfword output};
+\draw[-{Latex}] (input)--(first);
+\draw[-{Latex}] (first)--(second);
+\draw[-{Latex}] (second)--(result);
+\end{tikzpicture}
+\caption{Intermediate widths preserve the two-dimensional transform's scale.}
+\end{figure}
+
+For eight second-pass products, load two four-word vectors from each contiguous
+row. Each signed word dot product produces two doubleword partial sums:
+\begin{minted}{mars-idea}
+ld.w $w0, 0($t0)
+ld.w $w1, 0($fp)
+dotp_s.d $w2, $w0, $w1
+ld.w $w3, 16($t0)
+ld.w $w4, 16($fp)
+dotp_s.d $w5, $w3, $w4
+addv.d $w6, $w2, $w5
+\end{minted}
+Extract both resulting doublewords and add them before descaling. Together they
+cover all eight products. The loads fit the private thirty-two-byte rows; they
+do not grant permission to read extra bytes from a padded caller input row.
+
+\section{Round signed values and clip at the right boundary}
+The reference implementation returns
+\[
+ R(S)=\left\lfloor\frac{S+2^{31}}{2^{32}}\right\rfloor.
+\]
+This rounds to nearest with ties toward positive infinity. A full-width
+arithmetic shift by 32 implements the division after adding the positive bias.
+In MIPS64, \texttt{dsra32} with encoded shift zero performs that thirty-two-bit
+shift. A logical shift would reinterpret a negative accumulator as a large
+positive value. Loading the bias as a sign-extended negative 32-bit quantity
+would also change the result.
+
+For example, $-0.75\times2^{32}$ rounds to $-1$, while
+$-0.5\times2^{32}$ rounds to zero with this tie rule. Keep the rule beside the
+implementation so a change of precision does not leave a stale shift or bias.
+The alternative implementation uses fifteen fractional bits and a thirty-bit
+descale; it must be assessed by accuracy rather than by identical coefficient bits.
+
+The forward exercise returns bounded coefficients clipped to $[-2048,2047]$.
+The inverse returns a reconstructed residual or INTRA sample block clipped to
+$[-256,255]$, following the inverse-transform boundary in H.263 clause 6.2.4.
+For INTER reconstruction, prediction is added later and the final picture sample
+is then clipped to $[0,255]$. Clipping a negative inverse residual to zero here
+would erase a correction the decoder needs.

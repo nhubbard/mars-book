@@ -1,0 +1,20 @@
+\section{Step 67 Perform bounded vector sample reconstruction}\label{h263-block-s07}
+In mode one, load eight inverse and eight prediction halfwords from aligned
+private arrays. Add halfword lanes, apply signed maximum with zero and signed
+minimum with 255, and store exactly eight pixel bytes. A straightforward taught
+version stores the clipped vector temporarily and extracts its native halfwords
+for byte stores; another correct packing schedule is acceptable.
+
+The sum bound $[-256,510]$ establishes that an ordinary halfword addition is
+safe before clipping. This argument depends on the earlier inverse contract.
+Test mixed signs and positions rather than only a constant vector.
+
+\paragraph{Observe} The scalar and vector paths preserve signed inverse values
+in the diagnostic array while producing clipped pixel bytes in the final array.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must happen before narrowing a lane to a pixel byte?
+\begin{itemize}
+\item[A.] Clip the complete signed sum to 0 through 255.
+\item[B.] Discard all negative inverse outputs before adding prediction.
+\item[C.] Replace the selected levels with raw pixels.
+\end{itemize}

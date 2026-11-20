@@ -1,0 +1,24 @@
+\section{Account for the work that remains}
+QCIF contains eleven by nine 16-by-16 luma macroblocks, or 99. A motion search
+with 25 candidate positions can therefore request 2475 luma comparisons for one
+P-picture before considering reuse, pruning or boundary exclusions. Seven such
+pictures give 17\,325 comparisons. These counts describe a chosen search schedule;
+the format does not require that particular schedule.
+
+Multiplying those calls by the measured reference counts gives a useful accounting
+estimate for this kernel: 56\,219\,625 scalar instructions or 3\,586\,275 MSA
+instructions. It excludes candidate generation, motion-vector prediction, chroma
+work, transforms, quantization, bit writing, file I/O and local reconstruction.
+It also assumes every candidate reaches a full comparison. Keep those exclusions
+beside the estimate rather than presenting it as a whole-encoder benchmark.
+
+Use the estimate to decide what to measure next. Avoid recalculating an unchanged
+reference block unnecessarily; preserve exact candidate semantics if caching or
+pruning comparisons. Later optimization must retain the same tie rule, valid
+search region and output-quality contract. A candidate skipped because its lower
+bound cannot win needs a proof tied to that decision rule.
+
+The eight-picture generated clip is a candidate teaching workload, not a measured
+promise about the completed encoder. Measure the full scalar and MSA paths once
+their syntax and reconstruction are correct. Retain the ten-second and thirty-fps
+ceilings while choosing a smaller ordinary example that students can run repeatedly.

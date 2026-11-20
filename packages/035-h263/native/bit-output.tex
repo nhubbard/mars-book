@@ -1,0 +1,130 @@
+\section{Turn syntax fields into an ordered bit sequence}
+The reconstructed block and selected levels are still arrays of numbers. A
+bitstream requires a second representation: an ordered sequence of fields with
+specified widths. The value five in a three-bit field is \texttt{101}; the same
+value in a five-bit field is \texttt{00101}. The field width determines leading
+zeros, so writing the value as a machine word cannot replace bit emission.
+
+H.263 generally transmits a field's most significant bit first. In this chapter's
+output buffer, the first transmitted bit occupies bit seven of the first byte,
+the next occupies bit six, and so on. A new field continues at the next free bit;
+it does not automatically begin at a byte boundary. Byte order of a native
+machine word and transmission order of a bit field are separate conventions.
+The writer must produce the same output bytes in either simulator byte order.
+
+Let $p$ be the number of already committed bits. Its next byte index and bit
+position are
+\[
+ b=\left\lfloor\frac p8\right\rfloor,\qquad t=7-(p\bmod8).
+\]
+For a right-aligned value $v$ with declared width $n$, source bit $n-1$ is
+emitted first. Then emit source bit $n-2$, continuing down to zero. If the field
+crosses a byte boundary, recompute the next destination byte and bit position.
+A twenty-two-bit picture start code is one example of a field wider than a byte;
+the writer itself does not need to know what that field means.
+
+\section{Keep committed bits separate from unused buffer storage}
+The writer context contains a buffer pointer, byte capacity and committed bit
+count. Capacity describes allocated storage. The count describes the valid stream
+prefix. A partly used last byte also contains bits that do not yet belong to the
+stream. Reading or writing the entire capacity to a file would expose unrelated
+storage after the valid prefix.
+
+For this exercise, preserve every bit outside the appended field, including low
+bits after a partly filled last byte. That makes the boundary explicit and lets
+tests detect accidental whole-byte replacement. Before a file is written, the
+encoder must apply the syntax's actual alignment or termination rule. It cannot
+assume that unused bits happen to be zero. A normal encoder can initialize its
+arena to zero, but initialization alone does not change the number of committed
+bits or authorize arbitrary padding between fields.
+
+The supplied observation arena starts with bytes \texttt{A5}, whose bits are
+\texttt{10100101}. Consider a context with three committed bits, followed by a
+nine-bit append of decimal 419, or \texttt{110100011}:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lrrl}
+\textbf{State} & \textbf{Committed bits} & \textbf{First bytes} & \textbf{Meaning}\\
+Before append & 3 & \texttt{A5 A5} & Only prefix \texttt{101} is valid\\
+Append nine bits & 12 & \texttt{BA 35} & Last four bits still unused\\
+Append four zero bits & 16 & \texttt{BA 30} & Two complete valid bytes
+\end{tabular}
+\end{center}
+After the nine-bit append, byte one contains the valid prefix \texttt{0011}
+and retained low bits \texttt{0101}. Those low bits are not part of the field.
+Appending four zeros explicitly replaces them and advances the count to sixteen.
+This example is a packing trace; it is not a complete H.263 header.
+
+\section{Expose a bounded append operation}
+Implement \texttt{h263\_write\_bits}. Pass an eight-byte-aligned mapped 24-byte
+context in \texttt{\$a0}, an unsigned right-aligned field value in \texttt{\$a1}
+and a full-width declared bit count in \texttt{\$a2}. Context fields are unsigned
+native-endian doublewords:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Range or role}\\
+0 & Buffer pointer & Byte-addressed output arena\\
+8 & Capacity in bytes & 0 through 1\,048\,576\\
+16 & Committed bit count & 0 through eight times capacity
+\end{tabular}
+\end{center}
+The complete context and buffer extents must be non-wrapping. Positive-capacity
+buffer storage is mapped, needs no alignment beyond a byte, and is disjoint from
+the context. A zero-capacity buffer is never accessed. Preserve the buffer pointer
+and capacity, all saved general registers and the incoming stack pointer. Provide
+an aligned stack and private space if your implementation needs a frame.
+
+Admit widths zero through 32. Require $0\leq v<2^n$; the high bits must be zero
+rather than silently discarded. Width zero therefore requires value zero.
+Validate every full-width field and the existing context before buffer accesses.
+Malformed context or field returns status one and count zero, retaining context
+and output without accessing buffer bytes. Context reads needed for validation
+are permitted.
+
+After metadata admission, compare the requested width with the remaining bit
+capacity. Insufficient space returns status two and count zero, again with no
+buffer access or state change. A valid empty append succeeds with count zero
+and performs no buffer access or context write. It still validates the context.
+
+On nonempty success, append exactly the declared bits, preserve all bits outside
+that window, and update only the committed count after output is complete.
+Return status zero and the appended width in \texttt{\$v1}. Access only destination
+bytes touched by the field. A wider load or store reaching neighbouring bytes
+is outside this contract, even if those bytes are mapped. No file operation is
+performed by this function.
+
+\section{Make space failure a preflight decision}
+Let byte capacity be $c$ and used bits be $p$. First establish $p\leq8c$.
+Then the remaining space is $8c-p$, and admission requires
+\[
+ n\leq8c-p.
+\]
+The exercise's capacity bound makes the multiplication by eight safe. Subtracting
+a validated used count also avoids relying on an unchecked $p+n$ calculation.
+Only after the whole field fits should the first read-modify-write occur.
+
+This gives field-level atomicity for ordinary admission failures: a rejected
+field leaves the prior stream usable, including its count and partial last byte.
+It does not yet give atomicity to a multi-field structure. If a coefficient event
+requires several appends, its encoder must preflight their total space or stage
+the complete event. A failed fifth append cannot be repaired merely by restoring
+the old count, because earlier appends may already have replaced unused bits.
+
+\section{Write one byte fragment at a time}
+Begin with the bit-at-a-time path, then combine adjacent bits within a byte.
+If the next destination offset is $r=p\bmod8$, that byte has $8-r$ available
+positions. Take the smaller of the remaining field width and $8-r$. Extract
+that many next source bits, shift them into their destination positions, clear
+exactly the corresponding old bits, then OR in the replacement fragment.
+
+For a fragment of $k$ bits ending above $s$ low positions, its mask is
+$(2^k-1)\ll s$. Clearing that mask before OR is essential when the new fragment
+contains zeros. An OR-only writer can set old zero bits, but cannot replace old
+ones with zero. The initial \texttt{A5} data deliberately exposes that error.
+
+The byte-chunk path is still ordered scalar work. A field carries at most 32
+bits and may touch five destination bytes when unaligned. MSA is useful in the
+transform and sample paths; it is not a requirement for this serial append.
+Compare complete function work, including admission and cursor updates, before
+claiming that fewer loop iterations improve the whole encoder.

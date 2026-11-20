@@ -1,0 +1,26 @@
+\section{Step 69 Check the actual selected-level reconstruction}\label{h263-block-s09}
+Run the public feedback on a source containing your block entry and completed
+transform/quantizer dependencies:
+\begin{verbatim}
+python3 construction/h263-reconstruction-construction/grade.py \
+    my-block.asm --cli /path/to/mars-cli.jar \
+    --report block-results.json
+\end{verbatim}
+Compare every stage, not just the first final pixel. The checker accepts the
+permitted forward and inverse accuracy while requiring exact level-to-coefficient
+and inverse-to-pixel consistency. It also checks wide pointers, independent
+strides, input-read bounds, output guards and saved state.
+
+The statistical inverse gate remains a separate prerequisite. An implementation
+that passes one constant block can still have a normalization, transpose or bias
+error elsewhere.
+
+\paragraph{Observe} Two independently accurate precisions and another traversal
+order can satisfy the same block interface without sharing every rounded coefficient.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why reconstruct the reference inverse from returned levels?
+\begin{itemize}
+\item[A.] It forces every encoder to emit the host encoder's bits.
+\item[B.] It avoids checking quantization entirely.
+\item[C.] It checks the actual representation this block selected.
+\end{itemize}

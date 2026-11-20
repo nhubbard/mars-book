@@ -1,0 +1,32 @@
+\section{Step 40 Verify complete records before adding transforms}\label{h263-macroblock-s10}
+Run completed feedback against your current source:
+\begin{verbatim}
+python3 construction/h263-macroblock-construction/grade.py \
+    my-macroblock.asm --cli /path/to/mars-cli.jar \
+    --report macroblock-results.json
+\end{verbatim}
+The 64 public cases cover both modes and byte orders, five signed vectors,
+picture-corner macroblocks, padded independent strides, read-only aliases, maximum
+differences and rejected requests. The checker computes every expected prediction
+and signed residual from its own plane data. It checks all six record offsets,
+the total, sample accesses, saved state, source/request preservation and output
+guards. It accepts alternative block orders and private frames. Reports require
+a new path.
+
+Measure the outer entry-to-return boundary, including preflight, child setup,
+all six calls, private staging and publication. For the named mixed-pattern
+interior case with displacement $(-2,-2)$, the reference used 11\,447 scalar
+instructions and 5525 with MSA block arithmetic. The sample results agreed.
+These finite instruction counts do not measure host time or a completed encoder.
+Publication and control work remain visible after faster block arithmetic.
+
+\paragraph{Observe} Use the odd worked displacement as well as the default.
+A correct total for a zero-chroma case cannot establish that Cr addressing and
+half-sample chroma prediction are correct. Check their individual records.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which boundary supplies the appropriate macroblock work count?
+\begin{itemize}
+\item[A.] Only the arithmetic inside one child.
+\item[B.] Outer entry through return, including staging and publication.
+\item[C.] The number of bytes in the raw input file.
+\end{itemize}

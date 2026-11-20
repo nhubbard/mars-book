@@ -1,0 +1,227 @@
+\section{Step 31 Plan one request and six records}\label{h263-macroblock-s01}
+Sketch the request offsets and the six output ranges before implementing the
+routine. The request has eighteen doublewords. The output has six records of
+192 bytes. A block's record starts at $192b$ for block index $b$; its signed
+residuals start another 64 bytes later.
+
+Keep saved caller state, a stable request copy, the reusable child request and
+staged results distinct. Align the ordinary entry stack before its first call;
+a private record at an aligned offset still needs an aligned stack base.
+Record sizes are byte counts, while loop counters may
+count doublewords. Confusing those units can produce a copy that looks correct
+at its beginning and leaves the final Cr residuals unchanged.
+
+\paragraph{Observe} Block five starts at byte 960 and its final halfword occupies
+bytes 1150 and 1151. The next byte belongs to the output guard.
+\Needspace{8\baselineskip}
+\paragraph{Check} Where does block five's residual array start?
+\begin{itemize}
+\item[A.] Byte 64, shared by every block.
+\item[B.] Byte 1024, which is $5\times192+64$.
+\item[C.] Byte 1152, after the whole result.
+\end{itemize}
+
+\section{Step 32 Check the macroblock geometry}\label{h263-macroblock-s02}
+Check request/output alignment and extents, then load the coordinates,
+displacement, mode and reserved field. Coordinates are unsigned and aligned to
+sixteen samples. Displacements are signed full-width quantities. Validate their
+small range before forming reference coordinates.
+
+A valid current position does not make every displacement valid. At $x=0$,
+$d_x=-1$ points outside the reference picture and must be rejected. A preceding
+search would have omitted that candidate; this routine must still defend its
+own interface when called directly.
+
+\paragraph{Observe} Current origin $(16,32)$ is admitted. $(17,32)$ is not a
+macroblock origin. $(0,32)$ with horizontal displacement $-1$ is rejected.
+\Needspace{8\baselineskip}
+\paragraph{Check} What should this routine do with an out-of-picture selected vector?
+\begin{itemize}
+\item[A.] Reject it before pixel reads or output changes.
+\item[B.] Silently clamp it to a different vector.
+\item[C.] Repeat the complete motion search without being asked.
+\end{itemize}
+
+\section{Step 33 Validate every plane before starting Y}\label{h263-macroblock-s03}
+Check all six plane strides and non-wrapping extents. Select width 176 and height
+144 for Y, width 88 and height 72 for each chroma plane. Validate each current and
+reference stride independently. A shared numerical value in the worked caller
+is an example, not permission to ignore a field.
+
+Finish this preflight before calling the first block predictor. Otherwise an
+invalid reference Cr stride could be discovered only after Y has already been
+read and written. Status one requires no pixel reads, even when the invalid
+field occurs at the end of the request.
+
+\paragraph{Observe} Setting only the final reference Cr stride to zero returns
+one and zero, retaining the entire old output and leaving all image traces empty.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which extent belongs to an 88-by-72 chroma plane?
+\begin{itemize}
+\item[A.] $143s+176$, copied from Y.
+\item[B.] $72s+88$, with an extra row advance.
+\item[C.] $71s+88$, with 71 advances before the last active row.
+\end{itemize}
+
+\section{Step 34 Build the four luma child requests}\label{h263-macroblock-s04}
+For blocks zero through three, derive local offsets $(0,0)$, $(8,0)$, $(0,8)$
+and $(8,8)$. Add each to the current macroblock origin. The reference coordinate
+also includes the selected displacement. Compute byte offsets with the respective
+Y strides and complete plane origins.
+
+Set both child phases to zero because this search selects full luma pixels.
+Set the child's mode and reserved field explicitly. Retain all values needed for
+later blocks across the call; child argument and scratch registers are temporary.
+The outer return address must survive every nested call.
+
+\paragraph{Observe} For current $(16,32)$ and displacement $(-2,-2)$, block one
+uses current $(24,32)$ and reference $(22,30)$, both in Y.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which local offset belongs to the bottom-left Y block?
+\begin{itemize}
+\item[A.] $(8,0)$.
+\item[B.] $(0,8)$.
+\item[C.] $(8,8)$.
+\end{itemize}
+
+\section{Step 35 Derive both chroma requests from the same vector}\label{h263-macroblock-s05}
+Halve the aligned current coordinates to obtain the chroma macroblock origin.
+Split each signed luma displacement into its floored half and its phase bit.
+Add the floored shifts to the chroma origin, then form addresses from the chosen
+Cb or Cr plane and its own stride.
+
+Reuse the geometry for both chroma blocks, but load their distinct pointers and
+strides. An odd negative component needs origin shift $-1$ and phase one.
+Truncating division toward zero would select the wrong reference interval.
+The displayed sample aspect ratio does not change these array coordinates.
+
+\paragraph{Observe} At current $(16,32)$ and displacement $(-1,-1)$, both chroma
+blocks use current $(8,16)$, reference origin $(7,15)$ and phases $(1,1)$.
+\Needspace{8\baselineskip}
+\paragraph{Check} What may Cb and Cr legitimately share here?
+\begin{itemize}
+\item[A.] The derived displacement geometry, while retaining their own data and strides.
+\item[B.] One pointer, regardless of the request.
+\item[C.] The Y stride, regardless of either chroma stride field.
+\end{itemize}
+
+\section{Step 36 Point the child at its private record}\label{h263-macroblock-s06}
+Build the reusable eight-by-eight request from the current block's fields.
+Pass a private output address at staged-base plus $192b$. The child writes its
+prediction and residual there. Its successful return does not publish the whole
+macroblock yet; the remaining records still have to be produced.
+
+A stable block index identifies output order even when you process blocks in a
+different sequence. An implementation that visits five through zero can store
+each result at the same specified record offset. Do not make traversal order
+implicitly determine which plane appears in a record.
+
+\paragraph{Observe} After one successful child call, only its private record
+is complete. The caller's output still has all of its original bytes.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which address should the child receive as its output?
+\begin{itemize}
+\item[A.] The caller output, before knowing whether later children succeed.
+\item[B.] The request's reference plane pointer.
+\item[C.] Its assigned private staging record.
+\end{itemize}
+
+\section{Step 37 Add magnitudes without cancelling errors}\label{h263-macroblock-s07}
+On each successful child return, add its SAD to a full-width total. This total
+summarizes all six records. Keep it separate from the byte-copy counter, block
+index and status register. Save the returned status and total before an
+ordinary observation caller prints them. Loading a syscall service number into
+\texttt{\$v0} replaces the function's returned status.
+
+Sum magnitudes, rather than taking the magnitude of a sum of signed residuals.
+Residuals $-10$ and $+10$ contribute twenty to SAD even though their signed sum
+is zero. The six-block upper bound is 97\,920, covering 384 current samples.
+Every signed residual remains stored for the later transform.
+
+\paragraph{Observe} With all current samples 255 and all reference samples zero,
+the return total is 97\,920 in both modes. Reversing the extremes retains that
+total but reverses the residual signs.
+\Needspace{8\baselineskip}
+\paragraph{Check} What do residuals $-10$ and $+10$ contribute to the returned total?
+\begin{itemize}
+\item[A.] Zero, because they cancel.
+\item[B.] Twenty, the sum of their magnitudes.
+\item[C.] Two, the number of samples only.
+\end{itemize}
+
+\section{Step 38 Handle a failed child without publishing}\label{h263-macroblock-s08}
+Inspect the child status before adding its score or proceeding to another block.
+If it is nonzero, return dependency status two and total zero. Restore saved state
+and leave the caller's output untouched. The child may have changed its private
+record before reporting failure; those bytes are not a complete macroblock result.
+
+A completed outer routine with the supplied unfinished child is a useful
+integration observation. It should report block prediction failure, rather than
+pretend the child's development value is a valid SAD. Restore the completed child
+before expecting the ordinary success checks to pass.
+
+\paragraph{Observe} A failure on a later child retains the old caller output,
+even after earlier private records were successfully produced. Argument rejection
+still uses status one and occurs before any child pixel work.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does dependency status two imply about earlier input reads?
+\begin{itemize}
+\item[A.] Earlier successful child calls may already have read their inputs.
+\item[B.] The function never read its request.
+\item[C.] The caller's first three output records must be overwritten.
+\end{itemize}
+
+\section{Step 39 Copy the complete staged output}\label{h263-macroblock-s09}
+After all six children succeed, copy exactly 1152 bytes to the caller's output.
+For aligned doubleword transfers this is 144 iterations. Keep a distinct source
+and destination pointer and stop at the exclusive end. Preserve record order and
+the native-endian halfword bytes already produced by the child.
+
+Return success and the accumulated total only after the copy completes. The
+caller must use the returned status to decide whether the output is new. This
+working representation will feed transforms; it is not a stream of already
+compressed H.263 bytes.
+
+\paragraph{Observe} The default worked caller prints 2976. At its return
+breakpoint, the sixth record is complete and the byte immediately after the
+1152-byte area is unchanged.
+\Needspace{8\baselineskip}
+\paragraph{Check} How many eight-byte transfers cover the complete output?
+\begin{itemize}
+\item[A.] Eighteen, the number of request fields.
+\item[B.] 1152, treating bytes as doublewords.
+\item[C.] 144.
+\end{itemize}
+
+\section{Step 40 Verify complete records before adding transforms}\label{h263-macroblock-s10}
+Run completed feedback against your current source:
+\begin{verbatim}
+python3 construction/h263-macroblock-construction/grade.py \
+    my-macroblock.asm --cli /path/to/mars-cli.jar \
+    --report macroblock-results.json
+\end{verbatim}
+The 64 public cases cover both modes and byte orders, five signed vectors,
+picture-corner macroblocks, padded independent strides, read-only aliases, maximum
+differences and rejected requests. The checker computes every expected prediction
+and signed residual from its own plane data. It checks all six record offsets,
+the total, sample accesses, saved state, source/request preservation and output
+guards. It accepts alternative block orders and private frames. Reports require
+a new path.
+
+Measure the outer entry-to-return boundary, including preflight, child setup,
+all six calls, private staging and publication. For the named mixed-pattern
+interior case with displacement $(-2,-2)$, the reference used 11\,447 scalar
+instructions and 5525 with MSA block arithmetic. The sample results agreed.
+These finite instruction counts do not measure host time or a completed encoder.
+Publication and control work remain visible after faster block arithmetic.
+
+\paragraph{Observe} Use the odd worked displacement as well as the default.
+A correct total for a zero-chroma case cannot establish that Cr addressing and
+half-sample chroma prediction are correct. Check their individual records.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which boundary supplies the appropriate macroblock work count?
+\begin{itemize}
+\item[A.] Only the arithmetic inside one child.
+\item[B.] Outer entry through return, including staging and publication.
+\item[C.] The number of bytes in the raw input file.
+\end{itemize}

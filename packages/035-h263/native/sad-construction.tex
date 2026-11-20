@@ -1,0 +1,221 @@
+\section{Step 1 Admit strides before touching samples}\label{h263-sad-s01}
+Begin with the two callable shells in the supplied file. Keep the returned count
+zero while checking arguments. Reject an unsigned stride below sixteen or above
+4096. Apply the check independently to both inputs. A negative register pattern
+is a large unsigned stride, not a request to walk rows backwards.
+
+Use the same failure convention in scalar and MSA entries. A valid computation
+that is still unfinished may return development status four; an argument rejected
+by the completed interface returns one. Sharing the checks is reasonable, but it
+is not required for an equivalent implementation.
+
+\paragraph{Observe} In a prepared test copy, use stride fifteen. The function
+must reject it without reading an input sample. Restore the worked stride 176
+before continuing with the picture windows.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why is stride fifteen invalid for this entry?
+\begin{itemize}
+\item[A.] The fixed comparison consumes sixteen active samples in every row.
+\item[B.] Every MSA byte load requires an address divisible by sixteen.
+\item[C.] A luma sample occupies two bytes.
+\end{itemize}
+
+\section{Step 2 Bound the complete address windows}\label{h263-sad-s02}
+After the stride checks, compute $15s+16$ for each input in 64-bit registers.
+The admitted stride bound makes these extent calculations small, but the input
+pointer may still be near the end of the address space. Add the extent to its
+start and use an unsigned comparison to detect a wrapping exclusive end.
+
+Perform both checks before the first load from either source. Otherwise, a valid
+first input could already have been read when the second pointer is rejected.
+A mapped input window is a caller obligation; this arithmetic check does not
+inspect the simulator's memory map or turn an arbitrary unmapped pointer into a
+successful argument.
+
+\paragraph{Observe} For stride 176, the minimum extent is 2656 bytes. For stride
+sixteen it is 256. A top address whose addition wraps is rejected with count zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} How much input does one successful comparison consume?
+\begin{itemize}
+\item[A.] Every byte in both contiguous extents.
+\item[B.] Exactly 256 active sample bytes from each window.
+\item[C.] Sixteen bytes from each whole picture.
+\end{itemize}
+
+\section{Step 3 Form one scalar difference}\label{h263-sad-s03}
+Use separate row-start pointers and a count of sixteen rows. At the start of a
+row, copy those starts into moving sample cursors and initialize a sixteen-sample
+column count. Load one unsigned byte from each cursor. Their subtraction lies
+between minus 255 and plus 255, so its absolute value fits an ordinary general
+register without a special minimum-integer case.
+
+Accumulate the magnitude in a wide sum. The current input's first worked sample
+is 56 and the reference sample is 200, giving magnitude 144. Loading 200 with a
+signed byte load would instead produce minus 56, so the wrong result can arise
+before the absolute-value operation. Interpret the samples correctly at the load.
+
+\paragraph{Observe} Stop immediately after forming the first magnitude. It is
+144. No input byte has been modified.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which loaded values should be subtracted for this pair?
+\begin{itemize}
+\item[A.] 56 and minus 56.
+\item[B.] Minus 200 and 56.
+\item[C.] 56 and 200.
+\end{itemize}
+
+\section{Step 4 Finish exactly sixteen scalar rows}\label{h263-sad-s04}
+Advance both sample cursors by one after each pair, and repeat for sixteen pairs.
+When a row finishes, advance the retained row starts by their respective strides.
+The row starts and moving cursors have different jobs: adding the stride to a
+cursor already sixteen bytes past the start would drift sixteen extra samples
+on every row.
+
+Finish sixteen rows and retain the complete sum. For the worked first row, eight
+differences are 144 and eight are 132, giving 2208. Later rows overlap the bright
+square differently, so multiplying 2208 by sixteen is not the block result.
+The complete scalar sum is 7872. A row's neighbors and padding do not contribute.
+
+\paragraph{Observe} The successful trace has 256 sample loads from each window.
+Their addresses fit the sixteen active bytes in each row. The final sum is 7872.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which pointer should receive the row stride?
+\begin{itemize}
+\item[A.] The pointer to the start of the current row.
+\item[B.] The pointer already sixteen samples beyond that start, without adjustment.
+\item[C.] The address of the returned sum.
+\end{itemize}
+
+\section{Step 5 Compare a whole row with MSA}\label{h263-sad-s05}
+Start the MSA entry with the same admission checks and row count. Zero its wide
+lane accumulator once for the whole block. For each row, load exactly sixteen
+bytes from each active start and form unsigned byte difference magnitudes with
+\texttt{asub\_u.b}. Keep the input samples and the byte differences conceptually
+separate: their bit widths agree, but their meanings do not.
+
+There is no scalar remainder within a sixteen-sample row. Do not load a second
+vector to make an unaligned address convenient. A byte-form MSA load is permitted
+at the supplied unaligned byte pointer; its entire sixteen-byte access must still
+fit the active row.
+
+\paragraph{Observe} The first worked row's magnitudes consist of eight 144s and
+eight 132s by increasing sample address. All-zero against all-255 input produces
+sixteen magnitudes of 255.
+\Needspace{8\baselineskip}
+\paragraph{Check} What is wrong with using \texttt{asub\_s.b} here?
+\begin{itemize}
+\item[A.] It always changes the memory byte order.
+\item[B.] It interprets samples above 127 as negative values.
+\item[C.] It returns a floating-point result.
+\end{itemize}
+
+\section{Step 6 Widen before accumulating}\label{h263-sad-s06}
+Combine adjacent difference bytes into unsigned halfwords, then add those
+halfwords to the block accumulator. For the first worked row, the adjacent pair
+sums by increasing address are four 288s and four 264s. Each pair now needs more
+than one byte even though its two original magnitudes individually fit.
+
+The width proof applies to every admitted byte pattern, not just the selected
+video. A halfword lane can receive at most $16\times510=8160$ over the entire
+block. That bound permits wrapping halfword addition here without losing a carry.
+It does not permit byte accumulation followed by a wider interpretation of its
+already-wrapped result.
+
+\paragraph{Observe} With all differences 255, each of the eight final halfword
+lanes is 8160. Their total is 65\,280.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which operation preserves the information needed for that total?
+\begin{itemize}
+\item[A.] Add rows in byte lanes, then reinterpret the bytes as halfwords.
+\item[B.] Saturate every row total to 255.
+\item[C.] Widen adjacent byte sums before accumulating across rows.
+\end{itemize}
+
+\section{Step 7 Advance rows without extending the reads}\label{h263-sad-s07}
+After each vector row, advance the two row-start addresses by their own strides
+and reduce the remaining-row count. Continue for sixteen rows. The loaded width
+is sixteen bytes, but the worked row advance is 176 bytes. Those values agree
+only for a tightly packed block copy, which this caller does not supply.
+
+Do not clear the accumulator inside the loop. Equal inputs then hide the error,
+because every row contributes zero. Use a maximum-difference block and the worked
+moving-square block to expose lost earlier contributions. Keep the final row's
+access bounded even if the next scratch pointer would never be dereferenced.
+
+\paragraph{Observe} Each input generates sixteen full-width sample loads. No
+load includes a seventeenth sample, a padding byte or the following row.
+\Needspace{8\baselineskip}
+\paragraph{Check} How many row-vector loads does this block need in total?
+\begin{itemize}
+\item[A.] Sixteen, shared between both inputs.
+\item[B.] Thirty-two, sixteen from each input.
+\item[C.] Two, one from each whole frame.
+\end{itemize}
+
+\section{Step 8 Reduce the accumulated lanes}\label{h263-sad-s08}
+Reduce the eight halfwords into four words, then into two doublewords. Extract
+both doublewords into general registers and add them. The final sum includes all
+sixteen rows and all sixteen columns. Returning one doubleword alone would retain
+only part of the block, even if that partial sum looks reasonable.
+
+The two wide partials are bounded by 32\,640 each. A doubleword extraction cannot
+turn either into a negative value. Keep the return count in a full-width general
+register so its representation is unambiguous at the callable boundary. Compare
+both target byte orders: a consistent permutation of byte positions can leave a
+sum unchanged, while an incorrect extraction or missed half still fails.
+
+\paragraph{Observe} Maximum-difference inputs return 65\,280. The worked windows
+return 7872, and identical windows return zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does the final scalar addition combine?
+\begin{itemize}
+\item[A.] Two partial sums covering the complete block together.
+\item[B.] The addresses of the two source buffers.
+\item[C.] Two competing motion vectors.
+\end{itemize}
+
+\section{Step 9 Return the result through the supplied caller}\label{h263-sad-s09}
+Publish success status zero only after the whole block has been compared. Return
+the SAD in \texttt{\$v1}, preserve saved registers and return through the caller's
+address. A zero SAD is an ordinary successful result; it is not the failure
+convention. Overlapping read-only windows are also legitimate arguments.
+
+Prepare separate worked copies in scalar and MSA modes. Run each to completion.
+The completed caller prints 7872 followed by a newline and exits successfully.
+Before the functions are complete, its development message and failing process
+status remain expected. Treat that message as progress feedback rather than a
+completed codec result.
+
+\paragraph{Observe} In Debug, stop before \texttt{sad\_caller\_return}'s first
+instruction. Returned registers are zero and 7872 before the caller stores them
+in \texttt{sad\_last\_status} and \texttt{sad\_last\_sum}.
+\Needspace{8\baselineskip}
+\paragraph{Check} What should identical valid windows return?
+\begin{itemize}
+\item[A.] Failure status one because no motion was found.
+\item[B.] Development status four forever.
+\item[C.] Success status zero and SAD zero.
+\end{itemize}
+
+\section{Step 10 Measure this boundary before adding search}\label{h263-sad-s10}
+Count completed instructions from function entry through its return to a stopped
+caller continuation. Include admission checks and reduction; exclude preparation
+of the caller's data. Record which implementation and input produced the count.
+An instruction count is reproducible simulator work, while host wall time also
+includes scheduling and runtime effects.
+
+The checked reference used 3245 completed instructions in scalar mode and 207 in
+MSA mode for each admitted worked block. A second valid MSA implementation used
+239, because it formed magnitudes with separate maximum, minimum and subtraction
+operations. All produced the same exact sums and active-row accesses. Neither
+207 nor the ratio between these counts is a grading threshold.
+
+\paragraph{Observe} Record counts for equal, maximum-difference and worked
+windows. Confirm correctness independently before reporting the counts.
+\Needspace{8\baselineskip}
+\paragraph{Check} What can these measurements establish by themselves?
+\begin{itemize}
+\item[A.] Completed instruction work for the named kernel boundaries and inputs.
+\item[B.] The running time of the finished video encoder.
+\item[C.] A requirement that every correct solution execute exactly 207 instructions.
+\end{itemize}

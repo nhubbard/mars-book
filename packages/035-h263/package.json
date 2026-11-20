@@ -1,0 +1,4441 @@
+{
+  "formatVersion": 1,
+  "id": "035-h263",
+  "version": "0.1.0",
+  "status": "draft",
+  "title": "Encode a restricted H.263 stream",
+  "audience": "Students with basic programming competence and prior assembly/MSA experience",
+  "environment": {
+    "isa": "MIPS64 Release 6",
+    "syscallAbi": "MARS educational",
+    "jdk": "25",
+    "ide": "IntelliJ IDEA 2026.3",
+    "upstreamCommit": "6c66f10175b366e2bdae37d3d8420b29a2a17b0c",
+    "byteOrder": "both native byte orders in grading",
+    "graderRequirements": [
+      "callFunction",
+      "readDataAddress",
+      "readBytes",
+      "traceMemoryAccesses",
+      "provideFiles.failWriteAfterBytesByPath"
+    ],
+    "memoryLayout": "Student ordinary data below the reserved wide-address grading arena; each domain supplies its documented private stack"
+  },
+  "modes": [
+    "guided",
+    "free-writing"
+  ],
+  "progression": {
+    "default": "recommended-order",
+    "instructorControls": [
+      "require-quiz",
+      "require-check",
+      "hint-availability",
+      "allow-skip",
+      "allow-mode-switch"
+    ],
+    "localImplementation": "Native stage observations and completed feedback; automatic remote enforcement remains pending"
+  },
+  "entry": "starter/main.asm",
+  "assignment": "assignment.tex",
+  "reading": "reading.json",
+  "gradingHarness": "checks/harness-clip.asm",
+  "checkHarnesses": {
+    "checks/sad.kts": "checks/harness-sad.asm",
+    "checks/motion.kts": "checks/harness-motion.asm",
+    "checks/prediction.kts": "checks/harness-prediction.asm",
+    "checks/macroblock.kts": "checks/harness-macroblock.asm",
+    "checks/transform.kts": "checks/harness-transform.asm",
+    "checks/quantization.kts": "checks/harness-quantization.asm",
+    "checks/block.kts": "checks/harness-block.asm",
+    "checks/writer.kts": "checks/harness-writer.asm",
+    "checks/coefficients.kts": "checks/harness-coefficients.asm",
+    "checks/syntax.kts": "checks/harness-syntax.asm",
+    "checks/picture.kts": "checks/harness-picture.asm",
+    "checks/clip.kts": "checks/harness-clip.asm"
+  },
+  "prerequisites": [
+    "MIPS64 calling conventions, full-width addressing and MSA",
+    "Bounded file I/O and the earlier image/video chapters"
+  ],
+  "learningObjectives": [
+    "Build interoperable restricted baseline QCIF H.263 output",
+    "Preserve accuracy through selected levels and local reconstruction",
+    "Keep accepted reconstructed references separate from raw and staged pictures",
+    "Validate complete buffers and publish according to each stated failure contract",
+    "Compare finite work, file size and decoded quality independently"
+  ],
+  "functionContract": {
+    "entries": [
+      "h263_sad16",
+      "h263_sad16_msa",
+      "h263_search16",
+      "h263_predict8",
+      "h263_predict_mb",
+      "h263_transform8",
+      "h263_quantize8",
+      "h263_encode_block8",
+      "h263_write_bits",
+      "h263_emit_coefficients",
+      "h263_emit_macroblock",
+      "h263_encode_picture",
+      "h263_encode_clip"
+    ],
+    "profile": "QCIF planar Y/Cb/Cr input; one initial I and INTER-only P pictures; explicit row GOB headers; bounded full-pixel search; baseline coding without optional annex modes",
+    "maxPictures": 299,
+    "maxDurationSeconds": 10,
+    "additionalGates": [
+      "Full inverse transform Annex A accuracy and exact-zero checks",
+      "Independent complete-stream decoding, source quality and local reconstruction comparison"
+    ]
+  },
+  "steps": [
+    {
+      "id": "h263-sad-s01",
+      "number": 1,
+      "title": "Admit strides before touching samples",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s01.tex",
+      "prerequisites": [],
+      "quiz": {
+        "id": "h263-sad-s01",
+        "format": "latex",
+        "prompt": "Why is stride fifteen invalid for this entry?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The fixed comparison consumes sixteen active samples in every row."
+          },
+          {
+            "id": "B",
+            "text": "Every MSA byte load requires an address divisible by sixteen."
+          },
+          {
+            "id": "C",
+            "text": "A luma sample occupies two bytes."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s02",
+      "number": 2,
+      "title": "Bound the complete address windows",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s02.tex",
+      "prerequisites": [
+        "h263-sad-s01"
+      ],
+      "quiz": {
+        "id": "h263-sad-s02",
+        "format": "latex",
+        "prompt": "How much input does one successful comparison consume?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every byte in both contiguous extents."
+          },
+          {
+            "id": "B",
+            "text": "Exactly 256 active sample bytes from each window."
+          },
+          {
+            "id": "C",
+            "text": "Sixteen bytes from each whole picture."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s03",
+      "number": 3,
+      "title": "Form one scalar difference",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s03.tex",
+      "prerequisites": [
+        "h263-sad-s02"
+      ],
+      "quiz": {
+        "id": "h263-sad-s03",
+        "format": "latex",
+        "prompt": "Which loaded values should be subtracted for this pair?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "56 and minus 56."
+          },
+          {
+            "id": "B",
+            "text": "Minus 200 and 56."
+          },
+          {
+            "id": "C",
+            "text": "56 and 200."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s04",
+      "number": 4,
+      "title": "Finish exactly sixteen scalar rows",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s04.tex",
+      "prerequisites": [
+        "h263-sad-s03"
+      ],
+      "quiz": {
+        "id": "h263-sad-s04",
+        "format": "latex",
+        "prompt": "Which pointer should receive the row stride?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The pointer to the start of the current row."
+          },
+          {
+            "id": "B",
+            "text": "The pointer already sixteen samples beyond that start, without adjustment."
+          },
+          {
+            "id": "C",
+            "text": "The address of the returned sum."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s05",
+      "number": 5,
+      "title": "Compare a whole row with MSA",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s05.tex",
+      "prerequisites": [
+        "h263-sad-s04"
+      ],
+      "quiz": {
+        "id": "h263-sad-s05",
+        "format": "latex",
+        "prompt": "What is wrong with using \\texttt{asub\\_s.b} here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It always changes the memory byte order."
+          },
+          {
+            "id": "B",
+            "text": "It interprets samples above 127 as negative values."
+          },
+          {
+            "id": "C",
+            "text": "It returns a floating-point result."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s06",
+      "number": 6,
+      "title": "Widen before accumulating",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s06.tex",
+      "prerequisites": [
+        "h263-sad-s05"
+      ],
+      "quiz": {
+        "id": "h263-sad-s06",
+        "format": "latex",
+        "prompt": "Which operation preserves the information needed for that total?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Add rows in byte lanes, then reinterpret the bytes as halfwords."
+          },
+          {
+            "id": "B",
+            "text": "Saturate every row total to 255."
+          },
+          {
+            "id": "C",
+            "text": "Widen adjacent byte sums before accumulating across rows."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s07",
+      "number": 7,
+      "title": "Advance rows without extending the reads",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s07.tex",
+      "prerequisites": [
+        "h263-sad-s06"
+      ],
+      "quiz": {
+        "id": "h263-sad-s07",
+        "format": "latex",
+        "prompt": "How many row-vector loads does this block need in total?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Sixteen, shared between both inputs."
+          },
+          {
+            "id": "B",
+            "text": "Thirty-two, sixteen from each input."
+          },
+          {
+            "id": "C",
+            "text": "Two, one from each whole frame."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s08",
+      "number": 8,
+      "title": "Reduce the accumulated lanes",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s08.tex",
+      "prerequisites": [
+        "h263-sad-s07"
+      ],
+      "quiz": {
+        "id": "h263-sad-s08",
+        "format": "latex",
+        "prompt": "What does the final scalar addition combine?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Two partial sums covering the complete block together."
+          },
+          {
+            "id": "B",
+            "text": "The addresses of the two source buffers."
+          },
+          {
+            "id": "C",
+            "text": "Two competing motion vectors."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s09",
+      "number": 9,
+      "title": "Return the result through the supplied caller",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s09.tex",
+      "prerequisites": [
+        "h263-sad-s08"
+      ],
+      "quiz": {
+        "id": "h263-sad-s09",
+        "format": "latex",
+        "prompt": "What should identical valid windows return?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Failure status one because no motion was found."
+          },
+          {
+            "id": "B",
+            "text": "Development status four forever."
+          },
+          {
+            "id": "C",
+            "text": "Success status zero and SAD zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-sad-s10",
+      "number": 10,
+      "title": "Measure this boundary before adding search",
+      "kind": "edit",
+      "stage": "h263-sad-construction",
+      "domain": "sad",
+      "content": "native/h263-sad-s10.tex",
+      "prerequisites": [
+        "h263-sad-s09"
+      ],
+      "quiz": {
+        "id": "h263-sad-s10",
+        "format": "latex",
+        "prompt": "What can these measurements establish by themselves?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Completed instruction work for the named kernel boundaries and inputs."
+          },
+          {
+            "id": "B",
+            "text": "The running time of the finished video encoder."
+          },
+          {
+            "id": "C",
+            "text": "A requirement that every correct solution execute exactly 207 instructions."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/sad.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s01",
+      "number": 11,
+      "title": "Preserve the search across a nested call",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s01.tex",
+      "prerequisites": [
+        "h263-sad-s10"
+      ],
+      "quiz": {
+        "id": "h263-motion-s01",
+        "format": "latex",
+        "prompt": "Where can a candidate coordinate safely remain across SAD?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "In any scratch register, because the caller used it first."
+          },
+          {
+            "id": "B",
+            "text": "In a preserved register or an allocated stack local."
+          },
+          {
+            "id": "C",
+            "text": "Only in an input pixel byte."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s02",
+      "number": 12,
+      "title": "Admit the complete request before pixels",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s02.tex",
+      "prerequisites": [
+        "h263-motion-s01"
+      ],
+      "quiz": {
+        "id": "h263-motion-s02",
+        "format": "latex",
+        "prompt": "Which read is permitted while rejecting a bad mode field?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The mapped request field needed to inspect that mode."
+          },
+          {
+            "id": "B",
+            "text": "The first reference vector, to see whether the image looks usable."
+          },
+          {
+            "id": "C",
+            "text": "An arbitrary address beyond the reference plane."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s03",
+      "number": 13,
+      "title": "Clip signed displacement intervals",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s03.tex",
+      "prerequisites": [
+        "h263-motion-s02"
+      ],
+      "quiz": {
+        "id": "h263-motion-s03",
+        "format": "latex",
+        "prompt": "Why is a top-left reference coordinate of 175 invalid?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Byte 175 can never be mapped."
+          },
+          {
+            "id": "B",
+            "text": "Every motion vector must be zero."
+          },
+          {
+            "id": "C",
+            "text": "A sixteen-sample block starting there extends past the picture width."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s04",
+      "number": 14,
+      "title": "Compare the zero candidate once",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s04.tex",
+      "prerequisites": [
+        "h263-motion-s03"
+      ],
+      "quiz": {
+        "id": "h263-motion-s04",
+        "format": "latex",
+        "prompt": "What is a safe initial best-score sentinel?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero, because SAD is nonnegative."
+          },
+          {
+            "id": "B",
+            "text": "65\\,536, which exceeds the maximum possible block SAD."
+          },
+          {
+            "id": "C",
+            "text": "The current image address."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s05",
+      "number": 15,
+      "title": "Form each candidate from the plane origin",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s05.tex",
+      "prerequisites": [
+        "h263-motion-s04"
+      ],
+      "quiz": {
+        "id": "h263-motion-s05",
+        "format": "latex",
+        "prompt": "Which pointer changes when selecting a new candidate?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The reference window pointer derived from the plane origin."
+          },
+          {
+            "id": "B",
+            "text": "Both image pointers by the same displacement."
+          },
+          {
+            "id": "C",
+            "text": "The result pointer by sixteen rows."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s06",
+      "number": 16,
+      "title": "Update the best result without changing ties",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s06.tex",
+      "prerequisites": [
+        "h263-motion-s05"
+      ],
+      "quiz": {
+        "id": "h263-motion-s06",
+        "format": "latex",
+        "prompt": "What happens if equal scores always replace the best?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "SAD becomes negative."
+          },
+          {
+            "id": "B",
+            "text": "The vector registers become read-only."
+          },
+          {
+            "id": "C",
+            "text": "Traversal order can incorrectly replace the specified preferred tie."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s07",
+      "number": 17,
+      "title": "Finish the rectangle without crossing an edge",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s07.tex",
+      "prerequisites": [
+        "h263-motion-s06"
+      ],
+      "quiz": {
+        "id": "h263-motion-s07",
+        "format": "latex",
+        "prompt": "What does the returned candidate count describe?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The number of scratch registers used."
+          },
+          {
+            "id": "B",
+            "text": "The number of unique positions admitted by the clipped search."
+          },
+          {
+            "id": "C",
+            "text": "The number of output bytes."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s08",
+      "number": 18,
+      "title": "Publish one complete result",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s08.tex",
+      "prerequisites": [
+        "h263-motion-s07"
+      ],
+      "quiz": {
+        "id": "h263-motion-s08",
+        "format": "latex",
+        "prompt": "What may an invalid request publish in the result area?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Nothing; every existing result byte must remain unchanged."
+          },
+          {
+            "id": "B",
+            "text": "A partially updated displacement."
+          },
+          {
+            "id": "C",
+            "text": "A success score with an invalid status."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s09",
+      "number": 19,
+      "title": "Run independent search feedback",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s09.tex",
+      "prerequisites": [
+        "h263-motion-s08"
+      ],
+      "quiz": {
+        "id": "h263-motion-s09",
+        "format": "latex",
+        "prompt": "What makes a different traversal an equivalent solution?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It uses the reference implementation's private labels."
+          },
+          {
+            "id": "B",
+            "text": "It has the same instruction count."
+          },
+          {
+            "id": "C",
+            "text": "It returns the specified result and preserves the same boundaries."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-motion-s10",
+      "number": 20,
+      "title": "Measure search work at its own boundary",
+      "kind": "edit",
+      "stage": "h263-motion-construction",
+      "domain": "motion",
+      "content": "native/h263-motion-s10.tex",
+      "prerequisites": [
+        "h263-motion-s09"
+      ],
+      "quiz": {
+        "id": "h263-motion-s10",
+        "format": "latex",
+        "prompt": "Which measurement includes search setup and restoration?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The file size of the generated raw fixture."
+          },
+          {
+            "id": "B",
+            "text": "A trace covering search entry through return to its caller."
+          },
+          {
+            "id": "C",
+            "text": "The SAD kernel count alone, without entering search."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/motion.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s01",
+      "number": 21,
+      "title": "Split a signed chroma displacement",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s01.tex",
+      "prerequisites": [
+        "h263-motion-s10"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s01",
+        "format": "latex",
+        "prompt": "Which decomposition represents a chroma shift of $-0.5$?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Origin zero and phase one."
+          },
+          {
+            "id": "B",
+            "text": "Origin $-1$ and phase one."
+          },
+          {
+            "id": "C",
+            "text": "Origin $-1$ and phase zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s02",
+      "number": 22,
+      "title": "Admit the interpolation footprint",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s02.tex",
+      "prerequisites": [
+        "h263-prediction-s01"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s02",
+        "format": "latex",
+        "prompt": "What is the minimal reference extent for diagonal prediction?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "$8s_R+9$ bytes, spanning nine active rows."
+          },
+          {
+            "id": "B",
+            "text": "Eight bytes in total."
+          },
+          {
+            "id": "C",
+            "text": "The size of the full output record."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s03",
+      "number": 23,
+      "title": "Copy the integer prediction first",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s03.tex",
+      "prerequisites": [
+        "h263-prediction-s02"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s03",
+        "format": "latex",
+        "prompt": "Which value belongs in a residual when current is zero and prediction is 255?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Positive 255."
+          },
+          {
+            "id": "B",
+            "text": "Unsigned byte one."
+          },
+          {
+            "id": "C",
+            "text": "Signed halfword $-255$."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s04",
+      "number": 24,
+      "title": "Add one fractional axis",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s04.tex",
+      "prerequisites": [
+        "h263-prediction-s03"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s04",
+        "format": "latex",
+        "prompt": "What is the baseline average of 100 and 101 at a half-sample position?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "100, always rounding down."
+          },
+          {
+            "id": "B",
+            "text": "101, after adding one before division by two."
+          },
+          {
+            "id": "C",
+            "text": "201, without division."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s05",
+      "number": 25,
+      "title": "Round a diagonal prediction once",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s05.tex",
+      "prerequisites": [
+        "h263-prediction-s04"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s05",
+        "format": "latex",
+        "prompt": "When is the diagonal rounding bias applied?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Once, after summing all four neighbours."
+          },
+          {
+            "id": "B",
+            "text": "Separately after every addition."
+          },
+          {
+            "id": "C",
+            "text": "Only after the signed residual has been clipped to a byte."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s06",
+      "number": 26,
+      "title": "Gather eight samples without overreading",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s06.tex",
+      "prerequisites": [
+        "h263-prediction-s05"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s06",
+        "format": "latex",
+        "prompt": "Why can a sixteen-byte load be wrong for this current row?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "MSA cannot calculate unsigned values."
+          },
+          {
+            "id": "B",
+            "text": "All byte pointers must be sixteen-byte aligned."
+          },
+          {
+            "id": "C",
+            "text": "The load can include padding or samples outside the admitted footprint."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s07",
+      "number": 27,
+      "title": "Keep interpolation and residual lanes wide",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s07.tex",
+      "prerequisites": [
+        "h263-prediction-s06"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s07",
+        "format": "latex",
+        "prompt": "Which width holds a diagonal neighbour sum before rounding?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "An unsigned halfword, whose range includes 1020."
+          },
+          {
+            "id": "B",
+            "text": "A byte, because each input fits a byte."
+          },
+          {
+            "id": "C",
+            "text": "A one-bit phase field."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s08",
+      "number": 28,
+      "title": "Accumulate a score without erasing signs",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s08.tex",
+      "prerequisites": [
+        "h263-prediction-s07"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s08",
+        "format": "latex",
+        "prompt": "Why does a correct SAD not prove a correct residual array?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "SAD specifies the required motion-vector syntax."
+          },
+          {
+            "id": "B",
+            "text": "Taking magnitudes removes the direction of every difference."
+          },
+          {
+            "id": "C",
+            "text": "Signed halfwords cannot be read in both byte orders."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s09",
+      "number": 29,
+      "title": "Return a complete block to the caller",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s09.tex",
+      "prerequisites": [
+        "h263-prediction-s08"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s09",
+        "format": "latex",
+        "prompt": "At the caller return boundary, what is already complete?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A conforming whole-video output file."
+          },
+          {
+            "id": "B",
+            "text": "The future quantized coefficient stream."
+          },
+          {
+            "id": "C",
+            "text": "This block's prediction/residual record and returned status/SAD."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-prediction-s10",
+      "number": 30,
+      "title": "Check every sample before measuring work",
+      "kind": "edit",
+      "stage": "h263-prediction-construction",
+      "domain": "prediction",
+      "content": "native/h263-prediction-s10.tex",
+      "prerequisites": [
+        "h263-prediction-s09"
+      ],
+      "quiz": {
+        "id": "h263-prediction-s10",
+        "format": "latex",
+        "prompt": "What must a faster gather preserve?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The reference solution's exact scratch-register names."
+          },
+          {
+            "id": "B",
+            "text": "Every required sample and the admitted access footprint."
+          },
+          {
+            "id": "C",
+            "text": "Only the final absolute sum, regardless of signed residuals."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/prediction.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s01",
+      "number": 31,
+      "title": "Plan one request and six records",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s01.tex",
+      "prerequisites": [
+        "h263-prediction-s10"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s01",
+        "format": "latex",
+        "prompt": "Where does block five's residual array start?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Byte 64, shared by every block."
+          },
+          {
+            "id": "B",
+            "text": "Byte 1024, which is $5\\times192+64$."
+          },
+          {
+            "id": "C",
+            "text": "Byte 1152, after the whole result."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s02",
+      "number": 32,
+      "title": "Check the macroblock geometry",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s02.tex",
+      "prerequisites": [
+        "h263-macroblock-s01"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s02",
+        "format": "latex",
+        "prompt": "What should this routine do with an out-of-picture selected vector?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Reject it before pixel reads or output changes."
+          },
+          {
+            "id": "B",
+            "text": "Silently clamp it to a different vector."
+          },
+          {
+            "id": "C",
+            "text": "Repeat the complete motion search without being asked."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s03",
+      "number": 33,
+      "title": "Validate every plane before starting Y",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s03.tex",
+      "prerequisites": [
+        "h263-macroblock-s02"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s03",
+        "format": "latex",
+        "prompt": "Which extent belongs to an 88-by-72 chroma plane?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "$143s+176$, copied from Y."
+          },
+          {
+            "id": "B",
+            "text": "$72s+88$, with an extra row advance."
+          },
+          {
+            "id": "C",
+            "text": "$71s+88$, with 71 advances before the last active row."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s04",
+      "number": 34,
+      "title": "Build the four luma child requests",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s04.tex",
+      "prerequisites": [
+        "h263-macroblock-s03"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s04",
+        "format": "latex",
+        "prompt": "Which local offset belongs to the bottom-left Y block?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "$(8,0)$."
+          },
+          {
+            "id": "B",
+            "text": "$(0,8)$."
+          },
+          {
+            "id": "C",
+            "text": "$(8,8)$."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s05",
+      "number": 35,
+      "title": "Derive both chroma requests from the same vector",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s05.tex",
+      "prerequisites": [
+        "h263-macroblock-s04"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s05",
+        "format": "latex",
+        "prompt": "What may Cb and Cr legitimately share here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The derived displacement geometry, while retaining their own data and strides."
+          },
+          {
+            "id": "B",
+            "text": "One pointer, regardless of the request."
+          },
+          {
+            "id": "C",
+            "text": "The Y stride, regardless of either chroma stride field."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s06",
+      "number": 36,
+      "title": "Point the child at its private record",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s06.tex",
+      "prerequisites": [
+        "h263-macroblock-s05"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s06",
+        "format": "latex",
+        "prompt": "Which address should the child receive as its output?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The caller output, before knowing whether later children succeed."
+          },
+          {
+            "id": "B",
+            "text": "The request's reference plane pointer."
+          },
+          {
+            "id": "C",
+            "text": "Its assigned private staging record."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s07",
+      "number": 37,
+      "title": "Add magnitudes without cancelling errors",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s07.tex",
+      "prerequisites": [
+        "h263-macroblock-s06"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s07",
+        "format": "latex",
+        "prompt": "What do residuals $-10$ and $+10$ contribute to the returned total?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Zero, because they cancel."
+          },
+          {
+            "id": "B",
+            "text": "Twenty, the sum of their magnitudes."
+          },
+          {
+            "id": "C",
+            "text": "Two, the number of samples only."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s08",
+      "number": 38,
+      "title": "Handle a failed child without publishing",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s08.tex",
+      "prerequisites": [
+        "h263-macroblock-s07"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s08",
+        "format": "latex",
+        "prompt": "What does dependency status two imply about earlier input reads?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Earlier successful child calls may already have read their inputs."
+          },
+          {
+            "id": "B",
+            "text": "The function never read its request."
+          },
+          {
+            "id": "C",
+            "text": "The caller's first three output records must be overwritten."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s09",
+      "number": 39,
+      "title": "Copy the complete staged output",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s09.tex",
+      "prerequisites": [
+        "h263-macroblock-s08"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s09",
+        "format": "latex",
+        "prompt": "How many eight-byte transfers cover the complete output?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Eighteen, the number of request fields."
+          },
+          {
+            "id": "B",
+            "text": "1152, treating bytes as doublewords."
+          },
+          {
+            "id": "C",
+            "text": "144."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-macroblock-s10",
+      "number": 40,
+      "title": "Verify complete records before adding transforms",
+      "kind": "edit",
+      "stage": "h263-macroblock-construction",
+      "domain": "macroblock",
+      "content": "native/h263-macroblock-s10.tex",
+      "prerequisites": [
+        "h263-macroblock-s09"
+      ],
+      "quiz": {
+        "id": "h263-macroblock-s10",
+        "format": "latex",
+        "prompt": "Which boundary supplies the appropriate macroblock work count?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the arithmetic inside one child."
+          },
+          {
+            "id": "B",
+            "text": "Outer entry through return, including staging and publication."
+          },
+          {
+            "id": "C",
+            "text": "The number of bytes in the raw input file."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/macroblock.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s01",
+      "number": 41,
+      "title": "Locate DC without centering INTRA samples",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s01.tex",
+      "prerequisites": [
+        "h263-macroblock-s10"
+      ],
+      "quiz": {
+        "id": "h263-transform-s01",
+        "format": "latex",
+        "prompt": "What should happen to a constant INTRA block of value 128 here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Subtract 128 and force all coefficients to zero."
+          },
+          {
+            "id": "B",
+            "text": "Produce DC 1024 with zero AC coefficients."
+          },
+          {
+            "id": "C",
+            "text": "Treat each input byte as an already coded coefficient."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s02",
+      "number": 42,
+      "title": "Admit metadata, then signed samples",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s02.tex",
+      "prerequisites": [
+        "h263-transform-s01"
+      ],
+      "quiz": {
+        "id": "h263-transform-s02",
+        "format": "latex",
+        "prompt": "Which load preserves a negative halfword residual's meaning?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A signed halfword load."
+          },
+          {
+            "id": "B",
+            "text": "An unsigned byte load of only its first byte."
+          },
+          {
+            "id": "C",
+            "text": "A pointer load used as a coefficient."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s03",
+      "number": 43,
+      "title": "Choose the basis for the direction",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s03.tex",
+      "prerequisites": [
+        "h263-transform-s02"
+      ],
+      "quiz": {
+        "id": "h263-transform-s03",
+        "format": "latex",
+        "prompt": "What changes in the taught inverse direction?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every coefficient becomes unsigned."
+          },
+          {
+            "id": "B",
+            "text": "Both passes are skipped."
+          },
+          {
+            "id": "C",
+            "text": "The selected basis is transposed."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s04",
+      "number": 44,
+      "title": "Accumulate the first signed dot products",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s04.tex",
+      "prerequisites": [
+        "h263-transform-s03"
+      ],
+      "quiz": {
+        "id": "h263-transform-s04",
+        "format": "latex",
+        "prompt": "Why does the signed form of the dot product matter?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It controls the memory byte order."
+          },
+          {
+            "id": "B",
+            "text": "Both samples and basis constants can be negative."
+          },
+          {
+            "id": "C",
+            "text": "It automatically quantizes the coefficients."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s05",
+      "number": 45,
+      "title": "Store unrounded intermediates transposed",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s05.tex",
+      "prerequisites": [
+        "h263-transform-s04"
+      ],
+      "quiz": {
+        "id": "h263-transform-s05",
+        "format": "latex",
+        "prompt": "What scale remains in each stored first-pass sum?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "$2^{16}$, retained for the second pass."
+          },
+          {
+            "id": "B",
+            "text": "No scale, after every row is rounded to a byte."
+          },
+          {
+            "id": "C",
+            "text": "The source picture's display aspect ratio."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s06",
+      "number": 46,
+      "title": "Widen the second products to doublewords",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s06.tex",
+      "prerequisites": [
+        "h263-transform-s05"
+      ],
+      "quiz": {
+        "id": "h263-transform-s06",
+        "format": "latex",
+        "prompt": "Which result width is required for second-pass products?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A byte, because final pixels use bytes."
+          },
+          {
+            "id": "B",
+            "text": "A halfword, because original samples used halfwords."
+          },
+          {
+            "id": "C",
+            "text": "A signed doubleword."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s07",
+      "number": 47,
+      "title": "Apply one signed descale",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s07.tex",
+      "prerequisites": [
+        "h263-transform-s06"
+      ],
+      "quiz": {
+        "id": "h263-transform-s07",
+        "format": "latex",
+        "prompt": "What goes wrong with a logical shift of a negative accumulator?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It supplies an extra reference sample."
+          },
+          {
+            "id": "B",
+            "text": "It treats the high sign bits as a large positive value."
+          },
+          {
+            "id": "C",
+            "text": "It changes an eight-by-eight block into a sixteen-by-sixteen block."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s08",
+      "number": 48,
+      "title": "Clip the transform result, then publish",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s08.tex",
+      "prerequisites": [
+        "h263-transform-s07"
+      ],
+      "quiz": {
+        "id": "h263-transform-s08",
+        "format": "latex",
+        "prompt": "Why must a negative inverse residual survive this function?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It may need to reduce the later predicted sample."
+          },
+          {
+            "id": "B",
+            "text": "It is an output pointer."
+          },
+          {
+            "id": "C",
+            "text": "H.263 stores every reconstructed picture sample as a negative number."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s09",
+      "number": 49,
+      "title": "Compare with an independent finite reference",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s09.tex",
+      "prerequisites": [
+        "h263-transform-s08"
+      ],
+      "quiz": {
+        "id": "h263-transform-s09",
+        "format": "latex",
+        "prompt": "Why use an independent reference instead of only a round trip?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A round trip guarantees every coefficient convention is correct."
+          },
+          {
+            "id": "B",
+            "text": "The reference must copy the student's intermediate registers."
+          },
+          {
+            "id": "C",
+            "text": "A forward and inverse pair can share the same normalization error."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-transform-s10",
+      "number": 50,
+      "title": "Pass the inverse accuracy gate",
+      "kind": "edit",
+      "stage": "h263-transform-construction",
+      "domain": "transform",
+      "content": "native/h263-transform-s10.tex",
+      "prerequisites": [
+        "h263-transform-s09"
+      ],
+      "quiz": {
+        "id": "h263-transform-s10",
+        "format": "latex",
+        "prompt": "Which claim follows from passing this gate?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The complete H.263 encoder is already interoperable."
+          },
+          {
+            "id": "B",
+            "text": "The tested inverse meets the measured Annex A accuracy requirements."
+          },
+          {
+            "id": "C",
+            "text": "Quantization is lossless for every video."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/transform.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s01",
+      "number": 51,
+      "title": "Name the two output representations",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s01.tex",
+      "prerequisites": [
+        "h263-transform-s10"
+      ],
+      "quiz": {
+        "id": "h263-quant-s01",
+        "format": "latex",
+        "prompt": "Which array is ready to feed the inverse transform?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The reconstructed coefficient array."
+          },
+          {
+            "id": "B",
+            "text": "The array of transmitted levels without inverse quantization."
+          },
+          {
+            "id": "C",
+            "text": "The eight-bit DC code by itself."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s02",
+      "number": 52,
+      "title": "Admit complete controls before samples",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s02.tex",
+      "prerequisites": [
+        "h263-quant-s01"
+      ],
+      "quiz": {
+        "id": "h263-quant-s02",
+        "format": "latex",
+        "prompt": "Why retain the full quantizer field during admission?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It contains a video frame rate."
+          },
+          {
+            "id": "B",
+            "text": "A large invalid value can have the same low word as eight."
+          },
+          {
+            "id": "C",
+            "text": "It permits division by zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s03",
+      "number": 53,
+      "title": "Select ordinary levels from magnitudes",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s03.tex",
+      "prerequisites": [
+        "h263-quant-s02"
+      ],
+      "quiz": {
+        "id": "h263-quant-s03",
+        "format": "latex",
+        "prompt": "What is the level selected for $C=-15$ at $Q=8$?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "$-1$."
+          },
+          {
+            "id": "B",
+            "text": "15."
+          },
+          {
+            "id": "C",
+            "text": "Zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s04",
+      "number": 54,
+      "title": "Encode INTRA DC separately",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s04.tex",
+      "prerequisites": [
+        "h263-quant-s03"
+      ],
+      "quiz": {
+        "id": "h263-quant-s04",
+        "format": "latex",
+        "prompt": "What reconstructed coefficient does DC code 255 represent?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "1024."
+          },
+          {
+            "id": "B",
+            "text": "255."
+          },
+          {
+            "id": "C",
+            "text": "2040."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s05",
+      "number": 55,
+      "title": "Reconstruct scalar magnitudes and signs",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s05.tex",
+      "prerequisites": [
+        "h263-quant-s04"
+      ],
+      "quiz": {
+        "id": "h263-quant-s05",
+        "format": "latex",
+        "prompt": "When is the even-parameter subtraction applied?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After adding a predicted pixel."
+          },
+          {
+            "id": "B",
+            "text": "To the positive nonzero magnitude before restoring the sign."
+          },
+          {
+            "id": "C",
+            "text": "To the final pointer."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s06",
+      "number": 56,
+      "title": "Establish lane widths before vectorizing",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s06.tex",
+      "prerequisites": [
+        "h263-quant-s05"
+      ],
+      "quiz": {
+        "id": "h263-quant-s06",
+        "format": "latex",
+        "prompt": "What permits halfword multiplication in this stage?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every video operation uses bytes."
+          },
+          {
+            "id": "B",
+            "text": "MSA automatically widens every product."
+          },
+          {
+            "id": "C",
+            "text": "The legal input ranges bound the complete intermediate below 32768."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s07",
+      "number": 57,
+      "title": "Restore vector signs and exact zeros",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s07.tex",
+      "prerequisites": [
+        "h263-quant-s06"
+      ],
+      "quiz": {
+        "id": "h263-quant-s07",
+        "format": "latex",
+        "prompt": "Why retain the original zero-level mask?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The nonzero formula would otherwise turn zero into a nonzero value."
+          },
+          {
+            "id": "B",
+            "text": "Zero levels use a different memory byte order."
+          },
+          {
+            "id": "C",
+            "text": "It replaces the input pointer check."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s08",
+      "number": 58,
+      "title": "Publish both completed arrays",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s08.tex",
+      "prerequisites": [
+        "h263-quant-s07"
+      ],
+      "quiz": {
+        "id": "h263-quant-s08",
+        "format": "latex",
+        "prompt": "Which value is excluded from the INTRA nonzero count?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every negative AC level."
+          },
+          {
+            "id": "B",
+            "text": "The separate INTRA DC code."
+          },
+          {
+            "id": "C",
+            "text": "Every coefficient in a chroma block."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s09",
+      "number": 59,
+      "title": "Exercise boundaries and equivalent schedules",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s09.tex",
+      "prerequisites": [
+        "h263-quant-s08"
+      ],
+      "quiz": {
+        "id": "h263-quant-s09",
+        "format": "latex",
+        "prompt": "What does exact kernel output agreement establish?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The whole stream is already conforming H.263."
+          },
+          {
+            "id": "B",
+            "text": "Every complete encoder must choose these same forward levels."
+          },
+          {
+            "id": "C",
+            "text": "The tested kernel follows this exercise's quantization policy."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-quant-s10",
+      "number": 60,
+      "title": "Feed reconstruction from reconstructed coefficients",
+      "kind": "edit",
+      "stage": "h263-quantization-construction",
+      "domain": "quantization",
+      "content": "native/h263-quant-s10.tex",
+      "prerequisites": [
+        "h263-quant-s09"
+      ],
+      "quiz": {
+        "id": "h263-quant-s10",
+        "format": "latex",
+        "prompt": "Which coefficient block must the local inverse consume?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The inverse-quantized block derived from the transmitted levels."
+          },
+          {
+            "id": "B",
+            "text": "The original forward block regardless of selected levels."
+          },
+          {
+            "id": "C",
+            "text": "The preceding raw picture's bytes reinterpreted as halfwords."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/quantization.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s01",
+      "number": 61,
+      "title": "Preflight two independent windows",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s01.tex",
+      "prerequisites": [
+        "h263-quant-s10"
+      ],
+      "quiz": {
+        "id": "h263-block-s01",
+        "format": "latex",
+        "prompt": "Which prediction stride applies during INTER admission?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The independent prediction stride in the request."
+          },
+          {
+            "id": "B",
+            "text": "Always the current stride."
+          },
+          {
+            "id": "C",
+            "text": "Always the full QCIF width."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s02",
+      "number": 62,
+      "title": "Gather signed transform input",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s02.tex",
+      "prerequisites": [
+        "h263-block-s01"
+      ],
+      "quiz": {
+        "id": "h263-block-s02",
+        "format": "latex",
+        "prompt": "Why use zero prediction for INTRA input here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "INTRA stores only motion vectors."
+          },
+          {
+            "id": "B",
+            "text": "Its transform describes absolute samples in this baseline path."
+          },
+          {
+            "id": "C",
+            "text": "It changes the quantizer parameter to zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s03",
+      "number": 63,
+      "title": "Call the forward transform privately",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s03.tex",
+      "prerequisites": [
+        "h263-block-s02"
+      ],
+      "quiz": {
+        "id": "h263-block-s03",
+        "format": "latex",
+        "prompt": "What direction belongs in this first transform request?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Inverse."
+          },
+          {
+            "id": "B",
+            "text": "Picture playback."
+          },
+          {
+            "id": "C",
+            "text": "Forward."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s04",
+      "number": 64,
+      "title": "Quantize and retain the ordinary count",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s04.tex",
+      "prerequisites": [
+        "h263-block-s03"
+      ],
+      "quiz": {
+        "id": "h263-block-s04",
+        "format": "latex",
+        "prompt": "Why save the quantizer count across the next call?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The inverse call can replace the return registers."
+          },
+          {
+            "id": "B",
+            "text": "It is the picture's byte stride."
+          },
+          {
+            "id": "C",
+            "text": "The count changes the current source bytes in place."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s05",
+      "number": 65,
+      "title": "Invert the reconstructed coefficient block",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s05.tex",
+      "prerequisites": [
+        "h263-block-s04"
+      ],
+      "quiz": {
+        "id": "h263-block-s05",
+        "format": "latex",
+        "prompt": "Which array supplies this inverse request?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Original raw pixel bytes."
+          },
+          {
+            "id": "B",
+            "text": "Reconstructed coefficients derived from selected levels."
+          },
+          {
+            "id": "C",
+            "text": "Unquantized forward coefficients."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s06",
+      "number": 66,
+      "title": "Add prediction before sample clipping",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s06.tex",
+      "prerequisites": [
+        "h263-block-s05"
+      ],
+      "quiz": {
+        "id": "h263-block-s06",
+        "format": "latex",
+        "prompt": "Which operation occurs first for an INTER pixel?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Narrow the signed residual to an unsigned byte."
+          },
+          {
+            "id": "B",
+            "text": "Clip the residual alone to the final pixel range."
+          },
+          {
+            "id": "C",
+            "text": "Add signed residual to prediction in a sufficient width."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s07",
+      "number": 67,
+      "title": "Perform bounded vector sample reconstruction",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s07.tex",
+      "prerequisites": [
+        "h263-block-s06"
+      ],
+      "quiz": {
+        "id": "h263-block-s07",
+        "format": "latex",
+        "prompt": "What must happen before narrowing a lane to a pixel byte?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Clip the complete signed sum to 0 through 255."
+          },
+          {
+            "id": "B",
+            "text": "Discard all negative inverse outputs before adding prediction."
+          },
+          {
+            "id": "C",
+            "text": "Replace the selected levels with raw pixels."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s08",
+      "number": 68,
+      "title": "Publish a complete block result",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s08.tex",
+      "prerequisites": [
+        "h263-block-s07"
+      ],
+      "quiz": {
+        "id": "h263-block-s08",
+        "format": "latex",
+        "prompt": "What survives a failed inverse child?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A partially replaced caller record."
+          },
+          {
+            "id": "B",
+            "text": "Every old caller-result byte, with parent failure status two."
+          },
+          {
+            "id": "C",
+            "text": "A successful status because forward transform already completed."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s09",
+      "number": 69,
+      "title": "Check the actual selected-level reconstruction",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s09.tex",
+      "prerequisites": [
+        "h263-block-s08"
+      ],
+      "quiz": {
+        "id": "h263-block-s09",
+        "format": "latex",
+        "prompt": "Why reconstruct the reference inverse from returned levels?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It forces every encoder to emit the host encoder's bits."
+          },
+          {
+            "id": "B",
+            "text": "It avoids checking quantization entirely."
+          },
+          {
+            "id": "C",
+            "text": "It checks the actual representation this block selected."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-block-s10",
+      "number": 70,
+      "title": "Retain reconstructed pixels for the next prediction",
+      "kind": "edit",
+      "stage": "h263-reconstruction-construction",
+      "domain": "block",
+      "content": "native/h263-block-s10.tex",
+      "prerequisites": [
+        "h263-block-s09"
+      ],
+      "quiz": {
+        "id": "h263-block-s10",
+        "format": "latex",
+        "prompt": "Which stored pixels can become the next reference?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The completed locally reconstructed picture."
+          },
+          {
+            "id": "B",
+            "text": "The raw input regardless of quantization loss."
+          },
+          {
+            "id": "C",
+            "text": "Any half-written pixel array after a child failure."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/block.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s01",
+      "number": 71,
+      "title": "Separate byte capacity from bit position",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s01.tex",
+      "prerequisites": [
+        "h263-block-s10"
+      ],
+      "quiz": {
+        "id": "h263-writer-s01",
+        "format": "latex",
+        "prompt": "What unit does the mutable context counter use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Bits already committed to the stream."
+          },
+          {
+            "id": "B",
+            "text": "Capacity measured in native words."
+          },
+          {
+            "id": "C",
+            "text": "Video pictures per second."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s02",
+      "number": 72,
+      "title": "Validate the field value and width",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s02.tex",
+      "prerequisites": [
+        "h263-writer-s01"
+      ],
+      "quiz": {
+        "id": "h263-writer-s02",
+        "format": "latex",
+        "prompt": "Why reject high bits instead of silently masking them?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It changes the memory byte order."
+          },
+          {
+            "id": "B",
+            "text": "It catches a malformed field before corrupting its intended syntax."
+          },
+          {
+            "id": "C",
+            "text": "It permits widths greater than 32."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s03",
+      "number": 73,
+      "title": "Admit the complete field before touching output",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s03.tex",
+      "prerequisites": [
+        "h263-writer-s02"
+      ],
+      "quiz": {
+        "id": "h263-writer-s03",
+        "format": "latex",
+        "prompt": "What happens when a valid field exceeds remaining space?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Write the fitting prefix and return success."
+          },
+          {
+            "id": "B",
+            "text": "Advance the count without writing bytes."
+          },
+          {
+            "id": "C",
+            "text": "Return status two without accessing the buffer."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s04",
+      "number": 74,
+      "title": "Emit the highest selected bit first",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s04.tex",
+      "prerequisites": [
+        "h263-writer-s03"
+      ],
+      "quiz": {
+        "id": "h263-writer-s04",
+        "format": "latex",
+        "prompt": "Which source bit is emitted first for width $n>0$?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Bit $n-1$ of the right-aligned value."
+          },
+          {
+            "id": "B",
+            "text": "Always bit zero."
+          },
+          {
+            "id": "C",
+            "text": "The highest bit of the native address."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s05",
+      "number": 75,
+      "title": "Replace the selected destination bits",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s05.tex",
+      "prerequisites": [
+        "h263-writer-s04"
+      ],
+      "quiz": {
+        "id": "h263-writer-s05",
+        "format": "latex",
+        "prompt": "Why is an OR-only append incorrect?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "It cannot write a one."
+          },
+          {
+            "id": "B",
+            "text": "It cannot clear an old one when the new bit is zero."
+          },
+          {
+            "id": "C",
+            "text": "It always reverses native byte order."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s06",
+      "number": 76,
+      "title": "Commit the cursor after successful output",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s06.tex",
+      "prerequisites": [
+        "h263-writer-s05"
+      ],
+      "quiz": {
+        "id": "h263-writer-s06",
+        "format": "latex",
+        "prompt": "Which quantity belongs in the successful return count?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Byte capacity."
+          },
+          {
+            "id": "B",
+            "text": "The numerical field value."
+          },
+          {
+            "id": "C",
+            "text": "The declared width just appended."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s07",
+      "number": 77,
+      "title": "Observe repeated appends through the caller",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s07.tex",
+      "prerequisites": [
+        "h263-writer-s06"
+      ],
+      "quiz": {
+        "id": "h263-writer-s07",
+        "format": "latex",
+        "prompt": "Which byte results from fields \\texttt{101} and \\texttt{10011}?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "\\texttt{10110011}."
+          },
+          {
+            "id": "B",
+            "text": "\\texttt{00000101} only."
+          },
+          {
+            "id": "C",
+            "text": "Two unrelated native doublewords."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s08",
+      "number": 78,
+      "title": "Combine the next byte fragment",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s08.tex",
+      "prerequisites": [
+        "h263-writer-s07"
+      ],
+      "quiz": {
+        "id": "h263-writer-s08",
+        "format": "latex",
+        "prompt": "How many bytes can an unaligned 32-bit append touch?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always exactly four."
+          },
+          {
+            "id": "B",
+            "text": "At most five."
+          },
+          {
+            "id": "C",
+            "text": "Thirty-two native doublewords."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s09",
+      "number": 79,
+      "title": "Check boundaries before comparing work",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s09.tex",
+      "prerequisites": [
+        "h263-writer-s08"
+      ],
+      "quiz": {
+        "id": "h263-writer-s09",
+        "format": "latex",
+        "prompt": "What must match when comparing the two schedules?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only their scratch-register names."
+          },
+          {
+            "id": "B",
+            "text": "The host computer's display theme."
+          },
+          {
+            "id": "C",
+            "text": "Field value, width, initial bit cursor and complete measured boundary."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-writer-s10",
+      "number": 80,
+      "title": "Append alignment bits explicitly",
+      "kind": "edit",
+      "stage": "h263-bit-writer-construction",
+      "domain": "writer",
+      "content": "native/h263-writer-s10.tex",
+      "prerequisites": [
+        "h263-writer-s09"
+      ],
+      "quiz": {
+        "id": "h263-writer-s10",
+        "format": "latex",
+        "prompt": "When should ordinary field appends insert padding automatically?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Never; the syntax layer requests any required alignment bits."
+          },
+          {
+            "id": "B",
+            "text": "After every field regardless of its syntax."
+          },
+          {
+            "id": "C",
+            "text": "Whenever an unused buffer byte is nonzero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/writer.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s01",
+      "number": 81,
+      "title": "Admit the level and writer windows",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s01.tex",
+      "prerequisites": [
+        "h263-writer-s10"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s01",
+        "format": "latex",
+        "prompt": "What representation enters this function?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Selected coefficient levels, with separate INTRA DC code."
+          },
+          {
+            "id": "B",
+            "text": "Unquantized forward coefficients."
+          },
+          {
+            "id": "C",
+            "text": "Raw RGB pixels."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s02",
+      "number": 82,
+      "title": "Validate every level before publication",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s02.tex",
+      "prerequisites": [
+        "h263-coeff-s01"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s02",
+        "format": "latex",
+        "prompt": "Which ordinary escape level is forbidden?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Minus 127."
+          },
+          {
+            "id": "B",
+            "text": "Minus 128."
+          },
+          {
+            "id": "C",
+            "text": "Plus one."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s03",
+      "number": 83,
+      "title": "Locate the final nonzero in scan order",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s03.tex",
+      "prerequisites": [
+        "h263-coeff-s02"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s03",
+        "format": "latex",
+        "prompt": "What does LAST one describe?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The final allocated byte in the buffer."
+          },
+          {
+            "id": "B",
+            "text": "Always scan position sixty-three."
+          },
+          {
+            "id": "C",
+            "text": "The final nonzero ordinary event."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s04",
+      "number": 84,
+      "title": "Count zeros between nonzero events",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s04.tex",
+      "prerequisites": [
+        "h263-coeff-s03"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s04",
+        "format": "latex",
+        "prompt": "When does the run counter reset?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After emitting each nonzero event."
+          },
+          {
+            "id": "B",
+            "text": "Only at the end of a picture."
+          },
+          {
+            "id": "C",
+            "text": "After every zero level."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s05",
+      "number": 85,
+      "title": "Build a valid escape record first",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s05.tex",
+      "prerequisites": [
+        "h263-coeff-s04"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s05",
+        "format": "latex",
+        "prompt": "How is minus 127 stored in an escape LEVEL field?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "As a sign bit followed by a seven-bit VLC prefix."
+          },
+          {
+            "id": "B",
+            "text": "As the eight bits \\texttt{10000001}."
+          },
+          {
+            "id": "C",
+            "text": "As forbidden level zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s06",
+      "number": 86,
+      "title": "Select compact codes when available",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s06.tex",
+      "prerequisites": [
+        "h263-coeff-s05"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s06",
+        "format": "latex",
+        "prompt": "What identifies one compact table entry?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the sign of the level."
+          },
+          {
+            "id": "B",
+            "text": "The current raw pixel value."
+          },
+          {
+            "id": "C",
+            "text": "LAST, RUN and level magnitude."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s07",
+      "number": 87,
+      "title": "Admit the complete chosen plan",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s07.tex",
+      "prerequisites": [
+        "h263-coeff-s06"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s07",
+        "format": "latex",
+        "prompt": "What must be included in capacity preflight?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every field in the complete selected block plan."
+          },
+          {
+            "id": "B",
+            "text": "Only its first event."
+          },
+          {
+            "id": "C",
+            "text": "Only fields whose numerical values are nonzero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s08",
+      "number": 88,
+      "title": "Emit into a private byte window",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s08.tex",
+      "prerequisites": [
+        "h263-coeff-s07"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s08",
+        "format": "latex",
+        "prompt": "Why is restoring only the old public count insufficient?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The count is a pixel pointer."
+          },
+          {
+            "id": "B",
+            "text": "Earlier public appends may already have replaced buffer bits."
+          },
+          {
+            "id": "C",
+            "text": "LAST fields are always native doublewords."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s09",
+      "number": 89,
+      "title": "Decode emitted bits independently",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s09.tex",
+      "prerequisites": [
+        "h263-coeff-s08"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s09",
+        "format": "latex",
+        "prompt": "Which comparison establishes this block payload's meaning?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Matching the reference's private buffer bytes exactly."
+          },
+          {
+            "id": "B",
+            "text": "Matching only the first emitted byte."
+          },
+          {
+            "id": "C",
+            "text": "Decoding the payload and recovering every selected input level."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-coeff-s10",
+      "number": 90,
+      "title": "Keep block payload and macroblock flags separate",
+      "kind": "edit",
+      "stage": "h263-coefficient-construction",
+      "domain": "coefficients",
+      "content": "native/h263-coeff-s10.tex",
+      "prerequisites": [
+        "h263-coeff-s09"
+      ],
+      "quiz": {
+        "id": "h263-coeff-s10",
+        "format": "latex",
+        "prompt": "Which later layer decides whether a block has ordinary payload?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The macroblock's coded-block presence information."
+          },
+          {
+            "id": "B",
+            "text": "Unused bits left in the output allocation."
+          },
+          {
+            "id": "C",
+            "text": "The host machine's native endianness."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/coefficients.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s01",
+      "number": 91,
+      "title": "Admit picture and macroblock controls",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s01.tex",
+      "prerequisites": [
+        "h263-coeff-s10"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s01",
+        "format": "latex",
+        "prompt": "Which picture/type combination is excluded?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "INTER inside an I-picture."
+          },
+          {
+            "id": "B",
+            "text": "INTRA inside a P-picture."
+          },
+          {
+            "id": "C",
+            "text": "INTRA inside an I-picture."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s02",
+      "number": 92,
+      "title": "Validate all six blocks and form presence",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s02.tex",
+      "prerequisites": [
+        "h263-syntax-s01"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s02",
+        "format": "latex",
+        "prompt": "Does a nonzero INTRA DC code by itself set that block's flag?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Yes, every DC value sets every chroma flag."
+          },
+          {
+            "id": "B",
+            "text": "No, this presence decision concerns ordinary AC levels for INTRA."
+          },
+          {
+            "id": "C",
+            "text": "Only when the host uses little endian."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s03",
+      "number": 93,
+      "title": "Distinguish skipped from coded zero motion",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s03.tex",
+      "prerequisites": [
+        "h263-syntax-s02"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s03",
+        "format": "latex",
+        "prompt": "What motion does a baseline skipped macroblock use?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The supplied predictor without modification."
+          },
+          {
+            "id": "B",
+            "text": "The preceding raw picture's arbitrary vector."
+          },
+          {
+            "id": "C",
+            "text": "Zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s04",
+      "number": 94,
+      "title": "Select MCBPC and CBPY tables",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s04.tex",
+      "prerequisites": [
+        "h263-syntax-s03"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s04",
+        "format": "latex",
+        "prompt": "Which lookup index represents an INTER Y pattern of zero?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Fifteen."
+          },
+          {
+            "id": "B",
+            "text": "Always zero."
+          },
+          {
+            "id": "C",
+            "text": "The chroma stride."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s05",
+      "number": 95,
+      "title": "Normalize both motion differences",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s05.tex",
+      "prerequisites": [
+        "h263-syntax-s04"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s05",
+        "format": "latex",
+        "prompt": "What are the vector units at this boundary?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always full pixels regardless of the earlier search."
+          },
+          {
+            "id": "B",
+            "text": "Half-sample units; full-pixel search results are multiplied by two."
+          },
+          {
+            "id": "C",
+            "text": "Bytes in the output file."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s06",
+      "number": 96,
+      "title": "Emit the header to private storage",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s06.tex",
+      "prerequisites": [
+        "h263-syntax-s05"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s06",
+        "format": "latex",
+        "prompt": "Which fields are absent from an I-INTRA header here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "MCBPC and CBPY."
+          },
+          {
+            "id": "B",
+            "text": "All six DC bytes."
+          },
+          {
+            "id": "C",
+            "text": "COD and motion-vector differences."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s07",
+      "number": 97,
+      "title": "Emit block data in component order",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s07.tex",
+      "prerequisites": [
+        "h263-syntax-s06"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s07",
+        "format": "latex",
+        "prompt": "Why must an INTRA block without AC still be emitted?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Its separate DC byte remains mandatory."
+          },
+          {
+            "id": "B",
+            "text": "It must contain an invented end-of-block code."
+          },
+          {
+            "id": "C",
+            "text": "Every block is padded to a native doubleword."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s08",
+      "number": 98,
+      "title": "Check total space and merge boundary bits",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s08.tex",
+      "prerequisites": [
+        "h263-syntax-s07"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s08",
+        "format": "latex",
+        "prompt": "When may the routine first read caller output bytes?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Before validating the last block."
+          },
+          {
+            "id": "B",
+            "text": "After all children succeed and the complete representation fits."
+          },
+          {
+            "id": "C",
+            "text": "After checking only MCBPC length."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s09",
+      "number": 99,
+      "title": "Decode complete macroblock meaning",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s09.tex",
+      "prerequisites": [
+        "h263-syntax-s08"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s09",
+        "format": "latex",
+        "prompt": "Which result defines semantic agreement here?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The reference's exact private bytes."
+          },
+          {
+            "id": "B",
+            "text": "Only the printed number of bits."
+          },
+          {
+            "id": "C",
+            "text": "Decoded type, motion, flags and all selected block levels."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-syntax-s10",
+      "number": 100,
+      "title": "Leave picture history to the picture controller",
+      "kind": "edit",
+      "stage": "h263-macroblock-syntax",
+      "domain": "syntax",
+      "content": "native/h263-syntax-s10.tex",
+      "prerequisites": [
+        "h263-syntax-s09"
+      ],
+      "quiz": {
+        "id": "h263-syntax-s10",
+        "format": "latex",
+        "prompt": "Who supplies the neighbour-derived motion predictor?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The picture controller, using the encoded macroblock history."
+          },
+          {
+            "id": "B",
+            "text": "Unused suffix bits in the output buffer."
+          },
+          {
+            "id": "C",
+            "text": "The quantizer's DC code alone."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/syntax.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s01",
+      "number": 101,
+      "title": "Admit a complete picture request",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s01.tex",
+      "prerequisites": [
+        "h263-syntax-s10"
+      ],
+      "quiz": {
+        "id": "h263-picture-s01",
+        "format": "latex",
+        "prompt": "Which input is absent for an I-picture?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The old reconstructed reference."
+          },
+          {
+            "id": "B",
+            "text": "The current raw picture."
+          },
+          {
+            "id": "C",
+            "text": "All three current planes."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s02",
+      "number": 102,
+      "title": "Write the picture header into the private context",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s02.tex",
+      "prerequisites": [
+        "h263-picture-s01"
+      ],
+      "quiz": {
+        "id": "h263-picture-s02",
+        "format": "latex",
+        "prompt": "Which context receives the header first?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The caller context with its count already committed."
+          },
+          {
+            "id": "B",
+            "text": "The private workspace context."
+          },
+          {
+            "id": "C",
+            "text": "The previous picture reference."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s03",
+      "number": 103,
+      "title": "Begin a row with the right predictor state",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s03.tex",
+      "prerequisites": [
+        "h263-picture-s02"
+      ],
+      "quiz": {
+        "id": "h263-picture-s03",
+        "format": "latex",
+        "prompt": "What does an unchanged PTYPE require of GFID?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A change at every macroblock."
+          },
+          {
+            "id": "B",
+            "text": "The row number modulo four."
+          },
+          {
+            "id": "C",
+            "text": "The same value as the preceding picture."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s04",
+      "number": 104,
+      "title": "Search the reconstructed reference",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s04.tex",
+      "prerequisites": [
+        "h263-picture-s03"
+      ],
+      "quiz": {
+        "id": "h263-picture-s04",
+        "format": "latex",
+        "prompt": "Which plane supplies reference samples?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The preceding locally reconstructed Y plane."
+          },
+          {
+            "id": "B",
+            "text": "The preceding raw input Y plane."
+          },
+          {
+            "id": "C",
+            "text": "The partially written current reconstruction."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s05",
+      "number": 105,
+      "title": "Build six prediction records",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s05.tex",
+      "prerequisites": [
+        "h263-picture-s04"
+      ],
+      "quiz": {
+        "id": "h263-picture-s05",
+        "format": "latex",
+        "prompt": "What is the tight chroma-plane stride?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "176 bytes."
+          },
+          {
+            "id": "B",
+            "text": "88 bytes."
+          },
+          {
+            "id": "C",
+            "text": "Six block records."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s06",
+      "number": 106,
+      "title": "Collect levels and position reconstructed pixels",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s06.tex",
+      "prerequisites": [
+        "h263-picture-s05"
+      ],
+      "quiz": {
+        "id": "h263-picture-s06",
+        "format": "latex",
+        "prompt": "Which block output is copied into the new picture?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The selected levels as raw bytes."
+          },
+          {
+            "id": "B",
+            "text": "The forward coefficients."
+          },
+          {
+            "id": "C",
+            "text": "The clipped reconstructed pixels."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s07",
+      "number": 107,
+      "title": "Emit macroblock syntax and retain actual motion",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s07.tex",
+      "prerequisites": [
+        "h263-picture-s06"
+      ],
+      "quiz": {
+        "id": "h263-picture-s07",
+        "format": "latex",
+        "prompt": "Which vector becomes the next left candidate?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The actual encoded vector."
+          },
+          {
+            "id": "B",
+            "text": "The MVD table index."
+          },
+          {
+            "id": "C",
+            "text": "The raw unwrapped difference."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s08",
+      "number": 108,
+      "title": "Publish both complete picture results",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s08.tex",
+      "prerequisites": [
+        "h263-picture-s07"
+      ],
+      "quiz": {
+        "id": "h263-picture-s08",
+        "format": "latex",
+        "prompt": "When does the caller used count change?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Immediately after the picture start code."
+          },
+          {
+            "id": "B",
+            "text": "After both final output copies succeed."
+          },
+          {
+            "id": "C",
+            "text": "Before validating the reference extent."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s09",
+      "number": 109,
+      "title": "Decode and reconstruct the public cases",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s09.tex",
+      "prerequisites": [
+        "h263-picture-s08"
+      ],
+      "quiz": {
+        "id": "h263-picture-s09",
+        "format": "latex",
+        "prompt": "What does the picture checker compare?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Only the picture start code."
+          },
+          {
+            "id": "B",
+            "text": "Only the printed byte count."
+          },
+          {
+            "id": "C",
+            "text": "Decoded motion/levels, accurate reconstruction and state effects."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-picture-s10",
+      "number": 110,
+      "title": "Keep clip publication separate from picture publication",
+      "kind": "edit",
+      "stage": "h263-picture-construction",
+      "domain": "picture",
+      "content": "native/h263-picture-s10.tex",
+      "prerequisites": [
+        "h263-picture-s09"
+      ],
+      "quiz": {
+        "id": "h263-picture-s10",
+        "format": "latex",
+        "prompt": "When may the outer loop swap its reference buffers?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After the completed picture and required output writes are accepted."
+          },
+          {
+            "id": "B",
+            "text": "As soon as the first block is reconstructed."
+          },
+          {
+            "id": "C",
+            "text": "Before reading the current raw picture."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/picture.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s01",
+      "number": 111,
+      "title": "Admit the clip before opening files",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s01.tex",
+      "prerequisites": [
+        "h263-picture-s10"
+      ],
+      "quiz": {
+        "id": "h263-clip-s01",
+        "format": "latex",
+        "prompt": "What prevents an output open from truncating the input?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Comparing admitted path contents before opening files."
+          },
+          {
+            "id": "B",
+            "text": "Assuming different pointer values imply different names."
+          },
+          {
+            "id": "C",
+            "text": "Choosing descriptor three in advance."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s02",
+      "number": 112,
+      "title": "Own each successful descriptor",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s02.tex",
+      "prerequisites": [
+        "h263-clip-s01"
+      ],
+      "quiz": {
+        "id": "h263-clip-s02",
+        "format": "latex",
+        "prompt": "Which descriptor is owned?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Every integer from zero through thirty-one."
+          },
+          {
+            "id": "B",
+            "text": "Only a nonnegative descriptor actually returned by this call's successful open."
+          },
+          {
+            "id": "C",
+            "text": "The input path pointer."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s03",
+      "number": 113,
+      "title": "Load exactly one raw picture",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s03.tex",
+      "prerequisites": [
+        "h263-clip-s02"
+      ],
+      "quiz": {
+        "id": "h263-clip-s03",
+        "format": "latex",
+        "prompt": "What advances the destination cursor?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Always 4096 bytes."
+          },
+          {
+            "id": "B",
+            "text": "The complete picture size on the first call."
+          },
+          {
+            "id": "C",
+            "text": "The actual positive return count."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s04",
+      "number": 114,
+      "title": "Construct the next picture request",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s04.tex",
+      "prerequisites": [
+        "h263-clip-s03"
+      ],
+      "quiz": {
+        "id": "h263-clip-s04",
+        "format": "latex",
+        "prompt": "Which reference enters a P-picture?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The last accepted reconstruction."
+          },
+          {
+            "id": "B",
+            "text": "Whatever remains in the raw input buffer from a previous read."
+          },
+          {
+            "id": "C",
+            "text": "The current destination before its first block is written."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s05",
+      "number": 115,
+      "title": "Check the complete picture child result",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s05.tex",
+      "prerequisites": [
+        "h263-clip-s04"
+      ],
+      "quiz": {
+        "id": "h263-clip-s05",
+        "format": "latex",
+        "prompt": "Which count is written to the stream?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "The entire 131072-byte capacity."
+          },
+          {
+            "id": "B",
+            "text": "The admitted complete child byte count."
+          },
+          {
+            "id": "C",
+            "text": "The size of all three raw planes."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s06",
+      "number": 116,
+      "title": "Write the encoded bytes with guarded short-I/O handling",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s06.tex",
+      "prerequisites": [
+        "h263-clip-s05"
+      ],
+      "quiz": {
+        "id": "h263-clip-s06",
+        "format": "latex",
+        "prompt": "What must remain pending after a short write?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A duplicate of the already accepted prefix."
+          },
+          {
+            "id": "B",
+            "text": "Only the next picture header."
+          },
+          {
+            "id": "C",
+            "text": "The unaccepted suffix of the current output."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s07",
+      "number": 117,
+      "title": "Accept reconstruction before swapping buffers",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s07.tex",
+      "prerequisites": [
+        "h263-clip-s06"
+      ],
+      "quiz": {
+        "id": "h263-clip-s07",
+        "format": "latex",
+        "prompt": "When does the destination become the reference?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "After both complete output writes are accepted."
+          },
+          {
+            "id": "B",
+            "text": "After its first row is reconstructed."
+          },
+          {
+            "id": "C",
+            "text": "Immediately after a stream open succeeds."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s08",
+      "number": 118,
+      "title": "Require exact EOF and close owned files",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s08.tex",
+      "prerequisites": [
+        "h263-clip-s07"
+      ],
+      "quiz": {
+        "id": "h263-clip-s08",
+        "format": "latex",
+        "prompt": "What establishes overall success?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "A nonempty stream file alone."
+          },
+          {
+            "id": "B",
+            "text": "All required work, exact EOF and successful return status zero."
+          },
+          {
+            "id": "C",
+            "text": "Any progress value greater than zero."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s09",
+      "number": 119,
+      "title": "Exercise real file errors without host files",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s09.tex",
+      "prerequisites": [
+        "h263-clip-s08"
+      ],
+      "quiz": {
+        "id": "h263-clip-s09",
+        "format": "latex",
+        "prompt": "Why target one output path at a time?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "To make all writes succeed regardless of return counts."
+          },
+          {
+            "id": "B",
+            "text": "To require a private descriptor number."
+          },
+          {
+            "id": "C",
+            "text": "To exercise each failure boundary independently with the real encoder."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    },
+    {
+      "id": "h263-clip-s10",
+      "number": 120,
+      "title": "Run and independently decode the generated clip",
+      "kind": "edit",
+      "stage": "h263-clip-construction",
+      "domain": "clip",
+      "content": "native/h263-clip-s10.tex",
+      "prerequisites": [
+        "h263-clip-s09"
+      ],
+      "quiz": {
+        "id": "h263-clip-s10",
+        "format": "latex",
+        "prompt": "What does the host preparation script generate?",
+        "choices": [
+          {
+            "id": "A",
+            "text": "Raw digital input samples and run controls, not the encoded target solution."
+          },
+          {
+            "id": "B",
+            "text": "The completed MIPS encoder implementation."
+          },
+          {
+            "id": "C",
+            "text": "An all-INTRA substitute for the submitted program."
+          }
+        ]
+      },
+      "completion": {
+        "type": "native-observation",
+        "completedStageCheck": "checks/clip.kts",
+        "scope": "Observe the matching stage working source; completed-entry feedback separately checks the whole stated contract"
+      }
+    }
+  ],
+  "figures": "captures/plan.json",
+  "publicChecks": [
+    "checks/sad.kts",
+    "checks/motion.kts",
+    "checks/prediction.kts",
+    "checks/macroblock.kts",
+    "checks/transform.kts",
+    "checks/quantization.kts",
+    "checks/block.kts",
+    "checks/writer.kts",
+    "checks/coefficients.kts",
+    "checks/syntax.kts",
+    "checks/picture.kts",
+    "checks/clip.kts"
+  ],
+  "exports": [
+    "package.json",
+    "README.md",
+    "assignment.tex",
+    "starter",
+    "native",
+    "checks",
+    "captures",
+    "reading.json",
+    "construction",
+    "steps.json",
+    "grade.py",
+    "snapshot.json"
+  ]
+}

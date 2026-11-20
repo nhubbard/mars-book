@@ -1,0 +1,21 @@
+\section{Step 52 Admit complete controls before samples}\label{h263-quant-s02}
+Load each request field as a doubleword. Check $1\leq Q\leq31$ and both binary
+selectors before using them. An unsigned comparison of $Q-1$ with 31 can perform
+the range check, including rejection of zero and large values whose low word
+looks valid. Check pointer alignment and non-wrapping extents before dereferencing
+samples. Mapped storage and disjointness are caller obligations.
+
+Only after admission should you read signed halfwords. Validate all values against
+$[-2048,2047]$. You may compute private levels as you validate, because an invalid
+late sample still leaves public output untouched. Do not publish those partial
+results.
+
+\paragraph{Observe} Quantizer zero is rejected before any division or sample
+read. A bad final coefficient returns status two with all 256 result bytes intact.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why retain the full quantizer field during admission?
+\begin{itemize}
+\item[A.] It contains a video frame rate.
+\item[B.] A large invalid value can have the same low word as eight.
+\item[C.] It permits division by zero.
+\end{itemize}

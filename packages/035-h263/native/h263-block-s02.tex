@@ -1,0 +1,20 @@
+\section{Step 62 Gather signed transform input}\label{h263-block-s02}
+Read current bytes as unsigned values. For INTER, read matching prediction bytes
+and subtract prediction from current in a signed general register. For INTRA,
+use zero prediction, leaving absolute current values. Store tight signed halfwords
+in a private transform-input array and retain tight halfword prediction values
+for the later reconstruction addition.
+
+The subtraction range $[-255,255]$ fits the forward transform's admitted domain.
+INTRA values 0 through 255 also fit. Avoid an unsigned-byte subtraction that
+would replace a negative residual with its wrapped representation.
+
+\paragraph{Observe} Current five predicted from ten produces signed residual
+minus five; it remains negative when loaded as a halfword.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why use zero prediction for INTRA input here?
+\begin{itemize}
+\item[A.] INTRA stores only motion vectors.
+\item[B.] Its transform describes absolute samples in this baseline path.
+\item[C.] It changes the quantizer parameter to zero.
+\end{itemize}

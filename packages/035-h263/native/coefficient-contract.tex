@@ -1,0 +1,64 @@
+\section{Expose a complete baseline block emitter}
+Implement \texttt{h263\_emit\_coefficients}. Pass an eight-byte-aligned mapped
+32-byte request in \texttt{\$a0}. Its unsigned native-endian doublewords are:
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rll}
+\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
+0 & Level pointer & Two-byte-aligned, 64 natural-order halfwords\\
+8 & Writer-context pointer & Eight-byte-aligned prior 24-byte context\\
+16 & Block type & 0 INTER; 1 INTRA\\
+24 & Reserved & Zero
+\end{tabular}
+\end{center}
+All ordinary levels lie in $[-127,127]$, with zero omitted from events. For INTRA,
+index zero instead contains a positive DC code from one through 255, excluding
+128. There is no quantizer parameter here: these are already selected levels.
+The emitter must preserve their exact meaning, not reconstruct coefficients or
+perform another quantization.
+
+Request, context and level input are disjoint; the byte output arena is disjoint
+from all three. All complete extents are mapped and non-wrapping. The writer
+context retains its earlier capacity bound of one MiB and a used count within
+that capacity. Preserve saved general registers, incoming stack pointer, request,
+level bytes and context pointer/capacity fields. Supply an aligned stack with
+private space; vector registers are caller-saved.
+
+Validate metadata before level reads. A malformed request, context or level
+returns status one and count zero. Reads to find an invalid level are permitted
+after valid metadata. No caller output access or state change is permitted on
+such rejection. A chosen plan that exceeds remaining capacity returns status two
+and count zero, also before caller-buffer access. A failed bit-writer dependency
+returns status three and count zero; prior caller-buffer reads needed for private
+staging are permitted, but no caller output or count may be written.
+
+On success, append one complete baseline block payload at the existing bit cursor,
+preserve every bit outside it, and commit the new used count. Return status zero
+and the number of appended bits in \texttt{\$v1}. An empty INTER block appends
+nothing and makes no caller-buffer access or context write. An INTRA block always
+appends its DC byte, even when every ordinary AC level is zero. This function
+does not emit a macroblock header, coded-block pattern, alignment padding or file.
+
+Use \path{construction/h263-coefficient-construction/main.asm}. Its supplied scan and
+complete compact-code tables are numeric data. Replace the emitter stub and carry
+in your completed \texttt{h263\_write\_bits} entry and helpers, replacing its stub.
+The default INTRA observation has DC code 255, level one at natural index one,
+level minus one at natural index eight and zero elsewhere, beginning at bit offset
+three in a buffer of \texttt{A5} bytes.
+\begin{verbatim}
+python3 construction/h263-coefficient-construction/prepare.py \
+    --source my-coefficients.asm --intra 1 --pattern worked \
+    --capacity 192 --used 3 --output worked-coefficients.asm
+\end{verbatim}
+Preparation changes the provided level data and typed controls, retaining all
+instructions and code tables. Existing output files are refused. The completed
+compact reference appends sixteen bits and prints sixteen; the valid escape-only
+alternative appends fifty-two and prints fifty-two. The prefix is retained in
+both cases, and both exit zero. An unfinished emitter reports development status
+four and exits one.
+
+At \texttt{coeff\_caller\_return}, before the first caller instruction, output
+and context are complete and return registers contain status and appended bits.
+Named status/bit-count fields have not yet received their copies. Inspect the
+committed bit interval and decode it; a differing printed bit count alone is
+not evidence of a wrong coefficient block.

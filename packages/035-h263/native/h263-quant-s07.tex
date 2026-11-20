@@ -1,0 +1,20 @@
+\section{Step 57 Restore vector signs and exact zeros}\label{h263-quant-s07}
+Derive an all-zero or all-one halfword sign mask by arithmetic-shifting the signed
+level fifteen places. XOR with that mask and subtract the mask to obtain its
+magnitude. Apply the nonzero reconstruction arithmetic, then use the same XOR
+and subtraction to restore signs.
+
+Construct an equality mask for original zero levels and clear those lanes after
+the formula. Without that mask, every zero lane acquires $Q$ or $Q-1$. Clamp
+signed lanes to the coefficient limits. Load and store exactly the eight groups
+that cover each 128-byte private array; no tail or neighbour data is needed.
+
+\paragraph{Observe} Mixed positive, negative and zero lanes agree with the
+scalar reconstruction at every position, not just in their sum.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why retain the original zero-level mask?
+\begin{itemize}
+\item[A.] The nonzero formula would otherwise turn zero into a nonzero value.
+\item[B.] Zero levels use a different memory byte order.
+\item[C.] It replaces the input pointer check.
+\end{itemize}

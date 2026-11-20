@@ -1,0 +1,124 @@
+\section{Describe six block payloads as one macroblock}
+The coefficient emitter describes one block. A macroblock has four Y blocks,
+one Cb block and one Cr block, in the order already used for prediction. Its
+header tells the decoder which prediction mode applies, which ordinary block
+payloads follow and which motion vector to use. These fields must agree with
+the selected levels and the reconstruction path; a correctly encoded block under
+the wrong presence flag is still a wrong macroblock.
+
+Keep picture type and macroblock type separate. An I-picture uses INTRA
+macroblocks. A P-picture can use INTER or INTRA macroblocks in this profile.
+INTRA within a P-picture remains an absolute block reconstruction and carries
+no motion-vector fields. This restricted encoder keeps the picture quantizer
+constant and uses baseline INTER and INTRA types, without per-macroblock quantizer
+changes, four-vector prediction, PB pictures or optional annex modes.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\textbf{Picture} & \textbf{Macroblock} & \textbf{Fields before block data}\\
+I & INTRA & MCBPC, CBPY\\
+P & INTRA & COD zero, MCBPC, CBPY\\
+P & INTER, coded & COD zero, MCBPC, CBPY, horizontal/vertical MVD\\
+P & INTER, skipped & COD one only
+\end{tabular}
+\end{center}
+COD is the coded-macroblock indication. A value of one skips further syntax for
+that macroblock. In the baseline mode, it means INTER with zero motion and no
+coefficient data. It does not mean to reuse the predicted motion vector. The
+picture controller must still record actual vector zero for later prediction.
+
+A skipped macroblock is valid only when its chosen reconstruction uses zero
+motion and zero residual levels. Equal consecutive raw blocks do not establish
+that condition: the reference is a reconstructed picture. The syntax routine
+receives already chosen levels and motion. Deciding whether that candidate gives
+suitable picture quality belongs to the encoding and reconstruction layers.
+
+\section{Form presence bits from ordinary nonzeros}
+For each block, set a presence bit when at least one ordinary level is nonzero.
+For INTRA, exclude the separate DC code from this decision. Six nonzero DC codes
+with every AC level zero therefore give presence pattern zero. Their DC bytes
+are nevertheless mandatory and must still be emitted.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rlll}
+\textbf{Block} & \textbf{Component/position} & \textbf{Six-bit mask weight} & \textbf{Header pattern}\\
+1 & Y, top left & 32 & CBPY bit 3\\
+2 & Y, top right & 16 & CBPY bit 2\\
+3 & Y, bottom left & 8 & CBPY bit 1\\
+4 & Y, bottom right & 4 & CBPY bit 0\\
+5 & Cb & 2 & CBPC bit 1\\
+6 & Cr & 1 & CBPC bit 0
+\end{tabular}
+\end{center}
+CBPC describes the two chroma blocks and is combined with the macroblock type in
+the MCBPC code. CBPY describes the four Y blocks. For a six-bit presence mask $m$,
+its direct patterns are $m\bmod4$ for CBPC and $m\gg2$ for CBPY. The baseline
+CBPY table indexes the direct pattern for INTRA and its four-bit complement for
+INTER. Thus an INTER Y pattern of zero uses table index fifteen, not zero.
+
+The supplied MCBPC data has three groups: I-INTRA, P-INTER and P-INTRA. Each group
+has four CBPC choices. Select the group using both picture and macroblock type.
+Using the I-picture INTRA group for an INTRA macroblock inside a P-picture changes
+the syntax even though the six block payloads themselves are identical.
+
+\section{Code motion differences in half-sample units}
+The earlier search reports full-pixel displacement. Multiply a selected component
+by two when passing it to this syntax boundary. The boundary itself uses signed
+half-sample units, admitting components from $-32$ through 31, corresponding to
+$-16$ through $15.5$ luma pixels. A small integer here is not automatically a
+full-pixel displacement.
+
+MVD represents the difference between the selected vector and a predictor derived
+from neighbouring macroblocks. The picture controller will compute that predictor;
+the syntax entry receives its horizontal and vertical components explicitly.
+For each component, reduce the difference modulo 64 into the admitted signed range:
+\[
+ d=\bigl((v-p+32)\bmod64\bigr)-32.
+\]
+Then use MVD table index $d+32$. The decoder adds the represented difference to
+its predictor and wraps the sum into the same range. This implements the baseline
+paired-difference interpretation without confusing a wrapped difference with a
+new absolute vector.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrl}
+\textbf{Selected $v$} & \textbf{Predictor $p$} & \textbf{Raw difference} & \textbf{Coded $d$} & \textbf{Recovered vector}\\
+$-4$ & 3 & $-7$ & $-7$ & $-4$\\
+$-32$ & 31 & $-63$ & 1 & $-32$\\
+31 & $-32$ & 63 & $-1$ & 31\\
+0 & 31 & $-31$ & $-31$ & 0
+\end{tabular}
+\end{center}
+Horizontal MVD precedes vertical MVD. The zero difference has a one-bit code, but
+it means selected vector equals predictor. It does not mean selected vector zero
+unless the predictor is zero. By contrast, skipped COD one means actual zero
+motion regardless of that predictor. Test these two cases separately.
+
+\section{Stage header and payloads before caller publication}
+Preflight the complete request, context and all six level blocks before invoking
+syntax children. Derive the presence mask from those validated levels. Build the
+header fields, then emit them and the required block payloads into a zeroed private
+buffer through a private writer context. For INTRA, invoke all six block emitters
+because every DC byte is present. For INTER, invoke only blocks whose presence
+bits are set. A skipped macroblock emits no further fields.
+
+At this boundary, the private buffer can start with zeros. Caller prefix and suffix
+bits need not be read yet. After every child succeeds, determine the actual total
+length of the chosen encoding and check caller capacity. If it does not fit,
+return with no caller-buffer access. If it fits, merge existing prefix and suffix
+bits into the private first and last bytes, copy only the touched window, then
+commit the caller's new used count.
+
+This retains caller bytes and count when a late child fails or the completed
+representation does not fit. The alternative compact and escape choices can have
+different lengths, so admission refers to the actual chosen representation.
+Providing space for the worst-case legal payload guarantees that either fits.
+
+An INTER macroblock has at most six 1408-bit block payloads and 39 header bits,
+for 8487 bits. With an initial bit offset of seven it touches at most 1062 bytes.
+INTRA payloads have fewer ordinary levels, and their mandatory DC fields still
+fit below this bound. A 1152-byte private staging arena suffices for the supported
+syntax. This is a macroblock storage bound, not a limit on the complete video file.

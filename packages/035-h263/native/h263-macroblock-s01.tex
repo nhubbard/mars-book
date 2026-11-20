@@ -1,0 +1,22 @@
+\section{Step 31 Plan one request and six records}\label{h263-macroblock-s01}
+Sketch the request offsets and the six output ranges before implementing the
+routine. The request has eighteen doublewords. The output has six records of
+192 bytes. A block's record starts at $192b$ for block index $b$; its signed
+residuals start another 64 bytes later.
+
+Keep saved caller state, a stable request copy, the reusable child request and
+staged results distinct. Align the ordinary entry stack before its first call;
+a private record at an aligned offset still needs an aligned stack base.
+Record sizes are byte counts, while loop counters may
+count doublewords. Confusing those units can produce a copy that looks correct
+at its beginning and leaves the final Cr residuals unchanged.
+
+\paragraph{Observe} Block five starts at byte 960 and its final halfword occupies
+bytes 1150 and 1151. The next byte belongs to the output guard.
+\Needspace{8\baselineskip}
+\paragraph{Check} Where does block five's residual array start?
+\begin{itemize}
+\item[A.] Byte 64, shared by every block.
+\item[B.] Byte 1024, which is $5\times192+64$.
+\item[C.] Byte 1152, after the whole result.
+\end{itemize}

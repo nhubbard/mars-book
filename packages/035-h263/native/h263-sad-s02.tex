@@ -1,0 +1,21 @@
+\section{Step 2 Bound the complete address windows}\label{h263-sad-s02}
+After the stride checks, compute $15s+16$ for each input in 64-bit registers.
+The admitted stride bound makes these extent calculations small, but the input
+pointer may still be near the end of the address space. Add the extent to its
+start and use an unsigned comparison to detect a wrapping exclusive end.
+
+Perform both checks before the first load from either source. Otherwise, a valid
+first input could already have been read when the second pointer is rejected.
+A mapped input window is a caller obligation; this arithmetic check does not
+inspect the simulator's memory map or turn an arbitrary unmapped pointer into a
+successful argument.
+
+\paragraph{Observe} For stride 176, the minimum extent is 2656 bytes. For stride
+sixteen it is 256. A top address whose addition wraps is rejected with count zero.
+\Needspace{8\baselineskip}
+\paragraph{Check} How much input does one successful comparison consume?
+\begin{itemize}
+\item[A.] Every byte in both contiguous extents.
+\item[B.] Exactly 256 active sample bytes from each window.
+\item[C.] Sixteen bytes from each whole picture.
+\end{itemize}

@@ -1,0 +1,20 @@
+\section{Step 35 Derive both chroma requests from the same vector}\label{h263-macroblock-s05}
+Halve the aligned current coordinates to obtain the chroma macroblock origin.
+Split each signed luma displacement into its floored half and its phase bit.
+Add the floored shifts to the chroma origin, then form addresses from the chosen
+Cb or Cr plane and its own stride.
+
+Reuse the geometry for both chroma blocks, but load their distinct pointers and
+strides. An odd negative component needs origin shift $-1$ and phase one.
+Truncating division toward zero would select the wrong reference interval.
+The displayed sample aspect ratio does not change these array coordinates.
+
+\paragraph{Observe} At current $(16,32)$ and displacement $(-1,-1)$, both chroma
+blocks use current $(8,16)$, reference origin $(7,15)$ and phases $(1,1)$.
+\Needspace{8\baselineskip}
+\paragraph{Check} What may Cb and Cr legitimately share here?
+\begin{itemize}
+\item[A.] The derived displacement geometry, while retaining their own data and strides.
+\item[B.] One pointer, regardless of the request.
+\item[C.] The Y stride, regardless of either chroma stride field.
+\end{itemize}

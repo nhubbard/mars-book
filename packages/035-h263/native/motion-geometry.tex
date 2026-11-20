@@ -1,0 +1,84 @@
+\section{Turn a block score into a motion search}
+A block comparison answers one question: how different are these two windows?
+Motion search asks the question at several reference positions and retains the
+best result. The current block stays fixed. Only the reference address changes.
+For a current block whose picture position is $(x,y)$, define a candidate's
+reference position as $(x+d_x,y+d_y)$. Positive $d_x$ moves right in the reference
+picture; positive $d_y$ moves down. A square that moved down and right between
+pictures can therefore require a negative reference displacement.
+
+The next exercise searches full-pixel displacements in a radius $r$ from zero,
+with $r$ restricted to zero, one or two. An interior radius-two search has
+$5\times5=25$ candidates. This is our encoder's initial search policy. H.263's
+motion compensation also supports half-pixel positions; selecting full-pixel
+luma positions here does not change the bitstream's motion-vector units. The
+later syntax stage must convert units and derive chroma prediction according to
+the standard, rather than writing these result fields directly into the stream.
+See clause 6.1 of the official recommendation cited at the end of this chapter.
+
+Every candidate must contain its complete sixteen-by-sixteen block within the
+176-by-144 reference plane. Its top-left coordinate therefore satisfies
+$0\leq x+d_x\leq160$ and $0\leq y+d_y\leq128$. Clip the displacement intervals:
+\[
+\begin{split}
+ d_x^{\min}&=\max(-r,-x),\qquad
+ d_x^{\max}=\min(r,160-x),\\
+ d_y^{\min}&=\max(-r,-y),\qquad
+ d_y^{\max}=\min(r,128-y).
+\end{split}
+\]
+The admitted candidate count is the product of the two inclusive interval lengths.
+At $(0,0)$ with radius two, both intervals are $[0,2]$: nine candidates survive.
+At $(0,32)$, only the horizontal interval is clipped, giving fifteen. Radius zero
+always has one candidate, including at a corner.
+
+Clipping removes candidates; it does not clamp every proposed coordinate onto an
+edge. Clamping would visit the same block repeatedly and distort the candidate
+count. Nor does mapped memory beyond a row make an out-of-picture block valid.
+The search may read the union of its admitted reference windows and the sixteen
+active bytes of each current row. It must not use row padding, an adjacent plane
+or extra guard bytes as image samples.
+
+The current block pointer already addresses its top-left sample. Do not add
+$(x,y)$ to it again. The reference pointer addresses the complete reference
+plane, so a candidate pointer is
+\[
+ P_R+(y+d_y)s_R+(x+d_x).
+\]
+Apply this expression only after clipping signed coordinates. A negative
+candidate displacement is valid; an admitted reference coordinate is never
+negative. Use full-width address arithmetic throughout.
+
+\section{Make equal scores reproducible}
+The search minimizes exact SAD. Equal scores are common in flat areas and
+periodic patterns. Use the following result rule: prefer zero displacement when
+it has the minimum score; otherwise prefer the smallest $d_y$, then the smallest
+$d_x$, among minimum-score candidates. This is a project interface rule, not a
+claim that H.263 requires this search or tie policy.
+
+One implementation evaluates $(0,0)$ first, then visits the remaining candidates
+by increasing $d_y$ and, within each row, increasing $d_x$. Replace the best result
+only for a strictly smaller score. Another implementation can traverse in reverse
+and compare the complete tie key explicitly. Both must return the same result.
+A maximum-difference block has SAD 65\,280, so an initial best-score sentinel of
+65\,536 is larger than every possible score. An initial value of zero would
+prevent any nonnegative candidate from becoming the first best result.
+
+The worked raw windows from the preceding exercise give the following scores.
+Rows are vertical displacements and columns are horizontal displacements.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrrr}
+\textbf{$d_y\backslash d_x$} & \textbf{$-2$} & \textbf{$-1$} & \textbf{0} & \textbf{1} & \textbf{2}\\
+$-2$ & 2976 & 4368 & 5760 & 5568 & 5376\\
+$-1$ & 3600 & 5208 & 6816 & 6720 & 6624\\
+0 & 4224 & 6048 & 7872 & 7872 & 7872\\
+1 & 4272 & 6072 & 7872 & 7872 & 7872\\
+2 & 4320 & 6096 & 7872 & 7872 & 7872
+\end{tabular}
+\end{center}
+The selected displacement is $(-2,-2)$ with score 2976, compared with 7872 at
+zero displacement. The score remains nonzero because the stationary tiled
+background and the moving square do not share a single translation. This example
+still uses two known raw pictures to isolate search arithmetic. Once local
+reconstruction exists, the encoder must supply the reconstructed reference.

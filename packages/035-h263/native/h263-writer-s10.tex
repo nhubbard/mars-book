@@ -1,0 +1,27 @@
+\section{Step 80 Append alignment bits explicitly}\label{h263-writer-s10}
+Prepare a crossing observation without changing your instructions:
+\begin{verbatim}
+python3 construction/h263-bit-writer-construction/prepare.py \
+    --source my-writer.asm --first 5 --first-width 3 \
+    --second 419 --second-width 9 --output crossing.asm
+\end{verbatim}
+The two fields commit twelve bits and leave bytes \texttt{BA 35}; the low four
+bits are retained unused storage. To reach the next byte boundary where the
+syntax requires zero stuffing, append value zero with width four. This produces
+\texttt{BA 30} and count sixteen. In general, the required zero-bit count is
+$(8-(p\bmod8))\bmod8$. An already aligned stream needs zero additional bits.
+
+Keep alignment decisions in the syntax writer. Picture start codes require their
+specified alignment, but ordinary adjacent fields must not acquire arbitrary
+padding. The next coefficient and macroblock stages will use this append entry
+with their own lengths, admission and publication rules.
+
+\paragraph{Observe} Capacity and unused storage do not decide syntax. Explicit
+padding changes both the byte bits and the committed count.
+\Needspace{8\baselineskip}
+\paragraph{Check} When should ordinary field appends insert padding automatically?
+\begin{itemize}
+\item[A.] Never; the syntax layer requests any required alignment bits.
+\item[B.] After every field regardless of its syntax.
+\item[C.] Whenever an unused buffer byte is nonzero.
+\end{itemize}

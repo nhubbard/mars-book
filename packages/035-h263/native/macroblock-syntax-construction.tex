@@ -1,0 +1,182 @@
+\section{Step 91 Admit picture and macroblock controls}\label{h263-syntax-s01}
+Validate records, complete extents and full-width selectors before level reads.
+Reject INTER in an I-picture. Reject nonzero vector/predictor fields for INTRA;
+they have no syntax here and usually indicate a mismatched request. For INTER,
+validate all four signed half-sample components before computing differences.
+
+\paragraph{Observe} An INTRA macroblock in a P-picture is valid, but it uses the
+P-picture INTRA MCBPC group and has COD zero before it.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which picture/type combination is excluded?
+\begin{itemize}
+\item[A.] INTER inside an I-picture.
+\item[B.] INTRA inside a P-picture.
+\item[C.] INTRA inside an I-picture.
+\end{itemize}
+
+\section{Step 92 Validate all six blocks and form presence}\label{h263-syntax-s02}
+Scan all 384 halfwords before invoking output children. Validate each block's
+special DC entry for INTRA and the ordinary level range elsewhere. Set the
+appropriate presence bit for each nonzero ordinary value, excluding INTRA DC.
+Initialize the presence accumulator afresh on every call.
+
+\paragraph{Observe} Six INTRA DC codes 255 with no AC values give mask zero.
+A forbidden final coefficient in block six still returns status one before output.
+\Needspace{8\baselineskip}
+\paragraph{Check} Does a nonzero INTRA DC code by itself set that block's flag?
+\begin{itemize}
+\item[A.] Yes, every DC value sets every chroma flag.
+\item[B.] No, this presence decision concerns ordinary AC levels for INTRA.
+\item[C.] Only when the host uses little endian.
+\end{itemize}
+
+\section{Step 93 Distinguish skipped from coded zero motion}\label{h263-syntax-s03}
+A skip candidate requires a P-picture, INTER mode, zero presence mask, selected
+motion zero and permission to skip. The predictor need not be zero. An eligible
+skip emits COD one and nothing else. If skip is disallowed or not chosen, build
+ordinary coded INTER syntax and encode the difference needed to recover the
+selected vector, even when that selected vector is zero.
+
+\paragraph{Observe} Predictor 31 and selected vector zero require a nonzero MVD
+in coded output, while COD one directly declares actual zero motion.
+\Needspace{8\baselineskip}
+\paragraph{Check} What motion does a baseline skipped macroblock use?
+\begin{itemize}
+\item[A.] The supplied predictor without modification.
+\item[B.] The preceding raw picture's arbitrary vector.
+\item[C.] Zero.
+\end{itemize}
+
+\section{Step 94 Select MCBPC and CBPY tables}\label{h263-syntax-s04}
+Select the MCBPC group from picture type and INTRA/INTER mode, then index its
+four entries with the low two presence bits. Form the direct Y pattern from
+the high four bits. For INTRA, use that direct CBPY table index. For INTER, use
+its four-bit complement. Retain both code values and widths in the private header plan.
+
+\paragraph{Observe} Mask 33 describes Y block one and Cr block six. CBPC is one,
+and the direct Y pattern is eight; the INTER CBPY lookup index is seven.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which lookup index represents an INTER Y pattern of zero?
+\begin{itemize}
+\item[A.] Fifteen.
+\item[B.] Always zero.
+\item[C.] The chroma stride.
+\end{itemize}
+
+\section{Step 95 Normalize both motion differences}\label{h263-syntax-s05}
+For each component, subtract predictor from selected half-sample motion, add
+32, retain the low six bits and use that value as the table index. The index
+represents normalized difference plus 32. Emit horizontal before vertical.
+Keep the original signed components for validation rather than truncating their
+high bits before checking the admitted range.
+
+\paragraph{Observe} Selected minus 32 and predictor 31 give raw difference minus
+63, normalized difference one, and decoder recovery of minus 32 after wrapping.
+\Needspace{8\baselineskip}
+\paragraph{Check} What are the vector units at this boundary?
+\begin{itemize}
+\item[A.] Always full pixels regardless of the earlier search.
+\item[B.] Half-sample units; full-pixel search results are multiplied by two.
+\item[C.] Bytes in the output file.
+\end{itemize}
+
+\section{Step 96 Emit the header to private storage}\label{h263-syntax-s06}
+Initialize a zeroed private byte buffer and writer context at the caller's bit
+offset modulo eight. Emit the planned COD/type/presence/motion fields, checking
+every child return. Skip mode stops after COD one. Coded mode continues with
+exactly the fields required by the selected type.
+
+A zeroed staging buffer makes every new bit deterministic without reading the
+caller yet. Retain enough space for the complete worst-case supported macroblock,
+not just the header.
+
+\paragraph{Observe} The default I-INTRA DC-only header has five bits before the
+six mandatory DC bytes. It has no COD or MVD fields.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which fields are absent from an I-INTRA header here?
+\begin{itemize}
+\item[A.] MCBPC and CBPY.
+\item[B.] All six DC bytes.
+\item[C.] COD and motion-vector differences.
+\end{itemize}
+
+\section{Step 97 Emit block data in component order}\label{h263-syntax-s07}
+Visit the four Y blocks, Cb and Cr in the published order. INTRA invokes the
+coefficient emitter for every block, including those without AC. INTER invokes
+it only for present blocks. Pass the same private context across these calls so
+payloads continue at the actual next bit without automatic byte alignment.
+
+\paragraph{Observe} INTRA presence zero still emits forty-eight DC bits. INTER
+presence zero emits no coefficient blocks, though a coded header still has MVD.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why must an INTRA block without AC still be emitted?
+\begin{itemize}
+\item[A.] Its separate DC byte remains mandatory.
+\item[B.] It must contain an invented end-of-block code.
+\item[C.] Every block is padded to a native doubleword.
+\end{itemize}
+
+\section{Step 98 Check total space and merge boundary bits}\label{h263-syntax-s08}
+After every child succeeds, subtract the initial private bit offset from the
+private context count to obtain appended length. Check the caller's remaining
+space before any caller-buffer load. Merge existing prefix bits into the private
+first byte and unused suffix bits into its last byte. When the touched window
+has one byte, both masks apply to that same staged byte.
+
+Publish only touched bytes and commit the new caller count afterward. A failure
+before that point returns count zero and retains all caller state.
+
+\paragraph{Observe} A one-bit skipped append preserves seven other byte bits,
+including the case where it ends exactly at the byte boundary.
+\Needspace{8\baselineskip}
+\paragraph{Check} When may the routine first read caller output bytes?
+\begin{itemize}
+\item[A.] Before validating the last block.
+\item[B.] After all children succeed and the complete representation fits.
+\item[C.] After checking only MCBPC length.
+\end{itemize}
+
+\section{Step 99 Decode complete macroblock meaning}\label{h263-syntax-s09}
+Run public feedback on a source with completed dependencies:
+\begin{verbatim}
+python3 construction/h263-macroblock-syntax/grade.py \
+    my-macroblock.asm --cli /path/to/mars-cli.jar \
+    --report macroblock-results.json
+\end{verbatim}
+The independent decoder checks type, presence mask, selected motion, all six
+level arrays and exact payload consumption. It accepts legal compact/escape
+choices and permitted skipped or coded zero-motion output. State and memory traces
+check complete preflight, rejection, boundary preservation and saved registers
+in both native byte orders.
+
+\paragraph{Observe} Passing one header value is insufficient: a correct header
+with omitted INTRA DC or swapped Cb/Cr payloads still fails decoded meaning.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which result defines semantic agreement here?
+\begin{itemize}
+\item[A.] The reference's exact private bytes.
+\item[B.] Only the printed number of bits.
+\item[C.] Decoded type, motion, flags and all selected block levels.
+\end{itemize}
+
+\section{Step 100 Leave picture history to the picture controller}\label{h263-syntax-s10}
+Exercise repeated macroblock calls with the retained writer context, changing
+type, levels and predictor fields between calls. Check that presence and header
+plans are fresh. The picture controller must compute neighbour predictors, place
+reconstructed blocks in Y/Cb/Cr planes and retain actual motion for future neighbours.
+That history uses zero for INTRA and skipped macroblocks under this baseline path.
+
+This emitter changes no picture or motion-history array. Picture-level ownership,
+GOB boundaries, start-code alignment, file output and independent full-stream
+checking are still separate integrations. Keep these boundaries explicit when
+measuring the complete encoder rather than a syntax fragment.
+
+\paragraph{Observe} A permitted skip and an equivalent coded zero-motion macroblock
+can have different lengths while both declare actual motion zero and zero residuals.
+\Needspace{8\baselineskip}
+\paragraph{Check} Who supplies the neighbour-derived motion predictor?
+\begin{itemize}
+\item[A.] The picture controller, using the encoded macroblock history.
+\item[B.] Unused suffix bits in the output buffer.
+\item[C.] The quantizer's DC code alone.
+\end{itemize}
