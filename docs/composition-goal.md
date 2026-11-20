@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–28 and 33–35 have reviewed figure sets.
-Chapters 29–32 retain 16 planned figures across 4 sets. The manuscript has
-1,803 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–29 and 33–35 have reviewed figure sets.
+Chapters 30–32 retain 12 planned figures across 3 sets. The manuscript has
+1,807 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2251,3 +2251,14 @@ Fresh grading against a frozen public revision passes 16,270 positive cases acro
 All four native proofs pass original-pixel, coordinate, full-image-bound, font and tagging checks, with color/grayscale review. The decoder explanation was shortened to fit without reducing type or screenshot size. An obsolete planned-capture assertion now checks verified native receipts, exported source and original image hashes. Public IDs base64-f01 through base64-f04 remain unchanged. Native snapshots relocate only literal asset prefixes, and the bootstrap refuses edited TeX. The 69-page chapter and 1,803-page manuscript retain separate integration receipts. Independent accessibility review and later substantive editing remain open.
 
 Reviewed sets now cover chapters 1–28 and 33–35. Sixteen planned figures remain across chapters 29–32.
+
+
+## Binary PPM native figure set
+
+Four native figures use sixteen unchanged light-theme IDE captures and twenty explanations. Fixtures reconstruct the exact cumulative stages through s12, s19, s28 and s40 rather than executing the final reference at every stop. The decoder has stored its four words but retains its unfinished return; the encoder has written only the eleven-byte header; the saver has accepted twenty-three bytes but still retains the completion stub. Native screenshots use ordinary host writes and descriptor three. The independent core recipe separately forces three-byte short writes and descriptor nine, checks an owned descriptor at the checkpoint and verifies the guest close after continuation. The final native host file is checked separately; no per-launch native file history or guest-close claim is made.
+
+Seven independent grammar, byte-order, bounds, reconstruction and Pillow tests pass. Twelve assembled capture faults are rejected. Complete caller images cover both paths, all arenas, controls and alignment gaps. Exact caller write schedules, logical read footprints, private metadata, protected workspace and restored saved registers are checked. Active saved-frame slots are outside the complete-image claim. Input provenance omitted from the first metadata receipt was explicitly added with its original retained; no source, oracle, plan or capture bytes changed. The unchanged separate authoring plugin reuses exact source/build/class/dependency-bound 78-test Jupiter and paired API evidence; no new Jupiter invocation is claimed.
+
+Fresh grading against a frozen public revision passes 4,263 positive cases across 160 runs, 37 intermediate programs, 62 recipes, 38 exported guided checks and 42 quiz keys. Nine mutants and four unfinished entry points produce 181 expected failing cases. Guided exports regenerate into a private directory and match the frozen public bytes. All four executed verification scripts are retained and hash-bound to their reports. New optional output paths refuse existing reports and retain earlier evidence.
+
+All four native proofs pass original-pixel, coordinate, full-image-bound, font and tagging checks and color/grayscale review. Review corrected an escaped apostrophe in one alternative description. Public IDs ppm-f01 through ppm-f04 remain unchanged; the existing logical fixture diagram is Figure 29.1. Native snapshots relocate only literal asset prefixes. The guarded bootstrap refuses edited source. Independent accessibility review and later substantive editing remain open.
