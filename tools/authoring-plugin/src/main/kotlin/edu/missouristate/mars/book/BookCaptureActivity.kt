@@ -36,6 +36,8 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.xdebugger.XDebuggerManager
+import com.intellij.xdebugger.XDebuggerUtil
+import com.intellij.xdebugger.evaluation.EvaluationMode
 import com.intellij.xdebugger.breakpoints.XBreakpointProperties
 import com.intellij.xdebugger.breakpoints.XBreakpointType
 import com.intellij.xdebugger.breakpoints.XLineBreakpointType
@@ -159,7 +161,11 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 (labelStart until document.lineCount).first { type.canPutAt(source, it, project) }
             }
         }
-        val breakpoint = writeAction { addBreakpoint(project, type, source, stepLines.firstOrNull() ?: line) }
+        val breakpoint = writeAction {
+            addBreakpoint(project, type, source, stepLines.firstOrNull() ?: line).also { breakpoint ->
+                figure.breakpointCondition?.let { breakpoint.conditionExpression = XDebuggerUtil.getInstance().createExpression(it, null, null, EvaluationMode.EXPRESSION) }
+            }
+        }
         var inputDelivered = figure.standardInput == null
         val observedSteps = mutableListOf<Map<String, Any>>()
         var ownedSessionName: String? = null
@@ -263,6 +269,14 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         if (observeBookBitmap(canvas, expectedBitmap) == null) return@withContext null
                         return@withContext emptyList<BookUiRow>()
                     }
+                    figure.digitalLabView?.let { view ->
+                        val tool = ToolWindowManager.getInstance(project).getToolWindow("MARS Tools") ?: return@withContext null
+                        if (!tool.isVisible) { tool.show(); return@withContext null }
+                        val content = tool.contentManager.contents.singleOrNull { it.displayName == "Digital Lab Sim" } ?: return@withContext null
+                        if (tool.contentManager.selectedContent != content) { tool.contentManager.setSelectedContent(content, false); return@withContext null }
+                        ToolWindowManager.getInstance(project).getToolWindow("Debug")?.takeIf { it.isVisible }?.let { it.hide(); return@withContext null }
+                        return@withContext observeBookDigitalLab(content.component, view, "Book figure: " + figure.id)?.rows
+                    }
                     val descriptor = RunContentManager.getInstance(project).findContentDescriptor(
                         DefaultDebugExecutor.getDebugExecutorInstance(), session.debugProcess.processHandler,
                     ) ?: return@withContext null
@@ -310,7 +324,9 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 stable = if (texts != null && texts == previous) stable + 1 else 0
                 previous = texts
                 if (ready != null && stable >= 2) {
-                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap, observedSteps.toList())
+                    val nativeCondition = withContext(Dispatchers.EDT) { breakpoint.conditionExpression?.expression }
+                    check(nativeCondition == figure.breakpointCondition) { "Native breakpoint condition changed" }
+                    captureReady(project, plan, figure, output, ready, line, sourceStamp, source.url, expectedBitmap, observedSteps.toList(), nativeCondition)
                     break
                 }
                 delay(200)
@@ -374,7 +390,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         }
     }.toList()
 
-    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?, observedSteps: List<Map<String, Any>>) {
+    private suspend fun captureReady(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, rows: List<BookUiRow>, line: Int, sourceStamp: Long, sourceUrl: String, expectedBitmap: BookExpectedBitmap?, observedSteps: List<Map<String, Any>>, nativeCondition: String?) {
         val snapshot = withContext(Dispatchers.EDT) {
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             val root = frame.rootPane
@@ -394,6 +410,11 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 mapOf("label" to expected.label, "box" to captureBox(expected.column?.let { checkNotNull(row.cells[it]) } ?: row.bounds, viewport),
                     "observedText" to row.text, "column" to expected.column)
             }.toMutableList()
+            figure.digitalLabView?.let { view ->
+                val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
+                val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
+                callouts += lab.rows.map { row -> mapOf("label" to row.text, "observedText" to row.text, "box" to captureBox(row.bounds, viewport)) }
+            }
             LearningUiHighlightingManager.clearHighlights()
             if (expectedBitmap == null) {
                 checkNotNull(editor)
@@ -418,6 +439,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         val screenImages = withContext(Dispatchers.IO) { Robot().createMultiResolutionScreenCapture(snapshot.first).resolutionVariants }
         val image = screenImages.first() as BufferedImage
         var screenEvidence: BookBitmapScreenEvidence? = null
+        var labEvidence: Map<String, Any>? = null
         withContext(Dispatchers.EDT) {
             val session = checkNotNull(XDebuggerManager.getInstance(project).currentSession)
             check(session.isSuspended && session.sessionName == "Book figure: " + figure.id)
@@ -455,6 +477,14 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     error("Captured pixels differ from the independently checked frame")
                 }
             }
+            figure.digitalLabView?.let { view ->
+                val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
+                val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
+                check(lab.rows.map { it.text } == snapshot.third) { "Digital Lab changed during capture" }
+                lab.rows.forEachIndexed { index, row -> check(captureBox(row.bounds, snapshot.first) == snapshot.second[index]["box"]) { "Digital Lab bounds changed during capture" } }
+                labEvidence = mapOf("left" to view.left, "right" to view.right, "selectedExecution" to lab.selectedExecution,
+                    "timerRemaining" to 0, "pressedKeys" to emptyList<String>(), "samples" to lab.screenEvidence(image, snapshot.first))
+            }
             check(captureBalloons(project).isEmpty()) { "Notification appeared during screenshot" }
             val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
             check(frame.isActive && Rectangle(frame.rootPane.locationOnScreen, frame.rootPane.size) == snapshot.first) { "Capture window changed" }
@@ -473,6 +503,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "notificationBalloonsVisible" to 0,
                 "standardInput" to figure.standardInput, "standardInputDelivered" to (figure.standardInput?.let { true }),
                 "observedSteps" to observedSteps,
+                "digitalLabView" to figure.digitalLabView, "observedDigitalLab" to labEvidence, "breakpointCondition" to nativeCondition,
                 "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView, "bitmapView" to figure.bitmapView,
                 "observedBitmap" to expectedBitmap?.let { mapOf("columns" to it.view.columns, "rows" to it.view.rows,
                     "address" to it.view.address, "rgbSha256" to it.view.rgbSha256, "verifiedPixels" to it.colors.size,
