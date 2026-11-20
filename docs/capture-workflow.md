@@ -245,7 +245,7 @@ and independent accessibility review remain open. The authoring plugin is separa
 from MARS and depends on the published MARS plugin.
 
 
-## H.263 raw capture batch
+## H.263 capture and native composition
 
 The separate authoring plugin has captured sixteen native views for the six planned
 H.263 figures: SAD, selected motion, prediction and residuals, block reconstruction,
@@ -259,7 +259,12 @@ PNG digest, resolved callout bounds and plugin provenance. Twenty-eight Jupiter 
 and dependency-resolved Plugin Verifier checks accompany the batch. Raw overview
 inspection found no transient overlay or unrelated project in the retained views.
 
-These are raw captures. The six public plans remain planned until editable native
-LaTeX annotations, readable crops and color/grayscale print proofs are reviewed.
+The six public figure plans now retain reviewed native LaTeX compositions. Their
+22 numbered details use measured crops of the unchanged raw images. Captions,
+legends and alternative descriptions explain the worked memory and register state.
+Color and grayscale proofs and embedded-image checks pass; independent accessibility
+review and the earlier chapter figure plans remain open. The SAD plate uses two
+details from one actual screenshot; the other plates combine separately captured
+views of the same source and checkpoint.
 The private evidence records intentional termination of the dedicated IDE after
 batch completion; the resulting Gradle process exit is not reported as a passed build.

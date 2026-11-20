@@ -29,6 +29,23 @@ class CompositeCaptureTests(unittest.TestCase):
         self.assertEqual(2,len(self.receipt['parts']))
         self.assertEqual(3,len(self.receipt['panels']))
 
+    def test_two_details_from_one_actual_capture_pass(self):
+        receipt=copy.deepcopy(self.receipt)
+        receipt['parts']=[part for part in receipt['parts'] if part['id']=='counter']
+        receipt['panels']=[panel for panel in receipt['panels'] if panel['part']=='counter']
+        self.assertEqual(2,len(receipt['panels']))
+        self.validate(receipt)
+
+    def test_empty_capture_set_or_single_detail_is_not_a_composite(self):
+        for change in ('empty','single-panel'):
+            with self.subTest(change=change):
+                receipt=copy.deepcopy(self.receipt)
+                receipt['parts']=[part for part in receipt['parts'] if part['id']=='counter']
+                receipt['panels']=[panel for panel in receipt['panels'] if panel['part']=='counter']
+                if change=='empty':receipt['parts']=[]
+                else:receipt['panels']=receipt['panels'][:1]
+                with self.assertRaises(ValueError):self.validate(receipt)
+
     def test_unknown_or_downgraded_receipt_format_fails(self):
         for key,value in [('formatVersion',1),('kind','unrecognized')]:
             with self.subTest(field=key):

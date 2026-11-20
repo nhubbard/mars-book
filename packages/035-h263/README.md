@@ -59,6 +59,7 @@ Guided work follows native Observe/Check sections; free writing shares the same
 interfaces and semantic acceptance. Instructor choices for quizzes, hints, stage
 checks, progression and mode switching are recorded. Downloadable remote lessons
 and automatic progression enforcement remain future service/plugin work. Six
-light-theme IDE figures are explicitly planned, not marked captured. Capture
+light-theme IDE figures now retain verified original captures, native LaTeX annotations,
+numbered legends and reviewed color/grayscale proofs. Capture
 implementation belongs in the separate authoring plugin depending on MARS.
 Independent accessibility review and later substantive editing remain separate.

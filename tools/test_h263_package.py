@@ -15,6 +15,7 @@ def input_tree(target):
     (target/'docs').mkdir(parents=True)
     shutil.copyfile(ROOT/'docs/h263-grader-revision.txt',target/'docs/h263-grader-revision.txt')
     shutil.copytree(ROOT/'includes/chapters'/ID,target/'includes/chapters'/ID)
+    if (ROOT/'book/captures'/ID/'figures.json').exists():shutil.copytree(ROOT/'book/captures'/ID,target/'book/captures'/ID)
     for name in [s[1]for s in package.STAGES]+['h263-fixtures','h263-package']:
         shutil.copytree(ROOT/'drafts'/name,target/'drafts'/name,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
 
@@ -55,6 +56,34 @@ class H263PackageTest(unittest.TestCase):
         p=self.dest/'captures/plan.json';old=p.read_bytes();x=json.loads(old);x['figures'][0]['reviewNote']='Retain editorial decision';p.write_text(json.dumps(x));kept=p.read_bytes()
         try:package.build(self.root);self.assertEqual(p.read_bytes(),kept)
         finally:p.write_bytes(old)
+    def test_six_reviewed_figures_keep_native_annotations_and_raw_images(self):
+        figures=json.loads((self.dest/'captures/plan.json').read_text())['figures']
+        self.assertEqual(6,len(figures))
+        for figure in figures:
+            self.assertEqual('verified',figure['captureStatus'])
+            receipt=json.loads((self.dest/figure['receipt']).read_text())
+            native=self.dest/figure['nativeAnnotations']
+            self.assertEqual(package.sha(native),receipt['nativeExportSha256'])
+            self.assertIn('packages/035-h263/captures/',native.read_text())
+            self.assertNotIn('book/captures/',native.read_text())
+        segments=json.loads((self.dest/'reading.json').read_text())['segments']
+        self.assertEqual(6,sum(segment['kind']=='figure' for segment in segments))
+        self.assertFalse(any(segment.get('content','').startswith('native/fig-') for segment in segments))
+
+    def test_changed_reviewed_native_source_requires_new_review(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'public';input_tree(root)
+            source=root/'includes/chapters'/ID/'fig-sad-result.tex'
+            source.write_text(source.read_text()+'% Editorial change requiring renewed review\n')
+            with self.assertRaisesRegex(ValueError,'changed since review'):package.build(root)
+
+    def test_approved_asset_symlinks_are_not_exported(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'public';input_tree(root)
+            asset=root/'book/captures'/ID/'h263-sad-result/registers.png'
+            asset.unlink();outside=Path(folder)/'outside.png';outside.write_bytes(b'not an approved image');asset.symlink_to(outside)
+            with self.assertRaisesRegex(ValueError,'Symlink approved'):package.build(root)
+
     def test_edited_native_export_is_retained(self):
         p=self.dest/'native/purpose.tex';old=p.read_bytes();p.write_bytes(old+b'\n% Human revision\n')
         try:

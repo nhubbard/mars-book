@@ -54,8 +54,8 @@ def validate_composite_capture(root, figure, receipt):
         if any(raw.get(key) != value for key, value in shared.items()):
             raise ValueError('Composite captures differ from their shared state')
         parts[part['id']] = raw
-    if not 2 <= len(parts) <= 8 or shared.get('checkpoint') != figure['checkpoint']:
-        raise ValueError('Composite needs separate views at the declared checkpoint')
+    if not 1 <= len(parts) <= 8 or len(receipt['panels']) < 2 or shared.get('checkpoint') != figure['checkpoint']:
+        raise ValueError('Composite needs at least two panels at the declared checkpoint')
     identities = ('sourceSha256', 'source', 'checkpoint', 'sourceLine', 'publicCommit',
                   'upstreamCommit', 'upstreamDirtyFiles', 'ideBuild', 'captureDriverSha256',
                   'marsPluginArchiveSha256', 'locale', 'scale')

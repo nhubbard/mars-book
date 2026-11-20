@@ -24,7 +24,7 @@ STAGES=[
 ENTRIES=('h263_sad16','h263_sad16_msa','h263_search16','h263_predict8','h263_predict_mb','h263_transform8','h263_quantize8','h263_encode_block8','h263_write_bits','h263_emit_coefficients','h263_emit_macroblock','h263_encode_picture','h263_encode_clip')
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def write(p,x):p.write_text(json.dumps(x,indent=2)+'\n')
-def rewrite(text):return text.replace('drafts/h263-','construction/h263-')
+def rewrite(text):return text.replace('drafts/h263-','construction/h263-').replace('book/captures/035-h263/','packages/035-h263/captures/')
 def uniform_fills(text):
  """Preserve uniform arena bytes while reducing assembler initialization work."""
  offset=0;out=[]
@@ -89,6 +89,7 @@ def build(root=ROOT):
  source_order=re.findall(r'\\input\{includes/chapters/035-h263/([^}]+)\}',(native/'chapter.tex').read_text())
  for name in source_order:
   p=native/(name+'.tex');text=p.read_text();copy(p,dest/'native'/p.name,True)
+  if name.startswith('fig-'):continue
   if name not in stage_by_native:
    segments.append(dict(id='p-'+name,kind='prose',content='native/'+p.name,origin='ai',typesetting=dict(nativeLatex='native/'+p.name)));continue
   domain,folder,_,_=stage_by_native[name]
@@ -120,6 +121,25 @@ def build(root=ROOT):
   saved=json.loads(capture_plan.read_text())
   if [f['id']for f in saved['figures']]!=[f['id']for f in figures]:raise ValueError('Capture identities changed; retain and reconcile the reviewed plan')
  else:write(capture_plan,dict(formatVersion=1,figures=figures))
+ approved=root/'book/captures'/ID
+ if (approved/'figures.json').exists():
+  previous_plan=capture_plan.read_text();figures=json.loads(previous_plan)['figures'];seen=set()
+  for figure in json.loads((approved/'figures.json').read_text())['figures']:
+   if figure['id']in seen:raise ValueError('Duplicate approved H.263 figure')
+   seen.add(figure['id']);canonical=next(f for f in figures if f['id']==figure['id'])
+   if any(figure[k]!=canonical[k]for k in ('step','stage','checkpoint')):raise ValueError('Approved H.263 figure differs from its canonical checkpoint')
+   paths=[Path(figure[k])for k in ('artifact','receipt')]
+   if any(p.is_absolute()or'..'in p.parts for p in paths)or paths[0].parent!=paths[1].parent:raise ValueError('Unsafe approved H.263 asset')
+   source=approved/paths[0].parent
+   if source.is_symlink()or not source.resolve().is_relative_to(approved.resolve()):raise ValueError('Unsafe approved H.263 folder')
+   if any(p.is_symlink()for p in source.rglob('*')):raise ValueError('Symlink approved H.263 asset')
+   target=dest/'captures'/paths[0].parent;shutil.copytree(source,target,dirs_exist_ok=True)
+   receipt=json.loads((target/paths[1].name).read_text());composition=native/Path(figure['nativeAnnotations']).name
+   if sha(composition)!=receipt['nativeSourceSha256']:raise ValueError('Native H.263 composition changed since review')
+   receipt['nativeExportSha256']=sha(dest/figure['nativeAnnotations']);write(target/paths[1].name,receipt)
+   canonical.update(figure,artifact='captures/'+figure['artifact'],receipt='captures/'+figure['receipt'])
+  updated_plan=dict(formatVersion=1,figures=figures)
+  if json.loads(previous_plan)!=updated_plan:write(capture_plan,updated_plan)
  write(dest/'steps.json',dict(steps=steps));write(dest/'reading.json',dict(formatVersion=1,segments=segments));write(dest/'checks/counts.json',{s[0]:s[3]for s in STAGES})
  copy(root/'drafts/h263-fixtures/fixture.py',dest/'construction/h263-fixtures/fixture.py')
  (dest/'assignment.tex').write_text('% Native fragment; use the book preamble.\n\\input{packages/035-h263/native/assignment}\n')
