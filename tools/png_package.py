@@ -42,15 +42,15 @@ def build():
  write(PACKAGE/'steps.json',dict(steps=steps));write(PACKAGE/'inputs.json',dict(recipes=inputs))
  plans=[]
  for ident,step,recipe,checkpoint,caption,panes in[
-  ('png-file-eof','s10','s10-exact','loader_return','Compare exact file bytes and descriptor cleanup after loading.',['editor','registers','memory']),
+  ('png-file-eof','s10','s10-empty','loader_return','Inspect the empty-file failure at the loader caller boundary.',['editor','registers','memory']),
   ('png-container-fields','s27','s27-1','collect_publish_ready','Inspect accepted dimensions and joined/inflated counts before decompression.',['editor','registers','memory']),
-  ('png-row-reconstruction','s83','s83-1','row_vector_advanced','Compare reconstructed row bytes and the retained filter selectors.',['editor','registers','memory']),
+  ('png-row-reconstruction','s83','s83-1','row_up_tail_ready','Compare reconstructed row bytes and the retained filter selectors.',['editor','registers','memory']),
   ('png-vector-packing','s97','s97-1','pack_vector_advanced','Inspect sixteen packed pixels and the scalar remainder.',['editor','registers','memory']),
-  ('png-final-publication','s100','s100-1','decode_return','Show final width, height and active bytes beside the displayed image.',['editor','registers','bitmap'])]:
-  # Capture recipe identifiers are pinned to actual exported recipes below.
-  available=[r for r in inputs if r.get('step')==step or r['id']==recipe]
-  if recipe not in{r['id']for r in inputs}:recipe=next(s for s in steps if s['id']==step)['recipes'][0]
-  checkpoint=next(s for s in steps if s['id']==step)['checkpoint']if step!='s100'else'decode_return'
+  ('png-final-publication','s100','s100-1','publication_results_ready','Show final width, height and active bytes beside the displayed image.',['editor','registers','bitmap'])]:
+  # A normal IDE launch follows the supplied caller, not a direct-grading sentinel.
+  selected=[r for r in inputs if r['id']==recipe]
+  assert len(selected)==1 and recipe in next(s for s in steps if s['id']==step)['recipes']
+  assert checkpoint==selected[0].get('callerCheckpoint',selected[0]['checkpoint'])
   plans.append(dict(id=ident,step=step,recipe=recipe,checkpoint=checkpoint,theme='IntelliJ Light',captureStatus='planned',caption=caption,alt='Planned '+', '.join(panes)+' view at '+checkpoint+'. No screenshot has been captured.',nativeAnnotations='Pending actual capture coordinates and semantic descriptions'))
  write(PACKAGE/'captures/plan.json',dict(figures=plans))
  reading=[]

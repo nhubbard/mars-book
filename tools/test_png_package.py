@@ -43,4 +43,17 @@ class PngPackageTests(unittest.TestCase):
  def test_capture_plans_do_not_claim_images(self):
   root,m=course.validate(ID);plans=json.loads((root/m['figures']).read_text())['figures'];self.assertEqual(5,len(plans));recipes={r['id']for r in json.loads((root/'inputs.json').read_text())['recipes']}
   for p in plans:self.assertEqual('planned',p['captureStatus']);self.assertEqual('IntelliJ Light',p['theme']);self.assertIn(p['recipe'],recipes);self.assertNotIn('artifact',p);self.assertNotIn('receipt',p)
+ def test_capture_checkpoints_follow_the_actual_caller_recipes(self):
+  root,m=course.validate(ID);plans=json.loads((root/m['figures']).read_text())['figures']
+  recipes={r['id']:r for r in json.loads((root/'inputs.json').read_text())['recipes']}
+  expected={'png-file-eof':('s10-empty','loader_return'),
+            'png-container-fields':('s27-1','collect_publish_ready'),
+            'png-row-reconstruction':('s83-1','row_up_tail_ready'),
+            'png-vector-packing':('s97-1','pack_vector_advanced'),
+            'png-final-publication':('s100-1','publication_results_ready')}
+  self.assertEqual(expected,{p['id']:(p['recipe'],p['checkpoint'])for p in plans})
+  for plan in plans:
+   recipe=recipes[plan['recipe']]
+   self.assertEqual(recipe.get('callerCheckpoint',recipe['checkpoint']),plan['checkpoint'])
+  self.assertNotEqual(recipes['s10-empty']['functionCheckpoint'],expected['png-file-eof'][1])
 if __name__=='__main__':unittest.main()
