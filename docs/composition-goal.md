@@ -1542,3 +1542,37 @@ plugin remains separate and depends on MARS. Picture ownership, coefficient and
 macroblock syntax, file output, whole-encoder quality/interoperability/performance,
 chapter distributions and actual captures remain unfinished. Independent accessibility
 review and substantive editing remain separate.
+
+
+## Complete baseline H.263 coefficient payloads
+
+The native chapter now has 89 pages and ninety construction observations/quizzes.
+Steps 81–90 develop natural-to-zigzag addressing, complete level admission,
+LAST/RUN formation, separate INTRA DC, all 102 compact codes, legal baseline
+escapes, chosen-plan capacity admission, private whole-block publication and
+independent payload decoding. Five new native tables bring the chapter to
+27 tables/101 tagged header cells; the four described native figures remain.
+Normative numeric data retains official-source provenance and all 102 records
+were cross-checked against an independent codec's numeric code data.
+
+Compact and escape-only implementations pass 916 private cases each. Every compact
+entry is exercised with both signs, block types and byte orders. Three layouts
+pass 100 public cases. Four repeated-block cases retain the actual context; twelve
+implementation-specific child-failure probes retain caller bytes/count after
+private child work. Five wrong emitters and the unfinished starter fail. Sixteen
+completed ordinary callers and prepared full-source feedback pass, with report
+protection. All 304 public tooling tests pass. Grading decodes the emitted payload
+back to every natural-order level, accepting different valid syntax choices.
+
+Sixteen controlled target work cases vary code selection and bit packing independently.
+With the same byte-fragment child, compact versus escape-only costs 3206/2952 guest
+instructions for the worked two-event block and 12861/18550 for a dense alternating
+AC block. Sizes are 16/52 and 199/1394 bits. Sparse linear lookup can cost work while
+saving bits; the dense case reduces both. These are complete finite emitter work
+observations, not host time or whole-encoder throughput, and not grading thresholds.
+
+No MARS or authoring-plugin source changed and no GUI launch/capture occurred.
+The authoring plugin remains separate and depends on MARS. Macroblock/motion/type
+syntax, picture-reference ownership/publication, file output, whole-encoder quality,
+independent decoding/performance, chapter distributions and actual figures remain
+unfinished. Independent accessibility review and later substantive editing remain separate.

@@ -122,7 +122,16 @@ pass. A named unaligned 32-bit append costs 656 per-bit versus 189 byte-fragment
 instructions, including admission/commit; this is not whole-encoder timing.
 Four target header-packing cases agree with the independent header inspector,
 without claiming complete-stream conformance. Picture ownership, coefficient and
-baseline picture/macroblock syntax remain next. Keep the
+baseline picture/macroblock syntax remain next. Complete block coefficient emission
+now includes all 102 compact codes, baseline escapes, natural-to-zigzag addressing,
+INTRA DC and whole-block private publication. Two legal coding choices pass 916
+private cases each; three layouts pass 100 public cases. Four retained-context
+cases, twelve late child failures, sixteen ordinary callers and all 304 public
+tooling tests pass. Grading independently recovers levels instead of demanding
+private bytes. The chapter has 89 pages and ninety construction observations/quizzes.
+Controlled instruction work separates coding from bit packing; smaller payloads
+can cost extra sparse lookup work. Macroblock/motion/type syntax, picture ownership,
+complete stream/output and their quality/performance checks remain unfinished. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality
 checks, failure/publication contracts and equivalent valid encoders. Do not accept

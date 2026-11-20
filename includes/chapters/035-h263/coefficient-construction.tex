@@ -1,0 +1,186 @@
+\section{Step 81 Admit the level and writer windows}\label{h263-coeff-s01}
+Validate request, level and context alignment and non-wrapping extents. Check the
+block-type selector, reserved zero, writer capacity and existing bit count before
+reading levels. The writer's pointer and capacity will remain unchanged; retain
+the initial count for later complete-plan admission and commit.
+
+\paragraph{Observe} Natural-order level input needs only halfword alignment.
+A wide malformed selector is rejected before any level or buffer access.
+\Needspace{8\baselineskip}
+\paragraph{Check} What representation enters this function?
+\begin{itemize}
+\item[A.] Selected coefficient levels, with separate INTRA DC code.
+\item[B.] Unquantized forward coefficients.
+\item[C.] Raw RGB pixels.
+\end{itemize}
+
+\section{Step 82 Validate every level before publication}\label{h263-coeff-s02}
+Load signed halfwords for ordinary levels and check $-127\leq L\leq127$.
+For INTRA index zero, validate the positive DC code and its excluded value 128.
+Complete this pass even if an early event could already be encoded. A forbidden
+last value must not leave earlier events in the caller stream.
+
+\paragraph{Observe} Ordinary minus 128 is invalid. INTRA code 255 is valid and
+means reconstructed DC 1024 at the later decoding boundary.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which ordinary escape level is forbidden?
+\begin{itemize}
+\item[A.] Minus 127.
+\item[B.] Minus 128.
+\item[C.] Plus one.
+\end{itemize}
+
+\section{Step 83 Locate the final nonzero in scan order}\label{h263-coeff-s03}
+Use the scan permutation to inspect levels in reverse scan order until finding
+a nonzero ordinary value. Stop at position zero for INTER or one for INTRA.
+If none exists, retain an empty ordinary-event sequence. The INTRA DC code is
+handled separately and must not become an AC event.
+
+\paragraph{Observe} The default final nonzero is scan position two, natural
+index eight. The remaining AC zeros are implicit.
+\Needspace{8\baselineskip}
+\paragraph{Check} What does LAST one describe?
+\begin{itemize}
+\item[A.] The final allocated byte in the buffer.
+\item[B.] Always scan position sixty-three.
+\item[C.] The final nonzero ordinary event.
+\end{itemize}
+
+\section{Step 84 Count zeros between nonzero events}\label{h263-coeff-s04}
+Walk forward from the first ordinary scan position. Increment RUN on zero levels.
+For a nonzero, form an event with the current run and set LAST according to the
+final position found earlier. Then reset RUN to zero. Address each level through
+the supplied natural index, multiplied by two for halfword storage.
+
+\paragraph{Observe} Two consecutive nonzeros both have RUN zero, even when their
+natural indices are one and eight rather than adjacent memory locations.
+\Needspace{8\baselineskip}
+\paragraph{Check} When does the run counter reset?
+\begin{itemize}
+\item[A.] After emitting each nonzero event.
+\item[B.] Only at the end of a picture.
+\item[C.] After every zero level.
+\end{itemize}
+
+\section{Step 85 Build a valid escape record first}\label{h263-coeff-s05}
+Pack escape prefix three in seven bits, LAST in one, RUN in six and the validated
+level's low eight bits. These fields total twenty-two bits and fit a single call
+to the existing bit writer. Retain the full declared width so the prefix's leading
+zeros are emitted.
+
+For the first implementation, escape events can represent every legal ordinary
+combination. This gives a complete baseline path before adding compact lookup.
+Keep the separate INTRA DC field as eight bits without the escape prefix.
+
+\paragraph{Observe} A negative escape level uses signed eight-bit representation;
+it does not use a compact code's separate trailing sign convention.
+\Needspace{8\baselineskip}
+\paragraph{Check} How is minus 127 stored in an escape LEVEL field?
+\begin{itemize}
+\item[A.] As a sign bit followed by a seven-bit VLC prefix.
+\item[B.] As the eight bits \texttt{10000001}.
+\item[C.] As forbidden level zero.
+\end{itemize}
+
+\section{Step 86 Select compact codes when available}\label{h263-coeff-s06}
+Look up LAST, RUN and the positive magnitude in the supplied complete table.
+When found, use its code and declared width, setting the final sign bit for a
+negative level. Otherwise retain the escape record. Keep both implementations
+for correctness and later size/work comparison.
+
+A code's integer value does not encode its width. The compact final $+1$ code
+has leading zero, so passing only its nonzero bit length would change the syntax.
+
+\paragraph{Observe} The default compact block uses sixteen bits; the escape-only
+block uses fifty-two. Both describe the same DC and AC levels.
+\Needspace{8\baselineskip}
+\paragraph{Check} What identifies one compact table entry?
+\begin{itemize}
+\item[A.] Only the sign of the level.
+\item[B.] The current raw pixel value.
+\item[C.] LAST, RUN and level magnitude.
+\end{itemize}
+
+\section{Step 87 Admit the complete chosen plan}\label{h263-coeff-s07}
+Store each code value and width privately and sum the widths. Include the INTRA
+DC field if present. Compare the total with the caller's remaining bit capacity
+before loading output bytes. Return status two when this selected representation
+does not fit. An empty INTER plan succeeds without output access.
+
+A compact plan can fit a small buffer where an escape-only plan cannot. Both
+remain valid implementations. The public success cases supply enough space for
+the worst-case legal representation, except for explicit fixed-size boundary tests.
+
+\paragraph{Observe} A lone final INTER level minus 127 requires a twenty-two-bit
+escape. At starting bit two, exactly three destination bytes suffice.
+\Needspace{8\baselineskip}
+\paragraph{Check} What must be included in capacity preflight?
+\begin{itemize}
+\item[A.] Every field in the complete selected block plan.
+\item[B.] Only its first event.
+\item[C.] Only fields whose numerical values are nonzero.
+\end{itemize}
+
+\section{Step 88 Emit into a private byte window}\label{h263-coeff-s08}
+Copy the touched destination bytes into private storage. Initialize a private
+writer context at the caller's bit offset modulo eight. Emit every planned field
+through your completed bit writer and check each child status. If a child fails,
+return status three without any caller output or counter store.
+
+After all children succeed, copy back only touched bytes, retaining their old
+prefix/suffix bits, then commit the caller's total bit count. Save and restore
+the return address across nested calls.
+
+\paragraph{Observe} A late child can fail after earlier private fields were written.
+The old public stream must still be intact.
+\Needspace{8\baselineskip}
+\paragraph{Check} Why is restoring only the old public count insufficient?
+\begin{itemize}
+\item[A.] The count is a pixel pointer.
+\item[B.] Earlier public appends may already have replaced buffer bits.
+\item[C.] LAST fields are always native doublewords.
+\end{itemize}
+
+\section{Step 89 Decode emitted bits independently}\label{h263-coeff-s09}
+Run public feedback on your completed source:
+\begin{verbatim}
+python3 drafts/h263-coefficient-construction/grade.py \
+    my-coefficients.asm --cli /path/to/mars-cli.jar \
+    --report coefficient-results.json
+\end{verbatim}
+The independent decoder recognizes all compact codes and the baseline escape.
+It reconstructs the natural-order level array, rejects forbidden levels, excessive
+runs, missing LAST and trailing bits, and compares every recovered input level.
+The checker also verifies committed length, prefix/suffix preservation, guarded
+state and access boundaries in both native byte orders.
+
+\paragraph{Observe} Equivalent legal encodings can have different bit counts
+without losing any selected coefficient information.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which comparison establishes this block payload's meaning?
+\begin{itemize}
+\item[A.] Matching the reference's private buffer bytes exactly.
+\item[B.] Matching only the first emitted byte.
+\item[C.] Decoding the payload and recovering every selected input level.
+\end{itemize}
+
+\section{Step 90 Keep block payload and macroblock flags separate}\label{h263-coeff-s10}
+Retain the distinction between an empty ordinary payload and an INTRA DC field.
+The next macroblock stage will select presence flags for its four Y and two chroma
+blocks, write motion/type information, and invoke block emission in the required
+order. This entry emits none of those flags and adds no arbitrary alignment.
+
+Compare compact and escape payload sizes on the same selected levels. If measuring
+execution work, include scanning, lookup, staging, child calls and publication.
+Neither fewer bits nor one correct block proves whole-stream interoperability,
+reference-picture ownership or complete-encoder speed.
+
+\paragraph{Observe} INTRA with no nonzero AC still emits its DC byte. INTER with
+no nonzero levels emits no block payload here.
+\Needspace{8\baselineskip}
+\paragraph{Check} Which later layer decides whether a block has ordinary payload?
+\begin{itemize}
+\item[A.] The macroblock's coded-block presence information.
+\item[B.] Unused bits left in the output allocation.
+\item[C.] The host machine's native endianness.
+\end{itemize}
