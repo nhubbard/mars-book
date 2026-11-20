@@ -303,6 +303,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     }
                     lastObservedRows = visibleRows(frame).map { it.text }
                     if (!figure.debuggerView.isEmpty) {
+                        if (!configureBottomCaptureHeight(content.component, 400)) return@withContext null
                         val tree = selectDebuggerTree(captureComponents(frame).filterIsInstance<JTree>().filter { it.isShowing }.toList(), figure.debuggerView)
                             ?: return@withContext null
                         if (!applyDebuggerTreeView(tree, figure.debuggerView)) return@withContext null
