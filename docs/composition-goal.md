@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–27 and 33–35 have reviewed figure sets.
-Chapters 28–32 retain 20 planned figures across 5 sets. The manuscript has
-1,799 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–28 and 33–35 have reviewed figure sets.
+Chapters 29–32 retain 16 planned figures across 4 sets. The manuscript has
+1,803 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2238,3 +2238,16 @@ Fresh grading against a frozen public revision passes 3,912 positive cases acros
 All four proofs pass full-image overlap, embedded-pixel, coordinate, font and tagging checks, with color/grayscale review. Native edits clarify cross-row private-value boundaries and keep the modular-power equation together. The existing privacy assertion mistook a public photograph named private.png for instructor material; it now checks forbidden path components and private grading filenames explicitly. Native snapshots relocate only literal asset prefixes. The guarded bootstrap refuses edited TeX. The 64-page chapter and 1,799-page manuscript retain separate integration receipts. Independent accessibility review and later substantive editing remain open.
 
 Reviewed sets now cover chapters 1–27 and 33–35. Twenty planned figures remain across chapters 28–32.
+
+
+## Base64 figures and fresh package verification
+
+Four native figures use seventeen unchanged light-theme IDE captures and twenty-two explanations. The scalar figure separates numerical sextets from character codes. The malformed-input figure explains nonzero unused bits before the error return and caller status publication. The vector examples use the same twelve-byte payload in opposite directions, distinguishing sextets, grouped octets, compaction and an exact twelve-byte caller footprint. The pre-existing bit diagram remains Figure 28.1; the IDE figures are 28.2–28.5.
+
+Six independent model tests cover RFC 4648 vectors, library comparison, canonical padding, all 64 sextets and 256 differential vector groups. Twelve assembled faulty implementations are rejected. All 16424 caller bytes, 280 constant bytes, asserted vector lanes and caller/workspace/constant access sequences are checked. Both vector scratch images, protected workspace and full preserved registers are checked separately. Active saved-frame slots are outside the complete-stack-image claim. The separate authoring plugin reuses exact source/build/class/dependency-bound 78-test Jupiter and paired API evidence; no new Jupiter invocation is claimed.
+
+Fresh grading against a frozen public revision passes 16,270 positive cases across 174 runs with 37 intermediate programs, 52 recipes, 37 exported guided checks and 43 quiz keys. The unfinished starter and 26 mutants produce 1,162 expected failures in 27 rejection runs. Guided exports are regenerated into a private evidence directory and compared to the frozen public checks. The separately required zero-access/development suite contributes 26 successful cases. Exact archive comparison protects all graded files while permitting only explicit figure placeholders, capture metadata/assets and one factual status passage.
+
+All four native proofs pass original-pixel, coordinate, full-image-bound, font and tagging checks, with color/grayscale review. The decoder explanation was shortened to fit without reducing type or screenshot size. An obsolete planned-capture assertion now checks verified native receipts, exported source and original image hashes. Public IDs base64-f01 through base64-f04 remain unchanged. Native snapshots relocate only literal asset prefixes, and the bootstrap refuses edited TeX. The 69-page chapter and 1,803-page manuscript retain separate integration receipts. Independent accessibility review and later substantive editing remain open.
+
+Reviewed sets now cover chapters 1–28 and 33–35. Sixteen planned figures remain across chapters 29–32.

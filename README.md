@@ -879,3 +879,6 @@ Chapter 26 now has four reviewed native IDE figures explaining scalar quarter-ro
 
 
 Chapter 27 now has four reviewed native IDE figures explaining the full product accumulator and carry, the 129th sum bit, private reduction before publication and modular-power output before frame restoration. Sixteen unchanged screenshots support twenty-three explanations. Fresh grading passes 3,912 positive cases across 163 runs, 35 intermediate programs, 43 recipes, 35 exported guided checks and 42 quiz keys. The starter and 25 faulty variants produce 542 expected failures across 26 rejection runs. The standalone chapter has 64 pages. Independent accessibility review and later substantive editing remain open.
+
+
+Chapter 28 now has four reviewed native IDE figures explaining scalar alphabet lookup, nonzero unused padding bits, numerical vector sextets and exact twelve-byte decoder publication. Seventeen unchanged screenshots support twenty-two explanations. Fresh grading passes 16,270 positive cases across 174 runs, 37 intermediate programs, 52 recipes, 37 exported guided checks and 43 quiz keys. The starter and 26 faulty variants yield 1,162 expected failures across 27 rejection runs. The standalone chapter has 69 pages. Independent accessibility review and later substantive editing remain open.
