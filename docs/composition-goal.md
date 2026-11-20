@@ -2046,3 +2046,15 @@ chapter prose and human passages were not regenerated; existing figure labels re
 The integrated manuscript has 1,756 pages. Reviewed figure sets now cover chapters 1–13 and 33–35. Chapters 14–32 retain 76 planned
 figures across 19 sets. Independent accessibility review remains open. Substantive editing
 is the separate later goal; the full initial composition/capture goal remains active.
+
+## Chapter 14 illustrated draft
+
+Three actual IntelliJ Light plates now explain independent cursor wrap, an exact-fit full queue and a short-destination failure. Twelve unchanged original screenshots support fifteen numbered native LaTeX explanations. The standalone chapter has 37 pages. The independent host model stores complete records in a deque and separately projects their circular physical placement. All 472 data bytes are checked before execution and at each of fourteen publications; exact per-operation stores and logical read windows establish failure preservation and bounded copies. Four model tests cover 12,800 deterministic operations across all supported capacities. Core mutation tests reject a mapped-padding read and a failed-call write followed by restoration.
+
+Full grading verifies 226,520 positive cases, 18 intermediate programs and 30 quiz keys. The starter and 21 faulty variants produce 2,862 expected failures. Both reference implementations, relocated pointers above four GiB and a legal saved-register stack frame pass. The illustrated student archive is compared with the exact pre-illustration archive used for grading.
+
+The separate authoring plugin remains unchanged and depends on MARS. The accepted twelve-capture batch ran the actual clean cleanSandbox runIde tasks and passed native before/after receipt verification. Exact driver/source identity binds reuse of 67 passing Jupiter tests and compatible public API evidence. The rejected register-span attempt is retained privately. Original chapter prose, human passages and existing labels remain unchanged.
+
+Reviewed figure sets now cover chapters 1–14 and 33–35. Chapters 15–32 retain 73 planned figures across 18 sets. Independent accessibility review remains open. Substantive editing remains a separate later goal.
+
+The integrated chapter 14 build contains 1,759 manuscript pages.

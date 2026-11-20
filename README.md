@@ -848,3 +848,5 @@ keys. Both implementations, full-width pointers and an equivalent signed-payload
 variation pass. Independent capture checks cover all 324 data bytes at three boundaries,
 logical read windows and exact stores. The unchanged separate authoring driver retains
 its exact 67-test/API binding. Independent accessibility review and later editing remain open.
+
+Chapter 14 now includes three actual light-mode IDE figure plates: wrapped record order, an exact-fit full queue and a short-destination failure. Twelve original captures support fifteen native LaTeX explanations. An independent FIFO model checks all 472 data bytes at all fourteen operation boundaries, exact stores and logical read bounds. Complete grading passes 226,520 successful-case checks, 18 cumulative programs and 30 quiz keys; the starter and 21 faulty variants produce 2,862 expected failures. Independent accessibility review and later substantive editing remain open.

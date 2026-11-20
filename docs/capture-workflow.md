@@ -591,3 +591,9 @@ attempts remain private and are not accepted screenshots. Three native editable 
 have fifteen explanations, complete descriptions, paired native bases and explicit
 address/byte interpretations. Color/grayscale proofs, fonts, unchanged pixels and all
 annotation frames are checked. Independent accessibility review remains open.
+
+## Ring-buffer publication captures
+
+Chapter 14 replays the unchanged reference to operation_ready with native conditional breakpoints at command indices 3, 8 and 10. Each plate combines source, native signed-decimal returns, descriptor bytes, ring bytes and output bytes. The descriptor pointer is a full doubleword; only the first eight ring bytes belong to this queue. The captions identify stale free bytes, explicit occupied count, prefix versus payload size and preservation on a short destination. An independent deque model verifies every complete data image and per-command reads/stores across all fourteen operations, including the subsequent successful retry.
+
+The first register-view attempt is retained privately because revealing the distant operation-index register scrolled a return register off screen. The accepted plan keeps both returns visible; the conditional breakpoint and core oracle bind the index. All twelve accepted captures have before/after native receipts. The separate authoring plugin remains unchanged, with exact source/driver bindings to 67 Jupiter tests and compatible API verification. Every IDE launch runs the actual clean cleanSandbox runIde tasks. No authoring implementation is added to MARS.
