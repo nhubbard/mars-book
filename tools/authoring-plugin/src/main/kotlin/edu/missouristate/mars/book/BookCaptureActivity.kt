@@ -305,6 +305,16 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                         lastObservedRows = bookBotDiagnostics(content.component)
                         return@withContext observeBookMarsBot(content.component, view, "Book figure: " + figure.id)?.rows
                     }
+                    figure.cacheView?.let { view ->
+                        if (visibleAnalysisIndicators(frame).isNotEmpty()) return@withContext null
+                        val tool = ToolWindowManager.getInstance(project).getToolWindow("MARS Tools") ?: return@withContext null
+                        if (!tool.isVisible) { tool.show(); return@withContext null }
+                        val content = tool.contentManager.contents.singleOrNull { it.displayName == "Data Cache Simulator" } ?: return@withContext null
+                        if (tool.contentManager.selectedContent != content) { tool.contentManager.setSelectedContent(content, false); return@withContext null }
+                        ToolWindowManager.getInstance(project).getToolWindow("Debug")?.takeIf { it.isVisible }?.let { it.hide(); return@withContext null }
+                        lastObservedRows = bookCacheDiagnostics(content.component)
+                        return@withContext observeBookCache(content.component, view, "Book figure: " + figure.id)?.rows
+                    }
                     figure.digitalLabView?.let { view ->
                         if (visibleAnalysisIndicators(frame).isNotEmpty()) return@withContext null
                         val tool = ToolWindowManager.getInstance(project).getToolWindow("MARS Tools") ?: return@withContext null
@@ -359,7 +369,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                     reportedRows = lastObservedRows.toList()
                     reportedTabs = lastObservedTabs.toList()
                 }
-                if (ready == null && ((figure.digitalLabView != null && lastObservedRows.firstOrNull() == "Digital Lab diagnostics") || (figure.marsBotView != null && lastObservedRows.firstOrNull() == "MarsBot diagnostics"))) {
+                if (ready == null && ((figure.cacheView != null && lastObservedRows.firstOrNull() == "Cache diagnostics") || (figure.digitalLabView != null && lastObservedRows.firstOrNull() == "Digital Lab diagnostics") || (figure.marsBotView != null && lastObservedRows.firstOrNull() == "MarsBot diagnostics"))) {
                     val diagnostic = output.resolve(figure.id + "-unaccepted-diagnostic.png")
                     if (!withContext(Dispatchers.IO) { Files.exists(diagnostic) }) {
                         val bounds = withContext(Dispatchers.EDT) {
@@ -466,6 +476,11 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 val detail = Rectangle(bot.board.projection.detailRectangle()).apply { translate(bot.board.bounds.x, bot.board.bounds.y) }
                 callouts += mapOf("label" to "Trail detail region", "derivedFrom" to "native-board-projection", "box" to captureBox(detail, viewport))
             }
+            figure.cacheView?.let { view ->
+                val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
+                val cache = checkNotNull(observeBookCache(checkNotNull(content).component, view, "Book figure: " + figure.id))
+                callouts += cache.rows.map { row -> mapOf("label" to row.text, "observedText" to row.text, "box" to captureBox(row.bounds, viewport)) }
+            }
             figure.digitalLabView?.let { view ->
                 val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
                 val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
@@ -497,6 +512,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         var screenEvidence: BookBitmapScreenEvidence? = null
         var labEvidence: Map<String, Any>? = null
         var botEvidence: Map<String, Any>? = null
+        var cacheEvidence: Map<String, Any>? = null
         withContext(Dispatchers.EDT) {
             val session = checkNotNull(XDebuggerManager.getInstance(project).currentSession)
             check(session.isSuspended && session.sessionName == "Book figure: " + figure.id)
@@ -543,6 +559,13 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 check(captureBox(detail, snapshot.first) == snapshot.second[4]["box"]) { "MarsBot detail bounds changed during capture" }
                 botEvidence = bot.board.screenEvidence(image, snapshot.first) + mapOf("selectedExecution" to bot.selectedExecution)
             }
+            figure.cacheView?.let { view ->
+                val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
+                val cache = checkNotNull(observeBookCache(checkNotNull(content).component, view, "Book figure: " + figure.id))
+                check(cache.rows.map { it.text } == snapshot.third) { "Cache changed during capture" }
+                cache.rows.forEachIndexed { index, row -> check(captureBox(row.bounds, snapshot.first) == snapshot.second[index]["box"]) { "Cache bounds changed during capture" } }
+                cacheEvidence = cache.evidence()
+            }
             figure.digitalLabView?.let { view ->
                 val content = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("MARS Tools")).contentManager.selectedContent
                 val lab = checkNotNull(observeBookDigitalLab(checkNotNull(content).component, view, "Book figure: " + figure.id))
@@ -569,6 +592,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 "notificationBalloonsVisible" to 0,
                 "standardInput" to figure.standardInput, "standardInputDelivered" to (figure.standardInput?.let { true }),
                 "observedSteps" to observedSteps, "backstepFrom" to figure.backstepFrom, "observedBackstep" to observedBackstep,
+                "cacheView" to figure.cacheView, "observedCache" to cacheEvidence,
                 "marsBotView" to figure.marsBotView, "observedMarsBot" to botEvidence,
                 "digitalLabView" to figure.digitalLabView, "observedDigitalLab" to labEvidence, "breakpointCondition" to nativeCondition,
                 "debuggerView" to figure.debuggerView, "memoryView" to figure.memoryView, "bitmapView" to figure.bitmapView,

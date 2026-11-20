@@ -149,8 +149,34 @@ view: duplicate items in one dropdown or matches in multiple dropdowns reject th
 observation before changing any selection. Changing to the owned execution requires
 a subsequent observation before capture can proceed. Jupiter tests cover unrelated
 settings controls, missing and ambiguous executions, and rendered labels that differ
-from the underlying model text. This selection support alone does not implement or
-verify cache-view figure capture.
+from the underlying model text. This shared selection support alone does not verify a cache-view figure.
+
+### Native data-cache capture
+
+A dedicated Debug `cacheView` supplies `blocks`, `wordsPerBlock`, `placement`
+(`direct`, `full`, or `set`), `ways`, `replacement` (`lru` or `random`), exact
+`accesses` and `misses`, and `logging`. The driver selects the owned execution in
+MARS's existing Data Cache Simulator. Source-header settings must configure the
+cache before execution; the capture driver never applies settings, resets counters,
+or reads simulator models.
+
+The driver expands Cache Settings through the native disclosure's standard Swing
+accessible action. Public label associations identify each geometry dropdown. Native
+renderers supply its displayed selection. Eight observed rows cover the five settings,
+capacity/accesses, hits/misses, and rounded hit percentage. The percentage must agree
+with both its printed label and progress bar. All annotated controls must be fully
+visible. The logging checkbox is also checked; its collapsed section is not annotated.
+Receipts retain the expected cache contract, observed rows, selected execution and
+logging state. Values and callout bounds are checked again after the photograph.
+Cache panels cannot mix memory, register, bitmap, or other tool-view assertions.
+
+The pinned IntelliJ DSL implementation assigns ordinary `JLabel.labelFor` associations
+and exposes disclosure state/actions through `AccessibleContext`. The authoring code
+uses those standard Swing contracts, without importing their internal implementations.
+Jupiter fixtures cover valid mapping modes, cold/rounded counters, stale or duplicate
+values, clipping, disabled controls, logging/connection state, disclosure behavior,
+and incompatible capture modes. Actual chapter figures require a separate graphical
+capture batch and independent model checks; unit tests alone do not certify screenshots.
 
 ### Native debugger view selection
 

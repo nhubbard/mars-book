@@ -100,26 +100,27 @@ internal fun bookLabDiagnostics(root: JComponent): List<String> = listOf("Digita
 
 /** Select only one capture-owned execution, ignoring unrelated native settings controls. */
 internal fun selectBookToolExecution(components: List<Component>, execution: String): String? {
-    fun label(selector: JComboBox<Any>, index: Int): String {
-        val rendered = selector.renderer.getListCellRendererComponent(JList<Any>(), selector.getItemAt(index), index, false, false)
-        return captureComponents(rendered).mapNotNull {
-            when (it) {
-                is JLabel -> it.text
-                is SimpleColoredComponent -> it.getCharSequence(false).toString()
-                else -> null
-            }
-        }.joinToString(" ")
-    }
     // Cache views also contain geometry and replacement controls. Identify the execution
     // by its displayed label, rejecting duplicate matches before changing any selection.
     val matches = components.filterIsInstance<JComboBox<*>>().flatMap { component ->
         @Suppress("UNCHECKED_CAST")
         val selector = component as JComboBox<Any>
         (0 until selector.itemCount).mapNotNull { index ->
-            if (label(selector, index).startsWith("$execution (#")) selector to index else null
+            if (bookComboItemText(selector, index).startsWith("$execution (#")) selector to index else null
         }
     }
     val (selector, owned) = matches.singleOrNull() ?: return null
     if (selector.selectedIndex != owned) { selector.selectedIndex = owned; return null }
-    return label(selector, owned)
+    return bookComboItemText(selector, owned)
+}
+
+internal fun bookComboItemText(selector: JComboBox<Any>, index: Int): String {
+    val rendered = selector.renderer.getListCellRendererComponent(JList<Any>(), selector.getItemAt(index), index, false, false)
+    return captureComponents(rendered).mapNotNull {
+        when (it) {
+            is JLabel -> it.text
+            is SimpleColoredComponent -> it.getCharSequence(false).toString()
+            else -> null
+        }
+    }.joinToString(" ")
 }
