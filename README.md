@@ -477,3 +477,11 @@ actual IntelliJ highlighter; all 767 prior records remain identical and one is a
 Motion search, transforms, quantization, reconstruction, bitstream emission and
 full chapter grading/distribution/captures remain unfinished. The complete book
 goal remains active; substantive editing has not begun.
+
+The next tested draft step extends chapter 35 to 22 pages and twenty construction
+observations/quizzes. Bounded full-pixel search has its own unfinished caller,
+data-only preparation and 56 public completed-entry cases. Two traversals pass
+160 private cases each; public feedback accepts three layouts and rejects five
+wrong searches and the unfinished starter. All 247 public tooling tests pass.
+The verified worked result is displacement (-2,-2), SAD 2976 and 25 candidates.
+This extends the opening material; the complete H.263 encoder is still unfinished.

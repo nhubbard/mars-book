@@ -53,8 +53,18 @@ The host preflight retains an explicit observation of this distinction for the
 repeated-picture case.
 
 Public SAD feedback now supplies 32 completed-entry cases with separate high-address
-arenas, a 16-KiB private stack and protected result reports. Cumulative observations
-and bounded motion search are the next construction work, followed by prediction, transform/quantization, local
+arenas, a 16-KiB private stack and protected result reports. Bounded full-pixel motion search now has a callable request/result contract, ten
+construction observations/quizzes and 56 public cases. Two traversals pass 160
+private cases each; three implementations pass public feedback, and five wrong
+search bodies plus the unfinished starter are rejected. The geometry clips full
+16-by-16 windows to the picture, minimizes SAD and resolves ties by centre first,
+then increasing dy/dx. The worked raw result is (-2,-2), SAD 2976, 25 candidates.
+Pixel accesses, input/request/result guards, full-width admission and saved state
+are checked in both byte orders. Private references measure 82312 scalar versus
+6412 MSA instructions for the named interior shifted-pattern search; these are
+search entry-to-return observations, not a completed encoder benchmark.
+
+Prediction is next, followed by transform/quantization, local
 reconstruction, bit writing and baseline picture/macroblock syntax. Keep the
 closed reconstruction loop explicit: later prediction uses reconstructed samples.
 Final grading needs an independent decoder, profile validation, meaningful quality

@@ -1320,3 +1320,30 @@ transform/quantization, local reconstruction, complete baseline syntax, I/O,
 end-to-end interoperability/quality grading and chapter distribution/captures
 remain unfinished. Earlier chapter figures and independent accessibility review
 are still open; substantive editing is a separate later goal.
+
+## Bounded H.263 motion search
+
+The native chapter now has 22 pages, twenty construction observations/quizzes,
+four tables with seventeen header cells and its existing described reconstruction
+figure. New text explains full-pixel candidate geometry, reference-displacement
+signs, clipped picture edges, a complete score matrix, a native-endian request and
+result record, nested calls and deterministic ties. It distinguishes this chosen
+search policy from the standard's vector units and later chroma/syntax work.
+
+The ordinary unfinished caller and instruction-preserving preparation helper
+support scalar and MSA modes. Completed examples print -2 -2 2976 and return 25
+candidates. Two private implementations, including reverse traversal with an
+explicit tie key, pass 160 cases each. Three implementations pass the 56 public
+cases, including a different private frame. Five assembled incorrect searches
+and the unfinished starter fail completed checks. Public wrapper reports require
+a new path and reject partial case output. All 247 public tooling tests pass.
+
+Search-entry-to-return traces measure 82312 scalar versus 6412 reference MSA
+instructions on the named interior shifted pattern with 25 candidates. Radius
+zero measures 3427 and 391 respectively. Counts include admission, candidate
+setup, nested SAD, selection and restoration. They are not host time, encoder
+throughput or grading requirements. The worked raw fixture remains separate
+from the later locally reconstructed encoder reference. No graphical IDE launch
+or new screenshot is claimed. Prediction, residual transforms/quantization,
+local reconstruction, complete baseline syntax and full-encoder interoperability
+grading still need implementation and prose; the original book goal remains active.
