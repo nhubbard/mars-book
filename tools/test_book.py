@@ -463,3 +463,55 @@ class NativeCompositionTests(unittest.TestCase):
         with patch.object(book, 'snippets', return_value=['li $v0, 999 # changed\n']):
             with self.assertRaisesRegex(ValueError, 'Source changed'):
                 book.validate()
+
+
+class NativeReferenceConvergenceTests(unittest.TestCase):
+    def test_unrelated_document_changes_do_not_invalidate_job(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'reading.aux').write_text('reading labels')
+            unrelated = root / 'other.aux'
+            unrelated.write_text('old unrelated labels')
+            recorder = root / 'reading.fls'
+            recorder.write_text('INPUT reading.aux\nOUTPUT reading.aux\n')
+            before = book.reference_state(recorder, root)
+            unrelated.write_text('new unrelated labels')
+            self.assertEqual(before, book.reference_state(recorder, root))
+
+    def test_recorded_chapter_and_contents_changes_invalidate_job(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            chapter = root / 'chapter with spaces.aux'
+            chapter.write_text('old chapter label')
+            contents = root / 'reading.toc'
+            contents.write_text('old contents')
+            recorder = root / 'reading.fls'
+            recorder.write_text('INPUT chapter with spaces.aux\nOUTPUT reading.toc\n')
+            before = book.reference_state(recorder, root)
+            chapter.write_text('new chapter label')
+            changed = book.reference_state(recorder, root)
+            self.assertNotEqual(before, changed)
+            contents.write_text('new contents')
+            self.assertNotEqual(changed, book.reference_state(recorder, root))
+
+    def test_absolute_recorded_paths_and_duplicate_notices(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reference = root / 'reading.out'
+            reference.write_text('bookmarks')
+            recorder = root / 'reading.fls'
+            recorder.write_text('OUTPUT ' + str(reference) + '\n')
+            before = book.reference_state(recorder, root)
+            recorder.write_text('INPUT reading.out\nOUTPUT ' + str(reference) + '\nINPUT font.otf\n')
+            self.assertEqual(before, book.reference_state(recorder, root))
+
+    def test_missing_reference_evidence_is_not_stable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            recorder = root / 'reading.fls'
+            recorder.write_text('INPUT font.otf\n')
+            with self.assertRaisesRegex(ValueError, 'no reference files'):
+                book.reference_state(recorder, root)
+            recorder.write_text('OUTPUT missing.aux\n')
+            with self.assertRaises(FileNotFoundError):
+                book.reference_state(recorder, root)

@@ -90,6 +90,28 @@ def check_fonts():
     return folder
 
 
+def reference_state(recorder, root=ROOT):
+    """Fingerprint reference files actually read or written by this LuaLaTeX job."""
+    references = set()
+    for line in recorder.read_text().splitlines():
+        kind, separator, name = line.partition(' ')
+        if separator and kind in ('INPUT', 'OUTPUT'):
+            path = Path(name)
+            if not path.is_absolute():
+                path = root / path
+            if path.suffix in ('.aux', '.toc', '.out'):
+                references.add(path.resolve())
+    if not references:
+        raise ValueError('LuaLaTeX recorder contains no reference files')
+    digest = hashlib.sha256()
+    for path in sorted(references):
+        digest.update(str(path).encode())
+        digest.update(b'\0')
+        digest.update(path.read_bytes())
+        digest.update(b'\0')
+    return digest.digest()
+
+
 def build(entry):
     validate(entry)
     fonts = check_fonts()
@@ -119,9 +141,9 @@ def build(entry):
     for iteration in range(1, 6):
         print(f'LuaLaTeX pass {iteration}: {entry}', flush=True)
         with (build_dir / f'{stem}-pass-{iteration}.log').open('w') as log:
-            subprocess.run([engine, '-interaction=nonstopmode', '-halt-on-error', '-file-line-error', '-output-directory=' + str(build_dir), entry],
+            subprocess.run([engine, '-recorder', '-interaction=nonstopmode', '-halt-on-error', '-file-line-error', '-output-directory=' + str(build_dir), entry],
                            cwd=ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, check=True)
-        state = b''.join(p.read_bytes() for p in sorted(build_dir.rglob('*')) if p.suffix in ('.aux', '.toc', '.out'))
+        state = reference_state(build_dir / f'{stem}.fls')
         if iteration >= 2 and state == previous:
             break
         previous = state
