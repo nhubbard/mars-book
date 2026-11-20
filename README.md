@@ -784,3 +784,22 @@ all 377 public tooling tests pass. Student materials retain original images and
 state receipts alongside native annotations. Instructor solutions and keys remain
 private. Capture tooling stays in the separate authoring plugin depending on MARS.
 Independent accessibility review and later substantive editing remain open.
+
+
+## Illustrated maze chapter
+
+The maze chapter contains four reviewed native LaTeX IDE figures from twelve
+verified light-theme captures, with nineteen numbered explanations. Its 42 pages
+retain the shortest-route and active-queue diagrams. Numeric states, parent links,
+distances and route coordinates accompany the colored images. The full-room view
+shows all 64 queue-history bytes and explains why equal head/tail values still
+mean an empty active frontier. The selected route has fourteen edges and fifteen
+cells; alternative shortest routes remain valid under the grading contract.
+
+Both implementations pass public/private transitions, independent renderer calls
+and measured workloads. Seventeen cumulative programs and thirty quiz keys pass.
+Grading records 936 passing cases and 97 expected rejected cases; all 377 public
+tooling tests pass. Original images and state receipts accompany directly editable
+native annotations in student materials. Instructor checks and keys stay private.
+Screenshot automation remains in the separate authoring plugin depending on MARS.
+Independent accessibility review and later substantive editing remain open.

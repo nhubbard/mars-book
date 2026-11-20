@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–9 and 33–35 have reviewed figure sets.
-Chapters 10–32 retain 91 planned figures across 23 sets. The manuscript has
-1,743 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–10 and 33–35 have reviewed figure sets.
+Chapters 11–32 retain 87 planned figures across 22 sets. The manuscript has
+1,746 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -1890,5 +1890,44 @@ changed in this publication step.
 
 The integrated manuscript has 1,743 pages. Reviewed figure sets now cover
 chapters 1–9 and 33–35; chapters 10–32 retain 91 planned figures across 23 sets.
+Independent accessibility review remains open. Substantive editing is the separate
+later goal, and the full initial composition/capture goal remains active.
+
+
+## Reviewed maze figures
+
+Chapter 10 contains four reviewed native LaTeX IDE figures with nineteen numbered
+explanations from twelve actual light-theme captures. The retained shortest-route
+and active-queue diagrams remain figures 10.1 and 10.3; actual IDE figures are
+10.2 and 10.4–10.6. The 42-page chapter connects numeric state classifications,
+parent links, distances, queue counters and published frames. The final small-room
+route has two edges and three cells. The full-room run retains all 64 queue slots
+while its final active interval is empty, with a fourteen-edge route.
+
+Both completed implementations pass public/private BFS transitions, independent
+renderer calls and measured workloads. Seventeen cumulative programs and thirty
+quiz keys pass. Final grading records 936 passing cases and 97 expected rejected
+cases across faulty variants and starter controls. All 377 public tooling tests
+pass. The capture oracle independently agrees on all 72 publications and checks
+complete arrays, guards, metadata and exact ordered store prefixes. Native pixels
+and tooltip colors match exactly; the retained photographs differ by at most one
+channel level under an explicit bounded compositor allowance.
+
+Numeric classifications, parent-chain traces and explicit route coordinates give
+text equivalents to the colored bitmaps. Native callout numbers sit outside memory
+images so addresses remain unobscured. Crop edges exclude neighboring ASCII
+fragments. Color and grayscale proofs, native tags, embedded fonts and original
+pixels are checked. Prior layout/crop proofs remain private. The native sources
+retain the original figure-label aliases and accept direct editing. No human prose
+is regenerated from structured metadata.
+
+Capture implementation remains in the separate authoring plugin depending on MARS.
+The unchanged driver retains its exact source/binary binding to the prior 49
+passing Jupiter tests and compatible public API evidence. No MARS or authoring
+plugin source changed. Student materials retain the original images, source/state
+receipts and editable native annotations; private checks and keys remain separate.
+
+The integrated manuscript has 1,746 pages. Reviewed figure sets now cover
+chapters 1–10 and 33–35; chapters 11–32 retain 87 planned figures across 22 sets.
 Independent accessibility review remains open. Substantive editing is the separate
 later goal, and the full initial composition/capture goal remains active.

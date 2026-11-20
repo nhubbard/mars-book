@@ -489,3 +489,33 @@ are exported with student-safe native annotations. Screenshot code remains only
 in the separate authoring plugin depending on MARS; no plugin source changed. Its
 previous 49-test/API evidence is reused with exact unchanged-source/binary hashes.
 Independent accessibility review remains open after automated tag/font/pixel checks.
+
+
+## Maze search and route figures
+
+Chapter 10 uses twelve actual native Debug views for four figures. Small-room
+views combine state/parent/distance memory, publication metadata and the complete
+bitmap. The full-room figure instead shows all 64 queue-history bytes beside its
+bitmap. Native conditions select initial phase zero, the first expansion, and
+final phase two. The existing word(phase) evaluator read distinguishes the final
+route publication from the preceding goal-expansion frame with equal saved
+registers. No new instructions, observation labels or plugin mechanisms were added.
+
+The small reference is unchanged. Full-room inputs change only walls and the goal.
+Independent Python and core models agree on all 72 publications; exact stores,
+complete byte arrays, immutable inputs, metadata and all 64 frame words are checked.
+All native tooltip coordinates/addresses/colors and native paint values are exact.
+The explicit three-level photographic allowance reflects the established macOS
+compositor bound; actual maxima are zero/one, and retained-batch tests require at
+most one. Altered classification photos and conditions are rejected independently.
+
+Four editable native figures contain nineteen numbered explanations, semantic
+descriptions, coordinate labels and numeric equivalents for color classifications.
+They distinguish parent bytes from distances, route cells from edges, and queue
+storage from the active frontier. One-page proofs are reviewed in color and
+grayscale; actual chapter pages are inspected at print size. Tags, fonts and
+original embedded pixels are checked. Callout numbers avoid address digits and crops exclude adjacent ASCII
+fragments. Existing figure labels remain aliases. Screenshot code stays only in
+the separate authoring plugin depending on MARS; no driver or MARS source changed.
+Exact unchanged hashes bind reuse of prior 49-test/API evidence. Independent
+accessibility review remains open.
