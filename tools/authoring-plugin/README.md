@@ -323,3 +323,11 @@ internal `ConsoleViewImpl` class. Original PNGs and observed UTF-16 text ranges
 remain separate from subsequent native LaTeX annotations. Four additional Jupiter
 tests cover mode isolation, required output evidence, bounded callouts and exact
 unique editor offsets, including supplementary Unicode characters.
+
+The chapter 11 trial now supplies an actual twelve-panel cache capture batch. Four
+native cache views agree with independently derived traversal and LRU expectations:
+30/8, 24/7, 512/128 and 512/344 access/miss pairs. The exact installed authoring JAR
+is bound to 63 passing Jupiter tests and compatible dependency-resolved IntelliJ
+2026.3 verification. The batch used the real `clean cleanSandbox runIde` tasks.
+Four reviewed native LaTeX plates retain the original images and editable callouts;
+independent accessibility review and interactive progression remain open.

@@ -1931,3 +1931,42 @@ The integrated manuscript has 1,746 pages. Reviewed figure sets now cover
 chapters 1–10 and 33–35; chapters 11–32 retain 87 planned figures across 22 sets.
 Independent accessibility review remains open. Substantive editing is the separate
 later goal, and the full initial composition/capture goal remains active.
+
+## Reviewed matrix-transpose figures
+
+Chapter 11 now contains four reviewed native LaTeX IDE figures with twenty numbered
+explanations from twelve actual light-theme captures. The 40-page chapter retains its
+clipped-tile diagram as figure 11.2; actual IDE figures are 11.1 and 11.3–11.5. The
+plates connect source boundaries, hexadecimal dimensions/counts, output bytes, cache
+geometry and data-access counters. At the first-tile boundary, `$v0` holds the target
+count fifteen while twelve cells have been stored; this distinction is explicit.
+
+Independent host traversal and cold LRU models agree with every observed data-access
+address, width and direction. All 256 input/output words, guard words, pending caller
+store and count are checked at each boundary. Access/miss pairs are 30/8 for ordinary
+3×5, 24/7 after its first clipped tile, and 512/128 or 512/344 for the completed tiled
+16×16 run with fully associative or direct placement. Capacity remains 128 bytes.
+These are model counts rather than elapsed-time or processor-cycle measurements.
+
+Both implementations, legal variations and the reconstructed program pass the complete
+grading checks. Thirteen cumulative programs and 28 quiz keys pass. The final grading
+run records 3,655 passing cases and 120 expected rejected cases across the starter and
+eleven assembled faulty variants. Exact graded files are preserved when illustrations
+are added to the student distribution. Instructor checks and keys remain private.
+
+The separate authoring plugin adds native cache-view observation through public Swing
+renderers, label associations and disclosure accessibility. All 63 Jupiter tests pass;
+the exact installed binary is bound to dependency-resolved IntelliJ 2026.3 compatibility
+evidence. The actual batch used `clean cleanSandbox runIde`. No MARS source changed;
+its unrelated edits retain their recorded hashes. The capture driver neither applies
+cache settings nor resets its history during observation.
+
+Original images remain unchanged inside the PDF. Native captions, semantic descriptions
+and editable annotation frames are checked alongside embedded fonts and color/grayscale
+proofs. Retained rejected layouts exercise gates for stale crop coordinates and a heading
+collision. Existing figure-label aliases remain available. Original chapter prose and
+human passages were not regenerated.
+
+The integrated manuscript has 1,750 pages. Reviewed figure sets now cover chapters 1–11 and 33–35. Chapters 12–32 retain 83 planned
+figures across 21 sets. Independent accessibility review remains open. Substantive editing
+is the separate later goal; the full initial composition/capture goal remains active.

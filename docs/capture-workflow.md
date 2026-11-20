@@ -519,3 +519,28 @@ fragments. Existing figure labels remain aliases. Screenshot code stays only in
 the separate authoring plugin depending on MARS; no driver or MARS source changed.
 Exact unchanged hashes bind reuse of prior 49-test/API evidence. Independent
 accessibility review remains open.
+
+### Matrix transpose: native cache geometry and counters
+
+The chapter 11 batch contains twelve actual light-theme Debug panels for four figure
+boundaries. Separate register, memory and cache panels share the same source hash,
+checkpoint and condition. A native `$t1 == 4` condition selects the second `next_tile`
+visit. All runs start cold and stop before the caller stores the count.
+
+The separate authoring plugin observes native cache settings and counters through
+public Swing controls. Exactly one rendered execution item must identify the capture's
+owned process, even when the panel contains additional settings dropdowns. Disclosure
+accessibility expands Cache Settings. Labeled controls verify placement, block count,
+words per block, blocks per set and replacement policy; native text and progress controls
+verify capacity, accesses, hits, misses and rounded percentage. Logging and connection
+state are checked. The driver never applies settings, resets history or reads MARS models.
+
+Independent host traversal/LRU models agree with every observed read/write address,
+width and direction. Complete arrays and guards are checked. Four native plates retain
+unchanged original pixels and twenty numbered explanations, including hexadecimal
+register interpretation, target versus completed count, and debugger-line versus matrix-row
+grouping. Every drawn frame is checked against the original receipt and final crop.
+The PDF gate rejects heading/panel intersections; retained rejected proofs test it.
+Color and grayscale reviews remain distinct from independent accessibility review.
+The exact installed driver passed 63 Jupiter tests and the pinned compatibility check;
+MARS contains no authoring classes and its unrelated edits are unchanged.

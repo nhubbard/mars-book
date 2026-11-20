@@ -803,3 +803,17 @@ tooling tests pass. Original images and state receipts accompany directly editab
 native annotations in student materials. Instructor checks and keys stay private.
 Screenshot automation remains in the separate authoring plugin depending on MARS.
 Independent accessibility review and later substantive editing remain open.
+
+
+Chapter 11 now has four reviewed native LaTeX IDE figures from twelve actual light-theme
+captures, with twenty numbered explanations. They connect the input/output dimensions,
+the first clipped tile and two cache mappings at unchanged 128-byte capacity. Native
+register values, output bytes and cache settings accompany the counters. The first-tile
+caption distinguishes the target count in `$v0` from the twelve cells already stored.
+
+Independent host and core checks agree on every memory access and all output words.
+Full grading records 3,655 passing cases and 120 expected rejected cases across the
+starter and eleven faulty variants; thirteen intermediate programs and 28 quiz keys pass.
+The separate authoring plugin's native cache observer passes 63 Jupiter tests and the
+pinned IntelliJ compatibility check. Independent accessibility review and later substantive
+editing remain open.
