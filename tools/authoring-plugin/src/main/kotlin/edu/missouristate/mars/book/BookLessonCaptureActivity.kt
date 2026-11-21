@@ -1,0 +1,239 @@
+package edu.missouristate.mars.book
+
+import com.google.gson.GsonBuilder
+import com.intellij.ide.ui.LafManager
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.ActionUiKind
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.asContextElement
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.openapi.wm.WindowManager
+import java.awt.Rectangle
+import java.awt.Robot
+import java.awt.Window
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption.CREATE_NEW
+import java.util.concurrent.atomic.AtomicReference
+import javax.imageio.ImageIO
+import javax.swing.AbstractButton
+import javax.swing.JComponent
+import javax.swing.JDialog
+import javax.swing.JLabel
+import javax.swing.text.JTextComponent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import training.lang.LangManager
+import training.learn.CourseManager
+import training.statistic.LessonStartingWay
+
+internal data class BookLessonCapturePlan(
+    val projectRoot: String = "",
+    val outputDirectory: String = "",
+    val sourceSha256: String = "",
+) {
+    fun validate() {
+        require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
+        require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
+        require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
+    }
+}
+
+/** Opt-in authoring driver only. No screenshot or tutor automation is packaged in MARS. */
+class BookLessonCaptureActivity : ProjectActivity {
+    override suspend fun execute(project: Project) {
+        val location = System.getProperty("mars.book.lesson.capture.plan") ?: return
+        val plan = withContext(Dispatchers.IO) {
+            GsonBuilder().create().fromJson(Files.readString(Path.of(location)), BookLessonCapturePlan::class.java)
+        }
+        plan.validate()
+        if (Path.of(checkNotNull(project.basePath)).toRealPath() != Path.of(plan.projectRoot).toRealPath()) return
+        val output = Path.of(plan.outputDirectory)
+        withContext(Dispatchers.IO) { Files.createDirectory(output) }
+        try {
+            withTimeout(180_000) { capture(project, plan, output) }
+        } catch (error: Exception) {
+            withContext(NonCancellable + Dispatchers.IO) {
+                Files.writeString(output.resolve("failed.txt"), error.stackTraceToString(), CREATE_NEW)
+            }
+            throw error
+        }
+    }
+
+    private suspend fun capture(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        val source = Path.of(plan.projectRoot).resolve("mars-labs/console/first-program.asm")
+        val lesson = withContext(Dispatchers.EDT) {
+            val themes = LafManager.getInstance()
+            themes.autodetect = false
+            themes.setCurrentUIThemeLookAndFeel(themes.installedThemes.single { it.name == "IntelliJ Light" && !it.isDark })
+            themes.updateUI()
+            val colors = EditorColorsManager.getInstance()
+            colors.setGlobalScheme(checkNotNull(colors.getScheme(EditorColorsManager.getDefaultSchemeName())))
+            val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
+            val screen = frame.graphicsConfiguration.bounds
+            frame.setBounds(screen.x + 20, screen.y + 40, minOf(1280, screen.width - 40), minOf(900, screen.height - 80))
+            frame.toFront()
+            LangManager.getInstance().updateLangSupport("MARS_MIPS")
+            val manager = CourseManager.instance
+            manager.modules.single { it.id == "mars.console" }.lessons.single().also {
+                manager.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+        }
+        awaitFrame(project, "With 20 in", source)
+        check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(source)) } == plan.sourceSha256)
+        captureFrame(project, output, "prediction-start", "With 20 in")
+        answer(project, output, "doubling", "Mars.Learning.PredictDoubling",
+            "\$t0 is 20; reading \$v0 twice consumes the input.",
+            "Reading a register does not consume its value.", "\$t0 is 40; \$v0 is still 20.")
+        awaitFrame(project, "Now consider input -3", source)
+        captureFrame(project, output, "after-doubling", "Now consider input -3")
+        answer(project, output, "negative", "Mars.Learning.PredictNegative", "7",
+            "The u does not turn -3 into a positive magnitude.", "-5")
+        awaitFrame(project, "The destination tells you where to look", source)
+        captureFrame(project, output, "predictions-complete", "The destination tells you where to look")
+        val edited = withContext(Dispatchers.EDT) {
+            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+            WriteCommandAction.runWriteCommandAction(project) {
+                editor.document.insertString(editor.document.textLength, "\n# Student work retained after lesson restart.\n")
+            }
+            FileDocumentManager.getInstance().saveDocument(editor.document)
+            editor.document.text
+        }
+        withContext(Dispatchers.EDT) {
+            CourseManager.instance.openLesson(project, lesson, LessonStartingWay.RESTART_BUTTON, forceStartLesson = true)
+        }
+        awaitFrame(project, "The destination tells you where to look", source)
+        val retained = withContext(Dispatchers.EDT) {
+            checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor).document.text == edited
+        }
+        check(retained) { "Lesson restart replaced student source" }
+        val receipt = mapOf(
+            "scope" to "Native prediction segment only; Run/Debug and independent implementation remain separate work",
+            "platformBuild" to ApplicationInfo.getInstance().build.asString(),
+            "sourceSha256" to plan.sourceSha256,
+            "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
+            "studentEditsRetainedAfterRestart" to retained,
+            "marsPluginArchiveSha256" to withContext(Dispatchers.IO) {
+                captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive")))))
+            },
+        )
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
+        }
+    }
+
+    private suspend fun answer(
+        project: Project, output: Path, id: String, actionId: String,
+        wrong: String, feedback: String, correct: String,
+    ) {
+        val failure = AtomicReference<Throwable>()
+        withContext(Dispatchers.EDT) {
+            val action = checkNotNull(ActionManager.getInstance().getAction(actionId))
+            val context = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build()
+            val event = AnActionEvent.createEvent(action, context, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
+            ApplicationManager.getApplication().invokeLater({
+                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
+            }, ModalityState.nonModal())
+        }
+        val dialog = awaitDialog(failure)
+        onModalUi {
+            visibleLessonButton(dialog.rootPane, wrong).doClick()
+            visibleLessonButton(dialog.rootPane, "Check prediction").doClick()
+        }
+        awaitUi { lessonVisibleText(dialog.rootPane).contains(feedback) }
+        captureComponent(dialog.rootPane, output, "$id-feedback", feedback)
+        onModalUi {
+            visibleLessonButton(dialog.rootPane, correct).doClick()
+            visibleLessonButton(dialog.rootPane, "Check prediction").doClick()
+        }
+        awaitUi { !dialog.isShowing }
+        failure.get()?.let { throw it }
+    }
+
+    private suspend fun awaitDialog(failure: AtomicReference<Throwable>): JDialog {
+        while (true) {
+            failure.get()?.let { throw it }
+            val dialog = onModalUi {
+                Window.getWindows().filterIsInstance<JDialog>()
+                    .singleOrNull { it.isShowing && it.title == "Predict the register state" }
+            }
+            if (dialog != null) return dialog
+            delay(100)
+        }
+    }
+
+    private suspend fun awaitFrame(project: Project, text: String, source: Path) {
+        while (true) {
+            val ready = withContext(Dispatchers.EDT) {
+                val frame = WindowManager.getInstance().getFrame(project)
+                val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                val file = editor?.let { FileDocumentManager.getInstance().getFile(it.document) }
+                frame?.isShowing == true && file?.toNioPath() == source && lessonVisibleText(frame.rootPane).contains(text)
+            }
+            if (ready) { delay(300); return }
+            delay(100)
+        }
+    }
+
+    private suspend fun awaitUi(predicate: () -> Boolean) {
+        while (!onModalUi(predicate)) delay(100)
+        delay(200)
+    }
+
+    private suspend fun captureFrame(project: Project, output: Path, id: String, text: String) {
+        val root = withContext(Dispatchers.EDT) { checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane }
+        captureComponent(root, output, id, text)
+    }
+
+    private suspend fun captureComponent(root: JComponent, output: Path, id: String, text: String) {
+        val bounds = onModalUi {
+            check(lessonVisibleText(root).contains(text)) { "Expected lesson text is not visible: $text" }
+            check(LafManager.getInstance().currentUIThemeLookAndFeel?.name == "IntelliJ Light")
+            Rectangle(root.locationOnScreen, root.size).also {
+                requireVisibleCaptureViewport(it, root.graphicsConfiguration.bounds)
+            }
+        }
+        withContext(Dispatchers.IO) {
+            val image = Robot().createScreenCapture(bounds)
+            val png = output.resolve("$id.png")
+            Files.newOutputStream(png, CREATE_NEW).use { check(ImageIO.write(image, "png", it)) }
+            Files.writeString(output.resolve("$id.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "theme" to "IntelliJ Light", "assertionsPassed" to true, "observedText" to text,
+                "width" to image.width, "height" to image.height, "pngSha256" to captureSha256(Files.readAllBytes(png)),
+            )), CREATE_NEW)
+        }
+    }
+
+    private suspend fun <T> onModalUi(action: () -> T): T =
+        withContext(Dispatchers.EDT + ModalityState.any().asContextElement()) { action() }
+}
+
+internal fun lessonVisibleText(root: JComponent): String = captureComponents(root)
+    .filter { it.isShowing }
+    .mapNotNull {
+        when (it) {
+            is JTextComponent -> it.document.getText(0, it.document.length)
+            is JLabel -> it.text
+            is AbstractButton -> it.text
+            else -> null
+        }
+    }.joinToString("\n")
+
+internal fun visibleLessonButton(root: JComponent, text: String): AbstractButton =
+    captureComponents(root).filterIsInstance<AbstractButton>().single { it.isShowing && it.text == text }

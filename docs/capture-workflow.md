@@ -748,3 +748,28 @@ Fresh grading against a frozen public revision passes 6,667 execution cases acro
 All four native proofs pass unchanged-pixel, coordinate, full-image-bound, embedded-font and tagged-description checks, with color/grayscale review. Direct native edits shorten repeated callouts and place two register panes side by side without shrinking screenshots or type. Public IDs qoi-f01 through qoi-f04 remain stable; the later logical sprite drawing is Figure 30.5. Native exports relocate only literal asset prefixes, and the guarded bootstrap refuses edited TeX.
 
 Concurrent chapter/manuscript compilation exposed shared include-auxiliary writes. The native builder now holds an OS file lock across compilation and verification. Three tests cover real separate-process exclusion, release after failure, and the Windows retry/error paths through a mocked API. Generated reference files were retained before clearing for a serialized recovery build. Independent accessibility review and later substantive editing remain open.
+
+
+## Revised native student lesson verification
+
+The separate authoring plugin accepts `-PbookLessonCapturePlan=/absolute/plan.json`
+to exercise the native MARS prediction lesson. The JSON fields are `projectRoot`,
+`outputDirectory` and the SHA-256 `sourceSha256` of the public console example.
+Use a disposable fixture project and a fresh output directory. The driver opens
+the native course, records actual wrong-answer feedback and corrected progress,
+then inserts a fixture comment and verifies it survives restart. It does not alter
+simulator state or implement student teaching in the authoring plugin.
+
+Before every launch run the real `clean cleanSandbox runIde` tasks, supplying
+`marsPluginArchive`, `bookLessonCapturePlan`, `bookCaptureProject` and
+`bookCaptureTrustFixture=true` for the dedicated fixture. Verify the authoring and
+MARS ZIPs together with the Plugin Verifier so the public MARS dependency resolves.
+The current driver passes 88 Jupiter tests and the paired plugins are compatible
+with the pinned IDE. Experimental public APIs remain reported.
+
+The first complete batch, retained privately as `native-predictions-02`, has five
+light-theme screenshots and a source-preservation receipt. All five were inspected.
+The full-window views show an IDE update notification and are verification evidence
+rather than publication-ready figures. The two dialog views show actual feedback.
+This batch verifies only the prediction segment; it does not prove the remaining
+Run, Debug, grading, hint or independent-program activities.
