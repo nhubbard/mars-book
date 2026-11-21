@@ -817,3 +817,12 @@ injection verifies execution but does not verify keyboard entry or echoed input.
 The stopped Debug session is a pause/step observation, not evidence of normal Debug
 termination; the preceding Run verifies normal exit separately. Full-unit diagnosis,
 hints, independent writing, policies, reopen/resume and human review remain open.
+
+
+The plan also supports `captureOutput: true` for the native output-preparation
+lesson. It captures a wrong prediction and feedback, then a revised answer. A
+fresh ordinary Debug session pauses before the answer copy, after the copy, and
+before integer output. Rendered rows must show retained answer 41 throughout,
+selector 4 then 1, and argument 41 after the copy. The receipt records each
+requested segment's observed flag independently. Capture success and publication
+readiness remain separate claims.

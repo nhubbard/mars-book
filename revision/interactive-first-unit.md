@@ -93,7 +93,12 @@ results 0, 40 and 41, and native Debug lesson completion. The separate authoring
 plugin selects the owned register tab and reads the displayed rows; the production
 lesson contains no screenshot automation.
 
-This verifies only the three implemented segments. Output-argument diagnosis,
+A fourth segment now connects the retained answer to output preparation. A
+prediction asks for all three register roles, followed by source-bound Debug
+observations before the copy, after it and before integer output. Its focused
+native tests pass; full checks and fresh graphical verification remain pending.
+
+The remaining first-unit work includes output-argument diagnosis,
 graduated hints, instructor policies, free-writing acceptance and complete-unit
 resume/reopen behavior remain to be integrated and exercised. The current raw
 captures are verification artifacts awaiting publication layout and annotations.

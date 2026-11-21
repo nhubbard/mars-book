@@ -79,6 +79,7 @@ internal data class BookLessonCapturePlan(
     val sourceSha256: String = "",
     val captureRun: Boolean = false,
     val captureDebug: Boolean = false,
+    val captureOutput: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -166,11 +167,13 @@ class BookLessonCaptureActivity : ProjectActivity {
         check(retained) { "Lesson restart replaced student source" }
         if (plan.captureRun) captureRun(project, output, source)
         if (plan.captureDebug) captureDebug(project, output, source)
+        if (plan.captureOutput) captureDebug(project, output, source, outputPreparation = true)
         val receipt = mapOf(
-            "scope" to if (plan.captureDebug) "Native prediction, Run and Debug observations; diagnostic exercise and independent writing remain incomplete" else if (plan.captureRun) "Native prediction and Run segments; Debug and independent implementation remain separate work" else "Native prediction segment only",
+            "scope" to "Only the native segments marked observed below; diagnosis and independent writing remain incomplete",
             "nativePredictionPassesObserved" to predictionPasses.get(),
             "nativeRunPassedObserved" to plan.captureRun,
             "nativeDebugPassedObserved" to plan.captureDebug,
+            "nativeOutputPassedObserved" to plan.captureOutput,
             "platformBuild" to ApplicationInfo.getInstance().build.asString(),
             "sourceSha256" to plan.sourceSha256,
             "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
@@ -250,20 +253,28 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun captureDebug(project: Project, output: Path, source: Path) {
+    private suspend fun captureDebug(project: Project, output: Path, source: Path, outputPreparation: Boolean = false) {
+        val id = if (outputPreparation) "mars.console.output" else "mars.console.debug"
+        val prefix = if (outputPreparation) "output" else "debug"
         val passed = CompletableDeferred<Unit>()
         val listener = object : LessonListener {
             override fun lessonPassed(lesson: Lesson) { passed.complete(Unit) }
         }
         val lesson = withContext(Dispatchers.EDT) {
-            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.debug" }.also {
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == id }.also {
                 it.addLessonListener(listener)
                 CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
             }
         }
-        awaitFrame(project, "Set a breakpoint on addu", source)
+        if (outputPreparation) {
+            awaitFrame(project, "Track the most recent writer", source)
+            answer(project, output, "output", "Mars.Learning.PredictOutput",
+                "\$v0 is 20; \$a0 is 41; \$t0 is 0.", "\$v0 no longer holds the input:",
+                "\$v0 is 1; \$a0 is 41; \$t0 is 41.")
+        }
+        awaitFrame(project, if (outputPreparation) "Stop the preceding Debug session" else "Set a breakpoint on addu", source)
         val file = withContext(Dispatchers.EDT) { checkNotNull(LocalFileSystem.getInstance().findFileByNioFile(source)) }
-        val line = withContext(Dispatchers.IO) { Files.readString(source).lines().indexOfFirst { it.trim().startsWith("addu ") } }
+        val line = withContext(Dispatchers.IO) { Files.readString(source).lines().indexOfFirst { it.trim().startsWith(if (outputPreparation) "move " else "addu ") } }
         check(line >= 0)
         val type = XBreakpointType.EXTENSION_POINT_NAME.extensionList.filterIsInstance<XLineBreakpointType<*>>()
             .single { it.id == "MarsMipsLine" }
@@ -274,7 +285,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         var owned: XDebugSession? = null
         val rows = mutableListOf<Map<String, Any>>()
         try {
-            val name = "Book lesson Debug observation"
+            val name = "Book lesson $prefix observation"
             connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
                 override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
                     if (executorId == DefaultDebugExecutor.EXECUTOR_ID && env.runProfile.name == name) {
@@ -304,23 +315,32 @@ class BookLessonCaptureActivity : ProjectActivity {
             val handler = session.debugProcess.processHandler
             while (!handler.isStartNotified) delay(50)
             withContext(Dispatchers.IO) { deliverBookStandardInput(handler, "20\n") }
-            for ((index, expected) in listOf(0L, 40L, 41L).withIndex()) {
+            for ((index, expected) in (if (outputPreparation) listOf(41L, 41L, 41L) else listOf(0L, 40L, 41L)).withIndex()) {
                 val sourceLine = pauses.receive()
                 check(sourceLine >= line)
-                val text = when (index) {
+                val text = if (outputPreparation) when (index) {
+                    0 -> "Stop the preceding Debug session"
+                    1 -> "Step Over li"
+                    else -> "You observed the answer survive"
+                } else when (index) {
                     0 -> "Set a breakpoint on addu"
                     1 -> "The first addition produced 40"
                     else -> "You have observed the input"
                 }
                 if (index == 2) passed.await()
                 awaitFrame(project, text, source)
-                val observed = awaitDebugRegisters(project, handler, expected)
-                rows += mapOf("sourceLine" to sourceLine + 1, "input" to 20, "result" to expected, "renderedRows" to observed)
-                captureFrame(project, output, "debug-" + listOf("before-add", "after-add", "after-one")[index], text)
+                val registers = buildMap {
+                    put("\$v0", if (outputPreparation) (if (index == 2) 1L else 4L) else 20L)
+                    put("\$t0", expected)
+                    if (outputPreparation && index > 0) put("\$a0", 41L)
+                }
+                val observed = awaitDebugRegisters(project, handler, registers)
+                rows += mapOf("sourceLine" to sourceLine + 1, "standardInput" to 20, "expectedRegisters" to registers, "renderedRows" to observed)
+                captureFrame(project, output, "$prefix-" + (if (outputPreparation) listOf("before-copy", "after-copy", "before-syscall") else listOf("before-add", "after-add", "after-one"))[index], text)
                 if (index < 2) withContext(Dispatchers.EDT) { session.stepOver(false) }
             }
             withContext(Dispatchers.IO) {
-                Files.writeString(output.resolve("debug-observations.json"), GsonBuilder().setPrettyPrinting().create().toJson(rows), CREATE_NEW)
+                Files.writeString(output.resolve("$prefix-observations.json"), GsonBuilder().setPrettyPrinting().create().toJson(rows), CREATE_NEW)
             }
         } finally {
             connection.disconnect()
@@ -333,7 +353,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun awaitDebugRegisters(project: Project, handler: ProcessHandler, result: Long): List<String> {
+    private suspend fun awaitDebugRegisters(project: Project, handler: ProcessHandler, expected: Map<String, Long>): List<String> {
         val view = lessonDebugRegisterView
         while (true) {
             val rows = withContext(Dispatchers.EDT) {
@@ -352,7 +372,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 if (tree == null || !applyDebuggerTreeView(tree, view)) emptyList()
                 else (0 until tree.rowCount).map { renderedDebuggerRow(tree, tree.getPathForRow(it)) }
             }
-            if (lessonRegisterValue(rows, "\$v0") == 20L && lessonRegisterValue(rows, "\$t0") == result) return rows
+            if (expected.all { (register, value) -> lessonRegisterValue(rows, register) == value }) return rows
             delay(100)
         }
     }
