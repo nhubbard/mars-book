@@ -1,0 +1,291 @@
+\chapter{Arrays and images}
+\MARSChapterHeading{Arrays and images}
+\label{revision:arrays-and-images}
+
+A single pixel required one address and one color word. A small image requires a
+relationship between many addresses. We will draw an eight-by-eight sprite and
+its horizontal mirror beside it. The source occupies eight bytes; the displayed
+pair occupies 128 pixel words. Understanding why those sizes differ is the first
+part of writing the program.
+
+The byte-reversal function from Chapter~\ref{revision:functions-and-stack} already
+performs the transformation needed for one mirrored row. We will reuse it and
+write a second function that expands a row byte into eight pixel words. The main
+routine will coordinate those functions while moving through the source and
+destination arrays.
+
+You should be able to derive an element's address from its size and index, explain
+the difference between a column step and a row step, state a row renderer's memory
+contract, and check that a complete image stays inside its allocation. The final
+exercise changes row order without changing the meaning of a bit within a row.
+
+\section{Distinguish the two representations}
+
+Each source byte contains eight black-or-white decisions. Bit seven describes
+the leftmost pixel, and bit zero describes the rightmost. For \texttt{0x16}, the
+bits from left to right are \texttt{00010110}. Numbering columns from zero, the
+set pixels are at columns three, five and six. There is no need to store eight
+separate source values when one bit can describe each choice.
+
+The Bitmap Display uses a different representation: one 32-bit RGB word per
+logical pixel. We write \texttt{0x00FFFFFF} for white and zero for black. A source
+bit is therefore expanded into a whole word; the source byte is not itself a
+color word to copy to the framebuffer. The color's numerical bit layout and the
+source byte's left-to-right bit interpretation are separate conventions.
+
+Reversing \texttt{0x16} gives \texttt{0x68}, with bits \texttt{01101000}. Those
+set pixels occupy local columns one, two and four. In the right-hand image, local
+column zero begins at framebuffer column eight. The first row of the completed
+pair has the following positions.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=5mm,y=5mm,alt={Sixteen cells show the first row. In original columns zero through seven, cells three, five and six are white. In mirrored columns eight through fifteen, cells nine, ten and twelve are white. A heavier divider separates the two eight-pixel images.}]
+\fill[black] (0,0) rectangle (16,1);
+\foreach \c in {3,5,6,9,10,12} {\fill[white] (\c,0) rectangle (\c+1,1);}
+\draw[gray,step=5mm] (0,0) grid (16,1);
+\draw[black,line width=0.8pt] (0,0) rectangle (16,1);
+\draw[black,line width=1.2pt] (8,-0.1) -- (8,1.1);
+\foreach \c in {0,...,15} {\node[font=\scriptsize] at (\c+0.5,1.5) {\c};}
+\node[font=\small] at (4,-0.7) {Original};
+\node[font=\small] at (12,-0.7) {Mirrored};
+\end{tikzpicture}
+\caption{Framebuffer column numbers increase from left to right in both halves. Mirroring changes which source bit supplies a column; it does not reverse the order of destination addresses.}
+\label{fig:revision-sprite-row}
+\end{figure}
+
+The diagram shows only one row. Reversing each row independently produces a
+horizontal mirror of the whole sprite. Reversing the order of the row bytes would
+instead turn the image upside down. These transformations change different
+relationships and need different source indexing.
+
+\section{Derive addresses from element sizes}
+
+An array has a base address and an element size. Element $i$ of a byte array starts
+at $\textit{base}+i$. Element $i$ of a word array starts at
+$\textit{base}+4i$. The number of elements and the number of bytes are different
+quantities. Advancing a word pointer by one byte does not advance it to the next
+word.
+
+Our framebuffer contains sixteen columns and eight rows, in \emph{row-major}
+order: all sixteen words of row zero come first, then all sixteen of row one,
+and so on. For column $x$ and row $y$, the word index is $16y+x$ and its byte
+address is
+\[
+    \textit{frame}+4(16y+x).
+\]
+The admitted coordinates satisfy $0\leq x<16$ and $0\leq y<8$. A horizontal
+step changes the address by four bytes. A vertical step to the same column of
+the next row changes it by $16\times4=64$ bytes. This second displacement is the
+\emph{row stride}.
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Coordinate & Meaning & Word index & Byte displacement \\
+\midrule
+$(0,0)$ & First original pixel & 0 & 0 \\
+$(7,0)$ & Last original pixel in row zero & 7 & 28 \\
+$(8,0)$ & First mirrored pixel & 8 & 32 \\
+$(0,1)$ & First pixel in the next row & 16 & 64 \\
+$(15,7)$ & Last pixel in the allocation & 127 & 508 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+There are $16\times8=128$ words, occupying 512 bytes. The last word starts at
+displacement 508 and occupies bytes 508 through 511. The following byte, at
+displacement 512, is outside the frame. Counting only the final word's starting
+address would miss three bytes of its access.
+
+\section{Lay out the source and destination objects}
+
+The framebuffer remains first in static data so that the Bitmap Display's
+\texttt{base=static\_data} setting refers to it. The following declaration starts
+the complete program. The eight source bytes need not be aligned individually;
+they are read as bytes. Both guards are separate objects to preserve.
+
+\MARSCodeLabel{A packed source and a word-per-pixel destination}
+\begin{minted}{mars-idea}
+# mars:tool bitmap width=128 height=64 unitWidth=8 unitHeight=8 base=static_data
+.data
+.align 2
+frame:         .space 512
+frame_guard:   .word 0x13579bdf
+sprite:        .byte 0x16, 0x3c, 0x7e, 0xdb, 0xff, 0x24, 0x42, 0x81
+mirrored_rows: .space 8
+rows_guard:    .word 0x2468ace0
+\end{minted}
+
+The display setting describes 128 by 64 screen units grouped into eight-by-eight
+pixel blocks, giving sixteen logical columns and eight logical rows. Enlarging a
+logical pixel makes it easier to see; it does not change how many framebuffer
+words the program must write. Use the configured Bitmap Display for this session
+rather than treating a word's four bytes as four separate pixels.
+
+The source and its reversed rows each occupy eight bytes. In the Default layout,
+\texttt{frame} begins at \texttt{0x10010000}; its guard begins 512 bytes later.
+The source begins after that four-byte guard. The program uses labels to obtain
+these addresses, so a source address need not be recalculated from a memorized
+constant. The guard's purpose is to reveal an overrun during checking; it does
+not automatically stop a wrong address calculation.
+
+\section{Expand one row through a bounded interface}
+
+The \texttt{draw\_row} function receives a pattern in the low byte of
+\texttt{\$a0} and a destination address in \texttt{\$a1}. Its caller must supply
+space for eight consecutive pixel words, 32 bytes in total. It writes those words
+from left to right, using bit seven first. It preserves the saved-register and
+stack-pointer convention from the previous chapter. Arguments and temporaries
+may change, and it promises no register result.
+
+This function knows about one span of eight pixels. It does not know the full
+framebuffer's width, which row is being drawn, or whether the destination belongs
+to the left or right image. Those are the caller's responsibilities. Passing an
+address near the end of an allocation does not grant permission to write another
+32 bytes there.
+
+\MARSCodeLabel{Expand a row byte into eight explicit pixel stores}
+\begin{minted}{mars-idea}
+draw_row:
+    andi $t0, $a0, 0xff
+    li $t1, 8
+draw_pixel:
+    andi $t2, $t0, 0x80
+    move $t3, $zero
+    beqzc $t2, store_pixel
+    nop
+    li $t3, 0x00ffffff
+store_pixel:
+    sw $t3, 0($a1)
+    daddiu $a1, $a1, 4
+    sll $t0, $t0, 1
+    addiu $t1, $t1, -1
+    bnezc $t1, draw_pixel
+    nop
+draw_row_return:
+    jrc $ra
+\end{minted}
+
+Before each store, \texttt{\$t3} is initialized to black. If the tested bit is
+nonzero, the assignment of white replaces it. Both paths reach the same store.
+A clear bit still requires a store: leaving that pixel untouched would retain
+whatever color happened to be in the destination before this call. We are drawing
+an opaque black-and-white image, not making black pixels transparent.
+
+After the store, the destination advances by one word. Shifting the pattern left
+moves its next source bit into position seven, where the same mask can test it.
+After $c$ completed iterations, exactly $c$ words have been written, the pointer
+has advanced $4c$ bytes, and $8-c$ pixels remain. At eight iterations the pointer
+is just beyond this row span; the function makes no further store.
+
+The two \texttt{nop} instructions make the conditional compact branches' following
+instructions safe on their not-taken paths. They are not delay-slot work performed
+before a taken branch. This leaf function calls no other routine, so its incoming
+return address remains available in \texttt{\$ra}.
+
+\section{Coordinate the row and image loops}
+
+The main routine needs three persistent addresses: the next source byte, the next
+reversed byte to store, and the current framebuffer row's base. It also retains
+a row count and the original row pattern. Saved registers hold this state across
+the helper calls.
+
+Append the following main routine after the data declaration. Follow it with
+\texttt{draw\_row} and the unchanged \texttt{reverse\_byte} from the previous
+chapter. The complete \texttt{sprite-rows.asm} file in
+\texttt{revision/labs/files} contains those parts in that order.
+
+\MARSCodeLabel{Keep row state while the helpers use temporary registers}
+\begin{minted}{mars-idea}
+.text
+.globl main
+main:
+    dli $t0, -16
+    and $sp, $sp, $t0
+    la $s0, sprite
+    la $s1, mirrored_rows
+    la $s2, frame
+    li $s3, 8
+row_loop:
+    lbu $s4, 0($s0)
+    move $a0, $s4
+    balc reverse_byte
+row_reversed:
+    sb $v0, 0($s1)
+    move $a0, $v0
+    daddiu $a1, $s2, 32
+    balc draw_row
+right_row_drawn:
+    move $a0, $s4
+    move $a1, $s2
+    balc draw_row
+row_drawn:
+    daddiu $s0, $s0, 1
+    daddiu $s1, $s1, 1
+    daddiu $s2, $s2, 64
+    addiu $s3, $s3, -1
+    bnezc $s3, row_loop
+    nop
+frame_complete:
+    li $v0, 10
+    syscall
+\end{minted}
+
+\texttt{lbu} reads the source pattern as a nonnegative byte. The reversal is
+stored with \texttt{sb} because each element of \texttt{mirrored\_rows} is one
+byte, not one word. The first renderer call receives this reversed pattern and
+the current framebuffer row base plus 32 bytes. That places it in columns eight
+through fifteen. The second receives the retained original pattern and the row
+base itself, filling columns zero through seven.
+
+The right half is drawn first in this implementation. That order does not change
+the completed image because the two destination spans do not overlap. It does
+matter when predicting an intermediate pause. At \texttt{right\_row\_drawn}, the
+right half of the current row is finished, but the left half has not been drawn
+by this iteration yet.
+
+\texttt{draw\_row} advances its argument pointer, \texttt{\$a1}. It does not
+advance the saved row base in \texttt{\$s2}. Each call receives a newly prepared
+argument, and the main routine advances \texttt{\$s2} by the full 64-byte stride
+only after both halves are drawn. Confusing the within-row cursor with the next
+row's base can produce a correct first row followed by overlapping rows.
+
+\section{Explain the bounds before trusting the picture}
+
+At the start of iteration $r$, where $0\leq r<8$, the source address is
+$\textit{sprite}+r$, the reversed-output address is
+$\textit{mirrored\_rows}+r$, and the framebuffer row base is
+$\textit{frame}+64r$. Each source byte is inside the eight-byte source. Each
+reversed byte has its own output position.
+
+The left renderer writes word starts from $64r$ through $64r+28$ relative to the
+frame base. The right renderer writes starts from $64r+32$ through $64r+60$.
+Together their accesses occupy exactly bytes $64r$ through $64r+63$. The final
+row has $r=7$, so its final access ends at byte 511. The next row base computed
+by the updates is $\textit{frame}+512$, but the count has become zero and no
+renderer is called with that address.
+
+Run the program with MIPS64 Release 6 and the Default layout. Open
+\emph{MARS Tools} and select the configured \emph{Bitmap Display}. The program
+prints nothing. The left image should retain the source orientation; the right
+image should reflect it horizontally. Inspect \texttt{mirrored\_rows} as well:
+its first byte is \texttt{0x68}. A visually symmetric row such as \texttt{0x81}
+is not a good test of whether reversal actually happened.
+
+A correct final picture is one observation. Also check the source, reversed
+bytes, guards and access bounds. A store that damages a guard and later repairs
+it can evade a final-value guard check. The worked-program qualification observes
+actual accesses in the relevant regions; the public assignment states which
+final values it checks.
+
+For an independent variation, draw the source rows in reverse vertical order into
+the right-hand half of the frame. Preserve the left half exactly as it was. The
+first output row uses source row seven, while bit seven still supplies the
+leftmost pixel of that output row. The lab supplies a caller and public checks.
+
+The clipped-blitter companion project extends this address reasoning to images
+that cross a destination edge. It must determine a valid intersection before
+forming the source and destination spans. Our current row renderer has no such
+clipping behavior: its caller supplies a complete valid span. Keep that contract
+explicit when reusing it in a larger image operation.

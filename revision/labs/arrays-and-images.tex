@@ -1,0 +1,133 @@
+\chapter{Tracing source rows and pixel addresses}
+\MARSChapterHeading{Source rows and pixel addresses}
+\label{revision:lab-arrays}
+
+Use \texttt{sprite-rows.asm} from \texttt{revision/labs/files} with this chapter.
+It pairs the main book's byte representation, row renderer and compact-branch
+caller. These activities use normal MARS Run and Debug; the sixth revised unit
+is not yet a native interactive lesson.
+
+Your task is to connect a source bit, a destination coordinate and an actual word
+store. Keep the row's base address separate from the renderer's moving argument
+pointer. A drawing that looks plausible can still use the wrong stride, skip
+black stores or read a neighboring object as another source row.
+
+\section{Predict one asymmetric row}
+
+Write \texttt{0x16} as eight bits, including the leading zeros. List its set
+columns under the convention that bit seven is leftmost. Reverse the pattern and
+list the mirrored row's set columns. Add eight to those local column numbers to
+place them in the right half of the framebuffer.
+
+Derive the addresses for the first pixel of each half and the first pixel of the
+next row. Explain why the two displacements are 32 and 64 bytes. Then derive the
+last pixel's starting displacement and the last byte of that store. A word-sized
+access has a beginning and an end.
+
+\section{Pause before the first renderer call}
+
+Break at \texttt{row\_reversed}. The next instruction stores the computed reversed
+byte; that store has not executed yet. Inspect the original row in
+\texttt{\$s4}, the result in \texttt{\$v0}, the reversed-byte destination in
+\texttt{\$s1}, and the framebuffer row base in \texttt{\$s2}. Predict which
+objects remain unchanged before the pending byte store.
+
+Continue to \texttt{draw\_row}. On the first visit, the arguments describe the
+right half: pattern \texttt{0x68} and destination \texttt{frame}+32. Step to
+\texttt{store\_pixel}, before its first word store. The first tested source bit
+is zero, so the selected color is black. Predict the next destination address
+and count after that store and the following updates.
+
+At \texttt{right\_row\_drawn}, the helper has returned. Its argument pointer
+has advanced to \texttt{frame}+64; the saved row base still points to
+\texttt{frame}. The next call prepares a new argument for the left half. Explain
+why the advanced argument alone is not the next iteration's complete state.
+
+Continue to \texttt{row\_drawn}, before the outer updates. Both halves of row zero
+are complete, while the source and output-row pointers still name row zero.
+After the updates, they name row one. Check the remaining count at the next visit
+to \texttt{row\_loop}. State the execution boundary when recording a pointer or
+count; the same register can legitimately describe different stages of an iteration.
+
+Figure~\ref{fig:revision-sprite-progress} connects the first completed row with
+the finished pair. Compare these pictures with your recorded pointers and count;
+the picture alone does not show whether the next outer update has executed.
+
+\input{revision/figures/sprite/f01-progress}
+
+\section{Separate row order from bit order}
+
+Replace the source bytes with a single-bit pattern: row zero contains
+\texttt{0x80}, row one \texttt{0x40}, continuing down to \texttt{0x01} in row
+seven. Predict the diagonal in the original image and its horizontal reflection
+in the right image. Unlike a symmetric pattern, this input reveals which bit and
+which row supplies each visible position.
+
+Next use an all-zero row followed by an all-one row. Confirm that the first row
+is black even if its framebuffer words held nonzero values before drawing.
+Skipping a black store would behave like transparency and violate this renderer's
+contract. A new session's initial zeros can conceal that mistake.
+
+A horizontal mirror reverses the bits within each byte. A vertical flip reverses
+the order in which the bytes supply rows. Combining the two performs both changes.
+Do not diagnose a vertically misplaced pattern by changing its within-row mask.
+
+\section{Investigate an address error}
+
+In a copy, change the outer row-base increment from 64 to 32. Predict which row's
+words the next iteration will overwrite. Run a short Debug trace and locate the
+first destination span that differs from your address calculation. The source
+bytes and reversed bytes may still be correct because their pointers use separate
+updates.
+
+Restore the stride, then change a pixel increment from four bytes to one. This
+moves through overlapping byte ranges rather than consecutive words. Release 6
+ordinary misaligned accesses need not stop the program with an alignment fault;
+inspect the actual bytes and colors instead of relying on an exception to detect
+the mistake.
+
+For another copy, omit the initialization of black before testing a bit. Follow
+the color register's most recent writer. A white pixel can then leave white in the
+register for a later clear bit. The first wrong color is a state-lifetime error,
+not a different definition of the source pattern.
+
+\section{Draw a vertical variation independently}
+
+The separate \texttt{vertical-sprite.asm} caller supplies a source of eight bytes
+and a sixteen-by-eight framebuffer. Implement \texttt{draw\_vertical}, replacing
+the failing \texttt{break} body. Its arguments are the source address in
+\texttt{\$a0} and the frame base in \texttt{\$a1}. It draws eight rows into
+columns eight through fifteen, with source row seven supplying output row zero
+and source row zero supplying output row seven. Within each row, bit seven remains
+leftmost.
+
+Preserve columns zero through seven, both guards and all source bytes. Restore
+the saved registers and stack pointer from the chapter's calling convention,
+return through the incoming continuation, and perform no console or device I/O
+other than the ordinary framebuffer writes. The supplied \texttt{draw\_row}
+helper is available; another equivalent renderer is allowed.
+
+Plan the source row address, destination row base, count and return address before
+writing instructions. If you call the helper, decide which state must survive
+that call. A backwards source cursor may become one byte before the source after
+the final update; your stopping condition must prevent another load there.
+
+Run the public checks using JDK~25:
+
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/vertical-sprite.kts \
+  /path/to/your/vertical-sprite.asm
+\end{verbatim}
+
+The checks replace the source and prefill the frame with varied values. They
+compare all destination words, preserve the left half, source and guards, and
+check saved registers and the restored stack pointer. They do not prescribe your
+scratch registers, private labels or frame layout. Keep your own address derivation
+and a trace of the first and final rows alongside a passing report.
+
+The later clipped-blitter lab adds partial source and destination intersections.
+Before attempting it, be able to explain this fully in-bounds operation for an
+arbitrary source pattern and a prefilled destination. Clipping changes which
+rows and columns are admitted; it does not change the size of a pixel word or
+make an out-of-range address safe to access.
