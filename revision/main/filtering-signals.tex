@@ -1,0 +1,259 @@
+\chapter{Filtering a sequence of samples}
+\MARSChapterHeading{Filtering a sequence of samples}
+\label{revision:filtering}
+
+A mixer combines values at the same position in two streams. A filter can combine
+several positions in one stream. Imagine replacing each sample by the average of
+itself and its seven predecessors. An isolated change then influences eight
+outputs instead of one. This changes the signal even when no arithmetic clips.
+To implement that operation, we must specify which samples participate, how much
+each contributes, and when the calculation loses precision.
+
+The complete \texttt{fir-filter.asm} in \texttt{revision/labs/files} implements an
+eight-coefficient finite impulse response filter, abbreviated FIR. Its scalar and
+MSA paths compute the same exact sum before rounding once and saturating once.
+This chapter assumes the earlier fixed-point and PCM chapters and MSA lane
+operations. The independent task uses the same arithmetic but retains only every
+second filtered position.
+
+\section{Give each coefficient a time position}
+
+Call the input array $x$ and the eight coefficient codes $c_0,\ldots,c_7$. The
+array begins with seven history samples, in chronological order. Its next element
+is the first new sample. For output index $i$, the input window is
+$x_i,\ldots,x_{i+7}$. The first coefficient multiplies the oldest value in that
+window; the last multiplies its newest value. A coefficient applied at one time
+position is often called a \emph{tap}.
+
+The function forms the integer numerator
+\[
+ S_i=\sum_{j=0}^{7}x_{i+j}c_j.
+\]
+These are signed sixteen-bit input and coefficient codes. A coefficient code $c$
+represents the weight $c/32768$, a format commonly called Q15 here. Code 4096
+means one eighth, 16384 means one half, and $-32768$ means minus one. Positive
+one has no exact signed Q15 code: its scaled integer 32768 exceeds 32767.
+The sample remains an integer PCM code; multiplying by a Q15 coefficient gives a
+numerator in sample-code units scaled by 32768. Dividing the final sum by that
+scale restores sample-code units.
+
+With eight coefficients of 4096, the weights sum to one. The operation averages
+the window. A constant input of 16000, including its history, therefore produces
+16000. If history is zero and only the first new sample is 16000, the first
+window produces 2000. The same impulse remains in each of the next seven windows,
+then leaves. Outputs zero through seven are 2000; later outputs are zero.
+The response to that single impulse ends after finitely many outputs, giving
+this kind of filter its name. Each output depends on a finite input window,
+not on a chain of earlier outputs. History values are inputs, not an instruction
+to reset the filter at every call.
+
+\input{revision/figures/fir/windows}
+
+Coefficient order matters when the weights differ. For an impulse of 16384 and
+oldest-first codes $1024,2048,3072,4096,5120,6144,7168,8192$, output zero is
+4096 because the impulse initially meets the last coefficient. Subsequent outputs
+are $3584,3072,2560,2048,1536,1024,512$, then zero. An all-equal averaging filter
+cannot reveal a reversed coefficient order; this asymmetric example can.
+
+\section{Keep the exact sum until the chosen conversion}
+
+The required integer result before saturation is
+\[
+ R_i=\left\lfloor\frac{S_i+16384}{32768}\right\rfloor.
+\]
+Adding half the scale, then taking floor, rounds to the nearest integer with
+exact half ties toward positive infinity. Numerator 16384 becomes one, while
+$-16384$ becomes zero. Numerator $-49152$ represents $-1.5$ and becomes $-1$.
+A division that truncates toward zero cannot replace the floor operation for
+negative biased numerators.
+
+The function stores $R_i$ clamped to $[-32768,32767]$, and counts a clip only
+when the rounded integer lies strictly outside that interval. At the positive
+end, a value of 32767.5 rounds to 32768 and clips. At the negative end,
+$-32768.5$ rounds to $-32768$ and does not clip. Both a true negative clip and
+that exact half case store bytes \texttt{00 80}; the output bytes alone cannot
+explain the clipping count.
+
+Do not round the products separately. Eight products whose numerators are each
+16384 have an exact sum of 131072. One final rounding returns four. Rounding
+each half first would return eight. Nor may partial sums saturate before the
+remaining products arrive: a later negative product can cancel an earlier
+positive one. The preceding chapter's failure of associative saturated addition
+applies here too.
+
+\begin{samepage}
+One product fits in a signed word. The largest is
+$(-32768)(-32768)=1073741824=2^{30}$. Two such products sum to $2^{31}$, which
+does not fit. Eight sum to $2^{33}=8589934592$. The most negative individual
+product is $(-32768)(32767)=-1073709056$, so the eight-product sum lies between
+$-8589672448$ and 8589934592. Adding the rounding bias also fits comfortably in
+a signed doubleword. These bounds justify exact 64-bit accumulation, not exact
+32-bit accumulation followed by a wider copy.
+\par
+\end{samepage}
+
+In the scalar path, signed sample and coefficient values are reconstructed from
+two bytes with \texttt{seh}, as in the mixer. Each \texttt{dmul} produces an
+exact doubleword product under these bounds; \texttt{daddu} adds it to a
+zero-initialized doubleword sum. The inner loop consumes exactly eight taps.
+The outer loop then applies the shared rounding and clamp rule and moves to the
+next window. The complete source retains this scalar path as \texttt{fir\_scalar}.
+
+\section{Widen before a vector dot product can overflow}
+
+MSA's \texttt{dotp\_s.w} multiplies corresponding signed halfwords and adds
+neighboring products into word lanes. That sounds suitable for sixteen-bit
+samples, but a pair can already exceed the signed word range. An all-minimum
+pair produces word bit pattern \texttt{80000000}; copying that lane as a signed
+word yields a negative value. The lost sign cannot be repaired by copying it
+into a 64-bit general register afterward.
+
+Instead, sign-extend each input and coefficient to a word \emph{before}
+multiplication. Then \texttt{dotp\_s.d} combines pairs of signed word products
+into doubleword lanes. The original values are still only sixteen-bit numbers;
+the wider container gives their pair sums enough range.
+
+The following coefficient preparation runs once for a nonempty call. Register
+\texttt{\$a1} points to exactly sixteen readable coefficient bytes.
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Prepare signed word coefficients}
+\begin{minted}{mars-idea}
+ld.b $w1, 0($a1)
+clti_s.h $w2, $w1, 0
+ilvr.h $w3, $w2, $w1
+ilvl.h $w4, $w2, $w1
+\end{minted}
+
+\texttt{clti\_s.h} produces \texttt{ffff} for each negative halfword and zero
+otherwise. Interleaving a sample halfword with that sign halfword builds a signed
+word: $-32768$ becomes \texttt{ffff8000}, and 4096 becomes \texttt{00001000}.
+For this little-endian lane arrangement, \texttt{ilvr.h} takes the low four
+halfwords, interleaving the last source first; \texttt{ilvl.h} takes the high
+four. Read the resulting registers as words, not as eight independent samples.
+The values in \texttt{\$w3} and \texttt{\$w4} remain available for every window.
+
+The per-output calculation performs the same widening for the current eight
+samples. Only its input address changes between windows.
+\Needspace{18\baselineskip}
+\MARSCodeLabel{Form an exact eight-product numerator}
+\begin{minted}{mars-idea}
+ld.b $w0, 0($a0)
+clti_s.h $w2, $w0, 0
+ilvr.h $w5, $w2, $w0
+ilvl.h $w6, $w2, $w0
+dotp_s.d $w7, $w5, $w3
+dotp_s.d $w8, $w6, $w4
+addv.d $w7, $w7, $w8
+copy_s.d $t0, $w7[0]
+copy_s.d $t1, $w7[1]
+daddu $t0, $t0, $t1
+\end{minted}
+
+Write $p_j=x_{i+j}c_j$. The first dot product gives doublewords
+$[p_0+p_1,p_2+p_3]$; the second gives $[p_4+p_5,p_6+p_7]$. Their vector sum
+contains $[p_0+p_1+p_4+p_5,p_2+p_3+p_6+p_7]$. The two copies and final
+\texttt{daddu} finish $S_i$. This grouping is safe because all these intermediate
+sums fit in signed doublewords and none has yet been rounded or saturated.
+
+For eight minimum inputs and coefficients, each dot-product lane is 2147483648,
+hexadecimal \texttt{0000000080000000}. Each combined lane is 4294967296, and
+the final scalar sum is 8589934592. This example distinguishes widening before
+arithmetic from widening an already damaged result.
+
+\section{Quantize one output and move one window}
+
+The common quantizer begins with the exact numerator in \texttt{\$t0}:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Round a wide numerator once}
+\begin{minted}{mars-idea}
+daddiu $t0, $t0, 16384
+dsra $t0, $t0, 15
+\end{minted}
+The arithmetic shift implements floor division by $2^{15}$. The complete source
+then compares this wide rounded result strictly above 32767 and below $-32768$,
+selects an endpoint only when necessary, increments \texttt{\$v1} for that event,
+and stores the low two bytes. The bias and shift must operate on the full
+numerator; narrowing it before conversion would undo the earlier width proof.
+The rounded result itself lies between $-262136$ and 262144, so it fits in a
+signed word, but still needs the separate halfword-range comparisons.
+
+The interface takes full input, coefficient and output pointers in
+\texttt{\$a0/\$a1/\$a2}, output count zero through 64 in \texttt{\$a3}, and
+returns original count and clips in \texttt{\$v0/\$v1}. Samples and coefficients
+may begin at any byte address. The three selected slices are disjoint. Their
+lengths are $2(n+7)$, 16 and $2n$ bytes. Saved registers, frame pointer and stack
+pointer retain all their bits; other caller data remains unchanged. The routine
+returns through the supplied continuation and performs no console I/O.
+
+After one output, advance the input pointer by two bytes, advance output by two,
+and decrement the remaining output count. The window moves by one sample even
+though it contains eight. After $k$ outputs, the first $k$ destination samples
+are complete, the clipping count describes exactly that prefix, and the input
+pointer identifies original sample $k$. On the final iteration, the window ends
+at original index $n+6$, the last selected input sample. No remainder path is
+needed: every output always has an eight-sample window, even when the output
+count is one. Count zero must return before reading even the coefficients.
+
+Disjoint output is part of this contract. A store into future input could change
+a later overlapping window. The mixer's exact-alias proof does not transfer to
+this filter. Extra allocated padding also does not enlarge the permitted input
+slice. The access argument follows the selected window and count, not whether an
+address happens to be mapped.
+
+\section{Continue a stream with explicit history}
+
+There is no hidden state between calls. To split after $m$ outputs, start the
+second call at original input sample $m$, a byte displacement of $2m$. That
+second slice begins with the seven samples preceding its first new sample;
+its first window is exactly the original window for output $m$. Pass the same
+coefficients, an output pointer advanced by $2m$, and count $n-m$. The two output
+sequences must concatenate to the whole-call result. Add their clipping counts
+to recover the whole count.
+
+For the sixteen-output impulse example, split after five. The second window
+starts at original sample five, so it still contains the impulse at original
+sample seven. Its first three outputs are 2000, then zero. Supplying seven new
+zeros as its history would erase those contributions. A correct kernel cannot
+recover history that its caller discarded.
+
+This explicit-history interface is convenient for checking. A file-processing
+caller can retain seven trailing samples and prepend them to the next block.
+It must preserve chronological order and distinguish short final input from
+zero-length output. An audio device, file parser and real-time deadline are
+outside the numerical kernel; later chapters supply a file pipeline.
+
+\section{Filter fewer positions independently}
+
+Implement \texttt{decimate\_q15} in \texttt{fir-decimate.asm}. Use the same eight
+weights, exact accumulation, rounding and clipping policy, but compute windows
+starting at original indices $0,2,4,\ldots,2(n-1)$. Return $n$ output samples
+and their strict clipping count. The output count is zero through 32. The input
+has seven history samples and, for a nonempty call, $2n-1$ new samples: $2n+6$
+samples in total. A zero-output call declares seven history samples and reads
+none of them. Coefficients occupy sixteen bytes; output occupies $2n$ bytes.
+The pointers, disjointness, preservation and return rules match the worked filter.
+
+This operation filters and retains every second position, called decimation by
+two. It is not equivalent to discarding every other input before filtering;
+that would change the values within each window. For the default averaging
+impulse and eight requested outputs, the first four outputs are 2000 and the
+remaining four are zero. With asymmetric weights, derive the even-indexed
+outputs from the full filter instead of assuming another four identical values.
+
+Prove the last window's input bound and derive the input-byte advance per output.
+Then decide what input base a second call needs after $m$ retained outputs.
+Establish a scalar baseline, check an equivalent vector implementation, and
+investigate a negative half tie and an overflowing word pair separately. The
+written lab supplies public checks; it does not require particular temporary
+registers or instruction spelling. If vectorization is assigned, explain the
+lane meanings and verify them in the debugger in addition to checking results.
+
+\section*{Sources and laboratory connection}
+The public \path{packages/021-fixed-point-fir/} supplies the original exact
+contract, split-call checks and optional generated listening comparisons.
+The MSA widening and interleave behavior follows the pinned MARS implementations.
+Arm's \href{https://arm-software.github.io/CMSIS-DSP/latest/group__FIR.html}{CMSIS-DSP FIR documentation}
+provides a separate example of Q15 filtering with a 64-bit accumulator. Its
+conversion policy is not this exercise's nearest-rounding contract. Keep such
+policies explicit when comparing implementations. The revised lab follows the
+wide intermediate states and assigns the decimating filter independently.

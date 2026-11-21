@@ -1,0 +1,183 @@
+\chapter{Windows, wide sums and stream history}
+\MARSChapterHeading{Windows, wide sums and stream history}
+\label{revision-lab:fir}
+
+Use the complete \texttt{fir-filter.asm} and independent
+\texttt{fir-decimate.asm} in \texttt{revision/labs/files}. The main chapter
+explains the eight-tap equation, Q15 coefficient scale and final conversion.
+This written lab uses ordinary Run and Debug. Its native guided lesson remains
+unfinished. Keep disposable copies for input changes and deliberate faults.
+No audio device is needed to investigate the numerical behavior.
+
+\section{Explain an impulse before stepping the loop}
+
+The unchanged caller has seven zero history samples, then an impulse 16000,
+then zeros. All eight coefficients are 4096. Predict which input indices form
+the first, second, eighth and ninth windows. Derive why the first eight output
+samples are 2000 and the ninth is zero. Each output uses eight products; eight
+outputs are not one nonoverlapping group of eight inputs.
+
+Break at \texttt{filter\_ready}. The routine has returned count 16 in
+\texttt{\$v0} and clips zero in \texttt{\$v1}. Inspect the first sixteen
+output samples. Each 2000 is stored as bytes \texttt{d0 07}. The caller's
+\texttt{processed} and \texttt{clipped} words are still 99 because their stores
+follow this stop. Continue to \texttt{results\_ready} to observe the published
+16 and zero. Do not inspect exit's \texttt{\$v0} as though it were still the
+function return value.
+
+Next use an impulse 16384 and the following oldest-first coefficients. Keep
+the declared arena lengths and predict the first eight outputs.
+\begin{verbatim}
+coeff:  1024,2048,3072,4096,5120,6144,7168,8192
+output: 4096,3584,3072,2560,2048,1536,1024,512
+\end{verbatim}
+At the first window the impulse meets the last coefficient. A reversed
+coefficient implementation can pass the equal-weight example and fail this one.
+Explain the time position of each coefficient rather than memorizing the order.
+
+For a scalar comparison, change only the caller's target from
+\texttt{fir\_q15} to \texttt{fir\_scalar} in a copy. Both obey the same numerical
+interface. Compare their complete outputs and counts before comparing work.
+Preserve the book's stack setup and the full pointers when changing a caller.
+
+\section{Observe widening before multiplication}
+
+Make another copy with count one, eight input values of $-32768$ and eight
+coefficient values of $-32768$. Input still occupies a 192-byte arena: eight
+halfwords followed by 176 padding bytes. The coefficient arena remains eight
+halfwords followed by 48 padding bytes. The selected input is only sixteen
+bytes despite that larger backing allocation.
+
+Break at \texttt{fir\_widened}, before either dot product. Expand MSA vector
+registers and view \texttt{\$w5} as four 32-bit integer lanes. Each is
+\texttt{ffff8000}, representing signed $-32768$. The matching low coefficients
+are in \texttt{\$w3}; the high input and coefficient words are in
+\texttt{\$w6/\$w4}. Reading \texttt{ffff} as a separate audio sample would
+mistake the sign-extension half for another tap.
+
+Continue to \texttt{fir\_pairs}. View \texttt{\$w7} and \texttt{\$w8} as
+64-bit integer lanes. Each contains hexadecimal \texttt{0000000080000000},
+decimal 2147483648. Each lane is a pair sum of two positive products; it is not
+a negative word. At \texttt{fir\_combined}, both lanes of \texttt{\$w7} are
+\texttt{0000000100000000}, decimal 4294967296. The final scalar reduction at
+\texttt{fir\_round} has \texttt{\$t0}=8589934592.
+
+\input{revision/figures/fir/widening}
+
+Step over the bias and arithmetic shift. At \texttt{fir\_quantized},
+\texttt{\$t0}=262144, still wider than a signed halfword. At function return,
+the output is 32767 and the clipping count is one. The stored sample cannot
+show how large the exact numerator was; retain the intermediate observations
+when explaining why the accumulator width is necessary.
+
+In a diagnostic copy, compute a \texttt{dotp\_s.w} on the original halfwords
+and inspect its word lanes for the same input. Explain the negative signed
+interpretation before attempting a wider copy. Restore the complete correct
+program before using the ordinary behavioral checks. A new algorithm may use
+other registers; the named intermediate stops describe this worked schedule.
+
+\section{Separate rounding from clipping}
+
+Set count one and use these two input/coefficient arrays:
+\begin{verbatim}
+input: -32768,3,0,0,0,0,0,0
+coeff: 32767,-16384,0,0,0,0,0,0
+\end{verbatim}
+Their numerator is $-1073758208$, representing $-32768.5$ before rounding.
+At \texttt{fir\_quantized}, predict the rounded integer in \texttt{\$t0}.
+Then predict the stored bytes and clipping count. The rounded value is $-32768$, bytes \texttt{00 80}, with no clip.
+Now change the second input from three to four. The numerator becomes
+$-1073774592$, representing $-32769$. Its rounded value remains $-32769$;
+the clamp stores the same \texttt{00 80} but increments the count.
+
+For a positive half-boundary comparison, use these arrays:
+\begin{verbatim}
+input: 32767,1,1,0,0,0,0,0
+coeff: 32767,32767,16384,0,0,0,0,0
+\end{verbatim}
+The exact numerator is 1073725440,
+representing 32767.5. It rounds to 32768, then clips. Explain why the positive
+and negative half cases have different clipping outcomes under ties toward
+positive infinity.
+
+Finally use eight input ones and eight coefficient codes 16384. At
+\texttt{fir\_round}, the sum is 131072. The output must be four, not eight.
+A per-product rounded implementation would add eight ones. To diagnose a
+mismatch, distinguish a wrong exact numerator from a wrong conversion of a
+correct numerator. An omitted bias, logical shift or premature word addition
+fails at a different boundary.
+
+\section{Keep history when dividing work into calls}
+
+Write the input slice and output slice for a sixteen-output call split after
+five outputs. The second input base is ten bytes after the original base; its
+first seven samples are the history for its first new sample. Its first three
+impulse-response outputs are still 2000. Advancing to the next new sample
+without including its predecessors would change the problem.
+
+\Needspace{15\baselineskip}
+Run the existing public kernel, caller and split checks with the complete source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/021-fixed-point-fir/checks/kernel.kts \
+  revision/labs/files/fir-filter.asm
+java -jar /path/to/cli.jar grade \
+  packages/021-fixed-point-fir/checks/program.kts \
+  revision/labs/files/fir-filter.asm
+java -jar /path/to/cli.jar grade \
+  packages/021-fixed-point-fir/checks/splits.kts \
+  revision/labs/files/fir-filter.asm
+\end{verbatim}
+The split suite compares a whole result with two calls at every cut, including
+empty first and final calls. Check counts zero and one separately: zero reads no
+caller data, while one still has a full eight-sample window. For every positive
+count, the last load must stop at the last selected sample, not at the arena's
+padding limit.
+
+The optional original package includes deterministic listening comparisons.
+Its high component repeats $0,12000,0,-12000$, whose eight-sample sum is zero;
+the averaging filter therefore removes that particular component. The filtered
+low component also changes shape and timing. These examples do not establish
+that averaging preserves every desired signal or removes every unwanted one.
+The arithmetic and arrays remain usable without playback.
+
+\section{Implement a decimating filter independently}
+
+Complete \texttt{decimate\_q15} in \texttt{fir-decimate.asm}, retaining its caller
+and arenas. Arguments are full input, coefficient and output pointers in
+\texttt{\$a0/\$a1/\$a2} and output count zero through 32 in \texttt{\$a3}.
+For output $i$, compute the exact eight-product sum beginning at input sample
+$2i$. Apply the worked filter's single nearest conversion with half ties toward
+positive infinity, saturate once, and return original count and strict clips in
+\texttt{\$v0/\$v1}.
+
+For positive count $n$, input has $2n+6$ samples: seven history and $2n-1$ new.
+For zero, seven declared history samples remain unread. Coefficients have eight
+signed halfwords, output has $n$. All slices are disjoint at arbitrary byte
+alignment. Preserve all other caller bytes, saved registers, frame pointer and
+stack pointer, return through the supplied continuation and perform no console
+I/O. Private constants and private stack storage are allowed. The 192-byte
+arenas are capacities, not permission to read or write outside selected slices.
+
+Derive the last window as $2n-2$ through $2n+5$, then convert those indices to
+byte bounds. Derive the input advance for a split after $m$ outputs; the second
+nonempty call must begin at original sample $2m$, with its history included.
+State which full-filter output indices you retain. Filtering every other input
+sample instead would create a different window and need not agree.
+
+The default eight-output impulse caller expects four 2000s then four zeros.
+Use an asymmetric coefficient set, negative half ties and extreme pair sums as
+additional evidence. Establish a scalar baseline, then explain your vector lane
+arrangement and access bounds if vectorization is assigned.
+\Needspace{6\baselineskip}
+Run the public suite:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/fir-decimate.kts \
+  /path/to/your/fir-decimate.asm
+\end{verbatim}
+Keep a window-index derivation, one wide-sum observation and one split-call
+comparison with your implementation. Behavioral checks accept equivalent
+solutions; they do not establish which instruction strategy you used or a speedup.
+Compare equal numerical contracts and complete function intervals before making
+any performance claim.
