@@ -38,6 +38,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.WindowManager
@@ -58,6 +59,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import javax.swing.AbstractButton
 import javax.swing.JComponent
+import javax.swing.JCheckBox
+import javax.swing.JSpinner
 import javax.swing.JDialog
 import javax.swing.JLabel
 import javax.swing.JTree
@@ -87,6 +90,7 @@ internal data class BookLessonCapturePlan(
     val captureRepair: Boolean = false,
     val captureIndependent: Boolean = false,
     val captureHints: Boolean = false,
+    val capturePolicy: Boolean = false,
     val resumeIndependent: Boolean = false,
     val expectIndependentRecheck: Boolean = false,
     val independentSourceSha256: String = "",
@@ -100,11 +104,14 @@ internal data class BookLessonCapturePlan(
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
         require(!expectIndependentRecheck || resumeIndependent)
+        if (capturePolicy) {
+            require(captureIndependent && captureHints && !resumeIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
+        }
         if (resumeIndependent) {
             require(captureIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
             require(independentSourceSha256.matches(Regex("[a-f0-9]{64}")))
         }
-        if (captureIndependent && !resumeIndependent) {
+        if (captureIndependent && !resumeIndependent && !capturePolicy) {
             require(Path.of(independentSolutionPath).isAbsolute)
             require(independentSolutionSha256.matches(Regex("[a-f0-9]{64}")))
         }
@@ -130,7 +137,11 @@ class BookLessonCaptureActivity : ProjectActivity {
                     ToolWindowManager.getInstance(project).invokeLater { toolWindowsReady.complete(Unit) }
                 }
                 toolWindowsReady.await()
-                if (plan.resumeIndependent) captureResume(project, plan, output) else capture(project, plan, output)
+                when {
+                    plan.capturePolicy -> capturePolicy(project, plan, output)
+                    plan.resumeIndependent -> captureResume(project, plan, output)
+                    else -> capture(project, plan, output)
+                }
             }
             if (plan.closeProjectAfterCapture) closeProject(project, output)
         } catch (error: Exception) {
@@ -214,6 +225,111 @@ class BookLessonCaptureActivity : ProjectActivity {
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
         }
+    }
+
+    /** Uses only native settings, lesson actions and rendered dialogs; never injects policy/progress state. */
+    private suspend fun capturePolicy(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        setPolicy(project, output, "policy-restricted", released = 0)
+        val source = Path.of(plan.projectRoot).resolve("mars-labs/console/independent.asm")
+        val passes = AtomicInteger()
+        val listener = object : LessonListener {
+            override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet() }
+        }
+        val independent = withContext(Dispatchers.EDT) {
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.independent" }.also {
+                it.addLessonListener(listener)
+                CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+        }
+        try {
+            val required = "Your course requires both prediction quizzes"
+            awaitUi { WindowManager.getInstance().getFrame(project)?.let { lessonVisibleText(it.rootPane).contains(required) } == true }
+            delay(600)
+            check(passes.get() == 0)
+            captureFrame(project, output, "policy-prerequisite-required", required)
+            withContext(Dispatchers.EDT) {
+                val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
+                val data = DataManager.getInstance().getDataContext(learn.component)
+                for (id in listOf("Mars.Learning.CheckIndependent", "Mars.Learning.IndependentHint")) {
+                    val action = checkNotNull(ActionManager.getInstance().getAction(id))
+                    val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
+                    action.update(event)
+                    check(!event.presentation.isEnabled) { "Blocked lesson exposed $id" }
+                }
+                val predictions = CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.predictions" }
+                CourseManager.instance.openLesson(project, predictions, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+            val worked = source.resolveSibling("first-program.asm")
+            awaitFrame(project, "With 20 in", worked)
+            check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(worked)) } == plan.sourceSha256)
+            answer(project, output, "policy-doubling", "Mars.Learning.PredictDoubling",
+                "\$t0 is 20; reading \$v0 twice consumes the input.",
+                "Reading a register does not consume its value.", "\$t0 is 40; \$v0 is still 20.")
+            awaitFrame(project, "Now consider input -3", worked)
+            answer(project, output, "policy-negative", "Mars.Learning.PredictNegative", "7",
+                "The u does not turn -3 into a positive magnitude.", "-5")
+            awaitFrame(project, "The destination tells you where to look", worked)
+            withContext(Dispatchers.EDT) {
+                CourseManager.instance.openLesson(project, independent, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+            awaitFrame(project, "implement 3x+1", source)
+            val before = withContext(Dispatchers.IO) { Files.readAllBytes(source) }
+            captureHints(project, output, "policy-hints-zero", existing = 0, revealTo = 0, released = 0)
+            setPolicy(project, output, "policy-release-two", released = 2)
+            captureHints(project, output, "policy-hints-two", existing = 0, revealTo = 2, released = 2)
+            setPolicy(project, output, "policy-release-zero-again", released = 0)
+            captureHints(project, output, "policy-hints-retained", existing = 2, revealTo = 2, released = 0)
+            setPolicy(project, output, "policy-release-four", released = 4)
+            captureHints(project, output, "policy-hints-four", existing = 2, revealTo = 4)
+            check(passes.get() == 0)
+            checkIndependent(project, output, "policy-starter-feedback", passed = false)
+            check(passes.get() == 0)
+            withContext(Dispatchers.IO) {
+                check(Files.readAllBytes(source).contentEquals(before))
+                Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "platformBuild" to ApplicationInfo.getInstance().build.asString(),
+                    "nativeSettingsApplied" to true, "prerequisiteBlockedIndependent" to true,
+                    "nativePredictionAnswersUnlockedIndependent" to true,
+                    "hintReleaseObserved" to listOf(0, 2, 0, 4), "revealedHintsRetainedAfterRestriction" to true,
+                    "independentPassesObserved" to passes.get(), "starterRejectedByFiveCases" to true,
+                    "sourceUnchangedByPolicyAndHints" to true, "independentSourceSha256" to captureSha256(before),
+                    "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                    "scope" to "Native project policy settings and first-unit prediction prerequisite; other progression policies and mode controls remain open",
+                )), CREATE_NEW)
+            }
+        } finally {
+            withContext(NonCancellable + Dispatchers.EDT) { independent.removeLessonListener(listener) }
+        }
+    }
+
+    private suspend fun setPolicy(project: Project, output: Path, prefix: String, released: Int) {
+        val failure = AtomicReference<Throwable>()
+        withContext(Dispatchers.EDT) {
+            ApplicationManager.getApplication().invokeLater({
+                try { ShowSettingsUtil.getInstance().showSettingsDialog(project, "MARS Learning") }
+                catch (error: Throwable) { failure.set(error) }
+            }, ModalityState.nonModal())
+        }
+        val label = "Require both prediction quizzes before independent work"
+        var settings: JDialog? = null
+        while (settings == null) {
+            failure.get()?.let { throw it }
+            settings = onModalUi {
+                Window.getWindows().filterIsInstance<JDialog>().singleOrNull { it.isShowing && lessonVisibleText(it.rootPane).contains(label) }
+            }
+            if (settings == null) delay(100)
+        }
+        val dialog = settings
+        onModalUi {
+            val widgets = captureComponents(dialog.rootPane)
+            widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value = released
+            widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected = true
+        }
+        captureComponent(dialog.rootPane, output, prefix, label)
+        onModalUi { visibleLessonButton(dialog.rootPane, "OK").doClick() }
+        awaitUi { !dialog.isShowing }
+        failure.get()?.let { throw it }
     }
 
     /** Only the dedicated authoring fixture opts into closing; the native API saves before disposal. */
@@ -387,7 +503,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun captureHints(project: Project, output: Path, prefix: String, existing: Int, revealTo: Int) {
+    private suspend fun captureHints(project: Project, output: Path, prefix: String, existing: Int, revealTo: Int, released: Int = 4) {
         val titles = listOf("Plan the value flow", "Keep the original input available", "Combine the values deliberately", "Trace one possible calculation")
         val failure = AtomicReference<Throwable>()
         withContext(Dispatchers.EDT) {
@@ -410,13 +526,14 @@ class BookLessonCaptureActivity : ProjectActivity {
             }
         }
         assertRevealed(existing)
+        check(onModalUi { lessonVisibleText(dialog.rootPane).contains("releases $released of 4") })
         captureComponent(dialog.rootPane, output, "$prefix-open", "Reveal as much help as you need")
         for (index in existing until revealTo) {
             onModalUi { visibleLessonButton(dialog.rootPane, "Reveal next hint").doClick() }
             assertRevealed(index + 1)
             captureComponent(dialog.rootPane, output, "$prefix-${index + 1}", titles[index])
         }
-        if (revealTo == 4) check(onModalUi { !visibleLessonButton(dialog.rootPane, "Reveal next hint").isEnabled })
+        if (revealTo >= released) check(onModalUi { !visibleLessonButton(dialog.rootPane, "Reveal next hint").isEnabled })
         onModalUi { visibleLessonButton(dialog.rootPane, "Return to editor").doClick() }
         awaitUi { !dialog.isShowing }
     }

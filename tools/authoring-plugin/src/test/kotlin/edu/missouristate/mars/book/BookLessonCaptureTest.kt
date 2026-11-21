@@ -60,6 +60,19 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `policy captures use native settings without a solution or resume injection`() {
+        assertFalse(valid.capturePolicy)
+        assertThrows<IllegalArgumentException> { valid.copy(capturePolicy = true).validate() }
+        val policy = valid.copy(capturePolicy = true, captureIndependent = true, captureHints = true)
+        policy.validate()
+        for (invalid in listOf(policy.copy(captureHints = false), policy.copy(resumeIndependent = true),
+            policy.copy(captureRun = true), policy.copy(captureDebug = true), policy.copy(captureOutput = true),
+            policy.copy(captureDiagnosis = true), policy.copy(captureRepair = true))) {
+            assertThrows<IllegalArgumentException> { invalid.validate() }
+        }
+    }
+
+    @Test
     fun `selectors reject hidden and ambiguous UI controls`() {
         val root = JPanel()
         root.add(JButton("Check prediction"))
