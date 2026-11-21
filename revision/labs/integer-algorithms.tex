@@ -1,0 +1,131 @@
+\chapter{Tracing an integer rasterizer}
+\MARSChapterHeading{Tracing an integer rasterizer}
+\label{revision-lab:integer-algorithms}
+
+Use \texttt{integer-line.asm} from \texttt{revision/labs/files}. Read the main
+chapter's cell-selection rule before running it. These activities use ordinary
+MARS Run and Debug; the seventh revised unit is not yet a native interactive
+lesson. The separate \texttt{dashed-line.asm} file is your independent work area.
+
+Your evidence should connect the selected cells, the integer state and the actual
+stores. A finished line can look plausible even when a tie is inconsistent or an
+unrelated framebuffer word has been cleared. Test those behaviors separately.
+
+\section{Predict cells and addresses}
+
+Without consulting the worked trace, list the cells from $(1,1)$ to $(6,4)$.
+Include both endpoints. Calculate the address of each selected cell using
+$frame+4(8y+x)$. Explain why the count is six even though the horizontal difference
+is five. This framebuffer has eight columns; do not reuse the paired sprite
+chapter's sixteen-column stride.
+
+Next predict $(0,0)$ to $(2,1)$. At the middle column, the continuous height is
+exactly halfway between two rows. State which cell the chapter's convention
+selects. Reverse the supplied endpoints and predict again. Endpoint ordering
+must resolve the same geometric question in the same direction.
+
+Choose a steep falling line, such as $(1,6)$ to $(3,0)$. State its positive
+horizontal difference, negative stored vertical difference and vertical direction.
+The display's downward-increasing $y$ does not change the meaning of a negative
+integer step. It changes which way that step appears on the screen.
+
+\section{Separate the snapshot from the accumulator}
+
+Debug the default program with MIPS64 Release 6 and the Default layout. Break at
+\texttt{line\_pixel}. At its first visit, identify the current point in
+\texttt{\$t0}/\texttt{\$t1}, the target in \texttt{\$t2}/\texttt{\$t3}, the two
+differences in \texttt{\$t4}/\texttt{\$t5}, the vertical direction in
+\texttt{\$t6} and the error in \texttt{\$t7}. These values describe the cell about
+to be painted, not a cell already written by this iteration.
+
+Continue to \texttt{line\_decide}. The store and count increment have now executed,
+but the doubled-error instruction has not. Step over it, record the snapshot in
+\texttt{\$t8}, and predict both branches before advancing either coordinate.
+After an update, verify the invariant using the new cursor and the new error.
+
+The second visit to \texttt{line\_decide} is especially useful. At $(2,2)$, record
+$e=4$ and then $e_2=8$. Step through the horizontal update: the error becomes one.
+Explain why the pending vertical comparison must still read eight. Record the
+next cell and its address before continuing. Compare your observations with the
+main chapter's trace only after completing your prediction.
+
+At \texttt{line\_return}, inspect the count in \texttt{\$v0} and the return link.
+After returning to \texttt{line\_complete}, step over the count store. The label-addressed store is a pseudoinstruction and may require more than one
+instruction step. Check \texttt{line\_count} before and after the exit-selector load. A later
+\texttt{\$v0=10} does not mean that the function returned ten; it means the caller
+has reused the register for another purpose.
+
+\section{Make a fault explain itself}
+
+In a copy, recompute \texttt{\$t8} from the current error immediately before the
+vertical comparison at \texttt{skip\_x}. Predict the first cell that will differ
+from the original. Then pause on the second iteration and find the instruction
+that changes the decision's input. The intended error update is correct; using
+that new error for an old-state decision is the fault. Repair the copy and rerun
+the same counterexample.
+
+For a different fault, make a taken horizontal update jump directly to
+\texttt{line\_next}. This turns the two independent decisions into alternatives.
+Use the first default transition to explain why the line now loses a required
+vertical step. A diagonal movement needs both updates, not a new combined pixel
+address formula.
+
+Finally, move endpoint termination before the store. A one-point input is a short
+counterexample: it still requires one painted cell and a count of one. Check the
+actual store boundary rather than accepting a normal process exit as evidence
+that the point was drawn.
+
+\section{Distinguish geometry from preservation}
+
+Test horizontal, vertical, diagonal, steep, falling and point cases. Reverse each
+pair and compare all framebuffer words. A line in a different slope category
+should use the same function, not a manually edited branch direction.
+
+Prefill the frame with recognizable nonzero words before drawing. In Debug, stop
+before \texttt{balc draw\_line}, edit a few words outside your predicted line, then
+continue. They must retain their complete word values. Include a value with a
+nonzero high byte: the display's visible RGB channels alone cannot demonstrate
+preservation of every bit. The public checks automate a wider version of this
+experiment with a distinct value at every cell.
+
+Also check the endpoint record, color and guards. The function's ordering is a
+change to its working registers; input memory should retain the caller's original
+endpoint order. Passing the final-image checks does not justify writing beyond
+the frame and later restoring a guard. The worked-program qualification therefore
+observes relevant stores as well as final values.
+
+\section{Add a dash pattern independently}
+
+Implement \texttt{draw\_dashed} in the separate \texttt{dashed-line.asm} starter,
+replacing its failing \texttt{break}. It has the same three inputs as
+\texttt{draw\_line}: endpoint-record address in \texttt{\$a0}, frame base in
+\texttt{\$a1} and color in \texttt{\$a2}. All four coordinates lie from zero through
+seven; the frame has 64 words. Apply the same canonical endpoint and halfway rules.
+
+Visit that raster in canonical order. Paint visit zero, preserve visit one, paint
+visit two, and continue alternating. Preserve every skipped cell's original word,
+every cell outside the line, the endpoint/color inputs, all guards, saved registers,
+stack pointer and caller-owned stack bytes. Return the number actually painted in
+\texttt{\$v0}, produce no console output and return to the supplied continuation.
+The caller stores the count and exits. You may use a different correct raster
+algorithm; no particular temporary registers, private labels or stack layout are
+required.
+
+Before coding, distinguish three quantities: a coordinate, the number of visited
+cells and the number of stores performed. Explain what each does on a skipped
+cell. Using $x$ parity for the pattern fails on a vertical line. Incrementing the
+result count on every visit returns the solid-line count instead of the number
+painted. Neither mistake requires changing the geometric recurrence to repair it.
+
+Use these public formative checks with JDK 25:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/dashed-line.kts \
+  /path/to/your/dashed-line.asm
+\end{verbatim}
+They vary the color, endpoint order and existing frame, including a black line on
+nonzero pixels. They check the returned count, complete final words, protected
+input stores and preserved function state. A correct result is accepted without
+matching the worked source. Keep your predicted default dashed cells and a vertical
+counterexample beside the report; a passing report alone does not explain why the
+pattern follows visits rather than coordinates.

@@ -1,0 +1,321 @@
+\chapter{Integer algorithms}
+\MARSChapterHeading{Integer algorithms}
+\label{revision:integer-algorithms}
+
+A line between two pixels rarely passes through the centers of all the pixels
+between them. Drawing it therefore requires a decision: which nearby cells should
+represent the continuous line? The decision must work for a steep line, a falling
+line and a line consisting of one point. It should also give the same image when
+the caller exchanges the two endpoints.
+
+We will draw on an eight-by-eight word framebuffer. This is smaller than the
+previous chapter's paired sprite display: a row now occupies 32 bytes, and the
+whole frame occupies 256 bytes. Existing pixels outside the selected line must
+survive. The result is an overlay, not a cleared image followed by a drawing.
+
+You already know how to calculate a pixel address, use signed comparisons and
+write a leaf function. This chapter adds an integer decision state. You should be
+able to explain its update rule, distinguish a saved decision from the state it
+changes, account for endpoint and tie cases, and adapt the raster to a related
+operation without changing its geometry.
+
+\section{Specify the cells before writing the loop}
+
+Let the first endpoint be $(1,1)$ and the second $(6,4)$. Coordinates use the screen
+convention: $x$ increases to the right and $y$ increases downward. Five horizontal
+steps cover three vertical steps. At $x=2$, the continuous line has height $1.6$,
+so row two is nearer than row one. At $x=3$, its height is $2.2$, so row two remains
+nearer. Continuing gives the six cells in Figure~\ref{fig:revision-line-raster}.
+Both endpoints are included; five horizontal steps visit six columns.
+
+\input{revision/figures/lines/raster}
+
+At an exact halfway position, two rows are equally near. We need a convention to
+make the result reproducible. Order the endpoints by increasing $x$, breaking an
+equal-$x$ tie by increasing $y$. Call the resulting endpoints $A$ and $B$. At a
+halfway choice, take the minor-coordinate step toward $B$. Thus $(0,0)$ to $(2,1)$
+selects $(1,1)$ between its endpoints. This ordering makes the halfway choice independent of the supplied direction.
+
+For a shallow line, write $d_x=B_x-A_x$ and $D=|B_y-A_y|$, with $d_x\geq D$.
+At horizontal displacement $i$, the ideal vertical displacement has magnitude
+$iD/d_x$. Rounding to the nearest integer, with halfway values advancing, gives
+\[
+ j=\left\lfloor\frac{2iD+d_x}{2d_x}\right\rfloor.
+\]
+Here $\lfloor q\rfloor$ means the greatest integer no larger than $q$. For a steep
+line, exchange the roles of the major and minor displacements. These formulas
+specify the selected cells. They also provide a way to test the result independently
+of the incremental algorithm we will implement. Handle a point separately so that
+no formula divides by zero.
+
+\section{Carry the rounding decision forward}
+
+Calculating a fraction for every cell would repeat work. The numerator changes
+by a fixed amount each time the cursor advances. An integer accumulator can retain
+that change between iterations. This is the central idea of Bresenham line drawing,
+originally developed for digital plotters.\footnote{J. E. Bresenham, ``Algorithm for
+computer control of a digital plotter,'' \emph{IBM Systems Journal} 4(1), 1965,
+pp.~25--30. \url{https://doi.org/10.1147/sj.41.0025}. The implementation here uses
+an all-slope recurrence and an explicit endpoint/tie contract.}
+
+Use $d_y=-D$, so $d_y\leq0$, and let $s_y$ be $+1$ when $B_y\geq A_y$, otherwise
+$-1$. The horizontal direction is always positive after ordering; a vertical line
+will simply take no horizontal step. Initialize the accumulator to
+$e=d_x+d_y$. At the currently selected cell, save $e_2=2e$. Then make two separate
+decisions:
+\[
+\begin{aligned}
+ e_2\geq d_y &: \quad e\gets e+d_y,\qquad x\gets x+1,\\
+ e_2\leq d_x &: \quad e\gets e+d_x,\qquad y\gets y+s_y.
+\end{aligned}
+\]
+Either coordinate can advance, and both can advance in the same iteration. Paint
+the current cell and test endpoint equality before applying those updates.
+
+To see where the second comparison comes from, consider the shallow case. After
+$i$ horizontal and $j$ vertical steps, define $E=iD-jd_x$. The next ideal height
+requires a vertical step when $(i+1)D$ reaches the midpoint $(j+\tfrac12)d_x$.
+Multiplying that comparison by two gives $2E+2D\geq d_x$. Our accumulator satisfies
+$e=d_x-D-E$; substituting it gives $2e\leq d_x$, exactly the vertical decision.
+The corresponding major/minor exchange gives the horizontal decision for steep
+lines. The common two-test loop covers both orientations.
+
+The word ``error'' names this decision state; it is not a distance measured in
+pixels. Its useful invariant is
+\[
+ e=d_x-D-iD+jd_x,
+ \qquad i=x-A_x,\quad j=s_y(y-A_y).
+\]
+A horizontal step subtracts $D$ from this expression, and a vertical step adds
+$d_x$. The updates therefore keep it consistent with the coordinates. Replacing a
+coordinate update without its corresponding accumulator update breaks that relation.
+
+\section{Trace one saved decision through two updates}
+
+For the default line, $d_x=5$, $d_y=-3$ and $s_y=1$, so the initial error is two.
+Table~\ref{tab:revision-line-state} records state before each cell is painted.
+The final cell is painted and then returned from; its listed error does not cause
+another decision.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{rrrrll}
+\toprule
+$x$ & $y$ & $e$ & $2e$ & Coordinate steps & Next error\\
+\midrule
+1 & 1 & 2 & 4 & $x$ and $y$ & 4\\
+2 & 2 & 4 & 8 & $x$ only & 1\\
+3 & 2 & 1 & 2 & $x$ and $y$ & 3\\
+4 & 3 & 3 & 6 & $x$ only & 0\\
+5 & 3 & 0 & 0 & $x$ and $y$ & 2\\
+6 & 4 & 2 & --- & return & ---\\
+\bottomrule
+\end{tabular}
+\caption{A decision is frozen before either coordinate changes. The first update adds $-3$ to the error; a vertical update then adds $5$.}
+\label{tab:revision-line-state}
+\end{table}
+
+The second row exposes a common mistake. Its saved doubled error is eight. The
+horizontal update changes $e$ from four to one. If the vertical test recomputes
+$2e$ at that point, it sees two instead of eight and incorrectly advances $y$.
+The result would next paint $(3,3)$ rather than $(3,2)$. Saving the doubled error
+is part of the algorithm, not a temporary-register convenience.
+
+An \texttt{if}/\texttt{else} translation is also wrong: the first row requires both
+updates. Think of the cursor as one state transition with two decisions derived
+from the old state. An assembly program must preserve that relationship explicitly.
+
+\section{Give the rasterizer a bounded interface}
+
+The function \texttt{draw\_line} receives the address of four words in \texttt{\$a0}:
+$x_0$, $y_0$, $x_1$, $y_1$, in that order. Each coordinate must be from zero through
+seven. \texttt{\$a1} is the base address of 64 valid framebuffer words, and
+\texttt{\$a2} contains the color, from zero through \texttt{0x00ffffff}. The function
+returns the number of painted cells in \texttt{\$v0}. It preserves the input words,
+unselected framebuffer words, saved registers and stack pointer. It may change
+argument and temporary registers and \texttt{\$v1}.
+
+Passing a pointer to the endpoint record keeps the four related coordinates
+together without needing four separate argument registers in addition to the
+frame and color. The function loads the record, then orders its working registers;
+it never swaps the caller's memory. A source record and a mutable cursor are
+different objects even when their values initially agree.
+
+The complete program is \texttt{integer-line.asm} in \texttt{revision/labs/files}.
+Its data and caller are below. Append the function listings that follow, in their
+printed order. The caller saves the returned count before selecting the exit
+service, since that service selector also uses \texttt{\$v0}.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Supply a small frame and retain the result}
+\begin{minted}{mars-idea}
+# mars:tool bitmap width=64 height=64 unitWidth=8 unitHeight=8 base=static_data
+.data
+.align 2
+frame:           .space 256
+frame_guard:     .word 0x13579bdf
+endpoints:       .word 1, 1, 6, 4
+endpoints_guard: .word 0x2468ace0
+color:           .word 0x00ffffff
+color_guard:     .word 0x10203040
+line_count:      .word 0
+count_guard:     .word 0x31415926
+.text
+.globl main
+main:
+    dli $t0, -16
+    and $sp, $sp, $t0
+    la $a0, endpoints
+    la $a1, frame
+    lw $a2, color
+    balc draw_line
+line_complete:
+    sw $v0, line_count
+    li $v0, 10
+    syscall
+\end{minted}
+\end{minipage}
+
+\section{Translate the state without changing its meaning}
+
+First load and order the endpoints. If the second $x$ is smaller, exchange both
+coordinate pairs. If the $x$ values agree, use $y$ to decide the order. The two
+swaps must keep each $x$ paired with its original $y$. \texttt{slt} writes one when
+its first source is signed-less-than its second source, otherwise zero; the
+following compact branch consumes that result. The \texttt{nop} instructions keep
+the conditional branches' following instructions safe on fall-through paths, as
+in Chapter~\ref{revision:decisions-and-repetition}.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Order registers while preserving the endpoint record}
+\begin{minted}{mars-idea}
+draw_line:
+    lw $t0, 0($a0)
+    lw $t1, 4($a0)
+    lw $t2, 8($a0)
+    lw $t3, 12($a0)
+    slt $t9, $t2, $t0
+    bnezc $t9, swap_endpoints
+    nop
+    bnec $t0, $t2, ordered
+    nop
+    slt $t9, $t3, $t1
+    beqzc $t9, ordered
+    nop
+swap_endpoints:
+    move $v1, $t0
+    move $t0, $t2
+    move $t2, $v1
+    move $v1, $t1
+    move $t1, $t3
+    move $t3, $v1
+\end{minted}
+\end{minipage}
+
+After ordering, \texttt{\$t0}, \texttt{\$t1} hold the cursor and \texttt{\$t2},
+\texttt{\$t3} the target. The next block puts $d_x$ in \texttt{\$t4}, nonpositive
+$d_y$ in \texttt{\$t5}, $s_y$ in \texttt{\$t6} and the error in \texttt{\$t7}.
+A falling line already has a negative raw vertical delta, so that path retains it
+and changes the direction to $-1$. A nonnegative delta is negated. For a horizontal
+line the direction is $+1$, but the decision rule never takes a vertical step.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Initialize signed differences and the accumulator}
+\begin{minted}{mars-idea}
+ordered:
+    subu $t4, $t2, $t0
+    li $t6, 1
+    subu $t5, $t3, $t1
+    bgezc $t5, positive_delta
+    nop
+    li $t6, -1
+    bc differences_ready
+positive_delta:
+    subu $t5, $zero, $t5
+differences_ready:
+    addu $t7, $t4, $t5
+    move $v0, $zero
+\end{minted}
+\end{minipage}
+
+The final block paints one cell at address $frame+4(8y+x)$. The first shift
+multiplies $y$ by eight; the second multiplies the word index by four. The address
+addition uses \texttt{daddu} to retain the full pointer width. Coordinate and error
+arithmetic uses word instructions: every admitted value is small enough to be
+represented exactly. For example, the invariant gives the conservative bound
+$|e|\leq56$ for $0\leq i,j,d_x,D\leq7$, so doubling it cannot overflow a signed word.
+This bound depends on the stated domain; it is not a license to accept arbitrary
+32-bit endpoint differences.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Paint, stop at the endpoint, then update from one snapshot}
+\begin{minted}{mars-idea}
+line_pixel:
+    sll $v1, $t1, 3
+    addu $v1, $v1, $t0
+    dsll $v1, $v1, 2
+    daddu $v1, $a1, $v1
+    sw $a2, 0($v1)
+    addiu $v0, $v0, 1
+    bnec $t0, $t2, line_decide
+    nop
+    beqc $t1, $t3, line_return
+    nop
+line_decide:
+    sll $t8, $t7, 1
+    bltc $t8, $t5, skip_x
+    nop
+    addu $t7, $t7, $t5
+    addiu $t0, $t0, 1
+skip_x:
+    bltc $t4, $t8, line_next
+    nop
+    addu $t7, $t7, $t4
+    addu $t1, $t1, $t6
+line_next:
+    bc line_pixel
+line_return:
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+\texttt{bltc} compares signed register values and branches immediately when the
+first is less than the second. The first test skips the horizontal update when
+$e_2<d_y$. The second skips the vertical update when $d_x<e_2$. Both read
+\texttt{\$t8}, which is written once per decision. The unconditional compact
+\texttt{bc} returns to the next pixel calculation without a delay slot.
+
+This routine is a leaf: it makes no further call, changes no saved register and
+needs no stack frame. At \texttt{line\_return}, \texttt{\$ra} still holds its
+caller's continuation. For the default input, \texttt{\$v0} is six. The finished
+program leaves six in \texttt{line\_count}, exits normally and prints nothing.
+
+\section{Check boundaries and adapt the operation}
+
+Run the complete program with MIPS64 Release 6 and the Default layout. Open its
+configured Bitmap Display. In Debug, pause at \texttt{line\_decide} on the second
+visit: the current cell is $(2,2)$ and the current error is four. Step over the
+snapshot and horizontal update, then verify that \texttt{\$t8} remains eight even
+though \texttt{\$t7} becomes one. The pending vertical test must use eight.
+
+Test a horizontal line, a vertical line, a steep falling line and coincident
+endpoints. A point must paint once and return before any coordinate update. A
+non-point line visits $\max(d_x,D)+1$ cells, at most eight in this domain. Its
+monotone coordinate changes and nearest-cell decisions keep those cells inside
+the endpoint bounding box, hence inside the framebuffer. At least one coordinate
+advances per nonfinal iteration: failing both tests would require simultaneously
+$e_2<d_y\leq0$ and $e_2>d_x\geq0$.
+
+A halfway test checks a different issue from an endpoint test. Use $(0,0)$ to
+$(2,1)$ and then reverse the inputs. Both images should contain $(1,1)$. Prefill
+unselected cells with distinct nonzero words as well; a program that clears the
+frame before drawing violates the overlay contract even if its white line looks
+correct on an initially black display. Check the input record and guards, not just
+the picture.
+
+For independent work, draw alternating cells of the same canonical raster: paint
+cell zero, preserve cell one, paint cell two, and continue. The sequence index
+counts visits along the line, not the value of $x$, so vertical and steep lines
+must work too. Return the number actually painted. The lab supplies a failing
+starter and public checks. Keep the geometric decision state unchanged while
+adding the state that controls whether a visited cell is stored.
