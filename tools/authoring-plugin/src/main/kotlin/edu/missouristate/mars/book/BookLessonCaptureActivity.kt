@@ -93,6 +93,7 @@ internal data class BookLessonCapturePlan(
     val captureHints: Boolean = false,
     val capturePolicy: Boolean = false,
     val captureModes: Boolean = false,
+    val resumeModes: Boolean = false,
     val resumeIndependent: Boolean = false,
     val expectIndependentRecheck: Boolean = false,
     val independentSourceSha256: String = "",
@@ -106,6 +107,9 @@ internal data class BookLessonCapturePlan(
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
         require(!expectIndependentRecheck || resumeIndependent)
+        if (resumeModes) {
+            require(captureModes && independentSourceSha256.matches(Regex("[a-f0-9]{64}")))
+        }
         if (captureModes) {
             require(captureIndependent && captureHints && !capturePolicy && !resumeIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
         }
@@ -143,6 +147,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 toolWindowsReady.await()
                 when {
+                    plan.resumeModes -> captureModesResume(project, plan, output)
                     plan.captureModes -> captureModes(project, plan, output)
                     plan.capturePolicy -> capturePolicy(project, plan, output)
                     plan.resumeIndependent -> captureResume(project, plan, output)
@@ -263,6 +268,38 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
         awaitUi { !dialog.isShowing }
         failure.get()?.let { throw it }
+    }
+
+    /** A later JVM loads the native workspace; this path never writes source, answers or hints. */
+    private suspend fun captureModesResume(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        val folder = Path.of(plan.projectRoot).resolve("mars-labs/console")
+        val worked = folder.resolve("first-program.asm")
+        val independent = folder.resolve("independent.asm")
+        suspend fun assertSource() = withContext(Dispatchers.IO) {
+            check(captureSha256(Files.readAllBytes(worked)) == plan.sourceSha256)
+            check(captureSha256(Files.readAllBytes(independent)) == plan.independentSourceSha256)
+        }
+        assertSource()
+        chooseMode(project, output, "modes-reopened-choice", "Guided work", "Free writing", "Following a complete Run")
+        val runReady = "Run first-program.asm using the normal MARS Run"
+        awaitFrame(project, runReady, worked)
+        captureFrame(project, output, "modes-reopened-guided", runReady)
+        chooseMode(project, output, "modes-reopened-free", "Free writing", "Guided work", "Following a complete Run")
+        awaitFrame(project, "implement 3x+1", independent)
+        captureHints(project, output, "modes-reopened-history", existing = 1, revealTo = 1)
+        assertSource()
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "platformBuild" to ApplicationInfo.getInstance().build.asString(),
+                "freshProcessModeRestoration" to true, "savedModeObserved" to "FREE_WRITING",
+                "savedGuidedLessonObserved" to "mars.console.run", "hintHistoryObserved" to true,
+                "sourceUnchanged" to true, "workedSha256" to plan.sourceSha256,
+                "independentSha256" to plan.independentSourceSha256,
+                "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                "scope" to "Native workspace restoration in a fresh JVM without source, progress, quiz, policy or hint injection; no execution check is invoked",
+            )), CREATE_NEW)
+        }
     }
 
     /** Explicit mode changes through the production action; comments are the only fixture edits. */

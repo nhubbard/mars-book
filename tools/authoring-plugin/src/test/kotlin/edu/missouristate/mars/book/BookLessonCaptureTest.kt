@@ -86,6 +86,16 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `fresh-process mode restoration requires existing source provenance`() {
+        assertFalse(valid.resumeModes)
+        assertThrows<IllegalArgumentException> { valid.copy(resumeModes = true).validate() }
+        val resume = valid.copy(captureModes = true, captureIndependent = true, captureHints = true, resumeModes = true)
+        assertThrows<IllegalArgumentException> { resume.validate() }
+        resume.copy(independentSourceSha256 = "b".repeat(64)).validate()
+        assertThrows<IllegalArgumentException> { resume.copy(independentSourceSha256 = "bad").validate() }
+    }
+
+    @Test
     fun `selectors reject hidden and ambiguous UI controls`() {
         val root = JPanel()
         root.add(JButton("Check prediction"))
