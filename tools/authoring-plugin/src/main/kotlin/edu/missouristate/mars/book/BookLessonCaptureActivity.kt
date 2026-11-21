@@ -6,6 +6,7 @@ import com.intellij.execution.ExecutionManager
 import com.intellij.execution.RunManager
 import com.intellij.execution.configurations.ConfigurationType
 import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessListener
@@ -25,6 +26,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.asContextElement
+import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
@@ -34,6 +36,12 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.xdebugger.XDebugSession
+import com.intellij.xdebugger.XDebugSessionListener
+import com.intellij.xdebugger.XDebuggerManager
+import com.intellij.xdebugger.breakpoints.XBreakpointType
+import com.intellij.xdebugger.breakpoints.XLineBreakpointType
 import java.awt.Rectangle
 import java.awt.Robot
 import java.awt.Window
@@ -47,7 +55,9 @@ import javax.swing.AbstractButton
 import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JLabel
+import javax.swing.JTree
 import javax.swing.text.JTextComponent
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -66,6 +76,7 @@ internal data class BookLessonCapturePlan(
     val outputDirectory: String = "",
     val sourceSha256: String = "",
     val captureRun: Boolean = false,
+    val captureDebug: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -152,10 +163,12 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
         check(retained) { "Lesson restart replaced student source" }
         if (plan.captureRun) captureRun(project, output, source)
+        if (plan.captureDebug) captureDebug(project, output, source)
         val receipt = mapOf(
-            "scope" to if (plan.captureRun) "Native prediction and Run segments; Debug and independent implementation remain separate work" else "Native prediction segment only",
+            "scope" to if (plan.captureDebug) "Native prediction, Run and Debug observations; diagnostic exercise and independent writing remain incomplete" else if (plan.captureRun) "Native prediction and Run segments; Debug and independent implementation remain separate work" else "Native prediction segment only",
             "nativePredictionPassesObserved" to predictionPasses.get(),
             "nativeRunPassedObserved" to plan.captureRun,
+            "nativeDebugPassedObserved" to plan.captureDebug,
             "platformBuild" to ApplicationInfo.getInstance().build.asString(),
             "sourceSha256" to plan.sourceSha256,
             "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
@@ -232,6 +245,104 @@ class BookLessonCaptureActivity : ProjectActivity {
                 lesson.removeLessonListener(listener)
                 owned?.takeUnless { it.isProcessTerminated }?.destroyProcess()
             }
+        }
+    }
+
+    private suspend fun captureDebug(project: Project, output: Path, source: Path) {
+        val passed = CompletableDeferred<Unit>()
+        val listener = object : LessonListener {
+            override fun lessonPassed(lesson: Lesson) { passed.complete(Unit) }
+        }
+        val lesson = withContext(Dispatchers.EDT) {
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.debug" }.also {
+                it.addLessonListener(listener)
+                CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+        }
+        awaitFrame(project, "Set a breakpoint on addu", source)
+        val file = withContext(Dispatchers.EDT) { checkNotNull(LocalFileSystem.getInstance().findFileByNioFile(source)) }
+        val line = withContext(Dispatchers.IO) { Files.readString(source).lines().indexOfFirst { it.trim().startsWith("addu ") } }
+        check(line >= 0)
+        val type = XBreakpointType.EXTENSION_POINT_NAME.extensionList.filterIsInstance<XLineBreakpointType<*>>()
+            .single { it.id == "MarsMipsLine" }
+        val breakpoint = writeAction { XDebuggerManager.getInstance(project).breakpointManager.addLineBreakpoint(type, file.url, line, null) }
+        val started = CompletableDeferred<XDebugSession>()
+        val pauses = Channel<Int>(Channel.UNLIMITED)
+        val connection = project.messageBus.connect()
+        var owned: XDebugSession? = null
+        val rows = mutableListOf<Map<String, Any>>()
+        try {
+            val name = "Book lesson Debug observation"
+            connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
+                override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                    if (executorId == DefaultDebugExecutor.EXECUTOR_ID && env.runProfile.name == name) {
+                        val session = XDebuggerManager.getInstance(project).debugSessions.single { it.debugProcess.processHandler === handler }
+                        session.addSessionListener(object : XDebugSessionListener {
+                            override fun sessionPaused() {
+                                val position = checkNotNull(session.topFramePosition)
+                                check(position.file.toNioPath() == source)
+                                pauses.trySend(position.line)
+                            }
+                        })
+                        started.complete(session)
+                    }
+                }
+            })
+            withContext(Dispatchers.EDT) {
+                val runType = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
+                val settings = RunManager.getInstance(project).createConfiguration(name, runType.configurationFactories.single())
+                val state = Element("configuration").setAttribute("marsExecutionDefaults", "1")
+                state.addContent(Element("option").setAttribute("name", "sourcePath").setAttribute("value", source.toString()))
+                settings.configuration.readExternal(state)
+                settings.configuration.checkConfiguration()
+                ExecutionEnvironmentBuilder.create(DefaultDebugExecutor.getDebugExecutorInstance(), settings).buildAndExecute()
+            }
+            val session = started.await()
+            owned = session
+            val handler = session.debugProcess.processHandler
+            while (!handler.isStartNotified) delay(50)
+            withContext(Dispatchers.IO) { deliverBookStandardInput(handler, "20\n") }
+            for ((index, expected) in listOf(0L, 40L, 41L).withIndex()) {
+                val sourceLine = pauses.receive()
+                check(sourceLine >= line)
+                val text = when (index) {
+                    0 -> "Set a breakpoint on addu"
+                    1 -> "The first addition produced 40"
+                    else -> "You have observed the input"
+                }
+                if (index == 2) passed.await()
+                awaitFrame(project, text, source)
+                val observed = awaitDebugRegisters(project, expected)
+                rows += mapOf("sourceLine" to sourceLine + 1, "input" to 20, "result" to expected, "renderedRows" to observed)
+                captureFrame(project, output, "debug-" + listOf("before-add", "after-add", "after-one")[index], text)
+                if (index < 2) withContext(Dispatchers.EDT) { session.stepOver(false) }
+            }
+            withContext(Dispatchers.IO) {
+                Files.writeString(output.resolve("debug-observations.json"), GsonBuilder().setPrettyPrinting().create().toJson(rows), CREATE_NEW)
+            }
+        } finally {
+            connection.disconnect()
+            pauses.close()
+            withContext(NonCancellable + Dispatchers.EDT) {
+                lesson.removeLessonListener(listener)
+                owned?.stop()
+            }
+            withContext(NonCancellable) { writeAction { XDebuggerManager.getInstance(project).breakpointManager.removeBreakpoint(breakpoint) } }
+        }
+    }
+
+    private suspend fun awaitDebugRegisters(project: Project, result: Long): List<String> {
+        val view = BookDebuggerTreeView(expand = listOf(listOf("CPU registers")), reveal = listOf("CPU registers", "\$t0"))
+        while (true) {
+            val rows = withContext(Dispatchers.EDT) {
+                val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
+                val trees = captureComponents(frame.rootPane).filterIsInstance<JTree>().filter { it.isShowing }.toList()
+                val tree = selectDebuggerTree(trees, view)
+                if (tree == null || !applyDebuggerTreeView(tree, view)) emptyList()
+                else (0 until tree.rowCount).map { renderedDebuggerRow(tree, tree.getPathForRow(it)) }
+            }
+            if (lessonRegisterValue(rows, "\$v0") == 20L && lessonRegisterValue(rows, "\$t0") == result) return rows
+            delay(100)
         }
     }
 
@@ -334,3 +445,11 @@ internal fun lessonVisibleText(root: JComponent): String = captureComponents(roo
 
 internal fun visibleLessonButton(root: JComponent, text: String): AbstractButton =
     captureComponents(root).filterIsInstance<AbstractButton>().single { it.isShowing && it.text == text }
+
+/** Read actual scalar register rendering; do not accept duplicate or ambiguous native rows. */
+internal fun lessonRegisterValue(rows: List<String>, register: String): Long? {
+    val matches = rows.filter { it.substringBefore(" = ").removeSuffix(" (written)") == register }
+    check(matches.size <= 1) { "Ambiguous debugger register: $register" }
+    val value = matches.singleOrNull()?.substringAfter(" = ")?.substringBefore(' ') ?: return null
+    return if (value.startsWith("0x")) value.drop(2).toULongOrNull(16)?.toLong() else value.toLongOrNull()
+}

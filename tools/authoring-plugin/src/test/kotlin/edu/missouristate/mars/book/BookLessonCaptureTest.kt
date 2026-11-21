@@ -6,6 +6,7 @@ import javax.swing.JPanel
 import javax.swing.JTextPane
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -17,6 +18,7 @@ class BookLessonCaptureTest {
     fun `capture requires explicit roots and exact source provenance`() {
         valid.validate()
         assertFalse(valid.captureRun)
+        assertFalse(valid.captureDebug)
         valid.copy(captureRun = true).validate()
         assertThrows<IllegalArgumentException> { valid.copy(projectRoot = "relative").validate() }
         assertThrows<IllegalArgumentException> { valid.copy(outputDirectory = "relative").validate() }
@@ -49,4 +51,15 @@ class BookLessonCaptureTest {
         assertTrue(text.contains("Wrong sources do not consume values"))
         assertFalse(text.contains("hidden text"))
     }
+    @Test
+    fun `register observations use rendered values and reject ambiguous rows`() {
+        assertEquals(20L, lessonRegisterValue(listOf("\$v0 = 20"), "\$v0"))
+        assertEquals(40L, lessonRegisterValue(listOf("\$t0 (written) = 0x0000000000000028"), "\$t0"))
+        assertEquals(-1L, lessonRegisterValue(listOf("\$t0 = 0xffffffffffffffff"), "\$t0"))
+        assertNull(lessonRegisterValue(emptyList(), "\$v0"))
+        assertNull(lessonRegisterValue(listOf("\$v0 = loading"), "\$v0"))
+        assertNull(lessonRegisterValue(listOf("\$v0 = 0xloading"), "\$v0"))
+        assertThrows<IllegalStateException> { lessonRegisterValue(listOf("\$v0 = 20", "\$v0 = 21"), "\$v0") }
+    }
+
 }
