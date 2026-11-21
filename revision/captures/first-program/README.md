@@ -7,3 +7,13 @@ The editable publication is in `revision/figures/first-program/*.tex`. Captions,
 The two arithmetic images are successive source pauses. Output images are paused before the request, not completed console transcripts. Hexadecimal values 14, 28 and 29 represent decimal 20, 40 and 41. Circled numbers and surrounding text carry meaning without relying on color.
 
 The private verification batch is `verification/restructuring/native-figures-01`. It retains the original capture receipts, exact installed packages, observations, source hashes and publication checks. Automated checks and authoring visual inspection do not replace author or representative learner review.
+
+
+The additional `inline-prediction.png` shows the native Learn-pane choices and an
+editor focus cue before execution. It was captured by the separate authoring
+plugin in the successful `inline-prediction-02/desktop-final` batch. All five quiz
+retries and transitions, ordinary Run/Debug, repair, independent check/hint links
+and source retention after lesson restart were observed. `inline-coordinates.json`
+retains its raw digest, native focus and publication crop/callout geometry. The
+editor cue is not a debugger pause. Figure f00 uses native LaTeX annotations; the
+PNG is unchanged. Human usability review remains open.

@@ -2,8 +2,9 @@
 
 The first complete unit combines the main chapter `main/first-program.tex`, the
 written lab supplement `labs/first-program.tex` and a student lesson in the main
-MARS plugin. The outline below specifies the implementation to build next; it is
-not a completed interactive lesson or a replacement for the written lab book.
+MARS plugin. The outline below records its learning contract and implementation boundaries.
+The current native implementation is described under “Current implementation
+evidence”; this document does not replace the written lab book.
 
 ## Learning contract
 
@@ -157,3 +158,31 @@ At the 21 November checkpoint, the new inline code passes the plugin tests and
 packaged API verification. The corrected native capture run timed out before the
 first question was observed. The new controls therefore still need a successful
 end-to-end native walkthrough; earlier dialog captures do not validate them.
+
+
+## Inline native verification after the checkpoint
+
+The 21 November resumed batch completed all five questions through actual mouse
+clicks on their native Learn-pane links. Wrong-answer feedback, corrected answers,
+source focus and removal of completed choices were observed. Correct explanations
+are deferred until their step instead of appearing as gray previews. The first
+question and second-question screenshots explicitly check this distinction.
+
+The same fresh IDE process completed normal Run, arithmetic Debug, output
+preparation, diagnosis, repair and independent assessment. The starter failed its
+public cases; an equivalent program passed five cases, an edit required a new
+check, and source and hint history survived lesson restart. Direct check/hint links
+were clicked. Prediction restart produced a second native pass without replacing
+student edits. Native project save/close completed. This batch does not repeat
+the earlier fresh-process policy/reset/recovery checks or substitute for human
+learner review. The private evidence is `inline-prediction-02/desktop-final`.
+
+The capture driver initially treated Swing's zero-width caret rectangles as
+off-screen. The final log observes those zero widths and the corrected one-pixel
+visibility boxes. A second driver wait used an obsolete diagnosis prompt; that
+was corrected to the current visible text. These are separate from the MARS
+read-access repair. The final log contains no SEVERE or ERROR entries.
+
+Figure 1.1 in the revised written lab now shows the actual inline question and
+source cue, with editable native LaTeX callouts and an accessible description.
+The figure explains that editor focus is not a Debug pause.
