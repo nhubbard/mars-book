@@ -80,6 +80,8 @@ internal data class BookLessonCapturePlan(
     val captureRun: Boolean = false,
     val captureDebug: Boolean = false,
     val captureOutput: Boolean = false,
+    val captureDiagnosis: Boolean = false,
+    val captureRepair: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -168,12 +170,16 @@ class BookLessonCaptureActivity : ProjectActivity {
         if (plan.captureRun) captureRun(project, output, source)
         if (plan.captureDebug) captureDebug(project, output, source)
         if (plan.captureOutput) captureDebug(project, output, source, outputPreparation = true)
+        if (plan.captureDiagnosis) captureDebug(project, output, source.resolveSibling("wrong-output.asm"), diagnosis = true)
+        if (plan.captureRepair) captureRun(project, output, source.resolveSibling("repair-output.asm"), repair = true)
         val receipt = mapOf(
-            "scope" to "Only the native segments marked observed below; diagnosis and independent writing remain incomplete",
+            "scope" to "Only the native segments marked observed below; independent writing and full-unit integration remain incomplete",
             "nativePredictionPassesObserved" to predictionPasses.get(),
             "nativeRunPassedObserved" to plan.captureRun,
             "nativeDebugPassedObserved" to plan.captureDebug,
             "nativeOutputPassedObserved" to plan.captureOutput,
+            "nativeDiagnosisPassedObserved" to plan.captureDiagnosis,
+            "nativeRepairPassedObserved" to plan.captureRepair,
             "platformBuild" to ApplicationInfo.getInstance().build.asString(),
             "sourceSha256" to plan.sourceSha256,
             "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
@@ -187,13 +193,18 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun captureRun(project: Project, output: Path, source: Path) {
+    private suspend fun captureRun(project: Project, output: Path, source: Path, repair: Boolean = false) {
+        val id = if (repair) "mars.console.repair" else "mars.console.run"
+        val prefix = if (repair) "repair" else "run"
+        val readyText = if (repair) "repair-output.asm is your working copy" else "Run first-program.asm using the normal MARS Run"
+        val completeText = if (repair) "The repaired source printed 41" else "The console result agrees with the prediction"
+        val passes = AtomicInteger()
         val passed = CompletableDeferred<Unit>()
         val listener = object : LessonListener {
-            override fun lessonPassed(lesson: Lesson) { passed.complete(Unit) }
+            override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet(); passed.complete(Unit) }
         }
         val lesson = withContext(Dispatchers.EDT) {
-            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.run" }.also {
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == id }.also {
                 it.addLessonListener(listener)
                 CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
             }
@@ -201,12 +212,24 @@ class BookLessonCaptureActivity : ProjectActivity {
         val connection = project.messageBus.connect()
         var owned: ProcessHandler? = null
         try {
-            awaitFrame(project, "Run first-program.asm using the normal MARS Run", source)
-            captureFrame(project, output, "run-ready", "Run first-program.asm using the normal MARS Run")
+            awaitFrame(project, readyText, source)
+            captureFrame(project, output, "$prefix-ready", readyText)
+            if (repair) {
+                withContext(Dispatchers.EDT) {
+                    val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+                    val faulty = "move \$a0, \$v0"
+                    val text = editor.document.text
+                    check(text.split(faulty).size == 2)
+                    WriteCommandAction.runWriteCommandAction(project) {
+                        editor.document.setText(text.replace(faulty, "or \$a0, \$t0, \$zero"))
+                    }
+                    FileDocumentManager.getInstance().saveDocument(editor.document)
+                }
+            }
             val process = CompletableDeferred<ProcessHandler>()
             val exit = CompletableDeferred<Int>()
             val transcript = StringBuilder()
-            val name = "Book lesson Run observation"
+            val name = "Book lesson $prefix observation"
             connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
                 override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
                     if (executorId == DefaultRunExecutor.EXECUTOR_ID && env.runProfile.name == name) {
@@ -236,14 +259,33 @@ class BookLessonCaptureActivity : ProjectActivity {
             val observed = synchronized(transcript) { transcript.toString() }
             check(observed == "Enter a small integer: Twice your number plus one is: 41\n")
             withContext(Dispatchers.IO) {
-                Files.writeString(output.resolve("run-transcript.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                Files.writeString(output.resolve("$prefix-transcript.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
                     "exitCode" to 0, "stdin" to "20\n", "stdout" to observed,
                     "scope" to "Actual Run only; native lesson completion must also be observed",
                 )), CREATE_NEW)
             }
             passed.await()
-            awaitFrame(project, "The console result agrees with the prediction", source)
-            captureFrame(project, output, "run-complete", "The console result agrees with the prediction")
+            awaitFrame(project, completeText, source)
+            captureFrame(project, output, "$prefix-complete", completeText)
+            if (repair) {
+                val retained = withContext(Dispatchers.IO) { Files.readString(source) }
+                withContext(Dispatchers.EDT) {
+                    CourseManager.instance.openLesson(project, lesson, LessonStartingWay.RESTART_BUTTON, forceStartLesson = true)
+                }
+                awaitFrame(project, completeText, source)
+                awaitUi { passes.get() >= 2 }
+                withContext(Dispatchers.IO) {
+                    check(Files.readString(source) == retained)
+                    val counterexample = Files.readString(source.resolveSibling("wrong-output.asm"))
+                    check(counterexample.contains("move \$a0, \$v0"))
+                    Files.writeString(output.resolve("repair-preservation.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                        "nativeRepairPassesObserved" to passes.get(), "repairRetainedAfterRestart" to true,
+                        "repairSha256" to captureSha256(retained.toByteArray(Charsets.UTF_8)),
+                        "counterexampleSha256" to captureSha256(counterexample.toByteArray(Charsets.UTF_8)),
+                        "alternativePreparation" to "or \$a0, \$t0, \$zero",
+                    )), CREATE_NEW)
+                }
+            }
         } finally {
             connection.disconnect()
             withContext(NonCancellable + Dispatchers.EDT) {
@@ -253,9 +295,10 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun captureDebug(project: Project, output: Path, source: Path, outputPreparation: Boolean = false) {
-        val id = if (outputPreparation) "mars.console.output" else "mars.console.debug"
-        val prefix = if (outputPreparation) "output" else "debug"
+    private suspend fun captureDebug(project: Project, output: Path, source: Path, outputPreparation: Boolean = false, diagnosis: Boolean = false) {
+        val outputStyle = outputPreparation || diagnosis
+        val id = if (diagnosis) "mars.console.diagnosis" else if (outputPreparation) "mars.console.output" else "mars.console.debug"
+        val prefix = if (diagnosis) "diagnosis" else if (outputPreparation) "output" else "debug"
         val passed = CompletableDeferred<Unit>()
         val listener = object : LessonListener {
             override fun lessonPassed(lesson: Lesson) { passed.complete(Unit) }
@@ -272,9 +315,14 @@ class BookLessonCaptureActivity : ProjectActivity {
                 "\$v0 is 20; \$a0 is 41; \$t0 is 0.", "\$v0 no longer holds the input:",
                 "\$v0 is 1; \$a0 is 41; \$t0 is 41.")
         }
-        awaitFrame(project, if (outputPreparation) "Stop the preceding Debug session" else "Set a breakpoint on addu", source)
+        if (diagnosis) {
+            awaitFrame(project, "Find the last writer", source)
+            answer(project, output, "wrong-output", "Mars.Learning.PredictWrongOutput", "20",
+                "The input call returned 20", "4")
+        }
+        awaitFrame(project, if (diagnosis) "Stop other Debug sessions" else if (outputPreparation) "Stop the preceding Debug session" else "Set a breakpoint on addu", source)
         val file = withContext(Dispatchers.EDT) { checkNotNull(LocalFileSystem.getInstance().findFileByNioFile(source)) }
-        val line = withContext(Dispatchers.IO) { Files.readString(source).lines().indexOfFirst { it.trim().startsWith(if (outputPreparation) "move " else "addu ") } }
+        val line = withContext(Dispatchers.IO) { Files.readString(source).lines().indexOfFirst { it.trim().startsWith(if (outputStyle) "move " else "addu ") } }
         check(line >= 0)
         val type = XBreakpointType.EXTENSION_POINT_NAME.extensionList.filterIsInstance<XLineBreakpointType<*>>()
             .single { it.id == "MarsMipsLine" }
@@ -315,10 +363,14 @@ class BookLessonCaptureActivity : ProjectActivity {
             val handler = session.debugProcess.processHandler
             while (!handler.isStartNotified) delay(50)
             withContext(Dispatchers.IO) { deliverBookStandardInput(handler, "20\n") }
-            for ((index, expected) in (if (outputPreparation) listOf(41L, 41L, 41L) else listOf(0L, 40L, 41L)).withIndex()) {
+            for ((index, expected) in (if (outputStyle) listOf(41L, 41L, 41L) else listOf(0L, 40L, 41L)).withIndex()) {
                 val sourceLine = pauses.receive()
                 check(sourceLine >= line)
-                val text = if (outputPreparation) when (index) {
+                val text = if (diagnosis) when (index) {
+                    0 -> "Stop other Debug sessions"
+                    1 -> "Step Over li"
+                    else -> "Use the observed state"
+                } else if (outputPreparation) when (index) {
                     0 -> "Stop the preceding Debug session"
                     1 -> "Step Over li"
                     else -> "You observed the answer survive"
@@ -327,17 +379,25 @@ class BookLessonCaptureActivity : ProjectActivity {
                     1 -> "The first addition produced 40"
                     else -> "You have observed the input"
                 }
-                if (index == 2) passed.await()
+                if (index == 2 && !diagnosis) passed.await()
                 awaitFrame(project, text, source)
                 val registers = buildMap {
-                    put("\$v0", if (outputPreparation) (if (index == 2) 1L else 4L) else 20L)
+                    put("\$v0", if (outputStyle) (if (index == 2) 1L else 4L) else 20L)
                     put("\$t0", expected)
-                    if (outputPreparation && index > 0) put("\$a0", 41L)
+                    if (outputStyle && index > 0) put("\$a0", if (diagnosis) 4L else 41L)
                 }
                 val observed = awaitDebugRegisters(project, handler, registers)
                 rows += mapOf("sourceLine" to sourceLine + 1, "standardInput" to 20, "expectedRegisters" to registers, "renderedRows" to observed)
-                captureFrame(project, output, "$prefix-" + (if (outputPreparation) listOf("before-copy", "after-copy", "before-syscall") else listOf("before-add", "after-add", "after-one"))[index], text)
+                captureFrame(project, output, "$prefix-" + (if (outputStyle) listOf("before-copy", "after-copy", "before-syscall") else listOf("before-add", "after-add", "after-one"))[index], text)
                 if (index < 2) withContext(Dispatchers.EDT) { session.stepOver(false) }
+            }
+            if (diagnosis) {
+                answer(project, output, "diagnosis", "Mars.Learning.DiagnoseOutput",
+                    "Change the arithmetic because the printed answer is wrong.", "The stopped arithmetic result is already 41",
+                    "Prepare the integer-output argument from the retained answer instead of the service selector.")
+                passed.await()
+                awaitFrame(project, "You located an argument error", source)
+                captureFrame(project, output, "diagnosis-complete", "You located an argument error")
             }
             withContext(Dispatchers.IO) {
                 Files.writeString(output.resolve("$prefix-observations.json"), GsonBuilder().setPrettyPrinting().create().toJson(rows), CREATE_NEW)

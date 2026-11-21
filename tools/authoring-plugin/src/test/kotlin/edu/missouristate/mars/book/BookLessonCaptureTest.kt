@@ -24,6 +24,9 @@ class BookLessonCaptureTest {
         assertFalse(valid.captureRun)
         assertFalse(valid.captureDebug)
         assertFalse(valid.captureOutput)
+        assertFalse(valid.captureDiagnosis)
+        assertFalse(valid.captureRepair)
+        valid.copy(captureDiagnosis = true, captureRepair = true).validate()
         valid.copy(captureOutput = true).validate()
         valid.copy(captureRun = true).validate()
         assertThrows<IllegalArgumentException> { valid.copy(projectRoot = "relative").validate() }
