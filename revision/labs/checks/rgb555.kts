@@ -9,7 +9,7 @@ fun AssemblyCase.verify(count:Int,offset:Int,seed:Int,bucketBase:Int?=null) {
         input[offset+i*3+1]=((word/32)%32)*8+7
         input[offset+i*3+2]=(word%32)*8+7
     }
-    val destinationOffset=(offset*7+seed)%32
+    val destinationOffset=(offset*7+seed/32+1)%32
     val expected=(0 until count).flatMap { val at=offset+it*3;val word=pack555(input[at],input[at+1],input[at+2]);listOf(word and 255,word ushr 8) }
     val output=IntArray(96){(it*17+seed*11) and 255}
     for(i in expected.indices)output[destinationOffset+i]=expected[i] xor 255
