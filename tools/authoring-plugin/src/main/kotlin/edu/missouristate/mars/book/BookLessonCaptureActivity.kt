@@ -86,6 +86,8 @@ internal data class BookLessonCapturePlan(
     val projectRoot: String = "",
     val outputDirectory: String = "",
     val sourceSha256: String = "",
+    val captureReset: Boolean = false,
+    val resumeReset: Boolean = false,
     val captureRun: Boolean = false,
     val captureDebug: Boolean = false,
     val captureOutput: Boolean = false,
@@ -111,6 +113,17 @@ internal data class BookLessonCapturePlan(
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
+        if (captureReset || resumeReset) {
+            require(captureReset != resumeReset)
+            require(!captureIndependent && !captureHints && !capturePolicy && !captureModes && !resumeModes && !resumeGuided && !resumeIndependent)
+            if (captureReset) require(captureRun && captureDebug && captureOutput && captureDiagnosis && captureRepair)
+            else {
+                require(!captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
+                require(guidedSourceSha256.keys == setOf("first-program.asm", "wrong-output.asm", "repair-output.asm", "independent.asm"))
+                require(guidedSourceSha256.values.all { it.matches(Regex("[a-f0-9]{64}")) })
+                require(guidedSourceSha256["first-program.asm"] == sourceSha256)
+            }
+        }
         require(!expectIndependentRecheck || resumeIndependent)
         require(!expectGuidedRecheck || resumeGuided)
         if (resumeGuided) {
@@ -160,6 +173,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 toolWindowsReady.await()
                 when {
+                    plan.resumeReset -> captureResetRecovery(project, plan, output)
                     plan.resumeGuided -> captureGuidedResume(project, plan, output)
                     plan.resumeModes -> captureModesResume(project, plan, output)
                     plan.captureModes -> captureModes(project, plan, output)
@@ -229,7 +243,9 @@ class BookLessonCaptureActivity : ProjectActivity {
         if (plan.captureDiagnosis) captureDebug(project, output, source.resolveSibling("wrong-output.asm"), diagnosis = true)
         if (plan.captureRepair) captureRun(project, output, source.resolveSibling("repair-output.asm"), repair = true)
         if (plan.captureIndependent) captureIndependent(project, output, source.resolveSibling("independent.asm"), plan)
+        if (plan.captureReset) captureResetStart(project, output, source)
         val receipt = mapOf(
+            "nativeResetObserved" to plan.captureReset,
             "scope" to "Only the native segments marked observed below; instructor policies and full-unit integration remain incomplete",
             "nativePredictionPassesObserved" to predictionPasses.get(),
             "nativeRunPassedObserved" to plan.captureRun,
@@ -249,6 +265,130 @@ class BookLessonCaptureActivity : ProjectActivity {
         )
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
+        }
+    }
+
+    private suspend fun assertHistoryActionDisabled(project: Project, id: String) = withContext(Dispatchers.EDT) {
+        val action = checkNotNull(ActionManager.getInstance().getAction(id))
+        val data = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build()
+        val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
+        check(ActionUtil.updateAction(action, event).isPerformed && !event.presentation.isEnabled)
+    }
+
+    private suspend fun historyAction(project: Project, output: Path, prefix: String, recover: Boolean, confirm: Boolean) {
+        val failure = AtomicReference<Throwable>()
+        withContext(Dispatchers.EDT) {
+            val action = checkNotNull(ActionManager.getInstance().getAction(if (recover) "Mars.Learning.Recover" else "Mars.Learning.Reset"))
+            val data = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build()
+            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
+            check(ActionUtil.updateAction(action, event).isPerformed && event.presentation.isEnabled)
+            ApplicationManager.getApplication().invokeLater({
+                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
+            }, ModalityState.nonModal())
+        }
+        val dialog = awaitDialog(failure, if (recover) "Recover this unit's history?" else "Reset this unit's progress?")
+        captureComponent(dialog.rootPane, output, prefix, if (recover) "Execution checks must run again" else "Your source files and course settings stay as they are")
+        onModalUi { visibleLessonButton(dialog.rootPane, if (!confirm) "Cancel" else if (recover) "Recover history" else "Reset progress").doClick() }
+        awaitUi { !dialog.isShowing }
+    }
+
+    private suspend fun captureResetStart(project: Project, output: Path, worked: Path) {
+        val independent = worked.resolveSibling("independent.asm")
+        withContext(Dispatchers.EDT) {
+            val lesson = checkNotNull(CourseManager.instance.findLessonById("mars.console.independent"))
+            CourseManager.instance.openLesson(project, lesson, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+        }
+        awaitFrame(project, "implement 3x+1", independent)
+        captureHints(project, output, "reset-before-hints", existing = 0, revealTo = 1)
+        val sources = withContext(Dispatchers.IO) {
+            listOf(worked, worked.resolveSibling("wrong-output.asm"), worked.resolveSibling("repair-output.asm"), independent)
+                .associate { it.fileName.toString() to captureSha256(Files.readAllBytes(it)) }
+        }
+        historyAction(project, output, "reset-cancel", recover = false, confirm = false)
+        captureHints(project, output, "reset-cancel-preserved-hints", existing = 1, revealTo = 1)
+        val predictions = withContext(Dispatchers.EDT) { checkNotNull(CourseManager.instance.findLessonById("mars.console.predictions")) }
+        val passes = AtomicInteger()
+        val listener = object : LessonListener { override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet() } }
+        withContext(Dispatchers.EDT) { predictions.addLessonListener(listener) }
+        try {
+            historyAction(project, output, "reset-confirm", recover = false, confirm = true)
+            awaitFrame(project, "With 20 in", worked)
+            delay(1_500)
+            check(passes.get() == 0)
+            captureFrame(project, output, "reset-prediction-required", "With 20 in")
+            assertHistoryActionDisabled(project, "Mars.Learning.Reset")
+        } finally { withContext(Dispatchers.EDT) { predictions.removeLessonListener(listener) } }
+        withContext(Dispatchers.IO) {
+            check(sources.all { (name, digest) -> captureSha256(Files.readAllBytes(worked.resolveSibling(name))) == digest })
+            Files.writeString(output.resolve("reset-state.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "sourceSha256" to sources, "resetCancellationPreservedHint" to true,
+                "resetRequiredPrediction" to true, "resetDisabledWithoutNewHistory" to true, "nativeResetPassCallbacks" to passes.get(), "sourceUnchanged" to true,
+                "scope" to "Actual reset after six guided observations and one hint; recovery copy must survive native save/close and a fresh process",
+            )), CREATE_NEW)
+        }
+    }
+
+    private suspend fun captureResetRecovery(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        val folder = Path.of(plan.projectRoot).resolve("mars-labs/console")
+        suspend fun verifySources() = withContext(Dispatchers.IO) {
+            check(plan.guidedSourceSha256.all { (name, digest) -> captureSha256(Files.readAllBytes(folder.resolve(name))) == digest })
+        }
+        verifySources()
+        val executions = AtomicInteger()
+        val connection = project.messageBus.connect()
+        connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
+            override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) { executions.incrementAndGet() }
+        })
+        val predictions = withContext(Dispatchers.EDT) { checkNotNull(CourseManager.instance.findLessonById("mars.console.predictions")) }
+        val passes = AtomicInteger()
+        val listener = object : LessonListener { override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet() } }
+        withContext(Dispatchers.EDT) { predictions.addLessonListener(listener) }
+        try {
+            historyAction(project, output, "recovery-cancel", recover = true, confirm = false)
+            historyAction(project, output, "recovery-confirm", recover = true, confirm = true)
+            awaitFrame(project, "The destination tells you where to look", folder.resolve("first-program.asm"))
+            awaitUi { passes.get() == 1 }
+            captureFrame(project, output, "recovered-predictions", "The destination tells you where to look")
+            assertHistoryActionDisabled(project, "Mars.Learning.Recover")
+            for ((id, text, name) in listOf(
+                Triple("run", "Run first-program.asm using the normal MARS Run", "first-program.asm"),
+                Triple("repair", "repair-output.asm is your working copy", "repair-output.asm"),
+            )) {
+                val completed = AtomicInteger()
+                val pendingListener = object : LessonListener { override fun lessonPassed(lesson: Lesson) { completed.incrementAndGet() } }
+                val lesson = withContext(Dispatchers.EDT) {
+                    checkNotNull(CourseManager.instance.findLessonById("mars.console.$id")).also {
+                        it.addLessonListener(pendingListener)
+                        CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+                    }
+                }
+                try {
+                    awaitFrame(project, text, folder.resolve(name))
+                    delay(1_500)
+                    check(completed.get() == 0)
+                    captureFrame(project, output, "recovered-$id-recheck", text)
+                } finally { withContext(Dispatchers.EDT) { lesson.removeLessonListener(pendingListener) } }
+            }
+            withContext(Dispatchers.EDT) {
+                CourseManager.instance.openLesson(project, checkNotNull(CourseManager.instance.findLessonById("mars.console.independent")), LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+            awaitFrame(project, "implement 3x+1", folder.resolve("independent.asm"))
+            captureHints(project, output, "recovered-hints", existing = 1, revealTo = 1)
+            verifySources()
+            check(executions.get() == 0)
+            withContext(Dispatchers.IO) {
+                Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "sourceSha256" to plan.guidedSourceSha256, "sourceUnchanged" to true,
+                    "nativePredictionPassCallbacks" to passes.get(), "runAndRepairRequireRecheck" to true,
+                    "hintRecoveredAfterFreshProcess" to true, "recoveryCopyConsumed" to true, "processStarts" to executions.get(),
+                    "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                    "scope" to "Native recovery after fresh process without source/progress/answer injection; no execution credit restored",
+                )), CREATE_NEW)
+            }
+        } finally {
+            connection.disconnect()
+            withContext(Dispatchers.EDT) { predictions.removeLessonListener(listener) }
         }
     }
 

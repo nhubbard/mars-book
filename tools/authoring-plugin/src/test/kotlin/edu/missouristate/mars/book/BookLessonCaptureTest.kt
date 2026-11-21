@@ -119,6 +119,29 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `reset capture requires completed guided observations and cold recovery requires all existing sources`() {
+        assertFalse(valid.captureReset)
+        assertFalse(valid.resumeReset)
+        assertThrows<IllegalArgumentException> { valid.copy(captureReset = true).validate() }
+        val initial = valid.copy(captureReset = true, captureRun = true, captureDebug = true, captureOutput = true, captureDiagnosis = true, captureRepair = true)
+        initial.validate()
+        for (bad in listOf(initial.copy(captureRun = false), initial.copy(captureDebug = false), initial.copy(captureOutput = false),
+            initial.copy(captureDiagnosis = false), initial.copy(captureRepair = false), initial.copy(captureIndependent = true),
+            initial.copy(captureHints = true), initial.copy(captureModes = true), initial.copy(capturePolicy = true),
+            initial.copy(resumeModes = true), initial.copy(resumeGuided = true), initial.copy(resumeIndependent = true), initial.copy(resumeReset = true))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+        assertThrows<IllegalArgumentException> { valid.copy(resumeReset = true).validate() }
+        val hashes = listOf("first-program.asm", "wrong-output.asm", "repair-output.asm", "independent.asm").associateWith { "a".repeat(64) }
+        val resume = valid.copy(resumeReset = true, guidedSourceSha256 = hashes)
+        resume.validate()
+        assertThrows<IllegalArgumentException> { resume.copy(guidedSourceSha256 = hashes - "independent.asm").validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(guidedSourceSha256 = hashes + ("independent.asm" to "bad")).validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(sourceSha256 = "b".repeat(64)).validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(captureRun = true).validate() }
+    }
+
+    @Test
     fun `layout measurement detects clipped text and buttons rather than matching future text`() {
         val root = JPanel(null)
         assertNull(lessonHorizontalLayout(root))
