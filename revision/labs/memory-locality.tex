@@ -1,0 +1,161 @@
+\chapter{Addresses, tiles and cache observations}
+\MARSChapterHeading{Addresses, tiles and cache observations}
+\label{revision-lab:locality}
+
+Use \texttt{matrix-locality.asm} from \texttt{revision/labs/files}. The complete
+program implements original project \texttt{011-matrix-transpose}'s two functions.
+Read the main chapter's source/output mapping before inspecting performance.
+This lab uses ordinary Run and Debug and the native Data Cache Simulator, followed
+by an independent clockwise-rotation task.
+
+\section{Predict addresses in a rectangular matrix}
+
+For the default three-by-five source, locate values five and one by both coordinate
+and linear index. Derive their destination coordinates and byte displacements.
+Then write all five output rows. Explain why the output row width is three even
+though the source row width is five.
+
+For the first source row, derive both address sequences and classify the first ten
+read/write notices in a cold fully associative eight-line cache with four-word
+lines. Account for separate source and destination bases. Compare your prediction
+with the main chapter's trace only after identifying which accesses share a line.
+
+Set a breakpoint at \texttt{transpose\_begin}. Its next instruction calls the
+selected function; arguments already contain pointers and dimensions. Use the
+Data Cache Simulator in MARS Tools and select the active execution. Expand Cache
+Settings and verify eight Cache blocks, four Words per block, Fully associative
+placement, eight Blocks per set and Least recently used replacement. The source's
+cache annotation supplies these defaults. If changing settings manually, apply
+them while stopped at entry, then confirm that the cache is cold and counters zero.
+
+Continue to \texttt{transpose\_done}, before the caller's count store. Inspect
+\texttt{\$v0}=15 and output's five rows of three words. The complete ordinary
+function should have 30 cache accesses and eight misses. Stepping through the
+following caller store adds another data operation; do not compare that later
+boundary with the function-only measurement.
+
+\section{Inspect the first clipped tile}
+
+Set \texttt{METHOD} to one in a copy while keeping \texttt{ROWS}=3 and
+\texttt{COLS}=5. At the first \texttt{tile\_begin}, identify origin $(0,0)$.
+Derive exclusive ends three and four. The first tile has twelve cells; there is
+no fourth source row to read.
+
+Continue to the next \texttt{tile\_begin}. Its column origin is four and its row
+origin remains zero. The preceding tile is now complete. Output indices zero
+through eleven have their final transposed values; indices twelve through fourteen
+still have their initial contents. In the source, the completed reads are columns
+zero through three of each row, leaving values four, nine and fourteen for the
+last tile. Do not mistake the tile for a contiguous source prefix.
+
+With a cold fully associative cache at function entry, this boundary has 24 accesses
+and seven misses. Derive those seven resident lines: four source lines and three
+destination lines. The final tile adds six accesses and one new destination line,
+bringing totals to 30 and eight. Use the stopped source boundary and the cache log
+to distinguish an unfinished tile from a completed small matrix.
+
+Make a disposable copy with the row end left at four instead of clipped to three.
+Locate the first load outside the active source window. A readable allocation byte
+can still be outside the matrix passed to this call. Restore the row clip, then
+investigate the column clip separately with five columns.
+
+\section{Compare equal-capacity placements}
+
+Use a sixteen-by-sixteen source and start from a fresh execution for each method.
+Keep both allocation addresses and all cache settings fixed except the placement
+being investigated. Fully associative ordinary traversal gives 512 accesses and
+320 misses. The tiled traversal gives the same 512 accesses and 128 misses.
+Explain why equal operation counts can have different line reuse.
+
+For direct mapping, select one block per set and keep eight total blocks. For
+two-way placement, keep eight total blocks and use two blocks per set. Confirm
+the resulting 128-byte capacity in each view. Apply and reset at the entry boundary,
+then execute the function again. Applying settings after the function has returned
+does not replay its earlier memory operations.
+
+At this shape, direct mapping gives 344 misses for either method, and two-way
+placement gives 320 for either. Derive the row-start sets using the actual addresses.
+A destination row stride of 64 bytes advances four sixteen-byte lines. Explain
+why several live destination lines compete for only two direct-map sets or one
+two-way set, despite other cache entries being available. Figure~\ref{fig:revision-locality-cache}
+shows the actual full and direct tiled observations at the same return boundary.
+
+\input{revision/figures/locality/cache-placements}
+
+Repeat with eight-by-eight or fifteen-by-thirteen. Compare geometry before drawing
+a conclusion about associativity or tile size. Different dimensions change row
+alignment, line occupancy, clipping and set competition. No one miss count is a
+correctness requirement for every valid implementation.
+
+\section{Reproduce and interpret the measurement}
+
+Run the public tool from the repository root with JDK 25:
+\begin{verbatim}
+python3 tools/measure_revision_transpose.py \
+  --java /path/to/jdk-25/bin/java \
+  --cli /path/to/cli.jar --output /new/report/directory
+\end{verbatim}
+It checks the transpose and records twelve shape/method combinations. Each case
+starts a fresh session and cold full/direct/two-way observations at function entry,
+then stops before the caller's count store. Retain its JSON receipt, source and CLI
+hashes, stdout and access log. Use a new directory for another run.
+
+For sixteen-by-sixteen, compare ordinary 1,643 instructions with tiled 2,457.
+Account for tile-end calculations, per-tile pointer formation and extra loop levels.
+The cache improvement is real in the specified fully associative model; the extra
+instructions are real too. A claim about elapsed time would require an appropriate
+timing experiment or a justified hardware model, neither of which these counters
+provide.
+
+Distinguish the experiment's boundaries from the tools' behavior. Instruction
+fetch and debugger inspection are excluded from these data counts. Auxiliary
+stack traffic inside a different implementation would be included. Backstep does
+not rewind the cache observations; replaying an instruction adds another forward
+access. Restart or reset at the correct stopped entry for a new cold comparison.
+
+Run the original functional/traversal checks as well:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/011-matrix-transpose/checks/public.kts \
+  /path/to/your/matrix-locality.asm
+\end{verbatim}
+A correct final output does not prove the one-read/one-write or complete-tile
+schedule. For a repeated-load fault, find the duplicated address in the log.
+For a wrong rectangular stride, derive the first incorrect destination address.
+Fix correctness before interpreting a lower miss count that resulted from skipped
+work or accesses outside the active matrix.
+
+\section{Implement clockwise rotation independently}
+
+Open \texttt{matrix-rotate.asm} and implement \texttt{rotate\_clockwise}. Arguments
+are source pointer, destination pointer, rows and columns in
+\texttt{\$a0} through \texttt{\$a3}. Dimensions are zero through sixteen;
+word-aligned nonoverlapping windows lie within the named allocations. Return
+$RC$ in \texttt{\$v0}. Source $(i,j)$ must reach output $(j,R-1-i)$.
+
+Predict the complete two-by-three example before coding. Trace source top-left
+to output top-right and source bottom-left to output top-left. Explain why swapping
+coordinates alone gives a transpose rather than the required clockwise turn.
+Choose a source-oriented or destination-oriented traversal, or another valid order;
+this task does not require a particular tile schedule.
+
+Keep each active source read and destination write an aligned word notice, exactly
+once per cell, and read a cell before its corresponding write. Preserve source,
+inactive destination words, guards, saved registers, stack pointer and caller-owned
+stack bytes. Do not read the output as temporary workspace. Private stack storage
+is permitted under the preservation rules.
+
+Test empty shapes before entering a loop. Test both a single row and a single
+column, then a rectangle and an interior window whose pointer differs from its
+allocation label. Include words with high bits set: the required operation copies
+bit patterns, not just small positive numbers. Run:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/matrix-rotate.kts \
+  /path/to/your/matrix-rotate.asm
+\end{verbatim}
+The unfinished starter stops explicitly. When a case fails, preserve its shape,
+window offsets and first incorrect mapped coordinate. Establish the mapping and
+bounds before experimenting with cache scheduling. Once correct, compare the
+access patterns of two valid traversals under a stated cache policy; keep that
+performance investigation separate from the function's acceptance criteria.

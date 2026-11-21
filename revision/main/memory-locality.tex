@@ -1,0 +1,273 @@
+\chapter{Memory access and locality}
+\MARSChapterHeading{Memory access and locality}
+\label{revision:locality}
+
+Two loops can copy the same words to the same final positions while visiting
+addresses in different orders. Those orders determine which nearby words are
+used together and how long a cache line must remain available before it is used
+again. Correct output is the starting requirement; explaining locality requires
+an address trace as well.
+
+The complete \texttt{matrix-locality.asm} program in \texttt{revision/labs/files}
+offers two ways to transpose a matrix: an ordinary row traversal and
+a traversal grouped into four-by-four tiles. Each launch selects one method and
+runs it on a fresh input/output pair. Both implement original project
+\texttt{011-matrix-transpose}'s contract. Neither changes the word values.
+
+This chapter assumes indexed arrays, nested loops, full-width pointers and
+function preservation. You should be able to derive the source and destination
+addresses, explain a line hit or miss in the stated model, and compare measurements
+without treating them as elapsed-time predictions. The independent exercise rotates
+a rectangular matrix clockwise, with the same separation between data mapping
+and the order chosen to perform it.
+
+\section{Derive two row widths before writing a loop}
+
+A row-major matrix with $R$ rows and $C$ columns stores source cell $(i,j)$ at
+linear index $iC+j$. Transpose places that value at output coordinate $(j,i)$.
+The output has $C$ rows and $R$ columns, so its linear index is $jR+i$.
+For four-byte words the two addresses are therefore
+$input+4(iC+j)$ and $output+4(jR+i)$. The destination row width is $R$, not $C$.
+
+Use the default three-by-five source, filled with values zero through fourteen.
+Source $(1,0)$ contains five at source index five. It goes to output $(0,1)$,
+index one. Source $(0,1)$ contains one and goes to output $(1,0)$, index three.
+These two examples separate swapping coordinates from merely copying the same
+linear index. A square-only test can hide a mistaken destination row width.
+
+\input{revision/figures/locality/mapping}
+
+Each dimension may be zero through sixteen. The largest active matrix has 256
+words and the largest valid relative displacement is 1020 bytes. These bounds
+make word arithmetic sufficient for index products, but do not make a base address
+32 bits wide. Add displacements to pointers with full-width address arithmetic.
+A one-kilobyte allocation can still live above the first four gigabytes of memory.
+
+The source and destination are separate, nonoverlapping active windows inside
+256-word allocations. Passed pointers can name interior windows; do not replace
+them with global label addresses. Protect source words, guards and inactive output
+prefixes/suffixes from stores. An empty dimension means no matrix reads or writes.
+A zero return count alone would not prove that the function avoided an invalid
+first load before noticing the empty shape.
+
+The values are arbitrary 32-bit patterns. A \texttt{lw} can sign extend the loaded
+word into a register, but \texttt{sw} stores its same low 32 bits. Since transpose
+never performs arithmetic on that value, signed interpretation does not alter the
+copied pattern. A byte or halfword store would fail this requirement.
+
+\section{Follow the ordinary address recurrence}
+
+The ordinary function visits source rows in increasing order and each row's
+columns in increasing order. Within one row, advancing $j$ by one advances the
+source pointer by four bytes. In the destination, that same advance changes
+$jR+i$ by $R$, so its pointer advances by $4R$ bytes. After a complete source row,
+the destination's next starting position advances by one word.
+
+The complete function checks both empty cases and returns $RC$ in
+\texttt{\$v0}. It prepares destination stride $4R$ in \texttt{\$v1}, row index
+zero in \texttt{\$t0}, the source cursor in \texttt{\$t2}, and destination row
+origin in \texttt{\$t3}. Its loop is:
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Read a source row while writing a destination column}
+\begin{minted}{mars-idea}
+naive_row:
+    move $t1, $zero
+    move $t4, $t3
+naive_cell:
+    lw $t5, 0($t2)
+    sw $t5, 0($t4)
+    daddiu $t2, $t2, 4
+    daddu $t4, $t4, $v1
+    addiu $t1, $t1, 1
+    bltc $t1, $a3, naive_cell
+    nop
+    daddiu $t3, $t3, 4
+    addiu $t0, $t0, 1
+    bltc $t0, $a2, naive_row
+    nop
+\end{minted}
+\end{minipage}
+
+The source cursor never resets: the next source row follows the preceding one
+contiguously. The destination cursor \texttt{\$t4} is reset from the next row
+origin, because its inner-loop jumps do not lead to that origin. Keeping these
+two roles separate avoids accumulating the destination stride into the wrong row.
+The function is a leaf and leaves saved registers and the stack pointer untouched.
+
+For $R=3$, the first five source byte displacements are $0,4,8,12,16$ and the
+corresponding destination displacements are $0,12,24,36,48$. Values one through
+four therefore do not fill the next four consecutive output words. Derive the
+next source row's destination displacements $4,16,28,40,52$ before running Debug.
+All fifteen source words must appear once in the five-by-three output.
+
+\section{Explain the cache model one access at a time}
+
+The Data Cache Simulator groups addresses into lines, called blocks in its
+controls. Here each line contains four words, or sixteen bytes, and the cache
+has eight lines: 128 bytes total. A memory line number is $\lfloor address/16\rfloor$.
+An access is a hit if that line is already recorded in an allowed cache entry;
+otherwise it is a miss and installs that line, possibly replacing another.
+The initial cold cache has no resident lines.
+
+Nearby words can share a line. Using them close together is spatial locality.
+Returning to a word or resident line before it is replaced provides reuse over
+time. In this transpose each individual word is read or written only once;
+the useful reuse is between different words in the same line. The model records
+line presence, not cached data values. Its architectural memory operations still
+produce the same results regardless of hits and misses.
+
+In fully associative placement, any of the eight entries can hold any line.
+The least-recently-used policy, LRU, replaces the entry whose last access occurred
+furthest in the past when all allowed entries are occupied. A hit updates that
+recency too. This model allocates a line on a store miss as well as a load miss.
+An output miss is therefore part of the experiment, not a reason to ignore stores.
+
+\input{revision/figures/locality/first-row}
+
+At the first input read, source bytes zero through fifteen belong to the first
+line, so the later reads at offsets four, eight and twelve hit. The output's first
+store installs its own first line; offset twelve still belongs to that line and
+hits. Output offset 24 belongs to a different line and misses. Source and output
+are separate allocations even when their relative offsets match. Across the
+complete three-by-five case, each occupies four lines; all eight fit, yielding
+eight initial-touch misses and no further misses in this fully associative model.
+
+The tool observes forward simulated data-access notices. These aligned word loads
+and stores each contribute one notice. Instruction fetches and external debugger
+inspection do not contribute. Recording a line does not mean the program executed
+four separate loads, nor does the tool calculate fill latency or byte traffic.
+It does not model a processor pipeline, prefetching, write-back traffic or host
+execution time. Architectural backstep keeps cache observations rather than
+rewinding their history. Start a fresh run, or reset at the chosen stopped entry,
+to establish a new cold comparison.
+
+\section{Complete a small tile before moving elsewhere}
+
+The ordinary destination jumps can separate uses of nearby destination words by
+many intervening accesses. Tiling changes that schedule. Choose a four-by-four
+source tile, finish its source reads and corresponding output writes, then move
+to the next tile. The mathematical mapping remains $(i,j)\mapsto(j,i)$.
+
+For tile origin $(b_i,b_j)$, the exclusive ends are
+$e_i=\min(b_i+4,R)$ and $e_j=\min(b_j+4,C)$. Iterate $i$ from $b_i$ to just before
+$e_i$ and $j$ from $b_j$ to just before $e_j$. The last tiles can be narrower or
+shorter than four; their clipped bounds are part of correctness, not a cleanup
+optimization to add after testing only square multiples of four.
+
+The tiled routine holds the tile origin in \texttt{\$t0}/\texttt{\$t1} and
+computes its ends as follows. The rest of the complete function prepares row
+pointers from $iC+b_j$ and $b_jR+i$, then uses the same four-byte source and
+$4R$-byte destination increments inside that row.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Clip both exclusive tile ends to the actual shape}
+\begin{minted}{mars-idea}
+tile_begin:
+    addiu $t2, $t0, 4
+    blec $t2, $a2, tile_rows_ready
+    nop
+    move $t2, $a2
+tile_rows_ready:
+    addiu $t3, $t1, 4
+    blec $t3, $a3, tile_columns_ready
+    nop
+    move $t3, $a3
+\end{minted}
+\end{minipage}
+
+In the three-by-five example, the first tile contains three rows and four columns,
+or twelve cells. Its output covers linear indices zero through eleven, as shaded
+in Figure~\ref{fig:revision-locality-mapping}. The final tile contains the remaining
+three source cells and fills output indices twelve through fourteen. Its source
+IDs are four, nine and fourteen: the tile is not a contiguous twelve-word source
+prefix followed by its remainder.
+
+For a sixteen-by-sixteen matrix, a four-by-four source tile touches four source
+lines and four destination lines. In the fully associative eight-line model,
+those eight lines can coexist. By completing their sixteen cells together, the
+function uses each line's words before leaving that tile. The whole matrix then
+needs one initial touch for each of its 64 source lines and 64 destination lines.
+The observed 128 misses reach that lower bound under this allocation and policy.
+
+Placement can prevent lines from coexisting despite enough total capacity.
+Direct mapping has eight one-entry sets, selecting set $line\bmod8$. Two-way
+placement has four two-entry sets, selecting $line\bmod4$. A line can occupy only
+its selected set; LRU chooses within that set, not across the whole cache.
+Its tag identifies which of the different lines mapping to that set is present.
+
+The public output starts 1088 bytes, or 68 lines, after input. For sixteen rows,
+consecutive destination rows are 64 bytes, or four lines, apart. Their direct-map
+sets alternate between two numbers; in the two-way model they all select the
+same set. A tile's eight live lines therefore cannot necessarily occupy eight
+different entries. Unused entries in other sets do not help a crowded set.
+Derive these set numbers from the actual bases before attributing the difference
+to the word values or the total matrix size.
+
+\section{Measure the scope and the competing costs}
+
+The public measurement tool creates fresh sessions and cold cache observations
+at function entry. It stops at \texttt{transpose\_done}, before the caller stores
+the returned count. It records completed simulator instructions and data notices
+for the whole function. A stack-using implementation would include its auxiliary
+traffic in that scope; these two leaf implementations have none.
+
+\input{revision/figures/locality/measurements}
+
+Both methods perform two accesses per cell, so sixteen-by-sixteen gives 512
+notices. Fully associative misses fall from 320 ordinary to 128 tiled, but the
+instruction count rises from 1,643 to 2,457. Tile bounds, repeated pointer formation
+and extra loop levels cost instructions. Neither column alone establishes a
+speedup: the tool supplies no miss penalty, cycle model or elapsed host time.
+A different implementation or machine requires its own justified measurement.
+
+Direct mapping gives 344 misses for both methods, and two-way placement gives
+320 for both at this shape. Tiling improved the fully associative schedule but
+did not remove these placement conflicts. Even the ordering between direct and
+two-way counts need not be the same for every trace: at eight-by-eight, the tiled
+counts are 48 and 54. Changing ways also changes the number of sets and the lines
+that compete. Read the actual geometry and trace rather than treating a larger
+way count as a universal promise for every LRU workload.
+
+The smaller three-by-five matrices already fit the fully associative capacity,
+so tiling adds instructions without reducing their eight misses. Fifteen-by-thirteen
+has partially filled edge lines and clipped tiles; use its actual dimensions
+rather than extending the square's 128-miss argument to it.
+
+Repeat the experiment from the public repository root with JDK 25:
+\begin{verbatim}
+python3 tools/measure_revision_transpose.py \
+  --java /path/to/jdk-25/bin/java \
+  --cli /path/to/cli.jar --output /new/report/directory
+\end{verbatim}
+The tool checks the result and retains exact source/CLI hashes, measurements and
+the fully associative access log. A new output directory keeps an older receipt
+from being overwritten. Compare dimensions, base addresses, policy, initial cache
+state and interval before comparing numbers. Assembly, session startup and host
+time are outside these instruction/access counts.
+
+\section{Derive a different mapping independently}
+
+Implement \texttt{rotate\_clockwise} in \texttt{matrix-rotate.asm}. A clockwise
+quarter-turn maps source $(i,j)$ to output $(j,R-1-i)$. The output still has
+$C$ rows and $R$ columns, but one axis is reversed. Its linear destination index
+is $jR+(R-1-i)$, rather than transpose's $jR+i$.
+
+For source rows $[0,1,2]$ and $[3,4,5]$, the two-by-three matrix rotates into
+three rows $[3,0]$, $[4,1]$, $[5,2]$. Follow two corners to establish direction
+before deriving your loops. Ordinary transpose would produce $[0,3]$, $[1,4]$,
+$[2,5]$ instead. A one-by-one test cannot distinguish those mappings.
+
+Use the same full-pointer, nonoverlapping-window and zero-through-sixteen dimension
+preconditions. Return $RC$; preserve saved registers, the stack pointer, caller
+storage, source and guards. Each active source word receives one aligned read
+and each corresponding destination one aligned write, with no destination reads
+or inactive stores. Choose any traversal order; this independent task has no
+four-by-four tile schedule requirement.
+
+You might scan source rows and derive reversed destination origins, or scan output
+rows and derive source addresses backward. Bound relative indices separately from
+full addresses, and prove that every legal coordinate reaches exactly one output
+cell. Then use empty, rectangular and interior-window tests. The written lab
+supplies checks and investigations without prescribing your private labels or
+register allocation.
