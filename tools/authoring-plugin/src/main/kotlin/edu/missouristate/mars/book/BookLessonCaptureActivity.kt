@@ -64,6 +64,8 @@ import javax.swing.JCheckBox
 import javax.swing.JSpinner
 import javax.swing.JDialog
 import javax.swing.JLabel
+import javax.swing.JViewport
+import javax.swing.SwingUtilities
 import javax.swing.JTree
 import javax.swing.text.JTextComponent
 import kotlinx.coroutines.channels.Channel
@@ -365,11 +367,11 @@ class BookLessonCaptureActivity : ProjectActivity {
             check(captureSha256(Files.readAllBytes(independent)) == plan.independentSourceSha256)
         }
         assertSource()
-        chooseMode(project, output, "modes-reopened-choice", "Guided work", "Free writing", "Following a complete Run")
+        chooseMode(project, output, "modes-reopened-choice", "Guided work", "Free writing", "Run the program")
         val runReady = "Run first-program.asm using the normal MARS Run"
         awaitFrame(project, runReady, worked)
         captureFrame(project, output, "modes-reopened-guided", runReady)
-        chooseMode(project, output, "modes-reopened-free", "Free writing", "Guided work", "Following a complete Run")
+        chooseMode(project, output, "modes-reopened-free", "Free writing", "Guided work", "Run the program")
         awaitFrame(project, "implement 3x+1", independent)
         captureHints(project, output, "modes-reopened-history", existing = 1, revealTo = 1)
         assertSource()
@@ -392,8 +394,8 @@ class BookLessonCaptureActivity : ProjectActivity {
         val folder = Path.of(plan.projectRoot).resolve("mars-labs/console")
         val worked = folder.resolve("first-program.asm")
         val independent = folder.resolve("independent.asm")
-        val predictions = "Predicting register changes"
-        val run = "Following a complete Run"
+        val predictions = "Predict register changes"
+        val run = "Run the program"
         chooseMode(project, output, "modes-initial-cancel", null, "Guided work", predictions)
         check(withContext(Dispatchers.IO) { !Files.exists(folder) })
         chooseMode(project, output, "modes-guided-open", "Guided work", "Guided work", predictions)
@@ -1117,7 +1119,15 @@ class BookLessonCaptureActivity : ProjectActivity {
 
     private suspend fun captureFrame(project: Project, output: Path, id: String, text: String) {
         val root = withContext(Dispatchers.EDT) { checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane }
+        val layout = withContext(Dispatchers.EDT) {
+            checkNotNull(lessonHorizontalLayout(root)).also {
+                check(it.overflowPixels == 0) { "Native lesson is clipped horizontally: $it" }
+            }
+        }
         captureComponent(root, output, id, text)
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("$id-layout.json"), GsonBuilder().setPrettyPrinting().create().toJson(layout), CREATE_NEW)
+        }
     }
 
     private suspend fun captureComponent(root: JComponent, output: Path, id: String, text: String) {
@@ -1168,3 +1178,20 @@ internal fun lessonRegisterValue(rows: List<String>, register: String): Long? {
 internal val lessonDebugRegisterView = BookDebuggerTreeView(
     expand = listOf(listOf("Integer registers")), reveal = listOf("Integer registers", "\$t0"),
 )
+
+/** Geometry from ordinary Swing components; native lesson implementation types are not accessed. */
+internal data class BookLessonHorizontalLayout(val viewportWidth: Int, val panelWidth: Int, val overflowPixels: Int)
+
+internal fun lessonHorizontalLayout(root: JComponent): BookLessonHorizontalLayout? {
+    val panel = captureComponents(root).singleOrNull { it.name == "lessonPanel" && it.isShowing } ?: return null
+    val viewport = panel.parent as? JViewport ?: return null
+    val width = viewport.extentSize.width
+    val components = captureComponents(panel).filter {
+        it.name == "lessonMessagePane" || it is AbstractButton
+    }
+    val overflow = components.maxOfOrNull {
+        val bounds = SwingUtilities.convertRectangle(it.parent, it.bounds, viewport)
+        maxOf(0, -bounds.x, bounds.x + bounds.width - width)
+    } ?: 0
+    return BookLessonHorizontalLayout(width, panel.width, maxOf(0, panel.width - width, overflow))
+}

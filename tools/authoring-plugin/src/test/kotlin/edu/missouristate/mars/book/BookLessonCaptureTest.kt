@@ -7,6 +7,8 @@ import java.util.zip.ZipFile
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JViewport
+import java.awt.Dimension
 import javax.swing.JTextPane
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -114,6 +116,32 @@ class BookLessonCaptureTest {
             resume.copy(sourceSha256 = "d".repeat(64)))) {
             assertThrows<IllegalArgumentException> { invalid.validate() }
         }
+    }
+
+    @Test
+    fun `layout measurement detects clipped text and buttons rather than matching future text`() {
+        val root = JPanel(null)
+        assertNull(lessonHorizontalLayout(root))
+        val panel = object : JPanel(null) { override fun isShowing() = true }.apply { name = "lessonPanel" }
+        root.add(panel)
+        assertNull(lessonHorizontalLayout(root))
+        val viewport = JViewport().apply { extentSize = Dimension(500, 700); view = panel }
+        root.add(viewport)
+        panel.setSize(500, 1000)
+        assertEquals(BookLessonHorizontalLayout(500, 500, 0), lessonHorizontalLayout(root))
+        val text = JTextPane().apply { name = "lessonMessagePane"; setBounds(18, 10, 464, 600) }
+        panel.add(text)
+        assertEquals(0, lessonHorizontalLayout(root)!!.overflowPixels)
+        panel.setSize(560, 1000)
+        assertEquals(60, lessonHorizontalLayout(root)!!.overflowPixels)
+        panel.setSize(500, 1000)
+        text.setBounds(18, 10, 510, 600)
+        assertEquals(28, lessonHorizontalLayout(root)!!.overflowPixels)
+        text.setBounds(-5, 10, 464, 600)
+        assertEquals(5, lessonHorizontalLayout(root)!!.overflowPixels)
+        text.setBounds(18, 10, 464, 600)
+        panel.add(JButton("Next").apply { setBounds(100, 700, 420, 30) })
+        assertEquals(20, lessonHorizontalLayout(root)!!.overflowPixels)
     }
 
     @Test
