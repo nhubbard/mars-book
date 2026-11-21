@@ -239,4 +239,16 @@ class BookLessonCaptureTest {
         assertEquals(lessonDebugRegisterView.expand.single() + "\$t0", lessonDebugRegisterView.reveal)
     }
 
+    @Test
+    fun `assessment attempt captures cannot mix modes and resume requires source provenance`() {
+        valid.copy(captureAttempts = true).validate()
+        valid.copy(resumeAttempts = true, independentSourceSha256 = "b".repeat(64)).validate()
+        assertThrows<IllegalArgumentException> { valid.copy(resumeAttempts = true).validate() }
+        assertThrows<IllegalArgumentException> { valid.copy(captureAttempts = true, resumeAttempts = true).validate() }
+        for (mixed in listOf(valid.copy(captureRequirements = true), valid.copy(captureReset = true),
+            valid.copy(captureIndependent = true), valid.copy(captureRun = true), valid.copy(capturePolicy = true))) {
+            assertThrows<IllegalArgumentException> { mixed.copy(captureAttempts = true).validate() }
+        }
+    }
+
 }

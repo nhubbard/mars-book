@@ -86,6 +86,8 @@ internal data class BookLessonCapturePlan(
     val projectRoot: String = "",
     val outputDirectory: String = "",
     val sourceSha256: String = "",
+    val captureAttempts: Boolean = false,
+    val resumeAttempts: Boolean = false,
     val captureRequirements: Boolean = false,
     val resumeRequirements: Boolean = false,
     val captureReset: Boolean = false,
@@ -115,6 +117,11 @@ internal data class BookLessonCapturePlan(
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
+        if (captureAttempts || resumeAttempts) {
+            require(captureAttempts != resumeAttempts)
+            require(!captureRequirements && !resumeRequirements && !captureReset && !resumeReset && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair && !captureIndependent && !captureHints && !capturePolicy && !captureModes && !resumeModes && !resumeGuided && !resumeIndependent)
+            if (resumeAttempts) require(independentSourceSha256.matches(Regex("[a-f0-9]{64}")))
+        }
         if (captureRequirements || resumeRequirements) {
             require(captureRequirements != resumeRequirements)
             require(!captureReset && !resumeReset && !captureIndependent && !captureHints && !capturePolicy && !captureModes && !resumeModes && !resumeGuided && !resumeIndependent)
@@ -186,6 +193,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 toolWindowsReady.await()
                 when {
+                    plan.captureAttempts || plan.resumeAttempts -> captureAttempts(project, plan, output)
                     plan.resumeRequirements -> captureRequirementsResume(project, plan, output)
                     plan.resumeReset -> captureResetRecovery(project, plan, output)
                     plan.resumeGuided -> captureGuidedResume(project, plan, output)
@@ -282,6 +290,50 @@ class BookLessonCaptureActivity : ProjectActivity {
         )
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
+        }
+    }
+
+    private suspend fun captureAttempts(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        val source = Path.of(plan.projectRoot).resolve("mars-labs/console/independent.asm")
+        if (plan.resumeAttempts) check(withContext(Dispatchers.IO) {
+            captureSha256(Files.readAllBytes(source)) == plan.independentSourceSha256
+        })
+        openIndependent(project)
+        awaitFrame(project, "implement 3x+1", source)
+        awaitUi { independentCheckEnabled(project) }
+        if (!plan.resumeAttempts) {
+            setPolicy(project, output, "attempts-limit-one", released = 4, requiredChecks = emptySet(),
+                requirePredictions = false, maxAssessments = 1)
+            checkIndependent(project, output, "attempts-first-feedback", passed = false, status = "Completed assessments: 1 of 1")
+            checkIndependent(project, output, "attempts-limit-feedback", passed = false, limited = true, status = "used 1 of the 1")
+            withContext(Dispatchers.EDT) {
+                val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+                WriteCommandAction.runWriteCommandAction(project) { editor.document.insertString(0, "# Student revision preserves assessment count.\n") }
+                FileDocumentManager.getInstance().saveDocument(editor.document)
+            }
+            openIndependent(project)
+            awaitFrame(project, "implement 3x+1", source)
+            awaitUi { independentCheckEnabled(project) }
+            checkIndependent(project, output, "attempts-edit-still-limited", passed = false, limited = true, status = "used 1 of the 1")
+        } else {
+            checkIndependent(project, output, "attempts-reopened-still-limited", passed = false, limited = true, status = "used 2 of the 2")
+        }
+        val limit = if (plan.resumeAttempts) 3 else 2
+        setPolicy(project, output, "attempts-release-$limit", released = 4, requiredChecks = emptySet(),
+            requirePredictions = false, maxAssessments = limit)
+        checkIndependent(project, output, "attempts-released-feedback", passed = false, status = "Completed assessments: $limit of $limit")
+        checkIndependent(project, output, "attempts-released-limit", passed = false, limited = true, status = "used $limit of the $limit")
+        val digest = withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(source)) }
+        if (plan.resumeAttempts) check(digest == plan.independentSourceSha256)
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "completedAssessments" to limit, "assessmentLimit" to limit, "sourceSha256" to digest,
+                "reopened" to plan.resumeAttempts, "blockedRetriesPreserveCount" to true,
+                "instructorReleaseObserved" to true, "starterStillRejected" to true,
+                "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                "scope" to "Native settings and independent check feedback; no progress, answers or completed solution injected",
+            )), CREATE_NEW)
         }
     }
 
@@ -814,7 +866,7 @@ class BookLessonCaptureActivity : ProjectActivity {
     }
 
     private suspend fun setPolicy(project: Project, output: Path, prefix: String, released: Int, allowFreeWriting: Boolean = true,
-                                  requiredChecks: Set<String>? = null) {
+                                  requiredChecks: Set<String>? = null, requirePredictions: Boolean = true, maxAssessments: Int? = null) {
         val requirementLabels = withContext(Dispatchers.EDT) {
             listOf("run", "debug", "output", "diagnosis", "repair").associateWith { id ->
                 checkNotNull(CourseManager.instance.findLessonById("mars.console.$id")).name
@@ -844,7 +896,8 @@ class BookLessonCaptureActivity : ProjectActivity {
         onModalUi {
             val widgets = captureComponents(dialog.rootPane)
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value = released
-            widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected = true
+            if (maxAssessments != null) widgets.filterIsInstance<JTextComponent>().single { it.isShowing && it.accessibleContext.accessibleName == "Maximum completed independent assessments (0 means unlimited):" }.text = maxAssessments.toString()
+            widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected = requirePredictions
             widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected = allowFreeWriting
             if (requiredChecks != null) for ((id, title) in requirementLabels) {
                 widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == title }.isSelected = id in requiredChecks
@@ -853,7 +906,8 @@ class BookLessonCaptureActivity : ProjectActivity {
         awaitUi {
             val widgets = captureComponents(dialog.rootPane)
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value == released &&
-                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected &&
+                (maxAssessments == null || widgets.filterIsInstance<JTextComponent>().single { it.isShowing && it.accessibleContext.accessibleName == "Maximum completed independent assessments (0 means unlimited):" }.text == maxAssessments.toString()) &&
+                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected == requirePredictions &&
                 widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected == allowFreeWriting &&
                 (requiredChecks == null || requirementLabels.all { (id, title) ->
                     widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == title }.isSelected == (id in requiredChecks)
@@ -1071,7 +1125,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         awaitUi { !dialog.isShowing }
     }
 
-    private suspend fun checkIndependent(project: Project, output: Path, id: String, passed: Boolean) {
+    private suspend fun checkIndependent(project: Project, output: Path, id: String, passed: Boolean, limited: Boolean = false, status: String? = null) {
         val failure = AtomicReference<Throwable>()
         withContext(Dispatchers.EDT) {
             val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.CheckIndependent"))
@@ -1085,11 +1139,21 @@ class BookLessonCaptureActivity : ProjectActivity {
             }, ModalityState.nonModal())
         }
         val dialog = awaitDialog(failure, "Independent program results")
-        val expected = if (passed) "PASS input 20" else "FAIL input 20"
+        val expected = if (limited) "completed assessments allowed by your course" else if (passed) "PASS input 20" else "FAIL input 20"
         awaitUi { lessonVisibleText(dialog.rootPane).contains(expected) }
         val report = onModalUi { lessonVisibleText(dialog.rootPane) }
-        check(report.lines().count { it.startsWith(if (passed) "PASS input " else "FAIL input ") } == 5)
+        if (limited) check(!report.contains("PASS input ") && !report.contains("FAIL input "))
+        else check(report.lines().count { it.startsWith(if (passed) "PASS input " else "FAIL input ") } == 5)
+        if (status != null) check(report.contains(status))
         captureComponent(dialog.rootPane, output, id, expected)
+        if (status != null && !limited) {
+            onModalUi {
+                val text = captureComponents(dialog.rootPane).filterIsInstance<JTextComponent>().single { it.isShowing }
+                text.caretPosition = text.document.length
+            }
+            delay(300) // Let the native text viewport paint its assessment-count footer.
+            captureComponent(dialog.rootPane, output, "$id-status", status)
+        }
         onModalUi { visibleLessonButton(dialog.rootPane, "Return to editor").doClick() }
         awaitUi { !dialog.isShowing }
     }
