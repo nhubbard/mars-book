@@ -28,9 +28,13 @@ check is missing in MARS, implement and test it upstream rather than weakening t
 Read the upstream AGENTS.md before editing MARS; new plugin code must be Kotlin, use public
 IntelliJ APIs, and use Jupiter tests. Commit each tested implementation step.
 
-The teaching and capture implementation belongs in a separate authoring plugin that
-depends on MARS. Do not package the trainer into MARS as a book dependency. Prefer the
-public Features Trainer extension points; verify packaged APIs before implementation.
+The student instructional system belongs in the main MARS plugin, following the
+author's revised scope of 20 November 2026. Keep screenshot and publication-authoring
+automation in the separate authoring plugin that depends on MARS. Prefer public
+Features Trainer extension points; verify packaged APIs before implementation.
+The curriculum has a main learning book and a native LaTeX lab book that explains
+and supplements the interactive labs. Follow docs/restructuring-plan.md for revision;
+preserve the initial-draft evidence and human passages. There is no page cap.
 
 Use a dedicated IDE test instance and a light theme for captures. Before every upstream
 sandbox launch, run the actual clean cleanSandbox runIde tasks. Never invent screenshots

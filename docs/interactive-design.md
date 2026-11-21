@@ -29,13 +29,21 @@ does not establish semantic correctness. Source text equality is inappropriate f
 behavioral equivalence. State checks need defined pause boundaries and independent
 sessions so they do not corrupt the student's active debugger.
 
-## Separate authoring plugin
+## Main-plugin teaching and separate authoring automation
 
-The trainer and capture tooling belong in a separate IntelliJ plugin that depends on
-MARS. The published MARS simulator does not need a dependency on the book or trainer.
-The authoring plugin can depend on the bundled IDE Features Trainer for lessons and
-native highlighting. Its first purpose is reproducible IDE figure production; student
-remote delivery and instructor policy remain later work.
+The author revised the implementation boundary on 20 November 2026. The student
+instructional system belongs in the main MARS plugin. Its interactive labs are
+accompanied by a written native LaTeX lab book and the main learning book.
+Screenshot and publication-authoring automation remain in the separate plugin
+that depends on MARS. This supersedes the earlier proposal to keep all tutor
+implementation outside the student plugin.
+
+Use supported public Features Trainer facilities for native lesson presentation,
+action checks and highlighting. MARS owns its simulator-specific content and
+source-bound assessment state. The initial implementation foundation and the
+concrete platform-state gap are documented in the upstream
+`docs/student-instruction-system.md`. Production delivery and instructor policies
+are part of the authorized goal; they are not yet implemented.
 
 The pinned source and public SDK investigation is recorded in
 [intellij-tutor-investigation.md](intellij-tutor-investigation.md). It identifies public
@@ -58,7 +66,7 @@ run-service implementations by reflection.
 
 ## Remote delivery concept
 
-Start with local versioned archives. Later a server catalog can publish package IDs,
+Start with local versioned archives. A server catalog will publish package IDs,
 versions, digests, compatibility requirements, and download locations. Verify content
 before extraction, reject path traversal and symlinks, limit archive size, and retain
 an offline copy. Pin the version for an active assignment. Authentication, hosting,

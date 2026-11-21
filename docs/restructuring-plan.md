@@ -1,7 +1,7 @@
 # MARS textbook restructuring proposal
 
 Date: 20 November 2026  
-Status: Editorial approach accepted in principle; revised to remove page targets and defer the publication split. Implementation is a separate task.
+Status: Implementation goal authorized on 20 November 2026. Complete the main book, written lab supplement and student instruction in MARS; review the first complete unit before scaling.
 
 ## Purpose and decision
 
@@ -13,18 +13,19 @@ alternative applications available as companion laboratories.
 
 Set no page target or ceiling. Decide whether the learning book needs more than
 one physical volume after the revised material has a coherent reading sequence.
-The laboratories may become a separate native LaTeX lab book, interactive lessons
-integrated into IntelliJ, or both. That delivery choice follows pilot evaluation;
-it is not a requirement to produce three parallel publications.
+The laboratories have two complementary forms: interactive lessons integrated into
+MARS and a separate native LaTeX lab book explaining their concepts, observations
+and reasoning. These accompany the main learning book.
 
 The first draft is source material for this revision. Existing prose, code,
 checks and figures must earn their place through their contribution to learning.
 Technical verification establishes observed program behavior; it does not establish
 that an explanation teaches the reader to produce that behavior independently.
 
-This plan authorizes no chapter rewrite, deletion, package change or new simulator
-feature. The initial draft completion record remains a historical record. The
-current planning task produces this proposal only.
+The author has authorized implementation as a new goal. Start with one complete
+unit across the main book, written lab supplement and actual interactive lesson.
+The initial draft completion record remains historical evidence; preserve its
+sources and tested distributions on the recorded baseline commits.
 
 ## Intended reader and learning outcomes
 
@@ -64,8 +65,8 @@ Separate the learning narrative, practical activities and instructor materials:
 | Product | Purpose | Material it owns |
 | --- | --- | --- |
 | Main learning book | Explain concepts and develop independent reasoning, completing smaller projects in context | Connected exposition, selected worked programs, traces, conceptual figures, diagnostic examples and exercises |
-| Public companion laboratories | Supply extended and alternative project work, optionally collected in a lab book | Starters, supported contracts, optional extensions, longer construction guides, public checks and fixture generators |
-| Interactive IntelliJ lessons | Teach concepts through action and feedback, with guidance that decreases as students progress | Checkpoints, contextual hints, editor focus, per-step quizzes and recoverable progress |
+| Written lab book and public companion files | Explain what interactive labs teach and provide extended and alternative project work | Starters, supported contracts, optional extensions, longer construction guides, public checks and fixture generators |
+| Interactive labs in the main MARS plugin | Teach concepts through action and feedback, with guidance that decreases as students progress | Checkpoints, contextual hints, editor focus, per-step quizzes and recoverable progress |
 | Private instructor distribution | Support assessment and teaching | References, alternatives, answer keys, private checks, rubrics and teaching notes |
 
 All 35 projects remain available. Inclusion in the companion collection does not
@@ -107,11 +108,12 @@ Existing verified capture tooling does not establish that a student-facing tutor
 is already implemented.
 
 Retain guided and free-writing modes, equivalent-solution checks, and the planned
-instructor controls over progression and hints. Keep lesson and capture tooling
-in a separate plugin depending on MARS. Production delivery, remote downloads and
-policy enforcement require their own implementation scope. A lab book remains an
-option if it serves instruction or distribution needs; do not write both versions
-merely for completeness.
+instructor controls over progression and hints. Implement the student instructional system in the main MARS plugin. Keep screenshot
+and publication-authoring automation in the separate plugin depending on MARS.
+The written lab book is required: it prepares students for each activity, develops
+the reasoning that benefits from sustained prose, explains the observations and
+sets independent follow-up work. Plan production delivery, versioning and instructor
+policy as part of the instructional system, with explicit behavior and tests.
 
 Keep the publication as directly edited native LaTeX with ordinary includes.
 Exercise metadata may link a passage to a task but must not determine the order
@@ -126,10 +128,10 @@ length. Review a chapter's length by asking what it teaches, whether it repeats
 prior work and how much new reasoning it asks of the reader.
 
 The two parts below describe prerequisite order, not a committed physical split.
-They may fit in one main learning book or become separate volumes. A separate lab
-book would organize practical assignments by their prerequisites and links to the
-main text. An interactive lab collection could fulfill that practical role without
-a printed lab book. Each actual published volume should have its own contents,
+They may fit in one main learning book or become separate volumes. The separate lab
+book organizes practical assignments by their prerequisites and links to the main
+text. The written lab book complements the interactive collection and remains useful
+without replaying its IDE interactions. Each actual published volume should have its own contents,
 relevant glossary and index, and stated prerequisites.
 
 ### Part I Programming the machine
@@ -280,8 +282,8 @@ versions actually tested.
 | 5 Integration and publication review | Main book, any chosen volume or lab-book split, cross-references, indexes, accessible figures and matching distributions | Technical, editorial, visual and accessibility reviews pass; unresolved issues are documented with an owner |
 
 Review each chapter before starting a large batch. Use the pilots to establish the
-editorial method before extrapolating effort or completion dates. Do not open a
-sustained rewrite goal until the author accepts the pilot approach.
+editorial method before extrapolating effort or completion dates. The sustained implementation goal is authorized; retain author review of the
+completed pilot unit before a bulk rewrite.
 
 ### Pilot review tasks
 
@@ -334,8 +336,10 @@ result does not transfer automatically to a revised PDF.
 
 ## Work outside this revision
 
-Production remote course delivery, enforced instructor progression and hint policy,
-new simulator performance work and unrelated conformance work remain separate tasks.
+New simulator performance work and unrelated conformance work remain separate tasks.
+Remote delivery and instructor progression and hint policies are now part of the
+student instructional-system goal; rosters, LMS integration and hosted grading
+services require separate product decisions when their need is established.
 The restructuring may reveal a genuine missing grading capability; implement and
 test such a capability separately when the instructional contract requires it.
 Do not expand the book revision into an unrelated plugin redesign.
@@ -346,6 +350,6 @@ The concept-led approach and separation of explanation from extended constructio
 are accepted in principle. Review which smaller projects should be completed in
 the main book, the roles of the remaining labs, and the three pilot selections.
 Use the first interactive lesson storyboard to evaluate delivery. Defer physical
-volume count and the choice of a printed lab book until the revised sequence and
-pilot experience support those decisions. There is no page target or ceiling;
+volume count until the revised sequence supports that decision. The main learning
+book, written lab supplement and integrated interactive labs are the agreed products. There is no page target or ceiling;
 clarity, coherent progression and independent student work govern the revision.
