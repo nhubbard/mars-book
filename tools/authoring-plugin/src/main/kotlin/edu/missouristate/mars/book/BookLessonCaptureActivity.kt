@@ -37,6 +37,7 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.WindowManager
@@ -86,6 +87,10 @@ internal data class BookLessonCapturePlan(
     val captureRepair: Boolean = false,
     val captureIndependent: Boolean = false,
     val captureHints: Boolean = false,
+    val resumeIndependent: Boolean = false,
+    val expectIndependentRecheck: Boolean = false,
+    val independentSourceSha256: String = "",
+    val closeProjectAfterCapture: Boolean = false,
     val independentSolutionPath: String = "",
     val independentSolutionSha256: String = "",
 ) {
@@ -94,7 +99,12 @@ internal data class BookLessonCapturePlan(
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
-        if (captureIndependent) {
+        require(!expectIndependentRecheck || resumeIndependent)
+        if (resumeIndependent) {
+            require(captureIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
+            require(independentSourceSha256.matches(Regex("[a-f0-9]{64}")))
+        }
+        if (captureIndependent && !resumeIndependent) {
             require(Path.of(independentSolutionPath).isAbsolute)
             require(independentSolutionSha256.matches(Regex("[a-f0-9]{64}")))
         }
@@ -113,7 +123,10 @@ class BookLessonCaptureActivity : ProjectActivity {
         val output = Path.of(plan.outputDirectory)
         withContext(Dispatchers.IO) { Files.createDirectory(output) }
         try {
-            withTimeout(180_000) { capture(project, plan, output) }
+            withTimeout(180_000) {
+                if (plan.resumeIndependent) captureResume(project, plan, output) else capture(project, plan, output)
+            }
+            if (plan.closeProjectAfterCapture) closeProject(project, output)
         } catch (error: Exception) {
             withContext(NonCancellable + Dispatchers.IO) {
                 Files.writeString(output.resolve("failed.txt"), error.stackTraceToString(), CREATE_NEW)
@@ -129,17 +142,7 @@ class BookLessonCaptureActivity : ProjectActivity {
             override fun lessonPassed(lesson: Lesson) { predictionPasses.incrementAndGet() }
         }
         val lesson = withContext(Dispatchers.EDT) {
-            val themes = LafManager.getInstance()
-            themes.autodetect = false
-            themes.setCurrentUIThemeLookAndFeel(themes.installedThemes.single { it.name == "IntelliJ Light" && !it.isDark })
-            themes.updateUI()
-            val colors = EditorColorsManager.getInstance()
-            colors.setGlobalScheme(checkNotNull(colors.getScheme(EditorColorsManager.getDefaultSchemeName())))
-            val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
-            val screen = frame.graphicsConfiguration.bounds
-            frame.setBounds(screen.x + 20, screen.y + 40, minOf(1280, screen.width - 40), minOf(900, screen.height - 80))
-            frame.toFront()
-            LangManager.getInstance().updateLangSupport("MARS_MIPS")
+            configurePresentation(project)
             val manager = CourseManager.instance
             manager.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.predictions" }.also {
                 it.addLessonListener(predictionListener)
@@ -204,6 +207,84 @@ class BookLessonCaptureActivity : ProjectActivity {
         )
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
+        }
+    }
+
+    /** Only the dedicated authoring fixture opts into closing; the native API saves before disposal. */
+    private fun closeProject(project: Project, output: Path) {
+        val application = ApplicationManager.getApplication()
+        application.invokeLater({
+            val closed = ProjectManager.getInstance().closeAndDispose(project)
+            val disposed = project.isDisposed
+            application.executeOnPooledThread {
+                Files.writeString(output.resolve("project-closed.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "closed" to closed, "disposed" to disposed,
+                    "scope" to "Native save, close and dispose completed; a later IDE process must verify loaded progress",
+                )), CREATE_NEW)
+            }
+        }, ModalityState.nonModal())
+    }
+
+    private fun configurePresentation(project: Project) {
+        val themes = LafManager.getInstance()
+        themes.autodetect = false
+        themes.setCurrentUIThemeLookAndFeel(themes.installedThemes.single { it.name == "IntelliJ Light" && !it.isDark })
+        themes.updateUI()
+        val colors = EditorColorsManager.getInstance()
+        colors.setGlobalScheme(checkNotNull(colors.getScheme(EditorColorsManager.getDefaultSchemeName())))
+        val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
+        val screen = frame.graphicsConfiguration.bounds
+        frame.setBounds(screen.x + 20, screen.y + 40, minOf(1280, screen.width - 40), minOf(900, screen.height - 80))
+        frame.toFront()
+        LangManager.getInstance().updateLangSupport("MARS_MIPS")
+    }
+
+    /** Reopen existing work without seeding progress or installing a solution. */
+    private suspend fun captureResume(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        val directory = Path.of(plan.projectRoot).resolve("mars-labs/console")
+        val source = directory.resolve("independent.asm")
+        withContext(Dispatchers.IO) {
+            check(captureSha256(Files.readAllBytes(directory.resolve("first-program.asm"))) == plan.sourceSha256)
+            check(captureSha256(Files.readAllBytes(source)) == plan.independentSourceSha256)
+        }
+        val passes = AtomicInteger()
+        val listener = object : LessonListener {
+            override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet() }
+        }
+        val lesson = withContext(Dispatchers.EDT) {
+            configurePresentation(project)
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.independent" }.also {
+                it.addLessonListener(listener)
+                CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+        }
+        try {
+            if (plan.expectIndependentRecheck) {
+                awaitFrame(project, "implement 3x+1", source)
+                delay(600) // Several native timer checks must reject the old source evidence.
+                check(passes.get() == 0) { "Offline edit reused an earlier source check" }
+                captureFrame(project, output, "reopened-recheck-required", "implement 3x+1")
+                if (plan.captureHints) captureHints(project, output, "reopened-hints", existing = 4, revealTo = 4)
+                checkIndependent(project, output, "reopened-rechecked-feedback", passed = true)
+            }
+            awaitUi { passes.get() == 1 }
+            awaitFrame(project, "Your current source passed all five", source)
+            captureFrame(project, output, "reopened-complete", "Your current source passed all five")
+            withContext(Dispatchers.IO) {
+                check(captureSha256(Files.readAllBytes(source)) == plan.independentSourceSha256)
+                Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "platformBuild" to ApplicationInfo.getInstance().build.asString(),
+                    "resumedIndependent" to true, "nativeIndependentPassesObserved" to passes.get(),
+                    "checkActionInvoked" to plan.expectIndependentRecheck,
+                    "offlineEditRequiredRecheck" to plan.expectIndependentRecheck,
+                    "hintHistoryObserved" to (plan.expectIndependentRecheck && plan.captureHints),
+                    "sourceUnchangedByResume" to true, "independentSourceSha256" to plan.independentSourceSha256,
+                    "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                    "scope" to "Existing project in a fresh IDE process; no progress injection or solution installation",
+                )), CREATE_NEW)
+            }
+        } finally {
+            withContext(NonCancellable + Dispatchers.EDT) { lesson.removeLessonListener(listener) }
         }
     }
 

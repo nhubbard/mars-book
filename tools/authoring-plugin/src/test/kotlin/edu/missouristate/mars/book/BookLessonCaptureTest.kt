@@ -42,6 +42,24 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `resume captures require existing source provenance and cannot replay the initial sequence`() {
+        assertFalse(valid.resumeIndependent)
+        assertFalse(valid.expectIndependentRecheck)
+        assertFalse(valid.closeProjectAfterCapture)
+        assertThrows<IllegalArgumentException> { valid.copy(expectIndependentRecheck = true).validate() }
+        assertThrows<IllegalArgumentException> { valid.copy(resumeIndependent = true).validate() }
+        val resume = valid.copy(resumeIndependent = true, captureIndependent = true, independentSourceSha256 = "b".repeat(64))
+        resume.validate() // No instructor solution path is needed or read when resuming.
+        resume.copy(expectIndependentRecheck = true, captureHints = true, closeProjectAfterCapture = true).validate()
+        assertThrows<IllegalArgumentException> { resume.copy(independentSourceSha256 = "bad").validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(captureRun = true).validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(captureDebug = true).validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(captureOutput = true).validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(captureDiagnosis = true).validate() }
+        assertThrows<IllegalArgumentException> { resume.copy(captureRepair = true).validate() }
+    }
+
+    @Test
     fun `selectors reject hidden and ambiguous UI controls`() {
         val root = JPanel()
         root.add(JButton("Check prediction"))
