@@ -1,7 +1,7 @@
 # First-unit course policy
 
 MARS stores course settings separately from each student's progress. In IntelliJ,
-open **Settings → Tools → MARS Learning**. The first unit currently offers three
+open **Settings → Tools → MARS Learning**. The first unit offers the following
 controls:
 
 - **Released hints for the independent program** accepts a number from zero to
@@ -17,6 +17,13 @@ controls:
   lesson explains the restriction. Existing independent source and hint history stay
   intact. Releasing the mode later restores access without resetting that work.
 
+- **Required guided activities before independent work** selects any combination
+  of Run the program, Trace arithmetic, Prepare output, Find the wrong argument,
+  and Repair output. A selected activity needs a successful observation of its
+  current source. Output preparation and diagnosis also require correct latest
+  answers to their associated questions. Simply opening an activity does not
+  satisfy it. The independent lesson lists the required activities still needed.
+
 The default is four released hints with no prerequisite and free writing available.
 An instructor can start with no hints, release an initial question about value flow, then release a concrete
 trace later. Reading help does not complete a source check. Meeting the prediction
@@ -29,6 +36,15 @@ the current policy. If a newly required prerequisite is unsatisfied during an
 execution check, that result cannot earn a successful check. Existing genuine
 source evidence remains stored; the native task cannot complete while the current
 prerequisite is unsatisfied. A source edit separately invalidates execution evidence.
+
+Required execution evidence follows the source file after its lesson closes.
+Editing that source clears its checks, even if you restore the original text.
+Changes made outside the editor are checked against disk before an independent
+assessment starts and before its result is accepted. After reopening a project,
+unchanged completed activities remain usable; changed ones need fresh execution.
+Quizzes and revealed hints remain in personal history. A reset or recovery also
+requires fresh execution checks. Unknown required activity IDs are retained and
+block assessment until the course and plugin versions agree.
 
 IntelliJ saves the shared policy in `.idea/mars-learning.xml`. Personal progress,
 quiz attempts and hint history stay in `.idea/workspace.xml`. For example, this
@@ -61,8 +77,15 @@ then observes hint release at 0, 2, 0 and 4. It requires no source mutation, no
 completion from hints, and rejection of the unfinished starter by all five public
 cases. The implementation and exact verification scope are recorded upstream in
 `docs/student-instruction-system.md` and privately under `native-policy-01`.
-These first-unit controls do not yet implement per-step progression, retry limits,
-remote course policy distribution or private grading.
+The later `guided-requirements-01` native verification selects all five guided
+activities, completes their actual Run/Debug observations and questions, and checks
+that an edit-and-restore invalidates three observations of the shared worked
+source. Selecting only the unchanged diagnosis and repair activities permits
+assessment. A fresh IDE process detects an offline edit to the required repair
+source; releasing that requirement preserves the unchanged diagnosis evidence.
+The unfinished independent starter fails all five execution cases in both runs.
+These first-unit controls do not yet implement arbitrary per-step sequencing,
+retry limits, remote course policy distribution or private grading.
 
 ## Choosing a mode
 

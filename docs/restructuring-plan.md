@@ -357,3 +357,8 @@ clarity, coherent progression and independent student work govern the revision.
 ## First-unit figure milestone — 21 November 2026
 
 The revised written lab now includes three native teaching figures with fourteen numbered explanations, using four unchanged actual light-theme IDE captures. They compare consecutive arithmetic pauses, correct output preparation and a wrong argument with a correct retained result. Captions, descriptions and callouts are editable LaTeX; geometric receipts retain provenance. The six-page proof passes automated PDF/UA-2 validation, and color/grayscale inspection is recorded privately. These checks establish publication integrity, not learner usability. Author, learner and assistive-technology review remain open; the complete 35-project goal is unchanged.
+
+
+## First-unit progression milestone — 21 November 2026
+
+The main plugin now supports instructor-selected guided activities before independent assessment. Each selected requirement uses current-edition questions and source-bound Run/Debug evidence. Edits after leaving a lesson, edits restored to the original text, offline changes and mid-assessment changes cannot reuse stale execution credit. Native Settings, all five actual observations and a fresh-process offline-edit check have been exercised. The written lab explains the separate independent file and these prerequisites. This remains a first-unit implementation; arbitrary course sequencing, retry policies, content delivery and the remaining curriculum are open. Author, learner and assistive-technology review remain pending.
