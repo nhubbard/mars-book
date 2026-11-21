@@ -1,6 +1,8 @@
 package edu.missouristate.mars.book
 
 import com.google.gson.GsonBuilder
+import com.intellij.debugger.ui.DebuggerContentInfo.VARIABLES_CONTENT
+import com.intellij.execution.ui.RunContentManager
 import com.intellij.execution.ExecutionListener
 import com.intellij.execution.ExecutionManager
 import com.intellij.execution.RunManager
@@ -312,7 +314,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 if (index == 2) passed.await()
                 awaitFrame(project, text, source)
-                val observed = awaitDebugRegisters(project, expected)
+                val observed = awaitDebugRegisters(project, handler, expected)
                 rows += mapOf("sourceLine" to sourceLine + 1, "input" to 20, "result" to expected, "renderedRows" to observed)
                 captureFrame(project, output, "debug-" + listOf("before-add", "after-add", "after-one")[index], text)
                 if (index < 2) withContext(Dispatchers.EDT) { session.stepOver(false) }
@@ -331,12 +333,21 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun awaitDebugRegisters(project: Project, result: Long): List<String> {
+    private suspend fun awaitDebugRegisters(project: Project, handler: ProcessHandler, result: Long): List<String> {
         val view = lessonDebugRegisterView
         while (true) {
             val rows = withContext(Dispatchers.EDT) {
-                val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
-                val trees = captureComponents(frame.rootPane).filterIsInstance<JTree>().filter { it.isShowing }.toList()
+                val descriptor = RunContentManager.getInstance(project).findContentDescriptor(
+                    DefaultDebugExecutor.getDebugExecutorInstance(), handler,
+                ) ?: return@withContext emptyList()
+                val ui = descriptor.runnerLayoutUi ?: return@withContext emptyList()
+                val content = ui.findContent(VARIABLES_CONTENT) ?: ui.contents.singleOrNull { isRegisterCaptureTab(it.displayName) }
+                    ?: return@withContext emptyList()
+                if (!content.component.isShowing) {
+                    ui.selectAndFocus(content, false, true)
+                    return@withContext emptyList()
+                }
+                val trees = captureComponents(content.component).filterIsInstance<JTree>().filter { it.isShowing }.toList()
                 val tree = selectDebuggerTree(trees, view)
                 if (tree == null || !applyDebuggerTreeView(tree, view)) emptyList()
                 else (0 until tree.rowCount).map { renderedDebuggerRow(tree, tree.getPathForRow(it)) }
