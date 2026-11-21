@@ -3,16 +3,17 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first three main-book chapters: the complete console
+- `learning.tex` includes the first four main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
-  experiment, followed by addresses and memory through a complete pixel program.
+  experiment, addresses and memory through a complete pixel program, then decisions
+  and repetition through a bounded seven-segment range counter.
   The chapters use connected explanations and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first three written lab supplements: predictions,
+- `lab-book.tex` includes the first four written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
-  native interactive support; the second and third currently use ordinary Run and Debug.
+  native interactive support; the later units currently use ordinary Run and Debug.
 
 ## Reading the current proofs
 
@@ -20,8 +21,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–3 (16 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–3 (12 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–4 (23 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–4 (15 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -81,3 +82,7 @@ verification, downloadable sources and the remaining native lesson work.
 The addresses and memory chapter begins on page 12 of the main proof, and its
 written lab begins on page 10 of the lab proof. See [memory-unit.md](memory-unit.md)
 for the literal program, checks and remaining interactive work.
+
+The decisions and repetition chapter begins on main page 17, and its written lab
+begins on lab page 13. See [branch-unit.md](branch-unit.md) for the worked loop,
+verification scope and remaining native learning work.

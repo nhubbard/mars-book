@@ -1,0 +1,114 @@
+\chapter{Following a loop through both paths}
+\MARSChapterHeading{Following a loop through both paths}
+\label{revision:lab-decisions-and-repetition}
+
+This lab accompanies the main book's range counter. Use the supplied
+\texttt{range-counter.asm} program. It is stored under
+\texttt{revision/labs/files}. Select MIPS64 Release 6 and the Default memory
+layout. The source header connects Digital Lab Sim.
+These activities use ordinary Run and Debug; the fourth revised native MARS
+Learning unit is not yet implemented.
+
+The final display is only the latest mask. Your task is to explain how many
+stores occurred, why those stores had the required values, and why an empty range
+performs none. The existing seven-segment project provides public protocol checks
+alongside the manual investigation.
+
+\section{Predict before the first store}
+
+Start with the default inputs, first index zero and count sixteen. Break at
+\texttt{loop}. Record the current table address, next index and remaining count.
+Before stepping, decide whether \texttt{beqzc} will take its branch. State the next
+instruction on that path, rather than saying only that the condition is false.
+
+For a nonzero count, the next instruction is \texttt{nop}, followed by the byte
+load. Step through them and inspect \texttt{\$t3}. It should contain
+\texttt{0x3F}. Explain how that mask lights the six outside bars while leaving the
+middle bar and decimal point off. It is a mask selected by index zero, not the
+numerical value zero sent directly to the device.
+
+At \texttt{port\_write}, the store has not executed. Step once to
+\texttt{displayed}. The device has received the mask, but the index and count
+have not yet changed. Use these two pauses to distinguish a prepared transaction
+from a completed one.
+
+\section{Follow one complete iteration}
+
+Step through the three updates and stop at \texttt{iteration\_done}. The table
+address has advanced one byte, the next index is one, and the remaining count is
+fifteen. Explain why the pointer update uses a 64-bit addition while these small
+counts fit the word additions.
+
+Step over \texttt{bc}. Its next instruction is at \texttt{loop}; there is no delay
+slot to execute first. At the second table load, predict mask \texttt{0x06}.
+Check that the port address remains unchanged. The input words and table should
+also remain unchanged: this loop keeps its changing state in registers.
+
+Write a trace for two iterations with three distinct boundaries: before the
+store, after the store, and after the updates. Avoid calling the post-update index
+the digit already displayed. At that boundary it names the next entry.
+
+\section{Exercise the taken path}
+
+Change the inputs to first index sixteen and count zero. Restart Debug from the
+beginning so setup reads the new data. At \texttt{loop}, predict a taken branch
+to \texttt{done}. The following \texttt{nop} should be skipped, along with the
+load and store. A one-past-table pointer is computed but not read through.
+
+Check a second empty range with first index zero. Its pointer differs, while the
+required output history is still empty. This distinguishes the rule ``count zero
+means no work'' from a special case that stops only at index sixteen.
+
+Next select first index fourteen and count two. Predict the masks for E and F,
+then trace the count from two to one to zero. The index sixteen at termination
+is an exclusive boundary; loading glyph sixteen would go beyond the table.
+
+\section{Investigate one fault at a time}
+
+In a working copy, change the pointer increment from one to two. Start with a
+short range that should select adjacent entries. Predict the new load addresses
+and compare them with the selected table bytes. Restore the increment afterward.
+A wrong address stride can produce recognizable glyphs while violating the
+requested sequence.
+
+In another copy, remove the count decrement. Run with a bounded check or stop the
+Debug session after observing repeated iterations. The count remains nonzero,
+so the backward branch cannot make the top test succeed. Explain which part of
+the invariant has stopped being maintained. Restore the original source before
+trying the next change.
+
+For the forbidden-slot experiment, replace the \texttt{nop} immediately after
+\texttt{beqzc} with \texttt{bc done}. With a nonzero count, the conditional branch
+is not taken and the next control-transfer instruction is illegal in that slot.
+With count zero, the first branch jumps away before that slot executes. Predict
+both outcomes, then test separate runs. A label between the instructions would
+not repair the nonzero path. Restore the safe \texttt{nop} afterward.
+
+\section{Check the output protocol}
+
+Use the public checks in the seven-segment project. They observe actual device
+stores, including their byte width and address, and reject writes to protected
+input/table data. A final F-shaped display cannot establish that all sixteen
+requested writes occurred. Repeated mask values also require repeated stores:
+writing the same value twice can represent two distinct requested entries.
+
+The checks do not certify the timing of visible repaints. A rapid Run may show
+only its last mask. Debug supplies useful observation boundaries, while the
+execution trace supplies evidence about the whole sequence. Neither replaces
+your explanation of the loop's state and stopping argument.
+
+\section{Implement an end-pointer version}
+
+Write the alternative from the main book using a current pointer and an exclusive
+end pointer. Plan both addresses for an empty range before writing its branch.
+List the register values that change and those that remain fixed. Keep the branch
+comparison before the first load and keep its forbidden slot safe.
+
+Use the same public checks, including the empty and end-of-table cases. An
+equivalent implementation can use different registers, labels and updates while
+producing the same ordered port writes and preserving the protected data.
+Explain the condition that establishes a valid read on every iteration.
+
+The elective MarsBot square project is a later application of this loop reasoning
+to another device. Its movement protocol is a separate interface to study; the
+counter's display masks and port addresses do not carry over to it.

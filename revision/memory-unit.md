@@ -2,9 +2,9 @@
 
 The directly edited publication sources are
 `revision/main/addresses-and-memory.tex` and
-`revision/labs/addresses-and-memory.tex`. The main proof now has 16 pages, with
-chapter 3 beginning on page 12. The lab proof has 12 pages, with lab 3 beginning
-on page 10. The original manuscript remains preserved.
+`revision/labs/addresses-and-memory.tex`. At this unit’s first publication, the main proof had 16 pages and the lab had 12.
+Later chapters extend those proofs; chapter 3 still begins on main page 12 and
+lab 3 on lab page 10. The original manuscript remains preserved.
 
 The chapter develops addresses, labels, effective byte addresses, word/byte access
 width, little-endian layout and signed/unsigned loads through one complete pixel

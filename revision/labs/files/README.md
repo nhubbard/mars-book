@@ -63,3 +63,12 @@ the Default memory layout. `tools/check_revision_memory.py` verifies that this
 file matches the literal native listing, then checks memory, register snapshots
 and normal silent exit. The written lab supplies the manual Run/Debug sequence;
 the third revised native learning unit is not yet implemented.
+
+## Decisions and repetition
+
+`range-counter.asm` is the complete fourth main-book example. It uses MIPS64
+Release 6 compact branches, the Default memory layout and the Digital Lab source
+header. The written lab develops both branch paths and the output protocol.
+`tools/check_revision_branches.py` verifies the two-way-choice fragment and counter
+through the existing native grader; its stricter one-byte-read checks qualify the
+worked program, rather than imposing an exact implementation on student solutions.

@@ -1,0 +1,310 @@
+\chapter{Decisions and repetition}
+\MARSChapterHeading{Decisions and repetition}
+\label{revision:decisions-and-repetition}
+
+Every program so far has followed a fixed sequence from its first instruction to
+its exit. A counter needs a choice: display another value, or stop. That choice
+changes which instruction executes next. Repeating the same body with new register
+values lets a short program process a whole range of values.
+
+We will build a counter for MARS's right seven-segment display. Its data contains
+sixteen segment masks, one for each hexadecimal digit from 0 through F. Two input
+words select where to start and how many entries to display. The default inputs
+select all sixteen. An empty range selects none, and must reach the exit without
+reading a glyph or writing the display.
+
+\section{Choose the next instruction}
+
+The processor keeps the address of the next instruction in its \emph{program
+counter}, often abbreviated PC. During straight-line execution, the next address
+follows the current instruction. A \emph{branch} can choose another instruction
+address, specified in our source by a label.
+
+Suppose \texttt{\$t1} holds the number of entries remaining. The instruction
+\texttt{beqzc \$t1, done} branches to \texttt{done} if that register is zero.
+Its mnemonic means ``branch if equal to zero, compact.'' If the value is nonzero,
+execution continues with the following instruction. The assembler resolves the
+label into the branch's relative destination; we do not calculate its encoded
+distance by hand.
+
+The branch reads \texttt{\$t1}; it does not decrement it. A counter needs separate
+instructions to change its state. Similarly, the unconditional compact branch
+\texttt{bc loop} always selects \texttt{loop}. The backward destination makes
+repetition possible, but the register updates determine whether that repetition
+will eventually end.
+
+\section{Compact branches and the next source line}
+
+These examples use MIPS64 Release 6 compact branches. A taken compact branch
+transfers immediately: the instruction immediately after it is not executed on
+that path. If \texttt{beqzc} finds zero, the next instruction executed is at
+\texttt{done}. If it finds a nonzero value, the next instruction is the sequential
+one after the branch. These two paths are called taken and not taken.
+
+A conditional compact branch also has a \emph{forbidden slot}: when it is not
+taken, the immediately following machine instruction cannot itself be a branch
+or jump. Our program places \texttt{nop} there. This instruction performs no
+useful data operation and does not transfer control, so either branch outcome
+has a straightforward meaning. The instruction after the \texttt{nop} starts the
+body only when entries remain.
+
+A \texttt{nop} here is not a delay that runs before a taken branch. On the taken
+path it is skipped. The unconditional \texttt{bc} has neither a delay slot nor a
+forbidden slot. MARS also supports retained delayed branch instructions; copying
+an older loop and changing only its branch mnemonic can change what executes.
+Follow the semantics of the instruction you actually use.
+
+\section{Build a two-way choice}
+
+A branch can also choose between two computations without repeating either.
+Suppose a flag is already in \texttt{\$t0}. We want \texttt{\$t1} to become
+seven when the flag is zero, and nine otherwise. The following fragment belongs
+inside a \texttt{main} routine after the flag has been prepared.
+
+\MARSCodeLabel{Two paths with a shared continuation}
+\begin{minted}{mars-idea}
+    beqzc $t0, zero_case
+    nop
+    li $t1, 9
+    bc joined
+zero_case:
+    li $t1, 7
+joined:
+    nop
+\end{minted}
+
+With a zero flag, the first branch selects \texttt{zero\_case}. It skips both
+the safe \texttt{nop} and the assignment of nine. After assigning seven,
+execution reaches \texttt{joined} by continuing sequentially. With a nonzero
+flag, execution follows the \texttt{nop}, assigns nine and uses \texttt{bc} to
+skip the other assignment. Both paths arrive at the shared continuation with
+the chosen result in the same register.
+
+The second \texttt{nop} marks a harmless instruction at the join for this small
+experiment. In a complete program, useful work can continue there. The labels
+organize the paths; they do not stop execution or automatically separate an
+``else'' block. If we removed \texttt{bc joined}, the nonzero path would assign
+nine and then continue into \texttt{zero\_case}, replacing it with seven.
+
+Try flags zero, five and $-1$ in a copy of an earlier program's \texttt{main}
+routine. Replace its calculation with this fragment and inspect \texttt{\$t1}
+at \texttt{joined}, before exiting normally. Predict the result before each run.
+The condition tests equality with zero, so both positive and negative nonzero
+flags select nine. This pattern gives an assembly form of an ordinary two-way
+conditional: a test, two paths, and a place where execution rejoins.
+
+\section{A device address has an interface}
+
+Chapter~\ref{revision:addresses-and-memory} used ordinary data memory for a bitmap.
+Digital Lab Sim instead provides \emph{memory-mapped I/O}: selected addresses
+represent device ports. A store to such a port supplies a value to a peripheral
+model. The address, access width and written bits are part of its interface.
+
+In the Default memory layout, the right seven-segment display port is at
+\texttt{0x00000000FFFF0010}. The adjacent byte addresses serve other controls and
+the left display. We must use a one-byte store to the right port. A word store
+would touch more than that port, even if the source's low byte were correct.
+
+The source uses \texttt{.eqv RIGHT\_DISPLAY} to give this constant a name.
+\texttt{.eqv} defines an assembler substitution; it does not allocate a memory
+object. \texttt{dli \$t7, RIGHT\_DISPLAY} loads the complete 64-bit constant into
+a register. Like \texttt{li}, \texttt{dli} is an assembler convenience and can
+expand into several instructions. Here it makes the intended address's zero
+upper half explicit.
+
+A byte written to this device is a \emph{segment mask}, with one bit per lighted
+segment. It is not an ASCII character and is not the integer that the device will
+somehow convert to a digit. With the standard segment assignment, the mask for
+zero is \texttt{0x3F}, or binary \texttt{00111111}. Bits 0 through 5 are set;
+the middle segment and decimal point are off.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Mask bit & Segment controlled \\
+\midrule
+0 & Top horizontal bar \\
+1 & Upper-right bar \\
+2 & Lower-right bar \\
+3 & Bottom horizontal bar \\
+4 & Lower-left bar \\
+5 & Upper-left bar \\
+6 & Middle horizontal bar \\
+7 & Decimal point \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For digit one, only the two right bars are needed: bits 1 and 2 give
+$2+4=6$, or \texttt{0x06}. A lookup table stores these designs as bytes, so the
+loop does not need a different branch for every shape. Index zero selects mask
+\texttt{0x3F}; index one selects \texttt{0x06}. The index and the selected mask
+are different values with different jobs.
+
+\section{Describe the loop's state}
+
+The inputs satisfy $0\leq\texttt{first\_digit}\leq16$ and
+$0\leq\texttt{digit\_count}\leq16-\texttt{first\_digit}$. These bounds keep every
+requested entry inside the sixteen-byte table. They are preconditions of the
+worked program, not checks it performs on arbitrary input.
+
+We will retain the next table address in \texttt{\$t0}, the remaining count in
+\texttt{\$t1}, and the next index in \texttt{\$t2}. A byte load obtains the mask
+in \texttt{\$t3}, and \texttt{\$t7} retains the output port address. At the top
+of the loop, the count decides whether the table address may be read.
+
+After each store, advance the table address by one byte, advance the index by
+one, and reduce the remaining count by one. Then return to the test. For the
+initial range starting at zero with count sixteen, the first two iterations have
+the following boundaries. The output history lists bytes in hexadecimal.
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Boundary & Next index & Remaining & Output history \\
+\midrule
+First test & 0 & 16 & Empty \\
+After first store, before updates & 0 & 16 & \texttt{3F} \\
+Second test & 1 & 15 & \texttt{3F} \\
+Third test & 2 & 14 & \texttt{3F 06} \\
+Final test & 16 & 0 & All sixteen masks \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The index immediately after a store still names the entry just displayed. At the
+next test it names the next entry. State claims therefore need an execution
+boundary, as they did for the earlier arithmetic and memory examples.
+
+\section{The complete range counter}
+
+The header connects Digital Lab Sim. The table and guard words are ordinary
+static data; the display port is separate. The input words follow the table's
+guard, so loading \texttt{first\_digit} and the next word obtains the two inputs.
+
+\MARSCodeLabel{Display a bounded range of hexadecimal glyphs}
+\begin{minted}{mars-idea}
+# mars:tool digitalLab
+.eqv RIGHT_DISPLAY 0x00000000ffff0010
+.data
+.align 2
+glyphs:       .byte 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07
+              .byte 0x7f, 0x6f, 0x77, 0x7c, 0x39, 0x5e, 0x79, 0x71
+glyph_guard:  .word 0x13579bdf
+first_digit:  .word 0
+digit_count:  .word 16
+inputs_guard: .word 0x2468ace0
+
+.text
+.globl main
+main:
+    dli $t7, RIGHT_DISPLAY
+    la $t0, glyphs
+    la $t4, first_digit
+    lw $t2, 0($t4)
+    lw $t1, 4($t4)
+    daddu $t0, $t0, $t2
+loop:
+    beqzc $t1, done
+    nop
+    lbu $t3, 0($t0)
+port_write:
+    sb $t3, 0($t7)
+displayed:
+    daddiu $t0, $t0, 1
+    addiu $t2, $t2, 1
+    addiu $t1, $t1, -1
+iteration_done:
+    bc loop
+done:
+    li $v0, 10
+    syscall
+\end{minted}
+
+Save the program as \texttt{range-counter.asm} and select MIPS64 Release 6 with
+the Default memory layout. It prints nothing. Open \emph{MARS Tools} and select
+\emph{Digital Lab Sim} for the connected session. A full-speed Run may reach the
+final F-shaped mask before you can see intermediate repaints; the program makes
+no promise about animation speed.
+
+The setup uses \texttt{daddu} to add the starting index to the table base as a
+64-bit address calculation. Each table entry is one byte, so the index is also
+the byte displacement. Inside the loop, \texttt{daddiu} advances that address by
+one. The two \texttt{addiu} instructions update small 32-bit counts; their signed
+word results fit throughout the admitted input range.
+
+\section{Explain why it stops and stays in bounds}
+
+Let $k$ be the number of completed iterations at a visit to \texttt{loop}.
+At that point, the next index is $\texttt{first\_digit}+k$, the remaining count
+is $\texttt{digit\_count}-k$, and exactly $k$ glyph bytes have been written in
+order. This statement is a \emph{loop invariant}: it describes a relationship
+that holds each time execution returns to the test.
+
+Initially $k=0$, so no output has occurred. If the remaining count is nonzero,
+the stated input bounds ensure the next index is less than sixteen. The byte
+load is therefore inside the table. The body writes that byte once and updates
+the registers to the state for $k+1$. The invariant holds again at the next test.
+
+The remaining count starts nonnegative and decreases on each iteration. The
+test occurs before the next load, so zero ends the loop without decrementing it
+again. After the requested number of iterations, the next address may point one
+byte past the selected range. That address is a useful boundary; it is not
+permission to read another entry. In particular, starting at sixteen with count
+zero computes a one-past-table address but never dereferences it.
+
+If the count were decremented after zero, it would become negative rather than
+signal a special ``finished'' condition by itself. The branch's location and the
+updates together give the program its stopping behavior.
+
+\section{Trace the choice in Debug}
+
+Set a breakpoint at \texttt{loop}. With the default inputs, inspect the nonzero
+remaining count and predict the not-taken path. Step over the branch and the
+\texttt{nop}, then inspect the mask loaded into \texttt{\$t3}. At
+\texttt{port\_write}, the store is still pending. After stepping to
+\texttt{displayed}, the device has received \texttt{0x3F}, but the index and count
+still have their old values.
+
+At \texttt{iteration\_done}, inspect index one, remaining count fifteen and the
+next table address. Continue to the second store and predict \texttt{0x06}.
+For a shorter trace, change the inputs to start fourteen and count two. The
+requested masks are \texttt{0x79} and \texttt{0x71}; the final index is sixteen.
+Then try start sixteen and count zero. On its first visit, the test takes the
+branch directly to \texttt{done}. The table body and the \texttt{nop} are skipped.
+
+\section{Investigate a loop that looks almost correct}
+
+A program that loads every table byte but stores only the last mask can leave the
+same final display as the complete counter. It has not performed the requested
+sequence. A device interaction is an ordered history of transactions, not just
+a final register or picture. This is why the project's checks observe the count,
+order, width, address and values of actual stores.
+
+If the output skips every second entry, inspect the table-address increment.
+An increment of two advances two bytes. If the output never stops, inspect whether
+the branch reads the same count that the body decrements. If an empty range writes
+one mask, check whether a load/store was placed before the first zero test.
+Each symptom suggests a specific state or execution boundary to inspect.
+
+Putting another branch immediately after a not-taken \texttt{beqzc} is a different
+fault: it violates the forbidden-slot rule. A label between those instructions
+does not create an intervening instruction. Keep the safe \texttt{nop} while
+learning to follow both paths.
+
+\section{Write a different loop with the same contract}
+
+In a separate version, retain an exclusive end address rather than a remaining
+count. Stop when the current address equals that end. Use a compact equality
+comparison such as \texttt{beqc}, and keep its following instruction safe. Derive
+the end address from the supplied first index and count. The empty-range case
+must still perform no table load or port store.
+
+Test an empty range, one entry, the full range and a range ending exactly at
+sixteen. Preserve the table and both guards. Your registers and labels may differ
+from the worked program; the requested output transactions must agree.
+
+For another experiment, alter the glyph design for one in the table. Predict the
+segments from its bits, then display just that entry. This changes the table's
+meaning without changing the loop's control structure. The elective MarsBot lab
+uses the same ideas of state, repetition and device writes to control movement.
