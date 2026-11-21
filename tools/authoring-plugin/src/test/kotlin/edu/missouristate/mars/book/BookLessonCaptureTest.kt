@@ -10,6 +10,8 @@ import javax.swing.JPanel
 import javax.swing.JViewport
 import java.awt.Dimension
 import javax.swing.JTextPane
+import javax.swing.SwingUtilities
+import java.awt.geom.Point2D
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -37,6 +39,27 @@ class BookLessonCaptureTest {
         assertEquals(text.indexOf("Check my program") + 4, bookLessonActionOffset(text, "Check my program"))
         assertEquals(0, bookLessonActionOffset("X", "X"))
         assertThrows<IllegalArgumentException> { bookLessonActionOffset(text, "") }
+    }
+
+    @Test
+    fun `native lesson click uses a visible caret box and maps back to its answer`() {
+        SwingUtilities.invokeAndWait {
+            val pane = JTextPane().apply {
+                text = "Question\nA. first\nB. second\nC. third"
+                setSize(400, 200)
+                doLayout()
+            }
+            val offset = bookInlineChoiceOffset(pane.text, "second")!!
+            val raw = pane.modelToView2D(offset).bounds
+            val bounds = bookLessonLinkBounds(pane, offset)!!
+            assertEquals(raw.x, bounds.x)
+            assertEquals(raw.y, bounds.y)
+            assertTrue(bounds.width > 0)
+            assertTrue(pane.visibleRect.intersects(bounds))
+            val point = Point2D.Double(bounds.centerX, bounds.centerY)
+            val actualOffset = pane.viewToModel2D(point)
+            assertTrue(actualOffset in pane.text.indexOf("B. second") until pane.text.indexOf("\nC."))
+        }
     }
 
     private val valid = BookLessonCapturePlan("/tmp/lesson-project", "/tmp/lesson-evidence", "a".repeat(64))

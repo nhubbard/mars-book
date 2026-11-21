@@ -35,6 +35,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -1387,13 +1388,13 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
         awaitUi {
             val (pane, offset) = target() ?: return@awaitUi false
-            val rectangle = pane.modelToView2D(offset)?.bounds ?: return@awaitUi false
+            val rectangle = bookLessonLinkBounds(pane, offset) ?: return@awaitUi false
             pane.scrollRectToVisible(rectangle)
             pane.visibleRect.intersects(rectangle)
         }
         val point = withContext(Dispatchers.EDT) {
             val (pane, offset) = checkNotNull(target())
-            val bounds = checkNotNull(pane.modelToView2D(offset)).bounds
+            val bounds = checkNotNull(bookLessonLinkBounds(pane, offset))
             Point(bounds.x + 2, bounds.y + bounds.height / 2).also { SwingUtilities.convertPointToScreen(it, pane) }
         }
         withContext(Dispatchers.IO) {
@@ -1418,6 +1419,7 @@ class BookLessonCaptureActivity : ProjectActivity {
     }
 
     private suspend fun awaitFrame(project: Project, text: String, source: Path) {
+        var polls = 0
         while (true) {
             val ready = withContext(Dispatchers.EDT) {
                 val frame = WindowManager.getInstance().getFrame(project)
@@ -1426,6 +1428,16 @@ class BookLessonCaptureActivity : ProjectActivity {
                 frame?.isShowing == true && file?.toNioPath() == source && lessonVisibleText(frame.rootPane).contains(text)
             }
             if (ready) { delay(300); return }
+            if (++polls == 50) {
+                val observation = withContext(Dispatchers.EDT) {
+                    val frame = WindowManager.getInstance().getFrame(project)
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+                    val file = editor?.let { FileDocumentManager.getInstance().getFile(it.document) }
+                    "expectedText=$text; expectedFile=$source; actualFile=${file?.toNioPath()}; " +
+                        "frameShowing=${frame?.isShowing}; visibleText=${frame?.let { lessonVisibleText(it.rootPane) }}"
+                }
+                Logger.getInstance(BookLessonCaptureActivity::class.java).warn("Lesson capture wait: $observation")
+            }
             delay(100)
         }
     }
@@ -1508,3 +1520,7 @@ internal fun bookLessonActionOffset(text: String, label: String): Int? {
     val offset = text.lastIndexOf(label)
     return if (offset < 0) null else offset + minOf(4, label.lastIndex)
 }
+
+/** A Swing caret rectangle may have zero width even for a visible character. */
+internal fun bookLessonLinkBounds(pane: JTextPane, offset: Int): Rectangle? =
+    pane.modelToView2D(offset)?.bounds?.apply { width = width.coerceAtLeast(1) }
