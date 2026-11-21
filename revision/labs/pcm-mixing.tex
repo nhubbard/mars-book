@@ -1,0 +1,181 @@
+\chapter{Clipping evidence, tails and in-place samples}
+\MARSChapterHeading{Clipping evidence and in-place samples}
+\label{revision-lab:pcm}
+
+Use the complete \texttt{pcm-mix.asm} and independent
+\texttt{pcm-subtract.asm} in \texttt{revision/labs/files}. Read the main chapter's
+sample representation, saturation rule and clipping-mask derivation first.
+These activities use ordinary Run and Debug; a native guided version of this
+unit remains unfinished. Use disposable source copies for changed inputs and
+intentional faults. The arithmetic does not require an audio device.
+
+\section{Predict samples and the two return values}
+
+Begin with the unchanged sixteen-sample caller. Derive the outputs for sample
+indices three through six. In particular, $30000+10000$ clips, while
+$32767+0$ does not. Write each result as a signed value and a low/high byte pair.
+Predict the total number of strict out-of-range sums before running.
+
+Break at \texttt{mix\_ready}. The function has returned sixteen processed samples
+in \texttt{\$v0} and six clips in \texttt{\$v1}. Inspect \texttt{pcm\_c}; the
+caller has not yet copied those values to \texttt{processed} and
+\texttt{clipped}, whose sentinels are still 99. Continue to
+\texttt{wrap\_ready}. The first two result words now contain 16 and 6; the
+wrapping comparison returns live \texttt{\$v0}=16 and \texttt{\$v1}=0, while
+\texttt{wrapped\_count} is still 99. At \texttt{comparison\_ready}, all three
+published words contain 16, 6 and 16.
+
+Compare the stored saturated and wrapped results for exact sums 40000 and
+$-40000$. Both versions keep two bytes per sample, but they assign different
+values to an out-of-range sum. Then compare an exact endpoint. A stored endpoint
+alone is insufficient evidence that clipping happened. If the output is right
+but the count is wrong, keep the exact sum beside the stored sample while
+investigating the counter.
+
+The optional listening material in \texttt{packages/020-pcm-mixing/media} contains
+input and saturated/wrapped output WAV files. They provide another way to compare
+the arithmetic; use the numerical samples if playback is unavailable. This unit
+processes arrays. Parsing and writing an audio file belongs to the later WAV
+pipeline, and no real-time playback deadline is part of this function's contract.
+
+\section{Read the mask as evidence, then change its unit}
+
+Prepare a disposable copy whose first nine samples are the following. Retain the
+remaining declared samples and arena sizes, and set \texttt{count} to nine.
+The first eight pairs are the main chapter's mask example; the ninth tests the
+tail after a nonzero group count.
+\begin{verbatim}
+A: 0,30000,32767,-30000,-32768,30000,-30000,32767,-20000
+B: 0,2767,1,-2768,-1,10000,-10000,-32768,-20000
+\end{verbatim}
+Their exact sums are $0,32767,32768,-32768,-32769,40000,-40000,-1,-40000$.
+Four of the first eight clip, followed by the ninth. Distinguish the two exact
+endpoints from the just-outside values.
+
+Pause at \texttt{mix\_saturated}, before \texttt{ceq.h}. Expand MSA vector
+registers and compare halfword lanes in \texttt{\$w2} and \texttt{\$w3}.
+These are the wrapping and saturated results. Lane two wraps to hexadecimal
+\texttt{8000} but saturates to \texttt{7fff}. Lane three remains
+\texttt{8000} in both. Follow the comparison and inversion to
+\texttt{mix\_clipping\_mask}. In \texttt{\$w4}, only lanes 2, 4, 5 and 6
+are \texttt{ffff}. The other halfwords are zero. The debugger displays raw
+hexadecimal lane values; an all-one mask is evidence, not a signed audio sample
+to add to the clipping count.
+
+Step through \texttt{pcnt.d}, or continue to \texttt{mix\_population}.
+Now \texttt{\$w5} has two 64-bit integer lanes: hexadecimal \texttt{10} and
+\texttt{30}, decimal 16 and 48. The first doubleword contains four halfwords,
+only one clipped; the second contains three clipped halfwords. Add their bit
+counts and divide by sixteen. Predict \texttt{\$v1} at
+\texttt{mix\_store\_block}, before the output store. It is four.
+
+\input{revision/figures/pcm/mask-population}
+
+Continue through the scalar tail to \texttt{mix\_ready}. Both the ninth stored
+sample and the clipping count must reflect the final excessive sum. A correct
+vector mask with a final count of one would suggest that the tail discarded the
+four earlier events. A count of 64 after the first group would suggest that bit
+counts were mistaken for sample counts.
+
+\section{Check an exact alias and the first unprocessed sample}
+
+In the nine-sample copy, make the first caller's destination pointer refer to
+\texttt{pcm\_b}. This is an exact allowed alias, not a shifted overlap.
+Stop at \texttt{mix\_after\_block}. The first eight B samples have been replaced
+by their results; both input pointers and the output pointer still identify the
+current group because the pointer updates follow this label. Step through those
+updates. Each pointer advances sixteen bytes, remaining count becomes one, and
+\texttt{\$v1} remains four.
+
+At \texttt{mix\_sample}, both input pointers identify their ninth original
+sample. The earlier group store did not overwrite it. Load both values before
+storing the saturated result. At return, the ninth B sample is $-32768$, the
+following B sample remains its original value one, and source A is unchanged.
+The returned clipping count is five. Inspecting the unchanged following sample
+helps distinguish a correct tail from a vector overstore.
+
+\input{revision/figures/pcm/inplace-tail}
+
+Repeat with output exactly equal to A, then with all pointers identical. For
+identical inputs, each sample is doubled before saturation; it is not an automatic
+zero result as it will be for the independent subtraction. Explain the access
+order needed to preserve the original pair until both values have been read.
+Do not extend the proof to a destination shifted into the middle of an input;
+that overlap is excluded by this interface.
+
+Use counts zero, seven, eight, nine, 63 and 64. Predict the number of full groups
+and scalar iterations. For every stop, identify the processed prefix, the
+remaining count and the first unprocessed byte. At zero, the function returns
+zero in both result registers without caller-data accesses. Across repeated
+calls, a previous clipping count must not survive as the next initial value.
+
+\section{Diagnose one arithmetic or boundary fault at a time}
+
+In a copy, omit a scalar \texttt{seh}. Trace bytes \texttt{d0 8a} into the
+assembled value, then the sum and comparison. Identify the first value that
+stops representing $-30000$. The high byte being nonzero is not itself an error;
+the missing signed interpretation is.
+
+Restore the original and remove the mask inversion instead. Predict whether the
+population count now counts equal or unequal results. Restore it, then omit the
+final shift by four. Explain the unit of the returned count before comparing its
+number. Restore the original again before moving the vector gate to seven
+samples or reducing the output pointer's stride. In each case identify the first
+access or state transition that violates the contract.
+
+A valid alternative may load signed halfwords directly, including at odd
+addresses on this Release 6 target. It may use another mask reduction or a
+scalar schedule. Do not reject it merely because its temporary registers differ
+from the worked function. Keep a schedule-specific Debug trace separate from a
+behavioral interface check.
+
+Run both original public suites against the complete program:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/020-pcm-mixing/checks/kernel.kts \
+  revision/labs/files/pcm-mix.asm
+java -jar /path/to/cli.jar grade \
+  packages/020-pcm-mixing/checks/program.kts \
+  revision/labs/files/pcm-mix.asm
+\end{verbatim}
+If you measure scalar and vector work, keep the same values, count, alias and
+function interval. A shorter instruction stream alone does not establish a host
+elapsed-time or hardware speedup. The reduction and remainder are part of the
+complete function cost.
+
+\section{Write and test saturated subtraction independently}
+
+Implement \texttt{subtract\_pcm16} in \texttt{pcm-subtract.asm}, keeping its
+caller and data harness. Pass full A, B and output pointers in
+\texttt{\$a0/\$a1/\$a2}, count zero through 64 in \texttt{\$a3}; return count
+and clipped differences in \texttt{\$v0/\$v1}. Each selected slice has exactly
+$2n$ bytes at arbitrary byte alignment. Input arrays are disjoint or exactly
+identical; output is disjoint from both or exactly equal to either, including
+all-identical pointers. Shifted partial overlaps are excluded.
+
+Compute $A-B$ exactly in a sufficiently wide intermediate and clamp strictly
+outside $[-32768,32767]$. Preserve all other caller data, saved registers, frame
+pointer and stack pointer. Read only selected input/output caller bytes and write
+only selected output bytes. Private constants and private stack storage are
+allowed. Return through the supplied continuation, initialize the clipping count
+on every call and perform no console I/O.
+
+The supplied nine-pair example has five clipped differences. Explain why two
+identical inputs yield zero output and zero clips even when their original
+samples were near the endpoints. Choose a pair that distinguishes $A-B$ from
+$B-A$, and an exact endpoint that distinguishes clipping from endpoint detection.
+Then establish a scalar baseline before choosing a vector grouping and tail.
+\texttt{subs\_s.h} and \texttt{subv.h} provide signed saturation and wrapping;
+derive their comparison mask instead of reusing a counter without a proof.
+
+\Needspace{6\baselineskip}
+Run the public suite:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/pcm-subtract.kts \
+  /path/to/your/pcm-subtract.asm
+\end{verbatim}
+Keep the scalar result, a vector-group trace, a nine-sample exact-alias trace and
+a zero-length call with your result. Explain your chosen reduction, its units and
+its bounds. The checks accept equivalent implementations; your explanation and
+observation establish the vector strategy separately.

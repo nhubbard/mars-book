@@ -3,7 +3,7 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first fourteen main-book chapters: the complete console
+- `learning.tex` includes the first fifteen main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -18,13 +18,14 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   then joins availability proofs, explicit byte order, ordered errors and delayed output.
   The advanced sequence begins with exact scalar matrix products, partial sums and
   scoped instruction/cache observations. RGB conversion then introduces MSA lanes,
-  bounded overlapping loads, derived shuffle controls and scalar tails.
+  bounded overlapping loads, derived shuffle controls and scalar tails. PCM mixing
+  then derives clipping evidence, mask reduction, exact aliases and tail behavior.
   The chapters use connected explanations
   and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first fourteen written lab supplements: predictions,
+- `lab-book.tex` includes the first fifteen written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -34,8 +35,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–14 (91 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–14 and companions (85 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–15 (98 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–15 and companions (90 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -71,8 +72,8 @@ The full goal includes the actual integrated lesson, further editorial pilots,
 all 35 projects and human review where available. These pilot PDFs do not
 complete that goal and have not been validated with students.
 
-The advanced pilot PDF has ten pages: PCM mixing on pages 1–5 and the H.263
-reconstruction excerpt on pages 6–10. These are review compositions, not the final
+The advanced review PDF has twelve pages: the expanded PCM chapter on pages 1–7
+and the H.263 reconstruction excerpt on pages 8–12. These are review compositions, not the final
 chapter numbering. The literal PCM group listing is executable with:
 
 ```sh
@@ -121,7 +122,7 @@ See [ring-unit.md](ring-unit.md) for the independent queue assignment, compact
 starter, wraparound experiment and verified annotated Memory observations.
 
 The algorithms and cost chapter begins on main page 52, and its written lab begins
-on lab page 47. The current proofs contain 91 main-book pages and 85 lab-book pages.
+on lab page 47. The current proofs contain 98 main-book pages and 90 lab-book pages.
 See [sorting-unit.md](sorting-unit.md) for the complete two-sort visualizer,
 repeatable measurements, stable-partition exercise and remaining interactive work.
 
@@ -173,4 +174,10 @@ written treatment of original project 022; the other advanced projects remain op
 Chapter 14 starts on main page 86 and lab page 82. See [msa-unit.md](msa-unit.md)
 for the complete RGB888/RGB565 example, independent RGB555 exercise, equivalent
 scalar/vector checks and two verified native lane observations. This adds revised
-written treatment of original project 019; PCM mixing follows next.
+written treatment of original project 019; PCM mixing follows in Chapter 15.
+
+Chapter 15 starts on main page 92 and lab page 86. See [pcm-unit.md](pcm-unit.md)
+for the complete two-input mixer, independent saturated difference, exact
+mask/count and in-place-tail observations, and renewed native proof validation.
+The advanced review entry uses this same expanded PCM source. The five audited
+PCM/RGB/maze leaf callers now establish the book's sixteen-byte stack alignment.

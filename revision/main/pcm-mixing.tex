@@ -12,9 +12,11 @@ This chapter assumes that you can traverse an array, call a function and read
 an MSA vector as a collection of integer lanes. We will use those skills to mix
 two arrays of signed 16-bit samples. The result must stay in the same sample
 format, and the function must report how many sums were clipped. The accompanying
-lab supplies the complete calling convention and exercises memory bounds and
-in-place output. Here we develop the arithmetic and the loop that make that
-contract possible.
+lab develops memory bounds, in-place output and an independent saturated
+subtraction. The complete public \texttt{pcm-mix.asm} in
+\texttt{revision/labs/files} implements original project \texttt{020-pcm-mixing},
+including its wrapping comparison. Here we derive the arithmetic, the clipping
+evidence and the complete loop that make that contract possible.
 
 \section{A sample is a number with a storage format}
 
@@ -42,6 +44,24 @@ Its possible range is $[-65536,65534]$. A signed 32-bit word can retain that who
 range. A signed halfword cannot. This width calculation tells us where information
 could be lost: we may keep the intermediate in a word, but we must decide how to
 narrow it when writing the output sample.
+
+
+The function \texttt{mix\_pcm16} receives full pointers to source A, source B and
+output in \texttt{\$a0/\$a1/\$a2}, with count $n$ in \texttt{\$a3}, from zero
+through 64. Each selected slice has exactly $2n$ bytes and may begin at any byte
+alignment inside its allocation. Return $n$ in \texttt{\$v0} and the number of
+clipped samples in \texttt{\$v1}. Preserve all bits of the saved registers, frame
+pointer and stack pointer; return through the supplied continuation and perform
+no console I/O. Argument, temporary and vector registers may change. This leaf
+implementation uses no saved registers or stack frame.
+
+The two inputs are disjoint or exactly identical. Output is disjoint from both
+or exactly replaces either one; all three may be identical. An exact alias has
+the same starting address and length. A shifted partial overlap is outside this
+interface. Only selected output bytes may be written, and reads from caller data
+must fit the selected inputs or output. A source may change only when it is also
+the output. Private constants and private stack storage are permitted. Mapped
+padding remains outside the selected slices.
 
 \section{Clipping and wrapping give different signals}
 
@@ -111,10 +131,12 @@ $65535$ as an unsigned number, not the integer one we want to add to a count.
 Here is the complete group operation. On entry, \texttt{\$a0} and \texttt{\$a1}
 point to eight readable input samples, \texttt{\$a2} points to eight writable
 output samples, and \texttt{\$v1} holds the count from earlier groups. This
-fragment consumes one group; pointer updates and the remaining-count test belong
-to the surrounding loop. The temporary and vector registers shown are available
+fragment consumes one group; observation labels in the complete source are
+omitted here. Pointer updates and the remaining-count test belong to the
+surrounding loop. The temporary and vector registers shown are available
 to the fragment.
 
+\Needspace{23\baselineskip}
 \MARSCodeLabel{Mix eight samples and add their clipping count}
 \begin{minted}{mars-idea}
 ld.b $w0, 0($a0)
@@ -145,6 +167,8 @@ bits in total, so the count increases by four. The two endpoint sums contribute
 nothing. Trace those lanes before using the fragment in a loop; they distinguish
 the required test from a test for endpoint values.
 
+\input{revision/figures/pcm/mask-reduction}
+
 \section{The loop must prove each access fits}
 
 Let $r$ be the number of samples remaining. A sixteen-byte input load is justified
@@ -158,6 +182,21 @@ logical input slice. Extra backing storage does not make that access part of
 the interface. Finish the tail using scalar sample loads, an exact word sum,
 bounds comparisons and two byte stores. Each scalar iteration advances by two
 bytes and consumes one sample. A zero-length call performs no sample access.
+
+In the worked scalar path, \texttt{seh} sign-extends the assembled sixteen-bit
+pattern before addition. For $-30000$, bytes \texttt{d0 8a} first assemble as
+unsigned 35536; sign extension recovers $-30000$. Two negative inputs must not
+become two large positive operands. Their exact signed word sum fits without
+wrapping. Compare it strictly above 32767 and strictly below $-32768$, replace
+it with an endpoint only when needed, and increment the clipping count once.
+The two byte stores retain the selected signed halfword's representation.
+
+On function entry, the worked implementation copies the original count to
+\texttt{\$v0} and initializes \texttt{\$v1} to zero. The remaining count then
+shrinks in \texttt{\$a3}. A vector group contributes its reduction to the existing
+count; the scalar tail increments that same count. Resetting it at the tail would
+lose earlier clipping events. Keeping its value from a previous function call
+would invent events in the next call, including a zero-length call.
 
 The same loop works when output exactly replaces either input. The group fragment
 loads both inputs before storing the output. At an exact alias, that store can
@@ -183,6 +222,7 @@ the clipping test. If negative inputs act like large positive numbers in the sca
 path, inspect sign extension before the sum. If the first eight samples are correct
 and the ninth is wrong, inspect the tail's pointer and remaining count.
 
+\Needspace{6\baselineskip}
 For the vector path, pause after the saturated addition, then after the comparison.
 Keep the lane width explicit in the debugger. The equality mask's true halfwords
 are \texttt{ffff}; interpreting the same bits as bytes or doublewords changes the
@@ -198,27 +238,67 @@ gives eight groups and no scalar tail. Their costs need not rise smoothly with t
 sample count. Native instruction counts describe guest work. Host elapsed time also
 includes the simulator's costs and should be measured separately.
 
-\begin{MARSExercise}{Change the mask reduction}
-Implement the same mixer with a different method of counting clipped lanes. Keep
-the sample results, zero-length behavior, memory bounds and permitted aliases.
-Explain how your method converts an all-one comparison lane into one contribution
-to the count. Test exact endpoints as well as values on both sides of each bound.
-Use lengths 0, 1, 7, 8, 9 and 16 to expose group and tail mistakes.
-\end{MARSExercise}
+\section{Transfer the rule to a saturated difference}
 
-\begin{MARSExercise}{Decide when to clip}
-Mix the three values $30000$, $10000$ and $-10000$. Compare clipping after each
-pairwise addition with retaining an exact wider total and clipping once at the end.
-Explain which information the first clipping step discards. State an accumulation
-policy before extending the two-input mixer to more streams.
-\end{MARSExercise}
+Implement \texttt{subtract\_pcm16} in the public \texttt{pcm-subtract.asm}.
+It computes $d_i=a_i-b_i$, saturates the exact difference to the same signed
+halfword range and returns both the sample count and the number clipped.
+The exact difference ranges from $-65535$ through $65535$, so signed word
+arithmetic can retain it before clipping. For $30000-(-10000)$, the stored sample
+is 32767 and the count increases. For $30000-(-2767)$, the exact endpoint 32767
+is stored without increasing the count.
+
+The arguments, return registers, maximum count, permitted exact aliases and
+preservation rules are the same as for the mixer. Each slice has exactly $2n$
+bytes. Preserve other caller data, read only the selected input/output slices,
+return through the supplied continuation and produce no console output. Keep the
+supplied caller and arenas. Both pointers and saved values retain all their bits;
+using word arithmetic for the sample calculation does not authorize narrowing
+addresses. The failing body is your independent implementation.
+
+MSA supplies signed saturating subtraction, \texttt{subs\_s.h}, and wrapping
+halfword subtraction, \texttt{subv.h}. The left source is the minuend: swapping
+the two sources changes $A-B$ to $B-A$. Establish a scalar baseline first, then
+choose a vector group, a method of counting clipped lanes and a scalar tail.
+Determine whether comparing the two subtraction results still identifies exactly
+the out-of-range differences. Explain why an exact endpoint is not counted as clipped and how reading both
+inputs before the store handles identical pointers.
+
+The default nine pairs produce
+\[
+ [-32768,32767,32767,-32768,1,32767,-32768,-4444,32767],
+\]
+with five clipped differences. Derive these from the inputs before running.
+The public checks assess results, counts, accesses, aliases and preservation;
+they accept equivalent scalar and vector implementations. Show your vector
+strategy separately with an explanation of its lanes, group gate and tail.
+Changing the mask reduction in either function is also a useful comparison:
+explain how an all-one comparison lane becomes one event before measuring it.
+
+\section{Choose where a larger computation clips}
+
+Two-input saturation is part of this function's contract. Repeating that function
+is not generally the same as adding several inputs exactly and clipping once.
+For inputs $30000$, $10000$ and $-10000$, clipping the first pair produces 32767;
+adding the third input then produces 22767. The exact three-input total is 30000,
+which already fits. The first clipping discarded 7233, and the later subtraction
+cannot recover it.
+
+Changing the grouping changes the result again: $10000+(-10000)=0$, followed by
+$30000+0$, gives 30000. Saturated addition is therefore not associative. This is
+an arithmetic policy issue even when every individual function call is correct.
+Before extending the program to more streams, state whether each stage clips or
+whether a sufficiently wide accumulator retains the complete total until the end.
+The next filtering chapter will need the same decision after products and sums.
 
 \section*{Sources and laboratory connection}
 The numerical representation follows the signed 16-bit PCM format described in
 Microsoft's \href{https://learn.microsoft.com/en-us/windows/win32/multimedia/devices-and-data-types}{Devices and data types}.
-The particular clipping count, arbitrary alignment and allowed aliases are the
-contract of the PCM mixing lab. The MSA operations above are checked against the
+The particular clipping count, maximum count, arbitrary alignment and allowed
+aliases are the contract of this PCM mixing lab. The MSA operations above are checked against the
 pinned MARS integer and register instruction implementations. The public
 \path{packages/020-pcm-mixing/} contains the caller, input recipes and listening
-comparisons. The written lab supplement develops the observations needed to build
-and check the complete function; this fragment alone is not that function.
+comparisons. The revised lab supplement uses the complete public program, follows the clipping
+mask and in-place tail, and supplies checks for independent saturated subtraction.
+This numerical mixer is not a real-time playback loop; the later WAV pipeline
+will connect stored samples to a complete audio file.

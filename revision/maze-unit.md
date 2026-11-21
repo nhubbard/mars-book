@@ -63,3 +63,9 @@ Human learner and assistive-technology reviews remain pending. A native interact
 maze lesson, other companion revisions, later chapters and remaining instructional
 system features are open. The opening explanation about MARS versus hardware remains
 deferred. This companion does not complete the curriculum goal.
+
+A later caller amendment during Chapter 15 aligns the stack before the first
+call, including leaf routines. Relevant caller and behavior checks pass again;
+RGB captures were refreshed from the aligned source. The maze-neighbor experiment
+has no figure tied to its caller setup. Earlier milestone evidence is preserved;
+see [pcm-unit.md](pcm-unit.md) for the amendment and current proof scope.

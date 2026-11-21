@@ -79,3 +79,9 @@ its native interactive lesson is pending. No MSA wall-time speedup is claimed.
 No MARS implementation was changed, and unrelated edits and the original manuscript
 are preserved. The overall curriculum and production instructional-system goal
 remains active; PCM mixing is the next main chapter.
+
+A later caller amendment during Chapter 15 aligns the stack before the first
+call, including leaf routines. Relevant caller and behavior checks pass again;
+RGB captures were refreshed from the aligned source. The maze-neighbor experiment
+has no figure tied to its caller setup. Earlier milestone evidence is preserved;
+see [pcm-unit.md](pcm-unit.md) for the amendment and current proof scope.
