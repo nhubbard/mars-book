@@ -462,3 +462,10 @@ technology validation. Build the native assignment with
 The exported CBOR step fragments were normalized for trailing whitespace. All 45
 standalone pages were rendered again and are pixel-identical; all tested executable
 files retain their prior hashes. The final student archive digest is pinned privately.
+
+Native builds share their generated include references and minted cache under
+`build/native`. The build command holds an operating-system file lock for the
+whole compilation and verification sequence. Starting another chapter or manuscript
+build queues it until the current build finishes; failure releases the lock too.
+This prevents a standalone chapter from rewriting an include auxiliary while the
+manuscript is reading it. The publication source remains directly edited LaTeX.

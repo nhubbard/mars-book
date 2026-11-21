@@ -1,5 +1,6 @@
 """QOI distribution publication order, privacy and exact export contracts."""
 import json
+import hashlib
 from pathlib import Path
 import re
 import tempfile
@@ -16,7 +17,8 @@ class QoiPackageTests(unittest.TestCase):
         self.assertEqual(65, sum(s['completion']['type'] == 'cli-grade' for s in data['steps']))
         native = course.ROOT / 'includes/chapters/030-qoi'
         for path in native.glob('*.tex'):
-            self.assertEqual(path.read_bytes(), (root / 'native' / path.name).read_bytes())
+            expected_export = path.read_text().replace('book/captures/030-qoi/', 'packages/030-qoi/captures/')
+            self.assertEqual(expected_export, (root / 'native' / path.name).read_text())
         expected = re.findall(r'\\input\{includes/chapters/030-qoi/([^}]+)\}',
                               (native / 'chapter.tex').read_text())
         actual = [s['step'] if s['kind'] == 'step' else s['figure'].removeprefix('qoi-')
@@ -33,7 +35,21 @@ class QoiPackageTests(unittest.TestCase):
         recipes = {q['id']: q for q in json.loads((root / 'inputs.json').read_text())['recipes']}
         self.assertEqual(4, len(figures))
         for figure in figures:
-            self.assertEqual('planned', figure['captureStatus'])
+            self.assertEqual('verified', figure['captureStatus'])
+            receipt_path = root / figure['receipt']
+            receipt = json.loads(receipt_path.read_text())
+            self.assertEqual('native-composite', receipt['kind'])
+            self.assertEqual(figure['id'], receipt['figure'])
+            self.assertTrue(receipt['assertionsPassed'])
+            self.assertEqual(figure['recipe']['breakpoint'], receipt['sharedState']['checkpoint'])
+            self.assertEqual(receipt['previewSha256'], hashlib.sha256((root / figure['artifact']).read_bytes()).hexdigest())
+            self.assertEqual(receipt['nativeExportSha256'], hashlib.sha256((root / figure['nativeAnnotations']).read_bytes()).hexdigest())
+            for part in receipt['parts']:
+                raw_path = receipt_path.parent / part['receipt']
+                raw = json.loads(raw_path.read_text())
+                self.assertEqual(part['receiptSha256'], hashlib.sha256(raw_path.read_bytes()).hexdigest())
+                self.assertTrue(raw['assertionsPassed'])
+                self.assertEqual(raw['pngSha256'], hashlib.sha256((receipt_path.parent / part['image']).read_bytes()).hexdigest())
             self.assertEqual('IntelliJ Light', figure['theme'])
             for recipe in figure['recipe']['observations']:
                 self.assertEqual(recipes[recipe]['callerCheckpoint'], figure['recipe']['breakpoint'])

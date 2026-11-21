@@ -1,8 +1,8 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–29 and 33–35 have reviewed figure sets.
-Chapters 30–32 retain 12 planned figures across 3 sets. The manuscript has
-1,807 pages. Independent accessibility review remains open; substantive editing
+Latest verified capture status: chapters 1–30 and 33–35 have reviewed figure sets.
+Chapters 31–32 retain 8 planned figures across 2 sets. The manuscript has
+1,811 pages. Independent accessibility review remains open; substantive editing
 is the separate later goal. The chronological milestones below retain earlier
 progress snapshots.
 
@@ -2262,3 +2262,18 @@ Seven independent grammar, byte-order, bounds, reconstruction and Pillow tests p
 Fresh grading against a frozen public revision passes 4,263 positive cases across 160 runs, 37 intermediate programs, 62 recipes, 38 exported guided checks and 42 quiz keys. Nine mutants and four unfinished entry points produce 181 expected failing cases. Guided exports regenerate into a private directory and match the frozen public bytes. All four executed verification scripts are retained and hash-bound to their reports. New optional output paths refuse existing reports and retain earlier evidence.
 
 All four native proofs pass original-pixel, coordinate, full-image-bound, font and tagging checks and color/grayscale review. Review corrected an escaped apostrophe in one alternative description. Public IDs ppm-f01 through ppm-f04 remain unchanged; the existing logical fixture diagram is Figure 29.1. Native snapshots relocate only literal asset prefixes. The guarded bootstrap refuses edited source. Independent accessibility review and later substantive editing remain open.
+
+
+## QOI native figure set and fresh verification
+
+Four native figures use eighteen unchanged light-theme captures and twenty-two explanations. Exact cumulative s26, s32, s52 and s62 states separate the validator's pixel count, the decoder's packed dimensions, the encoder's byte count and partial file-write progress. The decoded words preserve alpha128 and255; source display behavior follows the MARS RGB implementation, without inferring alpha compositing from a screenshot. The teaching encoder's thirty-five-byte stream and the independent pinned reference's different valid chunk choice both recover all original RGBA values and descriptive flags.
+
+Five worked-model tests include a fresh C reference build, exact decoding of both teaching streams, equivalent reference encoding, cumulative reconstruction and complete caller layout. Nine assembled return-state faults and four short-write faults are rejected. Return fixtures compare all caller-owned paths, arenas, gaps and controls, exact write schedules, bounded logical reads, preserved registers and untouched workspace below the deepest frame. Saved-frame slots are outside the complete-image claim. The exact three-byte virtual output and owned descriptor nineteen at the native checkpoint are distinct from capture-stop cleanup; the independent core continuation verifies the guest close and all thirty-eight output bytes.
+
+The original two short-write views named the preceding public revision. The existing composite validator rejected mixing them with the sixteen newer views. Both were recaptured at the same revision; original receipts remain retained. The selected final batches contain sixteen plus two views, source/build/class-bound to the tested 85-test authoring driver and complete paired public API verification. No new Jupiter invocation is claimed for the unchanged driver during figure composition.
+
+Fresh grading against a frozen public revision passes 6,667 execution cases across 201 runs, 607 independent host-oracle checks and 65 prepared-fixture checks. All 57 intermediate programs, 65 recipes, 65 exported guided checks and 65 quiz keys are checked. Twelve faulty implementations, six unfinished domains and five unfinished guided regions produce 310 expected failing cases. Seven executed verification scripts and their exact report bindings are retained. Equivalent complete encoders are accepted.
+
+All four native proofs pass unchanged-pixel, coordinate, full-image-bound, embedded-font and tagged-description checks, with color/grayscale review. Direct native edits shorten repeated callouts and place two register panes side by side without shrinking screenshots or type. Public IDs qoi-f01 through qoi-f04 remain stable; the later logical sprite drawing is Figure 30.5. Native exports relocate only literal asset prefixes, and the guarded bootstrap refuses edited TeX.
+
+Concurrent chapter/manuscript compilation exposed shared include-auxiliary writes. The native builder now holds an OS file lock across compilation and verification. Three tests cover real separate-process exclusion, release after failure, and the Windows retry/error paths through a mocked API. Generated reference files were retained before clearing for a serialized recovery build. Independent accessibility review and later substantive editing remain open.
