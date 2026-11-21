@@ -1,5 +1,13 @@
 # IntelliJ lesson and highlighting investigation
 
+Scope update, 20 November 2026: the student instructional system now belongs in
+the main MARS plugin. Screenshot and publication-authoring automation remain in
+the separate dependent plugin. The earlier dependency recommendations below
+record the original authoring-only scope; the public API investigation remains
+useful, and actual packaged API compatibility must be checked for the student
+integration. Follow `interactive-design.md` and `restructuring-plan.md` for the
+current implementation scope.
+
 ## Features Trainer
 
 IntelliJ IDEA 2026.3 includes the IDE Features Trainer, available through Help → Learn
