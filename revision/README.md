@@ -53,3 +53,5 @@ check an unwritten scalar tail. Current public/private verification records bind
 the actual code, highlighter export and PDF; author and learner review are open.
 
 The integrated first unit now uses concise navigation names and fits an undersized side-docked Learn pane when opening its source. Wider user layouts are preserved. The separate authoring driver records native text/button geometry and rejects horizontal clipping at the captured viewport. Human readability and learner reviews remain open; this UI correction does not finish the instructional system.
+
+The first unit also provides confirmed reset and recovery through Tools. A saved recovery copy survives native close and a fresh IDE process. Recovery preserves source edits and restores quiz/hint history while requiring execution checks again; an empty reopened activity cannot replace the copy. The written lab explains the controls. Its current six-page proof has renewed automated accessibility verification; human review remains open.
