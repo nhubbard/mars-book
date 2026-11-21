@@ -1,0 +1,299 @@
+\chapter{State and buffers}
+\MARSChapterHeading{State and buffers}
+\label{revision:state-and-buffers}
+
+The line rasterizer made two decisions from one saved error value. A generation
+of Conway's Game of Life extends that problem to an entire array: every cell's
+next value depends on the same old board. If one cell reads a neighbor that has
+already changed, the program computes a different process.
+
+We will evolve a finite eight-by-eight board, render each completed generation
+and retain the preceding generation in a second allocation. The complete program
+is \texttt{life-buffers.asm} in \texttt{revision/labs/files}. Unlike the earlier
+small examples, this chapter prints the parts that establish the new state and
+ownership rules; the public file supplies the complete caller, stack-frame setup
+and familiar rendering loops.
+
+You should be able to distinguish a source snapshot from a partially built result,
+reason about a padded array, preserve live values across a helper call, and identify
+the boundary at which a result can become current. The independent exercise adds
+a changed-cell count without changing the generation that is computed.
+
+\section{Define a simultaneous update}
+
+A cell is either dead, represented by byte zero, or alive, represented by byte one.
+Its neighbors are the eight surrounding cells, including diagonals but excluding
+itself. A dead cell becomes alive when exactly three neighbors are alive. A live
+cell remains alive with two or three; all other next states are dead.\footnote{These
+are Conway's Life rules as introduced in Martin Gardner's October 1970
+\emph{Scientific American} column, pp.~120--123. A scan is available at
+\url{https://web.stanford.edu/class/sts145/Library/life.pdf}.}
+
+Our board is finite. Positions outside its eight-by-eight interior remain dead
+and do not wrap to the opposite edge. This boundary condition is part of the
+program's contract. It gives different edge behavior from an infinite board or
+a board whose opposite edges are connected.
+
+The rule has three cases. If the neighbor count is three, the
+next value is one regardless of the current cell. If the count is two, retain the
+current cell. Otherwise, write zero. The old cell is needed only in the second
+case; the destination's previous value is never an input.
+
+Consider three live cells at $(2,3)$, $(3,3)$ and $(4,3)$. The next generation has
+live cells at $(3,2)$, $(3,3)$ and $(3,4)$. After another update, the horizontal
+pattern returns. Figure~\ref{fig:revision-life-generations} shows the two distinct
+states and the allocations that hold them.
+
+\input{revision/figures/life/generations}
+
+An in-place row-major sweep changes this result. It first creates the new cell
+at $(3,2)$. When it then considers $(4,2)$, the old board has two live neighbors
+there, so the correct next value is zero. But the newly written $(3,2)$ would be
+counted as a third neighbor, producing an incorrect birth. The rule has not changed;
+the program has supplied values from two different generations to one decision.
+
+\section{Separate storage from its current role}
+
+Allocate two boards, called \texttt{board\_a} and \texttt{board\_b}. For one update,
+treat the current board as read-only and write every next cell into the other
+board. When all next cells exist, exchange the pointers that name the two roles.
+No board-sized copy is needed for that exchange.
+
+The allocation names remain fixed. After generation zero, A is current and B is
+available as a destination. After one update, B is current and A retains generation
+zero. After two, A is current again and B retains generation one. An allocation's
+address does not say whether it is the current snapshot or the next destination;
+the pointer roles and generation number establish that meaning.
+
+Before reusing the older allocation, verify that no later decision still needs
+its previous contents. In this program, the completed current board is sufficient
+to calculate the next generation, so the older board can be overwritten. A different
+algorithm might require more history and therefore more storage.
+
+The update contract requires separate, nonoverlapping source and destination
+boards. Giving both arguments the same address would violate the source-snapshot
+requirement. It would not become safe merely because the function receives two
+register arguments. A pointer is a reference to storage, not a copy of its contents.
+
+\section{Use padding to make neighbor addresses regular}
+
+Each board occupies 100 bytes: a ten-by-ten array containing an eight-by-eight
+interior and a one-cell border. This surrounding border is called a \emph{halo}.
+All 36 halo bytes start at zero and receive no program stores. An interior logical
+cell $(x,y)$ is at
+\[
+ board+10(y+1)+(x+1),\qquad 0\leq x,y<8.
+\]
+The first interior byte is at offset 11 and the last at offset 88. Consecutive
+interior cells differ by one byte; cells in the same column of successive rows
+differ by ten. Neither stride is the framebuffer's four-byte pixel step or
+32-byte row step.
+
+For an interior cell at address $p$, the neighbor addresses have these displacements:
+\[
+\begin{array}{rrr}
+ -11 & -10 & -9\\
+ -1 & \text{center} & +1\\
+ +9 & +10 & +11
+\end{array}
+\]
+The smallest neighbor address is $board+11-11=board$. The largest is
+$board+88+11=board+99$. Every neighbor load therefore lies within the 100-byte
+allocation. At an edge, some loads read zero halo bytes rather than requiring a
+separate bounds branch. The halo is readable state with a maintained value, not
+unallocated memory that happens to follow the board.
+
+The leaf helper below receives an interior-cell address in \texttt{\$a0} and
+returns its neighbor count in \texttt{\$v0}. It may change temporary registers;
+its caller must retain persistent state elsewhere. With binary cell inputs, the
+result is from zero through eight. There is no load at displacement zero, because
+the center is not its own neighbor.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Count eight bytes from the source snapshot}
+\begin{minted}{mars-idea}
+count_neighbors:
+    lbu $v0, -11($a0)
+    lbu $t0, -10($a0)
+    addu $v0, $v0, $t0
+    lbu $t0, -9($a0)
+    addu $v0, $v0, $t0
+    lbu $t0, -1($a0)
+    addu $v0, $v0, $t0
+    lbu $t0, 1($a0)
+    addu $v0, $v0, $t0
+    lbu $t0, 9($a0)
+    addu $v0, $v0, $t0
+    lbu $t0, 10($a0)
+    addu $v0, $v0, $t0
+    lbu $t0, 11($a0)
+    addu $v0, $v0, $t0
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+\section{Build every destination cell before publishing it}
+
+\texttt{life\_step} receives the source allocation base in \texttt{\$a0} and the
+destination allocation base in \texttt{\$a1}. Both halos must be zero. The source
+interior must contain only zero or one; destination interior bytes may initially
+contain arbitrary values. On return, the source is unchanged, the destination
+contains the complete next generation, and \texttt{\$v0} is its live-cell count.
+The routine preserves saved registers and the caller's stack state.
+
+This function calls \texttt{count\_neighbors}, so it must save its own return link.
+The complete source allocates a 48-byte frame: eight-byte slots hold \texttt{\$ra}
+at offset zero and \texttt{\$s0} through \texttt{\$s4} at offsets 8 through 40.
+It then initializes source and destination cursors to their bases plus 11, puts
+eight in \texttt{\$s2} for the remaining rows, and clears \texttt{\$s4} for the
+live-cell count. \texttt{\$s3} holds the remaining columns of the current row.
+
+Those saved registers keep the cursors, counters and partial count alive across
+helper calls. In particular, the caller does not rely on \texttt{\$a0} retaining
+the passed cell address. It obtains the old center from its saved source cursor
+when the two-neighbor case needs it.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Decide one next cell from the unchanged source}
+\begin{minted}{mars-idea}
+step_row:
+    li $s3, 8
+step_cell:
+    move $a0, $s0
+    balc count_neighbors
+    li $t0, 3
+    li $t1, 1
+    beqc $v0, $t0, store_cell
+    nop
+    li $t0, 2
+    move $t1, $zero
+    bnec $v0, $t0, store_cell
+    nop
+    lbu $t1, 0($s0)
+\end{minted}
+\end{minipage}
+
+Read the three rule paths together. A count of three reaches the store with one.
+A count other than two or three reaches it with zero. A count of two loads the
+old center, which is already zero or one. Every path executes the byte store,
+including the path for a dead result. Skipping zero stores would allow an old
+destination cell to survive incorrectly.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Store the result and advance interior cursors}
+\begin{minted}{mars-idea}
+store_cell:
+    sb $t1, 0($s1)
+    addu $s4, $s4, $t1
+    daddiu $s0, $s0, 1
+    daddiu $s1, $s1, 1
+    addiu $s3, $s3, -1
+    bnezc $s3, step_cell
+    nop
+    daddiu $s0, $s0, 2
+    daddiu $s1, $s1, 2
+    addiu $s2, $s2, -1
+    bnezc $s2, step_row
+    nop
+    move $v0, $s4
+\end{minted}
+\end{minipage}
+
+After eight stores, both cursors point to the right halo of their current row.
+Advancing by another two bytes skips that byte and the next row's left halo,
+landing at its first interior byte. At row $r$ and column $c$, both cursors have
+displacement $11+10r+c$ from their respective bases. This relation explains the
+addresses and the limits of the loop. After the final row, the loop count reaches
+zero before another neighbor call or store can occur.
+
+The omitted epilogue restores the six saved slots, releases all 48 bytes and
+returns through the restored link. The public source contains those instructions;
+the fragment above belongs inside that complete function, after its setup.
+
+\section{Publish a generation by exchanging roles}
+
+The complete caller copies the immutable 64-byte seed into A's interior, skipping
+the halo bytes between rows. That is generation zero, even when the requested
+number of updates is zero. It keeps the current and destination bases in
+\texttt{\$s0}/\texttt{\$s1}, the completed generation number in \texttt{\$s2}, and
+the requested count in \texttt{\$s3}. The request is from zero through four.
+
+The following control loop renders the current snapshot, stores its generation
+number, and reaches \texttt{generation\_ready}. The renderer converts all 64
+interior bytes to pixel words: one becomes \texttt{0x00ffffff}, zero becomes black.
+It writes dead pixels too, so the image cannot retain a cell that died. Rendering
+does not change either board.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Observe a complete snapshot, then prepare its successor}
+\begin{minted}{mars-idea}
+render_generation:
+    move $a0, $s0
+    la $a1, frame
+    balc render_board
+    sw $s2, generation
+generation_ready:
+    beqc $s2, $s3, life_done
+    nop
+    move $a0, $s0
+    move $a1, $s1
+    balc life_step
+generation_built:
+    move $t0, $s0
+    move $s0, $s1
+    move $s1, $t0
+    addiu $s2, $s2, 1
+    bc render_generation
+life_done:
+    li $v0, 10
+    syscall
+\end{minted}
+\end{minipage}
+
+At \texttt{generation\_built}, the destination is complete but the caller has not
+exchanged its pointer roles or rendered that new board. \texttt{generation\_ready}
+is the later observation boundary: the current board, generation word and frame
+all describe the same completed generation. This distinction lets the debugger
+show a meaningful stable result while still allowing inspection inside the update.
+
+The temporary \texttt{\$t0} retains the old current pointer during the exchange.
+Two sequential moves without that temporary would lose one address. The physical
+arrays remain in place; only their roles change. The old current board becomes the
+next destination and retains the preceding generation until the following update
+starts to overwrite it.
+
+A fast Run may repaint only the final picture. Use the ready breakpoint to inspect
+each generation; do not infer that the middle generation was skipped because the
+window did not visibly display it. With the default two-step oscillator, the final
+image equals the initial image, so a final-picture-only test could even accept a
+program that performed no evolution at all.
+
+\section{Test the transition, then extend its result}
+
+Predict the default pattern through generations zero, one and two, then observe
+each ready checkpoint in Debug. Record the generation word, current allocation
+and other allocation's contents. After an odd number of updates B is current;
+after an even number A is current. A stable two-by-two block tests a different
+property: its contents stay the same although the pointer roles still exchange.
+
+Use an edge pattern to check the boundary condition. Poison the destination
+interior with nonbinary values to confirm that every result is computed and
+stored. Check both halo contents and the absence of stores to them. A halo that
+is temporarily overwritten and later restored can still contaminate another
+neighbor count. Likewise, source preservation matters throughout an update, not
+only at its final checkpoint.
+
+The separate exercise implements \texttt{life\_changes} with the same board
+contract, returning the number of interior cells whose new value differs from
+their old value. That is not the live-cell count: the default oscillator has
+three live cells in either orientation, but four cells change on each transition.
+A stable block has four live cells and zero changes. You may count differences
+while building the result or compare the complete destination with the retained
+source afterward. In either design, the next board must be identical to the
+ordinary Life update.
+
+The ring-buffer companion applies related reasoning to queued records. It uses
+head, tail and occupied-byte counts to decide which storage can be read or reused,
+and its failed operations must preserve caller state. That lab adds wraparound
+and variable-length records; complete the snapshot reasoning here before taking
+on those additional interface rules.

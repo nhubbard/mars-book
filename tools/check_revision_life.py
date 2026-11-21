@@ -19,7 +19,7 @@ def verify(java, cli, output, alternatives):
     program = ROOT / 'revision/labs/files/life-buffers.asm'
     source = program.read_text()
     blocks = re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}', chapter.read_text(), re.S)
-    if len(blocks) != 3 or not all(source.count(block) == 1 for block in blocks):
+    if len(blocks) != 4 or not all(source.count(block) == 1 for block in blocks):
         raise ValueError('Every printed helper/core/driver fragment must occur exactly in the complete program')
     output.mkdir(parents=True, exist_ok=False)
     (output / 'chapter-source.tex').write_bytes(chapter.read_bytes())

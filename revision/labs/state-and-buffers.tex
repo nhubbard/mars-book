@@ -1,0 +1,131 @@
+\chapter{Observing complete generations}
+\MARSChapterHeading{Observing complete generations}
+\label{revision-lab:state-and-buffers}
+
+Use \texttt{life-buffers.asm} from \texttt{revision/labs/files} with ordinary MARS
+Run and Debug. Its default seed is a horizontal row of three live cells, and it
+requests two updates. Read the main chapter's distinction between a fixed allocation
+and its changing role before tracing the program. The important result is a sequence
+of complete states, not just the final picture.
+
+\section{Predict cells, counts and allocation roles}
+
+Draw generations zero, one and two on paper. For $(3,2)$ and $(4,2)$, count the
+neighbors in generation zero and state each next value. Explain why the newly
+born cell at $(3,2)$ must not contribute to the other cell's decision during this
+same update. You should be able to name both the source generation and the source
+addresses behind a count.
+
+Record which allocation is current at each generation and what the other allocation
+contains. Then change the request to zero in a copy. Predict whether the seed should
+still be copied and displayed. Generation zero is an initialized snapshot; it is
+not a request to skip the program's setup.
+
+Repeat the prediction for a two-by-two stable block. Its contents do not change,
+but the program still computes destinations and exchanges roles. Distinguish an
+unchanged pattern from an update that never ran.
+
+\section{Inspect the padding and one helper call}
+
+Locate \texttt{board\_a} and its first interior byte at base plus 11. Derive the
+addresses of the first and last interiors of the first row, the first interior
+of the second row, and the final interior. Account for the two-byte gap that the
+cursor skips after each group of eight cells.
+
+Set a breakpoint at \texttt{count\_neighbors}. On the first update, find the
+interior-cell pointer in \texttt{\$a0} and derive all eight load addresses. For a
+corner, some are halo bytes; inspect their zero values. The center address should
+not appear in the list. Continue to the helper's return, inspect \texttt{\$v0},
+and relate it to the main chapter's three-path rule.
+
+Inside \texttt{life\_step}, identify the saved source and destination cursors,
+remaining-row and remaining-column counts, and accumulated live-cell count. Explain
+why they must survive a helper call. Inspect the 48-byte frame and its saved return
+link, then verify that the caller's stack pointer is restored after return.
+
+For a boundary investigation, use a seed touching the upper-left corner. Predict
+its next state using dead positions outside the board. If the result appears to
+wrap to another edge, check the row stride and halo assumptions before changing
+the Life rule. Padding implements the chosen boundary condition; it does not make
+all possible index calculations correct.
+
+\section{Stop before and after the role exchange}
+
+Break at \texttt{generation\_ready}. Its first visit describes generation zero:
+\texttt{generation} is zero, A contains the initialized seed, and the frame shows
+that seed. At this point B's interior is not a published next generation. Do not
+assign meaning to its old contents.
+
+Continue to \texttt{generation\_built}. The first \texttt{life\_step} call has now
+returned. Inspect A and B: A must still contain the horizontal source, while B
+contains the complete vertical destination. The live-cell return count is three.
+The caller's pointer roles and generation word still describe the old publication,
+and the displayed frame is still horizontal.
+
+Step through the three pointer moves. Use the temporary value to explain why both
+addresses survive. After the count increment, stop again at
+\texttt{generation\_ready}; the generation word is now one, B is current and the
+frame is vertical. Record A's retained previous generation. Repeat for generation
+two, when A becomes current again and B retains generation one.
+
+This sequence is stronger evidence than seeing the final horizontal image. If Run
+appears to jump straight to that image, use Debug to inspect the ready boundaries.
+The display need not repaint for every generation during a fast execution.
+
+\section{Diagnose a mixed or incomplete generation}
+
+In a copy, pass the current source pointer as both arguments to \texttt{life\_step}.
+Predict the first incorrect cell in a row-major sweep of the default seed. Pause
+at the store for the new cell $(3,2)$, then inspect the later count for $(4,2)$.
+Find which read now sees a new-generation value. Restore separate buffers and
+repeat the trace; the count must return to the one derived from the old board.
+
+For another copy, skip the destination store when the computed next value is zero.
+An initially zero destination may hide the fault. Before the call, fill a few
+destination interior bytes with a recognizable nonzero value, then continue.
+Each must become its calculated binary result. Do not alter the halo for this test.
+The update must not depend on what happened to occupy its output storage earlier.
+
+Next skip black pixel stores in \texttt{render\_board}, while retaining all board
+updates. Inspect the board and the framebuffer separately after generation one.
+A correct board with an extra visible live cell is a rendering fault, not a wrong
+neighbor rule. The old horizontal endpoints need explicit black stores when they
+die. Locate the layer that first differs from your prediction before repairing it.
+
+\section{Return a changed-cell count independently}
+
+Implement \texttt{life\_changes} in the separate \texttt{life-changes.asm} starter,
+replacing its failing \texttt{break}. Inputs are separate 100-byte board allocation
+bases in \texttt{\$a0} and \texttt{\$a1}. Both halos are zero, and the source interior
+contains zero or one. The destination interior can contain arbitrary old bytes.
+Compute the same complete next generation as \texttt{life\_step}, but return the
+number of changed interior cells in \texttt{\$v0}.
+
+Preserve the entire source, both halos, supplied guards, saved registers, stack
+pointer and caller-owned stack bytes. Do not execute stores to the source or halos,
+even if restored later. Produce no console output and return to the supplied
+continuation. \texttt{count\_neighbors} is available; an equivalent implementation
+is also accepted. No scratch-register choices, private labels, frame layout or
+exact instruction count are required.
+
+Before writing code, predict three results: the empty board, a stable block and the
+default three-cell oscillator. For the oscillator, identify the one cell that is
+alive in both old and new states and the four positions whose values differ.
+Do not count every new live cell as a change; an already live cell can survive.
+Likewise, a dead result can be a change when its old value was one.
+
+Choose whether to count differences while constructing the destination or after
+it is complete. State where each comparison obtains its old and new values, and
+which values must survive any helper call. If you count afterward, the preserved
+source makes a second pass possible without reconstructing history.
+
+Run these public formative checks with JDK 25:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/life-changes.kts \
+  /path/to/your/life-changes.asm
+\end{verbatim}
+The checks include empty, full, stable, oscillating, edge and asymmetric patterns,
+with poisoned destination interiors. They compare complete board bytes, returned
+counts, protected-store histories and saved state. Keep your prediction and a trace
+of one changed and one unchanged cell alongside the report.
