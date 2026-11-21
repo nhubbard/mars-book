@@ -353,3 +353,7 @@ Use the first interactive lesson storyboard to evaluate delivery. Defer physical
 volume count until the revised sequence supports that decision. The main learning
 book, written lab supplement and integrated interactive labs are the agreed products. There is no page target or ceiling;
 clarity, coherent progression and independent student work govern the revision.
+
+## First-unit figure milestone — 21 November 2026
+
+The revised written lab now includes three native teaching figures with fourteen numbered explanations, using four unchanged actual light-theme IDE captures. They compare consecutive arithmetic pauses, correct output preparation and a wrong argument with a correct retained result. Captions, descriptions and callouts are editable LaTeX; geometric receipts retain provenance. The six-page proof passes automated PDF/UA-2 validation, and color/grayscale inspection is recorded privately. These checks establish publication integrity, not learner usability. Author, learner and assistive-technology review remain open; the complete 35-project goal is unchanged.
