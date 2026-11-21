@@ -1,0 +1,245 @@
+\chapter{Working with MSA lanes}
+\MARSChapterHeading{Working with MSA lanes}
+\label{revision:msa}
+
+A pixel conversion applies the same small calculation to many independent pixels.
+That makes it a useful first problem for the MIPS SIMD Architecture, or MSA:
+one instruction can perform the same operation on several elements of a vector
+register. The difficult part is often arranging the elements so that those
+parallel operations mean the calculation we intended.
+
+This chapter converts a tightly packed array of red, green and blue bytes to
+sixteen-bit pixels. You already know scalar loads, bit fields, array bounds and
+function interfaces. We will keep those obligations while changing the work done
+by the loop body. The complete public \texttt{rgb-formats.asm} in
+\texttt{revision/labs/files} implements original project \texttt{019-rgb-formats}.
+It includes packing, expansion and a two-row preview. Here we develop its packing
+kernel; the expansion function provides a runnable comparison rather than another
+construction sequence. The independent task changes the packed representation.
+
+\section{Specify the pixel before choosing instructions}
+
+RGB888 stores each pixel as three consecutive unsigned bytes: red $R$, green $G$
+and blue $B$. The next pixel begins immediately afterward. There is no alpha byte
+or padding. RGB565 stores one numerical halfword with five red bits, six green
+bits and five blue bits. Packing discards low component bits:
+\[
+ r=\lfloor R/8\rfloor,\qquad
+ g=\lfloor G/4\rfloor,\qquad b=\lfloor B/8\rfloor,
+ \qquad P=2^{11}r+2^5g+b.
+\]
+The fields occupy disjoint bit positions, so bitwise OR combines them just as
+addition does here. This is truncation, not rounding to the nearest value.
+
+For $(R,G,B)=(123,45,67)$, the reduced fields are $(15,11,8)$. Their placed values
+are $30720$, $352$ and $8$, giving $P=31080$, hexadecimal \texttt{7968}.
+The required byte order writes \texttt{68 79}. A halfword's numerical value and
+its two stored bytes are different descriptions of the same result.
+
+\input{revision/figures/vector/fields}
+
+The supplied expansion repeats high bits into the newly available low positions:
+\[
+ R'=8r+\lfloor r/4\rfloor,\quad
+ G'=4g+\lfloor g/16\rfloor,\quad
+ B'=8b+\lfloor b/4\rfloor.
+\]
+Our example expands to $(123,44,66)$. Maximum fields expand to 255. Discarded
+input bits cannot generally be recovered: distinct RGB888 pixels can share one
+RGB565 encoding. Nor must every expanded component be below its original; red
+128 packs to 16 and expands to 132. These are code-value rules, not a color-space
+or gamma conversion. A plausible-looking picture cannot establish exact compliance.
+
+The function \texttt{pack\_rgb565} receives full source and destination pointers
+in \texttt{\$a0/\$a1} and count $n$ in \texttt{\$a2}, from zero through 32. The
+selected input contains $3n$ bytes and output $2n$ bytes. They are disjoint and
+may start at any byte alignment, including inside larger allocations. Return $n$
+in \texttt{\$v0}, preserve all bits of the saved registers, frame pointer and
+stack pointer, and return through the supplied continuation. Only selected output
+bytes may change. Source bytes and padding remain the caller's property even when
+mapped. This leaf function needs no stack frame because it uses no saved registers
+or nested call.
+
+\section{Read one register through several lane widths}
+
+MSA provides 32 vector registers, \texttt{\$w0} through \texttt{\$w31}, each holding
+128 bits. An instruction's element suffix partitions those bits into lanes:
+\texttt{.b} uses sixteen eight-bit lanes, \texttt{.h} eight sixteen-bit lanes,
+\texttt{.w} four thirty-two-bit lanes and \texttt{.d} two sixty-four-bit lanes.
+A register does not permanently become a byte or halfword array. The next
+instruction can interpret its unchanged bits at a different width.
+
+In this little-endian MARS environment, a byte load to a vector puts the lowest
+addressed byte in byte lane zero. Byte lanes zero and one form halfword lane zero,
+with lane zero as its low byte. Thus bytes \texttt{7b 00} are halfword 123; bytes
+\texttt{7b 2d} are halfword \texttt{2d7b}, not two independent component values
+when a halfword instruction reads them. Widening a component therefore requires
+arranging a zero high byte, not merely changing the instruction suffix.
+
+Signedness also belongs to the operation and interpretation. A component byte
+\texttt{ff} means unsigned 255 in this interface. A scalar signed byte load would
+produce $-1$; \texttt{lbu} produces 255. The vector path gathers each component into
+a zero-extended halfword and uses logical right shifts. The suffix alone does not
+make data signed or unsigned. MSA registers overlap floating-point storage in this
+target; keeping an unrelated floating-point value live in that storage across a
+vector update would overwrite it. The exercise permits these registers to change.
+
+Unlike a scalar byte load, \texttt{ld.b} loads an entire sixteen-byte vector.
+Its byte suffix describes element organization, not a one-byte transfer. The
+matching \texttt{st.b} stores sixteen bytes. Byte-element vector transfers permit
+arbitrary byte alignment in the selected environment. Ordinary scalar halfword
+loads and stores also accept unaligned addresses on this Release 6 target; byte
+operations are not an alignment workaround. Every transfer still needs its whole
+range inside the caller's selected slice.
+
+\section{Cover eight pixels with two bounded windows}
+
+Eight RGB888 pixels occupy 24 bytes, while their packed outputs occupy sixteen.
+The worked group loads sixteen bytes at source offsets zero and eight:
+\begin{minted}{mars-idea}
+    ld.b $w0, 0($a0)
+    ld.b $w1, 8($a0)
+\end{minted}
+The windows cover bytes 0 through 15 and 8 through 23. Their eight-byte overlap
+is deliberate: all needed input is available in two registers, and both loads
+remain within one complete group. Loading at offsets zero and sixteen would read
+through byte 31. The extra mapped bytes would still be outside a 24-byte group
+when it is the final group. A wide load cannot be justified by ignoring its
+unwanted lanes afterward.
+
+Before either load, the loop proves at least eight pixels remain. No vector
+instruction runs on seven pixels, even if the input allocation happens to have
+padding. The proof has two parts: the group gate supplies 24 input bytes and the
+output contract supplies sixteen writable bytes. It is not enough to prove only
+the first address valid. We use full-width pointer additions for subsequent groups;
+the pixel count and component shifts need only their bounded scalar widths.
+
+\section{Derive a shuffle from the loaded bytes}
+
+\texttt{vshf.b} selects each output byte using a control byte from its destination
+register. For \texttt{vshf.b \$w4,\$w1,\$w0}, selectors 0 through 15 choose byte
+lanes in \texttt{\$w0}; selectors 16 through 31 choose lanes in \texttt{\$w1}.
+The rightmost source supplies the lower selector range. Selector 64 produces zero.
+We use only these explicitly defined controls in the worked tables.
+
+The two source ranges are a selector namespace, not consecutive source addresses:
+selector 16 refers to \texttt{\$w1} lane zero, which came from source byte eight.
+Red components lie at input offsets $0,3,6,9,12,15,18,21$. The first six are
+available in \texttt{\$w0}. The last two are lanes ten and thirteen of
+\texttt{\$w1}, so their selectors are 26 and 29. Insert zero between successive
+selected red bytes to obtain eight unsigned halfwords:
+\begin{minted}{mars-idea}
+gather_red: .byte 0,64,3,64,6,64,9,64,12,64,15,64,26,64,29,64
+\end{minted}
+Each pair is a low component byte followed by a zero high byte. The first default
+pixel therefore gives halfword 123, not a signed extension and not a red/green
+pair. Derive the green and blue tables by locating their actual source bytes;
+adding one to every red selector would fail where the chosen window changes.
+Green pixel five, at source offset sixteen, uses selector 24 rather than 16.
+
+\input{revision/figures/vector/windows}
+
+The destination has two roles: controls before the shuffle, selected data after
+it. The worked code retains immutable controls in \texttt{\$w16} through
+\texttt{\$w18} and copies them for every group:
+\begin{minted}{mars-idea}
+    move.v $w4, $w16
+    move.v $w5, $w17
+    move.v $w6, $w18
+    vshf.b $w4, $w1, $w0
+    vshf.b $w5, $w1, $w0
+    vshf.b $w6, $w1, $w0
+\end{minted}
+Afterward, \texttt{\$w4/\$w5/\$w6} contain red, green and blue halfwords. A second
+group that reuses these results as controls selects according to component values.
+It can fail even though the first group was correct. The control tables are
+ordinary private read-only constants; they are not extra caller pixels.
+
+\Needspace{18\baselineskip}
+\section{Apply the scalar field calculation in every lane}
+
+The layout now matches the arithmetic. Each lane contains one component between
+zero and 255, and each lane index names the same pixel in all three registers.
+The packer performs the same shifts as the scalar formula:
+\begin{minted}{mars-idea}
+    srli.h $w4, $w4, 3
+    slli.h $w4, $w4, 11
+    srli.h $w5, $w5, 2
+    slli.h $w5, $w5, 5
+    srli.h $w6, $w6, 3
+    or.v $w4, $w4, $w5
+    or.v $w4, $w4, $w6
+pack_fields:
+    st.b $w4, 0($a1)
+\end{minted}
+\texttt{srli.h} shifts each halfword logically to the right, inserting zero bits;
+\texttt{slli.h} shifts each halfword left. Neither moves a component into the
+neighboring halfword. The immediate is a bit count. Whole-vector \texttt{or.v}
+combines the bit patterns; it does not sum components across lanes.
+
+Lane zero follows the earlier trace: 123 becomes 15 then 30720; 45 becomes 11
+then 352; 67 becomes 8. The OR yields \texttt{7968} in that halfword.
+The store writes \texttt{68 79} as its first two bytes. Lane one supplies the
+next two bytes, and so on. Output order comes from the earlier lane arrangement;
+parallel arithmetic does not repair a mistaken shuffle.
+
+The complete source also expands packed pixels for comparison. It repeats bits
+according to the stated formulas, using a vector group and a scalar remainder.
+Its additional interleaving instructions are not prerequisites for this packing
+explanation. Inspect that implementation after deriving its output layout, rather
+than treating an unfamiliar shuffle sequence as a formula to memorize.
+
+\section{Carry the group invariant into a scalar tail}
+
+After $g$ complete groups, exactly $8g$ pixels have been converted. The source
+pointer is $A+24g$, the destination pointer $D+16g$, and the remaining count is
+$n-8g$. All earlier output bytes satisfy the same RGB565 rule. These relations
+explain the three loop updates and the next eligibility test. Saving the original
+count in \texttt{\$v0} keeps the returned count independent of the shrinking
+remaining-count register.
+
+When fewer than eight remain, scalar byte loads read one RGB triple, scalar
+shifts form the fields, and two byte stores write the low and high packed bytes.
+The scalar tail is part of the algorithm, not an approximation or an error case.
+Count nine uses one vector group and one scalar pixel; count seven uses only the
+tail. Count zero touches no caller data. For every count, the combined loop
+initializes exactly $2n$ output bytes and reads only the selected input bytes.
+
+An implementation may use different group sizes or an equivalent scalar schedule.
+Behavioral checks cannot prove that it used vector instructions merely because
+its output agrees. Conversely, a particular source spelling is not required for
+correctness: some wider shifts can be equivalent when their inputs have enough
+zero bits and no surviving bit crosses a field boundary. Establish the value
+range and follow those bits before declaring two instruction choices different.
+The lab uses exact intermediate observations to investigate this worked schedule,
+while the public interface checks accept equivalent implementations.
+
+\section{Pack a different representation independently}
+
+Implement \texttt{pack\_rgb555} in \texttt{rgb555.asm}, supplied in the same public
+files directory. RGB888 input stays unchanged, but output now has five bits per
+component and a zero top bit:
+\[
+ Q=2^{10}\lfloor R/8\rfloor+2^5\lfloor G/8\rfloor+\lfloor B/8\rfloor.
+\]
+Store low byte first. The worked pixel $(123,45,67)$ produces hexadecimal
+\texttt{3ca8}, stored \texttt{a8 3c}. White becomes \texttt{7fff}, not
+\texttt{ffff}. Reusing the RGB565 green shift or red position would implement a
+different format even if some dark pixels happen to agree.
+
+Arguments are source, destination and count in \texttt{\$a0} through
+\texttt{\$a2}; count is zero through 32. Return the original count in
+\texttt{\$v0}. Input has $3n$ bytes, output $2n$, with disjoint arbitrary byte
+alignments and possibly interior full-width pointers. Preserve inputs, guards,
+metadata, inactive output, the saved registers, frame pointer and stack pointer.
+Only selected output bytes may be written; caller reads may use only selected
+input or output. Private constants and private stack storage are permitted.
+There is no console I/O. Follow the supplied return continuation.
+
+First establish a scalar baseline and verify the field equation. Then choose a
+vector arrangement, prove its bounds and retain a scalar tail. Derive a pixel
+that distinguishes your two formats, predict its bytes and inspect the first
+incorrect instruction if a check disagrees. The public checks accept equivalent
+scalar and vector results; demonstrate your chosen vector strategy separately by
+explaining and observing its group and tail. A passing output alone is not that
+explanation.

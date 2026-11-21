@@ -1,0 +1,137 @@
+\chapter{Pixels, shuffle controls and scalar tails}
+\MARSChapterHeading{Pixels, shuffle controls and tails}
+\label{revision-lab:msa}
+
+Use \texttt{rgb-formats.asm} in \texttt{revision/labs/files} for observation and
+\texttt{rgb555.asm} for independent writing. Read the main chapter's lane model
+and RGB565 field derivation first. These activities use ordinary Run and Debug;
+a native guided version of this unit remains unfinished. Keep disposable copies
+for intentional faults so that each comparison has one known change.
+
+\section{Separate a pixel value from its display adapter}
+
+The first eight RGB triples in the worked source are deliberately varied. Derive
+the packed words for $(123,45,67)$, black, white and $(128,64,247)$. Predict their
+stored byte pairs before running. At \texttt{pack\_ready}, check the returned count
+and inspect \texttt{packed\_a}. The caller has not yet stored
+\texttt{packed\_count}; distinguish the function's result from its later publication.
+
+Continue to \texttt{unpack\_ready}. The first expanded triple is $(123,44,66)$.
+Explain which low bits were lost and how repetition fills the expanded fields.
+Test red 128 separately: the expanded value is 132. Packing and expansion are
+specified code-value operations; neither an exact inverse on RGB888 nor an arbitrary
+interpolation gives the required result.
+
+At \texttt{preview\_ready}, the top row uses original pixels and the bottom row
+expanded pixels. The preview holds \texttt{00RRGGBB} display words. It is a separate
+adapter: the Bitmap Display does not reinterpret raw RGB565 bytes as those words.
+A small visual difference cannot substitute for inspecting the numerical result.
+
+\section{Predict the first gathered vector}
+
+Break at \texttt{pack\_loaded}, after the two loads but before the control copies.
+Expand MSA vector registers and inspect \texttt{\$w0} and \texttt{\$w1} as byte
+lanes. The first begins with \texttt{7b 2d 43}; the second begins with the byte at
+source offset eight, not sixteen. Derive all 24 source byte positions covered by
+the two windows. Mark the overlap before interpreting shuffle selectors.
+
+Continue to \texttt{pack\_gathered}. Expand \texttt{\$w4} and select its
+sixteen-bit integer lane row. In lane order, the gathered red values are
+$[123,0,255,128,7,8,248,31]$. The same bits in byte lanes alternate components
+and zero bytes. These are two views of one register, not two stored copies.
+Derive the green and blue halfwords and check them in \texttt{\$w5/\$w6}.
+The debugger's integer lane rows use hexadecimal; convert the expected values
+before deciding that a displayed value is wrong.
+
+Locate red pixel six at input offset eighteen. Explain why its control is 26.
+Locate green pixel five at offset sixteen and explain why its control is 24.
+Changing only the source operands' order in one shuffle should change those
+selections. Investigate the first incorrect gathered lane before continuing to
+packed output. A field-shift change cannot repair a wrong component source.
+
+\section{Follow field placement and preserve controls}
+
+At \texttt{pack\_fields}, the shifts and ORs have completed but the vector store
+has not. The first eight halfwords are
+\texttt{7968, 0000, ffff, 821e, 0000, 0821, ffff, 1bfb}.
+Trace lane zero from 123, 45 and 67 through its three fields. Then inspect the
+first store and compare its sixteen bytes with these eight halfwords. All
+sixteen output bytes belong to this group, even though its input occupied 24.
+
+\input{revision/figures/vector/lanes}
+
+Use at least sixteen pixels to observe two group iterations. Record
+\texttt{\$w16} before and after the first group: it retains the red controls.
+Record \texttt{\$w4}: it contains results. In a copy, skip the control copies on
+the second iteration and inspect the changed gather. Restore the original before
+checking other faults. Passing the first eight pixels does not validate control
+reuse across a longer input.
+
+Do not assume that every different suffix creates a fault. Consider replacing
+the red left shift with a word-lane shift by eleven. Before that shift, each red
+halfword is at most 31; its placed bits still fit its original sixteen-bit lane.
+Predict whether any surviving bit crosses the boundary, then check the result.
+In contrast, putting an input component into a green halfword's high byte can
+leave unwanted bits after the green shifts. Trace which bits survive before
+judging equivalence.
+
+\section{Prove the gate and the remainder together}
+
+Use counts zero, seven, eight, nine and seventeen. For each, predict the number
+of full groups and scalar pixels. Inspect \texttt{\$a0}, \texttt{\$a1} and
+\texttt{\$a2} at each \texttt{pack\_block} visit and at \texttt{pack\_tail}.
+The source advances by 24 bytes per group and output by sixteen; \texttt{\$v0}
+keeps the original count. At count zero there are no caller-data accesses.
+
+Move the second load from offset eight to sixteen in a copy. For an eight-pixel
+input, identify the first byte beyond the selected source. That byte can be mapped
+and still violate the contract. Restore the load, then change the eligibility
+test to allow seven pixels. Identify the load whose full range no longer fits.
+The public checks inspect access footprints, not just final output bytes.
+
+Run the original public interface and caller checks against the worked source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/019-rgb-formats/checks/kernel.kts \
+  revision/labs/files/rgb-formats.asm
+java -jar /path/to/cli.jar grade \
+  packages/019-rgb-formats/checks/program.kts \
+  revision/labs/files/rgb-formats.asm
+\end{verbatim}
+These checks accept equivalent scalar and vector implementations. They do not
+establish an MSA performance advantage or require the worked source's register
+assignments. If you compare costs, state the interval and complete workload as in
+Chapter~\ref{revision-lab:measurement}; a vector instruction can move more bytes
+than its scalar counterpart.
+
+\section{Implement RGB555 without a construction sequence}
+
+Open \texttt{rgb555.asm} and implement \texttt{pack\_rgb555}. Keep its supplied
+caller and data harness. Arguments are full input and output pointers plus count
+in \texttt{\$a0/\$a1/\$a2}; return count in \texttt{\$v0}. Count is zero through
+32; input has $3n$ bytes and output $2n$. They are disjoint, may begin at any byte
+alignment and may select interior windows. Read only selected caller input or
+output, and write only selected output. Preserve inputs, metadata, guards,
+inactive output, the full saved registers, frame pointer and stack pointer.
+Private constants and native stack storage are allowed. Return through the
+supplied continuation and perform no console I/O.
+
+Derive the five-bit positions from the main chapter's equation. The top bit is
+zero. The first default pixel becomes \texttt{3ca8}, stored \texttt{a8 3c}; white
+becomes \texttt{7fff}. Choose a further green value that distinguishes RGB555
+from RGB565. Establish scalar correctness before choosing a vector group and tail.
+Explain whether the existing channel gather needs to change when only the output
+field positions change.
+
+Run the public checks:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/rgb555.kts \
+  /path/to/your/rgb555.asm
+\end{verbatim}
+The suite checks every supported count with varied byte offsets and a default
+caller run. It accepts equivalent implementations. Keep a scalar result, a
+vector-group observation, an incomplete-group trace and your bounds argument.
+If an instructor assigns vectorization, that explanation and observation establish
+the strategy separately from behavioral correctness. A successful output comparison
+does not show which instructions you chose.

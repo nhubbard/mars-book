@@ -30,12 +30,12 @@ The byte sequence \texttt{ff ff} represents $-1$. Loading those last two bytes a
 an unsigned integer would instead give $65535$. The bits have not changed;
 the interpretation used by the arithmetic has.
 
-A scalar implementation must reconstruct a signed sample before adding it.
-Because the lab permits a sample to begin at an odd byte address, two unsigned
-byte loads are sufficient: combine the high byte shifted left by eight with the
-low byte, then sign-extend the resulting halfword. A signed halfword load would
-have the desired numeric interpretation, but it would also impose an alignment
-requirement that this interface does not give us.
+A scalar implementation must recover a signed sample before addition. One method
+loads both bytes unsigned, shifts the high byte left by eight, combines the bytes,
+then sign-extends the halfword. On this Release 6 target, an ordinary signed
+halfword load also accepts odd byte addresses and recovers the sample directly.
+The byte-based method makes the representation explicit; either method must read
+only the selected sample's two bytes.
 
 For inputs $a_i$ and $b_i$, let $s_i=a_i+b_i$ be the exact sum at position $i$.
 Its possible range is $[-65536,65534]$. A signed 32-bit word can retain that whole
@@ -190,6 +190,7 @@ displayed grouping. After inversion and population count, expect small integer
 counts in two doubleword lanes. This sequence locates the first representation
 that differs from your paper trace.
 
+\Needspace{7\baselineskip}
 Measure a complete call after checking its results and memory bounds. Vector work
 has group and reduction overhead, and a short call may execute no full group at all.
 A count of 63 gives seven vector groups and seven scalar iterations; a count of 64
