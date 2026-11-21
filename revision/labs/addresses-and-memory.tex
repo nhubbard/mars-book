@@ -1,0 +1,110 @@
+\chapter{Following a store into memory}
+\MARSChapterHeading{Following a store into memory}
+\label{revision:lab-addresses-and-memory}
+
+This lab accompanies the main book's addresses and memory chapter. Use its
+complete \texttt{memory-pixel.asm} source, also supplied in
+\texttt{revision/labs/files}. Select MIPS64 Release 6 and the Default memory
+layout. The written sequence uses ordinary Run and Debug; this third revised
+unit is not yet a native interactive MARS Learning lesson.
+
+The program changes memory rather than printing a result. Its display cell is a
+useful visual check, while the byte values let you state exactly what happened.
+Work from predictions about addresses and bytes before interpreting a color.
+
+\section{Separate the address from the color}
+
+Write down what the first two instructions under \texttt{main} will put into
+\texttt{\$t0} and \texttt{\$t1}. The first value locates \texttt{pixel}; the second
+is the color to store there. In this layout, the address is
+\texttt{0x10010000} and the color is \texttt{0x00336699}. Both fit in registers,
+but their roles differ.
+
+Break at \texttt{store\_color}. At this boundary the address and color have been
+prepared, but memory still contains the declared zero. Check both source registers
+and the destination word. Predict what changes after one step. A store changes
+memory; it does not replace the address register with the color or advance that
+register to the next object.
+
+Step once and inspect four bytes beginning at \texttt{pixel}. In increasing
+address order, expect \texttt{99 66 33 00}. Explain how that byte sequence agrees
+with a word view showing \texttt{00336699}. A disagreement between those two
+written forms is not automatically a simulator error.
+
+\section{Track copies across a later write}
+
+Continue to \texttt{change\_blue}. The earlier loads have already completed.
+Record \texttt{\$t2}, \texttt{\$t3} and \texttt{\$t4}. The word snapshot is
+\texttt{0x00336699}; the unsigned byte is 153; the signed byte is $-103$.
+Both byte loads read the same location. Their extension rules explain why their
+register values differ.
+
+Step over the byte store. Inspect memory before executing the following load.
+Only its lowest-addressed byte should have changed. The three earlier register
+values should be unchanged. Explain why a later store cannot retroactively alter
+a value that was copied into a register by an earlier load.
+
+Step over the final word loads and compare the earlier word in \texttt{\$t2}
+with the current word in \texttt{\$t6}. Check the neighbor in \texttt{\$t7}.
+For every observation, name the location and the execution boundary. ``The color
+is unchanged'' is ambiguous if it refers to an old register copy rather than to
+current memory.
+
+\section{Use the display as a second observation}
+
+The source header connects Bitmap Display to static data and requests two logical
+columns and two rows. The pixel is the upper-left cell. Inspect the connected
+Debug session's display before and after the byte store. Its red and green
+components should remain 51 and 102; blue changes from 153 to 255.
+
+The program may run too quickly for you to distinguish these colors during an
+uninterrupted Run. A breakpoint establishes the intermediate boundary. Inspect
+the session that actually executed your current source; a previous run's frame
+does not establish the new program's result. A displayed color also cannot tell
+you whether an unrelated location was overwritten. Keep the memory checks.
+
+\section{Distinguish two faulty stores}
+
+In a copy, change the byte store to use offset one. Before running, compute the
+effective address by adding one byte to the base. Predict the word
+\texttt{0x0033FF99} and its four bytes. Run and compare. This error changes green
+because the offset selects a different byte; the store still writes only one byte.
+
+Restore offset zero and change \texttt{sb} to \texttt{sw}. With 255 in the source,
+the four stored bytes become \texttt{FF 00 00 00}. The starting address is now
+correct, but the width is wrong. Explain why the two faulty programs both exit
+normally even though their results differ from the contract.
+
+As a separate experiment, use byte offset four with \texttt{sb}. Predict which
+object it reaches. The address is the first byte of \texttt{neighbor}, so the
+pixel remains at its original stored color while the guard changes. Restore the
+original program afterward. The offset is measured in bytes for every one of
+these instructions; it never counts logical pixels automatically.
+
+\section{Account for every touched byte}
+
+The pixel occupies four consecutive bytes. A word store at offset zero fits that
+object. A word store beginning at offset one spans its final three bytes and the
+first byte of its neighbor. This Release 6 target supports that unaligned access,
+so the program need not stop with an alignment error. Predict the affected bytes
+rather than treating the lack of an exception as a bounds check.
+
+An instruction's legal address and the assignment's permitted destination are
+different questions. A store can reach writable memory and still damage an object
+the program was supposed to preserve. Record both the requested pixel change and
+the unchanged neighboring word when you justify your result.
+
+\section{Work from a new component}
+
+Implement the main book's red-component variation in a separate copy. Choose the
+byte offset from the little-endian layout rather than from the component's visual
+position in the written word. Read the modified component back with \texttt{lbu}
+and inspect the complete word as well. Confirm that the other components and guard
+are unchanged.
+
+For the memory-copy variation, draw the source, destination and guard as separate
+four-byte objects. A register used temporarily during the copy is another
+location, not the destination object itself. Trace the load from the source and
+the store to the destination, then change the source pixel. Explain why the copied
+word remains independent. Use that trace to diagnose any version in which both
+objects unexpectedly change or the destination was never written.

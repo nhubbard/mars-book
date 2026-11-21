@@ -54,3 +54,12 @@ main-book chapter’s complete listings. Their manually edited LaTeX remains the
 publication source; `tools/check_revision_integers.py` refuses a mismatch. Copy them
 to your project and use ordinary Run/Debug. A second native interactive unit has
 not yet been implemented. The written supplement supplies the manual sequence.
+
+## Addresses and memory
+
+`memory-pixel.asm` is the complete third main-book example, with the bitmap tool
+header, pixel, guard and reserved display-cell storage. Use MIPS64 Release 6 with
+the Default memory layout. `tools/check_revision_memory.py` verifies that this
+file matches the literal native listing, then checks memory, register snapshots
+and normal silent exit. The written lab supplies the manual Run/Debug sequence;
+the third revised native learning unit is not yet implemented.

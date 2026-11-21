@@ -1,0 +1,230 @@
+\chapter{Addresses and memory}
+\MARSChapterHeading{Addresses and memory}
+\label{revision:addresses-and-memory}
+
+The byte inspector kept its working values in registers. A larger program also
+needs storage that can hold many values and remain available between operations.
+Memory provides that storage. To use it correctly, we must distinguish a location
+from the contents of that location, and specify how many bytes an instruction
+reads or writes.
+
+Our program will write one RGB color into memory, replace its blue component,
+and read the result back. MARS's Bitmap Display can show the color, but the memory
+bytes will be our precise evidence. We will also keep a recognizable value beside
+the pixel and check that changing one byte does not damage its neighbor.
+
+\section{A location has an address}
+
+MARS presents memory as individually addressed bytes. An \emph{address} identifies
+one of those byte locations. Consecutive addresses differ by one, even when our
+program groups several bytes into a larger value. A 32-bit word occupies four
+consecutive bytes. If its first byte is at address \texttt{0x10010000}, its other
+bytes are at \texttt{0x10010001}, \texttt{0x10010002} and \texttt{0x10010003}.
+The next nonoverlapping word can begin at \texttt{0x10010004}.
+
+A label gives us a name for a location without repeating its numerical address
+throughout the source. In the declaration \texttt{pixel: .word 0}, the label
+\texttt{pixel} names the first byte of a four-byte object, and \texttt{.word 0}
+reserves those bytes with an initial value of zero. On this MIPS64 target,
+\texttt{.word} still describes four bytes. The general-purpose registers have
+eight bytes each; that does not change the directive's storage size.
+
+The instruction \texttt{la \$t0, pixel} puts the label's address in
+\texttt{\$t0}. It does not read the word stored at that address. We can think of
+the register as holding a pointer: a value our program uses to locate an object.
+An address in a register is still a bit pattern. The subsequent instruction
+determines whether to use it as a location or as an arithmetic operand.
+
+For the complete program below, select MARS's Default memory layout. Its first
+static data word is at \texttt{0x10010000}. Keeping \texttt{pixel} first lets the
+display header and the label refer to the same location. In ordinary code, using
+the label avoids depending on that numerical address. Here, the display interface
+also needs a known base, so the data order is part of the example's contract.
+
+\section{Moving a word between registers and memory}
+
+We will put a color value in \texttt{\$t1} and its destination address in
+\texttt{\$t0}. The instruction \texttt{sw \$t1, 0(\$t0)} stores the low 32 bits
+of \texttt{\$t1} into four bytes beginning at that address. The letters
+\texttt{sw} abbreviate ``store word.'' The source register is the first operand.
+Neither source register is erased or advanced by the store.
+
+The operand \texttt{0(\$t0)} combines a constant byte offset with a base register.
+The instruction adds zero to the address in \texttt{\$t0} to obtain the first
+address it will access, called the \emph{effective address}. An operand of
+\texttt{4(\$t0)} refers four bytes farther on. The offset counts bytes; it is not
+multiplied by four because the instruction stores a word.
+
+To read the stored value, \texttt{lw \$t2, 0(\$t0)} loads the four-byte word
+into \texttt{\$t2}, sign-extending it to the 64-bit register width. Here the first
+operand is a destination. The load does not change memory or the base register.
+The distinction between load and store is essential: a line that names a register
+and an address might change either one, depending on its mnemonic.
+
+Our color has its top word bit clear, so sign extension fills the upper register
+bits with zeros. A word such as \texttt{0xFFFFFFFF} would instead load with
+\texttt{lw} as \texttt{0xFFFFFFFFFFFFFFFF}, or signed $-1$. The extension rules
+from Chapter~\ref{revision:integer-representation} apply when a value comes from
+memory as well as when it comes from another register.
+
+\section{Four bytes make one color word}
+
+The MARS display interprets the low 24 bits of a word as red, green and blue
+components in the form \texttt{0x00RRGGBB}. Each component occupies eight bits and
+ranges from 0 through 255. The high byte is ignored by this RGB display; it is not
+an alpha value controlling transparency.
+
+For \texttt{0x00336699}, red is \texttt{0x33}=51, green is
+\texttt{0x66}=102 and blue is \texttt{0x99}=153. These positions describe the
+numerical word. They do not yet tell us which byte occupies the lowest address.
+That depends on \emph{byte order}, also called endianness.
+
+This example uses MARS's little-endian memory. The least significant byte of a
+word is stored at the lowest address. The initial color therefore has the
+following arrangement. Every byte in the table is written in hexadecimal.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Address & Byte & Meaning in the color word \\
+\midrule
+\texttt{0x10010000} & \texttt{99} & Blue \\
+\texttt{0x10010001} & \texttt{66} & Green \\
+\texttt{0x10010002} & \texttt{33} & Red \\
+\texttt{0x10010003} & \texttt{00} & Ignored high byte \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A word view may show \texttt{00336699} while a byte view at increasing addresses
+shows \texttt{99 66 33 00}. Both describe the same memory. Endianness changes the
+relationship between byte addresses and significance within a multibyte value.
+It does not reverse the bits within each byte or change how we write a register's
+hexadecimal value.
+
+\section{Changing exactly one byte}
+
+The instruction \texttt{sb \$t5, 0(\$t0)} stores only the low eight bits of
+\texttt{\$t5}. With 255 in that source register, it writes \texttt{FF} at the
+lowest-addressed byte of our color. The other three bytes remain unchanged.
+The new sequence is \texttt{FF 66 33 00}, representing the word
+\texttt{0x003366FF}. Only blue has changed, from 153 to 255.
+
+Store width and register width are separate decisions. Even if the source held
+\texttt{0x1234FF}, this byte store would still write only \texttt{FF}. Replacing
+\texttt{sb} with \texttt{sw} while the source holds 255 would write
+\texttt{FF 00 00 00}. That would erase the red and green components. The correct
+first byte alone is insufficient evidence that a word store is appropriate.
+
+We will also load the original blue byte twice. \texttt{lbu} loads one byte and
+zero-extends it, giving 153 for \texttt{0x99}. \texttt{lb} sign-extends the same
+byte, giving $-103$. The two loads leave memory unchanged. For a color component,
+the unsigned interpretation is useful; the signed load is included to connect
+this observation with the preceding chapter's two interpretations of one pattern.
+
+\section{The complete program}
+
+The header is a comment consumed by the MARS plugin. It asks Bitmap Display for
+a 64-by-64 display with 32-by-32 units, producing two logical columns and two rows.
+The first word represents the upper-left cell. The comment is not a processor
+instruction. The final eight reserved bytes provide space for the remaining two
+cells; the second word is deliberately used as a neighboring-memory check.
+
+\MARSCodeLabel{Store a color, change its blue byte, and reload}
+\begin{minted}{mars-idea}
+# mars:tool bitmap width=64 height=64 unitWidth=32 unitHeight=32 base=static_data
+.data
+.align 2
+pixel:    .word 0
+neighbor: .word 0x13579bdf
+          .space 8
+
+.text
+.globl main
+main:
+    la $t0, pixel
+    li $t1, 0x00336699
+store_color:
+    sw $t1, 0($t0)
+inspect_initial:
+    lw $t2, 0($t0)
+    lbu $t3, 0($t0)
+    lb $t4, 0($t0)
+    li $t5, 0xff
+change_blue:
+    sb $t5, 0($t0)
+inspect_final:
+    lw $t6, 0($t0)
+    lw $t7, 4($t0)
+    li $v0, 10
+    syscall
+\end{minted}
+
+Save this source as \texttt{memory-pixel.asm}. Run with the MIPS64 Release 6
+target and Default memory layout. The program prints nothing to the console.
+Its results are memory and register changes. Open the \emph{MARS Tools} window and select
+\emph{Bitmap Display} to inspect the connected run's color. Use Debug to examine the
+intermediate states rather than expecting two separate colors to remain visible
+after a fast Run.
+
+\texttt{.align 2} aligns the following data to a $2^2=4$ byte boundary.
+\texttt{.space 8} reserves eight bytes. The example places four-byte objects on
+nonoverlapping word boundaries. On this Release 6 target, ordinary word loads
+and stores also support unaligned addresses. That support does not make every
+offset correct: a word access beginning one byte later still touches four bytes,
+possibly including part of a neighboring object.
+
+\section{Follow the memory changes}
+
+At \texttt{store\_color}, check the prepared address and color. Step over the
+store, inspect the four bytes and confirm that \texttt{\$t0} is unchanged.
+
+Continue to \texttt{change\_blue}. The first load has copied the original word
+into \texttt{\$t2}; the byte loads have placed 153 in \texttt{\$t3} and
+$-103$ in \texttt{\$t4}. Step over \texttt{sb} and compare memory with those
+registers. Memory now contains the new blue byte, but the earlier register copies
+retain their old values. Loading creates a snapshot of a value at that execution
+boundary, not a live connection between a register and memory.
+
+Step over the two final loads. \texttt{\$t6} should hold
+\texttt{0x00000000003366FF}, and \texttt{\$t7} should still hold
+\texttt{0x0000000013579BDF}. Distinguish the register containing the address,
+the register containing the earlier word, and the register containing the current
+word. Seeing three different values is expected because those registers have
+different roles.
+
+\section{Find a wrong address or a wrong width}
+
+In a working copy, change the byte store's offset from zero to one. Predict the
+four resulting bytes before running. On this little-endian target, the green
+component becomes 255 and the word becomes \texttt{0x0033FF99}. The program still
+exits normally. A successful exit does not establish that the right component
+changed.
+
+Restore the offset, then replace the byte store with a word store. The result
+becomes \texttt{0x000000FF}. Red and green have been cleared even though the
+blue byte is correct. Investigate by writing down the effective address and the
+set of byte locations touched by the store. These two facts distinguish the
+address error from the width error.
+
+The permitted drawing operation owns the four bytes at \texttt{pixel}; it has no
+reason to modify \texttt{neighbor}. The adjacent word is a \emph{guard value}:
+a recognizable pattern that helps reveal an out-of-bounds write. Its unchanged
+value is useful evidence for this example, although one guard cannot prove that
+an arbitrary program never writes anywhere else.
+
+\section{Write a related memory operation}
+
+Starting from the complete program, change the red component to \texttt{0xAA}
+while preserving green and blue. Predict the new word and every byte before
+choosing an offset. Keep the guard unchanged, and use an unsigned byte load to
+read back the component you changed. Explain why that byte load and a word load
+report different-sized values from the same object.
+
+Then write a version that copies the original four-byte color to a second,
+separately declared destination before changing the first pixel. Give the copy its
+own label and retain an additional guard. After the update, the original should
+contain the new color while the copy retains \texttt{0x00336699}. Identify which
+instructions read memory and which write it. A load into a register alone does
+not create another memory object.
+

@@ -2,8 +2,9 @@
 
 The second main-book chapter is directly composed in
 `revision/main/integer-representation.tex`; its supplement is
-`revision/labs/integer-representation.tex`. The combined main proof has 11 pages
-(chapter 2 starts on page 6), and the lab proof has 9 (lab 2 starts on page 7).
+`revision/labs/integer-representation.tex`. At this unit’s first publication, the combined main proof had 11 pages and the lab
+proof had 9. Later chapters extend those proofs; chapter 2 still starts on page 6
+and lab 2 on page 7.
 The original manuscript remains preserved.
 
 The teaching sequence goes from eight-bit place values to hexadecimal, two's
