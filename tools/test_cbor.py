@@ -66,8 +66,8 @@ class CborFoundationTests(unittest.TestCase):
 
     def test_native_reading_includes_every_passage_once(self):
         source=[p for p,_ in book.sources('drafts/cbor-telemetry.tex')if p.parent.name=='032-cbor-telemetry']
-        self.assertEqual(87,len(source));self.assertEqual(len(source),len(set(source)))
+        self.assertEqual(91,len(source));self.assertEqual(len(source),len(set(source)))
         self.assertEqual('chapter',source[0].stem);self.assertEqual('purpose',source[1].stem);self.assertEqual('sources',source[-1].stem)
         self.assertEqual(0,len(book.validate('drafts/cbor-telemetry.tex')))
         chapter=(book.ROOT/'includes/chapters/032-cbor-telemetry/chapter.tex').read_text()
-        self.assertEqual(86,len(re.findall(r'\\input\{',chapter)))
+        self.assertEqual(90,len(re.findall(r'\\input\{',chapter)))
