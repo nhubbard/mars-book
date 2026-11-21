@@ -17,6 +17,12 @@ controls:
   lesson explains the restriction. Existing independent source and hint history stay
   intact. Releasing the mode later restores access without resetting that work.
 
+- **Maximum completed independent assessments** sets zero for unlimited attempts,
+  or a limit from one to 1,000 for this content edition. A complete five-case
+  check uses one attempt whether it passes or fails. Assembly errors,
+  cancellation, edited or superseded results do not count. Ordinary Run and
+  Debug stay available. Reaching the limit preserves a successful check; a
+  denied retry does not erase it. Increasing the limit releases further checks.
 - **Required guided activities before independent work** selects any combination
   of Run the program, Trace arithmetic, Prepare output, Find the wrong argument,
   and Repair output. A selected activity needs a successful observation of its
@@ -24,7 +30,7 @@ controls:
   answers to their associated questions. Simply opening an activity does not
   satisfy it. The independent lesson lists the required activities still needed.
 
-The default is four released hints with no prerequisite and free writing available.
+The defaults are four released hints, unlimited assessments, no prerequisite and free writing available.
 An instructor can start with no hints, release an initial question about value flow, then release a concrete
 trace later. Reading help does not complete a source check. Meeting the prediction
 requirement also does not establish that the student's independent program works;
@@ -45,6 +51,12 @@ unchanged completed activities remain usable; changed ones need fresh execution.
 Quizzes and revealed hints remain in personal history. A reset or recovery also
 requires fresh execution checks. Unknown required activity IDs are retained and
 block assessment until the course and plugin versions agree.
+
+Completed-assessment counts belong to personal history and survive source edits
+and reopening. Deliberately resetting unit history starts a new count and saves
+its previous count with the recovery copy. Recovering adds that saved count to
+attempts made since reset, while clearing execution credit. These editable local
+controls support formative teaching; they do not establish a locked attempt quota.
 
 IntelliJ saves the shared policy in `.idea/mars-learning.xml`. Personal progress,
 quiz attempts and hint history stay in `.idea/workspace.xml`. For example, this
@@ -85,7 +97,8 @@ assessment. A fresh IDE process detects an offline edit to the required repair
 source; releasing that requirement preserves the unchanged diagnosis evidence.
 The unfinished independent starter fails all five execution cases in both runs.
 These first-unit controls do not yet implement arbitrary per-step sequencing,
-retry limits, remote course policy distribution or private grading.
+remote course policy distribution or private grading. Completed-assessment limits
+are first-unit controls; there is no arbitrary per-step retry policy.
 
 ## Choosing a mode
 

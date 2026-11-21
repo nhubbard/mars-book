@@ -11,8 +11,9 @@ the same versioned package content.
 
 Instructors can control required checks and quizzes, hint release, retry behavior,
 skipping, and mode switching. Course policy is distinct from authored lesson content.
-A teacher can change progression without forking every paragraph. Markdown readers
-currently navigate freely; these controls are proposed behavior, not implemented features.
+A teacher can change progression without forking every paragraph. The intended
+curriculum-wide controls are broader than the first-unit implementation described
+below. Historical Markdown packages remain freely navigable exercise drafts.
 
 ## Proposed local state and transitions
 
@@ -42,8 +43,8 @@ Use supported public Features Trainer facilities for native lesson presentation,
 action checks and highlighting. MARS owns its simulator-specific content and
 source-bound assessment state. The initial implementation foundation and the
 concrete platform-state gap are documented in the upstream
-`docs/student-instruction-system.md`. Production delivery and instructor policies
-are part of the authorized goal; they are not yet implemented.
+`docs/student-instruction-system.md`. First-unit instructor controls are implemented;
+production content delivery and curriculum-wide policy remain part of the goal.
 
 The pinned source and public SDK investigation is recorded in
 [intellij-tutor-investigation.md](intellij-tutor-investigation.md). It identifies public
@@ -63,6 +64,25 @@ before choosing entry points and avoid internal APIs in the packaged plugin. A p
 MARS API may need a small extension if the authoring plugin lacks a necessary supported
 operation; document that gap and test the upstream change. Do not reach into internal
 run-service implementations by reflection.
+
+## Current first-unit boundary
+
+The revised first unit runs in the main plugin through native Features Trainer
+lessons. It provides prediction questions, actual Run/Debug observations, diagnosis,
+repair, an independent behavioral assessment, graduated hints, guided/free-writing
+navigation and recoverable personal history. The course settings select required
+guided observations, release hints and independent mode, and optionally limit
+completed independent assessments. See [course-policy.md](course-policy.md) for
+what each control enforces and how edits, retries and recovery affect evidence.
+The separate authoring plugin performs reproducible light-theme captures.
+
+These bundled lessons are authored in Kotlin against public platform APIs. The
+historical 22-step console package does not drive the revised native lesson and
+is not a completed runtime delivery format. The existing book/student exporter
+remains useful for its initial-draft distributions. A general content interpreter,
+local import, remote catalog, explicit update/migration flow and curriculum-wide
+policy still need implementation. Native LaTeX remains the publication authority;
+lesson metadata does not generate the revised prose.
 
 ## Remote delivery concept
 
