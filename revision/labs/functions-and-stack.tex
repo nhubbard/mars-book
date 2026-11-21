@@ -1,0 +1,135 @@
+\chapter{Following calls and saved state}
+\MARSChapterHeading{Calls and saved state}
+\label{revision:lab-functions}
+
+This lab accompanies Chapter~5 of the main book. Use its
+\texttt{reverse-rows.asm} worked program before attempting the separate
+\texttt{reverse-and-invert.asm} exercise. The files are in
+\texttt{revision/labs/files}. These activities use ordinary MARS Run and Debug;
+this fifth revised unit is not yet a native interactive lesson.
+
+Your evidence should connect a value to the call over which it must remain
+available. A final memory dump can show two correct results, but it cannot by
+itself explain how the caller's result pointer survived an inner function's use
+of the same register.
+
+\section{Separate a result from a continuation}
+
+With the Default layout and MIPS64 Release 6 selected, break at
+\texttt{main\_call}. Record \texttt{\$a0}, \texttt{\$a1}, \texttt{\$s0} and
+\texttt{\$sp}. The argument words are \texttt{0x16} and \texttt{0x81}; the saved
+register holds an address, not a third row value. The stack pointer has already
+been aligned by the driver's two opening instructions.
+
+Predict where the call will put \texttt{\$ra}. Compare the addresses in the
+Disassembly view rather than counting source lines: an assembler convenience
+such as \texttt{dli} may represent several machine instructions. The label
+\texttt{after\_pair} names the immediate continuation of this compact call.
+
+Use \emph{Step Into} to enter \texttt{reverse\_pair}. Check that execution reaches
+its first instruction before the stores in \texttt{main}. \emph{Step Over} can
+run a call and pause at its continuation; it is useful when testing an already
+understood function, but it hides the frame construction we want to inspect here.
+
+\section{Account for every saved byte}
+
+Continue to \texttt{pair\_frame\_ready}, before the next \texttt{move}. Record the
+new pointer and subtract it from the caller's pointer. The difference should be
+32 bytes. Inspect the eight-byte slots at offsets 8, 16 and 24. Compare them with
+the incoming \texttt{\$s1}, \texttt{\$s0} and \texttt{\$ra}. Interpret each slot
+as a complete 64-bit value, not just the first displayed word.
+
+In this layout, the aligned caller pointer is \texttt{0x7FFFEFF0}; the frame base
+is \texttt{0x7FFFEFD0}. The saved return address begins at
+\texttt{0x7FFFEFE8}. A slot beginning there occupies eight consecutive bytes and
+ends at \texttt{0x7FFFEFEF}. The caller's first byte at
+\texttt{0x7FFFEFF0} is outside the frame.
+
+These addresses describe this run, not constants to put into the function.
+Its offset-based accesses also work when a caller supplies a different valid,
+aligned stack pointer. Explain why loading a saved slot after restoring the
+pointer would address a different location.
+
+\section{Follow two calls through the same helper}
+
+At the first visit to \texttt{reverse\_byte}, record \texttt{\$ra}. It now names
+\texttt{pair\_first\_ready}, while the outer return address remains in memory.
+The helper does not reserve another frame because its temporary state fits in
+registers and it calls no other function. Predict the eight iterations for the
+first byte, then compare the returned \texttt{0x68} with your trace.
+
+At \texttt{pair\_second\_call}, find the retained second input in both the saved
+register and the prepared argument. Find the retained first result in
+\texttt{\$s1}. Step into the same helper again. Its instruction addresses are
+unchanged, but its input and return continuation differ from the first invocation.
+
+At \texttt{pair\_second\_ready}, the second result is in \texttt{\$v0}. Predict
+the two moves that place it in \texttt{\$v1} and restore the first result to
+\texttt{\$v0}. Then inspect \texttt{pair\_return}: the caller's registers and
+pointer must be restored before the return executes.
+
+Continue to \texttt{after\_pair} and inspect the still-pending result stores.
+Only then run to exit and inspect both result words and the guard. This separates
+three claims: the function returned its results, it preserved the caller's state,
+and the caller stored the results at its intended addresses.
+
+\section{Investigate one lost value at a time}
+
+Work on a copy when introducing a fault. First omit the restore of
+\texttt{\$s0}. Before returning, identify exactly which promise has already
+failed. The next store in \texttt{main} may fault or reach an unintended location,
+but the saved-register mismatch is earlier evidence of the cause.
+
+Next restore that instruction and instead omit saving the outer return address.
+Both inner reversals may finish. The final return then lacks the continuation of
+\texttt{main}; it is not enough that the loop calculated the right byte. Stop a
+run that fails to reach the expected continuation and inspect the link's last
+writer.
+
+For a third copy, save a register with a word store and restore it with a word
+load. A value with zero upper bits might hide that error. Try an incoming saved
+value whose upper half is nonzero, using the debugger's register editor before
+entering the function. Record why the preservation contract covers all 64 bits,
+even though the row data uses only eight.
+
+\section{Write a related function independently}
+
+The independent file supplies a caller, a visible continuation and the same
+\texttt{reverse\_byte} helper. Replace the failing \texttt{break} body with
+\texttt{reverse\_and\_invert}. It must use the helper and return a result in
+\texttt{\$v0} from zero through 255. It must return to its incoming continuation,
+restore \texttt{\$sp}, preserve the convention's saved registers and leave
+caller-owned stack bytes unchanged. It must not print or perform device I/O.
+
+Begin with a call-based design: decide where to retain the incoming return
+address, reserve an aligned frame if needed, call the helper, invert the returned
+low byte, and restore what you saved. Do not copy a 32-byte frame automatically;
+list the values your new routine actually needs to preserve.
+
+For input \texttt{0x16}, the caller should retain \texttt{0x97} in
+\texttt{\$s0} after the function returns. This assignment of \texttt{\$s0} is
+performed by the supplied caller, after the callee's preservation obligation ends.
+The exit service reuses \texttt{\$v0}; inspect the return boundary or the caller's
+retained result rather than interpreting the final service selector as the answer.
+
+Run the public checks with JDK~25 and the MARS CLI:
+
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/reverse-and-invert.kts \
+  /path/to/your/reverse-and-invert.asm
+\end{verbatim}
+
+The public check exercises every low-byte input, adds nonzero upper argument bits,
+and makes repeated calls with full-width saved-register values. It verifies the
+result, execution of the provided helper, the restored pointer, saved registers,
+caller-owned stack bytes and silent
+execution. These are formative checks you can read. A pass does not replace your
+explanation of the call boundaries.
+
+An equivalent implementation may use different temporaries and frame slots. As an
+extension, consider inverting the input byte first and transferring directly to
+\texttt{reverse\_byte}, with the original return address still in place. Prove
+that reversing inverted bits gives the same result as inverting reversed bits.
+Explain why that final transfer would need no new return continuation. Test it
+against the same contract rather than assuming that a shorter routine is correct.

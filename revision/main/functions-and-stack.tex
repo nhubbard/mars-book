@@ -1,0 +1,334 @@
+\chapter{Functions and the stack}
+\MARSChapterHeading{Functions and the stack}
+\label{revision:functions-and-stack}
+
+A loop gives several iterations one body of instructions. A function lets several
+parts of a program use one body and then continue at their own call sites. That
+continuation is part of the problem. A branch can reach the shared instructions,
+but the shared instructions also need to know where to return.
+
+We will extract a small operation from the sprite project: reverse the eight bits
+of a row byte. Then we will call that operation twice to reverse two rows. The
+second program must keep the first result while computing the second, and it must
+return to its own caller after making those calls. These requirements explain why
+some values can stay in temporary registers and others need a saved location.
+
+This chapter assumes the bit operations, loads, stores and compact branches from
+the preceding chapters. By its end, you should be able to state a function's
+inputs and effects, trace a call and return, distinguish temporary values from
+values that must survive another call, and explain a stack frame byte by byte.
+
+\section{Give a function a contract}
+
+A function's label names its entry instruction. The label does not declare
+parameters, allocate local variables or arrange a return. We need a convention
+for those jobs. For these examples, arguments arrive in \texttt{\$a0} through
+\texttt{\$a3}, and results leave in \texttt{\$v0} and, when needed,
+\texttt{\$v1}. The names help us follow that agreement; they do not prevent an
+instruction from writing a different register.
+
+Our first function, \texttt{reverse\_byte}, uses the low eight bits of
+\texttt{\$a0}. It returns their reversal as an integer from zero through 255 in
+\texttt{\$v0}. Upper input bits do not affect the result. It performs no console
+or device I/O and writes no memory. For example, input \texttt{0x16} has low-byte
+bits \texttt{00010110}; the returned bits are \texttt{01101000}, or
+\texttt{0x68}, decimal 104. Input \texttt{0x81} is unchanged by reversal because
+its first and last bits are both one and its other bits are zero.
+
+In the later sprite, bit seven supplies the leftmost pixel. Reversal exchanges
+the two ends, then the next pair, and so on. We can test this byte operation
+before drawing the image.
+
+The function also promises to preserve the saved registers and stack pointer in
+the convention below. A result alone is not the whole contract. A routine that
+returns 104 while losing its caller's output address is unusable by that caller.
+
+\section{A call records a continuation}
+
+The instruction \texttt{balc reverse\_byte} transfers to the function and writes
+a return address into \texttt{\$ra}, register 31. For \texttt{balc}, this is the
+address of the machine instruction immediately after the call. If the call's
+address is $C$, the saved address is $C+4$. The function returns with
+\texttt{jrc \$ra}, the MARS assembler alias for \texttt{jic \$ra, 0}.
+That instruction transfers to the address held in the register.
+
+These are Release 6 compact transfers: they have no delay slot. The instruction
+after \texttt{balc} waits until the function returns; it does not execute before
+the function starts. The instruction after \texttt{jrc} is not a return delay
+slot either. This differs from the retained delayed call/return forms you may
+find in older MIPS examples.\footnote{The \emph{MIPS64 Instruction Set Reference
+Manual}, revision 6.05, describes \texttt{balc} and its next-instruction link on
+page 66. The worked sources use MARS's Release 6 compact forms throughout.}
+
+The call transfers control and supplies a link. It does not copy an argument,
+reserve stack space, or save every register. Preparing \texttt{\$a0} remains the
+caller's job. Computing \texttt{\$v0} and reaching the return instruction remain
+the function's jobs. When the same function is called at another address, the new
+call records a different continuation without changing the function's body.
+
+\section{Reverse the byte in a leaf function}
+
+A function that calls no other function is a \emph{leaf function}. This one needs
+no memory for local state: its remaining input, result and count fit in temporary
+registers. The listing is a function body. The complete program later in the
+chapter supplies its caller and entry point.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{A leaf routine with one register argument and result}
+\begin{minted}{mars-idea}
+reverse_byte:
+    andi $t0, $a0, 0xff
+    move $v0, $zero
+    li $t1, 8
+reverse_bit:
+    sll $v0, $v0, 1
+    andi $t2, $t0, 1
+    or $v0, $v0, $t2
+    srl $t0, $t0, 1
+    addiu $t1, $t1, -1
+    bnezc $t1, reverse_bit
+    nop
+reverse_byte_return:
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+The initial mask selects exactly the low byte, including when the original
+register has nonzero upper bits. Each iteration makes room at the right of the
+result by shifting it left, copies the remaining input's low bit into that room,
+and shifts the remaining input right. The count makes this an eight-bit reversal,
+not a loop that stops as soon as the remaining input becomes zero. Leading zeros
+in a fixed-width pattern still need positions in the reversed result.
+
+For \texttt{0x16}, the first four completed iterations have these states. All
+values in the last two columns are hexadecimal.
+
+\begin{center}
+\begin{tabular}{rlll}
+\toprule
+Bits consumed & Bit just copied & Remaining input & Result \\
+\midrule
+0 & --- & \texttt{16} & \texttt{00} \\
+1 & 0 & \texttt{0B} & \texttt{00} \\
+2 & 1 & \texttt{05} & \texttt{01} \\
+3 & 1 & \texttt{02} & \texttt{03} \\
+4 & 0 & \texttt{01} & \texttt{06} \\
+8 & 0 & \texttt{00} & \texttt{68} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+After $k$ iterations, the result contains the reversal of the $k$ bits already
+consumed, in its low $k$ positions. The remaining input is the original low byte
+shifted right by $k$, and the count is $8-k$. At eight iterations, all eight
+positions have contributed. The result is at most 255, so these word shifts and
+logical operations do not encounter a signed word boundary.
+
+The \texttt{nop} after \texttt{bnezc} supplies a safe forbidden-slot instruction
+on the final, not-taken branch. On taken iterations it is skipped. Once the loop
+finishes, \texttt{jrc \$ra} returns with the result already in \texttt{\$v0}.
+Because this routine never makes another call, no instruction in it replaces the
+incoming return address.
+
+\section{Decide which values must survive a call}
+
+Now give \texttt{reverse\_pair} two inputs: the low byte of \texttt{\$a0} and the
+low byte of \texttt{\$a1}. It returns their reversals in \texttt{\$v0} and
+\texttt{\$v1}, respectively. For inputs \texttt{16} and \texttt{81} in
+hexadecimal, those results must be \texttt{68} and \texttt{81}, in that order.
+
+Before its first call, the pair routine needs to retain the second input. Before
+its second call, it needs to retain the first result. Keeping that result only in
+\texttt{\$v0} would fail: the second call is meant to replace \texttt{\$v0} with
+its own result. Keeping the second input in \texttt{\$a1} happens to work with
+today's leaf implementation, but its contract does not promise to retain argument
+registers. Relying on an unpromised detail would tie the caller to that particular
+implementation.
+
+We use this small convention for the book's routines:
+
+\begin{center}
+\begin{tabular}{lp{0.69\linewidth}}
+\toprule
+Register group & Agreement between caller and callee \\
+\midrule
+\texttt{\$a0}--\texttt{\$a3} & Arguments; their values need not survive a call. \\
+\texttt{\$v0}, \texttt{\$v1} & Results; another call can replace them. \\
+\texttt{\$t0}--\texttt{\$t9} & Temporary work; their values need not survive a call. \\
+\texttt{\$s0}--\texttt{\$s7}, \texttt{\$fp}, \texttt{\$gp} & A callee must return them with their incoming values. \\
+\texttt{\$sp} & A callee must restore its incoming stack pointer. Call boundaries use 16-byte alignment here. \\
+\texttt{\$ra} & A call replaces it. Retain an incoming return address if another call would destroy the continuation you still need. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A \emph{caller} makes a call; its \emph{callee} receives that call. The same
+routine can have both roles. \texttt{reverse\_pair} is called by \texttt{main},
+then becomes a caller of \texttt{reverse\_byte}. It can keep values in saved
+registers across those inner calls, but must first preserve the values its own
+caller already had there.
+
+This is an explicit convention for these standalone MARS programs, not a complete
+operating-system ABI. An ABI also specifies matters such as register assignment,
+stack arguments and linkage between separately built components. Follow that
+component's ABI when interoperating with it; do not infer one from these register
+names alone.
+
+\section{Give the saved values a stack frame}
+
+The stack is memory managed through \texttt{\$sp}. For this program it grows toward
+lower addresses. A function reserves a \emph{stack frame} by subtracting its size
+from \texttt{\$sp}, then uses offsets from the new pointer for its own slots.
+Before returning, it restores the saved values and adds back exactly that size.
+An inner call can reserve a lower frame without overlapping the outer one.
+
+We need to save the incoming \texttt{\$ra}, \texttt{\$s0} and \texttt{\$s1}.
+Each is a 64-bit value, so each slot occupies eight bytes. Three slots need 24
+bytes; we reserve 32 to keep a 16-byte-aligned pointer aligned. The unused first
+eight bytes are padding, not another saved register.
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Byte offsets from the new \texttt{\$sp} & Contents while this frame is active \\
+\midrule
+0--7 & Unused padding \\
+8--15 & Incoming \texttt{\$s1} \\
+16--23 & Incoming \texttt{\$s0} \\
+24--31 & Incoming \texttt{\$ra} \\
+32 and above & Outside this frame; belongs to the caller \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\MARSCodeLabel{A non-leaf routine preserves its caller's state}
+\begin{minted}{mars-idea}
+reverse_pair:
+    daddiu $sp, $sp, -32
+    sd $ra, 24($sp)
+    sd $s0, 16($sp)
+    sd $s1, 8($sp)
+pair_frame_ready:
+    move $s0, $a1
+    balc reverse_byte
+pair_first_ready:
+    move $s1, $v0
+    move $a0, $s0
+pair_second_call:
+    balc reverse_byte
+pair_second_ready:
+    move $v1, $v0
+    move $v0, $s1
+    ld $s1, 8($sp)
+    ld $s0, 16($sp)
+    ld $ra, 24($sp)
+    daddiu $sp, $sp, 32
+pair_return:
+    jrc $ra
+\end{minted}
+
+\texttt{sd} stores all eight bytes of a register; \texttt{ld} loads all eight.
+Saving with \texttt{sw} instead would retain only the low word. A later word load
+could not recover a saved register's arbitrary upper half. These slots are naturally aligned: the frame base is a multiple of sixteen,
+and the offsets are multiples of eight. This layout follows our calling
+convention.
+
+After saving the old values, \texttt{\$s0} holds the second input. The first call
+returns its result in \texttt{\$v0}; \texttt{move \$s1, \$v0} keeps it across
+the second call. That second call receives the retained input through
+\texttt{\$a0}. On return, its result is copied into \texttt{\$v1} before the
+first result is put back into \texttt{\$v0}. The two results are then independent
+of the saved registers we restore.
+
+Each inner \texttt{balc} replaces \texttt{\$ra}. The original continuation is
+safe in its memory slot. Loading it back makes the final \texttt{jrc} return to
+\texttt{main}, rather than to the continuation of an inner call. Restoring the
+pointer last keeps all slot offsets relative to the same frame base.
+
+Releasing a frame does not erase its bytes. It ends this function's use of those
+slots. A later call may overwrite them, so an old saved value visible below the
+current pointer is not evidence that the old frame is still active.
+
+\section{Connect the functions to a complete program}
+
+Save the following driver followed by \texttt{reverse\_pair} and
+\texttt{reverse\_byte} in one file. The complete \texttt{reverse-rows.asm}
+download is in \texttt{revision/labs/files}; it has exactly those three parts.
+Select MIPS64 Release 6 and the Default memory layout.
+
+\MARSCodeLabel{Prepare two inputs, call the pair routine and store its results}
+\begin{minted}{mars-idea}
+.data
+.align 2
+input_rows: .word 0x16, 0x81
+results:    .word 0, 0
+rows_guard: .word 0x13579bdf
+
+.text
+.globl main
+main:
+    dli $t0, -16
+    and $sp, $sp, $t0
+    la $s0, results
+    la $t0, input_rows
+    lw $a0, 0($t0)
+    lw $a1, 4($t0)
+main_call:
+    balc reverse_pair
+after_pair:
+    sw $v0, 0($s0)
+    sw $v1, 4($s0)
+done:
+    li $v0, 10
+    syscall
+\end{minted}
+
+The Default layout initializes \texttt{\$sp} to \texttt{0x7FFFEFFC}. This is not
+a 16-byte boundary. The driver loads the 64-bit mask $-16$, whose low four bits
+are zero and whose other bits are one, and clears those pointer bits with
+\texttt{and}. The resulting pointer is \texttt{0x7FFFEFF0}. This one-time setup
+happens before our first call; it is not part of a function's per-call frame.
+Every function still returns with the pointer it received.
+
+Here \texttt{\$s0} is useful caller state: it points to the two result words.
+The pair routine uses the same register for a different purpose, then restores
+that pointer. The stores after the call can therefore use the caller's original
+address. The second store has byte displacement four because each result object
+is a word. Neither store should reach \texttt{rows\_guard}.
+
+The program prints nothing. After a normal Run, inspect \texttt{results}: its
+words are \texttt{0x00000068} and \texttt{0x00000081}. The input words and guard
+are unchanged. The exit service reuses \texttt{\$v0}, so its final value is not
+the function's returned first result. Inspect the return boundary or the stored
+word when checking that result.
+
+\section{Trace the lifetimes, then change the implementation}
+
+Break at \texttt{main\_call} and record the result pointer and aligned stack
+pointer. Use \emph{Step Into} to enter the call. At the function's first
+instruction, \texttt{\$ra} names \texttt{after\_pair}; no frame has been reserved
+yet. At \texttt{pair\_frame\_ready}, the pointer is 32 bytes lower and its three
+slots contain the caller's saved values. The result pointer has not yet been
+replaced by the next \texttt{move}.
+
+At \texttt{pair\_first\_ready}, the first reversal is in \texttt{\$v0} and the
+second input is in \texttt{\$s0}. After saving that first result and preparing
+the second argument, step into the next call. Predict which values must remain
+unchanged while the leaf routine works. At \texttt{pair\_return}, the results
+are ready and both saved registers and \texttt{\$sp} have their incoming values.
+The pending return should next reach \texttt{after\_pair}.
+
+Try a deliberately faulty copy that omits the restore of \texttt{\$s0}. The
+arithmetic can still be right, but the first result store now uses a row value as
+an address. Another faulty copy can leave the first result only in
+\texttt{\$v0}; the second call then replaces it. Identify the first lost value
+rather than changing the bit-reversal loop in response to either symptom.
+
+Finally, implement a separate \texttt{reverse\_and\_invert} routine. It receives
+the same low-byte argument, uses \texttt{reverse\_byte}, and returns the reversed
+byte with every one of its eight bits inverted. For \texttt{0x16}, reversing
+gives \texttt{0x68}; XOR with \texttt{0xFF} gives \texttt{0x97}, decimal 151.
+Keep the same preservation convention. Plan the value that must survive the call,
+write the routine, then test all 256 byte inputs. The lab provides a caller and
+public checks. The checks compare behavior and preservation; they do not require
+your temporary registers or stack offsets to match this chapter.
