@@ -2,7 +2,7 @@
 
 The ninth main chapter is `main/algorithms-and-cost.tex`; its written supplement is
 `labs/algorithms-and-cost.tex`. They begin on pages 52 and 36 of the current 58-page
-main proof and 39-page lab proof. Both are directly edited native LaTeX.
+main proof and 45-page lab proof. Both are directly edited native LaTeX.
 
 The complete `labs/files/sorting-costs.asm` program implements adjacent-exchange
 insertion sort and first-minimum selection sort, using original project 009's
@@ -64,6 +64,6 @@ automated PDF/UA-2 validation with the established fonts. The original manuscrip
 and unrelated MARS edits are preserved.
 
 Human reading, representative learner and assistive-technology reviews remain
-open. Native interactive support for this unit, the maze companion, further
-main chapters and the rest of the instructional system remain unfinished. The
+open. The maze companion now follows in section 9.6; see `maze-unit.md`. Native
+interactive support for these units, further main chapters and the rest of the instructional system remain unfinished. The
 proposed opening explanation of MARS versus hardware is still deferred.

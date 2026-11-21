@@ -1,0 +1,268 @@
+\section{Companion lab: a shortest route through a maze}
+\label{revision-lab:maze}
+
+Sorting required a useful order for array entries. A search also needs an order
+for unfinished work. In this lab, an array of cell IDs records places waiting to
+be explored. Taking the oldest waiting cell first lets the search expand outward
+in layers of increasing distance. The result is a shortest route through an
+unweighted maze, together with enough intermediate state to explain that route.
+
+This is original project \texttt{010-maze-explorer}. Its contract is
+\texttt{assignment.md} in that package. The revised work area is
+\texttt{maze-search.asm}, under \texttt{revision/labs/files}. Both public checks
+remain in the original package's \texttt{checks} directory. Implement the search and its
+\texttt{render} function. The starter's \texttt{break} instructions deliberately
+stop execution until those missing bodies are replaced. Organize private functions
+and registers as you choose; the public allocations, observations and renderer
+interface establish what another program can inspect.
+
+You will use byte arrays, row-major addresses, loop invariants and calls that
+preserve live state. The new ideas are graph adjacency, discovery-time marking,
+a first-in, first-out frontier, predecessor links and a shortest-distance argument.
+Breadth-first search, or BFS, is the conventional name for this layer-by-layer
+search.\footnote{For the layer argument and predecessor reconstruction, see MIT
+OpenCourseWare, \emph{6.006 Introduction to Algorithms}, Spring 2020, Recitation 9,
+pp.~3--4: \url{https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_r09/}.}
+
+\subsection*{Represent cells and legal moves separately}
+
+The input is an eight-by-eight array of bytes. A zero \texttt{walls} byte denotes
+an open cell and one denotes a wall. The word inputs \texttt{start} and
+\texttt{goal} name open cells by IDs from zero through 63. A cell at column $x$
+and row $y$ has ID $8y+x$. Its byte entry is at $walls+ID$; its pixel word is at
+$frame+4ID$. An ID is neither of those addresses.
+
+Treat each open cell as a vertex of a graph, and each legal one-cell move as an
+edge. Moves are north, east, south or west, with cost one each. Diagonals are
+excluded. The graph is implicit: the program computes possible neighbors from
+coordinates rather than storing a linked collection for every cell.
+
+Derive $x=ID\bmod8$ and $y=\lfloor ID/8\rfloor$, apply a direction displacement,
+then reject a coordinate outside zero through seven. Only after these checks
+should the candidate be flattened back to an ID. Cell seven's eastern candidate
+has column eight and must be rejected. Adding one to its ID gives eight, which
+is a valid array index but belongs to the next row. An array bound alone cannot
+establish adjacency.
+
+The complete \texttt{maze-neighbor.asm} experiment isolates this geometry. Its
+\texttt{neighbor\_id} function takes a valid cell ID in \texttt{\$a0} and a
+direction index in \texttt{\$a1}: zero north, one east, two south, three west.
+It returns the neighbor ID in \texttt{\$v0}, or $-1$ when the move leaves the grid.
+It does not inspect walls; an in-bounds cell can still be blocked. The direction
+tables contain signed bytes, so \texttt{lb} must preserve the $-1$ displacements.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Check both coordinates before producing an ID}
+\begin{minted}{mars-idea}
+neighbor_id:
+    andi $t0, $a0, 7
+    srl $t1, $a0, 3
+    la $t2, dx
+    daddu $t2, $t2, $a1
+    lb $t3, 0($t2)
+    addu $t0, $t0, $t3
+    bltzc $t0, neighbor_absent
+    nop
+    li $t4, 8
+    bgec $t0, $t4, neighbor_absent
+    nop
+    la $t2, dy
+    daddu $t2, $t2, $a1
+    lb $t3, 0($t2)
+    addu $t1, $t1, $t3
+    bltzc $t1, neighbor_absent
+    nop
+    bgec $t1, $t4, neighbor_absent
+    nop
+    sll $v0, $t1, 3
+    addu $v0, $v0, $t0
+    jrc $ra
+neighbor_absent:
+    li $v0, -1
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+The bit mask extracts the low three column bits, and the shift extracts the row.
+After applying a displacement, the two signed checks on each coordinate reject
+negative and too-large results. Pointer additions use full-width instructions;
+the coordinates themselves fit comfortably in signed words. Saved registers and
+the stack pointer are untouched. This helper is an experiment you may call or
+adapt, not a required private decomposition of the full search.
+
+Run \texttt{revision/labs/checks/maze-neighbor.kts} against that complete source
+with the CLI. It checks all 256 valid cell/direction combinations and the supplied
+caller. Before running it, predict east from seven, west from eight, north from
+zero, and south from 55. Explain each answer with coordinates. In a copy, replace
+\texttt{lb} with \texttt{lbu} and find which directions now fail. Restore the
+signed loads before using the experiment as a search component.
+
+\subsection*{Make discovery a single event}
+
+Five 64-byte arrays hold different facts. \texttt{states} contains zero for unseen,
+one for discovered and waiting, and two for processed. \texttt{parents} stores the
+ID of the cell that first discovered an entry. \texttt{distance} stores its number
+of edges from the start. \texttt{queue} retains discovery IDs in FIFO order, and
+\texttt{path} eventually marks the chosen route. Unknown parents and distances
+are 255; queue and path bytes begin at zero. Initialize every entry on every launch,
+including those that the eventual search will never reach.
+
+These arrays are byte-indexed, so load IDs and distances with \texttt{lbu}.
+The sentinel 255 is not a valid ID and is not a distance to add one to. A simple
+route in a graph of at most 64 cells has at most 63 edges, leaving the sentinel
+outside the valid distance range. Word metadata uses \texttt{lw}/\texttt{sw};
+all public byte-array bases and metadata words are four-byte aligned. Preserve
+the declared guard words and execute no stores to \texttt{walls}, \texttt{start}
+or \texttt{goal}, even if later writes could restore them.
+
+Initialize the start as waiting with distance zero and no parent, then append
+its ID. For each newly discovered neighbor, set its waiting state, parent and
+distance before appending it. The parent is the current cell; the distance is
+that current cell's known distance plus one. Skip walls and every already
+discovered cell, including waiting cells that have not yet been removed.
+
+The four-cell room shows why the mark belongs at discovery. Zero discovers both
+one and eight.
+Processing one can discover nine. When eight later examines nine, it must see the
+existing mark and leave nine's parent and queue entry alone. If marking waited
+until dequeue, both predecessors could append nine before either copy was
+processed. Cycles would repeat work, invalidate unique history and undermine the
+queue capacity argument.
+
+\subsection*{Use the queue to explain the shortest distance}
+
+The monotone queue uses two word indices. \texttt{head} names its next unread
+byte and \texttt{tail} its first unused byte. Pending work occupies the half-open
+interval $[head,tail)$; retained history occupies $[0,tail)$. The invariant is
+$0\leq head\leq tail\leq64$. An empty pending queue has equal indices, even
+though earlier queue entries still contain IDs. Do not clear a removed entry.
+The unused suffix remains zero.
+
+This queue does not wrap like the preceding ring assignment. Each cell is
+appended at most once, so the entire search needs at most 64 slots, regardless
+of how many slots remain pending at one moment. Appending ID zero is valid:
+use head and tail to identify occupied entries instead of treating a zero byte
+as an end marker.
+
+The FIFO order is what gives the distance its meaning. Initially only distance
+zero is waiting. When a cell at distance $d$ is removed, its unseen neighbors
+receive $d+1$ and go behind work already waiting. All cells at smaller distances
+are therefore processed before any newly appended farther layer. If a neighbor
+had a shorter route, the preceding cell on that route would have been processed
+in an earlier layer and discovered it already. Its first assigned distance is
+thus shortest. This argument depends on equal edge costs and FIFO removal;
+a stack or weighted terrain would require a different argument.
+
+\input{revision/figures/maze/room}
+\input{revision/figures/maze/frontier}
+
+Follow Table~\ref{tab:revision-maze-frontier} by hand before implementing the
+loop. With north, east, south, west order, nine first receives parent one.
+With west, south, east, north order, the waiting order after zero is eight, one,
+and nine first receives parent eight. Both routes have two edges. The public
+checks accept either order and follow your actual queue history; they require a
+shortest valid chain, not the reference program's tie choice.
+
+Remove one pending ID, advance head, and mark that current cell processed.
+If it is the goal, skip its neighbor expansion. Otherwise inspect all four
+candidates, appending only unseen open neighbors. Publish after the complete
+expansion, then choose the next item. A reachable goal is finalized when dequeued
+under this contract, even if its shortest distance became known earlier.
+
+\subsection*{Publish a state that another observer can interpret}
+
+Set phase zero after initialization, phase one after each complete dequeue and
+expansion, and phase two after success or exhaustion. At every publication,
+\texttt{head}, \texttt{tail} and \texttt{current} describe that boundary. Initially
+current is $-1$. Result and length remain $-1$ throughout phases zero and one,
+including the phase-one publication of a dequeued goal. The path mask remains
+zero until reconstruction. A cell in the middle of expansion can have processed
+state internally, but phase-one observers must receive all its discoveries together.
+
+The leaf-style \texttt{render} interface reads \texttt{walls}, \texttt{states}
+and \texttt{path}, writes all 64 pixel words at \texttt{frame}, and changes no
+input array or metadata. It preserves full saved-register values and the stack
+pointer. It reaches \texttt{maze\_ready} exactly once with the frame complete
+and preserved state restored, then returns through the supplied return address.
+The \texttt{done} label supports an independent call. If you introduce nested
+calls or temporary stack storage, apply the earlier call-frame rules.
+
+Color priority is wall, path, then state. In hexadecimal RGB, walls are
+\texttt{202020}, path cells \texttt{0072B2}, unseen cells \texttt{FFFFFF}, waiting
+cells \texttt{E69F00}, and processed cells \texttt{009E73}. Repaint every pixel,
+including pixels whose new color is white or dark. The colors help locate state;
+array values and IDs provide the explanation without depending on color perception.
+The framebuffer is the first static allocation at hexadecimal \texttt{10010000};
+its immediate guard is at \texttt{10010100}. Other named arrays may move.
+
+Set a breakpoint at \texttt{maze\_ready} in Debug. Inspect phase zero and the
+single waiting start, then continue through the four-cell trace. At each phase-one
+pause, derive the pending range from head and tail and inspect the newly appended
+IDs and their parents. Step beyond the current occurrence before waiting for the
+next one. A fast Run may show only the final frame; screen refreshes are not a
+count of completed expansions.
+
+\subsection*{Follow parents and distinguish failure from a zero-length route}
+
+On success, set result to one and length to the goal's distance. Starting at the
+goal, mark that cell in \texttt{path}, then follow its parent until reaching the
+start. Mark the start too, and stop before reading its sentinel parent. Each
+parent must be an adjacent open cell whose distance is one smaller. This decreasing
+nonnegative distance explains why the chain terminates without a cycle.
+
+For route $0,1,9$, reconstruct backward as $9,1,0$. The mask has three marked
+cells but length is two: the contract counts edges. If start equals goal, the
+search still initializes and dequeues that cell, then succeeds with length zero
+and one marked cell. It does not expand the goal's neighbors.
+
+If pending work becomes empty without removing the goal, set result to zero,
+retain length $-1$ and leave the path mask all zero. Reach phase two, redraw and
+exit normally in either case. An unreachable goal and a zero-edge success have
+different result, length and path states; do not infer either from an empty queue
+alone.
+
+Figure~\ref{fig:revision-maze-routes} compares the two valid reconstructed chains.
+Use the IDs and publication outlines as well as the colors when comparing your
+result. A different parent for nine is acceptable when its chain remains valid
+and shortest.
+
+\input{revision/figures/maze/equal-routes}
+
+In a copy, make only cells seven and eight open, with seven the start and eight
+the goal. A result of one reveals row wrapping. Use cells zero and nine for a
+diagonal-only case; they are disconnected too. For the original four-cell room,
+delay the discovery mark in a disposable implementation and inspect the first
+duplicate append. Repair that transition before trying a larger open maze.
+
+\subsection*{Build and check the search independently}
+
+Begin with full initialization and the phase-zero frame. Then implement one
+dequeue and its complete expansion; use the table to inspect the first two such
+boundaries. Generalize that loop, add exhaustion and success, and finally reconstruct
+the predecessor chain. These stages separate faulty geometry, duplicate discovery
+and incorrect reconstruction instead of hiding all three behind one final picture.
+Keep the renderer independently callable so its faults can be investigated without
+running a complete search.
+
+Run both package checks against your revised source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/010-maze-explorer/checks/public.kts \
+  /path/to/your/maze-search.asm
+java -jar /path/to/cli.jar grade \
+  packages/010-maze-explorer/checks/render.kts \
+  /path/to/your/maze-search.asm
+\end{verbatim}
+The checks inspect every published transition and accept your scratch-register
+choices. Renderer checks supply independent arrays and saved registers. Keep a
+failing input and locate its first disagreement: a missing neighbor, duplicate
+append or changed parent can precede the wrong final mask. Repair that transition
+and rerun both checks, rather than patching only the picture.
+
+After the basic search passes, change the open room to force a detour and justify
+its new edge count. Predict which parent changes if you reverse neighbor order.
+Then measure the largest pending queue size at completed expansion boundaries;
+state that sampling boundary, since it excludes the internal moment after a
+removal but before its new appends. For a larger extension, design a rectangular
+interface with explicit row stride and capacity. Do not carry the eight-column
+mask or 64-slot proof into that interface without deriving their replacements.

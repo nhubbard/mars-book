@@ -113,6 +113,11 @@ See [ring-unit.md](ring-unit.md) for the independent queue assignment, compact
 starter, wraparound experiment and verified annotated Memory observations.
 
 The algorithms and cost chapter begins on main page 52, and its written lab begins
-on lab page 36. The current proofs contain 58 main-book pages and 39 lab-book pages.
+on lab page 36. The current proofs contain 58 main-book pages and 45 lab-book pages.
 See [sorting-unit.md](sorting-unit.md) for the complete two-sort visualizer,
 repeatable measurements, stable-partition exercise and remaining interactive work.
+
+The revised maze companion follows as section 9.6 on lab pages 39–45. Chapter 9 of
+the lab book is now titled “Sorting and search”. See [maze-unit.md](maze-unit.md)
+for the coordinate experiment, BFS reasoning, independent search task and two
+verified native route observations with native LaTeX annotations.
