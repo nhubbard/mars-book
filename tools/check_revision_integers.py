@@ -16,13 +16,15 @@ def sha(path):
 
 
 def verify(java, cli, output):
-    blocks = re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}', SOURCE.read_text(), re.S)
+    source_bytes = SOURCE.read_bytes()
+    blocks = re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}', source_bytes.decode('utf-8'), re.S)
     if len(blocks) != 2:
         raise ValueError('Expected the complete inspector and word-boundary experiment')
     for name, block in zip(('byte-inspector.asm', 'word-boundary.asm'), blocks):
         if (ROOT / 'revision/labs/files' / name).read_text() != block:
             raise ValueError('Downloadable source differs from literal listing: '+name)
     output.mkdir(parents=True, exist_ok=False)
+    (output / 'chapter-source.tex').write_bytes(source_bytes)
     runs = []
 
     def run(name, source, value=None):
@@ -74,7 +76,7 @@ def verify(java, cli, output):
     if run('wrong-arithmetic-width', wrong_width)[1]['t2'] == 0x80000000:
         raise AssertionError('Word/64-bit width fault was not exposed')
     receipt = dict(admittedByteCases=256, outsideRangeObservations=3, wordBoundaryCases=1,
-                   assembledFaultsRejected=4, sourceSha256=sha(SOURCE), cliSha256=sha(cli),
+                   assembledFaultsRejected=4, sourceSha256=hashlib.sha256(source_bytes).hexdigest(), cliSha256=sha(cli),
                    verifierSha256=sha(Path(__file__)), runs=runs,
                    scope='Literal native LaTeX listings, exact console output and full final register values. Fresh CLI sessions; no IDE breakpoint, student usability, or unimplemented independent-variation claim.')
     (output / 'receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
