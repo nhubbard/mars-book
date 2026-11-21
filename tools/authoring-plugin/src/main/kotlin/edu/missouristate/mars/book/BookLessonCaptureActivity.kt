@@ -245,7 +245,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
         try {
             val required = "Your course requires both prediction quizzes"
-            awaitUi { WindowManager.getInstance().getFrame(project)?.let { lessonVisibleText(it.rootPane).contains(required) } == true }
+            awaitFrame(project, required, source)
             delay(600)
             check(passes.get() == 0)
             captureFrame(project, output, "policy-prerequisite-required", required)
