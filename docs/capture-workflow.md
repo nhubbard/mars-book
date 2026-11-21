@@ -886,3 +886,26 @@ are retained; the six new independent-program views were inspected. Solution vie
 remain private verification material. They must not become student exercise figures.
 No new annotated or accessibility-verified publication figure is claimed. Project
 reopen, instructor policies, hints and human review remain separate work.
+
+
+## Native graduated hints
+
+Set `captureHints: true` together with `captureIndependent: true`. The separate
+authoring driver invokes hint and check actions through the actual Learn toolwindow
+context rather than injecting editor/file keys. It captures two hints, reopens to
+verify history and reveals the final two, then verifies no source mutation and no
+lesson completion from help alone. After a successful check, a source edit and
+restart expose the active exercise again; the full hint history persists and reveal
+is disabled. The student must recheck the edited program. Help is available only
+while the native independent lesson is active; completion disposes its checkpoint.
+
+The successful `native-hints-01` batch observes all seven segments and three native
+independent completion callbacks. It retains thirty-five raw light-theme views;
+the seven new hint views were visually inspected. The exact packages pass 968
+plugin tests (73 learning tests), 90 authoring tests and paired API verification.
+All eleven installed JARs match, and the successful log has no SEVERE entries.
+An earlier authoring-only failure requested hints after lesson disposal; retain it
+as a failed attempt rather than claiming completion from its partial captures.
+New annotated publication figures, project reopen, policies and human review remain
+open. The lab proof passes automated PDF/UA-2 validation and all four pages were
+inspected; this does not establish usability or human accessibility review.

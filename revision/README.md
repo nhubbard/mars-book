@@ -26,8 +26,8 @@ files. The repair accepts equivalent instruction spelling and survives restart.
 Independent writing now uses a separate skeleton and five public behavioral cases,
 with current editor text, cached assembly and a fresh machine per case. The IDE
 check verifies starter rejection, an equivalent program, edit invalidation and
-restart preservation. Hints, instructor policies and full project reopen/resume
-remain open. The progress service persists content-specific evidence. Its code and
+restart preservation. Graduated optional hints are implemented and tested;
+instructor policies and full project reopen/resume remain open. The progress service persists content-specific evidence. Its code and
 Jupiter verification are documented upstream in `docs/student-instruction-system.md`.
 The full goal includes the actual integrated lesson, further editorial pilots,
 all 35 projects and human review where available. These pilot PDFs do not
