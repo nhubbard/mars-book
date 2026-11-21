@@ -1,7 +1,7 @@
 # Revised state and buffers unit
 
 The native main chapter is `main/state-and-buffers.tex`; its written supplement is
-`labs/state-and-buffers.tex`. The current proofs contain 51 main pages and 29 lab
+`labs/state-and-buffers.tex`. The current proofs contain 51 main pages and 35 lab
 pages. Chapter eight begins on main page 45 and lab page 27. These are continuing
 revision proofs, not the completed curriculum.
 
@@ -63,7 +63,7 @@ inspection of the generation diagram. Original manuscript and unrelated MARS edi
 remain preserved.
 
 The eighth native interactive unit and human learner/assistive-technology reviews
-remain open. The ring-buffer project is preserved and introduced here, but its revised
-written companion still needs composition. The other companion revisions and the
+remain open. The ring-buffer project is preserved and its revised written companion now follows
+in section 8.6, on pages 30–35; see ring-unit.md for its separate qualification. The other companion revisions and the
 remaining main chapters also remain open. The proposed opening MARS-versus-hardware
 explanation is deferred. This milestone does not complete the curriculum goal.

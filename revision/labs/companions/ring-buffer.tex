@@ -1,0 +1,275 @@
+\section{Companion lab: variable-length records in a ring}
+\label{revision-lab:ring-buffer}
+
+Life reuses an allocation after its old contents are no longer needed. A queue
+reuses storage too, but it may contain several records with different lifetimes.
+The oldest record must remain available until it is successfully removed, while
+new records occupy the free space after the newest one. A circular buffer, or
+\emph{ring buffer}, lets that occupied region cross the physical end of an array.
+The array stays in place; its indices wrap back to zero.
+
+This companion is original project \texttt{014-ring-buffer-logger}. Use the revised
+\texttt{ring-records.asm} starter in \texttt{revision/labs/files} and both checks
+under \texttt{packages/014-ring-buffer-logger/checks}. Implement the
+callable \texttt{push\_record} and \texttt{pop\_record} functions. The supplied
+caller, allocations and \texttt{operation\_ready} marker provide a common way to
+observe and check your implementation. Replace the failing function bodies; choose your own register allocation and algorithm.
+The archived project starter remains available under its original package path.
+
+You will need the preceding chapters' byte addressing, function interfaces and
+preserved state. The new work is to separate physical positions from logical
+record order, account for prefix bytes, and arrange failure checks before changing
+caller data. The complete queue functions are your implementation task; the short
+cursor experiment below isolates one operation you can verify first.
+
+\subsection*{Represent a queue with indices and an occupied count}
+
+A record consists of one unsigned length byte followed by $L$ payload bytes, where
+$0\leq L\leq31$. The payload is binary data: zero is an ordinary byte, not a string
+terminator. An empty payload is a valid record and still occupies its one-byte
+prefix. The physical ring capacity $C$ is from one through 32 bytes and need not
+be a power of two.
+
+Each queue has an eight-byte-aligned, 24-byte descriptor. Offsets are byte
+displacements from the descriptor pointer passed in \texttt{\$a0}.
+
+\begin{center}
+\begin{tabular}{rll}
+\toprule
+Offset & Representation & Meaning\\
+\midrule
+0 & word & head: first byte of the oldest record\\
+4 & word & tail: position for the next appended prefix\\
+8 & word & used: occupied bytes, including prefixes\\
+12 & word & capacity: usable ring bytes\\
+16 & doubleword & full address of the ring allocation\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A valid descriptor satisfies $0\leq head,tail<C$, $0\leq used\leq C$, and
+\[
+ tail=(head+used)\bmod C.
+\]
+The occupied circular bytes contain complete valid records. You may assume this
+input invariant; this lab does not ask you to repair corrupted descriptors.
+The supplied descriptor, ring, source and output are separate objects. Data pointers
+may be byte unaligned. Load the ring pointer with \texttt{ld} from offset 16, then
+use full-width address arithmetic when adding an index. Loading only its low word
+would change the interface even if a particular Default-layout address happened
+to fit in that word.
+
+Head equal to tail is insufficient to identify an empty queue. An empty queue has
+$used=0$; a full queue has $used=C$. Both have equal head and tail. The occupied
+count also makes every ring byte usable, rather than reserving a slot to distinguish
+those states. Bytes outside the occupied region can retain stale data. Their
+values do not make them live records.
+
+\subsection*{Follow a record across the physical boundary}
+
+Start with capacity seven and an empty queue whose head and tail are both five.
+Push the three-byte payload \texttt{ABC}, whose byte values are 65, 66 and 67.
+Its prefix is three, so it occupies four positions: 5, 6, 0 and 1. Tail becomes
+two and used becomes four. The next two-byte payload \texttt{xy} occupies positions
+2, 3 and 4, including its prefix. Tail returns to five and used becomes seven.
+Figure~\ref{fig:revision-ring-full} shows the resulting full queue.
+
+\input{revision/figures/ring/wrapped-records}
+
+Read the oldest record in logical order, beginning at head, rather than by scanning
+physical index zero upward. A pop with destination capacity two cannot hold
+\texttt{ABC}. It returns a failure and the required payload length three. Nothing
+is consumed, so a retry with capacity three must return the same record. After
+that successful pop, head becomes two and used becomes three; tail remains five.
+The second record is still queued.
+
+\begin{center}
+\begin{tabular}{lrrrl}
+\toprule
+Completed operation & Head & Tail & Used & $(v_0,v_1)$\\
+\midrule
+Initial empty queue & 5 & 5 & 0 & ---\\
+Push \texttt{ABC} & 5 & 2 & 4 & $(0,4)$\\
+Push \texttt{xy} & 5 & 5 & 7 & $(0,3)$\\
+Pop, capacity 2 & 5 & 5 & 7 & $(-2,3)$\\
+Pop, capacity 3 & 2 & 5 & 3 & $(3,4)$\\
+Pop, capacity 31 & 5 & 5 & 0 & $(2,3)$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Figure~\ref{fig:revision-ring-memory} shows those full and empty descriptors in the
+native Memory tab for this seven-byte example. Each group of four hexadecimal
+bytes is one little-endian word; the boxed third group holds the occupied count.
+
+\input{revision/figures/ring/full-and-empty}
+
+The final empty state has the same indices as the full state. Popping does not
+clear ring bytes: the occupied count and head release their ownership. The old
+bytes remain available for a later push to overwrite. This also means that a
+successful pop writes its destination and descriptor, but never the ring itself.
+
+\subsection*{Establish the cursor operation separately}
+
+For a one-byte advance, increment the index and replace it with zero when it
+reaches capacity. Since the old index is at most $C-1$, the increment is at most
+$C$, so an equality check is sufficient. The complete \texttt{ring-cursor.asm}
+experiment in \texttt{revision/labs/files} calls this helper with index six and
+capacity seven, retains the result in \texttt{cursor\_result}, and exits silently.
+The helper receives the index in \texttt{\$a0}, capacity in \texttt{\$a1}, and
+returns the next index in \texttt{\$v0}.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Advance one byte without assuming a power-of-two capacity}
+\begin{minted}{mars-idea}
+advance_cursor:
+    addiu $v0, $a0, 1
+    bnec $v0, $a1, cursor_return
+    nop
+    move $v0, $zero
+cursor_return:
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+Run its public \texttt{revision/labs/checks/ring-cursor.kts} check to cover every
+valid index for capacities one through 32. Predict capacity one before running:
+its only valid index advances back to zero. Then compare a mask-based expression
+$(index+1)\mathbin{\&}(C-1)$. For $C=7$ and index six, it produces six instead of
+zero. Keeping selected low bits implements a power-of-two modulus, so that shortcut
+does not satisfy the arbitrary-capacity contract.
+
+The equality shortcut above belongs to a one-byte increment. A whole-record jump
+can pass capacity without equaling it. In the example, $5+4=9$, whose wrapped value
+is two. You can advance the cursor once per copied byte, use a remainder operation,
+or subtract $C$ when a bounded whole-record sum is at least $C$. State the bound
+that makes your chosen method valid. A fitting record occupies at most $C$ bytes,
+so its old index plus encoded size is less than $2C$.
+
+If you call the cursor helper from a queue function, that function becomes a
+non-leaf caller and must preserve its return link and live values across the call.
+You may instead inline the same bounded decision. The grading contract accepts
+either organization.
+
+\subsection*{Validate the request before copying}
+
+Both queue calls receive the descriptor in \texttt{\$a0}. For push,
+\texttt{\$a1} points to $L$ source payload bytes and \texttt{\$a2} is $L$.
+For pop, \texttt{\$a1} points to output storage and \texttt{\$a2} is that storage's
+capacity, also from zero through 31. The two result registers have these meanings:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Situation & $v_0$ & $v_1$\\
+\midrule
+Push: $L\geq C$ & $-2$ & 0\\
+Push: insufficient free bytes & $-1$ & 0\\
+Push: success & 0 & $L+1$\\
+Pop: empty queue & $-1$ & 0\\
+Pop: destination too small & $-2$ & required $L$\\
+Pop: success & $L$ & $L+1$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For push, first reject a record that cannot fit even in an empty ring: $L\geq C$.
+Then compare its encoded size $L+1$ with the free count $C-used$. This order gives
+the specified error priority when the ring is already full and the record is also
+too large. A representable record with insufficient current space returns $-1$;
+a record whose own size is impossible returns $-2$.
+
+For pop, test $used=0$ before interpreting a prefix. An empty ring can contain stale
+bytes that have no record meaning. When a record exists, read its length and compare
+it with the destination capacity. If it does not fit, return $(-2,L)$ without
+advancing head or writing any output. The caller can then retry with enough storage.
+
+A failure permits no stores to caller data, including a temporary write that is
+later restored. Arrange the complete failure decision before such stores. Registers
+can hold candidate indices and counts while you check the request. A private callee
+stack frame is separate from caller-owned descriptor, ring, source and output data;
+restore the agreed saved registers and stack pointer on every return path.
+
+For capacity one, a zero-length push succeeds: its prefix consumes the one available
+byte. A pop into capacity zero then succeeds with $(0,1)$ and performs no output
+store. Distinguish that zero-length success from an empty-queue failure. The second
+return value accounts for the consumed prefix even when there is no payload.
+
+\subsection*{Implement the two successful transitions}
+
+For a successful push, begin at the old tail and store the length prefix. Advance
+the working cursor once, then copy exactly $L$ source bytes, advancing and wrapping
+the ring cursor after each byte. Source payload bytes may contain zero,
+\texttt{0x80} or \texttt{0xff}; copy by length, using byte loads and stores.
+A zero-length payload skips the copy loop and performs no source load. On completion,
+retain the original head, publish the final tail, and increase used by $L+1$.
+Capacity and the full ring pointer are read-only descriptor fields.
+
+For a successful pop, retain the length from the validated prefix. Advance a working
+cursor past it and copy exactly $L$ ring bytes to the destination. Do not copy the
+prefix or append a terminator. Afterward publish the resulting head, subtract $L+1$
+from used, and preserve tail. Ring bytes remain unchanged throughout the call. A
+record can cross the boundary between any pair of payload bytes, including the
+pair immediately after its prefix.
+
+Keep a loop invariant beside each implementation. After $k$ payload bytes,
+$0\leq k\leq L$, the working ring cursor has advanced $k+1$ positions from its
+original head or tail; the extra one accounts for the prefix. The source or output
+pointer has advanced only $k$ bytes. This distinction locates many off-by-one
+faults without relying on a plausible final string.
+
+You may choose the successful descriptor-store order and copy direction as long
+as the final state and access bounds satisfy the contract. Keeping working state
+in registers until the copy is complete makes the transition easier to inspect.
+The supplied caller publishes results only after the function returns. At
+\texttt{operation\_ready}, the descriptor, \texttt{last\_status},
+\texttt{last\_aux} and \texttt{operation\_index} describe that completed command.
+An intermediate instruction inside a call need not yet have that completed-state
+interpretation.
+
+The revised caller aligns the stack and uses the same compact call and branch
+forms as the main book. Its unfinished functions stop with \texttt{break} until
+you supply their bodies. The archived project starter also remains compatible
+with these checks; it uses retained delayed transfers with explicit \texttt{nop}
+slots. On this MIPS64 target, a retained \texttt{jal} executes its following slot
+before entering the function and saves the call address plus eight. Its
+\texttt{jr} slot executes before returning. Keep that distinction when reading
+the archived source; the revised caller and cursor experiment use compact calls.
+
+\subsection*{Test state, access bounds and recovery}
+
+Begin with one record that fits without wrapping. Check its prefix, payload, updated
+tail and occupied count. Pop it and check the exact output byte count, the released
+space and the unchanged ring. Next reproduce the seven-byte example above, including
+the failed short-destination pop and its retry. Write down all physical positions
+before running it.
+
+The supplied 14-command caller uses capacity eight and a different starting state.
+Break at \texttt{operation\_ready} and use \texttt{operation\_index} to identify the
+completed command; the command index starts at zero. Index three shows a wrapped
+queue. Index eight is full. Index ten is a short-destination failure, and index
+eleven retries with enough capacity. Compare the full ring and descriptor across
+the failure, then locate the bytes released by the successful retry. Output bytes
+after the requested payload must retain their previous values.
+
+Run both public checks on your completed copy, using JDK 25:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/014-ring-buffer-logger/checks/kernels.kts \
+  /path/to/your/main.asm
+java -jar /path/to/cli.jar grade \
+  packages/014-ring-buffer-logger/checks/program.kts \
+  /path/to/your/main.asm
+\end{verbatim}
+The kernel check supplies different valid descriptors, capacities, offsets, saved
+register values and return continuations. The caller check observes completed
+commands and result publication. They check byte footprints and protected stores,
+not just a decoded payload string. An unchanged final descriptor does not excuse
+an earlier forbidden store on a failed call.
+
+For diagnosis, replace your wrap logic with a mask in a copy and use capacity seven.
+Then try accounting for only $L$ occupied bytes, omitting the prefix, and use a
+zero-length record. Finally, try advancing head before the pop capacity check and
+repeat the failed-pop/retry trace. In each case, identify the first incorrect
+state transition or store before repairing the code. Keep those counterexamples
+with a passing report and an explanation of why empty and full can share indices.

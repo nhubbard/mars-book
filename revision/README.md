@@ -26,7 +26,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–8 (51 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–8 (29 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–8 and ring-buffer companion (35 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -107,5 +107,6 @@ exhaustive endpoint checks, native diagram and independent dashed-line exercise.
 The state and buffers chapter begins on main page 45, and its written lab begins
 on lab page 27. See [state-unit.md](state-unit.md) for the complete Life program,
 source-snapshot checks, native generation diagram and independent changed-cell count.
-The revised ring-buffer companion remains to be composed; its original project
-and executable contract are preserved.
+The revised ring-buffer companion follows in section 8.6 on pages 30–35.
+See [ring-unit.md](ring-unit.md) for the independent queue assignment, compact
+starter, wraparound experiment and verified annotated Memory observations.
