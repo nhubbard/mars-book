@@ -287,6 +287,12 @@ class BookLessonCaptureActivity : ProjectActivity {
             }, ModalityState.nonModal())
         }
         val dialog = awaitDialog(failure, if (recover) "Recover this unit's history?" else "Reset this unit's progress?")
+        // macOS can expose the Swing hierarchy before the native sheet finishes placement.
+        // Wait for placement/paint, then ensure capture uses settled screen coordinates.
+        delay(500)
+        val settled = onModalUi { Rectangle(dialog.rootPane.locationOnScreen, dialog.rootPane.size) }
+        delay(200)
+        check(onModalUi { Rectangle(dialog.rootPane.locationOnScreen, dialog.rootPane.size) } == settled)
         captureComponent(dialog.rootPane, output, prefix, if (recover) "Execution checks must run again" else "Your source files and course settings stay as they are")
         onModalUi { visibleLessonButton(dialog.rootPane, if (!confirm) "Cancel" else if (recover) "Recover history" else "Reset progress").doClick() }
         awaitUi { !dialog.isShowing }
