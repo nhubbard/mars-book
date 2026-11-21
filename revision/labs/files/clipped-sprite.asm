@@ -39,7 +39,8 @@ state_end: .word 0x78901234
 .text
 .globl main
 main:
-    daddiu $sp, $sp, -8
+    dli $t0, -16
+    and $sp, $sp, $t0
     dla $s0, frame_a
     li $t0, 0x00444444
     li $t1, 128

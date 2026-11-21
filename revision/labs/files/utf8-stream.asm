@@ -22,7 +22,8 @@ state_end: .word 0x76543210
 .text
 .globl main
 main:
-    daddiu $sp, $sp, -8
+    dli $t0, -16
+    and $sp, $sp, $t0
     dla $s0, state_a
     dla $s1, chunks
     dla $t0, chunk_count

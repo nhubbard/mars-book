@@ -8,7 +8,8 @@ clipped_right: .word -1
 .text
 .globl main
 main:
-    daddiu $sp, $sp, -8
+    dli $t0, -16
+    and $sp, $sp, $t0
     lw $a0, position
     lw $a1, source_width
     lw $a2, frame_width
