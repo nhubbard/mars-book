@@ -33,7 +33,7 @@ guided work or free writing, preserves source and hint history, and remembers th
 last guided segment across a fresh IDE process. Broader instructor policies
 remain open. The independent exercise is also verified
 across native project save/close and fresh IDE processes, including an offline
-source edit; automatic resumption at every Run/Debug task remains open. The progress service persists content-specific evidence. Its code and
+source edit; fresh-process guided restoration now verifies all six guided segments. Unchanged work retains completion; an offline edit to the worked source requires new Run/arithmetic Debug/output observations while predictions and the separate diagnosis/repair histories survive. This restores completed evidence, not a running machine or an intermediate Debug trace. The progress service persists content-specific evidence. Its code and
 Jupiter verification are documented upstream in `docs/student-instruction-system.md`.
 The full goal includes the actual integrated lesson, further editorial pilots,
 all 35 projects and human review where available. These pilot PDFs do not

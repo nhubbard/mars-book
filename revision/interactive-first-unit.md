@@ -126,7 +126,8 @@ stated range; they are not authoritative private grading or a proof for every in
 The full grader suite passes 131 tests and the plugin suite passes 962, including
 67 learning tests.
 
-Graduated hints, instructor policies, explicit mode controls and complete-unit
-project reopen/resume remain to be integrated and exercised. The raw captures
-await publication layout, annotations and accessibility verification. Author and
-representative learner review remain open.
+Graduated hints, project-level hint release and prediction requirements, and explicit guided/free-writing modes are now implemented and exercised. Three native LaTeX lab figures use four actual IDE originals and fourteen explanations; their current proof has automated geometry, pixel, font and PDF/UA-2 verification. Human review remains open.
+
+A separate fresh-process batch reopens all six guided segments after native save/close. Each reports one native pass callback for unchanged source with zero process starts. After an offline comment edit to first-program.asm, Run, arithmetic Debug and output preparation require fresh execution evidence (zero pass callbacks); prediction history and the separate diagnosis and repair files retain completion. Sources, answers and progress are not injected by the restart driver. The independent segment has its own earlier reopen/edit evidence. These checks do not restore a running simulator, an unfinished multi-pause trace or every possible interrupted task.
+
+Remaining first-unit work includes recoverable reset, finer instructor progression policies and retry controls, integrated delivery and review. The native Learn panel also needs a readability pass: actual 1280-pixel-wide captures show horizontal clipping in some lesson text and long navigation buttons. These are verification views, not publication plates. Author and representative learner review remain open.
