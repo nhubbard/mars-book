@@ -1,0 +1,278 @@
+\chapter{Compact integer encodings}
+\MARSChapterHeading{Compact integer encodings}
+\label{revision:encodings}
+
+A sequence of readings may change much less than its absolute magnitude suggests.
+The values 1000, 1002, 1001, 1001 and 20000 need twenty bytes as five words, but
+most of their successive differences are small. We can store those differences
+in a representation that gives small values fewer bytes. Decoding must recover
+the exact readings, including a sudden change, and reject an incomplete or
+invalid spelling without corrupting earlier results.
+
+The complete \texttt{delta-codec.asm} in \texttt{revision/labs/files} contains
+an encoder and decoder. The example connects signed arithmetic, logical shifts,
+byte addressing and the bounded interfaces from earlier chapters. Its central
+invariant separates a candidate being examined from the prefix already committed.
+The independent exercise validates a stream and reports its last valid reading
+without creating a decoded array.
+
+\section{Subtract in the width the difference requires}
+
+Start each call with predecessor zero. For reading $x_i$, form
+$d_i=x_i-p$, then let $p=x_i$ after accepting that reading. For the five readings
+above, the differences are $1000,2,-1,0,18999$. The repeated 1001 needs a zero
+difference. Adding each difference to its predecessor reverses the operation;
+no approximation or quantization is involved.
+
+Both readings fit in signed words, but their difference may not. Moving from
+$-2147483648$ to 2147483647 gives 4294967295, while the reverse gives
+$-4294967295$. A word subtraction would retain a wrapped pattern instead of
+that exact value. The worked encoder loads with \texttt{lw}, obtaining a
+sign-extended reading in a 64-bit register, then uses \texttt{dsubu} against
+the full predecessor. Every possible difference fits in a signed doubleword.
+
+A complete encoded block needs an agreed starting predecessor. This format uses
+zero for every call. Splitting an array into two independently encoded blocks
+therefore restarts the second block at zero. Concatenating their bytes and
+decoding as one block would wrongly apply the first block's final predecessor
+to the second block's first difference. Either keep block boundaries or design
+an interface that explicitly carries predecessor state. Reusing a register from
+a previous call is not a substitute for such an interface.
+
+\section{Put small negative and positive values near zero}
+
+An unsigned representation naturally gives small nonnegative values short
+spellings. Map a signed difference to an unsigned integer $u$ by
+\[
+ u=\begin{cases}2d,&d\geq0,\\-2d-1,&d<0.\end{cases}
+\]
+This interleaves the two sides of zero: differences $0,-1,1,-2,2$ become
+$0,1,2,3,4$. This is commonly called ZigZag mapping. Positive differences become
+even integers, negative differences odd integers. It is different from copying
+a negative two's-complement pattern into an unsigned interpretation, which would
+place even minus one near the top of the unsigned range.
+
+The worked implementation uses the doubleword difference in \texttt{\$t1}:
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Map an exact signed difference}
+\begin{minted}{mars-idea}
+dsll $t2, $t1, 1
+dsra $t3, $t1, 63
+xor $t2, $t2, $t3
+\end{minted}
+
+For nonnegative $d$, the arithmetic sign shift produces zero, leaving $2d$.
+For negative $d$, it produces all ones; XOR complements the doubled pattern,
+which represents $-2d-1$ under these bounds. Difference $-1$ becomes one.
+A logical sign shift would produce only a one bit and would not perform that
+complement. Word shifts would also lose information for large differences.
+The mapped value needs as many as 33 bits; a 32-bit unsigned temporary is too small.
+
+To reverse the mapping, let $q=\lfloor u/2\rfloor$. An even $u$ gives $d=q$;
+an odd $u$ gives $d=-q-1$. The decoder uses the low bit to form either a zero
+mask or an all-one mask, then XORs that mask with the logical half. The sign of
+the original reading is not encoded separately: it emerges only after adding
+the recovered difference to the predecessor.
+
+\section{Store seven payload bits in each byte}
+
+Write $u$ in base 128, least significant digit first. A byte's low seven bits
+hold one digit; its high bit is one when another digit follows and zero in the
+last byte. The number of bytes is variable, so this is a \emph{varint}. The
+zero value still needs one byte, hexadecimal \texttt{00}.
+
+For the first difference 1000, mapped value 2000 has digits 80 and 15 because
+$2000=80+128\cdot15$. The first digit becomes hexadecimal \texttt{d0}, with
+its continuation bit set; the terminal digit is \texttt{0f}. This is an
+ordering of seven-bit digits, not a two-byte little-endian word store.
+The next differences $2,-1,0$ become bytes \texttt{04}, \texttt{01},
+\texttt{00}. The last maps to 37998, giving \texttt{ee a8 02}.
+
+\input{revision/figures/delta/worked-wire}
+
+The byte loop keeps the remaining unsigned value in \texttt{\$t2} and a full
+output cursor in \texttt{\$t5}. It masks the low seven bits, logically shifts
+the remaining value right by seven, and tests whether anything remains.
+For a nonterminal digit it adds the high bit before storing. The final digit
+is stored without that bit. The complete caller's five readings therefore
+produce eight bytes, which the decoder must reconstruct exactly.
+
+The format requires the shortest spelling. A multibyte value whose terminal
+payload is zero has an unnecessary final group: \texttt{80 00} is a redundant
+spelling of zero, and \texttt{81 00} a redundant spelling of one. Both are
+malformed here. An internal zero digit is permitted, as in \texttt{80 01}
+for unsigned 128; only the unnecessary highest group violates minimality.
+
+At most five bytes are permitted. Four groups provide 28 payload bits, leaving
+five bits for the fifth group. That byte must terminate and have payload less
+than 32. A fifth byte with its high bit set is already malformed; the decoder
+must not fetch a sixth byte to find out what happens. These syntax rules define
+a local format, not every format that uses a base-128 integer.
+
+\section{Reserve a complete encoding before storing it}
+
+The encoder receives a full word pointer and reading count in
+\texttt{\$a0/\$a1}, then a full byte destination and byte capacity in
+\texttt{\$a2/\$a3}. Counts range from zero through 32, capacities from zero
+through 160. Its input and output slices are disjoint. The function returns
+committed readings in \texttt{\$v0}, committed bytes in \texttt{\$v1}, and
+status in \texttt{\$a3}: zero complete or one capacity exhausted.
+
+After computing a candidate's mapped value, the worked encoder counts how many
+base-128 bytes it needs using a copy of that value. Length starts at one, even
+for zero. Let $C$ be total byte capacity, $B$ committed bytes, and $L$ candidate
+length. Test $L\leq C-B$ before any candidate store. The invariant $B\leq C$
+makes the subtraction meaningful and avoids relying on an unchecked address sum.
+Once the candidate fits, its byte loop cannot run out of capacity halfway through.
+
+Only after the entire spelling is stored does the routine update predecessor,
+reading count and byte count. If the candidate does not fit, it returns the
+previous prefix and writes none of the rejected candidate, even temporarily.
+Writing bytes and then restoring their old values would violate this contract;
+other observers can see those stores.
+
+For the worked readings with byte capacity seven, four readings commit five
+bytes. The final reading needs three, but only two positions remain. The return
+is \texttt{\$v0}=4, \texttt{\$v1}=5, status one. Byte positions five and six
+stay unchanged even though they lie inside the offered capacity. A capacity is
+a maximum, not a promise that every available position will be used.
+
+Empty input completes before testing capacity. Nonempty input at zero capacity
+returns capacity status without reading the first reading. This ordering makes
+the boundary cases part of the interface, not accidental consequences of loop
+placement. The source shows the same distinction at the top of each iteration.
+
+\section{Scan a candidate without advancing the prefix}
+
+The decoder's arguments use the same registers, but their units change:
+\texttt{\$a1} is byte length, and \texttt{\$a3} is word capacity. Results are
+committed bytes in \texttt{\$v0}, committed readings in \texttt{\$v1}, and
+status in \texttt{\$a3}. Besides complete and capacity, status two means
+malformed bytes and status three means a reconstructed reading outside the
+signed-word range. A nonempty stream with zero word capacity returns status one
+before examining whether its next candidate is malformed.
+
+The worked schedule keeps committed byte and reading counts in
+\texttt{\$s5/\$s6}, and predecessor in \texttt{\$s4}. At the start of a
+candidate, it copies the committed byte count to scan index \texttt{\$t0},
+clears the unsigned accumulator, and begins at shift zero. These temporaries
+may advance while the committed state stays fixed.
+
+Before every byte load, check the scan index against logical input length.
+An exhausted slice with a continued candidate is malformed, even if mapped
+padding happens to contain a terminal byte. Mask out the payload, advance the
+scan index, check the fifth-byte restrictions, then place the payload into the
+unsigned accumulator. The payload shift increases by seven only when another
+byte is required.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Accumulate one checked payload}
+\begin{minted}{mars-idea}
+dsllv $t6, $t5, $t2
+or $t1, $t1, $t6
+andi $t6, $t4, 128
+beqzc $t6, dec_terminal
+nop
+\end{minted}
+Here \texttt{\$t5} is the seven-bit payload, \texttt{\$t2} its bit position,
+and \texttt{\$t4} the original byte. The preceding bounds and width checks
+justify this fragment. Masking the continuation bit does not itself validate
+that the byte exists or that its position is allowed.
+
+Consider bytes \texttt{02 80 00}. The first byte commits reading one. The next
+candidate scans both remaining bytes, obtaining unsigned zero, but fails the
+shortest-spelling rule. At \texttt{dec\_bad}, scan index is three while committed
+input is one and committed output is one. Returning three consumed bytes would
+hide the rejected candidate from the caller. Returning no output would discard
+the earlier valid reading.
+
+\section{Validate the reconstructed reading before committing it}
+
+After syntax succeeds, invert the unsigned mapping and add the full predecessor
+in doubleword arithmetic. Only then check whether the candidate lies between
+$-2147483648$ and 2147483647. A valid byte spelling need not describe a valid
+reading in its current context. The syntactically valid five bytes
+\texttt{ff ff ff ff 1f} map back to difference $-4294967296$; from predecessor
+zero, that cannot be a signed-word reading and returns status three. A fifth
+payload of 32 instead fails syntax and returns status two.
+
+A word addition could wrap an invalid reconstructed value into the accepted
+range. Keep the sum wide until both comparisons succeed. The decoder then
+computes the full destination address, stores one word, updates predecessor,
+copies the scan index to committed input, and increments committed output.
+That ordering establishes the same prefix invariant as the encoder.
+
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Commit one validated reading}
+\begin{minted}{mars-idea}
+sw $t6, 0($t7)
+move $s4, $t6
+move $s5, $t0
+addiu $s6, $s6, 1
+\end{minted}
+The preceding address calculation and range checks are essential. An earlier
+store would expose an invalid candidate. The function's return path restores
+saved registers and stack pointer; inspect the working committed registers before
+that restoration, or use the public results after return.
+
+Both functions preserve all bits of saved registers, frame pointer and stack
+pointer, return through the supplied continuation and perform no console I/O.
+Word slices are four-byte aligned; byte slices may start anywhere. The existing
+package permits an eight-byte-aligned incoming stack, while the worked caller
+uses the book's sixteen-byte convention. Its 80-byte private frame accommodates
+nine saved doublewords and preserves that alignment. The larger backing arenas
+do not authorize reads outside selected input or writes beyond committed output.
+
+\section{Compare representations on the same readings}
+
+A useful comparison separates three decisions: fixed four-byte words, independent
+ZigZag varints of the readings, and ZigZag varints of successive differences.
+The middle choice benefits from small absolute values; the third benefits from
+small changes. Neither makes every dataset smaller.
+
+\input{revision/figures/delta/sizes}
+
+The ramp's values already fit in one mapped byte each, so delta coding cannot
+improve its 32-byte total. The spike creates two large changes, one entering it
+and one leaving it; independent coding has only one large absolute value.
+Alternating signed endpoints need five bytes per item in either variable-length
+scheme, exceeding the four-byte-word total. Choose a representation from the
+actual distribution and required interfaces, not from one favorable example.
+
+The repeatable \texttt{tools/measure\_revision\_delta.py} checks each complete
+encoding, decodes its actual output in the same session, and records completed
+instructions from function entry through return. For the worked source, steady
+data takes 941 encoder and 1651 decoder instructions; alternating extremes take
+2592 and 4000. Frame operations and validation are included; caller setup,
+publication, assembly, session startup and host inspection are excluded. These
+are simulator instruction counts, not hardware cycles or host elapsed time.
+Different valid algorithms can have different work and the same bytes.
+
+\section{Validate a stream independently}
+
+Implement \texttt{scan\_delta} in \texttt{delta-scan.asm}. Pass a full byte
+pointer in \texttt{\$a0}, byte length zero through 160 in \texttt{\$a1}, and
+reading limit zero through 32 in \texttt{\$a2}. Return committed bytes and
+readings in \texttt{\$v0/\$v1}, last committed signed reading in
+\texttt{\$a2}, and the decoder's status in \texttt{\$a3}. If no reading has
+committed, the last reading is zero. Apply exactly the same syntax, range and
+precedence rules, but write no caller data, including temporary writes.
+
+Explain which candidate state may change before acceptance and which state must
+survive rejection. Use empty input, zero limit, a valid prefix followed by a
+redundant zero, and a valid spelling whose reconstruction is out of range.
+The default five-reading stream returns eight bytes, five readings, last reading
+20000 and status zero. The lab supplies public checks that accept equivalent
+implementations. Keep full-width pointers, preserved state and per-call reset
+semantics; choose your own registers and algorithm.
+
+\section*{Sources and laboratory connection}
+The local format and item-atomic interface are specified in
+\path{packages/023-delta-varint/}. The Protocol Buffers
+\href{https://protobuf.dev/programming-guides/encoding/}{encoding guide}
+describes base-128 varints and ZigZag; this lab does not implement Protobuf
+messages. The \href{https://webassembly.github.io/spec/core/binary/values.html#integers}{WebAssembly integer grammar}
+permits some redundant spellings that this lab rejects. Check the particular
+format's rules when reusing a familiar byte loop. The revised lab investigates
+committed prefixes, malformed candidates and the independent scanner; the
+Base64 companion later applies bit grouping to a different representation task.

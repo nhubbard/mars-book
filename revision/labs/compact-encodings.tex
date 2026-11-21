@@ -1,0 +1,193 @@
+\chapter{Candidate bytes and committed values}
+\MARSChapterHeading{Candidate bytes and committed values}
+\label{revision-lab:encodings}
+
+Use the complete \texttt{delta-codec.asm} and independent \texttt{delta-scan.asm}
+in \texttt{revision/labs/files}. Read the main chapter's mapping, seven-bit groups
+and prefix invariant first. These activities use ordinary Run and Debug; a native
+guided lesson for this unit remains unfinished. Keep disposable copies for input
+changes and intentional faults. Treat byte lengths, reading counts and capacities
+as quantities with different units.
+
+\section{Recover the wire from the readings}
+
+Begin with the unchanged five-reading caller. Compute each exact difference from
+its predecessor, map it to a nonnegative integer, then split it into base-128
+digits. Set a continuation bit only when another digit follows. Explain why
+1000 produces \texttt{d0 0f}, while a repeated reading produces \texttt{00}.
+The entire wire is \texttt{d0 0f 04 01 00 ee a8 02}.
+
+Break at \texttt{codec\_done}, before the caller publishes the results.
+Live registers contain five consumed readings, eight produced bytes and status
+zero in \texttt{\$v0/\$v1/\$a3}. Inspect the byte arena \texttt{stream}; the
+three result words are still $-1$. At \texttt{results\_ready}, those words
+contain five, eight and zero. Exit subsequently uses \texttt{\$v0}, so retain
+the function result at the intended boundary.
+
+To decode that stream in a fresh copy, set \texttt{method} to one, initialize
+the eight bytes explicitly, set \texttt{byte\_count} to eight and retain word
+capacity 32. Keep 192 total stream bytes by reducing its trailing filler to 184.
+Bytes above 127 can be written as signed initializer spellings: 208 as $-48$,
+238 as $-18$, and 168 as $-88$. This changes assembler source notation, not the
+stored bit patterns. The decoder uses unsigned byte loads for interpretation.
+
+At return, \texttt{\$v0}=8 bytes and \texttt{\$v1}=5 readings. Verify all five
+words and the specified wire bytes. Count units reverse relative to the encoder.
+Two routines can agree with each other while implementing the wrong format.
+
+\section{Observe unused capacity after a complete prefix}
+
+In an encoder copy, change only \texttt{byte\_capacity} from 160 to seven.
+Derive each candidate length and the remaining capacity before running.
+The first four readings need five bytes in total. The fifth needs three;
+it cannot fit in the two remaining positions.
+
+At \texttt{codec\_done}, expect four readings, five bytes and status one.
+The first five stream bytes are \texttt{d0 0f 04 01 00}; every later byte remains
+its initial hexadecimal \texttt{a5}. In particular, offsets five and six are
+inside the offered capacity but outside the committed prefix. They must not
+contain a partly emitted final value.
+
+\input{revision/figures/delta/atomic-prefix}
+
+Inspect \texttt{enc\_check\_capacity} on a fresh execution. Its candidate length
+is three and remaining capacity is two. The function chooses \texttt{enc\_full}
+before computing and using the candidate's output cursor. Earlier accepted
+readings remain committed. A final-memory comparison is not sufficient to prove
+that a rejected candidate was never written; the public checks also observe
+memory accesses, including stores later restored.
+
+Repeat with capacities zero, one, two, five and eight. For each, predict both
+return counters, status and the first unchanged byte. Then set reading count
+zero and byte capacity zero together. Empty input succeeds without reading data;
+nonempty input with zero capacity reports capacity before reading its first value.
+Explain the ordering from the loop's top tests.
+
+\section{Distinguish scanning from committing}
+
+Prepare a decoder copy with method one, byte count three and stream
+\texttt{02 80 00}, followed by 189 filler bytes. Keep the default word arena
+so an unmodified second word is recognizable as 1002. The first byte maps to
+difference one and commits reading one. The next candidate represents unsigned
+zero using two bytes, which violates shortest spelling.
+
+\Needspace{6\baselineskip}
+Break at \texttt{dec\_bad}, before its status instruction. General register
+\texttt{\$t0} is scan index three, and \texttt{\$t1} is candidate unsigned
+zero. In the same stopped state, predecessor \texttt{\$s4}, committed input
+\texttt{\$s5} and committed readings \texttt{\$s6} are all one. The first
+word has become one; the second remains 1002. These are separate observations
+of a rejected candidate and the accepted prefix, not conflicting counter values.
+
+\input{revision/figures/delta/candidate-prefix}
+
+Continue to \texttt{codec\_done}. The public return is one committed byte,
+one reading and status two. The routine has restored saved registers, so its
+working values in \texttt{\$s4/\$s5/\$s6} no longer describe the loop state.
+Use the return registers after this boundary. Advancing committed input to the
+scan index would incorrectly claim the rejected candidate had been consumed.
+
+Now reduce word capacity to one. The function accepts the first byte and stops
+with status one, without examining either malformed tail byte. This is a
+capacity result, not a malformed result, because the next candidate is outside
+the amount of output the caller allowed the function to attempt.
+
+\section{Separate byte syntax from reading range}
+
+Classify these streams before executing them from predecessor zero:
+\begin{verbatim}
+00                 zero, one byte
+80 01              unsigned 128, difference 64
+80 00              redundant spelling of unsigned zero
+80                 continued value cut off by input end
+80 80 80 80 20     fifth payload too wide
+80 80 80 80 80     fifth byte still requests continuation
+ff ff ff ff 1f     valid spelling, reconstructed reading out of range
+\end{verbatim}
+The last three examples distinguish a width rule, a termination rule and a
+signed reading rule. For a malformed fifth continuation, the decoder must not
+read a sixth byte even if padding is mapped. For \texttt{ff ff ff ff 1f},
+unsigned value 8589934591 reverses to difference $-4294967296$; only the reading
+range check rejects it. Use status two for byte syntax and three for range.
+
+Next encode the readings minimum word, maximum word, minimum word. The second
+difference is 4294967295 and the third is $-4294967295$. Their mapped spellings
+are \texttt{fe ff ff ff 1f} and \texttt{fd ff ff ff 1f}. The first reading
+uses \texttt{ff ff ff ff 0f}. Explain why a word subtraction can pass small
+examples while corrupting these transitions. Find the first incorrect arithmetic
+result before investigating the later byte loop.
+
+The kernel, caller and same-session checks accept equivalent complete codecs:
+\Needspace{15\baselineskip}
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/023-delta-varint/checks/kernel.kts \
+  revision/labs/files/delta-codec.asm
+java -jar /path/to/cli.jar grade \
+  packages/023-delta-varint/checks/program.kts \
+  revision/labs/files/delta-codec.asm
+java -jar /path/to/cli.jar grade \
+  packages/023-delta-varint/checks/reuse.kts \
+  revision/labs/files/delta-codec.asm
+\end{verbatim}
+The arena sizes do not enlarge the selected slices. Preserve full pointers,
+all saved register bits and stack state. The worked functions accept the
+original package's eight-byte-aligned incoming stack; the ordinary caller uses
+sixteen-byte alignment. A new call begins from predecessor zero even after a
+partial or failed call.
+
+\section{Compare bytes separately from execution work}
+
+Run the repeatable public measurement tool with a new output directory:
+\begin{verbatim}
+python3 tools/measure_revision_delta.py \
+  --java /path/to/jdk-25/bin/java --cli /path/to/cli.jar \
+  --output /tmp/my-delta-measurements
+\end{verbatim}
+It refuses an existing directory, checks the complete encoding and decodes its
+actual bytes in the same execution session. Its receipt binds source, public
+oracle, tool and CLI hashes. It records representation bytes without framing
+and completed instructions for each function's entry through return, including
+frame operations and validation. Assembly, session startup, caller publication,
+host inspection and hardware cycles are outside that interval.
+
+Explain why the steady dataset benefits from deltas, the small ramp gains
+nothing over independent mapping, and the spike loses two bytes. Do not compare
+the encoder instruction count with a raw word copy that has different work and
+then call the ratio a machine speedup. If investigating another implementation,
+keep numerical semantics, input, capacity, validation and measurement interval
+consistent. A correct shorter wire and a correct faster implementation are
+separate findings.
+
+\section{Build a read-only scanner independently}
+
+Implement \texttt{scan\_delta} in \texttt{delta-scan.asm}, retaining its caller
+and data harness. Inputs are full byte pointer \texttt{\$a0}, byte length zero
+through 160 in \texttt{\$a1}, and reading limit zero through 32 in
+\texttt{\$a2}. Outputs are committed byte and reading counts in
+\texttt{\$v0/\$v1}, last committed signed reading in \texttt{\$a2}, and
+status in \texttt{\$a3}. With no committed reading, the last value is zero.
+
+Apply the decoder's exact mapping, shortest-spelling, fifth-byte, signed-range
+and precedence rules. Initialize predecessor on every call. Read only the
+selected input slice, and no caller bytes when input is empty or limit is zero.
+Write no caller bytes, including temporary writes restored before return.
+Private stack storage and submission-owned constants are permitted. Preserve
+saved registers, frame pointer and stack pointer, return through the supplied
+continuation and perform no console I/O.
+
+The unchanged stream returns eight bytes, five readings, last reading 20000 and
+status zero at \texttt{scan\_ready}. The caller publishes them only afterward.
+Choose a valid prefix whose last value differs from the rejected candidate;
+use it to check that rejection retains the earlier last reading. Also repeat a
+successful call after an error to expose accidental retained state.
+\Needspace{6\baselineskip}
+Run the public checks:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/delta-scan.kts \
+  /path/to/your/delta-scan.asm
+\end{verbatim}
+Keep your candidate/prefix invariant, one rejected-candidate observation and an
+explanation of error precedence with the implementation. Behavioral checks do
+not require the worked decoder's temporary registers or source spelling.

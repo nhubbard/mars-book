@@ -3,7 +3,7 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first sixteen main-book chapters: the complete console
+- `learning.tex` includes the first seventeen main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -21,13 +21,14 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   bounded overlapping loads, derived shuffle controls and scalar tails. PCM mixing
   then derives clipping evidence, mask reduction, exact aliases and tail behavior.
   FIR filtering follows with Q15 units, exact wide sums, one final rounding and
-  explicit stream history.
+  explicit stream history. Compact encodings then derive full-width differences,
+  canonical bytes, atomic prefixes and measured representation tradeoffs.
   The chapters use connected explanations
   and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first sixteen written lab supplements: predictions,
+- `lab-book.tex` includes the first seventeen written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -37,8 +38,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–16 (104 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–16 and companions (95 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–17 (111 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–17 and companions (100 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -190,3 +191,9 @@ history, independent decimation and three verified native Debug observations.
 The combined review proofs now have 104 main pages and 95 lab pages; the advanced
 PCM/H.263 excerpt remains unchanged at twelve pages. Original project 021 now has
 revised written treatment. Native delivery of later units remains open.
+
+Chapter 17 starts on main page 105 and lab page 96. See [delta-unit.md](delta-unit.md)
+for the complete delta codec, independent read-only scanner, candidate/prefix
+observations and repeatable byte-size/instruction-work comparisons. The main
+proof now has 111 pages and the lab proof 100. The advanced PCM/H.263 excerpt
+remains unchanged. Base64 is the next companion in the encoding sequence.
