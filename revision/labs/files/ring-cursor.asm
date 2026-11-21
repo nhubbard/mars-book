@@ -4,6 +4,8 @@ cursor_result: .word -1
 .text
 .globl main
 main:
+    dli $t0, -16
+    and $sp, $sp, $t0
     li $a0, 6
     li $a1, 7
     balc advance_cursor
