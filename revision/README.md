@@ -27,8 +27,10 @@ Independent writing now uses a separate skeleton and five public behavioral case
 with current editor text, cached assembly and a fresh machine per case. The IDE
 check verifies starter rejection, an equivalent program, edit invalidation and
 restart preservation. Graduated optional hints are implemented and tested;
-two native course controls now release hints and optionally require both
-prediction quizzes before independent assessment. Broader instructor policies
+native course controls now release hints, optionally require prediction quizzes,
+and govern free-writing availability. Tools → MARS Learning explicitly offers
+guided work or free writing, preserves source and hint history, and remembers the
+last guided segment across a fresh IDE process. Broader instructor policies
 remain open. The independent exercise is also verified
 across native project save/close and fresh IDE processes, including an offline
 source edit; automatic resumption at every Run/Debug task remains open. The progress service persists content-specific evidence. Its code and

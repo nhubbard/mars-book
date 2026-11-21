@@ -1,7 +1,7 @@
 # First-unit course policy
 
 MARS stores course settings separately from each student's progress. In IntelliJ,
-open **Settings → Tools → MARS Learning**. The first unit currently offers two
+open **Settings → Tools → MARS Learning**. The first unit currently offers three
 controls:
 
 - **Released hints for the independent program** accepts a number from zero to
@@ -12,9 +12,13 @@ controls:
   register changes**. The independent exercise opens its assembly file and explains
   the prerequisite. Its assessment and hint actions become available after those
   answers satisfy the requirement. The questions use the current content edition.
+- **Allow free-writing mode** controls access to independent assessment. When it is
+  disabled, the mode chooser offers guided work, and direct entry to the independent
+  lesson explains the restriction. Existing independent source and hint history stay
+  intact. Releasing the mode later restores access without resetting that work.
 
-The default is four released hints with no prerequisite. An instructor can start
-with no hints, release an initial question about value flow, then release a concrete
+The default is four released hints with no prerequisite and free writing available.
+An instructor can start with no hints, release an initial question about value flow, then release a concrete
 trace later. Reading help does not complete a source check. Meeting the prediction
 requirement also does not establish that the student's independent program works;
 the program still has to meet its execution contract.
@@ -57,5 +61,21 @@ then observes hint release at 0, 2, 0 and 4. It requires no source mutation, no
 completion from hints, and rejection of the unfinished starter by all five public
 cases. The implementation and exact verification scope are recorded upstream in
 `docs/student-instruction-system.md` and privately under `native-policy-01`.
-These two controls do not yet implement per-step progression, retry limits,
-mode-switch policies, remote course policy distribution or private grading.
+These first-unit controls do not yet implement per-step progression, retry limits,
+remote course policy distribution or private grading.
+
+## Choosing a mode
+
+Tools → MARS Learning opens the chooser; Find Action can locate the same action.
+Guided work starts with predictions and remembers the last guided segment opened.
+Free writing opens the related independent contract. It permits your own instruction
+sequence, labels and registers, subject to that contract's behavioral checks.
+Both modes keep source editable. Switching changes the lesson and selected file,
+while retaining each activity's work, attempts and hints. It does not grant a pass.
+Cancel leaves the activity unchanged and creates no exercise source on first use.
+
+The last mode and guided destination are personal workspace state. A verified fresh
+IDE process restores them, retains both edited files and reopens the saved hint.
+This is lesson-segment navigation; it does not serialize a live simulator or debugger
+pause. Course prerequisites and source-dependent checks still apply. Reopen the
+chooser after a policy change to refresh its available choices.

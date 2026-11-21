@@ -978,3 +978,34 @@ calls. The final paired report has no override-only diagnostics. Packages pass
 974 plugin tests (79 learning tests, all 729 lines and 374 branches covered),
 92 authoring tests and 391 public Python tests. Historical reports with old API
 calls are retained with their own packages and must not describe the final archive.
+
+
+## Explicit mode navigation and fresh-process restoration
+
+`captureModes: true` requires independent/hint capture flags and excludes other
+segments, policy-only capture and independent resume. It needs no solution fixture.
+The separate driver invokes production Mars.Learning.Open through supported ActionUtil
+updates and actions. It observes cancellation without source creation, guided
+prediction dialogs, the Run bookmark, free-writing entry, source comments retained
+across switches, hint history, starter rejection, and native course restriction and
+release. Direct independent lesson entry must display the restriction too.
+
+After successful native save/close and confirmed IDE termination, `resumeModes: true`
+uses the same existing project with exact worked `sourceSha256` and
+`independentSourceSha256`. It requires the saved Free writing choice and Run guided
+destination, opens each mode and the saved hint, and verifies byte-identical source.
+It does not install a solution, record answers, reveal hints, change policy or invoke
+an execution check. Both phases use the actual clean cleanSandbox runIde tasks.
+
+The native-modes-01 batch retains twenty-one initial and four reopened light-theme
+views. All were inspected by AI. One immediate post-edit source image caught the
+previous paint; subsequent resumed views show the retained comment. Keep that raw
+imperfection explicit and select later frames for publication. Text clipping,
+notifications, annotations and accessibility proof for figures remain open. The
+initial log has no SEVERE entries; reopened close logs a bundled Air provisioning
+cancellation error. Exact per-phase packages, installed JARs and logs remain private.
+The final authoring package passes 94 tests and compatible public API verification
+without override-only diagnostics. Production checks pass 979 tests, including 84
+learning tests with 819 lines and 416 branches covered. The lab's directly authored
+mode paragraph builds into a four-page proof that passes PDF/UA-2 validation; human
+editorial, learner and accessibility review remain separate.
