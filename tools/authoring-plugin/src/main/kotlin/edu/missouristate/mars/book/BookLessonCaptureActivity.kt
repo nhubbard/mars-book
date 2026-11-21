@@ -82,11 +82,18 @@ internal data class BookLessonCapturePlan(
     val captureOutput: Boolean = false,
     val captureDiagnosis: Boolean = false,
     val captureRepair: Boolean = false,
+    val captureIndependent: Boolean = false,
+    val independentSolutionPath: String = "",
+    val independentSolutionSha256: String = "",
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
+        if (captureIndependent) {
+            require(Path.of(independentSolutionPath).isAbsolute)
+            require(independentSolutionSha256.matches(Regex("[a-f0-9]{64}")))
+        }
     }
 }
 
@@ -172,14 +179,16 @@ class BookLessonCaptureActivity : ProjectActivity {
         if (plan.captureOutput) captureDebug(project, output, source, outputPreparation = true)
         if (plan.captureDiagnosis) captureDebug(project, output, source.resolveSibling("wrong-output.asm"), diagnosis = true)
         if (plan.captureRepair) captureRun(project, output, source.resolveSibling("repair-output.asm"), repair = true)
+        if (plan.captureIndependent) captureIndependent(project, output, source.resolveSibling("independent.asm"), plan)
         val receipt = mapOf(
-            "scope" to "Only the native segments marked observed below; independent writing and full-unit integration remain incomplete",
+            "scope" to "Only the native segments marked observed below; hints, policies and full-unit integration remain incomplete",
             "nativePredictionPassesObserved" to predictionPasses.get(),
             "nativeRunPassedObserved" to plan.captureRun,
             "nativeDebugPassedObserved" to plan.captureDebug,
             "nativeOutputPassedObserved" to plan.captureOutput,
             "nativeDiagnosisPassedObserved" to plan.captureDiagnosis,
             "nativeRepairPassedObserved" to plan.captureRepair,
+            "nativeIndependentPassedObserved" to plan.captureIndependent,
             "platformBuild" to ApplicationInfo.getInstance().build.asString(),
             "sourceSha256" to plan.sourceSha256,
             "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
@@ -191,6 +200,91 @@ class BookLessonCaptureActivity : ProjectActivity {
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
         }
+    }
+
+    private suspend fun captureIndependent(project: Project, output: Path, source: Path, plan: BookLessonCapturePlan) {
+        val solution = withContext(Dispatchers.IO) {
+            Files.readString(Path.of(plan.independentSolutionPath)).also {
+                check(captureSha256(it.toByteArray(Charsets.UTF_8)) == plan.independentSolutionSha256)
+            }
+        }
+        val passes = AtomicInteger()
+        val listener = object : LessonListener {
+            override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet() }
+        }
+        val lesson = withContext(Dispatchers.EDT) {
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.independent" }.also {
+                it.addLessonListener(listener)
+                CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+        }
+        try {
+            awaitFrame(project, "implement 3x+1", source)
+            captureFrame(project, output, "independent-ready", "implement 3x+1")
+            checkIndependent(project, output, "independent-starter-feedback", passed = false)
+            check(passes.get() == 0)
+            withContext(Dispatchers.EDT) {
+                val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+                WriteCommandAction.runWriteCommandAction(project) { editor.document.setText(solution) }
+                FileDocumentManager.getInstance().saveDocument(editor.document)
+            }
+            checkIndependent(project, output, "independent-passed-feedback", passed = true)
+            awaitUi { passes.get() == 1 }
+            awaitFrame(project, "Your current source passed all five", source)
+            captureFrame(project, output, "independent-complete", "Your current source passed all five")
+            withContext(Dispatchers.EDT) {
+                val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+                WriteCommandAction.runWriteCommandAction(project) { editor.document.insertString(0, "# Source edit requires a fresh check.\n") }
+                FileDocumentManager.getInstance().saveDocument(editor.document)
+                CourseManager.instance.openLesson(project, lesson, LessonStartingWay.RESTART_BUTTON, forceStartLesson = true)
+            }
+            awaitFrame(project, "implement 3x+1", source)
+            delay(600) // Allow several native timer checks to reject the invalidated earlier pass.
+            check(passes.get() == 1)
+            captureFrame(project, output, "independent-edited", "implement 3x+1")
+            checkIndependent(project, output, "independent-rechecked-feedback", passed = true)
+            awaitUi { passes.get() == 2 }
+            val retained = withContext(Dispatchers.IO) { Files.readString(source) }
+            withContext(Dispatchers.EDT) {
+                CourseManager.instance.openLesson(project, lesson, LessonStartingWay.RESTART_BUTTON, forceStartLesson = true)
+            }
+            awaitUi { passes.get() == 3 }
+            withContext(Dispatchers.IO) {
+                check(Files.readString(source) == retained)
+                Files.writeString(output.resolve("independent-observations.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "starterRejected" to true, "publicCasesObservedPerCheck" to 5,
+                    "nativeIndependentPassesObserved" to passes.get(), "sourceEditRequiredRecheck" to true,
+                    "workRetainedAfterRestart" to true, "solutionSha256" to plan.independentSolutionSha256,
+                    "retainedSourceSha256" to captureSha256(retained.toByteArray(Charsets.UTF_8)),
+                    "scope" to "Public formative checks and lesson restart; project reopen and human review remain separate",
+                )), CREATE_NEW)
+            }
+        } finally {
+            withContext(NonCancellable + Dispatchers.EDT) { lesson.removeLessonListener(listener) }
+        }
+    }
+
+    private suspend fun checkIndependent(project: Project, output: Path, id: String, passed: Boolean) {
+        val failure = AtomicReference<Throwable>()
+        withContext(Dispatchers.EDT) {
+            val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.CheckIndependent"))
+            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+            val file = checkNotNull(FileDocumentManager.getInstance().getFile(editor.document))
+            val data = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).add(CommonDataKeys.EDITOR, editor)
+                .add(CommonDataKeys.VIRTUAL_FILE, file).build()
+            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
+            ApplicationManager.getApplication().invokeLater({
+                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
+            }, ModalityState.nonModal())
+        }
+        val dialog = awaitDialog(failure, "Independent program results")
+        val expected = if (passed) "PASS input 20" else "FAIL input 20"
+        awaitUi { lessonVisibleText(dialog.rootPane).contains(expected) }
+        val report = onModalUi { lessonVisibleText(dialog.rootPane) }
+        check(report.lines().count { it.startsWith(if (passed) "PASS input " else "FAIL input ") } == 5)
+        captureComponent(dialog.rootPane, output, id, expected)
+        onModalUi { visibleLessonButton(dialog.rootPane, "Return to editor").doClick() }
+        awaitUi { !dialog.isShowing }
     }
 
     private suspend fun captureRun(project: Project, output: Path, source: Path, repair: Boolean = false) {
@@ -465,12 +559,12 @@ class BookLessonCaptureActivity : ProjectActivity {
         failure.get()?.let { throw it }
     }
 
-    private suspend fun awaitDialog(failure: AtomicReference<Throwable>): JDialog {
+    private suspend fun awaitDialog(failure: AtomicReference<Throwable>, title: String = "Predict the register state"): JDialog {
         while (true) {
             failure.get()?.let { throw it }
             val dialog = onModalUi {
                 Window.getWindows().filterIsInstance<JDialog>()
-                    .singleOrNull { it.isShowing && it.title == "Predict the register state" }
+                    .singleOrNull { it.isShowing && it.title == title }
             }
             if (dialog != null) return dialog
             delay(100)
