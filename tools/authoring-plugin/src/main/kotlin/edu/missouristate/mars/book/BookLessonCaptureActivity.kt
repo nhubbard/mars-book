@@ -236,11 +236,21 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
         awaitFrame(project, "With 20 in", source)
         check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(source)) } == plan.sourceSha256)
+        withContext(Dispatchers.EDT) {
+            val visible = lessonVisibleText(checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane)
+            check(!visible.contains("The first operand is the destination. Both source operands read 20"))
+            check(!visible.contains("Doubling gives -6, then adding one gives -5"))
+        }
         captureFrame(project, output, "prediction-start", "With 20 in")
         answer(project, output, "doubling", "Mars.Learning.PredictDoubling",
             "\$t0 is 20; reading \$v0 twice consumes the input.",
             "Reading a register does not consume its value.", "\$t0 is 40; \$v0 is still 20.")
         awaitFrame(project, "Now consider input -3", source)
+        withContext(Dispatchers.EDT) {
+            val visible = lessonVisibleText(checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane)
+            check(visible.contains("The first operand is the destination. Both source operands read 20"))
+            check(!visible.contains("Doubling gives -6, then adding one gives -5"))
+        }
         captureFrame(project, output, "after-doubling", "Now consider input -3")
         answer(project, output, "negative", "Mars.Learning.PredictNegative", "7",
             "The u does not turn -3 into a positive magnitude.", "-5")
@@ -1295,7 +1305,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 val text = if (diagnosis) when (index) {
                     0 -> "Stop other Debug sessions"
                     1 -> "Step Over li"
-                    else -> "Use the observed state"
+                    else -> "The arithmetic result is correct, but the output argument is wrong."
                 } else if (outputPreparation) when (index) {
                     0 -> "Stop the preceding Debug session"
                     1 -> "Step Over li"
@@ -1368,11 +1378,14 @@ class BookLessonCaptureActivity : ProjectActivity {
         awaitUi { lessonVisibleText(frame.rootPane).contains(feedback) }
         captureFrame(project, output, "$id-feedback", feedback)
         clickLessonLink(project, correct, answerChoice = true)
-        awaitUi { Window.getWindows().filterIsInstance<JDialog>().none { it.isShowing && it.title == "Predict the register state" } }
+        awaitUi {
+            val text = lessonVisibleText(frame.rootPane)
+            bookInlineChoiceOffset(text, wrong) == null && bookInlineChoiceOffset(text, correct) == null
+        }
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("$id-inline-answer.json"), GsonBuilder().setPrettyPrinting().create().toJson(
                 mapOf("route" to "native lesson callback links", "legacyActionId" to actionId,
-                    "legacyActionInvoked" to false, "wrongChoice" to wrong, "feedback" to feedback, "correctChoice" to correct, "focus" to focus),
+                    "legacyActionInvoked" to false, "completedChoicesRetired" to true, "wrongChoice" to wrong, "feedback" to feedback, "correctChoice" to correct, "focus" to focus),
             ), CREATE_NEW)
         }
     }
@@ -1395,6 +1408,9 @@ class BookLessonCaptureActivity : ProjectActivity {
         val point = withContext(Dispatchers.EDT) {
             val (pane, offset) = checkNotNull(target())
             val bounds = checkNotNull(bookLessonLinkBounds(pane, offset))
+            Logger.getInstance(BookLessonCaptureActivity::class.java).info(
+                "Lesson link click: label=$answer; offset=$offset; rawBounds=${pane.modelToView2D(offset)}; clickBounds=$bounds",
+            )
             Point(bounds.x + 2, bounds.y + bounds.height / 2).also { SwingUtilities.convertPointToScreen(it, pane) }
         }
         withContext(Dispatchers.IO) {
