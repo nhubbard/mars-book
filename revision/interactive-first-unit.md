@@ -102,7 +102,17 @@ before integer output. Its log has no SEVERE entries. The initial attempts expos
 file-refresh and future-completion threading defects; both were corrected and
 regression-tested before final capture.
 
-Output-argument diagnosis, graduated hints, instructor policies, free-writing
-acceptance and complete-unit resume/reopen behavior remain to be integrated and
-exercised. The current raw
-captures are verification artifacts awaiting publication layout and annotations.
+Two further native segments provide wrong-output diagnosis and a separate repair
+copy. The counterexample uses the service selector as an argument while retaining
+correct arithmetic. Actual Debug pauses show the copied 4 and final selector 1;
+a question distinguishes argument repair from changing arithmetic or services.
+The repair checker observes exact current source and normal Run completion. Both
+`move` and equivalent `or` preparations pass; the faulty program fails. In the
+actual IDE, the `or` repair prints 41, survives restart and completes the native
+lesson twice, while the counterexample remains unchanged.
+
+This repair observation covers one Run for input 20. Independent writing still
+requires a different calculation and multiple cases. Graduated hints, instructor
+policies, free-writing acceptance and complete-unit resume/reopen behavior remain
+to be integrated and exercised. The raw captures await publication layout,
+annotations and accessibility verification.

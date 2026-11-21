@@ -838,3 +838,28 @@ defects exposed by actual capture, so they must not substitute for this acceptan
 The corrected MARS opening future refreshes on IO and completes on EDT, as required
 by the native task continuation. No publication-ready figure or human review is
 claimed by these raw views.
+
+
+## Native wrong-output diagnosis and repair
+
+The plan accepts `captureDiagnosis: true` and `captureRepair: true`. Diagnosis opens
+the separate counterexample, captures a wrong prediction and feedback, then follows
+a real Debug session through retained answer 41, copied argument 4 and integer
+selector 1. A second quiz diagnoses the first incorrect state. The session stops
+before output; this is not an observed faulty console transcript or normal Debug
+termination.
+
+Repair opens the separate student working file, captures its initial fault and
+uses a public editor write command to make an equivalent `or` preparation. That
+fixture edit belongs only to the authoring driver. The main plugin does not repair
+student code. A normal Run verifies output 41 and exit zero. Restart must preserve
+the repair, leave the counterexample unchanged and produce a second native repair
+pass callback. The receipt binds the resulting files by hash.
+
+The actual `native-diagnosis-01` batch observes all six segments and retains
+twenty-two raw light-theme captures. The eight new diagnosis/repair views were
+inspected; publication annotations and accessibility verification remain open.
+Its IDE log has no SEVERE entries. Exact packages pass 952 plugin tests (57 learning
+tests), 90 authoring tests and paired API verification. Eleven installed JARs match
+the saved packages. Run package verifiers serially: one concurrent run lost an extracted JAR in the
+shared cache and failed; the serial retry passed.
