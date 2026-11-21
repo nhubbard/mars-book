@@ -1,6 +1,17 @@
 package edu.missouristate.mars.book
 
 import com.google.gson.GsonBuilder
+import com.intellij.execution.ExecutionListener
+import com.intellij.execution.ExecutionManager
+import com.intellij.execution.RunManager
+import com.intellij.execution.configurations.ConfigurationType
+import com.intellij.execution.executors.DefaultRunExecutor
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessHandler
+import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.process.ProcessOutputTypes
+import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -15,6 +26,8 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.asContextElement
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -28,12 +41,14 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.CREATE_NEW
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicInteger
 import javax.imageio.ImageIO
 import javax.swing.AbstractButton
 import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JLabel
 import javax.swing.text.JTextComponent
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
@@ -42,11 +57,15 @@ import kotlinx.coroutines.withTimeout
 import training.lang.LangManager
 import training.learn.CourseManager
 import training.statistic.LessonStartingWay
+import training.learn.course.Lesson
+import training.learn.lesson.LessonListener
+import org.jdom.Element
 
 internal data class BookLessonCapturePlan(
     val projectRoot: String = "",
     val outputDirectory: String = "",
     val sourceSha256: String = "",
+    val captureRun: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -78,6 +97,10 @@ class BookLessonCaptureActivity : ProjectActivity {
 
     private suspend fun capture(project: Project, plan: BookLessonCapturePlan, output: Path) {
         val source = Path.of(plan.projectRoot).resolve("mars-labs/console/first-program.asm")
+        val predictionPasses = AtomicInteger()
+        val predictionListener = object : LessonListener {
+            override fun lessonPassed(lesson: Lesson) { predictionPasses.incrementAndGet() }
+        }
         val lesson = withContext(Dispatchers.EDT) {
             val themes = LafManager.getInstance()
             themes.autodetect = false
@@ -91,7 +114,9 @@ class BookLessonCaptureActivity : ProjectActivity {
             frame.toFront()
             LangManager.getInstance().updateLangSupport("MARS_MIPS")
             val manager = CourseManager.instance
-            manager.modules.single { it.id == "mars.console" }.lessons.single().also {
+            manager.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.predictions" }.also {
+                it.addLessonListener(predictionListener)
+                Disposer.register(project) { it.removeLessonListener(predictionListener) }
                 manager.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
             }
         }
@@ -106,6 +131,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         answer(project, output, "negative", "Mars.Learning.PredictNegative", "7",
             "The u does not turn -3 into a positive magnitude.", "-5")
         awaitFrame(project, "The destination tells you where to look", source)
+        awaitUi { predictionPasses.get() >= 1 }
         captureFrame(project, output, "predictions-complete", "The destination tells you where to look")
         val edited = withContext(Dispatchers.EDT) {
             val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
@@ -119,12 +145,17 @@ class BookLessonCaptureActivity : ProjectActivity {
             CourseManager.instance.openLesson(project, lesson, LessonStartingWay.RESTART_BUTTON, forceStartLesson = true)
         }
         awaitFrame(project, "The destination tells you where to look", source)
+        awaitUi { predictionPasses.get() >= 2 }
+        withContext(Dispatchers.EDT) { lesson.removeLessonListener(predictionListener) }
         val retained = withContext(Dispatchers.EDT) {
             checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor).document.text == edited
         }
         check(retained) { "Lesson restart replaced student source" }
+        if (plan.captureRun) captureRun(project, output, source)
         val receipt = mapOf(
-            "scope" to "Native prediction segment only; Run/Debug and independent implementation remain separate work",
+            "scope" to if (plan.captureRun) "Native prediction and Run segments; Debug and independent implementation remain separate work" else "Native prediction segment only",
+            "nativePredictionPassesObserved" to predictionPasses.get(),
+            "nativeRunPassedObserved" to plan.captureRun,
             "platformBuild" to ApplicationInfo.getInstance().build.asString(),
             "sourceSha256" to plan.sourceSha256,
             "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
@@ -135,6 +166,72 @@ class BookLessonCaptureActivity : ProjectActivity {
         )
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
+        }
+    }
+
+    private suspend fun captureRun(project: Project, output: Path, source: Path) {
+        val passed = CompletableDeferred<Unit>()
+        val listener = object : LessonListener {
+            override fun lessonPassed(lesson: Lesson) { passed.complete(Unit) }
+        }
+        val lesson = withContext(Dispatchers.EDT) {
+            CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.run" }.also {
+                it.addLessonListener(listener)
+                CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+            }
+        }
+        val connection = project.messageBus.connect()
+        var owned: ProcessHandler? = null
+        try {
+            awaitFrame(project, "Run first-program.asm using the normal MARS Run", source)
+            captureFrame(project, output, "run-ready", "Run first-program.asm using the normal MARS Run")
+            val process = CompletableDeferred<ProcessHandler>()
+            val exit = CompletableDeferred<Int>()
+            val transcript = StringBuilder()
+            val name = "Book lesson Run observation"
+            connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
+                override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                    if (executorId == DefaultRunExecutor.EXECUTOR_ID && env.runProfile.name == name) {
+                        handler.addProcessListener(object : ProcessListener {
+                            override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                                if (outputType == ProcessOutputTypes.STDOUT) synchronized(transcript) { transcript.append(event.text) }
+                            }
+                            override fun processTerminated(event: ProcessEvent) { exit.complete(event.exitCode) }
+                        })
+                        process.complete(handler)
+                    }
+                }
+            })
+            withContext(Dispatchers.EDT) {
+                val type = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
+                val settings = RunManager.getInstance(project).createConfiguration(name, type.configurationFactories.single())
+                val state = Element("configuration").setAttribute("marsExecutionDefaults", "1")
+                state.addContent(Element("option").setAttribute("name", "sourcePath").setAttribute("value", source.toString()))
+                settings.configuration.readExternal(state)
+                settings.configuration.checkConfiguration()
+                ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(), settings).buildAndExecute()
+            }
+            owned = process.await()
+            while (!owned.isStartNotified) delay(50)
+            withContext(Dispatchers.IO) { deliverBookStandardInput(owned, "20\n") }
+            check(exit.await() == 0)
+            val observed = synchronized(transcript) { transcript.toString() }
+            check(observed == "Enter a small integer: Twice your number plus one is: 41\n")
+            withContext(Dispatchers.IO) {
+                Files.writeString(output.resolve("run-transcript.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "exitCode" to 0, "stdin" to "20\n", "stdout" to observed,
+                    "scope" to "Actual Run only; native lesson completion must also be observed",
+                )), CREATE_NEW)
+            }
+            passed.await()
+            awaitFrame(project, "The console result agrees with the prediction", source)
+            captureFrame(project, output, "run-complete", "The console result agrees with the prediction")
+        } finally {
+            connection.disconnect()
+            withContext(NonCancellable + Dispatchers.EDT) {
+                lesson.removeLessonListener(listener)
+                owned?.takeUnless { it.isProcessTerminated }?.destroyProcess()
+            }
         }
     }
 

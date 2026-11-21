@@ -16,6 +16,8 @@ class BookLessonCaptureTest {
     @Test
     fun `capture requires explicit roots and exact source provenance`() {
         valid.validate()
+        assertFalse(valid.captureRun)
+        valid.copy(captureRun = true).validate()
         assertThrows<IllegalArgumentException> { valid.copy(projectRoot = "relative").validate() }
         assertThrows<IllegalArgumentException> { valid.copy(outputDirectory = "relative").validate() }
         assertThrows<IllegalArgumentException> { valid.copy(outputDirectory = "/tmp/a/../lesson-project").validate() }
