@@ -19,8 +19,10 @@ specimen snippets and adds the revision entries for actual IntelliJ highlighting
 
 The first prediction segment is integrated into the main MARS plugin and verified
 in the actual IDE. Source-bound Run and Debug observations are also verified in
-the actual IDE. Output-argument diagnosis, hints and independent writing remain to
-be integrated. The progress service persists content-specific evidence. Its code and
+the actual IDE. A fourth segment now verifies the retained answer, output argument
+and service selector through prediction and actual Debug pauses. Output-argument
+diagnosis, hints and independent writing remain to be integrated. The progress
+service persists content-specific evidence. Its code and
 Jupiter verification are documented upstream in `docs/student-instruction-system.md`.
 The full goal includes the actual integrated lesson, further editorial pilots,
 all 35 projects and human review where available. These pilot PDFs do not

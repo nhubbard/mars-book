@@ -96,9 +96,13 @@ lesson contains no screenshot automation.
 A fourth segment now connects the retained answer to output preparation. A
 prediction asks for all three register roles, followed by source-bound Debug
 observations before the copy, after it and before integer output. Its focused
-native tests pass; full checks and fresh graphical verification remain pending.
+native tests and full checks pass. The final fresh IDE batch observes native
+completion, with selector 4 before the copy, argument 41 after it and selector 1
+before integer output. Its log has no SEVERE entries. The initial attempts exposed
+file-refresh and future-completion threading defects; both were corrected and
+regression-tested before final capture.
 
-The remaining first-unit work includes output-argument diagnosis,
-graduated hints, instructor policies, free-writing acceptance and complete-unit
-resume/reopen behavior remain to be integrated and exercised. The current raw
+Output-argument diagnosis, graduated hints, instructor policies, free-writing
+acceptance and complete-unit resume/reopen behavior remain to be integrated and
+exercised. The current raw
 captures are verification artifacts awaiting publication layout and annotations.

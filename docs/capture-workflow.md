@@ -826,3 +826,15 @@ before integer output. Rendered rows must show retained answer 41 throughout,
 selector 4 then 1, and argument 41 after the copy. The receipt records each
 requested segment's observed flag independently. Capture success and publication
 readiness remain separate claims.
+
+
+The final `native-output-04` batch observes all four implemented segments, two
+prediction passes and preserved edits, normal Run completion and both native Debug
+lesson passes. It retains fourteen inspected light-theme images. The exact packages
+pass 948 MARS tests (53 learning tests), 90 authoring tests and paired compatible
+API verification; all eleven installed JARs match the saved ZIP members. Its IDE
+log has no SEVERE entries. Earlier batches retain the VFS refresh and callback-thread
+defects exposed by actual capture, so they must not substitute for this acceptance.
+The corrected MARS opening future refreshes on IO and completes on EDT, as required
+by the native task continuation. No publication-ready figure or human review is
+claimed by these raw views.
