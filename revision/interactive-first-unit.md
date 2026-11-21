@@ -111,8 +111,22 @@ The repair checker observes exact current source and normal Run completion. Both
 actual IDE, the `or` repair prints 41, survives restart and completes the native
 lesson twice, while the counterexample remains unchanged.
 
-This repair observation covers one Run for input 20. Independent writing still
-requires a different calculation and multiple cases. Graduated hints, instructor
-policies, free-writing acceptance and complete-unit resume/reopen behavior remain
-to be integrated and exercised. The raw captures await publication layout,
-annotations and accessibility verification.
+The repair observation covers one Run for input 20. A seventh native segment now
+checks independent writing of 3x+1 with inputs 20, 0, -3, -1000 and 1000. Its skeleton
+supplies the exact text interface; the learner writes the input, computation and
+output body. The existing grader evaluates a cached assembly image in separate
+machines, using normal-exit and exact-output checks with a 2000-instruction bound.
+Different labels, scratch registers and equivalent programs are accepted.
+
+Actual IDE verification observes a failed starter, five passing cases for a private
+equivalent fixture, invalidation after an edit, successful rechecking and retained
+work on restart. The three native independent-pass callbacks correspond to the
+first check, the recheck and restart. Public finite cases support reasoning for the
+stated range; they are not authoritative private grading or a proof for every input.
+The full grader suite passes 131 tests and the plugin suite passes 962, including
+67 learning tests.
+
+Graduated hints, instructor policies, explicit mode controls and complete-unit
+project reopen/resume remain to be integrated and exercised. The raw captures
+await publication layout, annotations and accessibility verification. Author and
+representative learner review remain open.

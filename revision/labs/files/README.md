@@ -21,8 +21,8 @@ instruction; explain the value passed to the service rather than copying spellin
 
 The native repair checkpoint observes one normal Run with the expected transcript
 for input 20. It is a formative observation, not a proof for every input or private
-instructor grading. The independent-writing task will require a related calculation
-and multiple cases. The directly edited LaTeX chapter and lab supplement remain
+instructor grading. The independent-writing task checks a related calculation
+with multiple cases. The directly edited LaTeX chapter and lab supplement remain
 the publication sources; these files do not generate their prose.
 
 

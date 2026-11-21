@@ -23,8 +23,11 @@ the actual IDE. A fourth segment now verifies the retained answer, output argume
 and service selector through prediction and actual Debug pauses. Diagnosis and
 repair are also verified in the IDE, using separate counterexample and repair
 files. The repair accepts equivalent instruction spelling and survives restart.
-Hints and independent writing remain to be integrated. The progress service
-persists content-specific evidence. Its code and
+Independent writing now uses a separate skeleton and five public behavioral cases,
+with current editor text, cached assembly and a fresh machine per case. The IDE
+check verifies starter rejection, an equivalent program, edit invalidation and
+restart preservation. Hints, instructor policies and full project reopen/resume
+remain open. The progress service persists content-specific evidence. Its code and
 Jupiter verification are documented upstream in `docs/student-instruction-system.md`.
 The full goal includes the actual integrated lesson, further editorial pilots,
 all 35 projects and human review where available. These pilot PDFs do not

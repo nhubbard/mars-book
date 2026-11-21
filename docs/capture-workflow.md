@@ -863,3 +863,26 @@ Its IDE log has no SEVERE entries. Exact packages pass 952 plugin tests (57 lear
 tests), 90 authoring tests and paired API verification. Eleven installed JARs match
 the saved packages. Run package verifiers serially: one concurrent run lost an extracted JAR in the
 shared cache and failed; the serial retry passed.
+
+
+## Native independent-program checks
+
+`captureIndependent: true` additionally requires absolute `independentSolutionPath`
+and its SHA-256 `independentSolutionSha256`. Keep the verification program in the
+private instructor repository. The driver opens the public skeleton, invokes the
+ordinary native check action and verifies five actual FAIL report rows. It installs
+the explicitly supplied private assembly fixture through public editor commands,
+then verifies five PASS rows and native lesson completion. It edits the source,
+restarts, allows several native timer checks to reject the invalidated earlier
+pass, rechecks, then restarts again to verify retained work and current completion.
+The three native callbacks and source digests are recorded separately.
+
+The actual `native-independent-01` batch observes all seven implemented segments,
+including a different entry label and scratch register in the independent fixture.
+Its exact packages pass 962 plugin tests (67 learning tests), 131 CLI tests and
+90 authoring tests. Paired public API verification is compatible, eleven installed
+JARs match and the IDE log has no SEVERE entries. Twenty-eight raw light-theme views
+are retained; the six new independent-program views were inspected. Solution views
+remain private verification material. They must not become student exercise figures.
+No new annotated or accessibility-verified publication figure is claimed. Project
+reopen, instructor policies, hints and human review remain separate work.
