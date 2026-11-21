@@ -92,6 +92,7 @@ internal data class BookLessonCapturePlan(
     val captureIndependent: Boolean = false,
     val captureHints: Boolean = false,
     val capturePolicy: Boolean = false,
+    val captureModes: Boolean = false,
     val resumeIndependent: Boolean = false,
     val expectIndependentRecheck: Boolean = false,
     val independentSourceSha256: String = "",
@@ -105,6 +106,9 @@ internal data class BookLessonCapturePlan(
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
         require(!expectIndependentRecheck || resumeIndependent)
+        if (captureModes) {
+            require(captureIndependent && captureHints && !capturePolicy && !resumeIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
+        }
         if (capturePolicy) {
             require(captureIndependent && captureHints && !resumeIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
         }
@@ -112,7 +116,7 @@ internal data class BookLessonCapturePlan(
             require(captureIndependent && !captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
             require(independentSourceSha256.matches(Regex("[a-f0-9]{64}")))
         }
-        if (captureIndependent && !resumeIndependent && !capturePolicy) {
+        if (captureIndependent && !resumeIndependent && !capturePolicy && !captureModes) {
             require(Path.of(independentSolutionPath).isAbsolute)
             require(independentSolutionSha256.matches(Regex("[a-f0-9]{64}")))
         }
@@ -139,6 +143,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 toolWindowsReady.await()
                 when {
+                    plan.captureModes -> captureModes(project, plan, output)
                     plan.capturePolicy -> capturePolicy(project, plan, output)
                     plan.resumeIndependent -> captureResume(project, plan, output)
                     else -> capture(project, plan, output)
@@ -228,6 +233,120 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
+    private suspend fun chooseMode(project: Project, output: Path, prefix: String, selection: String?,
+                                   expectedSelected: String, expectedGuided: String, freeAllowed: Boolean = true) {
+        val failure = AtomicReference<Throwable>()
+        withContext(Dispatchers.EDT) {
+            val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.Open"))
+            val data = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build()
+            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
+            check(ActionUtil.updateAction(action, event).isPerformed && event.presentation.isEnabled)
+            ApplicationManager.getApplication().invokeLater({
+                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
+            }, ModalityState.nonModal())
+        }
+        val dialog = awaitDialog(failure, "Choose how to work")
+        awaitUi { lessonVisibleText(dialog.rootPane).contains("Guided work returns to: $expectedGuided.") }
+        onModalUi {
+            check(visibleLessonButton(dialog.rootPane, expectedSelected).isSelected)
+            check(visibleLessonButton(dialog.rootPane, "Free writing").isEnabled == freeAllowed)
+        }
+        captureComponent(dialog.rootPane, output, prefix, "Guided work returns to:")
+        onModalUi {
+            if (selection == null) visibleLessonButton(dialog.rootPane, "Cancel").doClick()
+            else {
+                val button = visibleLessonButton(dialog.rootPane, selection)
+                check(button.isEnabled)
+                button.doClick()
+                visibleLessonButton(dialog.rootPane, "Open lesson").doClick()
+            }
+        }
+        awaitUi { !dialog.isShowing }
+        failure.get()?.let { throw it }
+    }
+
+    /** Explicit mode changes through the production action; comments are the only fixture edits. */
+    private suspend fun captureModes(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        val folder = Path.of(plan.projectRoot).resolve("mars-labs/console")
+        val worked = folder.resolve("first-program.asm")
+        val independent = folder.resolve("independent.asm")
+        val predictions = "Predicting register changes"
+        val run = "Following a complete Run"
+        chooseMode(project, output, "modes-initial-cancel", null, "Guided work", predictions)
+        check(withContext(Dispatchers.IO) { !Files.exists(folder) })
+        chooseMode(project, output, "modes-guided-open", "Guided work", "Guided work", predictions)
+        awaitFrame(project, "With 20 in", worked)
+        check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(worked)) } == plan.sourceSha256)
+        answer(project, output, "modes-doubling", "Mars.Learning.PredictDoubling",
+            "\$t0 is 20; reading \$v0 twice consumes the input.",
+            "Reading a register does not consume its value.", "\$t0 is 40; \$v0 is still 20.")
+        awaitFrame(project, "Now consider input -3", worked)
+        answer(project, output, "modes-negative", "Mars.Learning.PredictNegative", "7",
+            "The u does not turn -3 into a positive magnitude.", "-5")
+        awaitFrame(project, "The destination tells you where to look", worked)
+        withContext(Dispatchers.EDT) {
+            val lesson = CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.run" }
+            CourseManager.instance.openLesson(project, lesson, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+        }
+        val runReady = "Run first-program.asm using the normal MARS Run"
+        awaitFrame(project, runReady, worked)
+        val workedText = withContext(Dispatchers.EDT) {
+            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+            WriteCommandAction.runWriteCommandAction(project) { editor.document.insertString(0, "# Guided work retained through mode changes.\n") }
+            FileDocumentManager.getInstance().saveDocument(editor.document)
+            editor.document.text
+        }
+        captureFrame(project, output, "modes-guided-edited", runReady)
+        chooseMode(project, output, "modes-to-free", "Free writing", "Guided work", run)
+        awaitFrame(project, "implement 3x+1", independent)
+        captureHints(project, output, "modes-first-hint", existing = 0, revealTo = 1)
+        val independentText = withContext(Dispatchers.EDT) {
+            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+            WriteCommandAction.runWriteCommandAction(project) { editor.document.insertString(0, "# Independent work retained through mode changes.\n") }
+            FileDocumentManager.getInstance().saveDocument(editor.document)
+            editor.document.text
+        }
+        chooseMode(project, output, "modes-free-cancel", null, "Free writing", run)
+        chooseMode(project, output, "modes-back-guided", "Guided work", "Free writing", run)
+        awaitFrame(project, runReady, worked)
+        check(withContext(Dispatchers.IO) { Files.readString(worked) } == workedText)
+        captureFrame(project, output, "modes-guided-resumed", runReady)
+        chooseMode(project, output, "modes-free-resumed", "Free writing", "Guided work", run)
+        awaitFrame(project, "implement 3x+1", independent)
+        check(withContext(Dispatchers.IO) { Files.readString(independent) } == independentText)
+        captureHints(project, output, "modes-hint-retained", existing = 1, revealTo = 1)
+        checkIndependent(project, output, "modes-starter-feedback", passed = false)
+        setPolicy(project, output, "modes-guided-required", released = 4, allowFreeWriting = false)
+        chooseMode(project, output, "modes-free-disabled", null, "Guided work", run, freeAllowed = false)
+        withContext(Dispatchers.EDT) {
+            val lesson = CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.independent" }
+            CourseManager.instance.openLesson(project, lesson, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+        }
+        awaitFrame(project, "Your course currently requires guided work", independent)
+        captureFrame(project, output, "modes-direct-entry-blocked", "Your course currently requires guided work")
+        chooseMode(project, output, "modes-forced-guided", "Guided work", "Guided work", run, freeAllowed = false)
+        awaitFrame(project, runReady, worked)
+        setPolicy(project, output, "modes-free-released", released = 4, allowFreeWriting = true)
+        chooseMode(project, output, "modes-final-free", "Free writing", "Guided work", run)
+        awaitFrame(project, "implement 3x+1", independent)
+        captureHints(project, output, "modes-final-history", existing = 1, revealTo = 1)
+        withContext(Dispatchers.IO) {
+            check(Files.readString(worked) == workedText && Files.readString(independent) == independentText)
+            Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "platformBuild" to ApplicationInfo.getInstance().build.asString(),
+                "nativeModeChoiceObserved" to true, "cancelCreatedNoSource" to true,
+                "guidedResumeLessonObserved" to "mars.console.run", "sourceEditsRetained" to true,
+                "hintHistoryRetained" to true, "unfinishedIndependentRejected" to true,
+                "courseDisabledFreeChoice" to true, "directIndependentEntryBlocked" to true,
+                "freeWritingReleasedAgain" to true, "workedSha256" to captureSha256(workedText.toByteArray(Charsets.UTF_8)),
+                "independentSha256" to captureSha256(independentText.toByteArray(Charsets.UTF_8)),
+                "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                "scope" to "Mode navigation, saved segment choice, source/hint preservation and policy. This batch does not execute normal Run/Debug or prove fresh-process mode restoration.",
+            )), CREATE_NEW)
+        }
+    }
+
     /** Uses only native settings, lesson actions and rendered dialogs; never injects policy/progress state. */
     private suspend fun capturePolicy(project: Project, plan: BookLessonCapturePlan, output: Path) {
         withContext(Dispatchers.EDT) { configurePresentation(project) }
@@ -304,7 +423,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun setPolicy(project: Project, output: Path, prefix: String, released: Int) {
+    private suspend fun setPolicy(project: Project, output: Path, prefix: String, released: Int, allowFreeWriting: Boolean = true) {
         val failure = AtomicReference<Throwable>()
         withContext(Dispatchers.EDT) {
             ApplicationManager.getApplication().invokeLater({
@@ -330,11 +449,13 @@ class BookLessonCaptureActivity : ProjectActivity {
             val widgets = captureComponents(dialog.rootPane)
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value = released
             widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected = true
+            widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected = allowFreeWriting
         }
         awaitUi {
             val widgets = captureComponents(dialog.rootPane)
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value == released &&
-                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected
+                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected &&
+                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected == allowFreeWriting
         }
         captureComponent(dialog.rootPane, output, prefix, label)
         onModalUi { visibleLessonButton(dialog.rootPane, "OK").doClick() }

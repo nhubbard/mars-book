@@ -73,6 +73,19 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `mode captures route through production UI without private solutions or mixed capture plans`() {
+        assertFalse(valid.captureModes)
+        assertThrows<IllegalArgumentException> { valid.copy(captureModes = true).validate() }
+        val modes = valid.copy(captureModes = true, captureIndependent = true, captureHints = true)
+        modes.validate()
+        for (invalid in listOf(modes.copy(captureHints = false), modes.copy(capturePolicy = true), modes.copy(resumeIndependent = true),
+            modes.copy(captureRun = true), modes.copy(captureDebug = true), modes.copy(captureOutput = true),
+            modes.copy(captureDiagnosis = true), modes.copy(captureRepair = true))) {
+            assertThrows<IllegalArgumentException> { invalid.validate() }
+        }
+    }
+
+    @Test
     fun `selectors reject hidden and ambiguous UI controls`() {
         val root = JPanel()
         root.add(JButton("Check prediction"))
