@@ -1,0 +1,210 @@
+\chapter{Your first assembly program}
+\MARSChapterHeading{Your first assembly program}
+\label{revision:first-program}
+
+A program that reads a number, doubles it and adds one is easy to describe in a
+language you already know. Assembly makes the intermediate work explicit. You
+choose where the input is held, which instruction computes each result, and how
+the result reaches the output operation. We will follow that small calculation
+from source code to an observable change in the machine.
+
+The program accepts an integer between $-1000$ and $1000$. For input 20, it prints
+41. For input $-3$, it prints $-5$. This range keeps the arithmetic comfortably
+within a signed 32-bit word. Wider values and overflow will receive a fuller
+treatment after we have a working model of execution.
+
+By the end of this chapter, you should be able to explain where a value comes
+from, which instruction changes it, and where it goes next. You will also change
+the calculation and use a debugger to investigate a wrong result.
+
+\section{The state that instructions change}
+
+A processor has a small collection of storage locations called \emph{registers}.
+An instruction can read values from registers, perform an operation and write a
+result to a register. Register names in this assembly language begin with a dollar
+sign: \texttt{\$v0} and \texttt{\$t0} name two different locations. For this first
+program, you need only a few names; there is no reason to memorize the complete
+register set before using it.
+
+Consider input 20. An input operation places 20 in \texttt{\$v0}. An addition reads
+that register twice, adds the values and puts 40 in \texttt{\$t0}. A second addition
+replaces 40 in \texttt{\$t0} with 41. The original input and the intermediate result
+occupy different registers. A source register is read because the instruction names
+it, not because it happens to contain a recent value.
+
+Registers are distinct from the larger byte-addressed \emph{memory} that holds
+program instructions and data. Our prompt is stored as bytes in memory. The input
+number is returned in a register. We will use both kinds of storage here, then
+study their relationship in detail in the memory chapter.
+
+\section{Reading the source}
+
+The complete example is shown below. Read it once to identify the three parts:
+data declarations, the input and calculation, and output followed by termination.
+The next sections explain those parts. You do not need to infer the meaning of
+all the lines before proceeding.
+
+\MARSCodeLabel{A complete console program}
+\begin{minted}{mars-idea}
+.data
+prompt:  .asciiz "Enter a small integer: "
+answer:  .asciiz "Twice your number plus one is: "
+newline: .asciiz "\n"
+
+.text
+.globl main
+main:
+    la $a0, prompt
+    li $v0, 4
+    syscall
+    li $v0, 5
+    syscall
+calculate:
+    addu $t0, $v0, $v0
+    addiu $t0, $t0, 1
+report:
+    la $a0, answer
+    li $v0, 4
+    syscall
+    move $a0, $t0
+    li $v0, 1
+    syscall
+    la $a0, newline
+    li $v0, 4
+    syscall
+done:
+    li $v0, 10
+    syscall
+\end{minted}
+
+An \emph{assembler} translates this source into instructions and data that MARS
+can execute. Lines beginning with a dot give instructions to the assembler.
+\texttt{.data} introduces data declarations and \texttt{.text} introduces executable
+code. \texttt{.globl main} makes the entry name available outside its local definition.
+
+A name followed by a colon is a \emph{label}. It names a location; it does not run
+an operation. Here, \texttt{main} names the beginning of the program, while
+\texttt{calculate} and \texttt{report} make useful places to find in the debugger.
+The three labels in the data section name the beginnings of strings.
+\texttt{.asciiz} stores the string's bytes followed by a zero byte marking its end.
+The sequence \texttt{\textbackslash n} represents a newline in a string.
+
+The remaining lines contain instructions. The first word is the operation name,
+called its \emph{mnemonic}; the names and constants after it are its operands.
+Some convenient forms, including \texttt{li}, \texttt{la} and \texttt{move}, are
+assembler pseudoinstructions. The assembler may translate one source line into
+more than one machine instruction. For now, follow the source-level calculation;
+the debugger can also expose the underlying instructions when you need them.
+
+\section{Asking MARS for input and output}
+
+Arithmetic instructions operate on values already available to the processor.
+Console input and output require another interface. MARS supplies an educational
+service convention: put a service number in \texttt{\$v0}, place any arguments in
+the designated registers, and execute \texttt{syscall}. These service numbers are
+part of the MARS environment, not a universal convention for every MIPS system.
+
+The first three instructions ask for string output. \texttt{la \$a0, prompt}
+places the prompt's address in \texttt{\$a0}. An address identifies where the string
+begins; it is not the string itself. \texttt{li \$v0, 4} selects the print-string
+service, and \texttt{syscall} performs the request. The console now displays the
+prompt, and execution proceeds to the next instruction.
+
+Next, \texttt{li \$v0, 5} selects integer input. This replaces the previous service
+number in that register. The following \texttt{syscall} waits for an integer and
+returns it in \texttt{\$v0}. The register has changed roles: it held a request code
+before the call and holds the input afterward. For input 20, that returned value
+is the number the arithmetic will read.
+
+An interface is an agreement about such roles. The processor does not decide that
+20 must be the input because it looks like a plausible number. The service and
+our program agree on the register used for the result.
+
+\section{Following the calculation}
+
+The line \texttt{addu \$t0, \$v0, \$v0} names the destination first, then two sources.
+With 20 in \texttt{\$v0}, it adds $20+20$ and writes 40 to \texttt{\$t0}. Reading the
+same source twice is valid. The operation leaves \texttt{\$v0} unchanged.
+
+The next line, \texttt{addiu \$t0, \$t0, 1}, has a constant operand. Such a constant
+is called an \emph{immediate}. The instruction reads the old value of
+\texttt{\$t0}, adds one and writes the new value to the same register. Naming one
+register as both source and destination does not cause a conflict: the old value
+supplies the input and the result replaces it.
+
+These particular additions operate on 32-bit words. On the MIPS64 target, their
+word result is sign-extended into the 64-bit destination register. The letter
+\texttt{u} indicates that signed overflow does not raise an arithmetic exception;
+it does not force negative inputs to become positive. Within our stated range,
+the results agree with ordinary integer addition.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Execution boundary & \texttt{\$v0} & \texttt{\$t0} \\
+\midrule
+After integer input & 20 & Not yet relevant \\
+After doubling & 20 & 40 \\
+After adding one & 20 & 41 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For input $-3$, the same operations produce $-6$ and then $-5$. Try that trace on
+paper before running it. A prediction gives you a specific claim to compare with
+the machine, rather than a screen full of values to inspect without a question.
+
+\section{Keeping a result until it is used}
+
+The calculation is complete, but output still requires several requests. The
+program first prints the answer prefix, then prints the number, then a newline.
+Each request needs another service number in \texttt{\$v0}. The answer therefore
+remains in \texttt{\$t0} while the output registers are prepared.
+
+\texttt{move \$a0, \$t0} copies the number into the argument register for integer
+output. It does not erase the source. Loading service number one into
+\texttt{\$v0} and executing \texttt{syscall} prints that number. Selecting service
+four again lets the program print the newline string. Finally, service ten ends
+the program normally.
+
+This is the first example of a value's \emph{lifetime}: the answer must survive
+from the instruction that produces it until the operation that consumes it.
+Keeping the answer in a register that is immediately reused for another purpose
+would lose it. Later, function calls will make these lifetime questions more
+important, and we will give them explicit conventions.
+
+\section{Using the debugger to answer a question}
+
+Run the supplied example and enter 20. You should see 41 after the answer prefix.
+That checks the final result for one input. Debugging lets you investigate the
+intermediate reasoning as well.
+
+Set a breakpoint at the addition under \texttt{calculate} and start Debug. Enter
+20 when the console asks. When execution pauses before that addition, the returned
+input should already be in \texttt{\$v0}. The highlighted instruction is the next
+one to execute. Predict its destination value, step once, and inspect
+\texttt{\$t0}. Repeat for the following addition. Check whether the debugger is
+showing signed decimal or hexadecimal before interpreting a negative result.
+
+If the printed answer is wrong, start with the last boundary where the value was
+correct. A correct input followed by a wrong doubled value points to the first
+addition. A correct 41 in \texttt{\$t0} followed by wrong output points to the
+argument preparation or service selection. This divides the investigation into
+questions you can actually test.
+
+\section{Writing a related program}
+
+Change the arithmetic to calculate $3x+1$. Keep the input and output interface the
+same. Work out the intermediate values for 20, zero and $-3$, then run all three
+cases. You should be able to explain which instructions consume the original
+input and which consume an intermediate result.
+
+As a separate experiment, change the integer-output argument preparation to copy
+\texttt{\$v0} instead of \texttt{\$t0}. Predict what the console will print by
+finding the most recent instruction that wrote \texttt{\$v0}; do not assume that
+it still holds the original input. Use a breakpoint to show that the arithmetic
+can be correct while the output argument is wrong, then repair the program.
+
+The companion lab develops these observations interactively. Its written
+explanations and the program remain available so you can revisit the reasoning
+without replaying every IDE action.

@@ -1,0 +1,124 @@
+\chapter{Following a value through a program}
+\MARSChapterHeading{Following a value}
+\label{revision:lab-first-program}
+
+This lab accompanies the main book's first program. Its purpose is to connect an
+expression you understand with changes you can observe in registers. You will
+predict the result of an instruction, compare the prediction with execution, and
+use a disagreement to investigate a program. Familiarity with variables and
+arithmetic is assumed; previous assembly experience is not.
+
+The interactive lesson will organize the actions in the IDE. This chapter supplies
+the reasoning behind those actions. The first revised interactive lesson is under
+construction; the activities below describe its intended learning sequence and
+can also be performed manually with the public example program.
+
+\section{Prepare a prediction}
+
+The expression is $2x+1$. Start with $x=20$ and distinguish the input, the doubled
+value and the final result. They are 20, 40 and 41. These are three states in a
+calculation, even if a high-level language lets you write the whole expression on
+one line.
+
+The example keeps the input in \texttt{\$v0} and the arithmetic result in
+\texttt{\$t0}. A register is a named location, so a statement about a value needs a
+location and an execution boundary. ``The value is 40'' is incomplete here.
+``After the doubling instruction, \texttt{\$t0} contains 40'' is a prediction you
+can check.
+
+Before you run, write down what each of the two arithmetic instructions reads and
+what it writes. Do not assume that a source is erased when read. When an instruction
+uses one register as both a source and a destination, distinguish the old value
+from the value written by that instruction.
+
+\section{Establish where execution is paused}
+
+Run the example once to recognize its prompt and output. Then place a breakpoint
+on the addition immediately below \texttt{calculate}, start Debug and enter 20.
+The console request occurs before the breakpoint. When the debugger stops on the
+addition, integer input has completed, but that addition has not executed yet.
+
+This boundary matters. Reading the destination before an instruction and expecting
+its new result would make a correct program appear wrong. The highlighted source
+line tells you what will execute next. Some source lines represent several machine
+instructions, so use the debugger's source step for this activity.
+
+Find \texttt{\$v0} in the register view and interpret its value using the selected
+number display. For input 20, decimal 20 and hexadecimal 14 name the same value.
+A display format changes how bits are written on the screen; it does not change
+the running program's bits.
+
+If the input is not what you expected, investigate that before stepping through the
+arithmetic. Confirm the input entered in this Debug session and the actual pause
+location. A leftover console from an earlier run is not evidence about this one.
+
+\section{Observe two different additions}
+
+The first addition reads \texttt{\$v0} twice and writes \texttt{\$t0}. Predict both
+registers after it executes. Step over the instruction and compare your prediction
+with the view. If only the destination changed, explain why that agrees with the
+instruction's operands.
+
+The second addition reads \texttt{\$t0}, adds the immediate constant one, and writes
+\texttt{\$t0}. Predict its result before stepping again. The same register name
+appears twice because the old value supplies an input and the new value replaces
+it. There is no separate hidden variable holding the whole expression.
+
+Repeat the arithmetic trace with input $-3$. Its doubled value is $-6$ and its
+final result is $-5$. A hexadecimal register display may show a long sequence
+starting with \texttt{f}; use signed decimal or the main book's explanation of
+representation when comparing it with your arithmetic. The instruction's name
+does not turn this negative input into an unsigned magnitude.
+
+\section{Follow the answer into output}
+
+Continue to the instructions below \texttt{report}. The program prints its text
+prefix before printing the number. That requires changing \texttt{\$v0} to select
+another service. The answer stays in \texttt{\$t0} until it is copied into
+\texttt{\$a0} for integer output.
+
+Pause just before the integer-output request. Identify the register that names the
+service, the register containing its argument, and the register retaining the
+calculation. For input 20, the service selector is one and the number to print is
+41. Those values have different roles. Seeing a one in the selector does not mean
+the calculation has become one.
+
+Now continue and compare the console with the argument you inspected. This connects
+the visible output to the interface that produced it. The print service does not
+search for a register that happens to contain your intended answer.
+
+\section{Investigate a plausible wrong result}
+
+Change only the instruction that prepares the integer-output argument so that it
+copies \texttt{\$v0} instead of \texttt{\$t0}. Predict the console result for
+input 20, then run the changed program. At this point, the prefix-printing request
+has already reused \texttt{\$v0} as a service selector. Its earlier role as the
+input register does not tell you its current contents.
+
+A useful investigation separates computation from presentation. Check the input
+at \texttt{calculate}, the answer after the two additions, and the argument before
+integer output. If the answer is correct in \texttt{\$t0} but the argument is wrong
+in \texttt{\$a0}, changing the arithmetic cannot repair the actual fault.
+
+Restore the correct argument preparation and repeat the run. A check passed before
+your edit is evidence about the earlier source. The interactive lesson must check
+the edited source again before marking its execution task complete. Your earlier
+predictions and any hints you opened can remain in your learning history.
+
+\section{Work without the construction hints}
+
+Implement $3x+1$ while keeping the same input convention. Write a trace before
+running the program. Include positive, zero and negative inputs. Explain why your
+intermediate results lead to the intended final value; three successful runs are
+useful checks, but the explanation should describe the operation for the stated
+input range.
+
+Then choose a different temporary register and make the program work again. List
+the uses that must change together. Register choice is an implementation decision;
+the important interface is the number passed to output and the behavior promised
+to the caller or user.
+
+When you can make those changes and explain a wrong result by locating the first
+incorrect state, you have used the debugger as a reasoning tool. Record any point
+where you needed an explanation that the book or lab did not supply. Those gaps
+are part of the pilot review, not something a successful execution check can hide.

@@ -9,7 +9,10 @@ and instruction semantics precisely, without explaining ordinary computer use re
 Use the current MARS MIPS64 Release 6 environment and educational syscall ABI.
 Check architecture claims against the pinned MARS source and architecture documentation.
 
-Edit the publication directly in main.tex and includes/**/*.tex. Compose chapters and
+Edit the publication directly in native LaTeX. During restructuring, the pilot
+entries are revision/learning.tex and revision/lab-book.tex, with directly edited
+includes under revision/. Preserve main.tex and includes/ as the initial-draft
+publication until the revised reading sequence is reviewed. Compose chapters and
 human passages with ordinary input/include. Never regenerate edited TeX from JSON or
 Markdown. Keep structured exercise/trainer drafts in packages; they do not control book
 composition. Follow docs/composition-goal.md and prioritize full chapter prose. Human
