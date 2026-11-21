@@ -34,6 +34,7 @@ import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -50,6 +51,8 @@ import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.breakpoints.XBreakpointType
 import com.intellij.xdebugger.breakpoints.XLineBreakpointType
 import java.awt.Rectangle
+import java.awt.Point
+import java.awt.event.InputEvent
 import java.awt.Robot
 import java.awt.Window
 import java.nio.file.Files
@@ -67,6 +70,7 @@ import javax.swing.JLabel
 import javax.swing.JViewport
 import javax.swing.SwingUtilities
 import javax.swing.JTree
+import javax.swing.JTextPane
 import javax.swing.text.JTextComponent
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CompletableDeferred
@@ -76,6 +80,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import training.lang.LangManager
+import training.ui.LearningUiHighlightingManager
 import training.learn.CourseManager
 import training.statistic.LessonStartingWay
 import training.learn.course.Lesson
@@ -1069,18 +1074,7 @@ class BookLessonCaptureActivity : ProjectActivity {
     private suspend fun captureHints(project: Project, output: Path, prefix: String, existing: Int, revealTo: Int, released: Int = 4) {
         val titles = listOf("Plan the value flow", "Keep the original input available", "Combine the values deliberately", "Trace one possible calculation")
         val failure = AtomicReference<Throwable>()
-        withContext(Dispatchers.EDT) {
-            val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.IndependentHint"))
-            val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
-            // Exercise the native Learn pane context, without injecting editor/file keys.
-            val data = DataManager.getInstance().getDataContext(learn.component)
-            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
-            check(ActionUtil.updateAction(action, event).isPerformed) { "Native action update did not complete" }
-            check(event.presentation.isEnabled) { "Hints must be available from the native Learn pane" }
-            ApplicationManager.getApplication().invokeLater({
-                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
-            }, ModalityState.nonModal())
-        }
+        clickLessonLink(project, "Open a hint")
         val dialog = awaitDialog(failure, "Independent program hints")
         suspend fun assertRevealed(count: Int) {
             awaitUi {
@@ -1103,17 +1097,7 @@ class BookLessonCaptureActivity : ProjectActivity {
 
     private suspend fun checkIndependent(project: Project, output: Path, id: String, passed: Boolean, limited: Boolean = false, status: String? = null) {
         val failure = AtomicReference<Throwable>()
-        withContext(Dispatchers.EDT) {
-            val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.CheckIndependent"))
-            val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
-            val data = DataManager.getInstance().getDataContext(learn.component)
-            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
-            check(ActionUtil.updateAction(action, event).isPerformed) { "Native action update did not complete" }
-            check(event.presentation.isEnabled) { "Checking must be available from the native Learn pane for its selected source" }
-            ApplicationManager.getApplication().invokeLater({
-                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
-            }, ModalityState.nonModal())
-        }
+        clickLessonLink(project, "Check my program")
         val dialog = awaitDialog(failure, "Independent program results")
         val expected = if (limited) "completed assessments allowed by your course" else if (passed) "PASS input 20" else "FAIL input 20"
         awaitUi { lessonVisibleText(dialog.rootPane).contains(expected) }
@@ -1360,28 +1344,65 @@ class BookLessonCaptureActivity : ProjectActivity {
         project: Project, output: Path, id: String, actionId: String,
         wrong: String, feedback: String, correct: String,
     ) {
-        val failure = AtomicReference<Throwable>()
-        withContext(Dispatchers.EDT) {
-            val action = checkNotNull(ActionManager.getInstance().getAction(actionId))
-            val context = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build()
-            val event = AnActionEvent.createEvent(action, context, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
-            ApplicationManager.getApplication().invokeLater({
-                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
-            }, ModalityState.nonModal())
+        // Exercise the learner's actual in-pane links. The legacy action ID is retained
+        // only in the receipt; no prediction dialog or Find Action interaction is invoked.
+        val focus = withContext(Dispatchers.EDT) {
+            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+            val rectangle = checkNotNull(LearningUiHighlightingManager.getRectangle(editor.contentComponent))
+            val line = editor.document.getLineNumber(editor.caretModel.offset)
+            val text = editor.document.getText(TextRange(
+                editor.document.getLineStartOffset(line), editor.document.getLineEndOffset(line),
+            )).trim()
+            val mnemonic = when (actionId) {
+                "Mars.Learning.PredictDoubling" -> "addu"
+                "Mars.Learning.PredictNegative" -> "addiu"
+                else -> "move"
+            }
+            check(text.startsWith("$mnemonic ")) { "Question points to the wrong instruction: $text" }
+            mapOf("sourceLine" to line + 1, "instruction" to text,
+                "highlight" to mapOf("x" to rectangle.x, "y" to rectangle.y, "width" to rectangle.width, "height" to rectangle.height))
         }
-        val dialog = awaitDialog(failure)
-        onModalUi {
-            visibleLessonButton(dialog.rootPane, wrong).doClick()
-            visibleLessonButton(dialog.rootPane, "Check prediction").doClick()
+        clickLessonLink(project, wrong, answerChoice = true)
+        val frame = withContext(Dispatchers.EDT) { checkNotNull(WindowManager.getInstance().getFrame(project)) }
+        awaitUi { lessonVisibleText(frame.rootPane).contains(feedback) }
+        captureFrame(project, output, "$id-feedback", feedback)
+        clickLessonLink(project, correct, answerChoice = true)
+        awaitUi { Window.getWindows().filterIsInstance<JDialog>().none { it.isShowing && it.title == "Predict the register state" } }
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("$id-inline-answer.json"), GsonBuilder().setPrettyPrinting().create().toJson(
+                mapOf("route" to "native lesson callback links", "legacyActionId" to actionId,
+                    "legacyActionInvoked" to false, "wrongChoice" to wrong, "feedback" to feedback, "correctChoice" to correct, "focus" to focus),
+            ), CREATE_NEW)
         }
-        awaitUi { lessonVisibleText(dialog.rootPane).contains(feedback) }
-        captureComponent(dialog.rootPane, output, "$id-feedback", feedback)
-        onModalUi {
-            visibleLessonButton(dialog.rootPane, correct).doClick()
-            visibleLessonButton(dialog.rootPane, "Check prediction").doClick()
+    }
+
+    private suspend fun clickLessonLink(project: Project, answer: String, answerChoice: Boolean = false) {
+        fun target(): Pair<JTextPane, Int>? {
+            val frame = WindowManager.getInstance().getFrame(project) ?: return null
+            return captureComponents(frame.rootPane).filterIsInstance<JTextPane>().filter { it.isShowing }.mapNotNull { pane ->
+                val text = pane.document.getText(0, pane.document.length)
+                val offset = if (answerChoice) bookInlineChoiceOffset(text, answer) else bookLessonActionOffset(text, answer)
+                offset?.let { pane to it }
+            }.singleOrNull()
         }
-        awaitUi { !dialog.isShowing }
-        failure.get()?.let { throw it }
+        awaitUi {
+            val (pane, offset) = target() ?: return@awaitUi false
+            val rectangle = pane.modelToView2D(offset)?.bounds ?: return@awaitUi false
+            pane.scrollRectToVisible(rectangle)
+            pane.visibleRect.intersects(rectangle)
+        }
+        val point = withContext(Dispatchers.EDT) {
+            val (pane, offset) = checkNotNull(target())
+            val bounds = checkNotNull(pane.modelToView2D(offset)).bounds
+            Point(bounds.x + 2, bounds.y + bounds.height / 2).also { SwingUtilities.convertPointToScreen(it, pane) }
+        }
+        withContext(Dispatchers.IO) {
+            Robot().apply {
+                mouseMove(point.x, point.y)
+                mousePress(InputEvent.BUTTON1_DOWN_MASK)
+                mouseRelease(InputEvent.BUTTON1_DOWN_MASK)
+            }
+        }
     }
 
     private suspend fun awaitDialog(failure: AtomicReference<Throwable>, title: String = "Predict the register state"): JDialog {
@@ -1474,4 +1495,16 @@ internal fun lessonHorizontalLayout(root: JComponent): BookLessonHorizontalLayou
         maxOf(0, -bounds.x, bounds.x + bounds.width - width)
     } ?: 0
     return BookLessonHorizontalLayout(width, panel.width, maxOf(0, panel.width - width, overflow))
+}
+
+/** Select answer text within a native lesson paragraph, rather than matching unrelated prose. */
+internal fun bookInlineChoiceOffset(text: String, answer: String): Int? =
+    Regex("(?m)^[ABC]\\. " + Regex.escape(answer) + "(?=\\R|$)").findAll(text).lastOrNull()?.let {
+        it.range.first + minOf(4, it.value.length - 1)
+    }
+
+internal fun bookLessonActionOffset(text: String, label: String): Int? {
+    require(label.isNotEmpty())
+    val offset = text.lastIndexOf(label)
+    return if (offset < 0) null else offset + minOf(4, label.lastIndex)
 }

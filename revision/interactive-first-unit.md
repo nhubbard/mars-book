@@ -76,8 +76,12 @@ until people with the intended prerequisites perform the independent task.
 
 ## Current implementation evidence
 
-The main MARS course currently exposes prediction, Run and Debug segments. The prediction
-dialogs support wrong-answer feedback and revised answers. The Run segment uses
+The main MARS course exposes prediction, Run and Debug segments. Predictions now use
+clickable answer choices in the Learn pane, with wrong-answer feedback and a native
+highlight around the relevant assembly instruction. Students do not need Find Action
+to answer a question. The optional legacy prediction actions remain available for
+compatibility; they are not the guided lesson route. The independent exercise also
+provides direct “Check my program” and “Open a hint” links. The Run segment uses
 the ordinary process lifecycle, exact captured source and options, document stamps
 and content-specific progress capabilities. Source edits invalidate old evidence.
 The actual IDE check observes the platform's lesson-pass callbacks and the expected
@@ -141,3 +145,15 @@ delivery for the public projects; it does not interpret their historical steps a
 native trainer tasks or execute downloaded Kotlin grading scripts. The bundled
 first unit retains its own guided and independent activities. See
 [the import guide](../docs/lab-import.md) for the supported workflow and boundaries.
+
+
+The instruction highlight is queried again by the trainer’s Swing repaint timer,
+which does not inherit the lesson task’s read context. The MARS callback acquires
+read access explicitly before reading PSI or editor geometry. A regression test
+invokes it from a raw Swing timer without pre-existing read access. Native IDE
+verification and its precise scope are retained privately with this implementation.
+
+At the 21 November checkpoint, the new inline code passes the plugin tests and
+packaged API verification. The corrected native capture run timed out before the
+first question was observed. The new controls therefore still need a successful
+end-to-end native walkthrough; earlier dialog captures do not validate them.

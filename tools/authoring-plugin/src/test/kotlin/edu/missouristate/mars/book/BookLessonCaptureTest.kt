@@ -18,6 +18,27 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class BookLessonCaptureTest {
+    @Test
+    fun `inline answer offsets select native choice paragraphs rather than surrounding prose`() {
+        val text = "A question mentions -5\nA. 7\nB. -7\nC. -5\n"
+        val offset = bookInlineChoiceOffset(text, "-5")!!
+        assertEquals('5', text[offset])
+        assertNull(bookInlineChoiceOffset(text, "5"))
+        assertNull(bookInlineChoiceOffset(text, "missing"))
+        val repeated = text + "Next question\nC. -5\r\n"
+        assertTrue(bookInlineChoiceOffset(repeated, "-5")!! > text.length)
+        assertTrue(bookInlineChoiceOffset("A. \$x", "\$x")!! >= 3)
+    }
+
+    @Test
+    fun `native lesson action links have a stable click point in their visible caption`() {
+        assertNull(bookLessonActionOffset("No controls", "Open a hint"))
+        val text = "Use Check my program and then Open a hint."
+        assertEquals(text.indexOf("Check my program") + 4, bookLessonActionOffset(text, "Check my program"))
+        assertEquals(0, bookLessonActionOffset("X", "X"))
+        assertThrows<IllegalArgumentException> { bookLessonActionOffset(text, "") }
+    }
+
     private val valid = BookLessonCapturePlan("/tmp/lesson-project", "/tmp/lesson-evidence", "a".repeat(64))
 
     @Test
