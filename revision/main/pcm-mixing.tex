@@ -1,0 +1,223 @@
+\chapter{Mixing samples without losing their meaning}
+\MARSChapterHeading{Mixing samples without losing their meaning}
+\label{revision:pcm-mixing}
+
+Adding two audio streams sounds like a direct application of integer addition.
+At each sample position, read one value from each stream and add them. The
+problem appears when the mathematical answer does not fit the output format.
+Two valid inputs can produce an invalid output value. Choosing what to do with
+that value is part of the algorithm, before it becomes an instruction choice.
+
+This chapter assumes that you can traverse an array, call a function and read
+an MSA vector as a collection of integer lanes. We will use those skills to mix
+two arrays of signed 16-bit samples. The result must stay in the same sample
+format, and the function must report how many sums were clipped. The accompanying
+lab supplies the complete calling convention and exercises memory bounds and
+in-place output. Here we develop the arithmetic and the loop that make that
+contract possible.
+
+\section{A sample is a number with a storage format}
+
+Pulse-code modulation, or PCM, represents a signal by a sequence of sample values
+at regularly spaced times. Our inputs are mono: each sample position contains
+one component value. A stereo stream would need a specified arrangement of left
+and right components before the same array reasoning could be applied.
+
+Each value in this exercise is a signed two's-complement halfword, from $-32768$
+through $32767$. Its two bytes are stored low byte first. For example,
+\texttt{ff 7f} represents $32767$, while \texttt{00 80} represents $-32768$.
+The byte sequence \texttt{ff ff} represents $-1$. Loading those last two bytes as
+an unsigned integer would instead give $65535$. The bits have not changed;
+the interpretation used by the arithmetic has.
+
+A scalar implementation must reconstruct a signed sample before adding it.
+Because the lab permits a sample to begin at an odd byte address, two unsigned
+byte loads are sufficient: combine the high byte shifted left by eight with the
+low byte, then sign-extend the resulting halfword. A signed halfword load would
+have the desired numeric interpretation, but it would also impose an alignment
+requirement that this interface does not give us.
+
+For inputs $a_i$ and $b_i$, let $s_i=a_i+b_i$ be the exact sum at position $i$.
+Its possible range is $[-65536,65534]$. A signed 32-bit word can retain that whole
+range. A signed halfword cannot. This width calculation tells us where information
+could be lost: we may keep the intermediate in a word, but we must decide how to
+narrow it when writing the output sample.
+
+\section{Clipping and wrapping give different signals}
+
+The required operation is \emph{saturation}: keep an in-range sum and replace an
+out-of-range sum with the nearest representable endpoint. Thus
+\[
+ c_i=\min(32767,\max(-32768,s_i)).
+\]
+If the exact sum is $40000$, the stored sample is $32767$. If it is $-40000$,
+the stored sample is $-32768$. These values are clipped. An exact sum equal to
+either endpoint already fits and is not counted as clipped.
+
+Consider the following pairs. Work out the exact sum before interpreting a
+stored halfword.
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{rrrrl}
+\toprule
+Input A & Input B & Exact sum & Output & Clipped?\\
+\midrule
+30000 & 2767 & 32767 & 32767 & No\\
+30000 & 10000 & 40000 & 32767 & Yes\\
+-30000 & -2768 & -32768 & -32768 & No\\
+-30000 & -10000 & -40000 & -32768 & Yes\\
+32767 & -32768 & -1 & -1 & No\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+A store that keeps only the low sixteen bits would implement wrapping instead.
+For $40000$, those bits denote $-25536$ as a signed halfword. For $-40000$,
+they denote $25536$. A slightly excessive positive peak can therefore become a
+large negative sample. Saturation keeps the peak at the positive endpoint.
+Both operations are precisely defined, but only one meets this mixer's contract.
+
+Clipping still changes the signal. It flattens excessive peaks; it cannot keep
+the original amplitude in a format that cannot represent it. Reducing input gains
+before adding is one way to avoid some clipping, but that would be a different
+function. Reducing a clipped result afterward cannot recover the discarded values.
+
+The count is another reason to retain evidence of the arithmetic. Counting output
+samples equal to $32767$ would misclassify the first row of the table. To distinguish
+that row from the second, we need to know whether the exact sum exceeded the bound.
+
+\section{Use two vector results to find the clipped lanes}
+
+An MSA vector contains 128 bits. Interpreted as halfwords, it contains eight lanes,
+so one operation can mix eight independent pairs. In our pinned little-endian
+MARS environment, loading sixteen consecutive sample bytes places each low/high
+byte pair in the corresponding halfword lane. Changing the operation suffix
+changes the lane interpretation of those bits; it does not rearrange the samples.
+
+\texttt{adds\_s.h} adds signed halfwords with saturation. This produces the output
+values we need, but does not return a count of clipped lanes. We can derive the
+count by also computing \texttt{addv.h}, which keeps each sum modulo $2^{16}$.
+An in-range sum has the same halfword representation in both results. An excessive
+positive sum wraps into the negative half of the signed range while saturating to
+$32767$. An excessive negative sum wraps into the nonnegative half while saturating
+to $-32768$. For these two-input sums, the results differ exactly where clipping
+occurred.
+
+Use \texttt{ceq.h} to compare them lane by lane. An equal pair produces sixteen
+one bits; an unequal pair produces sixteen zero bits. Inverting this mask makes
+clipped lanes all ones. The mask is useful evidence, but an all-one halfword is
+$65535$ as an unsigned number, not the integer one we want to add to a count.
+
+Here is the complete group operation. On entry, \texttt{\$a0} and \texttt{\$a1}
+point to eight readable input samples, \texttt{\$a2} points to eight writable
+output samples, and \texttt{\$v1} holds the count from earlier groups. This
+fragment consumes one group; pointer updates and the remaining-count test belong
+to the surrounding loop. The temporary and vector registers shown are available
+to the fragment.
+
+\MARSCodeLabel{Mix eight samples and add their clipping count}
+\begin{minted}{mars-idea}
+ld.b $w0, 0($a0)
+ld.b $w1, 0($a1)
+addv.h $w2, $w0, $w1
+adds_s.h $w3, $w0, $w1
+ceq.h $w4, $w2, $w3
+nor.v $w4, $w4, $w4
+pcnt.d $w5, $w4
+copy_s.d $t0, $w5[0]
+copy_s.d $t1, $w5[1]
+daddu $t0, $t0, $t1
+dsrl $t0, $t0, 4
+daddu $v1, $v1, $t0
+st.b $w3, 0($a2)
+\end{minted}
+
+\texttt{pcnt.d} counts set bits separately in the two 64-bit elements of the
+mask. \texttt{copy\_s.d} copies each count into a general register. There are
+sixteen set bits for every clipped halfword, so adding the counts and shifting
+right by four divides by sixteen. This yields a group count from zero through
+eight. The shift is exact because the mask contains only whole all-zero or
+all-one halfwords.
+
+For a group whose exact sums are $0$, $32767$, $32768$, $-32768$, $-32769$,
+$40000$, $-40000$ and $-1$, lanes 2, 4, 5 and 6 clip. They contribute 64 set
+bits in total, so the count increases by four. The two endpoint sums contribute
+nothing. Trace those lanes before using the fragment in a loop; they distinguish
+the required test from a test for endpoint values.
+
+\section{The loop must prove each access fits}
+
+Let $r$ be the number of samples remaining. A sixteen-byte input load is justified
+when $r\geq8$, because each sample occupies two bytes. After a group, advance
+each pointer by sixteen and reduce $r$ by eight. The loop invariant is that all
+samples before the pointers have been mixed exactly once, \texttt{\$v1} counts
+only those samples, and the pointers identify the first unprocessed samples.
+
+When fewer than eight remain, a complete vector access would extend beyond the
+logical input slice. Extra backing storage does not make that access part of
+the interface. Finish the tail using scalar sample loads, an exact word sum,
+bounds comparisons and two byte stores. Each scalar iteration advances by two
+bytes and consumes one sample. A zero-length call performs no sample access.
+
+The same loop works when output exactly replaces either input. The group fragment
+loads both inputs before storing the output. At an exact alias, that store can
+replace only the current group's already loaded samples; future groups begin
+after them. The scalar tail needs the same ordering for each pair. A destination
+shifted into the middle of an input would need a different argument about access
+order, so the lab excludes that overlap.
+
+\begin{MARSWorkedExample}{Nine samples with in-place output}
+Suppose the output pointer equals the second input pointer and the count is nine.
+The first iteration reads both sixteen-byte groups before overwriting the second
+input's first eight samples. One sample remains. The tail reads both final samples
+before writing their result at byte offset sixteen. It must not execute another
+vector load merely because the first group was aligned or the allocation is large.
+\end{MARSWorkedExample}
+
+\section{Investigate the first difference}
+
+Compare the scalar and vector versions on identical inputs. A wrong sample and
+a wrong clipping count suggest different places to investigate. If both versions
+store $32767$ for an exact sum of $32767$ but only one increments its count, inspect
+the clipping test. If negative inputs act like large positive numbers in the scalar
+path, inspect sign extension before the sum. If the first eight samples are correct
+and the ninth is wrong, inspect the tail's pointer and remaining count.
+
+For the vector path, pause after the saturated addition, then after the comparison.
+Keep the lane width explicit in the debugger. The equality mask's true halfwords
+are \texttt{ffff}; interpreting the same bits as bytes or doublewords changes the
+displayed grouping. After inversion and population count, expect small integer
+counts in two doubleword lanes. This sequence locates the first representation
+that differs from your paper trace.
+
+Measure a complete call after checking its results and memory bounds. Vector work
+has group and reduction overhead, and a short call may execute no full group at all.
+A count of 63 gives seven vector groups and seven scalar iterations; a count of 64
+gives eight groups and no scalar tail. Their costs need not rise smoothly with the
+sample count. Native instruction counts describe guest work. Host elapsed time also
+includes the simulator's costs and should be measured separately.
+
+\begin{MARSExercise}{Change the mask reduction}
+Implement the same mixer with a different method of counting clipped lanes. Keep
+the sample results, zero-length behavior, memory bounds and permitted aliases.
+Explain how your method converts an all-one comparison lane into one contribution
+to the count. Test exact endpoints as well as values on both sides of each bound.
+Use lengths 0, 1, 7, 8, 9 and 16 to expose group and tail mistakes.
+\end{MARSExercise}
+
+\begin{MARSExercise}{Decide when to clip}
+Mix the three values $30000$, $10000$ and $-10000$. Compare clipping after each
+pairwise addition with retaining an exact wider total and clipping once at the end.
+Explain which information the first clipping step discards. State an accumulation
+policy before extending the two-input mixer to more streams.
+\end{MARSExercise}
+
+\section*{Sources and laboratory connection}
+The numerical representation follows the signed 16-bit PCM format described in
+Microsoft's \href{https://learn.microsoft.com/en-us/windows/win32/multimedia/devices-and-data-types}{Devices and data types}.
+The particular clipping count, arbitrary alignment and allowed aliases are the
+contract of the PCM mixing lab. The MSA operations above are checked against the
+pinned MARS integer and register instruction implementations. The public
+\path{packages/020-pcm-mixing/} contains the caller, input recipes and listening
+comparisons. The written lab supplement develops the observations needed to build
+and check the complete function; this fragment alone is not that function.

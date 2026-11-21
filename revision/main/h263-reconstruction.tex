@@ -1,0 +1,229 @@
+\chapter{Keeping the encoder and decoder in agreement}
+\MARSChapterHeading{Keeping the encoder and decoder in agreement}
+\label{revision:h263-reconstruction}
+
+A video encoder can predict a region of the current picture from a picture it has
+already sent. If the prediction is close, the difference may be cheaper to encode
+than the original samples. This creates a dependency: the next prediction uses
+what the decoder reconstructed from the previous compressed picture. The encoder
+must retain a corresponding reconstruction of its own.
+
+This excerpt assumes that you know the capstone's picture planes, motion
+compensation, eight-by-eight transform, quantization and coefficient coding.
+It develops the connection between those stages. The full capstone produces an
+actual H.263 stream using a documented restricted baseline feature set. Its input
+is a short, script-generated QCIF sequence: a $176\times144$ luma plane and two
+$88\times72$ chroma planes per picture. The input limit is at most 30 pictures
+per second and ten seconds. Those bounds make the assignment finite; they do
+not change the reconstruction rule.
+
+\section{A reference picture is a computed result}
+
+Suppose an original sample is 100, but its coded representation reconstructs as
+98. The next picture's desired sample is 104. An encoder that subtracts its old
+original value obtains a residual of four. A decoder that adds four to its stored
+98 obtains 102. There is no arithmetic error in either subtraction or addition.
+The error is using different reference values.
+
+For this simplified example, using 98 on both sides gives residual six and
+reconstruction 104. In the real codec the residual also passes through transform,
+quantization and inverse operations. Those operations can change it. The encoder
+therefore cannot assume that sending a correction reproduces the original sample
+exactly. It must compute the same reconstruction path it expects at the decoder.
+
+Keep two buffers with distinct meanings. The raw input holds the samples we want
+to encode. The reconstruction holds samples available for later prediction.
+Treating raw input as the reconstruction can make later pictures disagree even
+when the first picture looks plausible.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=7mm,>=Stealth,
+ every node/.style={draw,align=center,font=\small,text width=96mm},
+ alt={Current samples minus prediction produce residuals. The forward transform and quantizer produce selected levels that are coded into the stream. A local path inverse-quantizes those same levels, applies the inverse transform, adds the same prediction and clips to sample range. The resulting reconstructed picture supplies future predictions.}]
+\node (residual) {Current samples minus prediction\\signed residuals};
+\node[below=of residual] (levels) {Forward transform and quantization\\selected levels};
+\node[below=of levels] (inverse) {Inverse quantization and inverse transform\\reconstructed residuals};
+\node[below=of inverse] (pixels) {Add the same prediction and clip\\reconstructed samples};
+\draw[->] (residual)--(levels);
+\draw[->] (levels)--(inverse);
+\draw[->] (inverse)--(pixels);
+\end{tikzpicture}
+\caption{The encoder's local reconstruction consumes the selected levels. Those levels also supply coefficient coding for the output stream.}
+\label{revision:local-reconstruction}
+\end{figure}
+
+\section{Follow the values across representation boundaries}
+
+For an INTER block, let $S[y,x]$ be an unsigned current sample and $P[y,x]$ its
+motion-compensated prediction. Form the signed residual
+\[
+ E[y,x]=S[y,x]-P[y,x].
+\]
+Both samples lie in $[0,255]$, so $E$ lies in $[-255,255]$. Subtracting in byte
+lanes would lose that signed range. Widen before subtraction and retain signed
+halfword residuals.
+
+The forward transform expresses the spatial residual block as coefficients.
+Quantization selects integer levels from those coefficients. The levels are what
+the coefficient coder describes to the decoder; the original coefficients are no
+longer available there. Local reconstruction must inverse-quantize the selected
+levels and inverse-transform the resulting coefficients. Call its spatial result
+$D[y,x]$.
+
+The reconstructed sample is
+\[
+ X[y,x]=\min(255,\max(0,P[y,x]+D[y,x])).
+\]
+The addition occurs while $D$ is still signed. For the capstone's inverse boundary,
+$D$ lies in $[-256,255]$, so the sum lies in $[-256,510]$ and fits a signed halfword.
+Narrow to a byte after clipping. With prediction 250 and residual 20, the exact
+sum is 270 and the output is 255; byte wrapping would give 14. With prediction
+five and residual $-10$, the exact sum is $-5$ and the output is zero. Clipping
+the residual to zero before adding would incorrectly give five.
+
+For an INTRA block there is no inter-picture prediction to add. The inverse
+transform describes absolute sample values, which are clipped to $[0,255]$.
+The capstone's baseline INTRA path transforms sample values directly. A level
+shift copied from a different codec would change this path.
+
+\section{Work through a constant block}
+
+A constant block isolates the reconstruction loop because only its DC transform
+coefficient is nonzero in the ideal transform. Take all 64 current samples as
+130 and all prediction samples as 128. Every residual is two. With the transform
+normalization used here, a constant residual $r$ has DC coefficient $8r$, so the
+forward DC is sixteen.
+
+Use quantizer parameter $Q=8$. The capstone's ordinary INTER quantizer selects
+level one for this coefficient. Its inverse quantization reconstructs coefficient
+23. That is the coefficient to feed to the inverse transform. Using the original
+sixteen would undo the quantizer's choice locally even though the decoder must
+work from level one.
+
+The ideal inverse of a DC-only block with coefficient 23 is $23/8=2.875$ at every
+sample. The supplied tested transform rounds this case to three. Adding that
+residual to prediction 128 gives reconstruction 131. The raw input was 130.
+The one-unit difference is a consequence of this quantized representation; it
+is not by itself evidence that the block pipeline is wrong.
+
+\begin{center}
+\tagpdfsetup{table/header-rows={1}}
+\begin{tabular}{lll}
+\toprule
+Boundary & Value & Meaning\\
+\midrule
+Current and prediction & 130, 128 & Unsigned samples\\
+Transform input & 2 & Signed residual\\
+Forward DC & 16 & Original coefficient\\
+Selected level & 1 & Value represented in the stream\\
+Reconstructed DC & 23 & Inverse-quantized coefficient\\
+Inverse output & 3 & Rounded spatial correction\\
+Reconstruction & 131 & Sample retained for future prediction\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This is a trace for the named transform and quantizer, not a requirement that
+every accurate implementation choose identical values at every rounding boundary.
+Use the transform's accuracy contract when comparing implementations. Within one
+implementation, the selected levels and the local reconstruction must remain
+consistent with the bitstream it actually emits.
+
+\Needspace{14\baselineskip}
+\begin{MARSWorkedExample}{The next picture}
+Let the next desired block contain 132 throughout, with zero motion. Prediction
+from the reconstructed 131 gives residual one and forward DC eight. At $Q=8$,
+this falls in the quantizer's zero region: the selected levels are all zero.
+The inverse residual is zero and reconstruction stays at 131. The encoder and
+decoder can agree while both differ from the current raw input.
+
+Now repeat the calculation using raw 130 as the encoder's reference. It gives
+residual two, selected level one and inverse residual three. The faulty local
+encoder adds three to 130 and obtains 133. The decoder adds three to its actual
+reference 131 and obtains 134. The disagreement is additional to the original
+quantization error. Changing the next raw picture cannot repair the faulty
+ownership of the reference buffer.
+\end{MARSWorkedExample}
+
+\section{Keep the vector path on the same boundaries}
+
+MSA can accelerate the sample operations around the transform. A prediction and
+an inverse residual can occupy halfword lanes. Add them at that width, apply
+signed lower and upper bounds, then pack the clipped values into bytes. The
+range proof above justifies ordinary halfword addition for this stage. It does
+not justify byte addition, and it does not determine the widths required inside
+the transform's dot products.
+
+Treat each vector access as a claim about the image layout. An eight-sample row
+occupies eight bytes, while an MSA vector occupies sixteen. A sixteen-byte load
+from the start of an arbitrary strided row can read padding or another region
+outside the admitted footprint. Gather the active bytes, or prove that a larger
+access consists entirely of permitted samples. A large backing allocation does
+not supply that proof.
+
+Use an independent scalar calculation to check the vector stage. Compare the
+signed inverse residuals as well as the final bytes. Final clipping can hide a
+wrong intermediate: both 270 and 300 become 255. A test that inspects only the
+clipped picture would miss that difference. Include negative corrections and
+values just inside and outside the sample bounds.
+
+\section{Publish the picture that was actually encoded}
+
+A picture-level encoder has more than one output. It produces compressed bytes
+and a reconstructed picture that may become the reference for a later picture.
+These outputs describe the same coding decisions. Publishing only one leaves
+subsequent work without a coherent accepted state.
+
+Stage the picture's coding output and reconstruction while the operation is in
+progress. Retain the previous accepted reference until the picture succeeds.
+If a child operation fails, the caller must be able to identify which state is
+still valid. The capstone's acceptance boundary includes completing the required
+output write before advancing its accepted-reference state. A partially written
+file cannot in general be rolled back; the driver reports failure and stops
+instead of continuing from a picture the receiver does not have completely.
+
+A candidate motion search reads the current picture and the retained reference.
+It does not modify either one. A chosen predictor and its reconstruction belong
+to the picture being built. Keeping these roles separate allows a failed block,
+capacity check or write to leave the last accepted reference usable for diagnosis.
+
+Identical consecutive raw pictures do not imply that a macroblock should be
+skipped. The current raw samples may still differ from the preceding reconstructed
+reference because of earlier quantization. Evaluate a skip decision against the
+prediction and syntax rules that the decoder will use.
+
+\section{Find where agreement first breaks}
+
+Inspect the stages in dependency order: prediction, selected levels,
+inverse-quantized coefficients, inverse output and reconstructed samples. A matching
+forward transform does not establish a matching local decoder. If the first
+reconstructed picture agrees but the next does not, verify the reference identity
+before changing the transform. If disagreement appears at the lower sample bound,
+look for an unsigned interpretation of a negative correction or clipping performed
+too early.
+
+An external H.263 decoder supplies a separate check on the emitted stream.
+Use it to verify dimensions, picture count, decodability and the documented quality
+conditions. Do not use a host encoder's private motion choices as the required
+student answer: several conforming choices can describe the same sequence.
+The capstone also checks inverse-transform accuracy and its own internal contracts;
+one successful external decode is not sufficient evidence for every component.
+
+\begin{MARSExercise}{Separate loss from disagreement}
+Use the two constant-block traces to write down three quantities for each picture:
+the desired raw sample, the encoder's local reconstruction and the decoder's
+reconstruction. Identify which differences can result from quantization and which
+show that the two sides used different state. Then replace the constant block with
+an asymmetric pattern to expose transform orientation errors hidden by DC-only data.
+\end{MARSExercise}
+
+\section*{Sources and capstone connection}
+The reconstruction and coding boundaries follow the restricted baseline profile
+specified for the capstone and \href{https://www.itu.int/rec/T-REC-H.263-200501-I/en}{ITU-T Recommendation H.263},
+including its inverse-transform and reconstructed-sample boundaries. Quantizer
+choices and the exact constant-block trace above belong to the documented teaching
+implementation. The public \path{docs/h263-profile.md} records the full project
+scope and points to the script-generated input and staged lab work. This excerpt
+explains the local reconstruction loop; it does not replace the complete encoder,
+syntax tables or conformance checks.

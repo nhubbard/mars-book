@@ -19,6 +19,7 @@ class NativeCompositionTests(unittest.TestCase):
     def test_actual_native_composition_and_highlight_integrity(self):
         self.assertEqual(796, len(book.validate()))
         self.assertEqual(1, len(book.validate('specimen.tex')))
+        self.assertEqual(1, len(book.validate('revision/advanced-pilots.tex')))
         self.assertEqual(3, len(book.validate('drafts/h263.tex')))
         self.assertEqual(13, len(book.validate('drafts/matrix-transpose.tex')))
         self.assertEqual(16, len(book.validate('drafts/fixed-point-ball.tex')))
