@@ -33,7 +33,7 @@ that declares a dependency on MARS. It is not included in the simulator plugin.
 ## Validation and remaining human work
 
 All 35 package manifests validate. The final manuscript passes veraPDF 1.30.4's
-PDF/UA-2 + Tagged PDF validation profile: 1,728 passed rules, 8,960,291 passed checks,
+PDF/UA-2 + Tagged PDF validation profile: 1,728 passed rules, 8,960,311 passed checks,
 and no failures. The current CBOR chapter also passes, with 237,581 passed checks.
 The private verification record retains raw reports, exact PDF and validator
 hashes, invocation details and verification of the official validator download.
