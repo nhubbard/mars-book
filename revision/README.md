@@ -51,3 +51,5 @@ That check runs 128 complete groups, verifies the clipping-count accumulation an
 compares all data bytes, including guards and exact aliases. It does not claim to
 check an unwritten scalar tail. Current public/private verification records bind
 the actual code, highlighter export and PDF; author and learner review are open.
+
+The integrated first unit now uses concise navigation names and fits an undersized side-docked Learn pane when opening its source. Wider user layouts are preserved. The separate authoring driver records native text/button geometry and rejects horizontal clipping at the captured viewport. Human readability and learner reviews remain open; this UI correction does not finish the instructional system.
