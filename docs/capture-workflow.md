@@ -944,3 +944,37 @@ Seven new successful reopen views were inspected, but remain raw private solutio
 captures. Both successful reopen logs also report a bundled Air agent-provisioning
 cancellation error during project close; they must not be labeled error-free.
 This evidence concerns the independent exercise, not every task's automatic resume.
+
+
+## Native first-unit policy capture
+
+`capturePolicy: true` requires `captureIndependent` and `captureHints`, excludes
+resume/other segment flags, and needs no instructor solution path. Start from an
+empty dedicated fixture. The driver applies policy through Settings → Tools →
+MARS Learning, waits for the native loading overlay to disappear and for values to
+paint, then opens independent work. It requires the assembly file and prerequisite
+message together, and disabled check/hint actions. It answers the actual doubling
+and negative-input prediction dialogs before reopening independent work.
+
+The release sequence 0 → 2 → 0 → 4 verifies denial, partial help, retained knowledge
+under a lower release and final release. Every step asserts the displayed course
+limit and whether reveal is disabled. Source bytes and zero native independent
+completion callbacks remain required. A final check must reject the unfinished
+starter in all five public cases. Optional native save/close retains the shared
+policy file and personal history separately.
+
+The final `native-policy-01` run retains sixteen raw light-theme captures. All sixteen were
+visually inspected by AI; none is claimed as an annotated publication figure.
+Earlier attempts retain the loading-overlay image and the pre-fix welcome-screen
+layout separately. The successful final log has no SEVERE entries, eleven installed
+JARs match the exact packages, and paired public API verification is compatible.
+The policy is described in [course-policy.md](course-policy.md). This capture covers
+two first-unit controls, not all instructor progression, retries or mode policies.
+
+Final authoring actions use public `ActionUtil.updateAction` and require its update
+to complete before checking the enabled presentation. Direct calls to the
+framework's override-only action method are removed, including two older authoring
+calls. The final paired report has no override-only diagnostics. Packages pass
+974 plugin tests (79 learning tests, all 729 lines and 374 branches covered),
+92 authoring tests and 391 public Python tests. Historical reports with old API
+calls are retained with their own packages and must not describe the final archive.
