@@ -255,7 +255,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 for (id in listOf("Mars.Learning.CheckIndependent", "Mars.Learning.IndependentHint")) {
                     val action = checkNotNull(ActionManager.getInstance().getAction(id))
                     val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
-                    action.update(event)
+                    check(ActionUtil.updateAction(action, event).isPerformed) { "Native action update did not complete" }
                     check(!event.presentation.isEnabled) { "Blocked lesson exposed $id" }
                 }
                 val predictions = CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.predictions" }
@@ -522,7 +522,7 @@ class BookLessonCaptureActivity : ProjectActivity {
             // Exercise the native Learn pane context, without injecting editor/file keys.
             val data = DataManager.getInstance().getDataContext(learn.component)
             val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
-            action.update(event)
+            check(ActionUtil.updateAction(action, event).isPerformed) { "Native action update did not complete" }
             check(event.presentation.isEnabled) { "Hints must be available from the native Learn pane" }
             ApplicationManager.getApplication().invokeLater({
                 try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
@@ -555,7 +555,7 @@ class BookLessonCaptureActivity : ProjectActivity {
             val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
             val data = DataManager.getInstance().getDataContext(learn.component)
             val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
-            action.update(event)
+            check(ActionUtil.updateAction(action, event).isPerformed) { "Native action update did not complete" }
             check(event.presentation.isEnabled) { "Checking must be available from the native Learn pane for its selected source" }
             ApplicationManager.getApplication().invokeLater({
                 try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
