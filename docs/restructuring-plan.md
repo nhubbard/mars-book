@@ -1,15 +1,21 @@
 # MARS textbook restructuring proposal
 
 Date: 20 November 2026  
-Status: Proposed editorial plan. Implementation is a separate task.
+Status: Editorial approach accepted in principle; revised to remove page targets and defer the publication split. Implementation is a separate task.
 
 ## Purpose and decision
 
-Restructure the 1,819-page initial manuscript into two teachable volumes with a
-combined working budget of 660 pages. Organize the explanation around machine
-concepts and increasing student independence. Retain all 35 projects in the
-curriculum, with selected projects developed in print and the remaining full
-construction sequences available as companion laboratories.
+Restructure the 1,819-page initial manuscript around a main learning book and a
+companion collection of laboratories. Organize the explanation around machine
+concepts and increasing student independence. Complete selected smaller projects
+within the main book. Retain all 35 projects in the curriculum, with larger and
+alternative applications available as companion laboratories.
+
+Set no page target or ceiling. Decide whether the learning book needs more than
+one physical volume after the revised material has a coherent reading sequence.
+The laboratories may become a separate native LaTeX lab book, interactive lessons
+integrated into IntelliJ, or both. That delivery choice follows pilot evaluation;
+it is not a requirement to produce three parallel publications.
 
 The first draft is source material for this revision. Existing prose, code,
 checks and figures must earn their place through their contribution to learning.
@@ -27,12 +33,12 @@ functions in another programming language. Assume no assembly experience. Briefl
 recover a prerequisite when an example needs it; avoid repeated lessons in ordinary
 computer use.
 
-By the end of Volume I, the reader should be able to translate a small algorithm
+By the end of the foundational part, the reader should be able to translate a small algorithm
 into assembly, explain its register and memory state, write and call a function,
 reason about widths and bounds, use the debugger to investigate a fault, and test
 an implementation against a stated contract.
 
-By the end of Volume II, the reader should be able to choose and measure a scalar
+By the end of the advanced part, the reader should be able to choose and measure a scalar
 or MSA implementation, handle structured input and files, explain a codec pipeline,
 and integrate independently tested functions into a larger program. Familiarity
 with a worked example should lead to an unfamiliar but related implementation.
@@ -53,62 +59,98 @@ editor action to an idea, an algorithm or a design decision.
 
 ## Publication architecture
 
-Maintain four distinct products with explicit relationships:
+Separate the learning narrative, practical activities and instructor materials:
 
 | Product | Purpose | Material it owns |
 | --- | --- | --- |
-| Two printed volumes | Explain concepts and develop independent reasoning | Connected exposition, selected worked programs, traces, conceptual figures, diagnostic examples and exercises |
-| Public companion laboratories | Supply executable project work | Starters, supported contracts, optional extensions, longer construction guides, public checks and fixture generators |
-| Guided tutor content | Support students who need smaller increments | Checkpoints, contextual hints, editor focus, per-step quizzes and recoverable progress |
+| Main learning book | Explain concepts and develop independent reasoning, completing smaller projects in context | Connected exposition, selected worked programs, traces, conceptual figures, diagnostic examples and exercises |
+| Public companion laboratories | Supply extended and alternative project work, optionally collected in a lab book | Starters, supported contracts, optional extensions, longer construction guides, public checks and fixture generators |
+| Interactive IntelliJ lessons | Teach concepts through action and feedback, with guidance that decreases as students progress | Checkpoints, contextual hints, editor focus, per-step quizzes and recoverable progress |
 | Private instructor distribution | Support assessment and teaching | References, alternatives, answer keys, private checks, rubrics and teaching notes |
 
 All 35 projects remain available. Inclusion in the companion collection does not
 require printing its complete implementation instructions. A project can supply a
 worked example, a substantial assignment, an elective lab or several illustrations.
 
+### Choosing the right home for an activity
+
+Keep a complete activity in the main book when its construction is short enough
+to support the explanation and its result makes the new concept concrete. The
+first console program, a pixel update and a small loop are candidates. The reader
+should regularly finish something useful within the learning narrative.
+
+Use a companion lab when the activity primarily provides additional practice,
+requires substantial integration, offers an alternative application, or involves
+many implementation choices after the central concept has been explained. The
+lab must still teach its project-specific ideas and provide enough context for
+independent use; moving material is not an excuse to leave it unexplained.
+
+Use an interactive lesson when action and immediate observation improve the
+explanation: predicting a register value, stepping over a store, comparing signed
+and unsigned loads, seeing vector lanes, or finding the first incorrect state.
+Explain the prediction before the action and interpret the result afterward.
+Feedback should diagnose the relevant misconception and lead to another attempt.
+Avoid reproducing the old construction checklist as a sequence of dialogs.
+
+The main book must supply the explanations needed to understand its subjects
+without requiring completion of an interactive lesson. The lesson can deepen or
+apply that explanation. The same concept may have a short book example and a
+richer lab, with clear links between them.
+
+### Pilot the laboratory delivery
+
+Pair the first-program editorial pilot with a small interactive lesson storyboard.
+Record its explanations, actual IDE actions, expected observations, useful failure
+feedback, hint behavior and independent closing task. Review whether that sequence
+teaches more effectively through interaction before expanding the implementation.
+Existing verified capture tooling does not establish that a student-facing tutor
+is already implemented.
+
+Retain guided and free-writing modes, equivalent-solution checks, and the planned
+instructor controls over progression and hints. Keep lesson and capture tooling
+in a separate plugin depending on MARS. Production delivery, remote downloads and
+policy enforcement require their own implementation scope. A lab book remains an
+option if it serves instruction or distribution needs; do not write both versions
+merely for completeness.
+
 Keep the publication as directly edited native LaTeX with ordinary includes.
 Exercise metadata may link a passage to a task but must not determine the order
 or granularity of the printed explanation. Human passages can be included at any
 appropriate point in that sequence.
 
-## Proposed volumes and page budgets
+## Proposed teaching sequence and publication options
 
-Budget pages using the existing readable typography, with figures, listings and
-exercises included. Do not achieve the budget by reducing font size, compressing
-spacing or hiding essential explanations in footnotes. The figures below are
-editorial allocations to test in the pilots, not completed pagination estimates.
+Use the existing readable typography, with native figures, listings and exercises.
+Do not shrink the typography or omit needed explanations to reach a numerical
+length. Review a chapter's length by asking what it teaches, whether it repeats
+prior work and how much new reasoning it asks of the reader.
 
-| Allocation | Volume I | Volume II | Total |
-| --- | ---: | ---: | ---: |
-| Main chapters | 276 | 326 | 602 |
-| Frontmatter, glossary, selected references and index | 24 | 34 | 58 |
-| Working total | 300 | 360 | 660 |
+The two parts below describe prerequisite order, not a committed physical split.
+They may fit in one main learning book or become separate volumes. A separate lab
+book would organize practical assignments by their prerequisites and links to the
+main text. An interactive lab collection could fulfill that practical role without
+a printed lab book. Each actual published volume should have its own contents,
+relevant glossary and index, and stated prerequisites.
 
-Use 720 pages as the combined review ceiling. Exceeding it requires an explicit
-scope decision: remove repetition, move a complete activity to the companion,
-reduce the number of printed applications, or revise the volume organization.
-A page overrun is not permission to omit a necessary explanation. Each volume
-needs its own contents, glossary, index and stated prerequisite knowledge.
-
-### Volume I Programming the machine
+### Part I Programming the machine
 
 Original project numbers in the final column identify existing materials, not
 proposed chapter numbers. A companion lab remains a complete executable assignment.
 
-| Chapter | Teaching purpose | Pages | Existing projects and treatment |
-| --- | --- | ---: | --- |
-| 1 Your first assembly program | Explain the execution model through input, arithmetic, output and one debugger trace | 18 | 01 console calculation as the worked program |
-| 2 Registers and integer representation | Connect bit patterns, signedness, widths and arithmetic results | 20 | 04 bit inspector |
-| 3 Addresses and memory | Distinguish an address from its stored bytes; explain loads, stores and byte order | 20 | 02 single pixel |
-| 4 Decisions and repetition | Translate conditionals and loops; explain branch behavior for the selected target | 24 | 05 seven-segment counter as the worked program; 06 MarsBot as an elective lab |
-| 5 Functions and the stack | Establish arguments, results, lifetimes, calls and register preservation before large programs | 24 | Extract short functions from the existing sprite and algorithm projects |
-| 6 Arrays and images | Develop indexed and two-dimensional addressing, row layout and bounded copying | 24 | 03 eight-byte sprite; 16 clipped blitter as an end-of-volume companion assignment |
-| 7 Integer algorithms | Explain invariants and dependent state updates through a visible algorithm | 24 | 07 Bresenham line drawing |
-| 8 State and buffers | Explain snapshots, ownership of updates and state carried between operations | 24 | 08 Life as the worked program; 14 ring buffer as a companion lab |
-| 9 Algorithms and their cost | Connect algorithm choices to observable work and data structures | 24 | 09 sorting as the worked comparison; 10 maze search as a companion lab |
-| 10 Fixed-point arithmetic | Explain scaling, rounding, intermediate range and overflow | 24 | 12 bouncing ball |
-| 11 Memory access and locality | Relate layout and traversal to the simulator's cache observations | 22 | 11 matrix transpose |
-| 12 Bounded interfaces and independent implementation | Consolidate contracts, partial input, failure behavior and testing | 28 | 13 packet parser as the worked program; 15 UTF-8 scanner as a substantial assignment |
+| Chapter | Teaching purpose | Existing projects and treatment |
+| --- | --- | --- |
+| 1 Your first assembly program | Explain the execution model through input, arithmetic, output and one debugger trace | 01 console calculation as the worked program |
+| 2 Registers and integer representation | Connect bit patterns, signedness, widths and arithmetic results | 04 bit inspector |
+| 3 Addresses and memory | Distinguish an address from its stored bytes; explain loads, stores and byte order | 02 single pixel |
+| 4 Decisions and repetition | Translate conditionals and loops; explain branch behavior for the selected target | 05 seven-segment counter as the worked program; 06 MarsBot as an elective lab |
+| 5 Functions and the stack | Establish arguments, results, lifetimes, calls and register preservation before large programs | Extract short functions from the existing sprite and algorithm projects |
+| 6 Arrays and images | Develop indexed and two-dimensional addressing, row layout and bounded copying | 03 eight-byte sprite; 16 clipped blitter as an end-of-volume companion assignment |
+| 7 Integer algorithms | Explain invariants and dependent state updates through a visible algorithm | 07 Bresenham line drawing |
+| 8 State and buffers | Explain snapshots, ownership of updates and state carried between operations | 08 Life as the worked program; 14 ring buffer as a companion lab |
+| 9 Algorithms and their cost | Connect algorithm choices to observable work and data structures | 09 sorting as the worked comparison; 10 maze search as a companion lab |
+| 10 Fixed-point arithmetic | Explain scaling, rounding, intermediate range and overflow | 12 bouncing ball |
+| 11 Memory access and locality | Relate layout and traversal to the simulator's cache observations | 11 matrix transpose |
+| 12 Bounded interfaces and independent implementation | Consolidate contracts, partial input, failure behavior and testing | 13 packet parser as the worked program; 15 UTF-8 scanner as a substantial assignment |
 
 Bounds begin with the first indexed access; Chapter 12 consolidates those lessons.
 Functions receive a small contract when first introduced in Chapter 5. Do not defer
@@ -116,25 +158,25 @@ these prerequisites simply because a later chapter treats them systematically.
 Introduce full clipping and independent record-wrap problems only after the reader
 has the required address and state reasoning.
 
-### Volume II Vector programming and structured data
+### Part II Vector programming and structured data
 
-| Chapter | Teaching purpose | Pages | Existing projects and treatment |
-| --- | --- | ---: | --- |
-| 1 Measuring a program | Establish correctness baselines, completed instructions, cache observations and comparable workloads | 20 | 22 blocked matrix multiplication |
-| 2 Working with MSA | Teach lanes, signedness, loads, shuffles, alignment requirements and scalar tails | 22 | 19 RGB conversion |
-| 3 Saturating arithmetic | Explain PCM representation and distinguish saturation from wrapping | 20 | 20 PCM mixing |
-| 4 Filtering signals | Develop accumulation width, fixed-point coefficients and scalar/vector correspondence | 22 | 21 FIR filter |
-| 5 Compact integer and byte encodings | Explain representations, size tradeoffs and partial groups | 20 | 23 delta/varint as the worked program; 28 Base64 as a companion lab |
-| 6 File boundaries and simple formats | Establish file I/O, bounded parsing, headers and complete output artifacts | 18 | 29 binary PPM |
-| 7 Checksums and streaming state | Derive an update rule, then compare equivalent implementations | 20 | 24 CRC-32 |
-| 8 Decoding with a state machine | Develop a bounded image decoder and its encoder counterpart | 24 | 30 QOI |
-| 9 Nested data and interpreters | Explain recursive state, explicit stacks and separation of syntax from evaluation | 24 | 32 CBOR as the worked format; 17 expression evaluator and 18 bytecode interpreter as elective labs |
-| 10 Word operations and cryptographic algorithms | Explain a quarter-round, lane organization and the distinction between an arithmetic primitive and a complete scheme | 22 | 26 ChaCha20 as the worked kernel; 25 SHA-256 and 27 RSA arithmetic as elective labs |
-| 11 An audio processing pipeline | Integrate file parsing, sample processing and playable output | 18 | 31 PCM WAV |
-| 12 A PNG decoding pipeline | Connect chunks, checksums, decompression, reconstructed rows and pixel output | 28 | 33 PNG capstone |
-| 13 A lossless video format | Develop frame dependencies, change encoding, indexing and seeking | 24 | 34 lossless video capstone |
-| 14 Predicting video pictures | Explain reference pictures, motion search, residuals and local reconstruction | 22 | 35 H.263, first half |
-| 15 Producing an H.263 stream | Connect transforms, quantization, syntax, bit output and independent decoding | 22 | 35 H.263, second half |
+| Chapter | Teaching purpose | Existing projects and treatment |
+| --- | --- | --- |
+| 1 Measuring a program | Establish correctness baselines, completed instructions, cache observations and comparable workloads | 22 blocked matrix multiplication |
+| 2 Working with MSA | Teach lanes, signedness, loads, shuffles, alignment requirements and scalar tails | 19 RGB conversion |
+| 3 Saturating arithmetic | Explain PCM representation and distinguish saturation from wrapping | 20 PCM mixing |
+| 4 Filtering signals | Develop accumulation width, fixed-point coefficients and scalar/vector correspondence | 21 FIR filter |
+| 5 Compact integer and byte encodings | Explain representations, size tradeoffs and partial groups | 23 delta/varint as the worked program; 28 Base64 as a companion lab |
+| 6 File boundaries and simple formats | Establish file I/O, bounded parsing, headers and complete output artifacts | 29 binary PPM |
+| 7 Checksums and streaming state | Derive an update rule, then compare equivalent implementations | 24 CRC-32 |
+| 8 Decoding with a state machine | Develop a bounded image decoder and its encoder counterpart | 30 QOI |
+| 9 Nested data and interpreters | Explain recursive state, explicit stacks and separation of syntax from evaluation | 32 CBOR as the worked format; 17 expression evaluator and 18 bytecode interpreter as elective labs |
+| 10 Word operations and cryptographic algorithms | Explain a quarter-round, lane organization and the distinction between an arithmetic primitive and a complete scheme | 26 ChaCha20 as the worked kernel; 25 SHA-256 and 27 RSA arithmetic as elective labs |
+| 11 An audio processing pipeline | Integrate file parsing, sample processing and playable output | 31 PCM WAV |
+| 12 A PNG decoding pipeline | Connect chunks, checksums, decompression, reconstructed rows and pixel output | 33 PNG capstone |
+| 13 A lossless video format | Develop frame dependencies, change encoding, indexing and seeking | 34 lossless video capstone |
+| 14 Predicting video pictures | Explain reference pictures, motion search, residuals and local reconstruction | 35 H.263, first half |
+| 15 Producing an H.263 stream | Connect transforms, quantization, syntax, bit output and independent decoding | 35 H.263, second half |
 
 The capstone chapters explain architecture and selected difficult components. They
 must provide enough information to understand and complete the assignment, while
@@ -231,11 +273,11 @@ versions actually tested.
 | Phase | Deliverable | Condition for moving on |
 | --- | --- | --- |
 | 0 Preserve the baseline | Record the current public/private commits, PDF digest, package versions and archive bindings; create a separate revision branch when implementation begins | Original draft and tested companions can be recovered without ambiguity |
-| 1 Audit and dependency map | Disposition inventory, concept prerequisites, final project-to-chapter map and revised contents | Author reviews the scope, elective choices and page allocations before chapter rewriting |
+| 1 Audit and dependency map | Disposition inventory, concept prerequisites, final project-to-chapter map and revised contents | Author reviews the scope, elective choices and laboratory roles before chapter rewriting |
 | 2 Three editorial pilots | Rewrite the first program, PCM mixing and the H.263 reconstruction-loop explanation; use the latter as a substantial excerpt | Author judges the prose and organization suitable; educational checks below pass before a bulk rewrite |
-| 3 Volume I | Revised foundational chapters, independent exercises and updated companion links | Prerequisites are introduced before use; chapter and volume reviews pass |
-| 4 Volume II | Revised vector, format and capstone chapters with explicit elective paths | Required reading forms a complete path; capstones can be attempted without elective-only knowledge |
-| 5 Integration and publication review | Both complete PDFs, cross-volume references, indexes, accessible figures and matching distributions | Technical, editorial, visual and accessibility reviews pass; unresolved issues are documented with an owner |
+| 3 Foundational part | Revised foundational chapters, complete smaller activities, independent exercises and companion links | Prerequisites are introduced before use; chapter reviews pass |
+| 4 Advanced part | Revised vector, format and capstone chapters with explicit elective paths | Required reading forms a complete path; capstones can be attempted without elective-only knowledge |
+| 5 Integration and publication review | Main book, any chosen volume or lab-book split, cross-references, indexes, accessible figures and matching distributions | Technical, editorial, visual and accessibility reviews pass; unresolved issues are documented with an owner |
 
 Review each chapter before starting a large batch. Use the pilots to establish the
 editorial method before extrapolating effort or completion dates. Do not open a
@@ -268,7 +310,7 @@ avoid claiming that the chapter has been validated for its intended audience.
 
 A chapter is editorially ready for author review when its prerequisites are
 explicit, unfamiliar terms are explained, the worked reasoning supports the
-independent exercise, and its sectioning and length fit the agreed role. Reader
+independent exercise, and its sectioning and length fit the agreed teaching purpose. Reader
 confusion calls for a diagnosis and revision, rather than an automatic extra hint.
 The author decides whether the explanation is acceptable; page counts and checks
 support that judgment but do not make it.
@@ -300,8 +342,10 @@ Do not expand the book revision into an unrelated plugin redesign.
 
 ## Decisions for author review
 
-Review the proposed two-volume boundary, the 660-page working budget, which projects
-receive full printed treatment, and the three pilot selections. These are the first
-editorial decisions needed when implementation is requested. Page allocations may
-change after the pilots; the limits on repeated construction detail and the need
-for independent student work remain.
+The concept-led approach and separation of explanation from extended construction
+are accepted in principle. Review which smaller projects should be completed in
+the main book, the roles of the remaining labs, and the three pilot selections.
+Use the first interactive lesson storyboard to evaluate delivery. Defer physical
+volume count and the choice of a printed lab book until the revised sequence and
+pilot experience support those decisions. There is no page target or ceiling;
+clarity, coherent progression and independent student work govern the revision.
