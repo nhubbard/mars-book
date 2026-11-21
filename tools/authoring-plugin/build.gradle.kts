@@ -65,6 +65,7 @@ tasks.runIde {
     systemProperty("mars.book.mars.archive", providers.gradleProperty("marsPluginArchive").get())
     providers.gradleProperty("bookCapturePlan").orNull?.let { systemProperty("mars.book.capture.plan", it) }
     providers.gradleProperty("bookLessonCapturePlan").orNull?.let { systemProperty("mars.book.lesson.capture.plan", it) }
+    providers.gradleProperty("bookPackageImportPlan").orNull?.let { systemProperty("mars.book.package.import.plan", it) }
     providers.gradleProperty("bookCaptureProject").orNull?.let { args(it) }
 }
 
