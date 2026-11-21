@@ -423,6 +423,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         captureFrame(project, output, "modes-guided-edited", runReady)
         chooseMode(project, output, "modes-to-free", "Free writing", "Guided work", run)
         awaitFrame(project, "implement 3x+1", independent)
+        captureFrame(project, output, "modes-independent-ready", "implement 3x+1")
         captureHints(project, output, "modes-first-hint", existing = 0, revealTo = 1)
         val independentText = withContext(Dispatchers.EDT) {
             val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
