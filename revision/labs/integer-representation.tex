@@ -1,0 +1,106 @@
+\chapter{Interpreting a register value}
+\MARSChapterHeading{Interpreting a register value}
+\label{revision:lab-integer-representation}
+
+This lab accompanies the main book's chapter on registers and integer
+representation. Use its complete \texttt{byte-inspector.asm} program and the
+separate \texttt{word-boundary.asm} experiment. Copies are supplied with the book
+in \texttt{revision/labs/files}. Work on your own copies so that deliberate
+faults do not replace the examples you use for comparison.
+
+The activities below can be performed with ordinary MARS Run and Debug. This
+second revised unit is not yet available as an interactive MARS Learning lesson.
+The written supplement explains what to investigate and how to interpret the
+observations; it does not require an automated checkpoint to advance.
+
+\section{Make two predictions from one pattern}
+
+Start with input 150. Write it as \texttt{10010110} in binary and \texttt{0x96}
+in hexadecimal. Add the unsigned place values to recover 150. Then assign the
+highest bit weight $-128$ to obtain the signed byte value $-106$. Your two answers
+should come from the same eight bits. No instruction has run yet, and no bits
+have changed merely because you chose another interpretation.
+
+Now predict the complete 64-bit results after the program's two conversion
+instructions. The mask should leave \texttt{0x0000000000000096} in
+\texttt{\$t0}. Sign extension should leave \texttt{0xFFFFFFFFFFFFFF96} in
+\texttt{\$t1}. Include the upper digits in your prediction: both registers have
+\texttt{0x96} in their low byte, so inspecting only that byte cannot distinguish
+the operations.
+
+\section{Observe the boundary that matters}
+
+Select MIPS64 Release 6, set a breakpoint on the \texttt{andi} below
+\texttt{interpret}, and start Debug. Enter 150. At the breakpoint, input has
+completed, but the mask has not executed. Inspect \texttt{\$v0}, step over the
+mask, and inspect \texttt{\$t0}. Step over \texttt{seb} and inspect
+\texttt{\$t1}. Record the source line and register alongside each value.
+
+The next highlighted instruction has not executed. If your prediction appears
+wrong, first check that you are comparing the same execution boundary. Then
+check the selected display format. A hexadecimal full-width register and a signed
+decimal byte are different descriptions; comparing their printed text directly
+is insufficient.
+
+Resume execution and check the two output numbers. Explain why both results
+survive the intervening string-output requests. Locate each instruction that
+copies a result into \texttt{\$a0}. This connects the conversion with the value
+actually consumed by integer output.
+
+\section{Choose a test that exposes a fault}
+
+In your working copy, replace the \texttt{seb} with a \texttt{move} using the
+same registers. Run input 127. The unchanged output does not establish that the
+conversion is correct: both instructions produce 127 for this case. Predict what
+will happen for 128, then run it.
+
+Debug the changed program with 128 and inspect both result registers immediately
+after the copy. Explain why changing a display preference cannot recover a sign
+extension that the program never performed. Restore \texttt{seb}, then separately
+change the second integer-output argument to copy \texttt{\$t0}. The signed
+conversion should now be correct internally while the second output is wrong.
+Use the debugger to identify the first boundary at which those two faulty
+programs differ. Restore the original before continuing.
+
+Test inputs 0, 127, 128 and 255. State what each contributes: zero, the largest
+positive signed byte, the first negative signed pattern, and the largest unsigned
+byte. Explain why testing only values below 128 misses the conversion fault.
+
+\section{Separate masking from validation}
+
+Predict the masked result for 256, then run it as a deliberate experiment outside
+the program's stated input range. The low byte is zero. The program has discarded
+the ninth bit; it has not reported an invalid input.
+
+Record that distinction explicitly. A precondition describes an input the program
+expects. A mask computes a result for the bits it receives. A range check would
+need instructions that decide whether to accept the input, which this program
+does not contain. Do not use this experiment to conclude that every integer
+outside the exercise's range is accepted by the console-input service.
+
+\section{Compare arithmetic widths}
+
+Open \texttt{word-boundary.asm} and break at \texttt{inspect}. Both additions
+have completed at this boundary. In hexadecimal, compare the full contents of
+\texttt{\$t1} and \texttt{\$t2}; in signed 64-bit decimal, compare their meanings.
+Explain the upper eight hexadecimal digits before looking at the low eight,
+which are identical.
+
+Replacing \texttt{daddiu} with \texttt{addiu} should make the two results agree.
+Predict which result changes and why, then test the replacement in a copy.
+The source and immediate are unchanged. The result width changes. Service 1
+prints only a signed 32-bit integer, so using that service for both registers
+would hide the full-width difference this experiment is designed to expose.
+
+\section{Work without the conversion recipe}
+
+Implement the main book's third output twice: first the unsigned byte value plus
+one, then that sum narrowed to eight bits. For input 255, the two versions should
+print 256 and zero respectively. Keep the original unsigned and signed outputs
+correct in both versions.
+
+Before running, name the register that retains each result and the instruction
+that supplies each output argument. If a test fails, inspect the value after its
+calculation and again before output. Use those observations to decide whether the
+fault lies in arithmetic, narrowing or argument preparation. Explain your final
+choice of tests and the property each test distinguishes.

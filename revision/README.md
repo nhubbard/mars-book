@@ -3,13 +3,15 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first main-book chapter: a connected explanation of
-  the complete console program, the machine state it changes and debugger reasoning.
+- `learning.tex` includes the first two main-book chapters: the complete console
+  program, then integer representation through a byte inspector and a word-width
+  experiment. Both chapters use connected explanations and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the written supplement: predictions, observations,
-  misconception diagnosis and independent variations for the interactive lab.
+- `lab-book.tex` includes the first two written lab supplements: predictions,
+  observations, fault diagnosis and independent variations. The first unit has
+  native interactive support; the second currently uses ordinary Run and Debug.
 
 ## Reading the current proofs
 
@@ -17,8 +19,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| First main-book chapter | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Written first-unit lab supplement | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–2 (11 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–2 (9 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -70,3 +72,7 @@ the actual code, highlighter export and PDF; author and learner review are open.
 The integrated first unit now uses concise navigation names and fits an undersized side-docked Learn pane when opening its source. Wider user layouts are preserved. The separate authoring driver records native text/button geometry and rejects horizontal clipping at the captured viewport. Human readability and learner reviews remain open; this UI correction does not finish the instructional system.
 
 The first unit also provides confirmed reset and recovery through Tools. A saved recovery copy survives native close and a fresh IDE process. Recovery preserves source edits and restores quiz/hint history while requiring execution checks again; an empty reopened activity cannot replace the copy. The written lab explains the controls. Its current six-page proof has renewed automated accessibility verification; human review remains open.
+
+The new integer chapter begins on page 6 of the main proof. Its written lab begins
+on page 7 of the lab proof. See [integer-unit.md](integer-unit.md) for executable
+verification, downloadable sources and the remaining native lesson work.

@@ -1,4 +1,4 @@
-# First-unit programs
+# Revised book programs
 
 `console.asm` is the complete worked program. `wrong-output.asm` is a public
 counterexample with the same input, arithmetic and messages. Its integer-output
@@ -6,7 +6,7 @@ argument comes from the current service selector instead of the retained answer.
 It supports the written lab's investigation of a correct calculation followed by
 incorrect output. Predict the console result before running it.
 
-The native MARS course creates three files under `mars-labs/console/`:
+The native MARS course creates four files under `mars-labs/console/`:
 
 - `first-program.asm`: the worked program, corresponding to `console.asm` here.
 - `wrong-output.asm`: the counterexample, kept available for comparison.
@@ -46,3 +46,11 @@ the IDE's assembly cache. It accepts equivalent programs and reports failures by
 case. A source edit requires checking again. Five passing cases support your
 reasoning; explain why the algorithm works throughout the stated range. Private
 instructor checks remain separate. The skeleton intentionally does not pass.
+
+## Integer representation
+
+`byte-inspector.asm` and `word-boundary.asm` are exact copies of the second revised
+main-book chapter’s complete listings. Their manually edited LaTeX remains the
+publication source; `tools/check_revision_integers.py` refuses a mismatch. Copy them
+to your project and use ordinary Run/Debug. A second native interactive unit has
+not yet been implemented. The written supplement supplies the manual sequence.

@@ -1,0 +1,283 @@
+\chapter{Registers and integer representation}
+\MARSChapterHeading{Registers and integer representation}
+\label{revision:integer-representation}
+
+In the first program, we treated a register as a place to keep a number. That
+model was sufficient for small calculations. Now consider a debugger showing
+\texttt{0x0000000000000080}. Is the value 128 or $-128$? To answer, we need to
+know which bits belong to the value and how those bits are interpreted.
+
+We will write a small byte inspector. It accepts a decimal integer from 0 through
+255 and prints two interpretations of its low eight bits: an unsigned value and
+a signed value. Input 128 will produce 128 and $-128$. The program will help us
+separate three questions: what bits are present, how wide the value is, and what
+number those bits represent. Those questions also arise when a program reads a
+pixel, a character or a sample from memory.
+
+\section{Counting with bits}
+
+A \emph{bit} has two possible values, zero and one. A group of eight bits is a
+\emph{byte}. Binary notation uses powers of two as place values, just as decimal
+notation uses powers of ten. In the byte \texttt{10010110}, the set bits contribute
+$128+16+4+2=150$ when we read the pattern as an unsigned number.
+
+\begin{center}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Bit position & 7 & 6 & 5 & 4 & 3 & 2 & 1 & 0 \\
+Place value & 128 & 64 & 32 & 16 & 8 & 4 & 2 & 1 \\
+Example bit & 1 & 0 & 0 & 1 & 0 & 1 & 1 & 0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Bit positions count from zero at the right. We call bit 0 the \emph{least
+significant bit} because changing it changes an unsigned value by only one.
+Bit 7 is the most significant bit of this byte. Its place value is 128.
+
+Eight bits have $2^8=256$ distinct patterns. An unsigned interpretation assigns
+them the integers 0 through 255. The largest pattern, \texttt{11111111}, represents
+$128+64+32+16+8+4+2+1=255$. There is no ninth position available to store 256.
+Width therefore limits the values a representation can hold.
+
+A MIPS64 general-purpose integer register has 64 bits. We can use its low eight
+bits to hold a byte value, but doing so does not shrink the register. The remaining
+56 bits still exist. An instruction's rules determine whether those other bits
+are kept, cleared or filled from a sign bit.
+
+\section{Reading hexadecimal}
+
+Writing 64 separate binary digits is cumbersome. \emph{Hexadecimal} notation groups
+bits four at a time. Each group has sixteen possible patterns, written with the
+digits 0 through 9 and the letters A through F. A represents ten; F represents
+fifteen. In source code, the prefix \texttt{0x} identifies a hexadecimal constant.
+
+For our example, split \texttt{10010110} into \texttt{1001} and \texttt{0110}.
+Those groups represent 9 and 6, so the byte is \texttt{0x96}. Its decimal value is
+$9\times16+6=150$. The notation changes; the underlying bits do not.
+\texttt{0x80}, \texttt{10000000} in binary, and 128 in decimal all describe the
+same unsigned byte value.
+
+Two hexadecimal digits describe eight bits. Sixteen hexadecimal digits describe
+64 bits. Leading zeros let the debugger show the full register width:
+\texttt{0x0000000000000096} still has the unsigned value 150. When you inspect a
+register, count the digits before deciding whether you are looking at a byte,
+a 32-bit word or a complete 64-bit value.
+
+\section{Giving the same bits a signed meaning}
+
+Programs also need negative numbers. The signed integer representation used here
+is \emph{two's complement}. For an eight-bit value, the top bit has weight $-128$
+instead of $+128$; the other seven weights are unchanged. Thus
+\texttt{10010110} represents $-128+16+4+2=-106$ as a signed byte.
+
+An equivalent calculation is useful when the unsigned value is already known.
+If bit 7 is zero, the signed and unsigned interpretations agree. If bit 7 is one,
+subtract 256 from the unsigned value. Our unsigned 150 becomes $150-256=-106$.
+This gives the signed range $-128$ through 127.
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Eight bits & Hexadecimal & Unsigned & Signed \\
+\midrule
+\texttt{00000000} & \texttt{0x00} & 0 & 0 \\
+\texttt{01111111} & \texttt{0x7F} & 127 & 127 \\
+\texttt{10000000} & \texttt{0x80} & 128 & $-128$ \\
+\texttt{10010110} & \texttt{0x96} & 150 & $-106$ \\
+\texttt{11111111} & \texttt{0xFF} & 255 & $-1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The top bit is not a separate minus sign attached to a positive magnitude.
+For example, \texttt{10000001} is $-128+1=-127$, rather than $-1$.
+The all-one pattern represents $-1$ because $-128+127=-1$.
+
+A register does not carry a label saying that its contents are a signed byte.
+The instruction, service or program convention supplies that interpretation.
+Before calling a debugger display wrong, ask which width and interpretation it
+is using. A signed 64-bit display of \texttt{0x0000000000000080} correctly shows
+128: bit 63 is zero. Reading just the low byte as signed gives a different answer.
+
+\section{Extending a value to register width}
+
+Suppose a byte's bits must become a value in a 64-bit register. For an unsigned
+byte, we preserve its value by filling the upper bits with zeros. This operation
+is called \emph{zero extension}. The byte \texttt{0x80} becomes
+\texttt{0x0000000000000080}, still 128.
+
+For a signed byte, preserving its value requires \emph{sign extension}: copy
+bit 7 into every new upper position. A signed \texttt{0x80} becomes
+\texttt{0xFFFFFFFFFFFFFF80}, whose signed 64-bit value is $-128$.
+A signed \texttt{0x7F} becomes \texttt{0x000000000000007F}, or 127, because its
+sign bit was zero. Sign extension preserves a signed value when widening it.
+It does not preserve the unsigned interpretation of a pattern whose top bit is one.
+
+The instruction \texttt{seb \$t1, \$t0} performs this byte sign extension. Its
+name abbreviates ``sign-extend byte.'' It reads the low eight bits of
+\texttt{\$t0} and writes the sign-extended result to \texttt{\$t1}. It neither
+changes \texttt{\$t0} nor fetches a byte from memory. Here, ``byte'' specifies the
+width of the source portion within a register.
+
+We will obtain the unsigned version with \texttt{andi \$t0, \$v0, 0xff}.
+The instruction performs a bitwise AND: each result bit is one only when both
+corresponding input bits are one. The constant \texttt{0xff} has ones in its low
+eight positions and zeros elsewhere after the immediate is zero-extended.
+Consequently, the instruction keeps the source's low eight bits and clears all
+higher bits. Such a constant is called a \emph{mask}. It selects the positions we
+want to retain.
+
+For input 150, the mask produces \texttt{0x0000000000000096}. The following
+\texttt{seb} produces \texttt{0xFFFFFFFFFFFFFF96} in a different register.
+We now have two full-width values that preserve the two meanings of one byte.
+The masked source also satisfies \texttt{seb}'s requirement for a sign-extended
+32-bit source value: its bit 31 and all higher bits are zero.
+
+\section{A complete byte inspector}
+
+The console interface is the one used in Chapter~\ref{revision:first-program}:
+service 5 reads a decimal integer into \texttt{\$v0}, service 4 prints a string,
+service 1 prints a signed 32-bit integer from \texttt{\$a0}, and service 10 exits.
+Our two results lie within that printing service's range. A 64-bit register does
+not make this particular service a general 64-bit integer printer.
+
+\MARSCodeLabel{One byte, two integer interpretations}
+\begin{minted}{mars-idea}
+.data
+prompt:   .asciiz "Enter an integer from 0 to 255: "
+unsigned: .asciiz "Unsigned byte: "
+signed:   .asciiz "Signed byte: "
+newline:  .asciiz "\n"
+
+.text
+.globl main
+main:
+    la $a0, prompt
+    li $v0, 4
+    syscall
+    li $v0, 5
+    syscall
+interpret:
+    andi $t0, $v0, 0xff
+    seb $t1, $t0
+report:
+    la $a0, unsigned
+    li $v0, 4
+    syscall
+    move $a0, $t0
+    li $v0, 1
+    syscall
+    la $a0, newline
+    li $v0, 4
+    syscall
+    la $a0, signed
+    li $v0, 4
+    syscall
+    move $a0, $t1
+    li $v0, 1
+    syscall
+    la $a0, newline
+    li $v0, 4
+    syscall
+    li $v0, 10
+    syscall
+\end{minted}
+
+Save the source as \texttt{byte-inspector.asm}. Select the MIPS64 Release 6 target,
+run it, and enter 150. The console should print \texttt{Unsigned byte: 150} and
+\texttt{Signed byte: -106} on separate lines. The prompt and input may share a
+line in the IDE console. The values are held in \texttt{\$t0} and \texttt{\$t1}
+while \texttt{\$v0} is reused for service selectors.
+
+The input range is a precondition for this exercise, not a check performed by
+the program. Entering 256 will leave zero after the mask; it will not produce an
+error message. Masking selects bits. It does not validate that an input belongs
+to a stated range. We will add explicit input decisions after learning branches.
+
+Before another run, predict the two output numbers for 0, 127, 128 and 255.
+Use the preceding table to check your reasoning, then compare your predictions
+with the console. These cases distinguish the ends of the range from the point
+where the signed interpretation changes.
+
+\section{Inspecting the conversion}
+
+Set a breakpoint at \texttt{interpret} and start Debug with input 128. Before
+\texttt{andi} executes, \texttt{\$v0} contains the input. Step once: the complete
+\texttt{\$t0} should be \texttt{0x0000000000000080}. Step again: the complete
+\texttt{\$t1} should be \texttt{0xFFFFFFFFFFFFFF80}. In a signed 64-bit decimal
+view those registers show 128 and $-128$. Inspect the full values, since their
+last two hexadecimal digits are identical.
+
+If both output lines say 128, check two boundaries. Did \texttt{seb} write
+\texttt{\$t1}, and did the second integer request copy \texttt{\$t1} into
+\texttt{\$a0}? A correct conversion followed by a copy from \texttt{\$t0} still
+prints the unsigned result. Changing the debugger's display format cannot repair
+a wrong argument in the running program.
+
+For another experiment, replace \texttt{seb \$t1, \$t0} with
+\texttt{move \$t1, \$t0}. Predict which inputs will expose the change.
+Inputs below 128 cannot distinguish these programs because their sign bit is zero.
+Input 128 can. A useful test exercises the property on which two implementations
+differ; a successful run with zero alone provides little evidence about sign extension.
+
+\section{Why instruction width matters}
+
+The first chapter used \texttt{addu} and \texttt{addiu}. These instructions compute
+32-bit word results, then sign-extend those results into the 64-bit destination.
+The \texttt{u} means that signed overflow does not raise an arithmetic exception.
+It does not request zero extension.
+Their sources must themselves be sign-extended 32-bit values. The small inputs
+in Chapter~\ref{revision:first-program} and the source below satisfy that rule.
+
+Consider the following short experiment. Stop before the exit service and inspect
+both result registers in hexadecimal and signed 64-bit decimal.
+
+\par\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Crossing the signed word boundary}
+\begin{minted}{mars-idea}
+.text
+.globl main
+main:
+    li $t0, 0x7fffffff
+    addiu $t1, $t0, 1
+    daddiu $t2, $t0, 1
+inspect:
+    li $v0, 10
+    syscall
+\end{minted}
+\end{minipage}\par
+
+The initial value is $2^{31}-1=2147483647$. Adding one mathematically gives
+2147483648. The word result of \texttt{addiu} has bit pattern
+\texttt{0x80000000}. Sign extension writes \texttt{0xFFFFFFFF80000000} into
+\texttt{\$t1}; its signed 64-bit interpretation is $-2147483648$.
+\texttt{daddiu} performs a 64-bit addition instead. It writes
+\texttt{0x0000000080000000} into \texttt{\$t2}, whose signed value is 2147483648.
+Both instructions receive the same source and immediate. Their arithmetic widths
+explain the different destinations.
+
+The immediate in both instructions is a signed 16-bit constant extended to the
+operation's width. The \texttt{u} does not make that immediate unsigned either.
+The constant one is representable, so this detail does not change our example.
+When selecting an instruction, identify its operand rules and result width;
+register width alone is insufficient.
+
+\section{Writing and explaining a variation}
+
+Extend the byte inspector to print the unsigned value plus one on a third line.
+Keep that sum as an ordinary register value: for input 255 it should print 256.
+Choose where the sum must survive while strings and other numbers are printed.
+Test 0, 127, 128 and 255, and explain which instruction supplies each output argument.
+
+Then change the third result to retain only the low eight bits of that sum.
+For input 255 the new result should be zero. This is \emph{wrapping} to eight bits:
+results repeat every 256 values. Identify the instruction that discards the extra
+bit. Distinguish this deliberate narrowing from the sign extension that made the
+signed output negative.
+
+Finally, explain why printing a value with service 1 is an insufficient test of
+all 64 register bits. That service consumes a signed 32-bit integer. The debugger's
+full-width view is needed for the preceding word-boundary experiment. The next
+chapter will move byte values between registers and memory, where selecting the
+right load width and extension becomes part of every access.
