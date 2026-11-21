@@ -142,6 +142,28 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `guided requirement capture needs real observations and cold validation binds all existing sources`() {
+        assertThrows<IllegalArgumentException> { valid.copy(captureRequirements = true).validate() }
+        val initial = valid.copy(captureRequirements = true, captureRun = true, captureDebug = true, captureOutput = true, captureDiagnosis = true, captureRepair = true)
+        initial.validate()
+        for (bad in listOf(initial.copy(captureRun = false), initial.copy(captureDebug = false), initial.copy(captureOutput = false),
+            initial.copy(captureDiagnosis = false), initial.copy(captureRepair = false), initial.copy(captureIndependent = true),
+            initial.copy(captureHints = true), initial.copy(captureModes = true), initial.copy(capturePolicy = true),
+            initial.copy(resumeModes = true), initial.copy(resumeGuided = true), initial.copy(resumeIndependent = true),
+            initial.copy(captureReset = true), initial.copy(resumeReset = true), initial.copy(resumeRequirements = true))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+        assertThrows<IllegalArgumentException> { valid.copy(resumeRequirements = true).validate() }
+        val hashes = listOf("first-program.asm", "wrong-output.asm", "repair-output.asm", "independent.asm").associateWith { "a".repeat(64) }
+        val resumed = valid.copy(resumeRequirements = true, guidedSourceSha256 = hashes)
+        resumed.validate()
+        assertThrows<IllegalArgumentException> { resumed.copy(guidedSourceSha256 = hashes - "independent.asm").validate() }
+        assertThrows<IllegalArgumentException> { resumed.copy(guidedSourceSha256 = hashes + ("repair-output.asm" to "bad")).validate() }
+        assertThrows<IllegalArgumentException> { resumed.copy(sourceSha256 = "b".repeat(64)).validate() }
+        assertThrows<IllegalArgumentException> { resumed.copy(captureRun = true).validate() }
+    }
+
+    @Test
     fun `layout measurement detects clipped text and buttons rather than matching future text`() {
         val root = JPanel(null)
         assertNull(lessonHorizontalLayout(root))

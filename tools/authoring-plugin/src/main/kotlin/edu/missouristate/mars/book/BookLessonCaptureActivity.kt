@@ -86,6 +86,8 @@ internal data class BookLessonCapturePlan(
     val projectRoot: String = "",
     val outputDirectory: String = "",
     val sourceSha256: String = "",
+    val captureRequirements: Boolean = false,
+    val resumeRequirements: Boolean = false,
     val captureReset: Boolean = false,
     val resumeReset: Boolean = false,
     val captureRun: Boolean = false,
@@ -113,6 +115,17 @@ internal data class BookLessonCapturePlan(
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
+        if (captureRequirements || resumeRequirements) {
+            require(captureRequirements != resumeRequirements)
+            require(!captureReset && !resumeReset && !captureIndependent && !captureHints && !capturePolicy && !captureModes && !resumeModes && !resumeGuided && !resumeIndependent)
+            if (captureRequirements) require(captureRun && captureDebug && captureOutput && captureDiagnosis && captureRepair)
+            else {
+                require(!captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair)
+                require(guidedSourceSha256.keys == setOf("first-program.asm", "wrong-output.asm", "repair-output.asm", "independent.asm"))
+                require(guidedSourceSha256.values.all { it.matches(Regex("[a-f0-9]{64}")) })
+                require(guidedSourceSha256["first-program.asm"] == sourceSha256)
+            }
+        }
         if (captureReset || resumeReset) {
             require(captureReset != resumeReset)
             require(!captureIndependent && !captureHints && !capturePolicy && !captureModes && !resumeModes && !resumeGuided && !resumeIndependent)
@@ -173,6 +186,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 toolWindowsReady.await()
                 when {
+                    plan.resumeRequirements -> captureRequirementsResume(project, plan, output)
                     plan.resumeReset -> captureResetRecovery(project, plan, output)
                     plan.resumeGuided -> captureGuidedResume(project, plan, output)
                     plan.resumeModes -> captureModesResume(project, plan, output)
@@ -237,14 +251,17 @@ class BookLessonCaptureActivity : ProjectActivity {
             checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor).document.text == edited
         }
         check(retained) { "Lesson restart replaced student source" }
+        if (plan.captureRequirements) captureRequirementsBefore(project, output, source)
         if (plan.captureRun) captureRun(project, output, source)
         if (plan.captureDebug) captureDebug(project, output, source)
         if (plan.captureOutput) captureDebug(project, output, source, outputPreparation = true)
         if (plan.captureDiagnosis) captureDebug(project, output, source.resolveSibling("wrong-output.asm"), diagnosis = true)
         if (plan.captureRepair) captureRun(project, output, source.resolveSibling("repair-output.asm"), repair = true)
         if (plan.captureIndependent) captureIndependent(project, output, source.resolveSibling("independent.asm"), plan)
+        if (plan.captureRequirements) captureRequirementsAfter(project, output, source)
         if (plan.captureReset) captureResetStart(project, output, source)
         val receipt = mapOf(
+            "nativeGuidedRequirementsObserved" to plan.captureRequirements,
             "nativeResetObserved" to plan.captureReset,
             "scope" to "Only the native segments marked observed below; instructor policies and full-unit integration remain incomplete",
             "nativePredictionPassesObserved" to predictionPasses.get(),
@@ -265,6 +282,107 @@ class BookLessonCaptureActivity : ProjectActivity {
         )
         withContext(Dispatchers.IO) {
             Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(receipt), CREATE_NEW)
+        }
+    }
+
+    private fun independentCheckEnabled(project: Project): Boolean {
+        val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.CheckIndependent"))
+        val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
+        val data = DataManager.getInstance().getDataContext(learn.component)
+        val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
+        check(ActionUtil.updateAction(action, event).isPerformed)
+        return event.presentation.isEnabled
+    }
+
+    private suspend fun assertIndependentCheckDisabled(project: Project) = withContext(Dispatchers.EDT) {
+        check(!independentCheckEnabled(project))
+    }
+
+    private suspend fun openIndependent(project: Project) = withContext(Dispatchers.EDT) {
+        CourseManager.instance.openLesson(project, checkNotNull(CourseManager.instance.findLessonById("mars.console.independent")),
+            LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+    }
+
+    private suspend fun captureRequirementsBefore(project: Project, output: Path, worked: Path) {
+        setPolicy(project, output, "requirements-all-selected", released = 4,
+            requiredChecks = setOf("run", "debug", "output", "diagnosis", "repair"))
+        openIndependent(project)
+        awaitFrame(project, "Your course requires these activities", worked.resolveSibling("independent.asm"))
+        captureFrame(project, output, "requirements-before-observations", "Your course requires these activities")
+        assertIndependentCheckDisabled(project)
+    }
+
+    private suspend fun captureRequirementsAfter(project: Project, output: Path, worked: Path) {
+        val independent = worked.resolveSibling("independent.asm")
+        openIndependent(project)
+        awaitFrame(project, "implement 3x+1", independent)
+        awaitUi { independentCheckEnabled(project) }
+        captureFrame(project, output, "requirements-all-satisfied", "implement 3x+1")
+        checkIndependent(project, output, "requirements-starter-feedback", passed = false)
+        val mutation = withContext(Dispatchers.EDT) {
+            val file = checkNotNull(LocalFileSystem.getInstance().findFileByNioFile(worked))
+            val document = checkNotNull(FileDocumentManager.getInstance().getDocument(file))
+            val text = document.text
+            val before = document.modificationStamp
+            check(FileEditorManager.getInstance(project).selectedTextEditor?.document !== document)
+            WriteCommandAction.runWriteCommandAction(project) {
+                document.setText(text + "\n# Changed after leaving its guided activity\n")
+                document.setText(text)
+            }
+            FileDocumentManager.getInstance().saveDocument(document)
+            check(document.modificationStamp != before)
+            mapOf("beforeStamp" to before, "afterStamp" to document.modificationStamp,
+                "sourceSha256" to captureSha256(document.text.toByteArray(Charsets.UTF_8)))
+        }
+        openIndependent(project)
+        awaitFrame(project, "Your course requires these activities", independent)
+        captureFrame(project, output, "requirements-edit-back-blocked", "Your course requires these activities")
+        assertIndependentCheckDisabled(project)
+        setPolicy(project, output, "requirements-retain-two", released = 4, requiredChecks = setOf("diagnosis", "repair"))
+        openIndependent(project)
+        awaitFrame(project, "implement 3x+1", independent)
+        awaitUi { independentCheckEnabled(project) }
+        captureFrame(project, output, "requirements-selected-two-satisfied", "implement 3x+1")
+        val sources = withContext(Dispatchers.IO) {
+            listOf("first-program.asm", "wrong-output.asm", "repair-output.asm", "independent.asm")
+                .associateWith { captureSha256(Files.readAllBytes(worked.resolveSibling(it))) }
+        }
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("requirements-state.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "allFiveOriginallyRequired" to true, "allFiveSatisfiedThroughNativeObservations" to true,
+                "inactiveEditBackRequiresFreshEvidence" to true, "mutation" to mutation,
+                "finalRequiredChecks" to listOf("diagnosis", "repair"), "sourceSha256" to sources,
+                "scope" to "Native settings and observations; unchanged text after an inactive edit cannot resurrect passes. Private solutions are not installed.",
+            )), CREATE_NEW)
+        }
+    }
+
+    private suspend fun captureRequirementsResume(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        val directory = Path.of(plan.projectRoot).resolve("mars-labs/console")
+        suspend fun verifySources() = withContext(Dispatchers.IO) {
+            check(plan.guidedSourceSha256.all { (name, digest) -> captureSha256(Files.readAllBytes(directory.resolve(name))) == digest })
+        }
+        verifySources()
+        openIndependent(project)
+        awaitFrame(project, "Your course requires these activities", directory.resolve("independent.asm"))
+        captureFrame(project, output, "requirements-offline-edit-blocked", "Your course requires these activities")
+        assertIndependentCheckDisabled(project)
+        setPolicy(project, output, "requirements-release-repair", released = 4, requiredChecks = setOf("diagnosis"))
+        openIndependent(project)
+        awaitFrame(project, "implement 3x+1", directory.resolve("independent.asm"))
+        awaitUi { independentCheckEnabled(project) }
+        captureFrame(project, output, "requirements-unchanged-diagnosis-accepted", "implement 3x+1")
+        checkIndependent(project, output, "requirements-reopened-starter-feedback", passed = false)
+        verifySources()
+        withContext(Dispatchers.IO) {
+            Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                "sourceSha256" to plan.guidedSourceSha256, "sourceUnchanged" to true,
+                "persistedRequirementsObserved" to true, "offlineRepairEditBlocked" to true,
+                "unchangedDiagnosisStillAccepted" to true, "unfinishedIndependentRejected" to true,
+                "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                "scope" to "Fresh-process policy/source validation and native release; no progress, quiz answers or private solutions injected",
+            )), CREATE_NEW)
         }
     }
 
@@ -693,7 +811,13 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
-    private suspend fun setPolicy(project: Project, output: Path, prefix: String, released: Int, allowFreeWriting: Boolean = true) {
+    private suspend fun setPolicy(project: Project, output: Path, prefix: String, released: Int, allowFreeWriting: Boolean = true,
+                                  requiredChecks: Set<String>? = null) {
+        val requirementLabels = withContext(Dispatchers.EDT) {
+            listOf("run", "debug", "output", "diagnosis", "repair").associateWith { id ->
+                checkNotNull(CourseManager.instance.findLessonById("mars.console.$id")).name
+            }
+        }
         val failure = AtomicReference<Throwable>()
         withContext(Dispatchers.EDT) {
             ApplicationManager.getApplication().invokeLater({
@@ -720,12 +844,18 @@ class BookLessonCaptureActivity : ProjectActivity {
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value = released
             widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected = true
             widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected = allowFreeWriting
+            if (requiredChecks != null) for ((id, title) in requirementLabels) {
+                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == title }.isSelected = id in requiredChecks
+            }
         }
         awaitUi {
             val widgets = captureComponents(dialog.rootPane)
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value == released &&
                 widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected &&
-                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected == allowFreeWriting
+                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == "Allow free-writing mode" }.isSelected == allowFreeWriting &&
+                (requiredChecks == null || requirementLabels.all { (id, title) ->
+                    widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == title }.isSelected == (id in requiredChecks)
+                })
         }
         captureComponent(dialog.rootPane, output, prefix, label)
         onModalUi { visibleLessonButton(dialog.rootPane, "OK").doClick() }
