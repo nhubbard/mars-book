@@ -3,15 +3,17 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first four main-book chapters: the complete console
+- `learning.tex` includes the first six main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
-  and repetition through a bounded seven-segment range counter.
+  and repetition through a bounded seven-segment range counter. Functions and
+  full-width stack frames lead into arrays and images through a complete sprite
+  renderer and its horizontal reflection.
   The chapters use connected explanations and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first four written lab supplements: predictions,
+- `lab-book.tex` includes the first six written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -21,8 +23,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–4 (23 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–4 (15 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–6 (36 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–6 (23 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -73,7 +75,7 @@ the actual code, highlighter export and PDF; author and learner review are open.
 
 The integrated first unit now uses concise navigation names and fits an undersized side-docked Learn pane when opening its source. Wider user layouts are preserved. The separate authoring driver records native text/button geometry and rejects horizontal clipping at the captured viewport. Human readability and learner reviews remain open; this UI correction does not finish the instructional system.
 
-The first unit also provides confirmed reset and recovery through Tools. A saved recovery copy survives native close and a fresh IDE process. Recovery preserves source edits and restores quiz/hint history while requiring execution checks again; an empty reopened activity cannot replace the copy. The written lab explains the controls. Its current six-page proof has renewed automated accessibility verification; human review remains open.
+The first unit also provides confirmed reset and recovery through Tools. A saved recovery copy survives native close and a fresh IDE process. Recovery preserves source edits and restores quiz/hint history while requiring execution checks again; an empty reopened activity cannot replace the copy. The written lab explains the controls. Its six-page first-unit section has renewed automated accessibility verification; human review remains open.
 
 The new integer chapter begins on page 6 of the main proof. Its written lab begins
 on page 7 of the lab proof. See [integer-unit.md](integer-unit.md) for executable
@@ -86,3 +88,12 @@ for the literal program, checks and remaining interactive work.
 The decisions and repetition chapter begins on main page 17, and its written lab
 begins on lab page 13. See [branch-unit.md](branch-unit.md) for the worked loop,
 verification scope and remaining native learning work.
+
+The functions and stack chapter begins on main page 24, and its written lab begins
+on lab page 17. See [functions-unit.md](functions-unit.md) for the call contracts,
+independent function and technical verification.
+
+The arrays and images chapter begins on main page 31, and its written lab begins
+on lab page 20. See [arrays-unit.md](arrays-unit.md) for the complete sprite renderer,
+vertical-reflection exercise, two verified native bitmap captures and remaining
+interactive work.
