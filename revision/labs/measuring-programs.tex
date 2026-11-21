@@ -1,0 +1,158 @@
+\chapter{Products, partial sums and measurement boundaries}
+\MARSChapterHeading{Products and measurement boundaries}
+\label{revision-lab:measurement}
+
+Use the complete \texttt{matrix-measure.asm} and independent
+\texttt{matrix-vector.asm} in \texttt{revision/labs/files}. Read the main
+chapter's arithmetic contract and measurement scopes first. Both public matrix
+entries are complete worked functions; the vector interface is your independent
+exercise. These activities use ordinary Run and Debug. The native interactive
+version of this unit remains unfinished.
+
+\section{Predict a product and its stored width}
+
+Derive all four default output values from rows and columns, then write each as
+two little-endian words. Break at \texttt{matmul\_done}. The function has returned,
+but the caller has not stored its count in \texttt{completed}. Compare the four
+doublewords and \texttt{\$v0}=4 with your calculation. Continue to
+\texttt{results\_ready} to inspect the published count before exit.
+
+Use a disposable copy with shape $1,2,1,2$ and both active inputs set to
+$[-32768,-32768]$. Predict the low and high output words for positive $2^{31}$.
+Then replace doubleword accumulation with word accumulation in a copy. Find the
+first lost upper bit rather than diagnosing the result as a problem with negative
+input values. Restore the original before taking reference measurements.
+
+\input{revision/figures/measurement/wide-sum}
+
+Repeat with $K=0$ and a nonzero sentinel in output. Every active doubleword becomes
+zero without input reads. With $M=0$ or $N=0$, no matrix bytes are touched. Explain
+why these two empty cases have different output obligations even though neither
+performs a multiplication.
+
+\section{Inspect the handoff between reduction blocks}
+
+Select method one in the default source. At the first \texttt{block\_reduction}
+visit, \texttt{\$t0} is zero and the product has been initialized. At its second
+visit, \texttt{\$t0} is two; inspect partial outputs $[25,28,73,82]$ in row-major
+order. Use a conditional breakpoint on \texttt{\$t0 == 2} or continue past the
+first visit. The final reduction contributes the remaining $q=2$ terms.
+
+Follow the clipped reduction end in \texttt{\$a2}. It becomes three, not four,
+when $L=2$, $K=3$ and $T=2$. Source pointers begin at that reduction offset;
+restarting them at column zero would add earlier terms twice. Replacing the loaded
+partial sum with zero would keep only the final block. Try each fault separately
+and identify the first incorrect output transition.
+
+Now use $M=5,K=7,N=3,T=3$. Derive the final row, column and reduction bounds on
+paper. The final output tile is two by three, while its last reduction interval
+has length one. A full-tile loop bound on any of these axes can access a mapped
+but unselected caller byte. The checks inspect footprints as well as final values.
+
+\section{Reproduce cold, warm and reset observations}
+
+Run the measurement tool from the repository root, using JDK 25 and a new output
+directory:
+\begin{verbatim}
+python3 tools/measure_revision_matmul.py \
+  --java /path/to/jdk-25/bin/java \
+  --cli /path/to/mars-cli.jar \
+  --output /new/measurement-directory
+\end{verbatim}
+The tool checks products, sentinel suffixes and exact reference traffic accounting.
+It records raw output, source/CLI/tool hashes and a structured measurement receipt.
+Its reference counts belong to the supplied source. For a different implementation,
+retain its correctness checks and establish a separate observation; a new loop
+need not reproduce these exact counts.
+
+Choose the sixteen-by-sixteen, tile-four rows. Compare cold function, second call,
+reset replay and launch scopes. Explain why the warm row is a counter difference,
+why reset reproduces the cold values, and why launch has one more data notice.
+Do not infer that a second IDE launch inherits a prior session's modeled cache.
+The warm case is a second call inside the same execution session.
+
+Account for 36 stack notices and four descriptor notices before counting matrix
+traffic. For each method, derive the input and product notice totals. A single
+doubleword store contributes two native notices here. Compare those totals with
+completed instructions and explain why their units differ.
+
+\section{Connect the native cache view to the measured scope}
+
+For the large observation, set shape to $16,16,16,4$ and method zero. The source
+header selects sixteen four-word lines with fully associative LRU placement.
+Run Debug to \texttt{matmul\_done} and open Data Cache Simulator for that execution.
+The initial view counts the whole launch, including the method read. Repeat in a
+fresh launch with method one and compare the same boundary.
+
+The expected launch access counts are 8745 and 12841, with full misses 5388 and
+1068. The main chapter's cold function table has one fewer access in each case.
+The method read shares a line later used by the descriptor in these observations,
+so the extra read does not add another final miss. That equality is a consequence
+of the actual address trace and model, not a general rule for caller work.
+
+\input{revision/figures/measurement/cache-comparison}
+
+For a function-only cache observation, pause at \texttt{matmul\_call}, reset the
+cache while stopped, then continue to \texttt{matmul\_done}. The call instruction
+has no data notice, so this cache interval matches function entry. Record the
+reset and its boundary with the counters. A reset after partial multiplication
+would measure a suffix instead.
+
+Change only tile edge to eight and compare again under each stated placement.
+Use the measured table to explain the direct-mapped regression. Increasing tile
+size changes the working set and loop overhead together; it is not evidence that
+larger tiles always improve a program. Keep capacity and replacement policy fixed
+when investigating placement.
+
+\begin{samepage}
+Run the three original correctness checks against your working copy:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/022-blocked-matmul/checks/kernel.kts \
+  /path/to/your/matrix-measure.asm
+java -jar /path/to/cli.jar grade \
+  packages/022-blocked-matmul/checks/program.kts \
+  /path/to/your/matrix-measure.asm
+java -jar /path/to/cli.jar grade \
+  packages/022-blocked-matmul/checks/reuse.kts \
+  /path/to/your/matrix-measure.asm
+\end{verbatim}
+\par\end{samepage}
+These accept equivalent schedules under both public entries. The worked blocked
+schedule is an explanatory and measurement example; exact instruction/miss counts
+are not general correctness criteria.
+
+\section{Implement a matrix-vector reduction independently}
+
+Open \texttt{matrix-vector.asm} and replace \texttt{matvec}'s failing body.
+Arguments are matrix, vector, output and shape pointers in \texttt{\$a0} through
+\texttt{\$a3}. The shape contains only two words $M,K$. The packed matrix has
+$M$ rows and $K$ word columns; the vector has $K$ word elements. Each output is
+one exact signed doubleword dot product. Return $M$.
+
+Derive matrix row displacement $4iK$, vector displacement $4q$ and output
+displacement $8i$. The vector restarts for each new row. The default inputs give
+50 and 122. For a zero reduction width, store one zero doubleword per output row;
+for zero rows, read neither input. Both input ranges and the selected output can
+start inside their allocations, so use the passed pointers.
+
+Preserve full saved registers, frame pointer and stack pointer, input/shape words,
+guards and inactive output. Read only selected caller inputs, the eight-byte shape
+and initialized output. Private stack storage is allowed. The output starts with
+arbitrary bytes and must be initialized during this call before any partial-sum
+read. Produce no console I/O and return through the supplied continuation.
+
+\begin{samepage}
+Run the public checks on your completed source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/matrix-vector.kts \
+  /path/to/your/matrix-vector.asm
+\end{verbatim}
+\par\end{samepage}
+
+Keep a row invariant, a zero-$K$ trace and a signed-width counterexample with your
+passing results. After establishing correctness, propose a measurement interval
+for your own implementation and identify which loads/stores belong to its
+arithmetic versus its interface overhead. Its cache counts are observations to
+explain, not another acceptance target to imitate.
