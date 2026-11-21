@@ -11,6 +11,21 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
 - `lab-book.tex` includes the written supplement: predictions, observations,
   misconception diagnosis and independent variations for the interactive lab.
 
+## Reading the current proofs
+
+For restructuring review, open these local build outputs:
+
+| Reading | PDF |
+| --- | --- |
+| First main-book chapter | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Written first-unit lab supplement | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
+
+These PDFs are generated locally; the native LaTeX files in this directory are the
+publication sources. The author has accepted the current explanatory direction
+for continued work. An independent walkthrough of the complete book remains an
+acceptance exercise, not a completed review.
+
 Build with `python3 tools/book.py build --entry revision/learning.tex` and
 `python3 tools/book.py build --entry revision/lab-book.tex`, and
 `python3 tools/book.py build --entry revision/advanced-pilots.tex`. The normal publication

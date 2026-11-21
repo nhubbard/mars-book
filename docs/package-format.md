@@ -163,3 +163,25 @@ instruction totals as a universal correctness requirement.
 setRegisterToDataAddress and setRegisterToTextAddress resolve actual full-width labels
 for function arguments and continuations. Independent function checks can start at the
 public entry label and vary caller state without fixed data addresses or main setup.
+
+## Native file import
+
+The MARS plugin now reads existing format 1 student distributions through Tools →
+Import MARS Lab. The archive has one package root whose name matches its manifest
+ID. The native importer validates identity/version/title, supported MIPS64 Release
+6 or MSA target and educational ABI, and the entry/assignment files. It does not
+interpret the package's step/check metadata as native lesson tasks or execute its
+Kotlin grading scripts. See [lab-import.md](lab-import.md).
+
+Preview and installation use a bounded private snapshot. The importer checks actual
+compressed and expanded bytes, filenames, file counts and extracted hashes. The
+platform's extended ZIP extractor handles archive attributes; symlinks, unsafe
+paths, case collisions and instructor-only paths are rejected. The published
+file-only archive layout is supported; explicit directory entries are not accepted.
+Limits are 32 MiB compressed, 16 MiB per file, 128 MiB expanded and 4,096 files.
+
+Working copies are separated by package ID, content version and full archive
+SHA-256. An identical reimport retains edited files. A new version or changed bytes
+at the same version produce a separate copy. Importing is an explicit file-delivery
+operation, not a source merge, a native task interpreter or a declaration that all
+public and private grading contracts have been validated by this plugin.

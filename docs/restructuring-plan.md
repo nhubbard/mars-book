@@ -362,3 +362,10 @@ The revised written lab now includes three native teaching figures with fourteen
 ## First-unit progression milestone — 21 November 2026
 
 The main plugin now supports instructor-selected guided activities before independent assessment. Each selected requirement uses current-edition questions and source-bound Run/Debug evidence. Edits after leaving a lesson, edits restored to the original text, offline changes and mid-assessment changes cannot reuse stale execution credit. Native Settings, all five actual observations and a fresh-process offline-edit check have been exercised. The written lab explains the separate independent file and these prerequisites. This remains a first-unit implementation; arbitrary course sequencing, retry policies, content delivery and the remaining curriculum are open. Author, learner and assistive-technology review remain pending.
+
+
+## Author review and independent walkthrough — 21 November 2026
+
+The author reviewed the revised first-unit and advanced pilot PDFs and accepted the explanatory direction for continued work. This is permission to expand the approach, not evidence of a completed learner trial. The primary end-to-end acceptance exercise is the author's manual walkthrough of the book using the book, its companion materials and MARS without outside explanations. Record stopping points and the information needed before supplying help, so an explanation in conversation cannot hide a defect in the publication. Distinguish productive difficulty from an unexplained concept or an unclear tool action. Representative beginner and assistive-technology reviews remain open.
+
+A short opening orientation to MARS and its educational environment is a deferred editorial idea. It should distinguish assembly, architectural execution, supplied services and inspection tools; compare MARS with OS-hosted and bare-metal execution; and distinguish initial stack setup from a program's responsibility for function frames. Verify the actual implementation before describing defaults. No opening passage has been added.

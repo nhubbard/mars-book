@@ -123,11 +123,21 @@ equivalent fixture, invalidation after an edit, successful rechecking and retain
 work on restart. The three native independent-pass callbacks correspond to the
 first check, the recheck and restart. Public finite cases support reasoning for the
 stated range; they are not authoritative private grading or a proof for every input.
-The full grader suite passes 131 tests and the plugin suite passes 962, including
-67 learning tests.
+At that milestone, the grader suite passed 131 tests and the plugin suite passed
+962, including 67 learning tests. Later results are recorded upstream and in the
+private verification history.
 
 Graduated hints, project-level hint release and prediction requirements, and explicit guided/free-writing modes are now implemented and exercised. Three native LaTeX lab figures use four actual IDE originals and fourteen explanations; their current proof has automated geometry, pixel, font and PDF/UA-2 verification. Human review remains open.
 
 A separate fresh-process batch reopens all six guided segments after native save/close. Each reports one native pass callback for unchanged source with zero process starts. After an offline comment edit to first-program.asm, Run, arithmetic Debug and output preparation require fresh execution evidence (zero pass callbacks); prediction history and the separate diagnosis and repair files retain completion. Sources, answers and progress are not injected by the restart driver. The independent segment has its own earlier reopen/edit evidence. These checks do not restore a running simulator, an unfinished multi-pause trace or every possible interrupted task.
 
-Recoverable first-unit reset is now implemented and exercised across native save/close and a fresh IDE process. It preserves source, saves one edition-specific recovery copy and restores quiz/hint history while requiring fresh execution checks. Empty reopened records cannot replace the copy. Remaining first-unit work includes finer instructor progression policies and retry controls, integrated delivery and review. The initial Learn-panel clipping is corrected with supported native dock resizing and concise navigation names. Captures at a 1280-pixel-wide IDE window now measure the lesson viewport and reject horizontal overflow of text or navigation. Wider layouts are preserved; vertical scrolling remains normal for long lessons. These are verification views, not publication plates, and do not establish every display scale or human usability. Author and representative learner review remain open.
+Recoverable first-unit reset is now implemented and exercised across native save/close and a fresh IDE process. It preserves source, saves one edition-specific recovery copy and restores quiz/hint history while requiring fresh execution checks. Empty reopened records cannot replace the copy. Instructor-selected guided requirements and completed-assessment limits are now implemented. Remaining work includes general native content delivery, arbitrary per-step policies and independent review. The initial Learn-panel clipping is corrected with supported native dock resizing and concise navigation names. Captures at a 1280-pixel-wide IDE window now measure the lesson viewport and reject horizontal overflow of text or navigation. Wider layouts are preserved; vertical scrolling remains normal for long lessons. These are verification views, not publication plates, and do not establish every display scale or human usability. Author and representative learner review remain open.
+
+
+The plugin also imports the existing version 1 student distributions through a
+native file-selection and preview workflow. Each ID/version/archive digest has a
+separate working copy, and an identical reimport keeps student edits. This is file
+delivery for the public projects; it does not interpret their historical steps as
+native trainer tasks or execute downloaded Kotlin grading scripts. The bundled
+first unit retains its own guided and independent activities. See
+[the import guide](../docs/lab-import.md) for the supported workflow and boundaries.
