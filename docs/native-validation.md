@@ -1,5 +1,7 @@
 # Native publication validation: 17 November 2026
 
+Current completion status is recorded in [initial-draft-status.md](initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
+
 The first nine drafted chapters are editable LaTeX composed through main.tex and
 includes/. The former Markdown book assembler has been removed. Structured exercise
 packages remain separate. The source hashes and destinations from the one-time import

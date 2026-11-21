@@ -1,10 +1,11 @@
 # Full chapter composition goal
 
-Latest verified capture status: chapters 1–30 and 33–35 have reviewed figure sets.
-Chapters 31–32 retain 8 planned figures across 2 sets. The manuscript has
-1,811 pages. Independent accessibility review remains open; substantive editing
-is the separate later goal. The chronological milestones below retain earlier
-progress snapshots.
+The initial 35-chapter composition and capture work is complete: 1,819 manuscript
+pages, 1,505 instructional steps and 144 verified IDE figures. The complete PDF
+passes automated PDF/UA-2 validation. Human accessibility review, student walkthroughs
+and substantive editing remain separate work. See [initial-draft-status.md](initial-draft-status.md)
+for the final inventory and scope. The chronological milestones below retain their
+earlier progress counts and pending-work statements.
 
 Author the complete instructional text for the increasingly difficult projects in the
 35-project roadmap. The reader understands basic programming and is learning assembly

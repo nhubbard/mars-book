@@ -1,5 +1,7 @@
 # H.263 chapter contract and implementation boundary
 
+Current completion status is recorded in [initial-draft-status.md](initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
+
 Chapters 33 and 34 have their initial text, student/instructor distributions and
 all five PNG/six video IDE figure plans completed before this work begins. Chapter
 35 remains an initial draft in progress. Human substantive editing is a separate

@@ -1,5 +1,7 @@
 # Chapter verification
 
+Current completion status is recorded in [initial-draft-status.md](initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
+
 The initial package was checked with JDK 25.0.1 and the locally built MARS CLI
 from the upstream checkout pinned in package.json. The private build records the
 actual CLI SHA-256 and Java version, rather than assuming a JAR matches a branch name.

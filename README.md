@@ -1,5 +1,7 @@
 # Programming and computer architecture with MARS
 
+Current completion status is recorded in [initial-draft-status.md](docs/initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
+
 Book source and student project packages for the IntelliJ MARS plugin. The text
 assumes basic programming knowledge and teaches assembly details explicitly.
 
