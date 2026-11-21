@@ -45,8 +45,8 @@ fonts and native LaTeX publication authority remain in use. Original main.tex an
 publication integrity, not learner usability or assistive-technology validation.
 
 The clipped-blit companion is now available as section 6.6; see clipped-unit.md.
-Native interactive UTF-8 delivery, the MarsBot companion, advanced chapters and
-the remaining instructional-system work are open. The proposed
+The MarsBot companion is now section 4.7; see marsbot-unit.md. Native interactive
+UTF-8 delivery, advanced chapters and remaining instructional-system work are open. The proposed
 MARS-versus-hardware opening remains deferred. This milestone does not complete
 the curriculum goal.
 

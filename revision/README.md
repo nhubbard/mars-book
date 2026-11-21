@@ -31,7 +31,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–12 (78 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–12 and companions (71 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–12 and companions (76 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -97,58 +97,65 @@ begins on lab page 14. See [branch-unit.md](branch-unit.md) for the worked loop,
 verification scope and remaining native learning work.
 
 The functions and stack chapter begins on main page 24, and its written lab begins
-on lab page 17. See [functions-unit.md](functions-unit.md) for the call contracts,
+on lab page 22. See [functions-unit.md](functions-unit.md) for the call contracts,
 independent function and technical verification.
 
 The arrays and images chapter begins on main page 31, and its written lab begins
-on lab page 20. See [arrays-unit.md](arrays-unit.md) for the complete sprite renderer,
+on lab page 25. See [arrays-unit.md](arrays-unit.md) for the complete sprite renderer,
 vertical-reflection exercise, two verified native bitmap captures and remaining
 interactive work.
 
 The integer algorithms chapter begins on main page 37, and its written lab begins
-on lab page 30. See [lines-unit.md](lines-unit.md) for the complete compact rasterizer,
+on lab page 35. See [lines-unit.md](lines-unit.md) for the complete compact rasterizer,
 exhaustive endpoint checks, native diagram and independent dashed-line exercise.
 
 The state and buffers chapter begins on main page 45, and its written lab begins
-on lab page 33. See [state-unit.md](state-unit.md) for the complete Life program,
+on lab page 38. See [state-unit.md](state-unit.md) for the complete Life program,
 source-snapshot checks, native generation diagram and independent changed-cell count.
-The revised ring-buffer companion follows in section 8.6 on pages 36–41.
+The revised ring-buffer companion follows in section 8.6 on pages 41–46.
 See [ring-unit.md](ring-unit.md) for the independent queue assignment, compact
 starter, wraparound experiment and verified annotated Memory observations.
 
 The algorithms and cost chapter begins on main page 52, and its written lab begins
-on lab page 42. The current proofs contain 78 main-book pages and 71 lab-book pages.
+on lab page 47. The current proofs contain 78 main-book pages and 76 lab-book pages.
 See [sorting-unit.md](sorting-unit.md) for the complete two-sort visualizer,
 repeatable measurements, stable-partition exercise and remaining interactive work.
 
-The revised maze companion follows as section 9.6 on lab pages 45–51. Chapter 9 of
+The revised maze companion follows as section 9.6 on lab pages 50–56. Chapter 9 of
 the lab book is now titled “Sorting and search”. See [maze-unit.md](maze-unit.md)
 for the coordinate experiment, BFS reasoning, independent search task and two
 verified native route observations with native LaTeX annotations.
 
 The fixed-point chapter begins on main page 59, and its written lab begins on
-lab page 52. See [fixed-point-unit.md](fixed-point-unit.md) for the complete ball
+lab page 57. See [fixed-point-unit.md](fixed-point-unit.md) for the complete ball
 program, signed interpolation exercise and three verified native IDE observations.
 Unit verification notes retain proof sizes at their own milestones; the totals
 in this README describe the latest combined proofs.
 
 The memory access and locality chapter begins on main page 65, and its written lab
-begins on lab page 56. See [locality-unit.md](locality-unit.md) for the complete
+begins on lab page 61. See [locality-unit.md](locality-unit.md) for the complete
 transpose comparison, cold-cache measurement tool, independent clockwise rotation
 and annotated native cache observations.
 
 The bounded interfaces chapter begins on main page 72, and its written lab begins
-on lab page 61. See [bounded-unit.md](bounded-unit.md) for the complete packet
+on lab page 66. See [bounded-unit.md](bounded-unit.md) for the complete packet
 parser, independent binary delimiter search, bounded access checks and four
 verified native observations presented in two annotated comparisons.
 
-The UTF-8 companion follows as section 12.6 on lab pages 65–71. See
+The UTF-8 companion follows as section 12.6 on lab pages 70–76. See
 [utf8-unit.md](utf8-unit.md) for persistent-state reasoning, the independent
 scanner starter, full scalar/pair domain checks and native annotated Memory
 comparisons. The main-book proof is unchanged by this companion.
 
-The clipped-sprite companion is section 6.6 on lab pages 23–29. See
+The clipped-sprite companion is section 6.6 on lab pages 28–34. See
 [clipped-unit.md](clipped-unit.md) for the half-open interval experiment, descriptor
 and stride reasoning, independent blitter, and native annotated copy observations.
 The page references above follow the current combined proof; individual unit
 verification notes retain their earlier milestone page numbers.
+
+The MarsBot companion is section 4.7 on lab pages 16–21. See
+[marsbot-unit.md](marsbot-unit.md) for the complete feedback-controlled east leg,
+independent square task, all documented side/rate checks and native one-step
+movement-state comparison. All original projects 001–016 now have revised written
+treatment; advanced compositions and the remaining student instructional system
+are still open. This is a written-foundation milestone, not goal completion.

@@ -369,3 +369,15 @@ The main plugin now supports instructor-selected guided activities before indepe
 The author reviewed the revised first-unit and advanced pilot PDFs and accepted the explanatory direction for continued work. This is permission to expand the approach, not evidence of a completed learner trial. The primary end-to-end acceptance exercise is the author's manual walkthrough of the book using the book, its companion materials and MARS without outside explanations. Record stopping points and the information needed before supplying help, so an explanation in conversation cannot hide a defect in the publication. Distinguish productive difficulty from an unexplained concept or an unclear tool action. Representative beginner and assistive-technology reviews remain open.
 
 A short opening orientation to MARS and its educational environment is a deferred editorial idea. It should distinguish assembly, architectural execution, supplied services and inspection tools; compare MARS with OS-hosted and bare-metal execution; and distinguish initial stack setup from a program's responsibility for function frames. Verify the actual implementation before describing defaults. No opening passage has been added.
+
+## Written foundational sequence — 21 November 2026
+
+The directly edited revision now covers original projects 001–016 across twelve
+main chapters and five written companion labs: MarsBot, clipped sprites, ring
+records, maze search and streaming UTF-8. Each companion includes explanatory
+reasoning, an independent task, executable checks and verified native figures.
+The combined review proofs are 78 main-book pages and 76 lab-book pages. This is
+a composition milestone, not completion of phase 3 review or the overall goal.
+Native student lessons beyond the first unit, the advanced sequence, production
+content delivery/policies, final publication integration and human reviews remain
+open. The planned MARS-versus-hardware opening remains deferred.

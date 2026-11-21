@@ -60,6 +60,6 @@ The final lab PDF passes automated PDF/UA-2 with zero failures. Pages 23–30 an
 representative grayscale diagram/capture pages were visually reviewed. Established
 fonts and native LaTeX publication authority remain. Original main.tex and forty
 unrelated MARS files are preserved. Human learner/assistive-technology reviews and
-native interactive delivery remain open. The MarsBot companion, advanced chapters
+native interactive delivery remain open. The MarsBot companion is now section 4.7; see marsbot-unit.md. Advanced chapters
 and remaining instructional-system work are unfinished. The proposed MARS-versus-
 hardware opening remains deferred; this milestone does not complete the goal.

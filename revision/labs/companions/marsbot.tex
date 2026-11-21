@@ -1,0 +1,212 @@
+\section{Companion lab: draw a square using coordinate feedback}
+\label{revision-lab:marsbot}
+
+The display counter issues a store for each requested glyph. A moving device
+needs a longer-lived command: start it, observe its progress, and stop it when a
+condition holds. The command does not finish merely because its store has
+completed. This lab uses that distinction to draw a square with MarsBot.
+
+\begin{samepage}
+Use \texttt{marsbot-square.asm} in \texttt{revision/labs/files}, the revised work
+area for original project \texttt{006-marsbot-square}. Implement the program
+before its exit code, replacing the failing \texttt{break}. It receives a word
+\texttt{side} from one through 63. Starting at $(0,0)$, visit
+\[
+ (side,0),\quad(side,side),\quad(0,side),\quad(0,0)
+\]
+in that order with the pen down, then finish stopped at the origin, facing north,
+with the pen up. The trail must contain exactly those four sides. A saved list of
+intended corners does not establish that the robot actually traveled between them.\par
+\end{samepage}
+
+The prerequisites are the counter's conditional branches, loop state and
+memory-mapped stores. A complete one-leg experiment below separates the movement
+protocol from your four-leg implementation. You do not need function calls,
+arrays or a command table to complete the square. A later table-driven version
+is an optional way to revisit it after learning those subjects.
+
+\subsection*{Distinguish command registers from feedback}
+
+The source header connects MarsBot and selects 64 completed simulator instructions
+per movement tick. Use MIPS64 Release 6 and the Default memory layout. In that
+layout its register block begins at \texttt{0x00000000FFFF8000}. The explicit
+leading zeros matter: this is a positive address in the simulated memory map,
+not a negative signed displacement from zero. The supplied experiment loads it
+with \texttt{dli}. Keep a full address in the base register when adding offsets.
+
+\input{revision/figures/marsbot/ports}
+
+A command is a store to heading, pen or movement control. Feedback is a load from
+one of the coordinate registers. Writing a coordinate does not move the robot
+there; the device republishes its actual position. This assignment forbids those
+stores, including writes later restored. Read feedback to determine where the
+robot has reached.
+
+Heading zero points north, 90 east, 180 south and 270 west. Coordinates increase
+rightward and downward, so moving south increases $y$. The board has positions
+zero through 511 on each axis and clamps motion at its edges. At the initial
+upper-left corner, northward motion cannot produce an outward first side.
+Figure~\ref{fig:revision-marsbot-route} shows the required route in these coordinates.
+
+\input{revision/figures/marsbot/route}
+
+Begin each leg while stopped. Set its heading, then store a nonzero movement
+command. Stop by storing zero to movement control. The pen state is independent:
+starting movement with the pen up changes position without drawing a stroke;
+stopping with the pen down does not lift it. These distinctions are part of the
+requested final state as well as the route.
+
+\subsection*{Use a reached coordinate as the stopping condition}
+
+The complete \texttt{marsbot-east.asm} experiment draws only the first side.
+It loads \texttt{side}, lowers the pen, selects heading 90 and starts movement.
+The following loop observes $x$ until it equals the requested endpoint:
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Read the endpoint, then stop the movement command}
+\begin{minted}{mars-idea}
+east_wait:
+    lw $t2, 0x30($s0)
+    bnec $t2, $s1, east_wait
+    nop
+east_stop:
+    sw $zero, 0x50($s0)
+\end{minted}
+\end{minipage}
+
+Here \texttt{\$s0} holds the device base and \texttt{\$s1} the positive side
+length. A branch mismatch returns to the load, obtaining fresh feedback. Reusing
+the same \texttt{\$t2} value without another load would keep testing an old
+observation even while the device moves. The \texttt{nop} keeps the compact
+conditional branch's forbidden slot safe; the stop store follows it when the
+comparison matches.
+
+\begin{samepage}
+During this first leg, the target and heading stay fixed, $y=0$, and $x$ advances
+toward the target. The loop must stop movement before another tick can carry it
+past the endpoint. Repeatedly reading a reached coordinate is not a stop command.
+A picture with the robot at the corner while its status still says Moving is an
+unfinished transition.\par
+\end{samepage}
+
+This polling argument depends on both the device and the loop. For this
+assignment, the rate is an integer from eight through 128 completed instructions
+per tick. The short load/branch loop and immediate stop fit the response window.
+Do not add printing, long calculations or a second busy-wait between the load
+and stop. A different device rate or longer control loop needs a new latency
+argument; equality alone cannot recover an endpoint already skipped.
+
+The full \texttt{marsbot-east.asm} program then lifts the pen and exits at
+$(side,0)$, still facing east. That is correct for the experiment, but deliberately
+incomplete for the square assignment. Its public
+\texttt{revision/labs/checks/marsbot-east.kts} check verifies the straight stroke,
+its stopped endpoint, protected data and final pen-up state at several lengths
+and rates.
+
+\subsection*{Trace the command before and after it takes effect}
+
+Use a fresh Debug launch of the east experiment. At \texttt{east\_wait}, read the
+feedback and predict whether the branch will return to the load. Run to
+\texttt{east\_stop}: the branch has matched, but the next instruction has not yet
+stopped movement. The endpoint is reached and the pen is down; movement remains
+on. Step once to \texttt{east\_stopped}. Position is unchanged, but movement is
+now off. The pending instruction lifts the pen. At \texttt{leg\_finished}, that
+pen command has completed too.
+
+Figure~\ref{fig:revision-marsbot-stop} compares these two movement states for
+side 48, used to make the trail easier to see. The supplied source still defaults
+to side 16; change only that input to reproduce the illustrated case.
+
+\input{revision/figures/marsbot/stopping}
+
+Leave the program paused briefly, then inspect the same coordinates. MarsBot
+advances on completed simulator instructions, not on a host-time animation timer.
+Waiting at a breakpoint executes no instructions and produces no further motion.
+Stepping does advance the simulated instruction clock. A slow visual repaint is
+not a separate instruction or an extra device tick.
+
+Now change \texttt{instructionsPerTick} in the source header from 64 to 17 and
+restart. The device needs fewer completed instructions to move one pixel, so the
+program reaches the same coordinate after less polling work. The endpoint and
+stroke should remain the same. Keep the illustrated 64 setting when comparing
+an intermediate Debug state with a figure; changing the rate can change the
+instruction at which a particular coordinate first becomes visible.
+
+A fixed iteration count makes a different promise. It can wait approximately
+the right number of instructions at one rate and cover a different distance at
+another. That is why the assignment checks actual coordinate feedback and trail
+behavior at changed rates. The 100,000-instruction ceiling catches nontermination;
+it is not an optimization score or a requirement to match a reference count.
+
+\subsection*{Compose four stopped corners}
+
+Implement the remaining legs in the independent square work area. Set the east
+heading first and poll $x$ for \texttt{side}. After stopping, set south and poll
+$y$ for \texttt{side}. Next move west and poll $x$ for zero, then move north and
+poll $y$ for zero. The other coordinate remains fixed along each axis-aligned
+leg. A zero-target returning leg still needs a start command and fresh feedback;
+it cannot reuse the nonzero outward target.
+
+\input{revision/figures/marsbot/corners}
+
+For this construction, stop before changing heading. This gives each corner a boundary at which position,
+heading and trail have a clear interpretation. Keeping the pen down through a
+stopped corner preserves the continuous square; lift it after the final stop.
+Heading north on the last leg already establishes the required final heading.
+There is no need to draw an extra turn or move beyond the origin. The assessed
+contract is the complete trail and final state; it does not prescribe a particular
+intermediate command count.
+
+Use \texttt{side} throughout. With length one, each leg is only one device tick,
+which makes command/stop latency especially visible. With length 63, the robot
+travels farther but the same four transitions and tests apply. None of the allowed
+squares reaches the opposite boundary of the 512-position board, so a boundary
+clamp cannot substitute for the outward endpoint test.
+
+If you use four explicit legs, the target, feedback offset and heading should be
+easy to identify in each. After learning array traversal, you can represent those
+three choices in a command table and drive one common polling loop. Both forms
+can satisfy the same route contract. The grader does not prescribe private labels,
+scratch registers or an exact command count.
+
+\subsection*{Diagnose a route, not only a final position}
+
+Begin with the default length 16. Record the state at each stopped corner and
+compare the accumulated trail with the table. Repeat with length one and another
+nondefault input. Then run the completed square at a changed instruction rate.
+The final position must agree, but so must every straight side and the final
+heading, movement and pen states.
+
+In a disposable copy, leave the pen up for the first side. The robot can still
+visit every corner and return to the origin, but the first stroke is missing.
+In another copy, replace the input load with a constant 16. The default drawing
+looks correct; a length-one check exposes that the input is ignored. Restore each
+fault before introducing another.
+
+For a feedback fault, use the $x$ register in the southward loop. The fixed $x$
+value can make that loop stop immediately instead of drawing the second side.
+For a control fault, omit the final stop before lifting the pen. The robot can
+remain at the origin because the board blocks further northward motion, while
+its movement state is still on. Inspect that state before exit. Neither fault is
+diagnosed by looking only at the final origin. Keep the first divergent command,
+stroke or device-state field in your report.
+
+The trail must contain exactly the four requested straight sides, with no pen-up
+gaps or extra strokes. The program must not store to \texttt{side},
+\texttt{side\_guard}, or either coordinate register, even temporarily, and must
+produce no console output. Device feedback reads and control stores have different
+roles; preserved RAM words do not replace a real device observation.
+
+\begin{samepage}
+Run the original public check on your completed square:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/006-marsbot-square/checks/public.kts \
+  /path/to/your/marsbot-square.asm
+\end{verbatim}
+\par\end{samepage}
+
+The cases change length and movement rate, inspect the actual device trail and
+final state, and reject protected stores. Keep your corner trace and one polling
+invariant with the passing result. Explain separately why the robot reached each
+corner, why it stopped there, and why its path contains the required ink.
