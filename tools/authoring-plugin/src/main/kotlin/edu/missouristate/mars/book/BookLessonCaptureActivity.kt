@@ -124,6 +124,12 @@ class BookLessonCaptureActivity : ProjectActivity {
         withContext(Dispatchers.IO) { Files.createDirectory(output) }
         try {
             withTimeout(180_000) {
+                // Public queue waits for native toolwindow/layout initialization on reopened projects.
+                val toolWindowsReady = CompletableDeferred<Unit>()
+                withContext(Dispatchers.EDT) {
+                    ToolWindowManager.getInstance(project).invokeLater { toolWindowsReady.complete(Unit) }
+                }
+                toolWindowsReady.await()
                 if (plan.resumeIndependent) captureResume(project, plan, output) else capture(project, plan, output)
             }
             if (plan.closeProjectAfterCapture) closeProject(project, output)
@@ -259,6 +265,13 @@ class BookLessonCaptureActivity : ProjectActivity {
             }
         }
         try {
+            awaitFrame(project, "", source)
+            val learnShown = CompletableDeferred<Unit>()
+            withContext(Dispatchers.EDT) {
+                checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn")).show { learnShown.complete(Unit) }
+            }
+            learnShown.await()
+            captureFrame(project, output, "reopened-start", "")
             if (plan.expectIndependentRecheck) {
                 awaitFrame(project, "implement 3x+1", source)
                 delay(600) // Several native timer checks must reject the old source evidence.
@@ -284,7 +297,19 @@ class BookLessonCaptureActivity : ProjectActivity {
                 )), CREATE_NEW)
             }
         } finally {
-            withContext(NonCancellable + Dispatchers.EDT) { lesson.removeLessonListener(listener) }
+            val observation = withContext(NonCancellable + Dispatchers.EDT) {
+                lesson.removeLessonListener(listener)
+                mapOf(
+                    "nativeIndependentPassesObserved" to passes.get(),
+                    "selectedSource" to FileEditorManager.getInstance(project).selectedTextEditor?.let {
+                        FileDocumentManager.getInstance().getFile(it.document)?.path
+                    },
+                    "nativeVisibleText" to WindowManager.getInstance().getFrame(project)?.let { lessonVisibleText(it.rootPane) },
+                )
+            }
+            withContext(NonCancellable + Dispatchers.IO) {
+                Files.writeString(output.resolve("resume-state.json"), GsonBuilder().setPrettyPrinting().create().toJson(observation), CREATE_NEW)
+            }
         }
     }
 
