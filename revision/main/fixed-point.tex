@@ -1,0 +1,265 @@
+\chapter{Fixed-point arithmetic}
+\MARSChapterHeading{Fixed-point arithmetic}
+\label{revision:fixed-point}
+
+A pixel coordinate names a discrete cell, but an object can move by less than one
+cell per update. If we discard that fraction after every addition, a velocity of
+three quarters of a pixel can become no movement at all. The program needs a
+position representation with finer steps than the display it eventually draws.
+
+Fixed-point arithmetic supplies such a representation using integers. We choose
+a scale, store scaled raw values, and keep that scale consistent through arithmetic.
+The complete \texttt{fixed-point-ball.asm} program in \texttt{revision/labs/files}
+uses signed words with eight fractional bits. It updates a point inside an
+eight-by-eight frame, reflects it at the boundary, and converts the result to
+one pixel only when rendering.
+
+This chapter assumes signed words, shifts, function calls and row-major pixel
+addressing. You should be able to explain a raw value's units, derive a reflected
+position, choose a rounding rule, and justify an intermediate width. The independent
+exercise interpolates between two signed raw values, including negative values
+and full-word extremes that the motion model deliberately excludes.
+
+\section{Choose a scale and keep the units}
+
+With eight fractional bits, raw integer $r$ represents $r/256$. Raw 256 means one,
+128 means one half, 192 means three quarters, and $-128$ means minus one half.
+The stored bit pattern is still an ordinary two's-complement integer. The chosen
+interpretation supplies the binary point; no register flag tells an addition
+instruction which scale we intended.
+
+For this motion model, position is measured in pixels and velocity in pixels per
+update. Raw $x=320$ means 1.25 pixels. Raw $v_x=192$ means 0.75 pixels per update.
+Adding those raw integers gives 512, representing two pixels after one update.
+Both operands share a scale, so their sum keeps that scale. Adding literal one
+would move by $1/256$ of a pixel; moving by one whole pixel requires adding 256.
+An update is a simulation step, not a specified number of real seconds.
+
+\begin{samepage}
+Every raw integer is an exact multiple of $1/256$ under this interpretation.
+Some desired values, such as one tenth, cannot be represented exactly at that
+scale. Choosing raw 26 approximates one tenth by 0.1015625; choosing raw 25 gives
+0.09765625. A rule for converting an external value is part of the interface.
+Using more fractional bits offers smaller steps but reduces the represented
+range available in a fixed-width word.
+\par
+\end{samepage}
+
+A signed 32-bit raw word therefore spans $-2^{31}/256$ through
+$(2^{31}-1)/256$, in increments of $1/256$. This is the format's representable
+range. It is much broader than the ball function's accepted range, and does not
+promise that every arithmetic operation on two such words fits in another word.
+Specify the range needed by each operation instead of relying on the format's name.
+
+\section{Reflect an overshoot instead of clamping it}
+
+The ball's raw walls are zero and $L=7\cdot256=1792$, the centers of display
+columns or rows zero and seven. Horizontal coordinates increase rightward;
+vertical coordinates increase downward. The axis function takes position
+$0\leq p\leq1792$ and velocity $-1024\leq v\leq1024$. These are deliberate
+preconditions, not checks for arbitrary external input.
+
+First compute the trial $z=p+v$. If $0<z<L$, keep $z$ and the old velocity.
+At or below the lower wall, return $-z$ and $-v$. At or above the upper wall,
+return $2L-z$ and $-v$. Reflecting the excess keeps the portion of the step
+traveled after contact. Clamping would discard that portion and change later states.
+
+For example, raw 1728 is 6.75 pixels and raw 320 is 1.25 pixels per update.
+Their trial is 2048, or eight pixels. It overshoots the upper wall by one pixel,
+so the reflected position is six pixels: raw $3584-2048=1536$. The new velocity
+is $-320$. Reversing velocity while leaving position at 2048 would still leave
+the object outside the model's interval.
+
+\input{revision/figures/fixed-point/reflection}
+
+Exact contacts also reverse a nonzero incoming velocity. Position 1664 with
+velocity 128 reaches 1792 exactly and returns velocity $-128$. Position 128
+with velocity $-128$ reaches zero and returns velocity 128. Zero velocity stays
+zero. An initial outward velocity at a wall is permitted; its first update
+reflects inward under the same rule.
+
+The complete axis routine has two results: position in \texttt{\$v0} and velocity
+in \texttt{\$v1}. It uses only argument, result and temporary registers, leaving
+saved registers and the stack pointer unchanged.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Reflect one bounded axis update}
+\begin{minted}{mars-idea}
+advance_axis:
+    addu $v0, $a0, $a1
+    move $v1, $a1
+    blezc $v0, reflect_low
+    nop
+    li $t0, 1792
+    bgec $v0, $t0, reflect_high
+    nop
+    jrc $ra
+reflect_low:
+    subu $v0, $zero, $v0
+    subu $v1, $zero, $v1
+    jrc $ra
+reflect_high:
+    li $t0, 3584
+    subu $v0, $t0, $v0
+    subu $v1, $zero, $v1
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+The inclusive lower and upper comparisons establish the contact convention.
+The following \texttt{nop}s provide legal compact-branch fall-through slots;
+they do not delay the simulated motion. A return ends each path with the pair
+fully prepared.
+
+The range proof is small enough to do explicitly. A trial lies between $-1024$
+and 2816. Lower reflection produces zero through 1024; upper reflection produces
+768 through 1792. The maximum speed is four pixels in a seven-pixel interval,
+so one reflection suffices. All sums and negations fit in a signed word. This
+proof does not cover a velocity of several wall-to-wall intervals or the most
+negative word; either would require a broader contract and a different analysis.
+
+\section{Round the display without changing the trajectory}
+
+The model keeps raw coordinates between updates. Rendering converts a nonnegative
+raw coordinate to a cell. Mode zero uses floor: $cell=\lfloor raw/256\rfloor$.
+For these nonnegative inputs, a logical right shift by eight implements that
+operation. Mode one uses nearest, with exact half ties upward:
+$cell=\lfloor(raw+128)/256\rfloor$. Raw 127 maps to zero in either mode;
+128 maps to zero in floor mode and one in nearest mode; 129 also maps to one
+in nearest mode.
+
+The renderer receives a full destination pointer in \texttt{\$a0}, raw $x$ and
+$y$ in \texttt{\$a1}/\texttt{\$a2}, and mode zero or one in \texttt{\$a3}.
+This fragment computes the returned pixel ID before the drawing loop:
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Apply a display-only rounding bias}
+\begin{minted}{mars-idea}
+render_ball:
+    sll $t0, $a3, 7
+    addu $t1, $a1, $t0
+    addu $t2, $a2, $t0
+    srl $t1, $t1, 8
+    srl $t2, $t2, 8
+    sll $t2, $t2, 3
+    addu $v0, $t2, $t1
+\end{minted}
+\end{minipage}
+
+Shifting mode by seven produces either zero or 128. The biased coordinates reach
+at most 1920, so the additions remain safe. Each shifted cell remains zero through
+seven. The row shift by three and final addition form $8\cdot row+column$.
+The complete function writes all 64 destination words: one white pixel and 63
+black pixels. It uses a full-width cursor increment for addresses, preserves saved
+registers and \texttt{\$sp}, and returns the ID in \texttt{\$v0}.
+
+The destination argument matters even though main always passes \texttt{frame}.
+Independent callers can pass \texttt{spare\_frame} or another valid allocation.
+The renderer must not quietly replace that pointer with the display's global address.
+Nor may it replace the model coordinates with their rounded cells. The two display
+modes should change only pixels, not subsequent motion.
+
+\input{revision/figures/fixed-point/trace}
+
+At tick seven, $x=1664$ is 6.5 pixels, still moving right. Nearest mode displays
+column seven already. At tick eight, reflection has occurred and the raw position
+is 1728 with velocity $-192$; nearest mode still displays column seven. A pixel
+alone cannot tell you whether contact has occurred. Use the raw position and
+velocity to explain that state. Quantization is a many-to-one conversion, so
+different model states can have the same displayed coordinate.
+
+\section{Publish the initial state and each complete update}
+
+Main loads the four seeds into saved registers, retains the requested count and
+rounding mode, and starts tick at zero. The default seeds are raw
+$(x,y,v_x,v_y)=(320,448,192,320)$. It writes those raw words and tick to the public
+state, calls the renderer, stores its returned pixel ID, then reaches
+\texttt{frame\_ready}. The single \texttt{nop} before \texttt{frame\_continue}
+is a countable observation marker, not a timer.
+
+If no updates remain, main exits. Otherwise it calls \texttt{advance\_axis} for
+$x$, retains both results, then calls it for $y$ with its own position and velocity.
+Only after both results are retained does it increment tick and publish again.
+The saved registers protect model state from allowed temporary-register changes
+inside either helper. Main eventually publishes ticks zero through $N$, so a
+request of eight produces nine observations. A request of zero still initializes
+and displays its seed.
+
+A debugger paused between the two axis calls can see an intermediate state in
+registers: new horizontal values and old vertical values. That is not a complete
+published tick. At \texttt{frame\_ready}, raw words, tick, pixel ID and frame must
+agree. The caller owns this publication order; the renderer owns only its returned
+ID and destination pixels. Input seeds, options, guards and the unused spare frame
+remain unchanged, including across stores that might otherwise be restored later.
+
+\section{Choose intermediate width before reducing precision}
+
+The bounded motion proof justified word arithmetic. The separate
+\texttt{add\_fixed\_probe} accepts any two correctly sign-extended signed words
+and exposes a case outside that proof. It returns the wrapped word sum in
+\texttt{\$v0} and exact doubleword sum in \texttt{\$v1}. Its body uses
+\texttt{addu} and \texttt{daddu} on the same operands.
+
+For raw inputs hexadecimal \texttt{7FFFFF00} and \texttt{00000200}, the exact
+raw sum is 2,147,483,904, hexadecimal \texttt{0000000080000100}. It does not fit
+in a signed word. \texttt{addu} keeps low word \texttt{80000100} and sign extends
+it to hexadecimal \texttt{FFFFFFFF80000100}, interpreted as $-2{,}147{,}483{,}392$.
+\texttt{daddu} retains the exact positive result because the sum fits in 64 bits.
+Both still describe raw units at the original scale; changing width did not move
+the binary point.
+
+The unsigned suffix in \texttt{addu} specifies nontrapping word arithmetic; it
+does not make the result a nonnegative doubleword. For this target, word results
+are sign extended. \texttt{add} instead raises a signed-overflow exception for
+this pair. Set \texttt{DEMO} to one in a copy and stop at
+\texttt{overflow\_ready} to compare the results before exit overwrites
+\texttt{\$v0}. A temporary \texttt{add} substitution investigates the exception;
+restore the working program afterward.
+
+Multiplication changes scale as well as range. If $a$ and $b$ represent values
+$a/256$ and $b/256$, their integer product represents a quantity scaled by
+$256^2$. Returning to eight fractional bits requires dividing that product by
+256 with an explicit rounding rule. Raw $192\cdot320=61440$ reduces to raw 240,
+representing $0.9375$. Narrowing the product before rescaling can lose bits that
+the final result needs.
+
+\begin{samepage}
+The Release 6 \texttt{dmul} instruction multiplies doubleword operands and keeps
+the low 64 bits in an ordinary result register. It is exact only when the needed
+product fits in that width. Two signed-word operands have a signed product that
+fits in 64 bits; unrestricted doubleword operands do not have that guarantee.
+A signed \texttt{dsra} shift retains the sign and rounds division by a power of
+two downward. A logical shift would turn a negative intermediate into a large
+positive value. These width and rounding decisions become part of the next
+exercise's contract.
+\par
+\end{samepage}
+
+\section{Interpolate signed raw values independently}
+
+Implement \texttt{interpolate\_raw} in \texttt{fixed-interpolate.asm}. It takes
+two correctly sign-extended signed raw words, $a$ and $b$, and an integer weight
+$w$ from zero through 256. Return the nearest raw integer to
+$((256-w)a+wb)/256$, with exact half ties toward positive infinity. All inputs
+share the same eight-fractional-bit format. Weight zero selects $a$, weight 256
+selects $b$, and weight 128 selects their midpoint.
+
+For raw $a=-256$, $b=512$, $w=64$, the weighted numerator is $-16384$ and the
+returned raw value is $-64$, representing minus one quarter. This interpolates
+one quarter of the way from minus one to two. Do not quantize either endpoint
+to a display cell before computing it.
+
+The coefficients are nonnegative and sum to 256. The exact numerator is bounded
+by $-2^{39}$ and $2^{39}-256$, so a signed doubleword has ample range even though
+a word does not. The returned rounded raw value stays between the endpoints and
+fits in a signed word. If you choose the algebraic form $a+w(b-a)/256$, widen
+before subtracting: two valid endpoints can have a difference that exceeds a
+signed word. Establish bounds for every intermediate in your chosen form.
+
+Use concrete negative half cases to establish rounding: the nearest integer to
+$-0.5$ with this tie rule is zero, while the nearest integer to $-1.5$ is $-1$.
+Adding a half-unit bias to a wide numerator and then taking floor can implement
+this convention, but a division that truncates toward zero does not implement
+floor for negative values. Preserve saved registers, \texttt{\$sp}, caller-owned
+stack bytes, inputs and guards. Choose your temporary registers and algorithm;
+the written lab supplies public checks and boundary investigations.

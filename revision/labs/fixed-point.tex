@@ -1,0 +1,143 @@
+\chapter{Motion, rounding and arithmetic range}
+\MARSChapterHeading{Motion, rounding and arithmetic range}
+\label{revision-lab:fixed-point}
+
+Use \texttt{fixed-point-ball.asm} from \texttt{revision/labs/files}. The complete
+program follows original project \texttt{012-fixed-point-ball}; its original
+kernel and program checks apply. Read the main chapter's raw-value interpretation
+and reflection rule first. This lab uses ordinary Run and Debug, with a separate
+independent interpolation task.
+
+\section{Predict the model before drawing it}
+
+Convert the four default raw seeds to pixels and pixels per update. Derive ticks
+zero, one and two by hand, retaining raw integers through every addition. For each
+tick, compute the display ID in both modes. Explain why the two modes can choose
+different IDs while keeping identical positions and velocities.
+
+Trace the vertical crossing from tick four to five. Derive the trial, its excess
+past the upper wall, the reflected raw position and the returned velocity. Compare
+that result with clamping at the wall. Continue both hypothetical trajectories for
+one more tick to show why the lost overshoot matters later.
+
+Repeat for an exact contact: position 1664 and velocity 128. The returned position
+is at the upper wall, but the returned velocity must point inward. Then consider
+position zero and velocity $-1024$. The accepted initial state is outward-facing;
+the first update reflects it inward. State why one reflection suffices under the
+actual speed bound, and why that argument would fail for unrestricted velocities.
+
+\section{Inspect a complete tick and an intermediate call}
+
+Break at \texttt{frame\_ready}. At the first pause, inspect the four raw words,
+tick and pixel ID. It is tick zero, not the first completed update. The frame must
+contain exactly one white word at the reported ID and black elsewhere. A request
+of zero still requires this initialization and publication.
+
+Step past the marker to \texttt{frame\_continue}, then follow the horizontal
+\texttt{advance\_axis} call. After its return, inspect both results and the
+saved-register moves that retain them. During the next, vertical call, memory
+still describes the preceding publication. Explain which registers now contain
+new horizontal state and which still contain old vertical state.
+
+Continue to the next ready boundary and verify that both axes, tick, ID and
+frame agree. Each requested update adds one publication to the initial one.
+Do not count tool repaints during a fast Run: the screen can skip intermediate
+frames even though the simulator executes each render.
+
+Set mode to one in a copy and inspect ticks seven and eight. In both frames,
+the ball is in column seven. At tick seven its raw $x$ is 1664 and velocity is
+192; at tick eight they are 1728 and $-192$. Explain which tick precedes contact
+and why the same displayed column does not imply the same physical state.
+Figure~\ref{fig:revision-fixed-contact} shows those actual pauses.
+
+\input{revision/figures/fixed-point/quantized-contact}
+
+\section{Diagnose quantization and reflection faults}
+
+In a disposable copy, remove the half-unit rounding bias. Find the first mismatch
+against nearest mode using raw 127, 128 and 129. Restore the bias, then check raw
+1664. The displayed wall column is selected before the actual raw wall is reached.
+Rendering must not use that display cell to decide whether to reverse velocity.
+
+For another copy, replace a saved raw position with its integer-pixel part after
+rendering. Predict how repeated updates lose fractional displacement, then compare
+the first incorrect raw tick with the working version. Repair the model value;
+changing only a pixel or a caption cannot restore the lost fraction.
+
+Change the upper contact comparison from inclusive to strict. An exact contact
+may still draw at the right place, so inspect the returned velocity. Test the
+lower contact separately. A frame-only test can miss this error until the next
+update. Restore both contact conventions and test an overshoot as well as equality.
+
+Finally call \texttt{render\_ball} with \texttt{spare\_frame} as destination.
+It should return the same ID without writing the normal display frame. This
+separates a helper's pointer contract from main's fixed display choice. Run both
+original checks against your source from the public repository root:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/012-fixed-point-ball/checks/kernels.kts \
+  /path/to/your/fixed-point-ball.asm
+java -jar /path/to/cli.jar grade \
+  packages/012-fixed-point-ball/checks/program.kts \
+  /path/to/your/fixed-point-ball.asm
+\end{verbatim}
+
+\section{Compare a wrapped sum with an exact wider sum}
+
+Set \texttt{DEMO} to one in a copy. Break at \texttt{overflow\_ready}, before the
+exit service replaces \texttt{\$v0}. Inspect the full 64-bit values of
+\texttt{\$v0} and \texttt{\$v1}. Derive the exact sum of raw hexadecimal
+\texttt{7FFFFF00} and \texttt{00000200}, then explain the sign extension in the
+wrapped word result. Both results use the same scale; only the arithmetic width
+and retained range differ. Compare the actual native register observation in
+Figure~\ref{fig:revision-fixed-overflow}.
+
+\input{revision/figures/fixed-point/overflow}
+
+Replace only the probe's \texttt{addu} with \texttt{add} in a disposable file.
+Execute it and identify the signed-overflow exception at that instruction.
+Explain why it does not contradict the earlier motion range proof: this probe
+accepts a different input domain. Restore \texttt{addu} and normal mode before
+running the complete program checks.
+
+For multiplication, compute raw $192\cdot320$ and explain its scale before
+rescaling. Then use a negative product to distinguish arithmetic right shift
+from a logical shift. A shift does not decide the desired rounding rule for you;
+state whether you need floor, truncation toward zero, or nearest with a specified
+tie convention.
+
+\section{Implement signed interpolation independently}
+
+Open \texttt{fixed-interpolate.asm}. Implement \texttt{interpolate\_raw} with
+two sign-extended signed raw words in \texttt{\$a0} and \texttt{\$a1}, and
+weight $0\leq w\leq256$ in \texttt{\$a2}. Return the nearest raw word to
+$((256-w)a+wb)/256$ in \texttt{\$v0}; exact half ties go toward positive infinity.
+Preserve saved registers, the stack pointer, caller-owned stack bytes, inputs
+and guards. Temporary registers and private labels are your choice.
+
+Start with the endpoints: weight zero returns $a$ and 256 returns $b$. Predict
+the default $(-256,512,64)$ result, raw $-64$. For a rounding boundary, use raw
+endpoints $-1$ and zero with weight 128. Their exact midpoint is minus one half
+of a raw unit, so the required result is zero. Raw endpoints $-2$ and $-1$ at the
+same weight produce $-1$. These are fractions of a raw unit, not half a pixel.
+
+Choose a weighted-sum or difference-based formulation and bound each intermediate.
+The wider numerator fits in a signed doubleword, but word products need not fit.
+For the difference form, test the most negative and most positive word together:
+subtracting them must happen at the wider width too. Delay precision reduction
+until the combined numerator is ready, rather than rounding the terms separately.
+
+Use arithmetic that implements floor after the chosen half-unit bias. A signed
+division that truncates toward zero gives a different result for some negative
+numerators. Verify values immediately around a half tie in both directions.
+Then run the public checks:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/fixed-interpolate.kts \
+  /path/to/your/fixed-interpolate.asm
+\end{verbatim}
+The checker exercises endpoint weights, signed-word extremes, half boundaries,
+sampled full-word inputs and preserved caller state. An unfinished starter fails
+explicitly. On a mismatch, retain the input triple and derive its exact wide
+numerator before changing the rounding or return instruction. A correct default
+answer does not justify narrower arithmetic for the full stated domain.
