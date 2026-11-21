@@ -76,7 +76,7 @@ until people with the intended prerequisites perform the independent task.
 
 ## Current implementation evidence
 
-The main MARS course currently exposes prediction and Run segments. The prediction
+The main MARS course currently exposes prediction, Run and Debug segments. The prediction
 dialogs support wrong-answer feedback and revised answers. The Run segment uses
 the ordinary process lifecycle, exact captured source and options, document stamps
 and content-specific progress capabilities. Source edits invalidate old evidence.
@@ -85,7 +85,15 @@ console transcript; a core-only check or visible future text is insufficient.
 The original event-only Run check was corrected to the native timer facility after
 the first graphical attempt exposed asynchronous completion.
 
-This verifies only the two implemented segments. Debug, output-argument diagnosis,
+The Debug observer follows a source-bound session through the two arithmetic
+instructions. It uses copied stopped-state values, instruction words, PC boundaries
+and fresh suspension identities. Edits invalidate the attempt, and simultaneous
+sessions cannot advance each other. A fresh actual IDE batch observes input 20,
+results 0, 40 and 41, and native Debug lesson completion. The separate authoring
+plugin selects the owned register tab and reads the displayed rows; the production
+lesson contains no screenshot automation.
+
+This verifies only the three implemented segments. Output-argument diagnosis,
 graduated hints, instructor policies, free-writing acceptance and complete-unit
 resume/reopen behavior remain to be integrated and exercised. The current raw
 captures are verification artifacts awaiting publication layout and annotations.

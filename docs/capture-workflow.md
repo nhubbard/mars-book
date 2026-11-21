@@ -790,3 +790,30 @@ two prediction-pass callbacks, retained edits and one actual native Run completi
 The full-window views retain an IDE notification, and the Run view needs publication
 scroll/layout cleanup. No new annotated publication figure is claimed. Debug and
 the remaining first-unit activities still require their own verification.
+
+
+## Native Debug lesson capture
+
+The lesson plan additionally accepts `captureDebug: true`. Enable `captureRun` too
+for a combined prediction/Run/Debug batch. The driver opens `mars.console.debug`,
+places a real source breakpoint before the arithmetic and starts an ordinary MARS
+Debug configuration. It enters 20 through the public process input stream, selects
+the owned native register content and reads actual rendered register rows. It
+records pauses before the doubling, after 40 and after 41, then awaits the native
+Debug lesson-pass callback. Its regression test compares the register-group caption
+with the actual packaged MARS message resource. Public session stepping APIs drive
+the two steps; the driver stops its owned session and removes its breakpoint.
+
+`native-debug-01` retains a partial attempt blocked by the original wrong caption.
+`native-debug-02` is prelaunch validation only. The final `native-debug-03` batch
+retains ten inspected light-theme captures and actual completion receipts for all
+three segments. Its exact packages pass 945 MARS tests, including 50 learning
+tests, and 90 authoring tests. Paired verification finds both packages compatible;
+all eleven installed JARs match the saved package bytes.
+
+The raw captures need notification removal, scroll/layout cleanup and annotations
+before publication. Debug registers show native hexadecimal values. Process input
+injection verifies execution but does not verify keyboard entry or echoed input.
+The stopped Debug session is a pause/step observation, not evidence of normal Debug
+termination; the preceding Run verifies normal exit separately. Full-unit diagnosis,
+hints, independent writing, policies, reopen/resume and human review remain open.
