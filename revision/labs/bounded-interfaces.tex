@@ -1,0 +1,163 @@
+\chapter{Parsing, bounds and unchanged output}
+\MARSChapterHeading{Parsing, bounds and unchanged output}
+\label{revision-lab:bounded-interfaces}
+
+Use \texttt{bounded-packet.asm} from \texttt{revision/labs/files}. It is the
+complete worked implementation of original project
+\texttt{013-binary-packet-parser}; both original public checks apply. Read the
+main chapter's invented format and ordered decisions first. This lab uses ordinary
+Run and Debug, then an independent binary delimiter parser.
+
+\section{Predict bytes, fields and three lengths}
+
+Write the default packet as twelve hexadecimal bytes and label header, payload
+and trailer. Derive its declared payload length, consumed count, sequence number,
+payload-sum residue and complete checksum residue. Distinguish the count of three
+payload bytes from the count of twelve bytes needed to validate this packet.
+
+Predict the result for available counts seven, eight, eleven and twelve without
+changing the mapped packet bytes. Explain which reads have been justified at each
+point. With eight bytes available, the declared body length can be decoded, but
+the three payload bytes and trailer are not yet part of the supplied window.
+A debugger can display those mapped bytes without granting the parser permission
+to load them.
+
+Repeat with a zero-length payload and a recomputed checksum. Eight bytes still
+need more; nine can succeed. For the returned slice $input+8$, explain why a zero
+payload length forbids treating its first addressed byte as payload. Then append
+a second complete packet and predict the first call's consumed count. It should
+not change merely because the caller supplied a longer window.
+
+\section{Follow the first bound and the ordered errors}
+
+Break at \texttt{parse\_packet} and use a copy with available set to seven.
+Step through the initial comparison. The function must return need-more before
+executing an input load. Stop at \texttt{parse\_ready}: \texttt{\$v0} is $-1$,
+\texttt{\$v1} is zero, and all four output words retain their original values.
+Continue through main and distinguish its status/pointer metadata stores from
+forbidden writes inside the failed parser.
+
+\input{revision/figures/bounded/returns}
+
+Restore enough available bytes. In disposable copies, introduce both a wrong
+magic byte and an unsupported version. Derive which error comes first. Repair
+only the magic and repeat, then combine reserved flags with an excessive declared
+length. Use the main chapter's priority table to explain each status rather than
+accepting whichever comparison happens to run first in your own draft.
+
+For an excessive declaration, set length bytes to hexadecimal \texttt{00 41},
+meaning 65. With a complete header, the result is $-5$ even if the declared body
+has not arrived. Compare this with the same bytes and available seven, where the
+initial result is $-1$. Do not move the length-cap decision after a body read.
+
+Return to the default length three and available eleven. Break at
+\texttt{packet\_length} and follow the second availability comparison. The required
+count is twelve, so the function returns without entering its checksum loops.
+A missing-trailer error must not become an apparent success because padding
+happens to contain a suitable checksum byte.
+
+\section{Inspect acceptance before and after publication}
+
+Run the valid default packet and break at \texttt{packet\_commit}. At this point
+the checksum residue is zero, but the selected record has not received a store.
+Inspect tentative flags, sequence, length and payload sum in the source's temporary
+registers. The raw payload sum is 510; its low-byte residue will be 254. The
+\texttt{\$v0} register can still hold $-6$ because success has not yet replaced
+the tentative checksum status. This is an internal pause, not the return interface.
+
+Step through the successful stores and return to \texttt{parse\_ready}. Inspect
+output words $[1,4660,3,254]$, consumed count twelve and payload pointer $input+8$.
+Locate the native bytes of the sequence output word. They are
+\texttt{34 12 00 00}, while the input sequence field remains \texttt{12 34}.
+Use the wire format and native memory representation to explain both observations.
+
+Change only the checksum trailer from hexadecimal \texttt{1A} to \texttt{1B}.
+The returned status is $-6$, the payload pointer is zero and the record remains
+at its sentinel values. That picture is consistent with no output writes, but
+does not prove their absence: the grader checks the store history too. A failed
+routine that writes and restores the old words is still incorrect.
+
+\input{revision/figures/bounded/records}
+
+The payload pointer borrows the caller's input storage. In a disposable experiment,
+change a payload byte after success and inspect through the returned address.
+Explain why the pointer sees the changed byte: no separate payload copy was made.
+The caller must preserve the input until it has finished using the slice.
+
+\section{Diagnose byte and checksum mistakes}
+
+Use a sequence with hexadecimal bytes \texttt{FF 80}. Derive the expected unsigned
+value 65408. In a copy, replace the low sequence byte's \texttt{lbu} with
+\texttt{lb}. Inspect the sign-extended value before the OR and locate the bits
+that corrupt the decoded field. Restore unsigned field decoding and repeat with
+an input offset of one byte.
+
+Compare that fault with a payload-only signed-load variant. Each signed high-bit
+payload byte differs by minus 256, so both final checksum residues can remain
+correct. Explain the arithmetic before deciding whether the variant is valid.
+The checks accept equivalent behavior rather than requiring a particular mnemonic.
+
+Introduce an ordinary zero payload byte and recompute the trailer. A parser that
+stops at zero will confuse the rest of the body and trailer. Repair the remaining-
+count loop instead of adding a text-string terminator rule to this binary format.
+Finally exchange the default first two payload values, 127 and 128. Their sum and
+the packet checksum stay unchanged; explain what this additive check cannot detect.
+
+Run both original public checks against the complete program:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/013-binary-packet-parser/checks/parser.kts \
+  /path/to/your/bounded-packet.asm
+java -jar /path/to/cli.jar grade \
+  packages/013-binary-packet-parser/checks/program.kts \
+  /path/to/your/bounded-packet.asm
+\end{verbatim}
+On failure, retain the exact input window, available count and selected output.
+Locate the first out-of-window access, wrong decision or forbidden store. A final
+status disagreement may originate earlier than the return instruction.
+
+\section{Implement a bounded delimiter parser independently}
+
+Open \texttt{bounded-line.asm} and implement \texttt{read\_line}. Input pointer,
+available count and selected eight-byte output pointer arrive in
+\texttt{\$a0}/\texttt{\$a1}/\texttt{\$a2}. The input window is inside a 256-byte
+arena; output is separate and word aligned. Accept one LF-delimited binary record,
+with at most 32 payload bytes. LF is hexadecimal \texttt{0A}; zero, \texttt{0D}
+and every other byte value are ordinary payload.
+
+On success, return payload length plus one in \texttt{\$v0} and the original input
+pointer in \texttt{\$v1}. Output words are payload length and payload sum modulo
+256, excluding LF. Need-more is $-1$; too-long is $-2$. Every failure returns zero
+in \texttt{\$v1} and executes no output stores. Preserve the input, guards, other
+record, full saved registers, stack pointer and caller-owned stack bytes. Choose
+your own temporary registers and private labels.
+
+Begin with zero available bytes and an immediate LF. The first case returns
+need-more without reading; the second accepts a zero-length payload and consumes
+one byte. The supplied \texttt{41 00 80 0A 42} example consumes four bytes and
+returns length three, sum 193. The final \texttt{42} belongs to a later call.
+
+Now write out the capacity boundary. With 32 non-LF bytes and no next byte,
+return need-more. If the next supplied byte is LF, accept length 32 and consumed
+count 33. If it is not LF, return too-long. Therefore test that next byte for LF
+before rejecting it as a 33rd payload byte. Do not read it until it is available.
+
+Stop reading at the first LF, or after 33 bytes when no LF has appeared. Repeated
+reads inside this permitted prefix are allowed, so a two-pass search/sum method
+can be equivalent to accumulating while searching. Preserve failure outputs by
+holding tentative values until acceptance. Do not use the output record as scratch
+storage or inspect a following record speculatively.
+
+\begin{samepage}
+Run the public checks from the repository root:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/bounded-line.kts \
+  /path/to/your/bounded-line.asm
+\end{verbatim}
+\par\end{samepage}
+The starter deliberately stops until implemented. The cases vary incomplete
+prefixes, byte values, cap boundaries, input offsets, destination records and
+return continuations. Keep each failed case and derive its permitted read prefix
+before changing the scan condition. A larger available window is not permission
+to continue reading after this task's stopping boundary.

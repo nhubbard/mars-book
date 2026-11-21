@@ -1,0 +1,281 @@
+\chapter{Bounded interfaces and independent implementation}
+\MARSChapterHeading{Bounded interfaces}
+\label{revision:bounded-interfaces}
+
+A parser receives bytes, not trustworthy field values. A packet can stop in the
+middle of its header, declare a body that has not arrived, or contain a checksum
+that does not agree with its contents. Reading a mapped address successfully does
+not establish that the caller supplied that byte. The function must connect every
+load to an explicit bound and every output store to an accepted result.
+
+The complete \texttt{bounded-packet.asm} program in \texttt{revision/labs/files}
+implements original project \texttt{013-binary-packet-parser}. Its format is
+invented for this exercise. It is not an existing network protocol. We will use
+its small header to make bounds, byte order, error priority and output preservation
+visible in one runnable program.
+
+You should be able to distinguish declared, available and consumed lengths;
+justify loads before executing them; decode multibyte fields; and delay output
+until all checks succeed. Earlier chapters established these ideas for arrays
+and functions. Here the input's own contents influence what the program wants
+to read next. The independent exercise replaces the declared body length with
+a bounded delimiter search.
+
+\section{State the byte format and the caller's promises}
+
+The function takes an input pointer in \texttt{\$a0}, available count $n$ in
+\texttt{\$a1}, and a selected output-record pointer in \texttt{\$a2}. The input
+can begin at any byte offset inside a 256-byte arena. The caller guarantees a
+nonnegative count no larger than the arena's remaining bytes. The output is a
+separate, nonoverlapping, word-aligned 16-byte record, either \texttt{record\_a}
+or \texttt{record\_b}. The parser validates the packet within that supplied window;
+it does not discover the allocation size from a pointer.
+
+\input{revision/figures/bounded/format}
+
+\begin{samepage}
+Only flag bit zero is accepted; its value is reported as metadata without any
+additional behavior. The sequence number is reported as an unsigned integer,
+not checked for duplicates or increasing order. Such a policy would need state
+across calls and a different interface.\par
+\end{samepage}
+
+Length $L$ describes the payload alone. The complete packet requires eight header
+bytes, $L$ payload bytes and one trailer, consuming $9+L$. A valid empty payload
+still consumes nine bytes. More available bytes may follow the first packet;
+those suffix bytes do not contribute to its checksum, output or consumed count.
+A zero payload byte is ordinary binary data, not a string terminator.
+
+The default input is hexadecimal
+\texttt{4D 50 01 01 00 03 12 34 7F 80 FF 1A}. It declares three payload bytes
+and sequence hexadecimal \texttt{1234}, decimal 4660. Its header sum is 232,
+payload sum 510 and trailer 26, giving total 768. That total is zero modulo 256.
+The accepted output words are flags one, sequence 4660, length three and payload
+sum modulo 256, which is 254. Success returns consumed count 12 in
+\texttt{\$v0} and payload address $input+8$ in \texttt{\$v1}.
+
+\input{revision/figures/bounded/window}
+
+These lengths answer different questions. Available tells which bytes the caller
+permits this call to read. Declared tells what the header claims the body contains.
+Consumed tells how far a successful caller can advance to the next item. Replacing
+one with another can accept a truncated packet or consume bytes belonging to its
+successor.
+
+\section{Prove availability before interpreting bytes}
+
+The first check is $n\geq8$, before any input load. Even if one available byte
+already has the wrong magic, the specified status for fewer than eight bytes is
+need-more. The worked entry prepares that error and a zero payload pointer:
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Establish a complete-header bound before the first load}
+\begin{minted}{mars-idea}
+parse_packet:
+    li $v0, -1
+    move $v1, $zero
+    li $t9, 8
+    bltuc $a1, $t9, packet_return
+    nop
+\end{minted}
+\end{minipage}
+
+Once this check passes, every byte at offsets zero through seven is available.
+The parser can safely inspect the header, but its values can still be invalid.
+Apply the ordered decisions in Table~\ref{tab:revision-bounded-priority}. An
+input with multiple defects must receive the first applicable status, so different
+correct implementations agree on the result.
+
+\input{revision/figures/bounded/priority}
+
+For example, eight available bytes with valid magic but a declared length of
+65 produce $-5$, not need-more: the semantic length limit is checked before
+complete-packet availability. If only seven bytes are supplied, the initial
+bound instead gives $-1$ without interpreting that length. These choices are
+contract decisions, not consequences of whichever byte the implementation loads
+first.
+
+The length stage first decodes the two header bytes, then applies the cap before
+forming the required total:
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Separate a permitted length from an available packet}
+\begin{minted}{mars-idea}
+packet_length:
+    lbu $t0, 4($a0)
+    sll $t0, $t0, 8
+    lbu $t7, 5($a0)
+    or $t0, $t0, $t7
+    li $v0, -5
+    li $t9, 64
+    bltuc $t9, $t0, packet_return
+    nop
+    addiu $t8, $t0, 9
+    li $v0, -1
+    bltuc $a1, $t8, packet_return
+    nop
+\end{minted}
+\end{minipage}
+
+After the cap, $9+L$ is at most 73, so adding nine cannot overflow a word. Only
+after $n\geq9+L$ succeeds may the program read every payload byte and the trailer.
+For $L=0$, that second bound still requires nine bytes. The format's small cap
+makes this arithmetic proof explicit; a larger length field would need its own
+overflow analysis rather than an unchecked total.
+
+Every input access must fit wholly inside the supplied interval. A word load
+starting at the last available byte would read beyond it even if its starting
+address were legal. Mapped padding can hide such an error from ordinary execution.
+The checks therefore inspect native access addresses and widths as well as results.
+A valid implementation can reread header bytes; no exact load count is prescribed.
+
+\section{Decode integers without borrowing the machine's byte order}
+
+For high byte $h$ and low byte $l$, a big-endian 16-bit field has value
+$256h+l$. The length fragment shifts the first unsigned byte by eight, then ORs
+the second into the disjoint low bits. Sequence decoding uses the same rule at
+offsets six and seven. Separate byte loads work at every permitted input offset
+and make the format's byte order explicit.
+
+For wire bytes \texttt{12 34}, the decoded integer is \texttt{1234}. Storing that
+integer as a native word in the default little-endian MARS layout produces bytes
+\texttt{34 12 00 00}. This is not a reversed packet field: the output record stores
+a decoded integer in a different representation. Do not copy wire bytes directly
+into an output word and expect both representations to agree.
+
+Use unsigned loads for these field bytes. With low byte \texttt{80}, a signed
+\texttt{lb} yields a negative register value whose high bits are ones. ORing it
+with a shifted high byte can set bits outside the intended 16-bit field.
+The sequence pair \texttt{FF 80} should decode to 65408, not a negative value.
+The permitted sequence range is zero through 65535, independent of its storage
+in a signed 32-bit output word.
+
+\begin{samepage}
+Pointers have another width obligation. The cursor and returned payload address
+must retain the input pointer's full bits. The function may use word arithmetic
+for bounded byte counts and sums, but pointer advances use \texttt{daddiu} or
+\texttt{daddu}. A short packet does not imply that its address fits in a word.
+The input and output pointers are supplied arguments, not instructions to reload
+the default global labels.\par
+\end{samepage}
+
+\section{Validate the complete sum and retain the payload sum}
+
+The checksum rule is that the sum of header, payload and trailer is zero modulo
+256. The worked parser scans the eight header bytes into a total accumulator,
+then visits the $L$ payload bytes. Each payload byte contributes both to that total
+and to a separate payload accumulator. The trailer contributes only to the total.
+Masking the low eight bits tests the total residue and produces the reported
+payload residue.
+
+The body loop uses a remaining count. Before a payload iteration, the cursor names
+the next payload byte, the count names how many remain, and the two accumulators
+cover the bytes already visited. Each iteration loads one byte, updates both sums,
+advances the full pointer and decrements the count. When it reaches zero, the
+cursor names the trailer. The earlier availability proof establishes that every
+one of these accesses lies in the window.
+
+For an empty body, skip the payload loop completely. The initial body cursor
+$input+8$ already names the trailer, so executing a first body iteration would
+misclassify that checksum byte as payload. After validation, the returned payload
+slice still begins at $input+8$, but its length is zero. A pointer alone does not
+say how many bytes belong to the slice.
+
+The unsigned total is at most $73\cdot255=18615$ and the payload sum at most
+$64\cdot255=16320$, comfortably within a word. Reducing the sums after each byte
+or only at the end produces the same residues under these bounds. A payload-only
+signed-byte variant can also be correct: each high-bit signed byte differs by
+$-256$, which does not change either final residue. That reasoning does not justify
+signed loads for sequence decoding, which needs the actual unsigned field value.
+
+An additive checksum detects some changes but cannot distinguish all messages.
+Increasing the default payload's first byte from 127 to 128 and decreasing its
+second from 128 to 127 preserves both sums. The parser should accept that changed
+payload too. The checksum does not authenticate a sender, and its acceptance is
+not proof that every field was decoded correctly.
+
+\section{Keep output untouched until acceptance}
+
+All earlier values are tentative. The worked routine keeps flags, sequence,
+length and sums in registers until the checksum passes. Only then does it write
+the selected output record and prepare successful return values:
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Publish four checked fields and the borrowed payload slice}
+\begin{minted}{mars-idea}
+packet_commit:
+    andi $t4, $t4, 255
+    sw $t1, 0($a2)
+    sw $t2, 4($a2)
+    sw $t0, 8($a2)
+    sw $t4, 12($a2)
+    move $v0, $t8
+    daddiu $v1, $a0, 8
+\end{minted}
+\end{minipage}
+
+Every failure returns its negative status with \texttt{\$v1}=0 and no output
+stores. Leaving the same final bytes is weaker: writing a field and restoring
+its old value still violates this contract. Delaying the stores also avoids
+needing an output backup or rollback path. The four successful stores are ordinary
+sequential operations; this interface makes no concurrent atomic-publication promise.
+
+A debugger at \texttt{packet\_commit} sees a successful validation but can still
+see the tentative $-6$ in \texttt{\$v0}. The function has not yet returned.
+At \texttt{parse\_ready}, the return interface is complete: the four record words,
+consumed count and payload pointer agree. Stop there before main's exit service
+overwrites \texttt{\$v0}. Main later stores the status and full payload address
+in separate metadata for inspection after normal exit.
+
+The routine is a leaf and uses only caller-clobbered registers. Saved registers
+and \texttt{\$sp} remain unchanged. Another implementation may use a properly
+restored private stack frame. The caller owns the input bytes backing the returned
+slice and must keep them available while using it; the parser made no payload copy.
+A later overwrite of that input changes what the borrowed pointer denotes.
+
+On success, a caller can advance its input pointer by the positive consumed count
+and subtract that amount from its available count. On need-more it can retain the
+same prefix and retry after obtaining more bytes. Other invalid-input statuses
+require a caller policy, such as rejecting the record. This parser does not scan
+past a malformed prefix to guess where another packet begins.
+
+Tests should exercise successful values, every incomplete prefix, overlapping
+error conditions, alternate output records and the absence of forbidden stores.
+The original public checks do this without requiring a particular register
+allocation or source spelling. Preserve a failing input and locate the first
+violated bound, decision or write, rather than adjusting only the final status.
+
+\section{Write a bounded delimiter search independently}
+
+Implement \texttt{read\_line} in \texttt{bounded-line.asm}. It parses one binary
+record ending with byte hexadecimal \texttt{0A}, called LF. It accepts at most
+32 payload bytes before that delimiter. Other bytes, including zero, \texttt{0D}
+and high-bit values, are ordinary payload. There is no escape syntax or text
+encoding conversion in this interface.
+
+Arguments are input pointer, nonnegative available count and a selected eight-byte
+output record in \texttt{\$a0}, \texttt{\$a1} and \texttt{\$a2}. The window lies
+inside a 256-byte arena, at any byte offset, and output is nonoverlapping and word
+aligned. Success returns consumed count $L+1$ and the original input pointer in
+\texttt{\$v0}/\texttt{\$v1}; output words are $L$ and payload sum modulo 256,
+excluding LF. Failure returns $-1$ for need-more or $-2$ for too-long, with
+\texttt{\$v1}=0 and no output writes.
+
+Prove each next byte available before loading it. If LF occurs among the first
+33 supplied bytes, accept its preceding zero through 32 payload bytes. If 33
+bytes are available without LF, the record is too long. With fewer than 33 bytes
+and no LF, return need-more. Thus 32 payload bytes without their next byte still
+need more input; a following LF succeeds, while a following non-LF proves too-long.
+The delimiter test at that boundary must precede rejection for a 33rd payload byte.
+
+Read only through the first LF, or through the first 33 bytes when none has appeared.
+Do not inspect trailing records or mapped padding. You may revisit the permitted
+prefix, so either a one-pass sum or a delimiter-first, sum-second implementation
+is acceptable. Preserve saved registers, the stack pointer, caller storage, input,
+guards and the other output record.
+
+The default bytes \texttt{41 00 80 0A 42} consume four bytes, return a length of
+three and sum 193, and leave the final \texttt{42} for the caller. Empty input
+returns need-more without reading. An immediate LF accepts an empty payload and
+consumes one byte. Derive these cases and the exact-capacity boundary before
+coding; the written lab supplies public checks and failure investigations.
