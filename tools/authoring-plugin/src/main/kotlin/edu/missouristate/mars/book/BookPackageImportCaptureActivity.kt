@@ -246,8 +246,15 @@ class BookPackageImportCaptureActivity : ProjectActivity {
             val observations = mutableListOf<Map<String, Any>>()
             for ((index, value) in listOf(0L, 10L).withIndex()) {
                 check(debug.pauses.receive() == line + index)
+                awaitBookDebugRegisters(project, handler, mapOf("\$v0" to value))
+                delay(300) // Native variable-model updates can precede their Swing paint.
                 val rows = awaitBookDebugRegisters(project, handler, mapOf("\$v0" to value))
-                val frame = withContext(Dispatchers.EDT) { checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane }
+                val frame = withContext(Dispatchers.EDT) {
+                    checkNotNull(WindowManager.getInstance().getFrame(project)).rootPane.also {
+                        it.paintImmediately(it.visibleRect)
+                    }
+                }
+                delay(100)
                 captureBookComponent(frame, output, "imported-debug-$index", "Native imported source; v0=$value") {
                     session.topFramePosition?.file?.toNioPath() == source && session.topFramePosition?.line == line + index
                 }
