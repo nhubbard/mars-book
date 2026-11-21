@@ -1,5 +1,9 @@
 package edu.missouristate.mars.book
 
+import java.nio.file.Path
+import java.util.Properties
+import java.util.jar.JarInputStream
+import java.util.zip.ZipFile
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -60,6 +64,20 @@ class BookLessonCaptureTest {
         assertNull(lessonRegisterValue(listOf("\$v0 = loading"), "\$v0"))
         assertNull(lessonRegisterValue(listOf("\$v0 = 0xloading"), "\$v0"))
         assertThrows<IllegalStateException> { lessonRegisterValue(listOf("\$v0 = 20", "\$v0 = 21"), "\$v0") }
+    }
+
+    @Test
+    fun `register view caption matches the actual packaged MARS debugger bundle`() {
+        val archive = Path.of(checkNotNull(System.getProperty("marsPluginArchive")))
+        val labels = Properties()
+        ZipFile(archive.toFile()).use { zip ->
+            JarInputStream(zip.getInputStream(checkNotNull(zip.getEntry("plugin/lib/plugin-1.0-SNAPSHOT.jar")))).use { jar ->
+                checkNotNull(generateSequence { jar.nextJarEntry }.firstOrNull { it.name == "messages/MarsBundle.properties" })
+                labels.load(jar)
+            }
+        }
+        assertEquals(listOf(labels.getProperty("debug.registers.cpu")), lessonDebugRegisterView.expand.single())
+        assertEquals(lessonDebugRegisterView.expand.single() + "\$t0", lessonDebugRegisterView.reveal)
     }
 
 }

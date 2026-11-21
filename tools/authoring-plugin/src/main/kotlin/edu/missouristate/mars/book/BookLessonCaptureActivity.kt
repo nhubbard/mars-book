@@ -332,7 +332,7 @@ class BookLessonCaptureActivity : ProjectActivity {
     }
 
     private suspend fun awaitDebugRegisters(project: Project, result: Long): List<String> {
-        val view = BookDebuggerTreeView(expand = listOf(listOf("CPU registers")), reveal = listOf("CPU registers", "\$t0"))
+        val view = lessonDebugRegisterView
         while (true) {
             val rows = withContext(Dispatchers.EDT) {
                 val frame = checkNotNull(WindowManager.getInstance().getFrame(project))
@@ -453,3 +453,7 @@ internal fun lessonRegisterValue(rows: List<String>, register: String): Long? {
     val value = matches.singleOrNull()?.substringAfter(" = ")?.substringBefore(' ') ?: return null
     return if (value.startsWith("0x")) value.drop(2).toULongOrNull(16)?.toLong() else value.toLongOrNull()
 }
+
+internal val lessonDebugRegisterView = BookDebuggerTreeView(
+    expand = listOf(listOf("Integer registers")), reveal = listOf("Integer registers", "\$t0"),
+)
