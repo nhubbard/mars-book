@@ -44,7 +44,15 @@ fonts and native LaTeX publication authority remain in use. Original main.tex an
 40 unrelated MARS edits are preserved. These checks establish technical and
 publication integrity, not learner usability or assistive-technology validation.
 
-Native interactive UTF-8 delivery, clipped-blit and MarsBot companions, advanced
-chapters and the remaining instructional-system work are open. The proposed
+The clipped-blit companion is now available as section 6.6; see clipped-unit.md.
+Native interactive UTF-8 delivery, the MarsBot companion, advanced chapters and
+the remaining instructional-system work are open. The proposed
 MARS-versus-hardware opening remains deferred. This milestone does not complete
 the curriculum goal.
+
+A later caller review corrected stack setup to mask the initial pointer down to
+a multiple of sixteen, matching the book convention. Branch and stack-using
+scanners pass the 15 caller and seven written cases again, plus direct entry/return
+alignment checks across all four calls. Function instructions are unchanged.
+The correction evidence is in the private clipped-companion-01/caller-alignment
+record; the original UTF-8 milestone evidence remains intact.

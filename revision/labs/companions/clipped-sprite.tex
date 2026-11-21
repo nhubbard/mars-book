@@ -1,0 +1,246 @@
+\section{Companion lab: a sprite that crosses the frame boundary}
+\label{revision-lab:clipped-sprite}
+
+The row renderer above receives a destination where every output pixel fits.
+A movable sprite has another problem: its origin can lie outside the frame while
+some of its pixels remain visible. Moving it two columns left should hide those
+two source columns and preserve the rest. Moving it completely beyond an edge
+should change no destination pixel. Neither case permits writing outside the
+frame and hoping that the display will hide the mistake.
+
+This is original project \texttt{016-clipped-sprite-blitter}. The revised work
+area is \texttt{clipped-sprite.asm}, in \texttt{revision/labs/files}. Implement
+\texttt{blit\_sprite}, replacing its failing \texttt{break} body. A \emph{blit}
+is a rectangular image copy; this version also clips the copy and treats a selected
+source word as transparent. The supplied caller initializes the frame, fills the
+descriptors and pauses at \texttt{blit\_ready} after the call. Both original public
+checks apply to your completed source.
+
+Use the chapter's row-major addressing, the earlier signed comparisons and the
+function calling convention. The new reasoning is to intersect rectangles,
+translate the surviving destination origin back into source coordinates, and
+keep logical width separate from physical row stride. The interval experiment
+below is complete; the full image copy is your independent implementation.
+
+\subsection*{Read the image descriptors before forming addresses}
+
+The function receives a framebuffer descriptor in \texttt{\$a0}, a sprite
+descriptor in \texttt{\$a1}, and placement coordinates $x,y$ in
+\texttt{\$a2}/\texttt{\$a3}. The coordinates are signed 32-bit values, already
+sign extended to the full register width. They locate the sprite's upper-left
+cell in the frame's coordinate system. Both coordinate systems increase rightward
+and downward.
+
+\input{revision/figures/clipped/descriptors}
+
+A descriptor's width says how many pixels belong to a row. Its stride says how
+many words separate the starts of adjacent rows, including any padding. For a
+pixel at local column $c$ and row $r$, its address is
+\[
+ base+4(r\cdot stride+c).
+\]
+The multiplier four converts words to bytes. It does not convert width into
+stride: a width-five sprite with stride seven has two padding words after every
+logical row. Those words are storage, but they are not source pixels.
+
+Dimensions range from zero through eight, and stride is at least width and at
+most sixteen. All logical cells fit within the supplied 128-word allocation;
+the stored pointer can name an interior word rather than the allocation's first
+label. The two pixel allocations and descriptors are disjoint. You can assume
+valid descriptors; repairing corrupt dimensions and supporting overlapping copies
+are separate problems.
+
+Load the address field as a doubleword and add offsets with full-width arithmetic.
+Load a pixel as a word and copy its complete 32-bit pattern. A pointer and a pixel
+have different widths even when both happen to be held in general-purpose
+registers. Derive each address from the passed descriptor, rather than substituting
+the caller's default \texttt{frame\_a} or \texttt{sprite\_a} label.
+
+\subsection*{Intersect half-open intervals in frame coordinates}
+
+Write the frame's horizontal interval as $[0,F_w)$ and the placed sprite's as
+$[x,x+S_w)$. A \emph{half-open interval} includes its left endpoint and excludes
+its right endpoint. Its length is the difference between the endpoints, so adjacent
+intervals can meet without sharing a pixel. The surviving destination interval is
+\[
+ L=\max(0,x),\qquad R=\min(F_w,x+S_w).
+\]
+It is nonempty only when $L<R$. Repeat for rows:
+\[
+ T=\max(0,y),\qquad B=\min(F_h,y+S_h),
+\]
+requiring $T<B$. If either comparison fails, return zero visible and zero opaque
+pixels without a destination store. A zero width or height is an empty rectangle.
+A sprite beginning exactly at $x=F_w$ shares no columns with the frame.
+
+Keep these endpoint calculations at full width. Although each image is small,
+$x$ and $y$ can be extreme signed words. Their sums with a dimension and the
+subsequent differences need not fit a signed word. With $x=2147483647$ and width
+five, the mathematical right endpoint is 2147483652. A word addition followed by
+a word subtraction can turn a rejected interval into a plausible small positive
+extent. Prove the intersection empty before deriving pixel addresses.
+
+The complete \texttt{clip-interval.asm} experiment applies the horizontal rule.
+It receives $x$ in \texttt{\$a0}, source width in \texttt{\$a1}, and frame width
+in \texttt{\$a2}; it returns $L,R$ in \texttt{\$v0}/\texttt{\$v1}, or two
+zeros for an empty intersection. This is a helper interface for the experiment,
+not the blitter's pixel-count return interface.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Select the smaller right endpoint using full-width arithmetic}
+\begin{minted}{mars-idea}
+interval_left_ready:
+    daddu $t1, $a0, $a1
+    slt $t2, $a2, $t1
+    beqzc $t2, interval_right_ready
+    nop
+    move $t1, $a2
+\end{minted}
+\end{minipage}
+
+Here \texttt{\$t1} begins as the placed source's right endpoint. If frame width
+is smaller, the move selects it; otherwise the branch preserves the endpoint.
+The complete helper also selects the larger left endpoint and rejects $L\geq R$.
+Run its public \texttt{revision/labs/checks/clip-interval.kts} check. Predict the
+supplied $x=-2$, source width five and frame width eight: the result is $[0,3)$.
+Then try a source ending at zero, one beginning at eight, and an extreme coordinate.
+Explain the comparison that makes each interval empty.
+
+\subsection*{Translate the surviving origin back into the source}
+
+The first visible destination cell is $(L,T)$. It corresponds to source cell
+\[
+ s_x=L-x,\qquad s_y=T-y.
+\]
+The visible width is $w=R-L$ and height is $h=B-T$. Clipping the destination does
+not move source column zero to $L$: it discards the columns and rows before
+$(s_x,s_y)$. Those source offsets are the reason the visible fragment retains the
+sprite's original shape.
+
+The default sprite is five by four with stride seven, placed at $(-2,1)$ in an
+eight-by-six frame with stride sixteen. The intersection is $[0,3)\times[1,5)$,
+so $(s_x,s_y)=(2,0)$ and twelve source cells are visible.
+Figure~\ref{fig:revision-clipped-geometry} connects those coordinates.
+
+\input{revision/figures/clipped/geometry}
+
+The first source address is $source+4(0\cdot7+2)=source+8$. The first destination
+address is $frame+4(1\cdot16+0)=frame+64$. The next visible source row begins
+28 bytes after the first source row; the next destination row begins 64 bytes
+after its predecessor. Neither increment is the twelve-byte visible row length.
+
+Keep row starts separate from moving pixel pointers. One organization stores each
+row's source and destination starts, copies $w$ positions, then advances the row
+starts by their respective byte strides. Another lets the inner pointers advance
+and then adds $4(stride-w)$ at the end of each row. Using a full stride after an
+already-advanced inner pointer skips the copied width a second time.
+
+Use a loop invariant to distinguish these stages. At row $j$ and column $i$ within
+the intersection, the next selected source cell is $(s_x+i,s_y+j)$ and the next
+destination cell is $(L+i,T+j)$. Before the first pixel, $i=0$; after exactly $w$
+positions the row is complete. A transparent pixel still occupies one position
+and advances both pointers.
+
+You may instead visit every logical source cell and test its translated destination
+coordinates before copying. The contract accepts that organization too. Source
+reads may inspect logical source cells that are later clipped away, but never
+source padding or guards. Destination reads, if used, must remain within logical
+frame cells. There is no prescribed read count, register allocation or traversal
+order. The precomputed intersection is a way to make the bounds explicit, not a
+required source-code pattern.
+
+\subsection*{Separate visibility, transparency and changed colors}
+
+Return the number of visible opaque source pixels in \texttt{\$v0}, and all
+visible source pixels in \texttt{\$v1}. The latter is $wh$, including transparent
+cells. A fully invisible or empty image returns $(0,0)$. These counts describe
+selected source cells, not the number of destination colors that changed.
+
+The transparency key is the complete 32-bit word in the sprite descriptor. A
+source word equal to that key skips its destination store. Every other word is
+opaque and must be copied unchanged. Zero is opaque unless zero is the selected
+key. The high byte is part of the comparison; this lab does not interpret it as
+an alpha channel.
+
+In the supplied sprite, key \texttt{0x00FF00FF} is transparent, while
+\texttt{0x01FF00FF} is opaque. The Bitmap Display uses the low RGB bytes, so those
+two words can look the same when displayed directly. Their different copy behavior
+comes from the word comparison. Inspect Memory when the display cannot distinguish
+the relevant bits.
+
+\input{revision/figures/clipped/default-cells}
+
+For the default placement, the twelve visible cells include four keys and eight
+opaque words, so return $(8,12)$. The opaque word in the second row of the table
+has the same low RGB bytes as the key and must still be stored. With placement
+$(1,1)$, all twenty source cells fit and thirteen are opaque. One of those cells
+contains zero and must draw black. Use these two placements to distinguish a
+complete-word comparison from an RGB-only comparison or a zero-terminated rule.
+
+An opaque source pixel counts even if the destination already has exactly that
+word. A routine that counts only changed colors reports the wrong interface.
+Conversely, a transparent destination must receive no store, including a store
+of its old value or a write later restored. A final matching picture cannot
+establish that rule: the grading checks the store history as well as the frame.
+Preserve clipped cells, row padding, guards, descriptors and the source throughout.
+
+\subsection*{Observe the copy and diagnose an incorrect span}
+
+At \texttt{blit\_call}, the caller has initialized the frame and both descriptor
+pointers but has not entered your function. At \texttt{blit\_ready}, the function
+has returned; inspect its result registers before the caller publishes
+\texttt{copied} and \texttt{visible}. After normal exit, those words retain the
+counts, while the exit service has replaced \texttt{\$v0}.
+
+The revised source requests a sixteen-by-eight Bitmap Display beginning at
+\texttt{frame\_a} in the Default memory layout. The logical frame is only the
+first eight columns of its first six rows. The remaining displayed cells are
+allocation padding, prefilled gray; the active frame is prefilled dark blue.
+Display row width matches stride sixteen so padding does not masquerade as a
+shorter next row. If you change the memory layout or data origin, select the new
+frame base in the display too. Display configuration does not alter a descriptor.
+
+Figure~\ref{fig:revision-clipped-observations} compares the default partial copy
+with a complete placement. Native outlines identify the logical frame independently
+of the background colors; the surrounding storage is padding.
+
+\input{revision/figures/clipped/observations}
+
+Begin by drawing the default placement on paper, recording the two first addresses
+and the twelve visible source words. Run your implementation and compare its
+frame and counts. Then change placement to $(6,-2)$: source rows two and three,
+columns zero and one survive, mapping to destination columns six and seven in
+rows zero and one. There are four visible cells, two opaque; return $(2,4)$.
+
+In disposable copies, replace one row stride with logical width and locate the
+first address that diverges. Next retain the correct strides but set the clipped
+source origin to zero. A fragment appears in the expected place but contains the
+wrong source columns. For transparency, compare only the low 24 bits and observe
+the missing opaque magenta cell. Diagnose each fault from the first wrong source
+selection, address or store, rather than adjusting a counter until a check passes.
+
+The function must preserve full saved registers \texttt{\$s0} through
+\texttt{\$s7}, \texttt{\$fp} and \texttt{\$sp}, return through the supplied
+\texttt{\$ra}, and produce no console output. A restored private stack frame is
+permitted. If you call the interval helper, preserve the blitter's return link and
+any live state that its caller-clobbered temporaries may overwrite. Inlining the
+same comparisons is also valid.
+
+\begin{samepage}
+Run the two original public checks on your completed copy:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/016-clipped-sprite-blitter/checks/kernel.kts \
+  /path/to/your/clipped-sprite.asm
+java -jar /path/to/cli.jar grade \
+  packages/016-clipped-sprite-blitter/checks/program.kts \
+  /path/to/your/clipped-sprite.asm
+\end{verbatim}
+\par\end{samepage}
+
+The kernel cases select different descriptors, interior allocation offsets,
+strides, keys and saved values. The caller cases check initialized pixels and
+returned-count publication. Keep an empty intersection, a partial overlap and an
+all-transparent visible rectangle in your own test record. Explain why the last
+case returns a positive visible count but zero opaque count, and why none of
+those cases grants permission to overwrite frame padding.

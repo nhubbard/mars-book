@@ -54,8 +54,9 @@ Pro, Noto Sans Math and IntelliJ-derived minted styling remain in use.
 
 Human learner/assistive-technology reviews and a native interactive version of
 this lab remain open. The UTF-8 companion now follows in section 12.6; see
-utf8-unit.md. Clipped blitting, the MarsBot companion, later chapters and remaining
-instructional-system work are unfinished. Reaching
+utf8-unit.md. The clipped-sprite companion is now section 6.6; see clipped-unit.md.
+The MarsBot companion, later chapters and remaining instructional-system work
+are unfinished. Reaching
 twelve main chapters does not complete the foundational phase or overall goal.
 The proposed MARS-versus-hardware opening remains deferred. The original manuscript
 and unrelated MARS edits are preserved.
