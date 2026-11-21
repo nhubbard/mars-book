@@ -329,9 +329,11 @@ class BookLessonCaptureActivity : ProjectActivity {
                 document.setText(text + "\n# Changed after leaving its guided activity\n")
                 document.setText(text)
             }
+            val afterEdit = document.modificationStamp
+            check(afterEdit != before)
+            // Saving unchanged final text may restore its disk stamp; the actual edit already invalidated evidence.
             FileDocumentManager.getInstance().saveDocument(document)
-            check(document.modificationStamp != before)
-            mapOf("beforeStamp" to before, "afterStamp" to document.modificationStamp,
+            mapOf("beforeStamp" to before, "afterStamp" to afterEdit, "afterSaveStamp" to document.modificationStamp,
                 "sourceSha256" to captureSha256(document.text.toByteArray(Charsets.UTF_8)))
         }
         openIndependent(project)
