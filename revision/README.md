@@ -3,7 +3,7 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first eight main-book chapters: the complete console
+- `learning.tex` includes the first nine main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -11,11 +11,12 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   renderer and its horizontal reflection. Integer line drawing then develops
   an invariant, dependent state updates and a bounded raster contract. Life then
   extends snapshot reasoning to padded boards and complete generation transitions.
+  Sorting then compares invariants, stability and measured routine versus whole-program work.
   The chapters use connected explanations and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first eight written lab supplements: predictions,
+- `lab-book.tex` includes the first nine written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -110,3 +111,8 @@ source-snapshot checks, native generation diagram and independent changed-cell c
 The revised ring-buffer companion follows in section 8.6 on pages 30–35.
 See [ring-unit.md](ring-unit.md) for the independent queue assignment, compact
 starter, wraparound experiment and verified annotated Memory observations.
+
+The algorithms and cost chapter begins on main page 52, and its written lab begins
+on lab page 36. The current proofs contain 58 main-book pages and 39 lab-book pages.
+See [sorting-unit.md](sorting-unit.md) for the complete two-sort visualizer,
+repeatable measurements, stable-partition exercise and remaining interactive work.

@@ -1,0 +1,277 @@
+\chapter{Algorithms and their cost}
+\MARSChapterHeading{Algorithms and their cost}
+\label{revision:algorithms-and-cost}
+
+Two programs can produce the same ordered array while doing different amounts
+of work. They may compare different pairs, move different words, and call the
+display a different number of times. Choosing between them requires two separate
+arguments: that each preserves the required result, and that the measurement
+actually counts the work relevant to your question.
+
+We will compare adjacent-exchange insertion sort with selection sort. Both grow
+an ordered region of an array, but they choose the next operation differently.\footnote{For
+algorithm definitions and variants, see the NIST \emph{Dictionary of Algorithms and
+Data Structures} entries for insertion sort and selection sort:
+\url{https://xlinux.nist.gov/dads/HTML/insertionSort.html} and
+\url{https://xlinux.nist.gov/dads/HTML/selectionSort.html}.}
+The complete public program is \texttt{sorting-costs.asm} in
+\texttt{revision/labs/files}. It sorts up to eight signed words and draws an
+initial frame, a frame after each complete exchange, and a final frame.
+
+You should be able to state an ordering invariant, distinguish order from value
+preservation, explain how equal keys behave, and compare measurements with an
+explicit scope. The independent exercise changes the ordering requirement: group
+negative words first while retaining the relative order inside both groups.
+
+\section{Require both order and value preservation}
+
+For an active prefix of length $n$, ascending order requires
+$values[i]\leq values[i+1]$ whenever both positions exist. This condition alone is
+not enough. Replacing every word with zero would satisfy it while losing the input.
+The output must also contain the same values with the same multiplicities: it
+must be a permutation of the active input. Words after that prefix are outside
+the operation and must receive no stores.
+
+The worked visualization admits $0\leq n\leq8$ and keys from $-4$ through three.
+This small value domain gives each key a visible bar height from one through eight,
+using $height=value+5$. It does not change signed order. Column $x$ is white at
+screen row $y$ when $x<n$ and $y\geq3-values[x]$; other cells are black. Sorting
+routines compare signed keys directly. The display's bounded height is a separate
+reason for restricting this particular program's inputs.
+
+Begin with the four-word prefix $[2,-2,3,-4]$. Both algorithms must produce
+$[-4,-2,2,3]$. Table~\ref{tab:revision-sorting-exchanges} shows how their complete
+exchanges differ. The full program's default has eight words; set its count to
+four to follow this smaller example without touching the inactive suffix.
+
+\input{revision/figures/sorting/exchanges}
+
+During an exchange, the first store can temporarily duplicate a value in memory
+before the second restores the complete permutation. Publish the observation only
+after both stores. A debugger can inspect either boundary, but a half-exchange is
+not a completed sorting state.
+
+\section{Extend a sorted prefix by adjacent exchanges}
+
+Before insertion sort's outer iteration $i$, positions zero through $i-1$ are
+already sorted. Start a cursor $j=i$ at the next item. Compare it with its left
+neighbor. If it is strictly smaller, exchange the pair and move the cursor left;
+otherwise its insertion position has been reached. The array up to $i$ is sorted
+when this inner process ends, establishing the next outer iteration's invariant.
+
+In the four-word trace, $-2$ first moves left across two. The next item, three,
+already follows two and needs no exchange. Then $-4$ crosses three, two and $-2$,
+one adjacent pair at a time. A display exchange is therefore not the same thing
+as one completed outer iteration.
+
+The following fragment belongs inside the complete \texttt{insertion\_sort}
+function. Its setup saves the return link and \texttt{\$s0} through \texttt{\$s3},
+sets \texttt{\$s0} to the array, \texttt{\$s1} to $n$, and \texttt{\$s2} to one.
+The 48-byte frame contains five eight-byte saved slots and eight bytes of alignment
+padding. The omitted epilogue restores those values and releases the frame.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Move the next item left until its prefix is ordered}
+\begin{minted}{mars-idea}
+insertion_outer:
+    bgec $s2, $s1, insertion_return
+    nop
+    move $s3, $s2
+insertion_inner:
+    beqzc $s3, insertion_next
+    nop
+    dsll $t0, $s3, 2
+    daddu $t0, $s0, $t0
+    lw $t1, 0($t0)
+    lw $t2, -4($t0)
+insertion_compare:
+    bgec $t1, $t2, insertion_next
+insertion_compare_end:
+    nop
+    sw $t1, -4($t0)
+    sw $t2, 0($t0)
+insertion_exchanged:
+    move $a0, $s0
+    move $a1, $s1
+    balc publish_exchange
+    addiu $s3, $s3, -1
+    bc insertion_inner
+insertion_next:
+    addiu $s2, $s2, 1
+    bc insertion_outer
+\end{minted}
+\end{minipage}
+
+The zero-cursor check occurs before the left-neighbor load. When $j=0$, address
+$base+4j-4$ would precede the active array, so there is no valid pair to compare.
+The outer bound also handles empty and singleton prefixes without loading a key.
+All address additions retain the full pointer width; the loaded words are sign
+extended, and the compact comparison is signed.
+
+An adjacent exchange of unequal out-of-order values removes exactly one inversion:
+a pair of positions whose earlier key is greater than the later key. Thus this
+implementation performs one exchange per initial inversion. An already sorted
+prefix needs none. A reverse-ordered array of $n$ distinct keys has
+$n(n-1)/2$ such pairs, giving 28 exchanges at $n=8$.
+
+Equal keys do not exchange here. They therefore keep their relative order through
+the adjacent moves: this insertion policy is stable. If records also had associated
+payloads, those payloads would need to move with their keys. Our word-only array
+does not store an independent identity for two equal integers.
+
+\section{Choose the next minimum from the suffix}
+
+Selection sort maintains a different invariant. Before iteration $i$, the first
+$i$ positions contain the smallest $i$ keys in sorted order. Scan the remaining
+suffix, retain the first occurrence of its minimum, and exchange that item with
+position $i$ if the indices differ. This fixes one final position per outer iteration.
+
+The complete function saves \texttt{\$ra} and \texttt{\$s0} through \texttt{\$s2}
+in a 32-byte frame. They retain the array, $n$ and the left boundary across display
+calls. Inside the scan, \texttt{\$t0} holds the minimum index, \texttt{\$t2} its
+value, and \texttt{\$t1} the next index to inspect. These temporaries need not
+survive a call because no observation call occurs until the chosen exchange is
+complete.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Retain the first strictly smaller minimum}
+\begin{minted}{mars-idea}
+selection_outer:
+    addiu $t1, $s2, 1
+    bgec $t1, $s1, selection_return
+    nop
+    move $t0, $s2
+    dsll $t3, $s2, 2
+    daddu $t3, $s0, $t3
+    lw $t2, 0($t3)
+selection_scan:
+    bgec $t1, $s1, selection_exchange
+    nop
+    dsll $t3, $t1, 2
+    daddu $t3, $s0, $t3
+    lw $t4, 0($t3)
+selection_compare:
+    bgec $t4, $t2, selection_scan_next
+selection_compare_end:
+    nop
+    move $t2, $t4
+    move $t0, $t1
+selection_scan_next:
+    addiu $t1, $t1, 1
+    bc selection_scan
+\end{minted}
+\end{minipage}
+
+A candidate equal to the current minimum takes the branch and leaves the retained
+index unchanged. This implements the stated first-minimum policy. When the scan
+ends, the saved minimum value goes to the suffix's first position and that
+position's old value goes to the minimum's old position. The complete source
+skips the exchange if those indices already agree, then advances the boundary.
+
+The scan compares $n-1$ candidates on the first iteration, $n-2$ on the next, and
+so on. Its total is $n(n-1)/2$ key comparisons, regardless of the initial order.
+It needs at most $n-1$ exchanges, and sometimes fewer because self-exchanges are
+skipped.
+
+Keeping the first minimum does not make a long-distance exchange stable. Give
+equal keys conceptual labels: $[2_a,2_b,1]$. Selection's first exchange produces
+$[1,2_b,2_a]$, reversing the two equal keys. The labels are a reasoning aid, not
+extra bits stored in this program's array. Stability is a separate requirement
+from ascending order and preservation of the key values.
+
+\section{Preserve algorithm state across observations}
+
+The shared \texttt{publish\_exchange} helper sets phase to one, increments the
+exchange count, and calls \texttt{render}. It saves its own return link in a
+16-byte frame. Both sorting functions call it only after completing their pair
+of array stores. Their saved registers retain the loop state that must survive;
+allowed temporary-register changes cannot corrupt the next algorithm step.
+
+The renderer accepts an array pointer in \texttt{\$a0} and a valid prefix length
+in \texttt{\$a1}. It reads only that prefix, writes all 64 framebuffer words,
+preserves saved registers and the stack pointer, and reaches \texttt{sort\_ready}
+before returning. It does not change the source, phase or exchange count. Its
+caller owns publication metadata, just as the Life caller owned its generation
+number. A separate renderer test can pass a different prefix address without
+recreating the sorter's private register setup.
+
+Main publishes phase zero with exchange count zero before sorting. After the
+chosen routine returns, it publishes phase two with the final count. Empty,
+singleton and already sorted arrays still have initial and final observations.
+The frame must explicitly erase black and inactive cells on every render; otherwise
+an earlier bar can remain visible after the array has changed.
+
+Use \texttt{algorithm=0} for insertion and one for selection. At a
+\texttt{sort\_ready} breakpoint, inspect phase, \texttt{swap\_count}, the active
+words and the complete frame together. In the default eight-word input, insertion
+has 17 exchanges and selection has five. A fast Run may repaint only the final
+image, so visible screen refreshes are not an exchange counter.
+
+\section{Measure a question with a stated scope}
+
+A key comparison, a word store and a completed instruction are different units.
+For the measurements below, the core records completed MARS instructions, including
+expanded pseudoinstructions and executed \texttt{nop}s. One trace covers the entire
+run. Another counts addresses from the chosen sorting routine's entry to its end
+label. The latter includes its setup, comparisons, loop control, argument preparation,
+calls and return, but excludes the bodies of \texttt{publish\_exchange} and
+\texttt{render}. A third trace counts only the native branch instruction between
+the routine's comparison labels, giving actual key comparisons for this source.
+
+\input{revision/figures/sorting/costs}
+
+The three inputs use the same eight distinct keys. Their order changes, while
+the displayed heights and total number of white cells stay the same. Each method
+starts from a fresh copy of its input. Whole-run counts include the common caller,
+metadata, initial and final frames, exchange frames and exit. Assembly, session
+construction and host time are outside all these counts.
+
+The mixed row demonstrates why scope matters. Insertion uses 344 instructions
+inside its sorting routine, compared with selection's 399. Across the whole
+visualized program, insertion uses 19,633 and selection 7,510. Insertion's 17
+exchanges cause 19 complete renders, including initial and final; selection's five
+cause seven. That is 1,216 versus 448 framebuffer word stores. The observation
+work changes the result of the comparison.
+
+These are measurements of these implementations, not hardware cycles or universal
+algorithm timings. The routine interval still contains observation-call preparation
+and calls, so it is not a claim to count only comparisons and moves. Removing the
+visualizer, changing its implementation, or changing the calling structure creates
+a different measured program. Measure the workload you intend to run.
+
+Repeat the measurements with JDK 25:
+\begin{verbatim}
+python3 tools/measure_revision_sorting.py \
+  --java /path/to/jdk-25/bin/java \
+  --cli /path/to/cli.jar --output /new/report/directory
+\end{verbatim}
+The tool checks actual arrays, metadata, frame contents and store footprints while
+recording the core traces. Its report binds the source and CLI hashes. Compare
+those bindings before treating a changed number as a regression or improvement.
+
+The formulas also explain growth beyond this small demonstration. Selection scans
+a quadratic number of key pairs. Insertion has a quadratic worst case, but an
+already sorted input needs only one key comparison per new item. Those statements
+explain input sensitivity and scaling; they do not replace the concrete measurements
+or establish host execution time.
+
+\section{Apply an ordering requirement independently}
+
+The separate \texttt{partition-negative.asm} exercise groups negative words before
+nonnegative words while preserving relative order inside each group. For example,
+$[2,-2,3,-4,0,1,-3,-1]$ must become
+$[-2,-4,-3,-1,2,3,0,1]$, with a returned negative count of four. The negative group
+is not required to be numerically sorted.
+
+This task accepts the full signed 32-bit word range, unlike the visualizer's small
+bar-height domain. Zero belongs to the nonnegative group. Choose your own valid
+algorithm: you might move a newly encountered negative word left through earlier
+nonnegative words, or use private temporary storage and copy the two groups back.
+Preserve inactive words, guards, saved registers and caller-owned stack state,
+and limit source reads and array stores to the supplied active span.
+
+State the invariant that preserves each group's order, predict empty and all-one-sign
+cases, and test the most negative word as well as zero. The written lab supplies
+public checks and counterexamples. Sorting the whole prefix into ascending order
+would satisfy the sign boundary but violate the required relative order; use the
+actual contract to decide whether a result is correct.
