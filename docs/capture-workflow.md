@@ -909,3 +909,38 @@ as a failed attempt rather than claiming completion from its partial captures.
 New annotated publication figures, project reopen, policies and human review remain
 open. The lab proof passes automated PDF/UA-2 validation and all four pages were
 inspected; this does not establish usability or human accessibility review.
+
+
+## Native project save and fresh-process resume
+
+`closeProjectAfterCapture: true` opts the dedicated authoring fixture into public
+`ProjectManager.closeAndDispose`, which saves before disposal. Wait for
+`project-closed.json` with both `closed` and `disposed` true. Only then terminate
+the owned test IDE. Retain its workspace, sources, package bytes and log before
+cleaning the dedicated IDE directories. A lesson completion receipt alone does not
+prove project persistence.
+
+For a subsequent process, use `resumeIndependent: true`, `captureIndependent: true`
+and the existing independent file's `independentSourceSha256`. Supply
+`sourceSha256` for the retained worked example as well. No instructor solution path
+is needed or read on this path. Leave other capture-segment flags false. The driver
+uses the native toolwindow initialization queue and explicitly shows Learn through
+its asynchronous public API before observing the lesson. An unchanged source must
+produce a native completion without invoking the checker.
+
+For an offline-edit case, save/close and terminate first, then edit the source while
+leaving workspace/progress untouched. Set `expectIndependentRecheck: true` and
+`captureHints: true`. The driver requires the active exercise to remain incomplete
+for several native timer intervals, verifies the four saved hints with reveal
+disabled, invokes the public checker, observes five PASS rows and a native completion,
+and verifies that resuming did not alter the source. This recipe assumes the prior
+fixture revealed all four hints; it does not seed that history.
+
+The private `native-reopen-01` batch verifies both successful resume paths and
+retains two earlier startup-observation timeouts separately. Its final authoring
+package passes 91 tests and paired API verification; the MARS package is unchanged
+from the prior 968-test run. Eleven installed JARs match in each successful phase.
+Seven new successful reopen views were inspected, but remain raw private solution
+captures. Both successful reopen logs also report a bundled Air agent-provisioning
+cancellation error during project close; they must not be labeled error-free.
+This evidence concerns the independent exercise, not every task's automatic resume.

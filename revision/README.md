@@ -27,7 +27,9 @@ Independent writing now uses a separate skeleton and five public behavioral case
 with current editor text, cached assembly and a fresh machine per case. The IDE
 check verifies starter rejection, an equivalent program, edit invalidation and
 restart preservation. Graduated optional hints are implemented and tested;
-instructor policies and full project reopen/resume remain open. The progress service persists content-specific evidence. Its code and
+instructor policies remain open. The independent exercise is also verified
+across native project save/close and fresh IDE processes, including an offline
+source edit; automatic resumption at every Run/Debug task remains open. The progress service persists content-specific evidence. Its code and
 Jupiter verification are documented upstream in `docs/student-instruction-system.md`.
 The full goal includes the actual integrated lesson, further editorial pilots,
 all 35 projects and human review where available. These pilot PDFs do not
