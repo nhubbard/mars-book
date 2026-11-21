@@ -1,5 +1,6 @@
 """WAV student exports preserve native authority, unfinished code and exact privacy boundaries."""
 import importlib.util
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -20,11 +21,11 @@ class WavPackageTests(unittest.TestCase):
         self.assertTrue(all(s['completion']['type'] == 'cli-grade' for s in manifest['steps']))
         native = course.ROOT/'includes/chapters/031-pcm-wav'
         for path in native.glob('*.tex'):
-            self.assertEqual(path.read_bytes(), (root/'native'/path.name).read_bytes())
+            self.assertEqual(path.read_text().replace('book/captures/031-pcm-wav/','packages/031-pcm-wav/captures/'), (root/'native'/path.name).read_text())
         expected = re.findall(r'\\input\{includes/chapters/031-pcm-wav/([^}]+)\}', (native/'chapter.tex').read_text())
         reading = course.reading_segments(root, manifest)
-        actual = [r['step'] if r['kind'] == 'step' else Path(r['content']).stem
-                  for r in reading if r['kind'] != 'figure']
+        actual = [r['step'] if r['kind'] == 'step' else r['figure'].removeprefix('pcm-wav-')
+                  if r['kind'] == 'figure' else Path(r['content']).stem for r in reading]
         self.assertEqual(expected, actual)
         self.assertEqual(4, sum(r['kind'] == 'figure' for r in reading))
         steps = json.loads((root/'steps.json').read_text())['steps']
@@ -33,10 +34,15 @@ class WavPackageTests(unittest.TestCase):
         plans = json.loads((root/manifest['figures']).read_text())['figures']
         recipes = {q['id']:q for q in json.loads((root/'inputs.json').read_text())['recipes']}
         for plan in plans:
-            self.assertEqual('planned', plan['captureStatus'])
+            self.assertEqual('verified', plan['captureStatus'])
             self.assertEqual('IntelliJ Light', plan['theme'])
-            self.assertNotIn('artifact', plan)
-            self.assertNotIn('receipt', plan)
+            receipt = json.loads((root/plan['receipt']).read_text())
+            self.assertEqual('native-composite', receipt['kind'])
+            self.assertEqual(plan['id'], receipt['figure'])
+            self.assertEqual(plan['recipe']['breakpoint'], receipt['sharedState']['checkpoint'])
+            self.assertTrue(receipt['assertionsPassed'])
+            self.assertEqual(receipt['previewSha256'], hashlib.sha256((root/plan['artifact']).read_bytes()).hexdigest())
+            self.assertEqual(receipt['nativeExportSha256'], hashlib.sha256((root/plan['nativeAnnotations']).read_bytes()).hexdigest())
             for rid in plan['recipe']['observations']:
                 self.assertEqual(recipes[rid]['callerCheckpoint'], plan['recipe']['breakpoint'])
 
