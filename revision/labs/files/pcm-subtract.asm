@@ -20,6 +20,8 @@ caller_end: .word 0x55667788
 .text
 .globl main
 main:
+    dli $t0, -16
+    and $sp, $sp, $t0
     dla $a0, pcm_a
     dla $a1, pcm_b
     dla $a2, pcm_c

@@ -29,6 +29,8 @@ scatter_last: .byte 20,6,7,22,8,9,24,10,11,26,12,13,28,14,15,30
 .text
 .globl main
 main:
+    dli $t0, -16
+    and $sp, $sp, $t0
     dla $a0, rgb_a
     dla $a1, packed_a
     dla $t0, count

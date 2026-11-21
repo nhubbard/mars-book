@@ -12,6 +12,8 @@ completed: .word -1
 .text
 .globl main
 main:
+    dli $t0, -16
+    and $sp, $sp, $t0
     dla $a0, rgb
     dla $a1, packed
     lw $a2, count

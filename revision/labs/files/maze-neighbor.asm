@@ -8,6 +8,8 @@ dy: .byte -1, 0, 1, 0
 .text
 .globl main
 main:
+    dli $t0, -16
+    and $sp, $sp, $t0
     li $a0, 7
     li $a1, 1
     balc neighbor_id
