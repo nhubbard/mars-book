@@ -1,6 +1,7 @@
 package edu.missouristate.mars.book
 
 import com.google.gson.GsonBuilder
+import com.intellij.CommonBundle
 import com.intellij.debugger.ui.DebuggerContentInfo.VARIABLES_CONTENT
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.execution.ExecutionListener
@@ -321,10 +322,19 @@ class BookLessonCaptureActivity : ProjectActivity {
             if (settings == null) delay(100)
         }
         val dialog = settings
+        awaitUi {
+            captureComponents(dialog.rootPane).filterIsInstance<JLabel>()
+                .none { it.isShowing && it.text == CommonBundle.getLoadingTreeNodeText() }
+        }
         onModalUi {
             val widgets = captureComponents(dialog.rootPane)
             widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value = released
             widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected = true
+        }
+        awaitUi {
+            val widgets = captureComponents(dialog.rootPane)
+            widgets.filterIsInstance<JSpinner>().single { it.isShowing }.value == released &&
+                widgets.filterIsInstance<JCheckBox>().single { it.isShowing && it.text == label }.isSelected
         }
         captureComponent(dialog.rootPane, output, prefix, label)
         onModalUi { visibleLessonButton(dialog.rootPane, "OK").doClick() }
