@@ -384,3 +384,16 @@ the exact MARS version and that compatibility, internal and override-only proble
 files are absent. The default single-plugin `verifyPlugin` task cannot resolve an
 unpublished MARS dependency from Marketplace. Never hide that gap with external
 class prefixes or ignored compatibility problems.
+
+The opt-in file fixture also supports bounded virtual output for intermediate Debug
+checkpoints. Set `writable`, `maximumWrite`, `firstDescriptor` and exact
+`expectedContentsHex` in the private capture plan. `expectedOperations` records the
+actual accepted writes. `expectedOpenDescriptors` explicitly declares descriptors
+still owned at the photographed checkpoint; it defaults to an empty list. A stopped
+capture records those descriptors separately in `cleanupDescriptors`, without adding
+a guest CLOSE operation. A full guest continuation must be verified separately by
+the core check. This keeps short-write progress, routine completion and capture
+cancellation distinct. Read-only fixtures retain their strict guest-close contract.
+All virtual contents and cursors belong to one launch, and no fixture output reaches
+the host filesystem. The implementation uses MARS's existing public syscall hook
+and the native execution lifetime; the MARS plugin contains no authoring code.
