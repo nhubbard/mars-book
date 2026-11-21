@@ -773,3 +773,20 @@ The full-window views show an IDE update notification and are verification evide
 rather than publication-ready figures. The two dialog views show actual feedback.
 This batch verifies only the prediction segment; it does not prove the remaining
 Run, Debug, grading, hint or independent-program activities.
+
+
+The revised driver also accepts `captureRun: true` in its lesson plan. It selects
+the prediction lesson explicitly, observes native `LessonListener` pass callbacks,
+checks preserved edits after restart, then opens the Run lesson. It creates an
+ordinary MARS Run configuration through public APIs and supplies 20 through the
+same public process input stream used by the console worker. It records the exact
+stdout and normal exit separately from the native Run-pass callback. A preview of
+future conclusion text is not accepted as completion evidence.
+
+The first Run batch exposed an event-only state check that missed asynchronous
+completion; it remains failed evidence. The corrected MARS lesson uses the native
+`timerCheck` facility. The second batch has seven inspected light-theme captures,
+two prediction-pass callbacks, retained edits and one actual native Run completion.
+The full-window views retain an IDE notification, and the Run view needs publication
+scroll/layout cleanup. No new annotated publication figure is claimed. Debug and
+the remaining first-unit activities still require their own verification.

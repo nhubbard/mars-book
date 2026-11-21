@@ -73,3 +73,19 @@ the separate authoring plugin, with light-theme state receipts and native annota
 Review the written and interactive unit together with the author before extending
 the same method across the curriculum. Representative learner review remains open
 until people with the intended prerequisites perform the independent task.
+
+## Current implementation evidence
+
+The main MARS course currently exposes prediction and Run segments. The prediction
+dialogs support wrong-answer feedback and revised answers. The Run segment uses
+the ordinary process lifecycle, exact captured source and options, document stamps
+and content-specific progress capabilities. Source edits invalidate old evidence.
+The actual IDE check observes the platform's lesson-pass callbacks and the expected
+console transcript; a core-only check or visible future text is insufficient.
+The original event-only Run check was corrected to the native timer facility after
+the first graphical attempt exposed asynchronous completion.
+
+This verifies only the two implemented segments. Debug, output-argument diagnosis,
+graduated hints, instructor policies, free-writing acceptance and complete-unit
+resume/reopen behavior remain to be integrated and exercised. The current raw
+captures are verification artifacts awaiting publication layout and annotations.
