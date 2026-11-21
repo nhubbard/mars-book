@@ -117,7 +117,7 @@ See [ring-unit.md](ring-unit.md) for the independent queue assignment, compact
 starter, wraparound experiment and verified annotated Memory observations.
 
 The algorithms and cost chapter begins on main page 52, and its written lab begins
-on lab page 36. The current proofs contain 78 main-book pages and 59 lab-book pages.
+on lab page 36. The current proofs contain 78 main-book pages and 65 lab-book pages.
 See [sorting-unit.md](sorting-unit.md) for the complete two-sort visualizer,
 repeatable measurements, stable-partition exercise and remaining interactive work.
 
@@ -141,3 +141,8 @@ The bounded interfaces chapter begins on main page 72, and its written lab begin
 on lab page 55. See [bounded-unit.md](bounded-unit.md) for the complete packet
 parser, independent binary delimiter search, bounded access checks and four
 verified native observations presented in two annotated comparisons.
+
+The UTF-8 companion follows as section 12.6 on lab pages 59–65. See
+[utf8-unit.md](utf8-unit.md) for persistent-state reasoning, the independent
+scanner starter, full scalar/pair domain checks and native annotated Memory
+comparisons. The main-book proof is unchanged by this companion.

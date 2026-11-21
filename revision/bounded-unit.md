@@ -2,7 +2,8 @@
 
 Chapter 12, `main/bounded-interfaces.tex`, begins on main page 72; its written
 supplement, `labs/bounded-interfaces.tex`, begins on lab page 55. The combined
-proofs contain 78 and 59 pages. Native LaTeX remains authoritative.
+proofs at the chapter milestone contained 78 and 59 pages; see README.md for
+the latest combined totals. Native LaTeX remains authoritative.
 
 The chapter uses an invented binary packet format to explain supplied bounds,
 three distinct lengths, explicit byte order, error priority, checksum arithmetic,
@@ -52,8 +53,9 @@ were reviewed, and both final PDFs pass automated PDF/UA-2. Established Minion
 Pro, Noto Sans Math and IntelliJ-derived minted styling remain in use.
 
 Human learner/assistive-technology reviews and a native interactive version of
-this lab remain open. The UTF-8 companion, clipped blitting and MarsBot companion,
-later chapters and remaining instructional-system work are unfinished. Reaching
+this lab remain open. The UTF-8 companion now follows in section 12.6; see
+utf8-unit.md. Clipped blitting, the MarsBot companion, later chapters and remaining
+instructional-system work are unfinished. Reaching
 twelve main chapters does not complete the foundational phase or overall goal.
 The proposed MARS-versus-hardware opening remains deferred. The original manuscript
 and unrelated MARS edits are preserved.

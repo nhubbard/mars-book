@@ -1,0 +1,256 @@
+\section{Companion lab: validate UTF-8 across chunks}
+\label{revision-lab:utf8}
+
+The packet parser can leave an incomplete request untouched because the caller
+still owns the whole prefix. A stream interface may instead accept that prefix
+now and receive later bytes in another call. Its state must remember what the
+accepted bytes permit next. Resetting at each call would make correctness depend
+on where a file reader happened to divide the input.
+
+This is original project \texttt{015-utf8-scanner}. The revised work area is
+\texttt{utf8-stream.asm}, in the lab files directory. Implement
+\texttt{scan\_utf8}. The starter supplies the allocations, chunk caller and
+\texttt{chunk\_ready} observation marker. Its function body deliberately stops
+with \texttt{break} until replaced. Both checks under the original package's
+\texttt{checks} directory apply to a completed copy. Choose your own registers,
+private labels and implementation; the archived construction regions are not
+required by this assignment.
+
+The prerequisite is Chapter 12's bounded byte access and function reasoning.
+The new work is a persistent state machine: define which byte can follow a prefix,
+carry that decision across calls, count completed values, and retain the first
+failure. This scanner validates and counts UTF-8. It does not produce decoded
+text or replacement characters.
+
+\subsection*{Distinguish bytes, scalar values and displayed text}
+
+A Unicode code point is a numbered position, conventionally written with
+\texttt{U+} and hexadecimal digits. A Unicode \emph{scalar value} is a code point
+outside the surrogate range U+D800 through U+DFFF. UTF-8 represents a scalar with
+one through four bytes. The restrictions in Table~\ref{tab:revision-utf8-leads}
+exclude surrogate encodings, values beyond U+10FFFF and encodings longer than
+needed.\footnote{The Unicode Consortium, \emph{The Unicode Standard}, version
+17.0.0, Section 3.9.3 and Table 3-7:
+\url{https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-3/}.}
+
+A complete scalar is the unit this lab counts. It is not necessarily one visible
+character. For example, U+0065 followed by U+0301 represents an \texttt{e} and a
+combining acute accent: two scalars that can form one grapheme cluster in displayed
+text. U+00E9 is one scalar with a precomposed accented letter. This scanner counts
+them as two and one respectively; it does not normalize either representation or
+segment grapheme clusters.\footnote{For grapheme clusters and text boundaries,
+see Unicode Standard Annex 29, revision 47, Section 3:
+\url{https://www.unicode.org/reports/tr29/tr29-47.html}.}
+
+The supplied stream has eleven bytes, written here in hexadecimal:
+\[
+\underbrace{\mathtt{41}}_{\mathrm{U+0041}}\quad
+\underbrace{\mathtt{E2\ 82\ AC}}_{\mathrm{U+20AC}}\quad
+\underbrace{\mathtt{F0\ 9F\ 99\ 82}}_{\mathrm{U+1F642}}\quad
+\underbrace{\mathtt{00}}_{\mathrm{U+0000}}\quad
+\underbrace{\mathtt{C3\ A9}}_{\mathrm{U+00E9}}.
+\]
+It contains five complete scalars. Byte zero is a valid one-byte encoding; it
+neither ends this supplied stream nor suppresses the following scalar. U+FEFF,
+unassigned scalar values and noncharacters also count when their encodings are
+well formed. Assignment and display policies are outside this validator's contract.
+The program exits silently, so inspect its state rather than waiting for printed
+characters.
+
+\subsection*{Derive the next-byte rule from an accepted prefix}
+
+A one-byte encoding has high bit zero. A multibyte lead specifies its width;
+following bytes, called \emph{continuation bytes}, have bit pattern
+\texttt{10xxxxxx}. Their ordinary hexadecimal interval is \texttt{80} through
+\texttt{BF}. A continuation cannot begin a new scalar. Bytes \texttt{C0},
+\texttt{C1} and \texttt{F5} through \texttt{FF} cannot begin a valid encoding
+either. The first continuation after four particular leads has a tighter bound.
+
+\input{revision/figures/utf8/leads}
+
+These bounds do more than check the continuation tag. After \texttt{E0}, accepting
+\texttt{80} would allow a value below the three-byte minimum. After \texttt{ED},
+accepting \texttt{A0} would enter the surrogate range. The \texttt{F0} lower bound
+excludes values that need only three bytes; the \texttt{F4} upper bound excludes
+values above the Unicode limit. After a valid first continuation, reset the range
+to \texttt{80} through \texttt{BF} for every remaining continuation. The tighter
+rule does not persist for the whole sequence.\footnote{The byte grammar is also
+specified in RFC 3629, Section 4:
+\url{https://www.rfc-editor.org/rfc/rfc3629.html\#section-4}.}
+
+You can derive a boundary numerically. A three-byte encoding carries four useful
+bits from the lead and six from each continuation. For bytes $b_0,b_1,b_2$, its
+value is
+\[
+ ((b_0\mathbin{\&}15)\ll12)
+ \mathbin{|}((b_1\mathbin{\&}63)\ll6)
+ \mathbin{|}(b_2\mathbin{\&}63).
+\]
+Thus \texttt{E0 A0 80} gives $32\cdot64=2048$, hexadecimal 0800, the first
+three-byte scalar. \texttt{E0 9F 80} would give 1984, which has a shorter encoding.
+The scanner need not assemble this numerical value: retaining the allowed range
+and remaining count is enough to validate it. Use the formula to explain the
+range before encoding comparisons in assembly.
+
+Load input as unsigned bytes when comparing these ranges. An \texttt{lb} of
+\texttt{E0} sign-extends a negative value; unsigned comparisons with small positive
+bounds would then classify the wrong number. Advance the byte pointer with
+full-width arithmetic even though this lab's byte counts fit within a word.
+Neither a short chunk nor a small scalar implies a small address.
+
+\subsection*{Give persistent state a precise meaning}
+
+The function takes the selected state pointer in \texttt{\$a0}, current chunk
+pointer in \texttt{\$a1}, byte count in \texttt{\$a2}, and final flag in
+\texttt{\$a3}. The flag is zero or one. A chunk contains zero through 64 bytes
+inside the supplied 96-byte arena and can begin at any byte offset that leaves
+room for it. State is a separate, word-aligned 32-byte object, either
+\texttt{state\_a} or \texttt{state\_b}. Calls receive a reachable state; you do
+not need to accept arbitrary corrupted descriptors. For an active call, old total
+plus supplied count is at most 4096.
+
+\input{revision/figures/utf8/state}
+
+The empty state is $[0,0,0,128,191,-1,0,-1]$, in the table's word order and decimal
+notation. An idle active state has need zero, ordinary continuation bounds and
+start $-1$. A pending active state has need from one through three and retains
+the absolute offset of its lead. Its bounds describe the \emph{next} byte, not
+the first byte of the next call. Error remains $-1$ while active.
+
+At each input-byte boundary, total is the number of accepted bytes over all calls;
+count is the number of complete scalars among them. A valid pending prefix
+contributes to total but not yet to count. The current call's accepted count is
+separate. Return it in \texttt{\$v1}; total includes earlier calls too.
+
+If need is zero, an ASCII byte completes a scalar immediately. A legal multibyte
+lead records start at the old total, establishes need and the first-continuation
+range, and is then accepted. If need is positive, test the current byte against
+the stored range. An accepted continuation reduces need and restores ordinary
+bounds. Reaching need zero completes one scalar and resets start to $-1$.
+Only acceptance advances total, the call's accepted count and the input pointer.
+An impossible byte advances none of them.
+
+Keep this invariant at the loop's top. First determine whether the current call
+has an unexamined byte, then load within its supplied interval. A zero-length
+call performs no input load. The contract permits read-ahead within the current
+chunk, but never across its end, even if the next chunk is mapped immediately
+after it. A chunk ending with \texttt{E2} does not grant access to the following
+\texttt{82}; retain the pending rule for the next call instead.
+
+\subsection*{Trace one scalar across two chunk boundaries}
+
+The caller supplies the eleven-byte example as four chunks, with the last one
+marked final. Predict every row of Table~\ref{tab:revision-utf8-chunks} before
+running your implementation. All offsets are zero based; state and return values
+are decimal unless the byte column says otherwise.
+
+\input{revision/figures/utf8/chunks}
+
+The first chunk accepts \texttt{A} and the \texttt{E2} lead. Total becomes two,
+but only one scalar is complete. The second chunk finishes U+20AC and accepts
+\texttt{F0}, so need becomes three and the next-byte minimum becomes 144,
+hexadecimal \texttt{90}. The third chunk accepts two continuations. The first,
+\texttt{9F}, satisfies that tighter bound; after it, minimum returns to 128.
+Need is still one when the chunk ends. Its two bytes have not completed another
+scalar.
+
+The fourth chunk begins with \texttt{82}, which completes U+1F642. It then accepts
+the zero byte and \texttt{C3 A9}. Count becomes five, need becomes zero and the
+final flag permits successful completion. Splitting the same bytes at another
+position must produce the same final total and scalar count, although intermediate
+states and per-call accepted counts will differ.
+
+Break at \texttt{chunk\_ready} in Debug. The caller has already stored
+\texttt{chunk\_index}, \texttt{last\_status} and \texttt{last\_used}; their values
+identify the completed call. The state words must agree with that same call.
+Continue to the next stop to inspect another chunk, rather than restarting the
+program and accidentally observing index zero repeatedly. The revised caller uses
+compact transfers and preserves its live values in saved registers. Your scanner
+must preserve those registers and the stack pointer across all returns.
+
+Figure~\ref{fig:revision-utf8-pending} compares the pending rules after chunks
+one and two in actual native Memory observations. Read the boxed words as need
+and minimum using the state layout above.
+
+\input{revision/figures/utf8/pending}
+
+\subsection*{Separate malformed input, truncation and terminal reuse}
+
+A nonfinal chunk that ends in a still-possible prefix returns zero. A final chunk
+with no pending prefix returns one; a final chunk with a pending prefix returns
+$-2$, meaning truncated. The latter is a promise that no more bytes will arrive,
+not a new byte to validate. Even an empty final call can therefore finish or
+truncate a stream.
+
+An impossible byte returns $-1$ immediately, whether or not that call is final.
+Store its absolute offset in error, retaining the lead offset in start. For an
+invalid byte encountered while idle, that byte itself supplies start. Accepted
+progress preceding the error stays committed. This differs from the packet
+parser's no-output-on-failure contract: the stream's state records both its
+accepted prefix and its terminal diagnostic.
+
+Compare final input \texttt{41 E0} with final input \texttt{41 E0 80}. Both
+accept two bytes and complete one scalar. The first ends with a possible prefix:
+status $-2$, start one, error two. In the second, byte \texttt{80} at offset two
+is already impossible after \texttt{E0}: status $-1$, start one, error two. Do not
+call it truncated merely because the chunk was final. The offending byte is not
+included in \texttt{\$v1} or total. A final flag never replaces an earlier byte
+error. Figure~\ref{fig:revision-utf8-errors} compares those two completed calls.
+
+\input{revision/figures/utf8/errors}
+
+A successful final call, a malformed call and a truncated final call all make
+the state terminal. On any later call, return $(-3,0)$ without reading input or
+writing caller data. Preserve the stored status and error, so an attempted reuse
+does not erase the original result. Check status before entering the active scan.
+A zero-length later call has the same rejection rule. To begin an unrelated stream,
+the caller must deliberately initialize a fresh empty state.
+
+While active, stores may change only the selected state. Preserve the input,
+guards, other state, caller metadata and full saved registers. A correctly restored
+private stack frame is permitted. Active store order and temporary registers are
+not prescribed. A terminal rejection permits no caller-data stores, including a
+write that restores the same value. Keep terminal rejection outside any common
+active publication path that would rewrite state unconditionally.
+
+\subsection*{Build tests around the first changed decision}
+
+Begin with ASCII and an empty nonfinal call, then one multibyte scalar at each
+width. Divide each valid encoding after every possible byte and insert empty
+nonfinal chunks. Next test the four restricted leads on both sides of their first-
+continuation bounds. Include \texttt{E0 A0 80} and \texttt{F0 90 80 80} to expose
+a routine that forgets to restore ordinary bounds after the first continuation.
+
+Test \texttt{ED A0} and \texttt{F4 90} before supplying any further byte: both
+are already malformed. Test lone \texttt{80}, \texttt{C0} and \texttt{F5} while
+idle. Repeat a pending prefix once with final zero and once with final one, then
+try another call after each terminal outcome. Keep the original failure status
+and offsets in view during that last experiment.
+
+Use two state objects for interleaved independent streams. Feed \texttt{E2} to
+one and \texttt{C3} to the other; then finish them with \texttt{82 AC} and
+\texttt{A9} respectively. Their saved pending rules belong to those state objects,
+not to private global variables or a register value left over from the last call.
+Choose a fresh input offset for the second pair of calls. The supplied checks also
+change scratch registers between calls, so register residue cannot serve as
+persistent state.
+
+\begin{samepage}
+Run both original public checks on your completed source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/015-utf8-scanner/checks/stream.kts \
+  /path/to/your/utf8-stream.asm
+java -jar /path/to/cli.jar grade \
+  packages/015-utf8-scanner/checks/program.kts \
+  /path/to/your/utf8-stream.asm
+\end{verbatim}
+\par\end{samepage}
+
+When a check fails, retain the stream prefix, selected state, current chunk and
+final flag. Find the first byte whose permitted range or accepted count diverges.
+Then compare the saved state before and after that call. A correct final scalar
+count cannot excuse an out-of-chunk load, an overwritten earlier error or lost
+pending state. Keep one boundary trace and one malformed-versus-truncated trace
+with your passing results, explaining why changing chunk boundaries does not
+change the validity of the complete stream.
