@@ -94,6 +94,9 @@ internal data class BookLessonCapturePlan(
     val capturePolicy: Boolean = false,
     val captureModes: Boolean = false,
     val resumeModes: Boolean = false,
+    val resumeGuided: Boolean = false,
+    val expectGuidedRecheck: Boolean = false,
+    val guidedSourceSha256: Map<String, String> = emptyMap(),
     val resumeIndependent: Boolean = false,
     val expectIndependentRecheck: Boolean = false,
     val independentSourceSha256: String = "",
@@ -107,6 +110,14 @@ internal data class BookLessonCapturePlan(
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
         require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
         require(!expectIndependentRecheck || resumeIndependent)
+        require(!expectGuidedRecheck || resumeGuided)
+        if (resumeGuided) {
+            require(!captureRun && !captureDebug && !captureOutput && !captureDiagnosis && !captureRepair &&
+                !captureIndependent && !captureHints && !capturePolicy && !captureModes && !resumeModes && !resumeIndependent)
+            require(guidedSourceSha256.keys == setOf("first-program.asm", "wrong-output.asm", "repair-output.asm"))
+            require(guidedSourceSha256.values.all { it.matches(Regex("[a-f0-9]{64}")) })
+            require(guidedSourceSha256["first-program.asm"] == sourceSha256)
+        }
         if (resumeModes) {
             require(captureModes && independentSourceSha256.matches(Regex("[a-f0-9]{64}")))
         }
@@ -147,6 +158,7 @@ class BookLessonCaptureActivity : ProjectActivity {
                 }
                 toolWindowsReady.await()
                 when {
+                    plan.resumeGuided -> captureGuidedResume(project, plan, output)
                     plan.resumeModes -> captureModesResume(project, plan, output)
                     plan.captureModes -> captureModes(project, plan, output)
                     plan.capturePolicy -> capturePolicy(project, plan, output)
@@ -271,6 +283,78 @@ class BookLessonCaptureActivity : ProjectActivity {
     }
 
     /** A later JVM loads the native workspace; this path never writes source, answers or hints. */
+    /** Reopens saved native tasks without injecting progress, quiz answers or execution. */
+    private suspend fun captureGuidedResume(project: Project, plan: BookLessonCapturePlan, output: Path) {
+        withContext(Dispatchers.EDT) { configurePresentation(project) }
+        val folder = Path.of(plan.projectRoot).resolve("mars-labs/console")
+        suspend fun verifySources() = withContext(Dispatchers.IO) {
+            for ((name, digest) in plan.guidedSourceSha256) {
+                check(captureSha256(Files.readAllBytes(folder.resolve(name))) == digest) { "Saved source differs: $name" }
+            }
+        }
+        verifySources()
+        val executions = AtomicInteger()
+        val connection = project.messageBus.connect()
+        connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
+            override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
+                executions.incrementAndGet()
+            }
+        })
+        val observations = mutableListOf<Map<String, Any>>()
+        try {
+            for ((segment, completedText, pendingText) in listOf(
+                Triple("predictions", "The destination tells you where to look", ""),
+                Triple("run", "The console result agrees with the prediction", "Run first-program.asm using the normal MARS Run"),
+                Triple("debug", "You have observed the input, doubled value", "Set a breakpoint on addu"),
+                Triple("output", "You observed the answer survive", "Stop the preceding Debug session"),
+                Triple("diagnosis", "You located an argument error", ""),
+                Triple("repair", "The repaired source printed 41", ""),
+            )) {
+                val requiresRecheck = plan.expectGuidedRecheck && segment in setOf("run", "debug", "output")
+                val file = folder.resolve(when (segment) {
+                    "diagnosis" -> "wrong-output.asm"
+                    "repair" -> "repair-output.asm"
+                    else -> "first-program.asm"
+                })
+                val passes = AtomicInteger()
+                val listener = object : LessonListener {
+                    override fun lessonPassed(lesson: Lesson) { passes.incrementAndGet() }
+                }
+                val lesson = withContext(Dispatchers.EDT) {
+                    CourseManager.instance.modules.single { it.id == "mars.console" }.lessons.single { it.id == "mars.console.$segment" }.also {
+                        it.addLessonListener(listener)
+                        CourseManager.instance.openLesson(project, it, LessonStartingWay.LEARN_TAB, forceStartLesson = true)
+                    }
+                }
+                try {
+                    val text = if (requiresRecheck) pendingText else completedText
+                    awaitFrame(project, text, file)
+                    if (requiresRecheck) {
+                        // Observe several native timer ticks; merely seeing instruction text is insufficient.
+                        delay(1_500)
+                        check(passes.get() == 0) { "Edited source retained an execution pass: $segment" }
+                    } else awaitUi { passes.get() == 1 }
+                    captureFrame(project, output, "guided-reopened-$segment", text)
+                    observations.add(mapOf("lesson" to lesson.id, "requiresExecutionRecheck" to requiresRecheck,
+                        "nativePassCallbacks" to passes.get(), "source" to file.fileName.toString()))
+                } finally {
+                    withContext(Dispatchers.EDT) { lesson.removeLessonListener(listener) }
+                }
+            }
+            verifySources()
+            check(executions.get() == 0) { "Resume verification unexpectedly executed a process" }
+            withContext(Dispatchers.IO) {
+                Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
+                    "platformBuild" to ApplicationInfo.getInstance().build.asString(),
+                    "observations" to observations, "processStarts" to executions.get(),
+                    "sourceSha256" to plan.guidedSourceSha256,
+                    "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
+                    "scope" to "Fresh-process guided restoration with unchanged or offline-edited source; no source, progress, answers, policy or execution injected",
+                )), CREATE_NEW)
+            }
+        } finally { connection.disconnect() }
+    }
+
     private suspend fun captureModesResume(project: Project, plan: BookLessonCapturePlan, output: Path) {
         withContext(Dispatchers.EDT) { configurePresentation(project) }
         val folder = Path.of(plan.projectRoot).resolve("mars-labs/console")

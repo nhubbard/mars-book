@@ -96,6 +96,27 @@ class BookLessonCaptureTest {
     }
 
     @Test
+    fun `guided restoration binds every existing source and forbids execution or answer injection`() {
+        assertFalse(valid.resumeGuided)
+        assertThrows<IllegalArgumentException> { valid.copy(expectGuidedRecheck = true).validate() }
+        assertThrows<IllegalArgumentException> { valid.copy(resumeGuided = true).validate() }
+        val hashes = mapOf("first-program.asm" to "a".repeat(64), "wrong-output.asm" to "b".repeat(64), "repair-output.asm" to "c".repeat(64))
+        val resume = valid.copy(resumeGuided = true, guidedSourceSha256 = hashes)
+        resume.validate()
+        resume.copy(expectGuidedRecheck = true).validate()
+        for (invalid in listOf(resume.copy(captureRun = true), resume.copy(captureDebug = true),
+            resume.copy(captureOutput = true), resume.copy(captureDiagnosis = true), resume.copy(captureRepair = true),
+            resume.copy(captureIndependent = true), resume.copy(captureHints = true), resume.copy(capturePolicy = true),
+            resume.copy(captureModes = true), resume.copy(resumeModes = true), resume.copy(resumeIndependent = true),
+            resume.copy(guidedSourceSha256 = hashes - "repair-output.asm"),
+            resume.copy(guidedSourceSha256 = hashes + ("../source.asm" to "a".repeat(64))),
+            resume.copy(guidedSourceSha256 = hashes + ("wrong-output.asm" to "bad")),
+            resume.copy(sourceSha256 = "d".repeat(64)))) {
+            assertThrows<IllegalArgumentException> { invalid.validate() }
+        }
+    }
+
+    @Test
     fun `selectors reject hidden and ambiguous UI controls`() {
         val root = JPanel()
         root.add(JButton("Check prediction"))
