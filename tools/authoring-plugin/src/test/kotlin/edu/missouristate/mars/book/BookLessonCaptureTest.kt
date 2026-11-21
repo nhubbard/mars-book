@@ -27,6 +27,8 @@ class BookLessonCaptureTest {
         assertFalse(valid.captureDiagnosis)
         assertFalse(valid.captureRepair)
         assertFalse(valid.captureIndependent)
+        assertFalse(valid.captureHints)
+        assertThrows<IllegalArgumentException> { valid.copy(captureHints = true).validate() }
         assertThrows<IllegalArgumentException> { valid.copy(captureIndependent = true).validate() }
         valid.copy(captureIndependent = true, independentSolutionPath = "/tmp/private-solution.asm", independentSolutionSha256 = "b".repeat(64)).validate()
         assertThrows<IllegalArgumentException> { valid.copy(captureIndependent = true, independentSolutionPath = "/tmp/private-solution.asm", independentSolutionSha256 = "bad").validate() }

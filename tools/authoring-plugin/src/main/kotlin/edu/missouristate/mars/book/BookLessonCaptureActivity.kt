@@ -15,6 +15,7 @@ import com.intellij.execution.process.ProcessListener
 import com.intellij.execution.process.ProcessOutputTypes
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder
+import com.intellij.ide.DataManager
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -37,6 +38,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.xdebugger.XDebugSession
@@ -83,6 +85,7 @@ internal data class BookLessonCapturePlan(
     val captureDiagnosis: Boolean = false,
     val captureRepair: Boolean = false,
     val captureIndependent: Boolean = false,
+    val captureHints: Boolean = false,
     val independentSolutionPath: String = "",
     val independentSolutionSha256: String = "",
 ) {
@@ -90,6 +93,7 @@ internal data class BookLessonCapturePlan(
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(sourceSha256.matches(Regex("[a-f0-9]{64}")))
+        require(!captureHints || captureIndependent) { "Hint capture requires the independent lesson" }
         if (captureIndependent) {
             require(Path.of(independentSolutionPath).isAbsolute)
             require(independentSolutionSha256.matches(Regex("[a-f0-9]{64}")))
@@ -181,7 +185,7 @@ class BookLessonCaptureActivity : ProjectActivity {
         if (plan.captureRepair) captureRun(project, output, source.resolveSibling("repair-output.asm"), repair = true)
         if (plan.captureIndependent) captureIndependent(project, output, source.resolveSibling("independent.asm"), plan)
         val receipt = mapOf(
-            "scope" to "Only the native segments marked observed below; hints, policies and full-unit integration remain incomplete",
+            "scope" to "Only the native segments marked observed below; instructor policies and full-unit integration remain incomplete",
             "nativePredictionPassesObserved" to predictionPasses.get(),
             "nativeRunPassedObserved" to plan.captureRun,
             "nativeDebugPassedObserved" to plan.captureDebug,
@@ -189,6 +193,7 @@ class BookLessonCaptureActivity : ProjectActivity {
             "nativeDiagnosisPassedObserved" to plan.captureDiagnosis,
             "nativeRepairPassedObserved" to plan.captureRepair,
             "nativeIndependentPassedObserved" to plan.captureIndependent,
+            "nativeHintsObserved" to plan.captureHints,
             "platformBuild" to ApplicationInfo.getInstance().build.asString(),
             "sourceSha256" to plan.sourceSha256,
             "retainedSourceSha256" to captureSha256(edited.toByteArray(Charsets.UTF_8)),
@@ -223,6 +228,13 @@ class BookLessonCaptureActivity : ProjectActivity {
             captureFrame(project, output, "independent-ready", "implement 3x+1")
             checkIndependent(project, output, "independent-starter-feedback", passed = false)
             check(passes.get() == 0)
+            if (plan.captureHints) {
+                val beforeHints = withContext(Dispatchers.IO) { Files.readString(source) }
+                captureHints(project, output, "hints-initial", existing = 0, revealTo = 2)
+                captureHints(project, output, "hints-reopened", existing = 2, revealTo = 4)
+                check(withContext(Dispatchers.IO) { Files.readString(source) } == beforeHints)
+                check(passes.get() == 0)
+            }
             withContext(Dispatchers.EDT) {
                 val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
                 WriteCommandAction.runWriteCommandAction(project) { editor.document.setText(solution) }
@@ -232,6 +244,7 @@ class BookLessonCaptureActivity : ProjectActivity {
             awaitUi { passes.get() == 1 }
             awaitFrame(project, "Your current source passed all five", source)
             captureFrame(project, output, "independent-complete", "Your current source passed all five")
+            var expectedPasses = 1
             withContext(Dispatchers.EDT) {
                 val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
                 WriteCommandAction.runWriteCommandAction(project) { editor.document.insertString(0, "# Source edit requires a fresh check.\n") }
@@ -240,21 +253,25 @@ class BookLessonCaptureActivity : ProjectActivity {
             }
             awaitFrame(project, "implement 3x+1", source)
             delay(600) // Allow several native timer checks to reject the invalidated earlier pass.
-            check(passes.get() == 1)
+            check(passes.get() == expectedPasses)
+            if (plan.captureHints) captureHints(project, output, "hints-after-edit", existing = 4, revealTo = 4)
             captureFrame(project, output, "independent-edited", "implement 3x+1")
             checkIndependent(project, output, "independent-rechecked-feedback", passed = true)
-            awaitUi { passes.get() == 2 }
+            expectedPasses++
+            awaitUi { passes.get() == expectedPasses }
             val retained = withContext(Dispatchers.IO) { Files.readString(source) }
             withContext(Dispatchers.EDT) {
                 CourseManager.instance.openLesson(project, lesson, LessonStartingWay.RESTART_BUTTON, forceStartLesson = true)
             }
-            awaitUi { passes.get() == 3 }
+            expectedPasses++
+            awaitUi { passes.get() == expectedPasses }
             withContext(Dispatchers.IO) {
                 check(Files.readString(source) == retained)
                 Files.writeString(output.resolve("independent-observations.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
                     "starterRejected" to true, "publicCasesObservedPerCheck" to 5,
                     "nativeIndependentPassesObserved" to passes.get(), "sourceEditRequiredRecheck" to true,
-                    "workRetainedAfterRestart" to true, "solutionSha256" to plan.independentSolutionSha256,
+                    "workRetainedAfterRestart" to true, "hintHistoryObserved" to plan.captureHints,
+                    "solutionSha256" to plan.independentSolutionSha256,
                     "retainedSourceSha256" to captureSha256(retained.toByteArray(Charsets.UTF_8)),
                     "scope" to "Public formative checks and lesson restart; project reopen and human review remain separate",
                 )), CREATE_NEW)
@@ -264,15 +281,49 @@ class BookLessonCaptureActivity : ProjectActivity {
         }
     }
 
+    private suspend fun captureHints(project: Project, output: Path, prefix: String, existing: Int, revealTo: Int) {
+        val titles = listOf("Plan the value flow", "Keep the original input available", "Combine the values deliberately", "Trace one possible calculation")
+        val failure = AtomicReference<Throwable>()
+        withContext(Dispatchers.EDT) {
+            val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.IndependentHint"))
+            val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
+            // Exercise the native Learn pane context, without injecting editor/file keys.
+            val data = DataManager.getInstance().getDataContext(learn.component)
+            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
+            action.update(event)
+            check(event.presentation.isEnabled) { "Hints must be available from the native Learn pane" }
+            ApplicationManager.getApplication().invokeLater({
+                try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
+            }, ModalityState.nonModal())
+        }
+        val dialog = awaitDialog(failure, "Independent program hints")
+        suspend fun assertRevealed(count: Int) {
+            awaitUi {
+                val text = lessonVisibleText(dialog.rootPane)
+                titles.take(count).all(text::contains) && titles.drop(count).none(text::contains)
+            }
+        }
+        assertRevealed(existing)
+        captureComponent(dialog.rootPane, output, "$prefix-open", "Reveal as much help as you need")
+        for (index in existing until revealTo) {
+            onModalUi { visibleLessonButton(dialog.rootPane, "Reveal next hint").doClick() }
+            assertRevealed(index + 1)
+            captureComponent(dialog.rootPane, output, "$prefix-${index + 1}", titles[index])
+        }
+        if (revealTo == 4) check(onModalUi { !visibleLessonButton(dialog.rootPane, "Reveal next hint").isEnabled })
+        onModalUi { visibleLessonButton(dialog.rootPane, "Return to editor").doClick() }
+        awaitUi { !dialog.isShowing }
+    }
+
     private suspend fun checkIndependent(project: Project, output: Path, id: String, passed: Boolean) {
         val failure = AtomicReference<Throwable>()
         withContext(Dispatchers.EDT) {
             val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.CheckIndependent"))
-            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
-            val file = checkNotNull(FileDocumentManager.getInstance().getFile(editor.document))
-            val data = SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).add(CommonDataKeys.EDITOR, editor)
-                .add(CommonDataKeys.VIRTUAL_FILE, file).build()
-            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
+            val learn = checkNotNull(ToolWindowManager.getInstance(project).getToolWindow("Learn"))
+            val data = DataManager.getInstance().getDataContext(learn.component)
+            val event = AnActionEvent.createEvent(action, data, null, ActionPlaces.LEARN_TOOLWINDOW, ActionUiKind.NONE, null)
+            action.update(event)
+            check(event.presentation.isEnabled) { "Checking must be available from the native Learn pane for its selected source" }
             ApplicationManager.getApplication().invokeLater({
                 try { ActionUtil.performAction(action, event) } catch (error: Throwable) { failure.set(error) }
             }, ModalityState.nonModal())
