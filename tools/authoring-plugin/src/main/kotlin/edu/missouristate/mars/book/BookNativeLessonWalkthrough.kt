@@ -43,6 +43,8 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
         val layout = bookModalUi { checkNotNull(lessonHorizontalLayout(root)) }
         check(layout.overflowPixels == 0) { "Lesson content is clipped: $layout" }
         captureBookComponent(root, output, id, text)
+        val visibleText = bookModalUi { lessonVisibleText(root) }
+        withContext(Dispatchers.IO) { Files.writeString(output.resolve("$id-visible.txt"), visibleText, CREATE_NEW) }
     }
     suspend fun click(label: String, choice: Boolean = false) {
         fun target(): Pair<JTextPane, Int>? = captureComponents(root).filterIsInstance<JTextPane>()

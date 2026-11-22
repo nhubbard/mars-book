@@ -88,6 +88,7 @@ internal suspend fun captureBookNativeSprite(
         check(run.exit.await() == 0 && run.stdout.toString().isEmpty())
         record("ordinary-run", mapOf("source" to archive.entry, "exitCode" to 0, "stdout" to ""))
     } finally { run.close() }
+    capture("after-ordinary-run", "")
     if (!plan.resume) {
         predict("vertical-order", "Which source row supplies destination row zero in a vertical flip of eight rows?", "Source row seven", "lbu")
     }
