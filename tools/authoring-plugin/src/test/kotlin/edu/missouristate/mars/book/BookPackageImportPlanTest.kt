@@ -143,6 +143,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `sprite walkthrough isolates its exact source and single private fixture`() {
+        val sprite = plan.copy(archives = listOf(archive.copy(id = "003-sprite-rows", entry = "sprite-rows.asm")),
+            nativePredictions = true, spriteUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/vertical-sprite.asm", "/tmp/vertical.asm", "c".repeat(64))))
+        sprite.validate()
+        sprite.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(sprite.copy(nativePredictions = false), sprite.copy(nativeExecution = true),
+            sprite.copy(nativeDebug = true), sprite.copy(memoryUnit = true), sprite.copy(loopUnit = true),
+            sprite.copy(functionUnit = true), sprite.copy(assessmentFixtures = emptyList()),
+            sprite.copy(archives = listOf(archive)), sprite.copy(resumeCompleted = true), sprite.copy(spriteUnit = false),
+            sprite.copy(activityNavigation = true), sprite.copy(prerequisiteControls = true),
+            sprite.copy(assessmentFixtures = sprite.assessmentFixtures + sprite.assessmentFixtures),
+            sprite.copy(assessmentFixtures = listOf(sprite.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
