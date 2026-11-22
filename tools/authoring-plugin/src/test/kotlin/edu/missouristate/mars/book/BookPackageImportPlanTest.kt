@@ -179,6 +179,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `Life walkthrough isolates its exact source and single private fixture`() {
+        val life = plan.copy(archives = listOf(archive.copy(id = "008-life-buffers", entry = "life-buffers.asm")),
+            nativePredictions = true, lifeUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/life-changes.asm", "/tmp/life.asm", "c".repeat(64))))
+        life.validate()
+        life.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(life.copy(nativePredictions = false), life.copy(nativeExecution = true),
+            life.copy(nativeDebug = true), life.copy(memoryUnit = true), life.copy(loopUnit = true),
+            life.copy(functionUnit = true), life.copy(spriteUnit = true), life.copy(rasterUnit = true), life.copy(assessmentFixtures = emptyList()),
+            life.copy(archives = listOf(archive)), life.copy(resumeCompleted = true), life.copy(lifeUnit = false),
+            life.copy(activityNavigation = true), life.copy(prerequisiteControls = true),
+            life.copy(assessmentFixtures = life.assessmentFixtures + life.assessmentFixtures),
+            life.copy(assessmentFixtures = listOf(life.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
