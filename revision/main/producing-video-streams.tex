@@ -1,0 +1,372 @@
+\chapter{Produce a stream another decoder can read}
+\MARSChapterHeading{Produce a stream another decoder can read}
+\label{revision:producing-video-streams}
+
+The previous chapter ended with selected coefficient levels and a reconstructed
+picture. Neither is yet an H.263 file. The receiver needs an ordered description
+of picture type, prediction, coefficient positions and signed values. A wrong
+presence flag can change how every later bit is interpreted even when the
+underlying transform was accurate.
+
+This chapter completes the restricted encoder in \texttt{h263-encoder.asm}.
+We will follow a field across byte boundaries, describe a block's nonzeros,
+combine six blocks into a macroblock, and publish complete pictures through
+ordinary file I/O. An independent parser and decoder then check what the target
+program actually wrote. The final independent exercise reads bounded fields
+back from a byte sequence, giving us a small foundation for an inspector.
+
+Our profile uses standard QCIF, one initial I-picture followed by P-pictures,
+one quantizer per picture, whole-pixel luma search and explicit group headers
+between macroblock rows. Extended picture types, unrestricted vectors, arithmetic
+coding, advanced prediction and PB pictures are disabled. These are documented
+restrictions on an actual H.263 stream. A general decoder can read the output;
+our teaching parser deliberately admits a narrower set than every legal H.263
+stream.
+
+\section{Keep field width separate from machine byte order}
+
+Value five in three bits is \texttt{101}; in five bits it is \texttt{00101}.
+The width supplies leading zeros that a stored integer does not remember.
+Emit the most significant declared bit first. In the output array, the first
+bit occupies bit seven of byte zero, followed by bit six. A new field continues
+at the next free bit, including inside a partly used byte.
+
+For a committed count $p$, the next byte index is $\lfloor p/8\rfloor$ and its
+bit position is $7-(p\bmod8)$. This transmission order is independent of native
+word byte order. The writer must produce identical serialized bytes on either
+simulator target. Storing a native word is not a substitute for appending its
+chosen field bits.
+
+Start with bytes \texttt{A5 A5}, but only their first three bits committed.
+Those valid bits are \texttt{101}. Append the nine-bit value 419,
+\texttt{110100011}. The bytes become \texttt{BA 35}, with twelve valid bits.
+The low four bits of the second byte still contain the old \texttt{0101}; they
+are outside the append. Append four explicit zeros to reach sixteen committed
+bits and the bytes become \texttt{BA 30}. Alignment changes the valid bit count;
+it is not a license to overwrite an unfinished byte without recording the bits.
+
+\input{revision/figures/h263-stream/bit-window}
+\input{revision/figures/h263-stream/native-writer}
+
+The writer's context contains buffer pointer, byte capacity and committed bits.
+After validating full-width metadata and $p\leq8c$, compare the requested width
+$n$ with $8c-p$. A field that does not fit must fail before buffer access.
+The supported width is zero through 32, with no set value bits above that width.
+A valid zero-width append needs value zero, succeeds without buffer access and
+does not rewrite the context.
+
+For a nonempty admitted field, mask only the selected destination bits. In this
+worked fragment, \texttt{t6} initially marks those bits and \texttt{t8} holds
+new bits already shifted into position:
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Replace selected bits while retaining their neighbours}
+\begin{minted}{mars-idea}
+    nor $t6, $t6, $zero
+    lbu $t9, 0($t1)
+    and $t9, $t9, $t6
+    or $t9, $t9, $t8
+    sb $t9, 0($t1)
+\end{minted}
+The complete writer updates the committed count after output is complete.
+A successful field append does not make a sequence of field appends atomic.
+A larger structure needs its own plan or staging boundary.
+
+\section{Describe nonzero levels in scan order}
+
+Coefficient arrays use natural row-major order, but the coder visits their
+positions in zigzag order. The first natural indices are 0, 1, 8, 16, 9 and 2.
+Multiply an index by two to address its halfword. Scan order is a permutation;
+it neither changes the transform nor requantizes its values.
+
+For INTRA, emit the separate eight-bit DC code, then scan ordinary AC levels
+from position one. For INTER, scan from position zero: its DC coefficient is
+an ordinary signed level. Each nonzero event carries RUN, the number of zeros
+since the preceding nonzero or scan origin, and LAST, whether any nonzero
+follows. Trailing zeros need no events. LAST does not mean that the current
+position is the final array element.
+
+Consider INTRA DC code 255, level one at natural index one and minus one at
+natural index eight. Both ordinary runs are zero. Their compact descriptions are:
+\begin{table}[!ht]
+\centering
+\begin{tabular}{l r r r l}
+\toprule
+Part & LAST & RUN & LEVEL & Bits\\
+\midrule
+DC code & & & 255 & \texttt{11111111}\\
+First AC & 0 & 0 & 1 & \texttt{100}\\
+Final AC & 1 & 0 & $-1$ & \texttt{01111}\\
+\bottomrule
+\end{tabular}
+\caption{The complete worked block payload occupies sixteen bits.}
+\end{table}
+
+The baseline table supplies compact codes for 102 event combinations of LAST,
+RUN and magnitude, with a final sign bit. A legal escape instead carries
+seven prefix bits \texttt{0000011}, one LAST bit, six RUN bits and an eight-bit
+signed LEVEL. Its total is 22 bits. The ordinary escape value cannot be zero or
+minus 128. A negative escape level uses two's-complement bytes, rather than the
+compact code's separate sign bit.
+
+The same worked block can use its DC byte and two escapes: 52 bits instead of
+sixteen. Both representations recover the same levels. An empty INTER block
+emits no coefficient payload; an INTRA block still needs its DC byte even when
+all AC levels are zero. The macroblock header announces ordinary payload
+presence, so an empty block does not need an invented end marker.
+
+Validate all levels and plan the chosen complete payload before touching caller
+output. Then stage its touched bytes, preserving the original prefix and unused
+suffix bits. Abandon that private work if a child fails. Publish bytes and count
+only after the complete block succeeds. Per-field capacity checks alone would
+leave a partial block if its last event did not fit.
+
+\input{revision/figures/h263-stream/native-coefficients}
+
+\section{Make the macroblock header agree with its payloads}
+
+The decoder needs to know which of the six block payloads follow. Set each
+presence bit when that block has an ordinary nonzero level. For INTRA, exclude
+the special DC code. Six blocks containing only their required DC values
+therefore have ordinary presence pattern zero, although six DC bytes follow.
+
+The four Y blocks form CBPY; the two chroma blocks form CBPC. MCBPC combines
+the macroblock type with CBPC. Choose its table group using both picture type
+and macroblock type. An INTRA macroblock inside a P-picture does not use the
+I-picture INTRA group. The CBPY table uses the direct four-bit pattern for
+INTRA and its complement for INTER. A zero INTER Y pattern consequently indexes
+fifteen, not zero.
+
+A P-picture macroblock begins with COD. One skips further syntax and means
+actual zero motion with no residual levels. Zero introduces the coded header.
+A coded INTER macroblock includes MCBPC, CBPY, horizontal and vertical motion
+differences, then the present coefficient payloads. An INTRA macroblock has no
+motion fields. Its DC bytes remain mandatory regardless of ordinary presence.
+
+Skipping does not mean reuse the predicted motion vector. If the neighbour
+predictor is nonzero, coded zero motion and zero motion difference are different
+requests. Nor does an unchanged raw block prove a skip: its reconstructed
+reference may still differ because of quantization. The reconstruction layer
+chooses meaningful levels and vectors; the syntax layer must describe them
+without silently substituting another prediction.
+
+\section{Code motion relative to the decoder's predictor}
+
+The search returns full luma pixels. Multiply by two before this syntax boundary,
+which uses half-sample components in $[-32,31]$. For selected component $v$ and
+predictor $q$, represent their difference modulo 64:
+\[
+ d=((v-q+32)\bmod64)-32.
+\]
+With $v=-32$ and $q=31$, the raw difference minus 63 becomes coded difference
+one. The decoder adds one to 31 and wraps back to minus 32. A zero coded
+difference means selected vector equals predictor, not necessarily zero motion.
+
+The worked table stores one code/width pair per possible difference. Each pair
+occupies sixteen bytes, and index $d+32$ can be computed directly:
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Select a wrapped motion-difference table entry}
+\begin{minted}{mars-idea}
+    dsubu $t0, $s4, $t0
+    daddiu $t0, $t0, 32
+    andi $t0, $t0, 63
+    dsll $t0, $t0, 4
+    dla $t1, syntax_mvd_codes
+\end{minted}
+Here \texttt{s4} holds the selected component and \texttt{t0} initially holds
+its predictor. The masked index is already offset into the table; it is not
+the signed difference itself. Complete metadata admission bounds both values
+before this calculation.
+
+The general predictor is the component-wise median of left, above and above-right
+neighbours, with picture/group border rules. Our controller emits nonempty group
+headers between rows. At those row starts the upper candidates are replaced
+according to the border rule, so a row begins with predictor zero and subsequent
+macroblocks use their preceding actual vector. A skip contributes actual zero.
+Do not retain an earlier nonzero predictor as the skipped block's vector.
+
+This illustrates why boundaries belong in the design before optimization.
+Group headers change both syntax and neighbour availability. Removing a header
+without changing the predictor calculation can make the decoder use another
+vector even though the emitted difference code is individually legal.
+
+\section{Publish a whole picture before accepting it as reference}
+
+QCIF has nine rows of eleven macroblocks. For row $r$, column $c$, the Y origin
+is $(16c,16r)$ and the chroma origin $(8c,8r)$. Its 594 eight-by-eight blocks
+cover $99\cdot6\cdot64=38016$ samples. Copy each reconstructed block row to its
+plane stride; a list of block records is not the planar picture layout.
+
+An I-picture has no previous reference. For each later P-picture, this controller
+searches the accepted reconstruction, predicts six blocks and encodes their
+residuals. In QCIF, a group of blocks, or GOB, contains one macroblock row.
+The picture header establishes the first group. Later rows receive
+17-bit group start code one, five-bit row number, two-bit group identity and
+five-bit quantizer. Reach a byte boundary before each start code using fewer
+than eight zero stuffing bits. Do not align every ordinary field or coefficient.
+
+Group identity is constant inside a picture. With the chosen initial I-picture
+and later P-pictures, it can be zero for the first and one for every later picture.
+It tracks the relevant picture-type change, not alternating picture parity.
+The picture header's 22-bit start code has numerical value 32; its temporal
+reference has eight bits. The restricted header is fifty bits before macroblocks,
+so its following data does not automatically start at the next byte.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{l r l}
+\toprule
+Header field & Width & Selected profile value\\
+\midrule
+Picture start code & 22 & 32\\
+Temporal reference & 8 & Picture index times six, modulo 256\\
+Picture type & 13 & 4160 for I; 4176 for P\\
+Quantizer & 5 & 1 through 31; ordinary example eight\\
+Multipoint flag & 1 & Zero\\
+Extra insertion flag & 1 & Zero\\
+\bottomrule
+\end{tabular}
+\caption{The restricted fifty-bit picture header precedes macroblock data.}
+\end{table}
+
+Stage encoded bytes and a complete new reconstruction together. The workspace
+reserves 131072 bytes for one encoded picture and 38016 for its reconstructed
+planes. The stated worst-case payload and header bound fits that staging arena.
+After all children and final alignment succeed, admit caller capacity, copy both
+outputs and commit the used count. A late child or capacity failure retains both
+caller outputs. Workspace may have changed; it is not a published reference.
+
+There is no need to clear the entire encoded arena before every picture.
+Each published bit comes from an emitted field or explicit alignment. Bytes
+outside the committed count are not part of the output. This removes repeated
+initialization while keeping the serialized meaning exact.
+
+\section{Accept file progress only after both writes complete}
+
+The clip driver owns an input descriptor, a stream descriptor and a local
+reconstruction-trace descriptor. Reuse one raw picture buffer, two reconstruction
+buffers and the picture workspace. Working storage stays bounded as picture
+count grows. After a picture's stream and trace writes both succeed, exchange
+old-reference and new-destination roles. Before that point, retain the previous
+accepted reference.
+
+\input{revision/figures/h263-stream/accepted-progress}
+
+Reads and writes return accepted byte counts. Transfer at most 4096 bytes per
+request, advance by a positive returned count and retry the suffix. A short
+positive result is progress, not completion. Premature read zero, read error or
+nonpositive write ends the operation. Close every descriptor actually acquired
+on every return path; an earlier successful open still needs cleanup when a
+later open fails.
+
+The current educational write service prefetches one extra byte. The worked
+transport helper stages a chunk in 4097 private bytes and supplies its guard
+there. Only the requested bytes are file content. This isolates the service's
+read requirement from exact picture-buffer extents. Changing the request to
+include the guard would add unwanted data to the stream.
+
+The progress record contains accepted pictures, accepted encoded bytes and the
+last accepted reconstruction pointer. A failed write can leave more bytes in the
+file than this record counts. For example, if the second stream write accepts
+ten bytes then fails, those bytes are a partial unaccepted suffix. If its stream
+write completes but its trace write fails, the second picture is still unaccepted
+by this driver. File contents cannot generally be rolled back; progress identifies
+the last coherent accepted state.
+
+After the requested pictures, read one additional input byte to require exact EOF.
+Trailing data or an error can make the whole operation fail even when the accepted
+picture count equals the request. Inspect overall status as well as count.
+Metadata rejection precedes path access; path validation precedes opening files.
+Compare path contents, not just addresses, so two separate strings cannot name
+an input that would then be truncated as an output.
+
+\input{revision/figures/h263-stream/native-clip}
+
+\section{Check the actual stream with independent tools}
+
+From the book repository, prepare and run the completed source in a new directory:
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Generate input, execute the MIPS encoder and check its files}
+\begin{Verbatim}
+python3 packages/035-h263/construction/h263-clip-construction/run.py \
+  revision/labs/files/h263-encoder.asm --output-dir work/run-eight \
+  --cli "$CLI" --java "$JAVA"
+\end{Verbatim}
+The helper generates raw pixels and installs paths/controls while retaining the
+instruction section. MARS produces \texttt{encoded.263} and
+\texttt{reconstructed.yuv}. FFmpeg is used afterward as a decoder, not as a
+host encoder supplying the student's answer. The directory also retains raw
+input, metadata, prepared source, execution log and verification report.
+
+The strict parser visits every picture, group, macroblock and coefficient payload.
+It checks the restricted profile and temporal references, rather than recognizing
+only a plausible first header. FFmpeg then decodes every picture. Compare decoded
+samples with raw input to measure quality and with local reconstruction to measure
+decoder agreement. These are different questions. The assignment requires at least
+35 dB PSNR for each non-identical picture plane and at most sixteen sample values
+of local/decoder difference, alongside the separate kernel and inverse-accuracy
+gates. Those clip limits are not substitutes for accurate inverse arithmetic.
+
+PSNR is peak signal-to-noise ratio. For $n$ samples, first compute mean squared
+error $\operatorname{MSE}=\sum_i(S_i-X_i)^2/n$. This check uses the full eight-bit
+peak value 255:
+\[
+ \operatorname{PSNR}=10\log_{10}\!\left(\frac{255^2}{\operatorname{MSE}}\right).
+\]
+Higher PSNR means less mean squared error. An exactly matching plane has zero
+MSE and unbounded PSNR; the report treats that as an exact match. Evaluate planes
+separately so a large luma plane cannot conceal a poor chroma result. Average
+error can also hide an isolated large difference. The maximum local/decoder
+difference examines agreement between those two reconstructions, rather than
+quality relative to the raw source.
+
+The renewed eight-picture reference produces 2212 bytes; the equivalent
+escape-oriented implementation produces 5101. Both independently decode with
+maximum local/decoder difference two. The 44-picture reference run also crosses
+temporal-reference wraparound and remains within the input limit. These are
+observed files, not required private bit strings for every valid encoder.
+
+Keep picture time separate from execution time. Temporal reference advances by
+six ticks modulo 256 under a $30000/1001$-tick clock. Eight supplied intervals
+last 1.6016 seconds; this includes the fixture's final picture hold, not just its
+last start time. Forty-four pictures end with reference two after crossing 255.
+The host can take longer than the represented video to encode it.
+
+The ordinary reference MSA run executes 85093476 guest instructions, compared
+with 206396173 in scalar mode. Those complete-run observations include assembly
+expansions, file helpers and caller work; exact counts also depend on prepared
+paths. A smaller stream does not necessarily require fewer instructions, and an
+uncontrolled whole-JVM wall time is not a simulator throughput benchmark. Retain
+source, input, tool identities and the measurement boundary when comparing changes.
+
+\section{Read a bounded field without losing the cursor}
+
+Implement \texttt{h263\_read\_bits} in the independent lab file. Its context
+separates byte capacity, valid bit count and read cursor. The unused low bits of
+\texttt{BA 35} remain present in memory, but with twelve valid bits they are not
+available as another field. Starting at cursor three, reading nine bits returns
+419 and advances to twelve. A further one-bit request must fail without advancing.
+A valid empty read returns zero and leaves the cursor untouched.
+
+For one bit at position $p$, load byte $\lfloor p/8\rfloor$, select
+$7-(p\bmod8)$, shift the result accumulator left and append that bit. A second
+implementation can consume the available fragment of each byte. Both must produce
+a zero-extended result up to 32 bits, preserve input and publish the cursor only
+after the entire requested field is admitted. A failed or empty call must not
+reuse a previous nonzero return value.
+
+The lab gives complete metadata, access and failure contracts, plus checks that
+connect the reader to actual MARS-written fields. Once the primitive works, use
+it to read the first 22-bit picture start code and eight-bit temporal reference.
+Do not call that small extension a complete decoder: later variable-length events,
+prediction and reconstructed samples have their own meanings and boundaries.
+
+\input{revision/figures/h263-stream/native-reader}
+
+\section*{Sources and continuing work}
+
+The syntax and prediction rules follow clauses 4.5, 5 and 6.1 of
+\href{https://www.itu.int/rec/T-REC-H.263-199802-S/en}{ITU-T H.263 (02/1998)}.
+The public profile and callable contracts document our narrower encoder policy.
+The worked file and construction package provide a starting point for other
+legal coding choices. Keep independent decoding, quality, inverse accuracy,
+retained-state behavior and measured work together when developing them.

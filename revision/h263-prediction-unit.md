@@ -90,3 +90,7 @@ archived. These checks do not establish author, learner or assistive-technology
 review; those remain open. Chapter 27, advanced native lesson integration and the
 remaining instructional-system requirements are still in progress. This unit does
 not complete the full curriculum goal.
+
+The subsequent [stream unit](h263-stream-unit.md) now supplies renewed stream/file
+qualification and whole-clip independent decoding. This page retains the Chapter 26
+numerical publication boundary and its milestone page counts.

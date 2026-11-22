@@ -71,6 +71,8 @@ and its written lab explain numerical prediction and local reconstruction;
 reconstruction exercise with separate feedback under `revision/labs/checks/`.
 The original package keeps the full-encoder assignment unfinished. Four additional
 revised-book Debug figures show exact numerical observations; the six original
-construction figures remain available. Renewed whole-stream verification and the
-second revised chapter are in progress. Instructor alternatives, private checks
+construction figures remain available. The completed second revised chapter adds bounded bit reading under
+`revision/labs/files/h263-read-bits.asm`, with its separate public checks. Renewed
+whole-stream verification covers scalar/MSA and equivalent/wide-code sources,
+independent decoding and temporal-reference wrap. Instructor alternatives, private checks
 and quiz keys remain private.

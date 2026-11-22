@@ -1,9 +1,9 @@
-# Main book and lab book revision pilots
+# Main book and lab book revision
 
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first twenty-two main-book chapters: the complete console
+- `learning.tex` includes the twenty-seven main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -31,12 +31,15 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   item and schema validation through nested continuations and deterministic projection.
   ChaCha20 then connects dependent word arithmetic, column/diagonal selections,
   MSA lane arrangement, bounded byte output and immutable stream inputs.
+  WAV, PNG and lossless video then develop complete pipelines and independent
+  extensions. The final two H.263 chapters connect numerical prediction and
+  reconstruction to real stream/file publication and independent decoding.
   The chapters use connected explanations
   and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first twenty-two written lab supplements: predictions,
+- `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -46,8 +49,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–22 (145 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–22 and companions (161 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–27 and companions (185 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -275,3 +278,8 @@ The first H.263 unit is described in [h263-prediction-unit.md](h263-prediction-u
 Chapter 26 follows prediction, transform/quantization and local reconstruction; its
 lab adds an independent signed reconstruction exercise. Both current proofs are
 180 pages. Stream coding and independent decoding follow in Chapter 27.
+
+The final narrative unit is described in [h263-stream-unit.md](h263-stream-unit.md).
+The table above gives the current proof sizes; earlier unit notes retain their
+publication-milestone counts. Coverage/prerequisite audit, advanced native lessons
+and the remaining instructional-system requirements are still open.
