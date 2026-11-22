@@ -106,7 +106,7 @@ internal suspend fun captureBookNativeLoop(
     val fixture = plan.assessmentFixtures.single()
     val bytes = withContext(Dispatchers.IO) { Files.readAllBytes(Path.of(fixture.path)) }
     check(captureSha256(bytes) == fixture.sha256) { "Changed private authoring fixture" }
-    awaitText("Open independent/end-pointer.asm")
+    awaitText("Write the end-pointer version described in the written lab.")
     val independent = directory.resolve(fixture.source)
     selected(independent)
     if (!plan.resume) {
