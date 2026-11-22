@@ -381,3 +381,31 @@ a composition milestone, not completion of phase 3 review or the overall goal.
 Native student lessons beyond the first unit, the advanced sequence, production
 content delivery/policies, final publication integration and human reviews remain
 open. The planned MARS-versus-hardware opening remains deferred.
+
+
+## Downloaded byte-inspector Debug activity — 22 November 2026
+
+The revised byte-inspector package 0.3.0 now combines four inline predictions,
+five source-bound Run observations and a three-stop Debug activity. Students
+observe the input before the mask, the completed mask, and the completed sign
+extension in full-width registers. The main plugin checks ordinary native Debug
+pauses against assembler source metadata and actual consumed input. It accepts
+only a coherent forward session; edits, resets, replaced sessions, register or
+memory modifications and backsteps cannot substitute for the requested evidence.
+Partial Debug sequences are repeated in one session. Completed observations
+survive reopening while their source remains unchanged.
+
+The separate authoring plugin exercised HTTPS import, inline controls, saved
+source edits, failed Run feedback, source rechecking, a rejected Debug boundary,
+the correct three stops and completion in a third fresh IDE process. All IDE
+launches used the actual clean, cleanSandbox and runIde tasks. These screenshots
+are development evidence, not newly annotated publication figures. The written
+lab explains the checked sequence and keeps output tracing, deliberate faults,
+the word-width experiment and independent variations explicit. Native LaTeX,
+Minion Pro, Noto Sans Math and the IntelliJ-derived highlighting remain in use.
+Automated PDF/UA-2 verification and the changed pages were checked again.
+
+This is a second-unit runtime milestone. Downloaded independent-writing
+assessment, the remaining interactive units, broader I/O contracts, finer
+instructor progression policies and human learner/accessibility review remain
+open. The general MARS-versus-hardware opening remains deferred.

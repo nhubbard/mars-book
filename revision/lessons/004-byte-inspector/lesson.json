@@ -1,7 +1,7 @@
 {
-  "formatVersion": 2,
-  "introduction": "Read the complete byte-inspector program before changing it. This guided segment accompanies Chapter 2 and its written lab. Use MIPS64 Release 6 and the Default memory layout. Predict the two interpretations, then compare them with actual Run results.",
-  "conclusion": "The five checked runs cover the example and the byte boundaries on the current program. Next use Debug as described in the written lab: stop at interpret, inspect t0 after andi and t1 after seb in full-width hexadecimal, then trace each output argument. These Run checks do not replace the debugger investigation or independent output variations.",
+  "formatVersion": 3,
+  "introduction": "Read the complete byte-inspector program before changing it. This guided segment accompanies Chapter 2 and its written lab. Use MIPS64 Release 6 and the Default memory layout. Predict the two interpretations, compare them with actual Run results, then inspect the instruction boundaries in Debug.",
+  "conclusion": "The five checked runs and the ordered Debug observations now describe the current program. Resume Debug and trace each integer-output argument as the written lab explains. Then investigate the deliberate faults and word-width experiment before attempting the independent output variations. The guided checks do not assess those investigations or independent programs.",
   "steps": [
     {
       "kind": "prediction",
@@ -273,6 +273,86 @@
         {
           "id": "compare-results",
           "text": "If the input is right but the numbers differ, compare t0 after andi and t1 after seb. A wrong output argument can hide a correct conversion."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "debug-150",
+      "explanation": "Stop any earlier Debug session. Put a line breakpoint on andi under interpret, then launch Debug for this imported byte-inspector.asm. Enter 150 in its console. The lesson checks three ordered pauses in one fresh forward session. If you edit registers or memory, or use Backstep while exploring, start another Debug session to record these observations.",
+      "integerInputs": [
+        150
+      ],
+      "stops": [
+        {
+          "id": "before-mask",
+          "explanation": "Pause on andi under interpret. Input has completed, but the highlighted mask instruction has not executed. In the Debug register view, inspect all sixteen hexadecimal digits of v0: 0x0000000000000096. That is the input 150 before the mask. Wait for this observation to advance before stepping.",
+          "anchor": {
+            "label": "interpret",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000096"
+          },
+          "success": "At this boundary v0 contains the input. The mask is still the next instruction, so this pause does not yet show its effect.",
+          "hints": [
+            {
+              "id": "breakpoint",
+              "text": "Click the editor gutter beside andi below interpret. Use Debug on this file, then enter 150 in that session’s console."
+            },
+            {
+              "id": "next-operation",
+              "text": "If Debug is already on seb, andi has executed. Start a fresh Debug session to observe the earlier boundary first."
+            }
+          ]
+        },
+        {
+          "id": "after-mask",
+          "explanation": "Use Step Over once. Debug should now highlight seb. Inspect t0 as 0x0000000000000096 and v0 as 0x0000000000000096. The mask has written t0; it has not overwritten the input register. These values are measured before seb executes.",
+          "anchor": {
+            "label": "interpret",
+            "mnemonic": "seb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000096",
+            "$t0": "0x0000000000000096"
+          },
+          "success": "The mask retained the low eight bits and cleared t0’s upper 56 bits. The selected input already had zero upper bits, so v0 and t0 currently agree.",
+          "hints": [
+            {
+              "id": "after-mask",
+              "text": "Read the highlighted instruction as the next operation. When seb is next, the preceding andi has completed."
+            }
+          ]
+        },
+        {
+          "id": "after-extension",
+          "explanation": "Use Step Over once more. Debug should highlight the first la under report. Inspect t0 as 0x0000000000000096 and t1 as 0xFFFFFFFFFFFFFF96. Compare the upper digits as well as the shared low byte 96. The reporting code has not yet consumed either result.",
+          "anchor": {
+            "label": "report",
+            "mnemonic": "la",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000096",
+            "$t1": "0xFFFFFFFFFFFFFF96"
+          },
+          "success": "The byte sign bit was one. seb copied it into t1’s upper 56 positions while retaining the low byte. As a signed 64-bit value, t1 is -106; t0 remains unsigned 150.",
+          "hints": [
+            {
+              "id": "complete-width",
+              "text": "0x00000000FFFFFF96 is not the expected 64-bit result. Sign extension must also fill the highest eight hexadecimal digits with F."
+            }
+          ]
+        }
+      ],
+      "success": "You have observed the input, the completed mask and the completed sign extension at distinct boundaries. Resume this Debug session and use the written lab to trace the output arguments.",
+      "hints": [
+        {
+          "id": "debug-view",
+          "text": "Use the Debug register view, not console output alone. Service 1 prints a signed 32-bit value and cannot show every bit of a 64-bit register."
         }
       ]
     }

@@ -1034,3 +1034,28 @@ reimport preservation, normal Run, two Debug boundaries, and native project clos
 Wait for the source field to paint before capturing it; a model containing the
 right text does not prove that the screenshot displays it. Publication use still
 requires visual review of the actual images and native LaTeX annotations.
+
+
+### Downloaded native Debug observations
+
+The package-import plan can enable `nativeDebug` together with
+`nativePredictions` and `nativeExecution`. The byte-inspector 0.3.0 walkthrough
+first retains the normal prediction/import/resume and Run checks. It then stops
+at the wrong source operation and captures the production boundary feedback,
+starts a fresh Debug session, and records the three requested source positions
+and the native rendered integer registers. It uses public breakpoint, Debug
+session and execution APIs; it reads no private MARS progress state and does not
+inject successful results. The authoring plugin remains separate from MARS.
+
+A subsequent plan with `resume: true` and `resumeCompleted: true` requires the
+same exact archive and saved entry digest. In a fresh IDE process it checks that
+the completed lesson can reach its conclusion without another Run or Debug
+launch. Plan validation rejects completed continuation without native Debug or
+without a resume digest. Save complete receipts, the workspace state, actual
+light-theme screenshots and installed-JAR hashes. Keep the fixture certificate
+limited to the dedicated IDE configuration. Every launch still requires the
+actual `clean cleanSandbox runIde` tasks.
+
+Native instruction pointers and Debug highlights in these development captures
+do not make them publication-ready figures. Publication reuse requires the
+normal native annotation, semantic-description and coordinate-receipt workflow.
