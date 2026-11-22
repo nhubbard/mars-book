@@ -1,0 +1,287 @@
+\chapter{Decoding with a state machine}
+\MARSChapterHeading{Decoding with a state machine}
+\label{revision:qoi}
+
+PPM gave each pixel three explicit sample bytes. An image with a large uniform
+background repeats those bytes even when the next pixel is predictable. \href{https://qoiformat.org/qoi-specification.pdf}{QOI},
+the Quite OK Image format, represents pixels with short operations: repeat a
+color, recover one seen earlier, describe a small change, or supply new components.
+Decoding now requires remembering what previous operations established.
+
+The complete \texttt{qoi-codec.asm} in \texttt{revision/labs/files} supplies a
+bounded validator, decoder, encoder and file pipeline. Its worked image has
+eight pixels and uses all six QOI chunk types. We will trace that image before
+considering the larger sprite. The main problem is keeping the source cursor,
+remaining pixel count, previous color and cache consistent at every transition.
+The independent task changes output placement while preserving that transition
+order.
+
+This chapter assumes bounded parsing, RGB words, unsigned byte operations,
+function calls and file ownership. Our local version-1.0 domain limits width
+and height to one through 64. It accepts channels three or four and colorspace
+zero or one, reconstructs all four components, and requires one exact image
+with its complete end marker and no trailing bytes.
+
+\section{Separate file structure from reconstructed pixels}
+
+A QOI header has fourteen bytes: magic \texttt{qoif}, two big-endian unsigned
+32-bit dimensions, a channels byte and a colorspace byte. The worked header
+specifies width eight, height one, channels four and colorspace zero. The chunks
+start at offset fourteen. An eight-byte end marker follows them: seven zero
+bytes and a final one.
+
+The eight pixels need 32 raw RGBA bytes. Their worked chunks need sixteen,
+but header and marker add 22, making the file 38 bytes. A tiny file need not be
+smaller than its raw samples; this fixture is chosen to exercise every chunk type.
+
+Channels and colorspace are descriptive fields. Channels three does not prohibit
+an RGBA chunk or authorize discarding its alpha. Colorspace does not ask this
+codec to transform the component values. Preserve the flags in the metadata
+and the reconstructed components in the output. Colors are not premultiplied:
+a red value of seven and alpha 128 remain those separate values.
+
+The local descriptor has four unsigned words: width, height, channels and
+colorspace, in that order. These words use native little-endian storage, unlike
+the dimensions in the serialized header. A framebuffer pixel is word
+\texttt{0xAARRGGBB}; byte view therefore shows B, G, R, A.
+
+\input{revision/figures/qoi/representations}
+
+A variable-size operation is called a chunk here. It is not a PNG chunk with a
+length, type and CRC. A QOI opcode determines how many more bytes belong to its
+operation. Keep that distinction when reusing the preceding chapter's parser
+reasoning: the availability proof remains useful, but the record layout changes.
+
+\section{Define the state before dispatching an opcode}
+
+Begin with previous color $(R,G,B,A)=(0,0,0,255)$. Initialize every one of the
+64 cache entries to $(0,0,0,0)$. These are different states: the initial predictor
+is opaque black, while an untouched cache slot is transparent black. An initial
+INDEX of slot zero therefore has a defined transparent result.
+
+Track the next unread chunk byte and the number of pixels still required by
+$W\cdot H$. Also retain the preceding INDEX slot, or a sentinel meaning that the
+last chunk was not INDEX. Our validator rejects consecutive INDEX chunks naming
+the same slot; repetition should use RUN. A non-INDEX chunk clears that history.
+Cache contents alone cannot establish whether this sequence rule was followed.
+
+\input{revision/figures/qoi/tags}
+
+Full-byte tags \texttt{fe} and \texttt{ff} take precedence. Testing the upper
+two bits first would mistake them for runs of 63 and 64 pixels. The worked
+walker dispatches them before extracting those bits:
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Recognize full-byte tags first}
+\begin{minted}{mars-idea}
+li $t1, 254
+beqc $t0, $t1, walk_rgb
+nop
+li $t1, 255
+beqc $t0, $t1, walk_rgba
+nop
+dsrl $t1, $t0, 6
+\end{minted}
+
+The available chunk interval ends eight bytes before the selected file end.
+Every opcode and operand read must stay before that boundary. Reserving the
+marker first prevents its mapped zero bytes from completing a truncated RGB,
+RGBA or LUMA operation. A pixel count and an input cursor have separate jobs:
+one bounds reconstruction, the other bounds reads.
+
+\section{Recover changes without losing a component}
+
+RGB replaces red, green and blue while retaining the previous alpha. RGBA replaces
+all four. INDEX copies all four components from its selected cache slot. DIFF
+and LUMA retain alpha and reconstruct RGB with modulo-256 arithmetic.
+
+DIFF packs three two-bit fields into its low six bits. Subtract two from each
+field to recover a difference from $-2$ through one. Add that difference to the
+corresponding previous component, then mask to eight bits. Field value three
+means a change of one, not three. A change of $-2$ applied to one gives 255,
+not a negative stored component and not a saturated zero.
+
+The green part of the worked DIFF handler is:
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Remove the bias and wrap the reconstructed component}
+\begin{minted}{mars-idea}
+dsrl $t8, $t0, 2
+andi $t8, $t8, 3
+daddiu $t8, $t8, -2
+daddu $t5, $t5, $t8
+andi $t5, $t5, 255
+\end{minted}
+
+Here \texttt{\$t0} is the opcode and \texttt{\$t5} initially contains the
+previous green value. Mask after addition; masking a negative difference before
+adding may be equivalent modulo 256, but it does not make that difference an
+ordinary positive signed quantity. State which arithmetic interpretation your
+range tests and component operations use.
+
+LUMA spends six bits on the green difference and four bits each on the red and
+blue residuals relative to it. From the first byte recover
+$\Delta G=(\mathit{tag}\mathbin{\mathrm{and}}63)-32$. From the next byte recover residuals
+$e_R=(\mathit{next}\gg4)-8$ and $e_B=(\mathit{next}\mathbin{\mathrm{and}}15)-8$.
+Then add $\Delta G+e_R$ to red, $\Delta G$ to green and $\Delta G+e_B$ to blue,
+wrapping each result to a byte.
+
+For \texttt{a5 97}, $\Delta G=5$, $e_R=1$ and $e_B=-1$.
+Following previous RGB $(1,1,1)$, this produces $(7,6,5)$.
+The residual is not the full red or blue difference. Treating it as one loses
+part of the shared change. This encoding exploits related channel movement;
+it does not convert the pixel into a different stored color space.
+
+\section{Update the cache and count every produced pixel}
+
+After reconstructing a color, put it in slot
+\[
+ (3R+5G+7B+11A)\mathbin{\mathrm{and}}63.
+\]
+The weighted sum's low six bits select one of 64 entries. This is a replacement
+cache, not a list of every earlier color. For example, opaque black and opaque
+$(64,0,0)$ both hash to slot 53. Inserting the latter replaces the former.
+An encoder must compare the complete cached color before selecting INDEX;
+a matching slot number alone does not prove a matching color.
+
+RUN repeats the previous color between one and 62 times. Its low six bits store
+one less than the repetition count. Check that count against the remaining
+pixels before emitting any of them. Runs can cross row boundaries; rows have
+no special delimiter in the chunk stream.
+
+RUN also inserts its color into the cache. This matters at the start of the
+worked image: \texttt{c0} emits opaque black and installs it in slot 53. The
+later byte \texttt{35}, an INDEX of decimal slot 53, recovers that color.
+A decoder that skips the insertion would instead recover transparent black.
+An RGB-only preview might make that error invisible.
+
+\input{revision/figures/qoi/trace}
+
+The remaining trace illustrates the other state dependencies. DIFF \texttt{7f}
+changes black to $(1,1,1,255)$ and places it in slot four. LUMA changes RGB but
+keeps alpha 255. RGBA then changes alpha to 128 without changing those RGB
+values. The last INDEX restores all four components from slot four, including
+alpha 255. It does not merely reuse the current alpha with older RGB.
+
+Each emitted pixel reduces the remaining count by one. A RUN may do that
+several times without consuming another opcode. When the count reaches zero,
+require the cursor to equal the reserved marker boundary and verify all eight
+marker bytes. Too few pixels, a run past the required extent, extra chunk bytes,
+an altered marker and trailing data are distinct reasons to reject the stream.
+
+\section{Validate completely before publishing output}
+
+\texttt{qoi\_validate} receives full byte pointer, unsigned selected count and
+an eight-byte-aligned descriptor pointer in \texttt{\$a0/\$a1/\$a2}. Reject a
+count above 20502 before pointer access; counts below 23 are format errors.
+For accepted dimensions, require exactly $W\cdot H$ reconstructed pixels and
+the exact end marker before publishing the sixteen descriptor bytes. Success
+returns status zero and pixel count in \texttt{\$v1}; a rejected stream leaves
+the descriptor unchanged.
+
+\texttt{qoi\_decode} receives source pointer, byte count, word destination and
+unsigned pixel capacity. It validates the whole stream first, then checks
+capacity, then publishes reconstructed words. Success returns packed dimensions,
+height in the high 32 bits and width in the low 32 bits. Format failure wins over
+capacity failure, and neither may write output. A final-byte error must not
+leave an otherwise convincing prefix in the caller's framebuffer.
+
+The implementation validates, then walks again to emit. Each walk starts with
+a fresh predictor, zeroed cache, cursor and INDEX history; validation's final
+state would give emission the wrong start. No state from an earlier call,
+successful or failed, may seed the next image.
+
+Two passes revisit valid bytes, but give this implementation its whole-output
+failure guarantee without a private full-image staging buffer. A different
+implementation may stage results privately or validate another way. Preserve
+the published behavior when comparing designs; removing validation to obtain
+a lower instruction count changes the interface being measured.
+
+\section{Encode with legal alternatives and a proved bound}
+
+The encoder receives a framebuffer pointer, descriptor pointer, byte destination
+and unsigned capacity. It validates dimensions and flags before capacity, and
+requires capacity at least $22+5WH$ before reading pixels or writing output.
+Twenty-two accounts for header and marker; five bytes per pixel allows an RGBA
+literal for every pixel. For the eight-pixel example the required capacity is
+62 even though its worked encoded representation occupies only 38 bytes.
+
+This is a conservative reservation contract, not a prediction of the final size.
+It avoids partially emitting a header before discovering that a later pixel
+needs a larger chunk. Success reports the exact emitted count. Padding, an
+extra NUL and the educational write service's guard byte are outside that count.
+At the maximum local dimensions the reservation is 20502 bytes.
+
+An encoder may prefer a repeated-pixel run, an exact cache hit, DIFF, LUMA,
+RGB or RGBA. Several legal streams can describe the same image. Choosing a
+literal where another encoder chooses a difference is not itself an error.
+Checks reconstruct dimensions, flags and all RGBA components rather than
+matching the reference's chunk bytes.
+
+The local interface nevertheless requires useful compression of a uniform
+image. Opaque black needs at most $22+\lceil N/62\rceil$ bytes because it matches
+the initial predictor. Any other uniform color needs at most
+$27+\lceil(N-1)/62\rceil$: allow one five-byte literal, then runs. A shorter
+cache-based first chunk is also valid. Flush a pending run both when it reaches
+62 and when the image ends; a changed next color must not erase an unflushed run.
+
+RGB may be used only when retaining the previous alpha is correct. Otherwise
+use RGBA unless an exact INDEX or repeated-pixel operation already represents
+all four components. Channels three is not permission to remove an alpha change.
+The whole-operation checks include uniform bounds, cache collisions, changed
+flags and repeated calls as well as ordinary pictures.
+
+\section{Join decoding and encoding through real files}
+
+The supplied caller offers bound, validate, decode, encode, load and save modes;
+mode six joins load, decode, encode and save. The loader returns a byte count,
+the decoder returns packed dimensions, and metadata retains descriptive flags
+for the encoder. Each stage stops the chain on error. A returned pixel count
+cannot substitute for a serialized byte count.
+
+The file rules follow Chapter~\ref{revision:files}: establish EOF using actual
+read counts, probe privately when the offered buffer is exactly full, close
+before validating loaded bytes, and validate output before a truncating open.
+Saving loops on positive short writes and fails on zero progress or an error.
+Load may leave an accepted input prefix after failure; metadata remains unchanged.
+A failed save after opening may leave a partial file, but must close its descriptor.
+
+All six completed entries return status zero on success. Status one denotes a
+format or descriptor error, two an unsupported count or capacity, and three file
+I/O failure; every failure returns zero in \texttt{\$v1}. Bound returns one for
+unsupported dimensions. Updates preserve full saved registers, frame pointer,
+stack pointer and return path, with no console I/O. Byte/path pointers may be
+unaligned; pixel pointers are four-byte aligned and descriptors eight-byte aligned.
+Caller objects are disjoint.
+
+A round trip through your own encoder and decoder can preserve the same mistake
+in both. The lab therefore compares actual output files with an independent
+host decoder and with the intended RGBA, not only with the original serialized
+bytes. It also checks late errors and untouched output separately from successful
+round trips. An attractive sprite preview is one observation among these checks.
+
+\section{Mirror the image without reversing the state machine}
+
+Complete \texttt{qoi\_decode\_mirrored} in \texttt{qoi-mirrored.asm}. Its arguments,
+capacity units, status precedence and failure guarantees match \texttt{qoi\_decode}.
+Return the same packed dimensions, but place reconstructed pixel $(x,y)$ at
+$(W-1-x,y)$. Retain all four components exactly. There is no vertical reflection.
+
+The compressed stream still has to be interpreted in its original order.
+An INDEX depends on earlier cache insertions; a difference depends on the previous
+pixel, and a run may cross rows. Reading opcode bytes backward does not produce
+a reflected image and may not even preserve chunk boundaries.
+
+One design decodes successfully with the supplied routine, then swaps words
+within each output row. Another keeps the forward decoder state and changes
+its emission address. For emitted pixel number $k$, use $y=\lfloor k/W\rfloor$
+and $x=k\bmod W$, then address
+\[
+ destination+4\bigl(yW+(W-1-x)\bigr).
+\]
+A run needs a new placement for each produced pixel, including across rows.
+A single reversed walk over the entire framebuffer would also reverse row order.
+
+You may reuse the completed helpers. Write only the accepted pixel interval
+on success and no output on failure; preserve source and other caller data.
+The lab checks one-column, one-row, odd-width and multirow cases, full alpha,
+state reuse and rejected inputs. Explain both the validation boundary and the
+placement rule before drawing conclusions from the displayed image.

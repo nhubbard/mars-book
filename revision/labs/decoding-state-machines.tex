@@ -1,0 +1,227 @@
+\chapter{Trace the decoder's remembered state}
+\MARSChapterHeading{Trace the decoder's remembered state}
+\label{revision-lab:qoi}
+
+Use the complete \texttt{qoi-codec.asm} and independent
+\texttt{qoi-mirrored.asm} in \texttt{revision/labs/files}. Read the main
+chapter's opcode, cache and publication rules first. This lab follows the
+worked eight-pixel image, produces real image files and ends with reflected
+output. It uses ordinary Run and Debug; its native guided lesson remains
+unfinished.
+
+Keep separate source copies for intentional faults. The caller controls select
+one routine or the complete pipeline; they do not automatically prepare every
+other routine's inputs. In particular, a fresh encode-only run needs valid
+metadata and pixels. The file pipeline and grading cases supply them explicitly.
+
+\section{Account for bytes, pixels and reserved capacity}
+
+Keep the default mode zero and break at \texttt{bound\_return}. Dimensions
+are eight by one. Derive $22+5\cdot8=62$ before inspecting \texttt{\$v1}.
+This is a safe byte reservation for encoding those dimensions, not the selected
+input length and not a pixel count. The supplied source selects 38 file bytes
+and describes eight pixels. Its larger source allocation contains sentinel
+padding outside the file.
+
+Mode one validates and publishes a descriptor. In a fresh copy, select that
+mode and break at \texttt{validate\_return}. Expect status zero, pixel count
+eight and metadata words eight, one, four and zero. Explain why serialized
+dimensions use big-endian bytes while these native words use little-endian
+storage. The descriptor contains descriptive flags; it is not a pixel array.
+
+With mode two, break at \texttt{decode\_return}. Expect zero status and packed
+dimensions \texttt{0x0000000100000008}. The destination now contains eight
+\texttt{0xAARRGGBB} words. The caller's result words have not yet been stored;
+\texttt{results\_ready} begins that publication. Exit later reuses
+\texttt{\$v0}, so retain the result at the intended boundary.
+
+\section{Follow all six operations, including alpha}
+
+Use the main chapter's trace table to predict each of the eight RGBA values.
+For every chunk, write its selected source bytes, number of produced pixels,
+new previous color and cache slot. The first \texttt{c0} produces one opaque
+black pixel without an explicit RGB literal. The following \texttt{fe} chunk
+sets red, and the next \texttt{c0} repeats it.
+
+\input{revision/figures/qoi/native-rgba}
+
+The first four words are opaque black, red, red and black. The next four are
+\texttt{ff010101}, \texttt{ff070605}, \texttt{80070605} and
+\texttt{ff010101}. In byte view the seventh pixel is \texttt{05 06 07 80}.
+Explain why that is the RGBA value $(7,6,5,128)$ rather than $(5,6,7,128)$.
+The final INDEX restores alpha 255 along with its cached RGB; it does not keep
+alpha 128 from the preceding pixel.
+
+For \texttt{7f}, recover three differences of one. For \texttt{a5 97}, recover
+green change five and red/blue residuals one and minus one. Apply them to the
+previous $(1,1,1)$ before checking $(7,6,5)$. State where modulo-256 reduction
+belongs. Saturation or ordinary clamping would implement a different format.
+
+Change only the header's channels byte from four to three in another copy.
+The reconstructed alpha at pixel seven must still be 128. Setting colorspace
+to one also does not transform the component bytes. An RGB display cannot
+establish either property, because it does not show the fourth component.
+
+\section{Observe why a run changes the cache}
+
+In mode one, break at \texttt{after\_w\_hash}, on its first visit. This is a
+checkpoint in the supplied walker's implementation, after the first RUN has
+installed its color. It is useful for studying this source; equivalent solutions
+are not required to have this label or register allocation.
+
+At this boundary \texttt{\$s3} holds \texttt{00000000ff000000} and
+\texttt{\$s4} identifies the private cache base. Slot 53 is 212 bytes from
+that base. In the supplied ordinary layout its address is
+\texttt{0x100201c4}; use the live base if you change allocations.
+The displayed sixteen-byte row starts one word earlier, at slot 52.
+
+\Needspace{18\baselineskip}
+\input{revision/figures/qoi/native-cache}
+
+Slot 53 contains bytes \texttt{00 00 00 ff}; its neighbors remain zero.
+Those neighbors are transparent black, while the inserted value is opaque
+black. The later INDEX byte \texttt{35} selects decimal slot 53. A decoder
+that did not insert RUN colors would therefore reconstruct the wrong alpha,
+even though black RGB could still look right on screen.
+
+This observation occurs during validation, before caller pixels are emitted.
+Validation must maintain the same predictor and cache semantics as decoding.
+It cannot decide whether the stream is valid by checking opcode widths alone.
+The emitting pass starts with a fresh cache again, rather than inheriting the
+validator's final contents.
+
+As a diagnosis exercise, suppress the cache clear in a disposable copy. Try an
+initial INDEX of slot zero as well as the familiar trace. Explain why a stream
+that overwrites every cache slot it later reads can hide this fault. Restore
+the source before continuing; the public independent checks include an initial
+INDEX-zero counterexample.
+
+\section{Reject a late error without publishing a convincing prefix}
+
+In a mode-two copy, change the final marker byte from one to zero, keeping the
+selected count 38. All eight pixel operations still appear plausible. Predict
+whether any caller pixel may change before running. At \texttt{decode\_return},
+expect format status one and zero length, with the framebuffer still containing
+its initial \texttt{a5} bytes.
+
+\input{revision/figures/qoi/native-rejection}
+
+\Needspace{5\baselineskip}
+The figure shows the first untouched row. Executable checks separately inspect
+the complete caller arena and access history. A screenshot of a few bytes does
+not prove whole-buffer preservation. Repeat with zero pixel capacity: the
+malformed stream still reports format error, because validation precedes capacity.
+A valid stream with capacity seven instead reports capacity error and publishes
+no pixels.
+
+Consider a truncated RGBA operation immediately before the marker. Its missing
+alpha byte may be physically readable as a marker zero, but that byte is outside
+the chunk interval. Draw the selected file end and the boundary eight bytes before
+it. Prove availability against the latter boundary before interpreting operands.
+Reaching the required pixel count also does not authorize ignoring extra payload
+or a damaged marker.
+
+\section{Produce actual files and compare their decoded meaning}
+
+From the public book repository, run the complete pipeline in a new directory,
+substituting Java and CLI paths:
+\begin{verbatim}
+python3 tools/run_revision_qoi.py \
+  --java /path/to/java --cli /path/to/cli.jar \
+  --output /tmp/qoi-trace
+\end{verbatim}
+The helper writes a deterministic \texttt{input.qoi}, selects mode six in a
+separate source copy and executes ordinary host-file services. It checks the
+output's strict local format, dimensions, descriptive flags and complete RGBA.
+It also begins with a longer old output to check successful truncation.
+Each directory retains source, input, output, raw decoded RGBA and a receipt.
+It refuses an existing output directory.
+
+The worked encoder produces 35 bytes from the 38-byte trace. Compare the first
+red chunk: input \texttt{fe ff 00 00} occupies four bytes, while output
+\texttt{5a} represents differences $(-1,0,0)$ from black. Wrapping red's
+$0-1$ gives 255. The three-byte saving changes the representation without
+changing a pixel. Equivalent encoders may make other legal choices.
+
+Repeat with \texttt{--fixture sprite}. The resulting image reconstructs the
+familiar eight-by-eight pattern. Its 256 raw RGBA bytes are represented by a
+61-byte file in this supplied example; that is a byte-size observation, not a
+speed measurement. The actual native Bitmap observation below shows its RGB.
+
+\Needspace{22\baselineskip}
+\input{revision/figures/qoi/native-sprite}
+
+To reproduce the Bitmap view, use the helper's sprite pipeline copy and break
+at \texttt{decode\_return}. Request the same view with these public source comments; settings for the same
+tool are combined across the two lines:
+\begin{verbatim}
+# mars:tool bitmap width=256 height=256 unitWidth=32 unitHeight=32
+# mars:tool bitmap base=custom address=0x10015180
+\end{verbatim}
+This address is the supplied framebuffer's ordinary layout; use its actual
+address if you relocate objects. The header configures the viewer, not the codec.
+
+The helper also writes \texttt{rgb-preview.ppm}. That preview deliberately omits
+alpha, while \texttt{decoded.rgba} retains it. The draft verification separately
+decodes output files with a pinned build of the official QOI implementation and
+compares all four components and flags. The preview alone is not that evidence.
+
+Use \texttt{--fixture pattern --width 64 --height 64} for the largest local
+image. Its generated input consists of RGBA literals and occupies exactly
+20502 bytes, exercising the full-buffer EOF boundary. Try
+\texttt{--channels 3 --colorspace 1} with the trace to keep the alpha observation
+separate from descriptive flags. These ordinary host runs do not force short
+transfers or injected errors; grading fixtures test those paths separately.
+
+\section{Place reflected pixels while keeping forward decoder state}
+
+Complete \texttt{qoi\_decode\_mirrored} in a copy of
+\texttt{revision/labs/files/qoi-mirrored.asm}. Keep the supplied caller and
+helpers. The interface matches decode: byte pointer, unsigned byte count,
+word destination and unsigned pixel capacity. Preserve status precedence,
+zero failure length, full saved state and all source bytes. Format or capacity
+failure must leave the entire destination untouched.
+
+The output maps $(x,y)$ to $(W-1-x,y)$ and returns the original packed dimensions.
+One-column images remain unchanged; odd-width rows retain their center pixel.
+Reverse each row, not the whole framebuffer. A run may cross rows in the stream,
+so a decoder that emits directly to reflected addresses still needs to compute
+placement for every produced pixel.
+
+\input{revision/figures/qoi/native-mirror}
+
+This observation uses a three-by-two fixture. The original red values are
+one, two, three in the first row and four, five, six in the second, with varied
+alpha. The reflected rows are three, two, one and six, five, four. A Memory row
+shows four words, while an image row here has only three. Thus the first word of
+the second image row appears at the end of the first displayed Memory row.
+The unused bytes after six pixels retain their sentinel pattern.
+
+You may decode successfully into the destination and then swap its row words,
+or use a forward state walk with reflected stores after complete validation.
+Explain where your design proves the whole input and where it checks capacity.
+Changing an emission address must not change which pixel becomes the predictor
+or which color is inserted into the cache.
+
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/qoi-mirrored.kts \
+  /path/to/your/qoi-mirrored.asm
+\end{verbatim}
+The untouched starter deliberately stops in the unfinished entry. The public
+checks accept equivalent implementations and cover rows, offsets, alpha,
+state-sensitive inputs and rejected counts. They do not establish every possible
+QOI stream. Test a successful call after a failure and retain an explanation of
+which state must start fresh.
+
+Finally run your completed routine through the real file pipeline:
+\begin{verbatim}
+python3 tools/run_revision_qoi.py \
+  --java /path/to/java --cli /path/to/cli.jar \
+  --source /path/to/your/qoi-mirrored.asm --mirror \
+  --fixture pattern --output /tmp/qoi-mirrored
+\end{verbatim}
+The helper selects your entry in a separate pipeline copy and compares the
+encoded output's reconstructed image with the expected reflection. Keep the
+artifact, receipt and a diagram of one multirow placement. Those explain more
+than a claim that a symmetric sprite still looks correct.

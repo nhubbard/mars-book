@@ -268,3 +268,5 @@ case("ordinary mirrored caller"){
 }
 
 case("initial INDEX zero reconstructs transparent black"){memory("qoi_decode_mirrored",hex("716f696600000001000000010400000000000000000001"))}
+
+case("validation cache cannot seed the emitting pass"){memory("qoi_decode_mirrored",hex("716f69660000000200000001040000ff010000170000000000000001"))}
