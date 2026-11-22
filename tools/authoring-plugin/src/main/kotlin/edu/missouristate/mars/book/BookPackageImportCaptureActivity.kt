@@ -78,6 +78,8 @@ internal data class BookPackageImportPlan(
     val nativeDebug: Boolean = false,
     val resumeCompleted: Boolean = false,
     val assessmentFixtures: List<BookAssessmentFixture> = emptyList(),
+    val activityNavigation: Boolean = false,
+    val resumeActivity: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -94,6 +96,8 @@ internal data class BookPackageImportPlan(
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
         }
         require(!resumeCompleted || (resume && nativeDebug))
+        require(!activityNavigation || (resumeCompleted && assessmentFixtures.size == 2))
+        require(!resumeActivity || activityNavigation)
         if (resume) {
             require(expectedEntryDigests.keys == archives.map { it.sha256 }.toSet())
             require(expectedEntryDigests.values.all { it.matches(Regex("[a-f0-9]{64}")) })

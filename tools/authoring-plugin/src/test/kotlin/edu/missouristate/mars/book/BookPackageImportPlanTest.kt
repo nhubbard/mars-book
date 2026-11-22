@@ -66,6 +66,19 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `activity navigation is confined to the completed independent fixture and its continuation`() {
+        val fixtures = listOf(BookAssessmentFixture("independent/plus-one.asm", "/tmp/plus.asm", "c".repeat(64)),
+            BookAssessmentFixture("independent/wrapped-byte.asm", "/tmp/wrapped.asm", "d".repeat(64)))
+        val navigation = plan.copy(nativePredictions = true, nativeExecution = true, nativeDebug = true,
+            resume = true, resumeCompleted = true, assessmentFixtures = fixtures,
+            expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64)), activityNavigation = true)
+        navigation.validate(); navigation.copy(resumeActivity = true).validate()
+        assertThrows<IllegalArgumentException> { navigation.copy(resumeCompleted = false).validate() }
+        assertThrows<IllegalArgumentException> { navigation.copy(assessmentFixtures = emptyList()).validate() }
+        assertThrows<IllegalArgumentException> { navigation.copy(activityNavigation = false, resumeActivity = true).validate() }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
