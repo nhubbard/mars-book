@@ -197,6 +197,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `sorting walkthrough isolates its exact source and single private fixture`() {
+        val sorting = plan.copy(archives = listOf(archive.copy(id = "009-sorting-costs", entry = "sorting-costs.asm")),
+            nativePredictions = true, sortingUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/partition-negative.asm", "/tmp/sorting.asm", "c".repeat(64))))
+        sorting.validate()
+        sorting.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(sorting.copy(nativePredictions = false), sorting.copy(nativeExecution = true),
+            sorting.copy(nativeDebug = true), sorting.copy(memoryUnit = true), sorting.copy(loopUnit = true),
+            sorting.copy(functionUnit = true), sorting.copy(spriteUnit = true), sorting.copy(rasterUnit = true), sorting.copy(lifeUnit = true), sorting.copy(assessmentFixtures = emptyList()),
+            sorting.copy(archives = listOf(archive)), sorting.copy(resumeCompleted = true), sorting.copy(sortingUnit = false),
+            sorting.copy(activityNavigation = true), sorting.copy(prerequisiteControls = true),
+            sorting.copy(assessmentFixtures = sorting.assessmentFixtures + sorting.assessmentFixtures),
+            sorting.copy(assessmentFixtures = listOf(sorting.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
