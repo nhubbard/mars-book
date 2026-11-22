@@ -3,7 +3,7 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first twenty-one main-book chapters: the complete console
+- `learning.tex` includes the first twenty-two main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -29,12 +29,14 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   develops remembered decoder state, RGBA preservation, validated publication,
   equivalent encodings and reflected output placement. CBOR then separates head,
   item and schema validation through nested continuations and deterministic projection.
+  ChaCha20 then connects dependent word arithmetic, column/diagonal selections,
+  MSA lane arrangement, bounded byte output and immutable stream inputs.
   The chapters use connected explanations
   and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first twenty-one written lab supplements: predictions,
+- `lab-book.tex` includes the first twenty-two written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -44,8 +46,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–21 (139 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–21 and companions (141 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–22 (145 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–22 and companions (146 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -236,3 +238,5 @@ validation, countdown state, failure boundaries, reproducible fixtures and four 
 Debug observations. The lab proof now has 141 pages. Main and advanced proofs are
 unchanged. Original projects 017 and 018 now have revised written companion treatment;
 their native lessons remain open. The next main chapter develops ChaCha20 word operations.
+
+The Chapter 22 scope and finite qualification are recorded in [chacha-unit.md](chacha-unit.md).

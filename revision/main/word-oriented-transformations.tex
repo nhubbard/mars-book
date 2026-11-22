@@ -1,0 +1,298 @@
+\chapter{Transforming words in parallel}
+\MARSChapterHeading{Transforming words in parallel}
+\label{revision:chacha}
+
+A vector instruction is useful when several calculations have the same shape.
+The difficulty is often arranging the data so that the lanes describe independent
+calculations. ChaCha20 gives us a small example that we can first understand
+with four scalar values, then reorganize without changing the answer.
+
+This chapter develops the complete program in
+\texttt{revision/labs/files/chacha20.asm}. It produces a stream of bytes from a
+key, nonce and block counter, and combines those bytes with a counted message.
+The word transformation is defined by
+\href{https://www.rfc-editor.org/rfc/rfc8439.html}{RFC 8439, sections 2.1--2.4}.
+Our function interfaces and failure rules are specified separately in package
+\texttt{026-chacha20}. Read the implementation as an exercise in precise word
+arithmetic, data arrangement and ownership. Designing a cryptographic algorithm
+is a different task from implementing its specified operations.
+
+We will build the calculation from the inside out. First trace four words. Then
+identify which four words each call selects from a block. Only after that will
+we arrange four simultaneous calls in MSA lanes. The byte wrapper comes last:
+it depends on a correct block calculation, but has its own bounds and state.
+
+\section{Make the arithmetic width explicit}
+
+A ChaCha word has 32 bits, even though a MIPS64 scalar register has 64. Addition
+keeps the low 32 result bits. For example, adding hexadecimal
+\texttt{ffffffff} and \texttt{00000002} produces word \texttt{00000001}.
+There is no overflow error to report. The discarded carry is part of the
+specified arithmetic.
+
+The worked scalar code uses \texttt{addu} for this operation. Its suffix means
+that signed overflow does not trap; the instruction still performs a word
+addition. A MIPS64 word result is sign-extended into the register's upper half.
+That upper half is not another part of the ChaCha word. When tracing this code,
+compare eight hexadecimal digits for each word. Address arithmetic continues to
+use full-width operations such as \texttt{daddiu}; narrowing an address would
+be an unrelated error.
+
+The other operations are exclusive OR and rotation. XOR changes each bit where
+its two operands differ. A rotation moves bits around a word and puts the bits
+that leave one end back at the other. Rotating \texttt{80000001} left by one
+produces \texttt{00000003}. A left shift would instead discard the high bit and
+produce \texttt{00000002}.
+
+The scalar code expresses a left rotation by $r$ as a right rotation by
+$32-r$. Thus \texttt{rotr} by 20 implements a left rotation by 12. These are
+word rotations. Replacing them with doubleword rotations would change the
+algorithm by circulating bits through the register's upper half.
+
+\section{Follow the four dependencies in a quarter-round}
+
+A \emph{quarter-round} updates four words named $a$, $b$, $c$ and $d$.
+Each row below finishes before the next row starts. Every addition is modulo
+$2^{32}$, and $\operatorname{rotl}$ rotates a 32-bit word to the left.
+
+\begin{center}
+\begin{tabular}{lll}
+\textbf{Add} & \textbf{Combine} & \textbf{Rotate} \\
+$a\gets a+b$ & $d\gets d\mathbin{\oplus}a$ & $d\gets\operatorname{rotl}(d,16)$ \\
+$c\gets c+d$ & $b\gets b\mathbin{\oplus}c$ & $b\gets\operatorname{rotl}(b,12)$ \\
+$a\gets a+b$ & $d\gets d\mathbin{\oplus}a$ & $d\gets\operatorname{rotl}(d,8)$ \\
+$c\gets c+d$ & $b\gets b\mathbin{\oplus}c$ & $b\gets\operatorname{rotl}(b,7)$
+\end{tabular}
+\end{center}
+
+\MARSCodeLabel{The first dependency group, with a word rotation}
+\begin{minted}{mars-idea}
+    addu $t0, $t0, $t1
+    xor $t3, $t3, $t0
+    rotr $t3, $t3, 16
+\end{minted}
+
+The first XOR uses the newly computed $a$. The second addition uses the newly
+rotated $d$. These dependencies explain why the four lines cannot simply run
+in parallel. Keeping the original operands in a second set of registers and
+using them throughout would compute a different transformation.
+
+The supplied caller starts with words \texttt{11111111}, \texttt{01020304},
+\texttt{9b8d6f43} and \texttt{01234567}. After the first addition, $a$ is
+\texttt{12131415}. XOR with the original $d$ gives \texttt{13305172}; rotating
+that result left by 16 gives \texttt{51721330}. Stop at
+\texttt{after\_qr\_group1} to inspect those first changes. At that boundary,
+$b$ and $c$ still contain their input words.
+
+After all four groups, the selected words must be \texttt{ea2a92f4},
+\texttt{cb1cf8ce}, \texttt{4581472e} and \texttt{5881c4bb}, respectively.
+A wrong final word tells us less than the first wrong intermediate word.
+If the first group is already wrong, inspect addition width, XOR operands and
+rotation direction before investigating any block loop.
+
+\texttt{chacha\_quarter} receives four addresses in \texttt{a0} through
+\texttt{a3}, not four immediate word values. It loads the selected words,
+computes in temporary registers and stores to the same four addresses.
+The caller deliberately spaces those words 20 bytes apart. A function that
+loads the first address and assumes the other words are adjacent violates its
+interface even if it happens to pass a contiguous test. The gap bytes are not
+scratch space.
+
+\input{revision/figures/chacha/native-quarter}
+
+\section{Select positions before counting rounds}
+
+A block contains sixteen words. Number them in row order:
+
+\begin{center}
+\begin{tabular}{rrrr}
+0 & 1 & 2 & 3 \\
+4 & 5 & 6 & 7 \\
+8 & 9 & 10 & 11 \\
+12 & 13 & 14 & 15
+\end{tabular}
+\end{center}
+
+These numbers identify positions, not the values currently stored there.
+Word position $i$ has byte offset $4i$. A column round applies one quarter-round
+to each of the following selections, with the listed order giving $a,b,c,d$:
+$(0,4,8,12)$, $(1,5,9,13)$, $(2,6,10,14)$ and $(3,7,11,15)$.
+Those four selections do not overlap, so their quarter-rounds are independent.
+
+A diagonal round follows, selecting $(0,5,10,15)$, $(1,6,11,12)$,
+$(2,7,8,13)$ and $(3,4,9,14)$. These selections use the words left by the
+column round. Together, the column round and diagonal round form one
+\emph{double-round}. Ten repetitions give the twenty rounds in ChaCha20.
+There are eight quarter-round calls per repetition and eighty per block.
+
+In the scalar implementation, the destination initially receives a copy of the
+sixteen input words. It is then the working block. The input remains unchanged.
+The scalar routine saves its input pointer, output pointer and repetition count
+across nested quarter-round calls. A temporary register cannot retain that
+count merely because one particular version of the helper leaves it alone.
+
+After the tenth double-round, the function adds each original input word to its
+corresponding working word. This final addition is called \emph{feed-forward}.
+The original state must still be available at this point. Adding the working
+block to itself, or adding an already modified input block, produces the wrong
+output despite a correct round loop.
+
+Finally, serialize the sixteen sums in little-endian order. The worked
+simulator uses little-endian memory, so word stores produce the required byte
+order. A displayed word \texttt{e4e7f110} occupies memory as bytes
+\texttt{10 f1 e7 e4}. A byte-oriented reference and a word-oriented debugger can
+therefore show the same result in different-looking groups. Compare like units
+before changing the calculation.
+
+\input{revision/figures/chacha/native-block}
+
+\section{Turn independent selections into vector lanes}
+
+The MSA version loads one row into each of \texttt{w0} through \texttt{w3}.
+Consider lane zero across those registers: it holds positions 0, 4, 8 and 12.
+Lane one holds 1, 5, 9 and 13, and so on. A word addition between \texttt{w0}
+and \texttt{w1} now performs the first $a+b$ operation for all four columns.
+Each lane is an independent quarter-round; no operation adds one lane to its
+neighbor.
+
+\texttt{addv.w} performs four wrapping word additions. \texttt{xor.v} combines
+the corresponding bits. A rotation is formed from word shifts and OR: shift
+left by $r$, shift the same unmodified value right logically by $32-r$, then
+combine the results. The two shifts need separate temporaries. Shifting an
+already shifted value for the second half would lose the bits that should wrap.
+The worked allocation uses \texttt{w8/w9} for those temporaries and retains
+original rows in \texttt{w4} through \texttt{w7} for feed-forward.
+
+After a column round, the lane arrangements must change before the diagonal
+round. Keep row zero in place. Select row one's source lanes in order
+$1,2,3,0$, row two's in order $2,3,0,1$, and row three's in order $3,0,1,2$.
+Across lane zero we now have positions $(0,5,10,15)$, exactly the first diagonal.
+Across lane one we have $(1,6,11,12)$. This is why a row selection can replace
+four sets of scalar address calculations.
+
+\begin{center}
+\begin{tabular}{lrrr}
+\textbf{Row} & \textbf{Select immediate} & \textbf{Inverse immediate} \\
+\texttt{w1} & 57 & 147 \\
+\texttt{w2} & 78 & 78 \\
+\texttt{w3} & 147 & 57
+\end{tabular}
+\end{center}
+
+\MARSCodeLabel{Arrange diagonal inputs without changing row zero}
+\begin{minted}{mars-idea}
+    shf.w $w1, $w1, 57
+    shf.w $w2, $w2, 78
+    shf.w $w3, $w3, 147
+\end{minted}
+
+Each two-bit field of a \texttt{shf.w} immediate names the source lane for one
+destination lane, starting with destination lane zero in the low field.
+For 57, the fields read from low to high are $1,2,3,0$. Decode the fields;
+reading the binary literal from its printed left edge reverses their meaning.
+
+After the diagonal arithmetic, apply the inverse selections. The next column
+round, the original-row feed-forward and the final stores all expect the normal
+row arrangement. Omitting the inverse does not just change the display: it
+changes which words participate in the next repetition. A useful diagnostic is
+to compare scalar and vector working states after one complete double-round,
+when both should be back in the same arrangement.
+
+The illustrated vector function clobbers \texttt{w0} through \texttt{w9},
+including their floating-point register aliases. Its caller must respect that
+published allocation. The completed function checks accept another correct
+allocation; guided intermediate checks necessarily describe this particular one.
+
+\section{Generate bytes without consuming the message early}
+
+For the IETF stream interface, the initial state's first four words are fixed
+constants. Eight words hold the 32-byte key. Word 12 is a 32-bit block counter,
+and words 13--15 hold a 12-byte nonce. A nonce identifies a stream under a key;
+it is an input field, not another portion of the counter.
+
+The block function accepts any sixteen input words, which makes its arithmetic
+independently testable. The stream wrapper instead receives a valid IETF state.
+The wrapper copies that state into its own frame and increments only the private
+counter between required blocks. The caller's state remains unchanged.
+
+A generated block provides 64 \emph{keystream} bytes. For each selected message
+byte, output is the source byte XOR the corresponding keystream byte. Applying
+the same keystream again recovers the source, because $(x\mathbin{\oplus}k)
+\mathbin{\oplus}k=x$. Encryption and decryption therefore use the same byte
+operation and require the same starting stream position.
+
+The byte loop loads both operands before storing the result. This ordering
+supports exact in-place transformation: source and destination can identify
+the same byte. Arbitrary partial overlap is outside this exercise's interface.
+Moving the destination one byte forward could overwrite a source byte needed
+by the next iteration.
+
+For a 65-byte message, generate one block and transform 64 bytes, then generate
+another block and transform one byte. Generating a second block does not permit
+reading another 64 message bytes. Unused keystream bytes are discarded by this
+interface. Every load from the message and every store to its destination must
+remain within the declared count, even though the private block buffer is larger.
+
+\section{Reject an impossible request before writing}
+
+\texttt{chacha\_xor} accepts an unsigned count from zero through 4096.
+Check that full-width count first. An excessive count returns status one
+without accessing any supplied pointer. A zero count returns success with the
+same no-access promise. Only then may a positive request read its state.
+Checking a narrowed word would mistakenly accept some large 64-bit counts.
+
+For positive count $n$, let $B=\lfloor(n+63)/64\rfloor$. If the initial
+counter is $c$, the final block uses counter $c+B-1$. Compute that expression
+in a wider unsigned representation and reject a result above
+\texttt{ffffffff}. The bound of 4096 makes the arithmetic small enough to fit
+comfortably in a 64-bit register. Load $c$ with \texttt{lwu}; a signed word
+load would give the wrong widened value when its top bit is set.
+
+\begin{center}
+\begin{tabular}{lrll}
+\textbf{Initial counter} & \textbf{Bytes} & \textbf{Blocks} & \textbf{Result} \\
+\texttt{ffffffff} & 1 & 1 & success \\
+\texttt{ffffffff} & 64 & 1 & success \\
+\texttt{ffffffff} & 65 & 2 & status two \\
+\texttt{fffffffe} & 65 & 2 & success
+\end{tabular}
+\end{center}
+
+The largest counter is usable. What fails is a request for a later block.
+Perform this check before the first destination store. Rejecting only when the
+loop eventually wraps would publish a prefix and then fail, violating the
+whole-request promise. Nor may a counter increment carry into the nonce: those
+bytes describe a different input field.
+
+Return after the last required fragment, before incrementing the counter again.
+This both avoids unnecessary work and permits the last available block.
+Restore full saved registers and the stack pointer on every allocated-frame
+exit. The worked wrapper's 192-byte frame and scalar block's 48-byte frame
+preserve a caller's alignment through their nested calls.
+
+\section{Distinguish a restart from a continuation}
+
+The function retains no hidden stream position. Two one-byte calls with the
+same state both use byte zero of the same block. They do not consume successive
+bytes. To continue after a partial block, another interface would need to retain
+its unused keystream and byte position, or explicitly request an offset.
+Updating only the block counter after a one-byte call skips the other 63 bytes.
+
+This also explains why changing a message while keeping its key, nonce and
+counter repeats the same keystream. For two such outputs, XOR cancels that
+keystream and exposes the XOR of the two messages. The exercise uses fixed
+inputs for reproducible inspection; those fixtures are not a nonce-allocation
+scheme.
+
+Finally, a successful round trip proves neither authenticity nor complete
+correctness. Two matching implementation mistakes can cancel during decryption.
+Changing a ciphertext bit changes the corresponding recovered bit without
+making this stream function report a failure. The authenticated construction in
+RFC 8439 adds a separate authenticator; it is outside this program.
+Use independent known outputs, arbitrary raw block inputs, exact memory bounds
+and repeated-call tests to evaluate the implementation we actually wrote.
+
+Before the lab, identify the first incorrect state caused by a doubleword
+rotation, an omitted inverse shuffle, a signed counter load, a full-block read
+for a one-byte tail, or a hidden counter. Name the violated promise before
+changing instructions.

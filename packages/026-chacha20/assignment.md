@@ -58,7 +58,7 @@ errors and repeated calls. They allow equivalent register allocations and frames
 not impose an exact instruction count. Guided MSA checkpoints inspect the illustrated
 lane states; completed interface checks do not use source matching. Instructor policies
 can select required checks and hints in metadata; a remote runner enforcing those rules
-is still pending. The book's screenshot slots are planned, not captured pixels.
+is still pending. The original package capture plan remains a construction draft. Completed revised-book Debug figures and receipts are under `revision/captures/chacha`; `revision/chacha-unit.md` records their scope.
 
 Run the six scripts listed in package.json with `java -jar cli.jar grade CHECK SOURCE`.
 The supplied caller stops at main_done before storing status, so its reported status

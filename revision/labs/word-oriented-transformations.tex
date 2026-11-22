@@ -1,0 +1,189 @@
+\chapter{Tracing and testing ChaCha20}
+\MARSChapterHeading{Tracing and testing ChaCha20}
+\label{revision:chacha-lab}
+
+This laboratory accompanies Chapter 22 of the main book.
+Use the complete worked program at
+\texttt{revision/labs/files/chacha20.asm} to inspect a known implementation.
+Use a separate copy of package \texttt{026-chacha20/starter/main.asm} for your
+own construction. Keeping those two roles separate lets you compare a boundary
+without replacing the program you are trying to understand.
+
+The completed entries are \texttt{chacha\_quarter},
+\texttt{chacha\_block\_scalar}, \texttt{chacha\_block\_msa} and
+\texttt{chacha\_xor}. Their detailed memory and return contracts are in
+\texttt{assignment.md}. The caller's labels are fixtures for supplying data;
+functions must still use the addresses passed in their arguments. The completed
+checks can relocate objects, change gaps and repeat calls in one session.
+
+\section{Use a prediction to locate the first dependency}
+
+Leave \texttt{mode} at zero in the worked program and put a breakpoint at
+\texttt{after\_qr\_group1}. Before running, write the expected low 32 bits of
+\texttt{t0} through \texttt{t3}. Compute the addition, then XOR, then rotation
+in that order. Record the operands for the XOR as well as its result. That
+extra line distinguishes using an old value from rotating in the wrong direction.
+
+At this boundary, \texttt{t0} should be \texttt{12131415} and \texttt{t3}
+should be \texttt{51721330}. The other two values have not changed. If your
+register view shows additional high digits, compare the word portion first and
+explain the word instruction's extension separately. Do not change an
+instruction solely to make all sixteen displayed digits look unsigned.
+
+The selected words in \texttt{quad} remain unchanged until the stores at the
+end of the function. Register state and caller memory therefore answer different
+questions at this breakpoint. Step to \texttt{main\_done} to inspect the four
+published results, at offsets 0, 20, 40 and 60. The gaps should still contain
+\texttt{a5} bytes.
+
+\Needspace{10\baselineskip}
+In your implementation, complete only the quarter-round first. Run its public
+check before building the block loop:
+
+\begin{Verbatim}[fontsize=\small]
+java -jar /path/to/cli.jar grade \
+  packages/026-chacha20/checks/quarter.kts \
+  path/to/your/main.asm
+\end{Verbatim}
+
+Paths are relative to your book checkout in this example; replace the CLI and
+source paths with your own. A passing result establishes the tested cases,
+including argument selection. It does not make the other three entries complete.
+The starter's status three deliberately identifies unfinished work.
+
+\section{Separate selection errors from arithmetic errors}
+
+Set \texttt{mode} to one to run the scalar block. The caller's supplied state
+has counter one. Stop after its first quarter-round call and compare only word
+positions 0, 4, 8 and 12 with a separate quarter-round calculation. The other
+twelve positions should still match the copied input. If more positions changed,
+investigate the selected addresses and write bounds before the repetition count.
+
+Next, inspect one complete double-round. Write down all eight selections as
+word indices, then convert each index to a byte offset. This catches a common
+mistake: using position 12 as byte offset 12 instead of byte offset 48.
+Do not compare a one-double-round working state with the final serialized block;
+the remaining nine repetitions and feed-forward have not happened yet.
+
+At \texttt{main\_done}, the first sixteen output bytes for the supplied block
+are \texttt{10 f1 e7 e4 d1 3b 59 15 50 0f dd 1f a3 20 71 c4}.
+Compare the full 64-byte block with the scalar check, rather than inferring that
+one matching row establishes the rest. Also compare the original 64 input bytes:
+the block entry promises to preserve them.
+
+Implement the scalar block in your source and run \texttt{checks/scalar.kts}.
+When diagnosing a mismatch, choose the earliest of these boundaries that is
+wrong: copy, first quarter-round, first double-round, tenth double-round,
+feed-forward, serialized bytes. Each boundary removes several possible causes.
+
+\section{Explain a shuffle before executing it}
+
+Set \texttt{mode} to two. At \texttt{after\_msa\_load}, each vector register
+contains one row of the initial state. Write a table with columns for destination
+lanes zero through three and rows for \texttt{w0} through \texttt{w3}.
+Initially label its cells with word positions, not numerical word contents.
+
+In a second table, show the arrangement after \texttt{after\_msa\_select}.
+For each destination lane, list the four positions it now connects. Lane zero
+must describe the first diagonal. These are provenance labels: after a column
+round, the numerical contents at those positions have already changed.
+Expecting the literal integers 0 through 15 in the debugger would confuse the
+diagram with the data it describes.
+
+Now decode immediate 147 into four two-bit fields, starting at the low end.
+Explain why it undoes the row-one selection with immediate 57. Row two's
+selection is its own inverse; show this by composing its lane map with itself.
+Only then step through the actual shuffles and compare the lane contents with
+your predicted rearrangement of the pre-shuffle values.
+
+Complete the MSA block and run \texttt{checks/msa.kts}. Compare its final output
+with both the scalar function and the independent expected block. Agreement
+between your own two routines is useful, but a shared selection mistake can make
+them agree on the same wrong result.
+
+For a diagnostic experiment in a disposable copy, omit one inverse shuffle.
+Predict whether the first column half, the first diagonal arithmetic or the next
+column half first differs from the specified arrangement. Restore the operation
+after observing that boundary. The experiment is about locating the dependency;
+it is not an alternative cipher.
+
+\section{Treat the wrapper as a separate program}
+
+Set \texttt{mode} to three for the byte wrapper. With count 65, predict two
+block calls and exactly 65 destination bytes. Describe the second fragment's
+source read and destination write before running. There is one of each, even
+though the private generated block contains 64 bytes.
+
+First test disjoint source and destination. Then set \texttt{in\_place} to one
+and rerun from the same initial source and state. Compare the transformed source
+with the previous destination. The function's load-before-store order makes
+these cases equivalent. A second run over already transformed bytes is a
+separate experiment: with the same state it recovers the original source.
+
+Use a zero-filled source to expose the keystream directly, because XOR with zero
+preserves its other operand. This is a useful way to distinguish an incorrect
+block generator from an incorrect message walker. Use a nonzero source afterward
+to verify that the wrapper actually reads and combines the supplied bytes.
+
+Run \texttt{checks/xor.kts}. Include lengths zero, one, 63, 64, 65 and 4096
+in your own notes. For each positive length, calculate the number of generated
+blocks and the final fragment size. Explain why 64 has one full fragment and
+no empty second iteration.
+
+\Needspace{15\baselineskip}
+\section{Write the error proof before the error branch}
+
+For each request below, state its status and whether it may read the state,
+read the message or write the destination. The no-access rules for zero and
+excessive counts apply even when their supplied pointers are invalid.
+
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Count} & \textbf{Initial counter when applicable} \\
+0 & no state required \\
+4097 & no state required \\
+64 & \texttt{ffffffff} \\
+65 & \texttt{ffffffff} \\
+65 & \texttt{fffffffe}
+\end{tabular}
+\end{center}
+
+For the failing counter case, fill the destination with a recognizable pattern
+before the call. Confirm both the returned status and the unchanged entire
+caller-owned region. A status-two result after writing 64 bytes is still a
+failure of this interface. Checking only the status would miss it.
+
+\input{revision/figures/chacha/native-counter}
+
+Repeat independent calls with the same state and different buffers, then with
+changed state at the same address. Run \texttt{checks/reuse.kts} and
+\texttt{checks/caller.kts}. Write why a hidden counter or a cached pointer would
+be wrong even if one invocation produced the expected ciphertext.
+
+\section{Finish with an implementation you can explain}
+
+Guided construction retains the package's named regions and illustrated
+allocation. Free writing can use another register allocation, frame or
+decomposition while preserving the four public interfaces. Follow your
+instructor's requirements for checks and hints.
+
+For an independent attempt, close the worked source and implement the four
+entries from the contract and your boundary notes. Start with the quarter-round,
+then the scalar block, then MSA, then the wrapper. Use the six public checks as
+feedback. A full passing run should be accompanied by a short explanation of
+why each selected memory interval is legal and which values survive nested calls.
+
+\Needspace{9\baselineskip}
+After that attempt, design a continuation interface on paper. Specify where it
+keeps the unused keystream bytes, how many remain, and which counter the next
+block would use. Trace calls of lengths one and 64. They must together match a
+single 65-byte transformation when started at the same stream position.
+Do not silently change \texttt{chacha\_xor}: its restart semantics remain part
+of the completed assignment. A continuation extension needs its own contract
+and tests before it can be treated as a supported entry.
+
+When comparing scalar and MSA work, use identical input, output and stopping
+boundaries. Report a simulator instruction count as instructions, and host
+elapsed time as time. Neither a passing vector nor a lower instruction count
+establishes a hardware timing or security property. The result you can defend
+here is an implementation of the stated transformation and memory contract.
