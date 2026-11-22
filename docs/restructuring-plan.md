@@ -859,3 +859,28 @@ with zero failures. Final PDF SHA-256:
 The earlier build and validation remain as evidence of the sequence clarification.
 The main learning PDF is unchanged. Human accessibility and learner reviews,
 the later native units and companion exercises remain outstanding.
+
+
+### Ninth unit checking foundation (22 November 2026)
+
+The sorting lab's stable partition requires observed active-span access bounds
+and a prohibition on caller-frame stores, including later-restored writes.
+Those essential checks are now available through version-4 native function
+profiles. Older profiles reject the new fields and retain their original
+semantics. The existing native data/store observers are reused; simulator
+instruction behavior and IntelliJ integration mechanisms are unchanged.
+
+The complete MARS regression passes 168 CLI and 1194 plugin tests, with required
+coverage checks. The public foundation has 56 cases, two continuations each,
+signed extremes, every valid offset/length, inactive words and stable group order.
+Two private correct algorithms pass all cases in ordinary and relocated layouts
+through both the public script and prepared API. Both routes reject six faults
+and the unfinished starter. All 465 book-tool tests pass. The sorting measurement
+tool reproduces the chapter's existing instruction and observation-work counts.
+The packaged plugin passes the API verifier with 91 public experimental usages.
+
+This is checking groundwork, not a completed ninth native lesson. Its teaching
+sequence, manifest, exact archive import, real IDE/resume walkthrough and LaTeX
+lab integration remain. No new screenshot or PDF validation is claimed, and the
+verified 197-page lab PDF remains unchanged. Later units, companion integration,
+human accessibility and learner review also remain part of the active goal.
