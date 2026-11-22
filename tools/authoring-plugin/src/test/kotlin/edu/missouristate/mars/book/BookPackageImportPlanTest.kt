@@ -125,6 +125,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `function walkthrough binds its exact unit and isolates its private assessment fixture`() {
+        val functions = plan.copy(archives = listOf(archive.copy(id = "003-row-functions", entry = "reverse-rows.asm")),
+            nativePredictions = true, functionUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/reverse-and-invert.asm", "/tmp/function.asm", "c".repeat(64))))
+        functions.validate()
+        functions.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(functions.copy(nativePredictions = false), functions.copy(nativeExecution = true),
+            functions.copy(nativeDebug = true), functions.copy(memoryUnit = true), functions.copy(loopUnit = true),
+            functions.copy(assessmentFixtures = emptyList()), functions.copy(archives = listOf(archive)),
+            functions.copy(resumeCompleted = true), functions.copy(functionUnit = false),
+            functions.copy(activityNavigation = true), functions.copy(prerequisiteControls = true),
+            functions.copy(assessmentFixtures = functions.assessmentFixtures + functions.assessmentFixtures),
+            functions.copy(assessmentFixtures = listOf(functions.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

@@ -65,7 +65,8 @@ internal data class BookImportArchive(
 internal data class BookAssessmentFixture(val source: String = "", val path: String = "", val sha256: String = "") {
     fun validate() {
         require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
-            "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm"))
+            "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm",
+            "independent/reverse-and-invert.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -85,6 +86,7 @@ internal data class BookPackageImportPlan(
     val resumePrerequisites: Boolean = false,
     val memoryUnit: Boolean = false,
     val loopUnit: Boolean = false,
+    val functionUnit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -95,15 +97,22 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug || memoryUnit || loopUnit)
+            require(nativeDebug || memoryUnit || loopUnit || functionUnit)
             val expected = when {
                 memoryUnit -> setOf("independent/red-component.asm", "independent/independent-copy.asm")
                 loopUnit -> setOf("independent/end-pointer.asm")
+                functionUnit -> setOf("independent/reverse-and-invert.asm")
                 else -> setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
             }
             require(assessmentFixtures.map { it.source }.toSet() == expected)
             require(assessmentFixtures.size == expected.size)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
+        }
+        require(listOf(memoryUnit, loopUnit, functionUnit).count { it } <= 1)
+        if (functionUnit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
+            require(archives.single().id == "003-row-functions" && archives.single().entry == "reverse-rows.asm")
         }
         if (memoryUnit) {
             require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
