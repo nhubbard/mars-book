@@ -92,6 +92,22 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `memory walkthrough isolates its exact source interface and private fixtures`() {
+        val memory = plan.copy(archives = listOf(archive.copy(id = "002-single-pixel", entry = "memory-pixel.asm")),
+            nativePredictions = true, memoryUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/red-component.asm", "/tmp/red.asm", "c".repeat(64)),
+                BookAssessmentFixture("independent/independent-copy.asm", "/tmp/copy.asm", "d".repeat(64))))
+        memory.validate()
+        memory.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(memory.copy(nativePredictions = false), memory.copy(nativeExecution = true),
+            memory.copy(nativeDebug = true), memory.copy(assessmentFixtures = emptyList()),
+            memory.copy(archives = listOf(archive)), memory.copy(resumeCompleted = true),
+            memory.copy(memoryUnit = false))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

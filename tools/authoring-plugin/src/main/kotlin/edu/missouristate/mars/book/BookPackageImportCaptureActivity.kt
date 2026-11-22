@@ -64,7 +64,8 @@ internal data class BookImportArchive(
 /** Local authoring-only source fixture. Its contents never enter student distributions. */
 internal data class BookAssessmentFixture(val source: String = "", val path: String = "", val sha256: String = "") {
     fun validate() {
-        require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm"))
+        require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
+            "independent/red-component.asm", "independent/independent-copy.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -82,6 +83,7 @@ internal data class BookPackageImportPlan(
     val resumeActivity: Boolean = false,
     val prerequisiteControls: Boolean = false,
     val resumePrerequisites: Boolean = false,
+    val memoryUnit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -92,10 +94,17 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug)
-            require(assessmentFixtures.map { it.source }.toSet() == setOf("independent/plus-one.asm", "independent/wrapped-byte.asm"))
+            require(nativeDebug || memoryUnit)
+            val expected = if (memoryUnit) setOf("independent/red-component.asm", "independent/independent-copy.asm")
+                else setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
+            require(assessmentFixtures.map { it.source }.toSet() == expected)
             require(assessmentFixtures.size == 2)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
+        }
+        if (memoryUnit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 2)
+            require(archives.single().id == "002-single-pixel" && archives.single().entry == "memory-pixel.asm")
         }
         require(!resumeCompleted || (resume && nativeDebug))
         require(!activityNavigation || (resumeCompleted && assessmentFixtures.size == 2))
