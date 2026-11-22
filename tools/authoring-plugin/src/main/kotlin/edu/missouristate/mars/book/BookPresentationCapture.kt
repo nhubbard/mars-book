@@ -58,7 +58,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import org.jdom.Element
 
 /** Editor and completed-Run observations use native editor, execution and console contracts. */
 internal suspend fun captureBookPresentation(project: Project, plan: BookCapturePlan, figure: BookCaptureFigure, output: Path, descriptor: PluginDescriptor) {
@@ -122,11 +121,7 @@ internal suspend fun captureBookPresentation(project: Project, plan: BookCapture
             if (figure.mode == "run") {
                 val runType = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
                 val settings = RunManager.getInstance(project).createConfiguration(name, runType.configurationFactories.single())
-                val state = Element("configuration").setAttribute("marsExecutionDefaults", "1")
-                state.addContent(Element("option").setAttribute("name", "sourcePath").setAttribute("value", path.toString()))
-                state.addContent(Element("option").setAttribute("name", "workingDirectory").setAttribute("value", path.parent.toString()))
-                settings.configuration.readExternal(state)
-                settings.configuration.checkConfiguration()
+                configureBookCaptureLaunch(settings.configuration, path)
                 ExecutionEnvironmentBuilder.create(DefaultRunExecutor.getRunExecutorInstance(), settings).buildAndExecute()
             }
             editor
