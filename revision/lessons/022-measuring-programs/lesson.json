@@ -1,0 +1,688 @@
+{
+  "formatVersion": 6,
+  "introduction": "Derive exact scalar products before comparing their cost. Follow register sums, initialized output, clipped reduction blocks and caller publication. Compare controlled cache intervals, then transfer the reduction to an independently written matrix-vector function.",
+  "conclusion": "Use arithmetic and access evidence to establish correctness. Use stated workloads, initial state, geometry and boundaries to explain measurement differences; exact reference counts do not grade independent algorithms.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "first-dot-product",
+      "explanation": "The first output combines row [1,2,3] with column [7,9,11]. The reduction index advances through matching pairs; it does not choose another output cell.",
+      "question": "What is the first complete output?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "58",
+          "feedback": "The three products are 7,18 and 33; their sum is 58."
+        },
+        {
+          "id": "b",
+          "text": "50",
+          "feedback": "That uses the contiguous row [7,8,9], which belongs to the later matrix-vector example."
+        },
+        {
+          "id": "c",
+          "text": "7",
+          "feedback": "Seven is the first product, not the complete reduction."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "naive_dot",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-ordinary",
+      "source": "matrix-measure.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for matrix-measure.asm. Use one line breakpoint at a time for five stops. Read the lab alongside Learn: register evidence shows the recurrence, while Memory shows the doubleword outputs. Stop before executing each selected instruction.",
+      "stops": [
+        {
+          "id": "first-pair",
+          "explanation": "Break at the first naive_dot before either input load. The reduction index and accumulator are zero. t4 and t5 name the first row/column pair; t6 is the eight-byte right-column stride.",
+          "anchor": {
+            "label": "naive_dot",
+            "mnemonic": "lw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$t2": "0x0000000000000000",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x0000000010010000",
+            "$t5": "0x0000000010010480",
+            "$t6": "0x0000000000000008",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "The first load has not happened; address formation alone is not matrix traffic."
+        },
+        {
+          "id": "second-pair",
+          "explanation": "Resume to the next visit to naive_dot. The first product, seven, is in t3; q is one. The left cursor advanced four bytes and the right cursor eight. Keep the breakpoint until this second visit, then move it.",
+          "anchor": {
+            "label": "naive_dot",
+            "mnemonic": "lw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$t2": "0x0000000000000001",
+            "$t3": "0x0000000000000007",
+            "$t4": "0x0000000010010004",
+            "$t5": "0x0000000010010488",
+            "$t6": "0x0000000000000008",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "One product is complete; two remain for this output."
+        },
+        {
+          "id": "first-complete-sum",
+          "explanation": "Move to naive_store. t3 holds 58 after all three pairs. The selected sd has not executed yet; the output still contains its sentinel before publication.",
+          "anchor": {
+            "label": "naive_store",
+            "mnemonic": "mul",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$t2": "0x0000000000000003",
+            "$t3": "0x000000000000003a",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "The complete register sum precedes the output store."
+        },
+        {
+          "id": "returned",
+          "explanation": "Resume to matmul_done before the caller prepares its completed store. The function returned four and restored sp. Inspect doublewords [58,64,139,154] and completed=-1.",
+          "anchor": {
+            "label": "matmul_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000004"
+          },
+          "success": "The product is complete; the caller has not yet published its count."
+        },
+        {
+          "id": "published",
+          "explanation": "Resume to results_ready before the exit selector replaces v0. completed is now four; output is unchanged. The caller store adds data traffic after the earlier return boundary.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000004"
+          },
+          "success": "Function return and caller publication are separate observation boundaries."
+        }
+      ],
+      "success": "Finish or stop this Debug execution before starting another source. Explain the result and measurement boundary using the written lab."
+    },
+    {
+      "kind": "prediction",
+      "id": "sum-width",
+      "explanation": "Two pairs of signed -32768 values produce two positive products of 2^30. The allowed result is an exact doubleword, without saturation or intended wraparound.",
+      "question": "How is their sum stored as low and high 32-bit words?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "80000000 and ffffffff",
+          "feedback": "That sign-extends the low word as if it represented the entire signed result."
+        },
+        {
+          "id": "b",
+          "text": "80000000 and 00000000",
+          "feedback": "The positive result is 2^31. Its high word is zero even though the low word alone looks negative."
+        },
+        {
+          "id": "c",
+          "text": "7fffffff and 00000000",
+          "feedback": "That would saturate the sum, which this arithmetic contract does not request."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "naive_store",
+        "mnemonic": "sd",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-wide-sum",
+      "source": "worked/matrix-wide.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/matrix-wide.asm. Its shape is 1,2,1,2 and both active inputs contain two -32768 values. Observe three stops; keep the ordinary source unchanged.",
+      "stops": [
+        {
+          "id": "wide-before-store",
+          "explanation": "Break at naive_store. The full accumulator t3 is positive 2147483648. Compare that value with the signed interpretation of its low word before storing.",
+          "anchor": {
+            "label": "naive_store",
+            "mnemonic": "mul",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$t3": "0x0000000080000000",
+            "$s1": "0x0000000000000002"
+          },
+          "success": "Full-width accumulation retains the positive sum."
+        },
+        {
+          "id": "returned",
+          "explanation": "Resume to matmul_done. Inspect output low word 80000000 and high word 00000000, returned count one and completed=-1.",
+          "anchor": {
+            "label": "matmul_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000001"
+          },
+          "success": "The stored doubleword agrees with the mathematical sum."
+        },
+        {
+          "id": "published",
+          "explanation": "Resume to results_ready. completed is one before the exit selector changes v0.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000001"
+          },
+          "success": "The caller publishes the output count without changing the sum."
+        }
+      ],
+      "success": "Finish or stop this Debug execution before starting another source. Explain the result and measurement boundary using the written lab."
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-reduction",
+      "explanation": "An output exists for each selected row and column. If K is zero, its dot product has no terms. If M or N is zero, there are no output cells.",
+      "question": "For M=2,K=0,N=2, what must the function do?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Return zero and leave output alone",
+          "feedback": "There are still four selected output cells."
+        },
+        {
+          "id": "b",
+          "text": "Read one input pair to discover zero",
+          "feedback": "K already gives the empty reduction bound; no input read is permitted."
+        },
+        {
+          "id": "c",
+          "text": "Write four zero doublewords and return four",
+          "feedback": "Each empty sum is zero. A zero output dimension would instead require no matrix accesses."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "naive_column",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "partial-output",
+      "explanation": "The blocked method zeros output, then handles q=0 and q=1 before returning to block_reduction with L=2. For the first output those products are 7 and 18.",
+      "question": "What should the first partial output be before the final reduction block?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "25",
+          "feedback": "The final q=2 term has not yet been added."
+        },
+        {
+          "id": "b",
+          "text": "58",
+          "feedback": "That is the complete product after adding 33 from the final reduction interval."
+        },
+        {
+          "id": "c",
+          "text": "33",
+          "feedback": "That is only the final block’s contribution; resetting the partial sum would discard earlier work."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "block_reduction",
+        "mnemonic": "addu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-tiled",
+      "source": "worked/matrix-tiled.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/matrix-tiled.asm. Only method selection differs from the default source. Follow five stops and inspect partial output in Memory before interpreting the complete result.",
+      "stops": [
+        {
+          "id": "zero-partials",
+          "explanation": "Break at the first block_reduction. L=t0 is zero and all four selected output doublewords have been initialized to zero. The first reduction end is about to be formed.",
+          "anchor": {
+            "label": "block_reduction",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$t0": "0x0000000000000000",
+            "$s0": "0x0000000000000002",
+            "$s1": "0x0000000000000003",
+            "$s2": "0x0000000000000002",
+            "$s3": "0x0000000000000002"
+          },
+          "success": "Initialized output can now hold partial sums without reading old caller data."
+        },
+        {
+          "id": "second-block",
+          "explanation": "Resume to the second block_reduction visit. L=t0 is two. Inspect partial doublewords [25,28,73,82] before adding the q=2 terms.",
+          "anchor": {
+            "label": "block_reduction",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$t0": "0x0000000000000002",
+            "$s1": "0x0000000000000003",
+            "$s3": "0x0000000000000002"
+          },
+          "success": "The output carries every term below the new reduction origin."
+        },
+        {
+          "id": "clipped-reduction",
+          "explanation": "Move to reduction_bound. The exclusive end a2 is three, clipped to K; L is still two. A fourth input pair is outside the selected reduction.",
+          "anchor": {
+            "label": "reduction_bound",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007ffeffb0",
+            "$a2": "0x0000000000000003",
+            "$t0": "0x0000000000000002",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "The last interval has one term, not a full tile’s two."
+        },
+        {
+          "id": "returned",
+          "explanation": "Resume to matmul_done. The complete output is [58,64,139,154], v0 is four and completed is still -1. The frame has been restored.",
+          "anchor": {
+            "label": "matmul_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000004"
+          },
+          "success": "The blocked schedule agrees with the ordinary product."
+        },
+        {
+          "id": "published",
+          "explanation": "Resume to results_ready. The caller has now stored completed=4 before selecting normal exit.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000004"
+          },
+          "success": "Publication is later than the function-only measurement boundary."
+        }
+      ],
+      "success": "Finish or stop this Debug execution before starting another source. Explain the result and measurement boundary using the written lab."
+    },
+    {
+      "kind": "prediction",
+      "id": "clipped-reduction-end",
+      "explanation": "The last reduction block starts at L=2 with K=3 and tile edge two. Each axis uses its own exclusive minimum bound.",
+      "question": "What is this block’s exclusive reduction end?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four",
+          "feedback": "That would load a pair beyond K."
+        },
+        {
+          "id": "b",
+          "text": "Three",
+          "feedback": "min(K,L+T)=min(3,4)=3; only q=2 belongs to this interval."
+        },
+        {
+          "id": "c",
+          "text": "Two",
+          "feedback": "That would make the final block empty and omit its contribution."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "reduction_bound",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "native-notice-units",
+      "explanation": "In this aligned program an sd completes one machine instruction and emits two native word notices. The data-cache model observes notices, excluding instruction fetch.",
+      "question": "What does one aligned doubleword store contribute?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Two completed instructions and one data notice",
+          "feedback": "Instruction completion and native data notice counts use different units."
+        },
+        {
+          "id": "b",
+          "text": "One completed instruction and one data notice",
+          "feedback": "This native memory implementation splits the eight-byte store into two word notices."
+        },
+        {
+          "id": "c",
+          "text": "One completed instruction and two data notices",
+          "feedback": "Use the instruction count for executed work and the two notices when accounting for this data-cache trace."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "naive_store",
+        "mnemonic": "sd",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-cache-ordinary",
+      "source": "worked/cache-ordinary.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/cache-ordinary.asm. Both cache sources use deterministic 16-by-16 signed input matrices and tile edge four. The annotation selects sixteen four-word fully associative LRU lines. Keep this reference launch cold; the written lab’s stopped-reset experiment is a separate interval.",
+      "stops": [
+        {
+          "id": "cache-entry",
+          "explanation": "Break at matmul_call before the selected function call. Arguments and stack are ready. The caller has already read method, so the launch cache has one data access. Do not call this a zero-access function-only start without resetting it.",
+          "anchor": {
+            "label": "matmul_call",
+            "mnemonic": "jalrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$a0": "0x0000000010010000",
+            "$a1": "0x0000000010010480",
+            "$a2": "0x0000000010010900",
+            "$a3": "0x0000000010011184"
+          },
+          "success": "The current counters already include caller traffic."
+        },
+        {
+          "id": "returned",
+          "explanation": "Resume to matmul_done and open Data Cache Simulator for this execution. Inspect 8745 launch accesses and 5388 misses. The function returns 256 before the caller stores completed. The equivalent cold function interval has one fewer access.",
+          "anchor": {
+            "label": "matmul_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000100"
+          },
+          "success": "Record geometry, initial state, workload and this return boundary beside the counts."
+        },
+        {
+          "id": "published",
+          "explanation": "Resume to results_ready. completed is now 256 and the caller store has added a word notice. Those counters cover a longer interval than the preceding observation.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000100"
+          },
+          "success": "An unchanged product does not make different measurement intervals interchangeable."
+        }
+      ],
+      "success": "Finish or stop this Debug execution before starting another source. Explain the result and measurement boundary using the written lab."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-cache-tiled",
+      "source": "worked/cache-tiled.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/cache-tiled.asm. Both cache sources use deterministic 16-by-16 signed input matrices and tile edge four. The annotation selects sixteen four-word fully associative LRU lines. Keep this reference launch cold; the written lab’s stopped-reset experiment is a separate interval.",
+      "stops": [
+        {
+          "id": "cache-entry",
+          "explanation": "Break at matmul_call before the selected function call. Arguments and stack are ready. The caller has already read method, so the launch cache has one data access. Do not call this a zero-access function-only start without resetting it.",
+          "anchor": {
+            "label": "matmul_call",
+            "mnemonic": "jalrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$a0": "0x0000000010010000",
+            "$a1": "0x0000000010010480",
+            "$a2": "0x0000000010010900",
+            "$a3": "0x0000000010011184"
+          },
+          "success": "The current counters already include caller traffic."
+        },
+        {
+          "id": "returned",
+          "explanation": "Resume to matmul_done and open Data Cache Simulator for this execution. Inspect 12841 launch accesses and 1068 misses. The function returns 256 before the caller stores completed. The equivalent cold function interval has one fewer access.",
+          "anchor": {
+            "label": "matmul_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000100"
+          },
+          "success": "Record geometry, initial state, workload and this return boundary beside the counts."
+        },
+        {
+          "id": "published",
+          "explanation": "Resume to results_ready. completed is now 256 and the caller store has added a word notice. Those counters cover a longer interval than the preceding observation.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fff0000",
+            "$v0": "0x0000000000000100"
+          },
+          "success": "An unchanged product does not make different measurement intervals interchangeable."
+        }
+      ],
+      "success": "Finish or stop this Debug execution before starting another source. Explain the result and measurement boundary using the written lab."
+    },
+    {
+      "kind": "prediction",
+      "id": "same-session-warm",
+      "explanation": "The measurement tool calls a kernel again in the same stopped execution session, retaining the modeled cache contents. It reports the second call as counter differences. A third call resets the cache first.",
+      "question": "Which observation is the modeled warm case?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The second call in the same session without a cache reset",
+          "feedback": "It inherits modeled lines from the first call; JVM compilation is a separate concern."
+        },
+        {
+          "id": "b",
+          "text": "A new IDE launch after another program finished",
+          "feedback": "Independent launches create independent execution sessions and modeled cache state."
+        },
+        {
+          "id": "c",
+          "text": "The reset replay",
+          "feedback": "Reset deliberately restores the cold modeled-cache starting condition."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "matmul_call",
+        "mnemonic": "jalrc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "cost-tradeoff",
+      "explanation": "For the stated 16-by-16 tile-four case, the blocked method has more native data notices but fewer fully associative misses. The simulator’s data cache does not assign a cycle cost to every miss or instruction.",
+      "question": "What follows from this comparison?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The blocked program must finish sooner",
+          "feedback": "That would need a justified timing model or an appropriate timing experiment."
+        },
+        {
+          "id": "b",
+          "text": "This schedule trades additional traffic for fewer misses in this model",
+          "feedback": "Those are measured costs. Keep them distinct from host elapsed time and hardware cycle predictions."
+        },
+        {
+          "id": "c",
+          "text": "The ordinary program must finish sooner",
+          "feedback": "Fewer notices alone do not price its additional misses."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "matmul_call",
+        "mnemonic": "jalrc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-ordinary",
+      "source": "matrix-measure.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Finish or stop Debug, then use ordinary Run for matrix-measure.asm. It exits silently. Inspect its retained product and completed count separately from the earlier return-boundary cache observations.",
+      "success": "The complete program exited normally without console output. The full Run includes caller publication."
+    },
+    {
+      "kind": "run",
+      "id": "run-tiled",
+      "source": "worked/matrix-tiled.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Finish or stop Debug, then use ordinary Run for worked/matrix-tiled.asm. It exits silently. Inspect its retained product and completed count separately from the earlier return-boundary cache observations.",
+      "success": "The complete program exited normally without console output. The full Run includes caller publication."
+    },
+    {
+      "kind": "run",
+      "id": "run-wide",
+      "source": "worked/matrix-wide.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Finish or stop Debug, then use ordinary Run for worked/matrix-wide.asm. It exits silently. Inspect its retained product and completed count separately from the earlier return-boundary cache observations.",
+      "success": "The complete program exited normally without console output. The full Run includes caller publication."
+    },
+    {
+      "kind": "run",
+      "id": "run-cache-ordinary",
+      "source": "worked/cache-ordinary.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Finish or stop Debug, then use ordinary Run for worked/cache-ordinary.asm. It exits silently. Inspect its retained product and completed count separately from the earlier return-boundary cache observations.",
+      "success": "The complete program exited normally without console output. The full Run includes caller publication."
+    },
+    {
+      "kind": "run",
+      "id": "run-cache-tiled",
+      "source": "worked/cache-tiled.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Finish or stop Debug, then use ordinary Run for worked/cache-tiled.asm. It exits silently. Inspect its retained product and completed count separately from the earlier return-boundary cache observations.",
+      "success": "The complete program exited normally without console output. The full Run includes caller publication."
+    },
+    {
+      "kind": "prediction",
+      "id": "vector-restart",
+      "explanation": "The independent matrix-vector exercise uses rows [1,2,3] and [4,5,6], with vector [7,8,9]. The same vector begins again for each row.",
+      "question": "What are its two complete output sums?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "58 and 139",
+          "feedback": "Those came from a matrix-product column [7,9,11], not this vector."
+        },
+        {
+          "id": "b",
+          "text": "50 and 50",
+          "feedback": "The vector restarts, but the matrix advances to its next row."
+        },
+        {
+          "id": "c",
+          "text": "50 and 122",
+          "feedback": "The sums are 7+16+27 and 28+40+54; each output is a signed doubleword."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "naive_dot",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "matrix-vector",
+      "source": "independent/matrix-vector.asm",
+      "caseProfile": "independent/matrix-vector.cases.json",
+      "checkKind": "function",
+      "explanation": "Implement matvec in the independent source, replacing break. Read independent/README.md. Eleven public cases retain all eight original function input families and the complete default caller, adding a direct default-input function case and positive 2^31. Each function case calls twice through different continuations. Respect selected full-width pointers, preserve caller state, initialize output during each call before partial-sum reads and produce exact signed doublewords. Alternative schedules and private stack frames are accepted.",
+      "success": "The current source passes all eleven native function/caller cases. Check normal exit next and retain the independent reasoning requested by the lab.",
+      "hints": [
+        {
+          "id": "address-strides",
+          "text": "For row i and reduction q, matrix displacement is 4*(i*K+q), vector displacement is 4*q and output displacement is 8*i. Add these displacements to full-width passed pointers."
+        },
+        {
+          "id": "empty-dimensions",
+          "text": "Check M before any matrix/vector access. For K=0, store one zero doubleword per selected row without input reads."
+        },
+        {
+          "id": "partial-sums",
+          "text": "A register accumulator starts at zero for each row. If you instead accumulate through output, initialize each output byte during this call before reading it. An old matching value is not initialization."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/matrix-vector.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "checkKind": "console",
+      "explanation": "Check the same independent source as a complete program. The preceding profile observed the default caller’s two complete sums and completed count before done. This check requires execution to continue to silent normal exit without a trap.",
+      "success": "Both native assessments pass for the current source. Explain a row invariant, a zero-K trace, a signed-width counterexample and a measurement interval for your own implementation."
+    }
+  ]
+}

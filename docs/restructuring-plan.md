@@ -1117,3 +1117,41 @@ This completes automated integration of the twelfth main unit. Human learner
 and assistive-technology reviews are still pending. Later native units, native
 companion integration and remaining instructional-system work remain open; the
 full curriculum goal stays active. The MARS-versus-hardware opening stays deferred.
+
+
+### Measuring-programs native foundation (22 November 2026)
+
+The thirteenth main unit, preserving original project 022, now has a draft native
+package with nine predictions, nineteen CLI-measured Debug boundaries, five
+complete worked sources and an independent matrix-vector reduction. Its topics
+are exact signed doubleword sums, initialized partial output, clipped reduction
+ends, caller publication and explicitly scoped cache observations. Exact counts
+belong to the worked sources; independent algorithms are graded by results and
+access contracts. The native LaTeX chapter/lab remain authoritative and unchanged
+at this foundation stage.
+
+The native checker adds assembled read/write policies rather than omitting reads
+from alignment padding. The original Kotlin input construction independently
+matches all eight original input families. Native data retains those families and
+the default caller, adding a direct default-input function case and positive
+2^31. Four correct algorithms under ordinary/relocated layouts and a wide-address
+variant pass both routes (18 actual JVM processes). Nine faults and the starter
+fail both routes (20). The native profile has ten repeated-call function cases
+and one complete-caller case, plus a separate normal-exit profile. The standalone
+script retains its nine original checks.
+
+All 481 public tooling tests pass. The checker passes 217 CLI / 1212 plugin tests
+and required coverage gates; function-profile parsing covers 144/144 lines and
+150/150 branches. The exact student archive passes import afterward. All nineteen
+register bindings match actual probes and source hashes; the two larger examples
+reproduce 8745/5388 and 12841/1068 launch accesses/misses before caller publication.
+These are native cache observations, not host time or hardware cycle predictions.
+
+The first exit-profile draft used the wrong input field and was rejected during
+exact import. That data was corrected and the passing archive rechecked; the
+rejected diagnostic remains private. No new screenshot, GUI reset, IDE resume or
+PDF validation is inferred from CLI evidence. Authoring automation, real student
+controls and resume, written lab integration and publication verification are
+still required before this unit is integrated. Human learner and accessibility
+review remain open, and the full curriculum goal stays active. The proposed
+MARS-versus-hardware opening stays deferred.

@@ -95,3 +95,34 @@ lesson. Exact reports and private sources are retained under
 `verification/restructuring/native-output-init-01` in the instructor repository.
 All 41 unrelated manual MARS edits are preserved. No new screenshot, IDE
 walkthrough or PDF validation is claimed for this checker-only milestone.
+
+
+## Native measurement foundation, 22 November 2026
+
+Function-profile version 8 now represents assembled caller read/write policies
+(MARS b07a4af0), including unnamed padding and full crossing notices. It uses the
+existing bounded access trace and preserves private stack use outside the watched
+caller span. The full checker run passes 217 CLI / 1212 plugin tests and both
+required coverage gates; the parser covers 144/144 lines and 150/150 branches.
+The exact student archive import test follows that frozen full regression.
+
+The original Kotlin construction independently exports all eight function inputs;
+shapes, offsets, matrix/vector words and signed products match the new generator.
+The native profile adds direct default input and positive 2^31 and retains the
+complete default caller. Ten function cases call twice, followed by one caller
+check and a separate normal-exit assessment. The original nine-check script is
+unchanged. Four correct algorithms in ordinary/relocated layouts and a wide
+variant pass both routes (18 JVM processes). Nine faults and the starter fail
+both routes (20 processes), including padding read, restored padding store,
+read-then-repair, incomplete high-word store and wrong continuation. These finite
+checks do not prove every arbitrary input.
+
+The draft `lessons/022-measuring-programs` supplies nine predictions, nineteen
+CLI-measured Debug stops, five complete worked sources/Runs and the independent
+exercise. Five actual source probes verify sums, partial output, caller metadata,
+full-width positive 2^31 and exact cache launch intervals. Every declared register
+binding matches its executed observation and source hash. All 481 book tests pass.
+This is not an IDE walkthrough: separate authoring automation, actual IDE/resume,
+GUI reset verification, written lab integration and renewed publication checks
+remain open. Existing publication evidence is preserved as historical. Human
+learner/accessibility review and the deferred opening remain separate.
