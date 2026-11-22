@@ -41,6 +41,7 @@ import com.intellij.xdebugger.breakpoints.XBreakpointType
 import com.intellij.xdebugger.breakpoints.XLineBreakpointType
 import java.awt.Rectangle
 import java.awt.Window
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.CREATE_NEW
@@ -59,9 +60,14 @@ import org.jdom.Element
 internal data class BookImportArchive(
     val path: String = "", val sha256: String = "", val id: String = "", val version: String = "",
     val entry: String = "", val assignment: String = "", val entrySha256: String = "",
+    val source: String? = null,
 ) {
     fun validate() {
         require(Path.of(path).isAbsolute)
+        source?.let {
+            val uri = URI.create(it)
+            require(uri.scheme == "https" && uri.host != null && uri.rawUserInfo == null && uri.rawFragment == null)
+        }
         require(sha256.matches(Regex("[a-f0-9]{64}")) && entrySha256.matches(Regex("[a-f0-9]{64}")))
         require(id.matches(Regex("[0-9]{3}-[a-z][a-z0-9-]*")))
         require(version.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+")))
@@ -182,10 +188,16 @@ class BookPackageImportCaptureActivity : ProjectActivity {
                 catch (error: Throwable) { failure.set(error); finished.completeExceptionally(error) }
             }, ModalityState.nonModal())
         }
-        val choose = dialog("Choose a MARS lab archive", failure)
-        bookModalUi { captureComponents(choose.rootPane).filterIsInstance<JTextComponent>()
-            .single { it.isShowing && it.accessibleContext.accessibleName == "Student ZIP archive:" }.text = archive.path }
-        if (capture) captureBookComponent(choose.rootPane, output, "$prefix-choose", "Student ZIP archive:")
+        val choose = dialog("Open a MARS lab package", failure)
+        bookModalUi {
+            val field = captureComponents(choose.rootPane).filterIsInstance<JTextComponent>()
+                .single { it.isShowing && it.accessibleContext.accessibleName == "Lab link or ZIP archive:" }
+            field.text = archive.source ?: archive.path
+            field.caretPosition = 0
+            choose.rootPane.paintImmediately(choose.rootPane.visibleRect)
+        }
+        delay(200) // Wait for the actual screen paint before the Robot capture.
+        if (capture) captureBookComponent(choose.rootPane, output, "$prefix-choose", "Lab link or ZIP archive:")
         bookModalUi { visibleLessonButton(choose.rootPane, if (cancelSelection) "Cancel" else "Preview lab").doClick() }
         if (!cancelSelection) {
             val preview = dialog("Import this MARS lab?", failure)

@@ -1009,3 +1009,28 @@ without override-only diagnostics. Production checks pass 979 tests, including 8
 learning tests with 819 lines and 416 branches covered. The lab's directly authored
 mode paragraph builds into a four-page proof that passes PDF/UA-2 validation; human
 editorial, learner and accessibility review remain separate.
+
+## Course-link import verification
+
+The separate authoring plugin's package-import plan accepts an optional `source`
+HTTPS URL for each archive. `path` still names the local public student ZIP used
+to bind its metadata and content digest. When `source` is present, the driver
+enters that link into the production import dialog; the native preview and retained
+archive must match the local binding. Without it, the existing local-file scenario
+continues to use `path`.
+
+For a loopback HTTPS fixture, supply `-PbookCourseCertificate=/absolute/course.crt`
+together with `-PbookPackageImportPlan=...`. The authoring build imports that
+certificate into the dedicated IDE configuration's certificate store before
+launch. It requires an explicit import plan and the dedicated authoring configuration
+path. It does not install a system certificate or disable HTTPS verification.
+Use a test-only certificate and key, keep the server alive through the capture,
+and retain its requests alongside the native observations.
+
+Every launch still runs the actual `clean cleanSandbox runIde` tasks. Retain the
+separate authoring Jupiter results before cleaning. The import driver exercises
+selection and preview cancellation, the actual import, an ordinary editor change,
+reimport preservation, normal Run, two Debug boundaries, and native project close.
+Wait for the source field to paint before capturing it; a model containing the
+right text does not prove that the screenshot displays it. Publication use still
+requires visual review of the actual images and native LaTeX annotations.

@@ -1,3 +1,5 @@
+import java.security.KeyStore
+import java.security.cert.CertificateFactory
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.INTERNAL_API_USAGES
@@ -85,6 +87,28 @@ tasks.runIde {
             options.resolve("trusted-paths.xml").writeText(
                 "<application><component name=\"Trusted.Paths.Settings\"><option name=\"TRUSTED_PATHS\"><list><option value=\"$path\"/></list></option></component></application>\n"
             )
+        }
+    }
+}
+
+// A loopback HTTPS course fixture gets one certificate in this disposable IDE only.
+// Production MARS continues to use the platform's normal certificate validation.
+tasks.runIde {
+    providers.gradleProperty("bookCourseCertificate").orNull?.let { certificatePath ->
+        doFirst {
+            require(providers.gradleProperty("bookPackageImportPlan").isPresent)
+            val config = sandboxConfigDirectory.get().asFile.canonicalFile
+            require(config.toPath().startsWith(layout.projectDirectory.dir(".intellijPlatform").asFile.canonicalFile.toPath()))
+            val certificate = file(certificatePath).inputStream().use {
+                CertificateFactory.getInstance("X.509").generateCertificate(it)
+            }
+            val target = config.resolve("ssl/cacerts")
+            target.parentFile.mkdirs()
+            val password = "changeit".toCharArray() // IntelliJ CertificateManager's public default store password.
+            val store = KeyStore.getInstance(KeyStore.getDefaultType())
+            if (target.isFile) target.inputStream().use { store.load(it, password) } else store.load(null, password)
+            store.setCertificateEntry("mars-book-course-fixture", certificate)
+            target.outputStream().use { store.store(it, password) }
         }
     }
 }

@@ -25,6 +25,15 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `course links retain a local exact archive binding for native capture`() {
+        plan.copy(archives = listOf(archive.copy(source = "https://example.com/student.zip?edition=1"))).validate()
+        for (source in listOf("http://example.com/a.zip", "relative.zip", "https:///a.zip",
+            "https://user:secret@example.com/a.zip", "https://example.com/a.zip#step")) {
+            assertThrows<IllegalArgumentException> { plan.copy(archives = listOf(archive.copy(source = source))).validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
