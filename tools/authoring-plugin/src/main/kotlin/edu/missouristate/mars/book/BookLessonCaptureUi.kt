@@ -6,6 +6,8 @@ import com.intellij.execution.executors.DefaultDebugExecutor
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.ui.RunContentManager
 import com.intellij.ide.ui.LafManager
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationsManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ModalityState
@@ -83,6 +85,13 @@ internal suspend fun awaitBookDebugRegisters(project: Project, handler: ProcessH
 }
 
 internal suspend fun captureBookComponent(root: JComponent, output: Path, id: String, text: String, visible: () -> Boolean = { lessonVisibleText(root).contains(text) }) {
+    // Match the established raw-figure driver: dismiss native update balloons before photography.
+    bookModalUi {
+        val manager = NotificationsManager.getNotificationsManager()
+        manager.getNotificationsOfType(Notification::class.java, null).toList()
+            .mapNotNull { it.balloon }.filterNot { it.isDisposed }.distinct().forEach { it.hide() }
+    }
+    delay(150)
     val bounds = bookModalUi {
         check(visible()) { "Expected lesson text is not visible: $text" }
         check(LafManager.getInstance().currentUIThemeLookAndFeel?.name == "IntelliJ Light")
