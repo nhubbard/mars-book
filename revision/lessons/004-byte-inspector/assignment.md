@@ -19,6 +19,14 @@ fault investigations and independent output variations. The older
 `004-bit-inspector` word-report assignment is a separate program with different
 prerequisites and checks.
 
-This package's prediction definition is a draft runtime asset. The current
-plugin validates its format during import; native lesson presentation is being
-integrated. The assembly programs can already be used with ordinary Run and Debug.
+The imported lesson presents four predictions and five Run observations. Answer
+questions and request hints in Learn. When an activity asks for execution, use
+ordinary Run on the imported `byte-inspector.asm` with the requested integer.
+A normally completed run must match both the consumed input and console output.
+Keep the default assembly settings, including pseudoinstruction support.
+
+Editing the source invalidates its Run observations. Use **Tools → Continue
+Downloaded MARS Lab** to repeat the activities that need checking; prediction
+answers and revealed hints remain. Debug, the deliberate faults, the word-width
+experiment and the independent variations in the written lab are still manual.
+This development package remains subject to human learner review.

@@ -1,9 +1,10 @@
 {
-  "formatVersion": 1,
-  "introduction": "Read the complete byte-inspector program before changing it. This prediction segment accompanies Chapter 2 and its written lab. Assume MIPS64 Release 6, the Default layout and the supplied instructions. You will separate width, stored bits and numerical interpretation.",
-  "conclusion": "Run the program with 0, 127, 128 and 255. In Debug, stop at interpret and inspect t0 after andi, then t1 after seb, using full-width hexadecimal. Explain each high bit before changing the output variation in the written lab. These predictions do not replace the execution and independent-writing activities.",
+  "formatVersion": 2,
+  "introduction": "Read the complete byte-inspector program before changing it. This guided segment accompanies Chapter 2 and its written lab. Use MIPS64 Release 6 and the Default memory layout. Predict the two interpretations, then compare them with actual Run results.",
+  "conclusion": "The five checked runs cover the example and the byte boundaries on the current program. Next use Debug as described in the written lab: stop at interpret, inspect t0 after andi and t1 after seb in full-width hexadecimal, then trace each output argument. These Run checks do not replace the debugger investigation or independent output variations.",
   "steps": [
     {
+      "kind": "prediction",
       "id": "mask-bits",
       "explanation": "The mask 0xFF has ones in positions 0 through 7. The register still has 64 bits; the AND operation clears the other positions. Assume the supplied instructions are unchanged.",
       "question": "How many bit positions can remain nonzero after the mask?",
@@ -38,6 +39,7 @@
       ]
     },
     {
+      "kind": "prediction",
       "id": "unsigned-value",
       "explanation": "Use input 150. Its low byte is 0x96, or 10010110 in binary. Read the set bits with unsigned place values before interpreting a sign bit.",
       "question": "What unsigned value does that byte represent?",
@@ -76,6 +78,7 @@
       ]
     },
     {
+      "kind": "prediction",
       "id": "extended-value",
       "explanation": "The next instruction, seb, sign extends the low byte into the complete register. For 0x96, bit seven is one. Sign extension copies that bit into all higher positions.",
       "question": "Which complete value will seb place in t1?",
@@ -114,6 +117,32 @@
       ]
     },
     {
+      "kind": "run",
+      "id": "run-150",
+      "explanation": "Start a fresh Run of byte-inspector.asm. Enter 150 in its console. Wait for normal completion, then compare the unsigned and signed outputs with your predictions. The lesson checks the integer the program consumed as well as its output.",
+      "integerInputs": [
+        150
+      ],
+      "stdout": "Enter an integer from 0 to 255: Unsigned byte: 150\nSigned byte: -106\n",
+      "success": "The low byte is 0x96 in both results. Its unsigned value is 150; sign extension preserves its signed-byte value, -106.",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "fresh-run",
+          "text": "Use Run on this imported byte-inspector.asm file. Enter the requested decimal integer in the Run console, then let the program finish."
+        },
+        {
+          "id": "compare-results",
+          "text": "If the input is right but the numbers differ, compare t0 after andi and t1 after seb. A wrong output argument can hide a correct conversion."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
       "id": "boundary-output",
       "explanation": "Now consider a fresh launch with input 128. The same two instructions produce the unsigned and signed interpretations in separate registers. The reporting code copies each result into the output argument when it is needed.",
       "question": "Which two numbers should the program print for input 128?",
@@ -144,6 +173,106 @@
         {
           "id": "two-results",
           "text": "Trace t0 and t1 separately. A destination written by seb does not replace its source register."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-128",
+      "explanation": "Start a fresh Run and enter 128. This is the first byte pattern whose sign bit is one. Read both output numbers before continuing.",
+      "integerInputs": [
+        128
+      ],
+      "stdout": "Enter an integer from 0 to 255: Unsigned byte: 128\nSigned byte: -128\n",
+      "success": "The output changes from unsigned 128 to signed -128. The mask keeps the low byte; seb copies its sign bit into the higher positions.",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "fresh-run",
+          "text": "Use Run on this imported byte-inspector.asm file. Enter the requested decimal integer in the Run console, then let the program finish."
+        },
+        {
+          "id": "compare-results",
+          "text": "If the input is right but the numbers differ, compare t0 after andi and t1 after seb. A wrong output argument can hide a correct conversion."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-0",
+      "explanation": "Start a fresh Run and enter 0. Decide what the mask and sign extension should do to an all-zero pattern, then compare the two outputs.",
+      "integerInputs": [
+        0
+      ],
+      "stdout": "Enter an integer from 0 to 255: Unsigned byte: 0\nSigned byte: 0\n",
+      "success": "Both values are zero. This checks the all-zero pattern, but it does not distinguish sign extension from a plain copy.",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "fresh-run",
+          "text": "Use Run on this imported byte-inspector.asm file. Enter the requested decimal integer in the Run console, then let the program finish."
+        },
+        {
+          "id": "compare-results",
+          "text": "If the input is right but the numbers differ, compare t0 after andi and t1 after seb. A wrong output argument can hide a correct conversion."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-127",
+      "explanation": "Start a fresh Run and enter 127. This pattern sets every low bit except bit seven. Compare the unsigned and signed outputs and explain why they agree.",
+      "integerInputs": [
+        127
+      ],
+      "stdout": "Enter an integer from 0 to 255: Unsigned byte: 127\nSigned byte: 127\n",
+      "success": "Both values are 127 because bit seven is zero. A faulty plain copy would also pass this case; the negative cases are necessary.",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "fresh-run",
+          "text": "Use Run on this imported byte-inspector.asm file. Enter the requested decimal integer in the Run console, then let the program finish."
+        },
+        {
+          "id": "compare-results",
+          "text": "If the input is right but the numbers differ, compare t0 after andi and t1 after seb. A wrong output argument can hide a correct conversion."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-255",
+      "explanation": "Start a fresh Run and enter 255. All eight low bits are one. Compare both outputs, then explain why interpreting the second value as signed produces -1.",
+      "integerInputs": [
+        255
+      ],
+      "stdout": "Enter an integer from 0 to 255: Unsigned byte: 255\nSigned byte: -1\n",
+      "success": "The unsigned result is 255 and the signed result is -1. Together with the other runs, this exposes faults that positive-only examples miss.",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "fresh-run",
+          "text": "Use Run on this imported byte-inspector.asm file. Enter the requested decimal integer in the Run console, then let the program finish."
+        },
+        {
+          "id": "compare-results",
+          "text": "If the input is right but the numbers differ, compare t0 after andi and t1 after seb. A wrong output argument can hide a correct conversion."
         }
       ]
     }

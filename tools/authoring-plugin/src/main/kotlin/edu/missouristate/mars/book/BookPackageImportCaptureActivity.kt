@@ -1,18 +1,6 @@
 package edu.missouristate.mars.book
 
 import com.google.gson.GsonBuilder
-import com.intellij.execution.ExecutionListener
-import com.intellij.execution.ExecutionManager
-import com.intellij.execution.RunManager
-import com.intellij.execution.configurations.ConfigurationType
-import com.intellij.execution.executors.DefaultDebugExecutor
-import com.intellij.execution.executors.DefaultRunExecutor
-import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.process.ProcessHandler
-import com.intellij.execution.process.ProcessListener
-import com.intellij.execution.process.ProcessOutputTypes
-import com.intellij.execution.runners.ExecutionEnvironment
-import com.intellij.execution.runners.ExecutionEnvironmentBuilder
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.ActionUiKind
@@ -29,13 +17,9 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.util.messages.MessageBusConnection
 import com.intellij.openapi.wm.WindowManager
-import com.intellij.xdebugger.XDebugSession
-import com.intellij.xdebugger.XDebugSessionListener
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.breakpoints.XBreakpointType
 import com.intellij.xdebugger.breakpoints.XLineBreakpointType
@@ -51,11 +35,9 @@ import javax.swing.text.JTextComponent
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import org.jdom.Element
 
 internal data class BookImportArchive(
     val path: String = "", val sha256: String = "", val id: String = "", val version: String = "",
@@ -84,6 +66,7 @@ internal data class BookPackageImportPlan(
     val resume: Boolean = false, val expectedEntryDigests: Map<String, String> = emptyMap(),
     val closeProjectAfterCapture: Boolean = false,
     val nativePredictions: Boolean = false,
+    val nativeExecution: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -91,6 +74,7 @@ internal data class BookPackageImportPlan(
         require(archives.size in 1..64 && archives.map { it.sha256 }.distinct().size == archives.size)
         archives.forEach(BookImportArchive::validate)
         require(!nativePredictions || archives.size == 1)
+        require(!nativeExecution || nativePredictions)
         if (resume) {
             require(expectedEntryDigests.keys == archives.map { it.sha256 }.toSet())
             require(expectedEntryDigests.values.all { it.matches(Regex("[a-f0-9]{64}")) })
@@ -248,18 +232,18 @@ class BookPackageImportCaptureActivity : ProjectActivity {
     }
 
     private suspend fun runAndDebug(project: Project, source: Path, output: Path) {
-        val run = launch(project, source, debug = false)
+        val run = launchBookProgram(project, source, debug = false)
         val runHandler = run.started.await()
         check(run.exit.await() == 0)
         check(run.stdout.toString().isEmpty())
         check(runHandler.isProcessTerminated)
-        run.connection.disconnect()
+        run.close()
         val file = withContext(Dispatchers.IO) { checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(source)) }
         val line = withContext(Dispatchers.IO) { Files.readString(source).lines().indexOfFirst { it.trim() == "li \$v0, 10" } }
         check(line >= 0)
         val type = XBreakpointType.EXTENSION_POINT_NAME.extensionList.filterIsInstance<XLineBreakpointType<*>>().single { it.id == "MarsMipsLine" }
         val breakpoint = writeAction { XDebuggerManager.getInstance(project).breakpointManager.addLineBreakpoint(type, file.url, line, null) }
-        val debug = launch(project, source, debug = true)
+        val debug = launchBookProgram(project, source, debug = true)
         try {
             val handler = debug.started.await()
             val session = withContext(Dispatchers.EDT) { XDebuggerManager.getInstance(project).debugSessions.single { it.debugProcess.processHandler === handler } }
@@ -287,7 +271,7 @@ class BookPackageImportCaptureActivity : ProjectActivity {
                 "scope" to "Normal Run/Debug of the unfinished imported starter's exit sequence, not completed submission grading",
             )), CREATE_NEW) }
         } finally {
-            debug.connection.disconnect()
+            debug.close()
             withContext(NonCancellable + Dispatchers.EDT) {
                 debug.session?.stop()
                 writeAction { XDebuggerManager.getInstance(project).breakpointManager.removeBreakpoint(breakpoint) }
@@ -295,45 +279,4 @@ class BookPackageImportCaptureActivity : ProjectActivity {
         }
     }
 
-    private class Launch(val connection: MessageBusConnection) {
-        val started = CompletableDeferred<ProcessHandler>()
-        val exit = CompletableDeferred<Int>()
-        val pauses = Channel<Int>(Channel.UNLIMITED)
-        val stdout = StringBuilder()
-        var session: XDebugSession? = null
-    }
-
-    private suspend fun launch(project: Project, source: Path, debug: Boolean): Launch {
-        val launch = Launch(project.messageBus.connect())
-        val name = if (debug) "Book imported Debug" else "Book imported Run"
-        launch.connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
-            override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
-                if (env.runProfile.name != name) return
-                handler.addProcessListener(object : ProcessListener {
-                    override fun processTerminated(event: ProcessEvent) { launch.exit.complete(event.exitCode) }
-                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                        if (outputType == ProcessOutputTypes.STDOUT) launch.stdout.append(event.text)
-                    }
-                })
-                if (debug) {
-                    val session = XDebuggerManager.getInstance(project).debugSessions.single { it.debugProcess.processHandler === handler }
-                    launch.session = session
-                    session.addSessionListener(object : XDebugSessionListener {
-                        override fun sessionPaused() { launch.pauses.trySend(checkNotNull(session.topFramePosition).line) }
-                    })
-                }
-                launch.started.complete(handler)
-            }
-        })
-        withContext(Dispatchers.EDT) {
-            val type = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
-            val settings = RunManager.getInstance(project).createConfiguration(name, type.configurationFactories.single())
-            settings.configuration.readExternal(Element("configuration").setAttribute("marsExecutionDefaults", "1")
-                .addContent(Element("option").setAttribute("name", "sourcePath").setAttribute("value", source.toString())))
-            settings.configuration.checkConfiguration()
-            val executor = if (debug) DefaultDebugExecutor.getDebugExecutorInstance() else DefaultRunExecutor.getRunExecutorInstance()
-            ExecutionEnvironmentBuilder.create(executor, settings).buildAndExecute()
-        }
-        return launch
-    }
 }

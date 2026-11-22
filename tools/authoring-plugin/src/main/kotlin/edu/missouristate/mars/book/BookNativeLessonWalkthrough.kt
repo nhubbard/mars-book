@@ -29,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import training.ui.LearningUiHighlightingManager
+import training.learn.lesson.LessonManager
 
 /** Actual student controls only: no private progress APIs, synthetic answers or host internals. */
 internal suspend fun captureBookNativePredictions(project: Project, plan: BookPackageImportPlan, output: Path) {
@@ -87,7 +88,8 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
     }
     val archive = plan.archives.single()
     val entry = archive.directory(Path.of(plan.projectRoot)).resolve(archive.entry)
-    if (plan.resume) {
+    val runReceipts = mutableListOf<Map<String, Any>>()
+    suspend fun continueLesson() {
         withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
             val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.ContinueDownloaded"))
             val event = AnActionEvent.createEvent(action, SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build(),
@@ -95,6 +97,32 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
             check(ActionUtil.updateAction(action, event).isPerformed && event.presentation.isEnabled)
             ActionUtil.performAction(action, event)
         }
+    }
+    suspend fun editComment(comment: String) {
+        withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
+            val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
+            WriteCommandAction.runWriteCommandAction(project) { editor.document.insertString(0, "# $comment\n") }
+            FileDocumentManager.getInstance().saveDocument(editor.document)
+        }
+    }
+    suspend fun run(input: Int, id: String, editWhileWaiting: Boolean = false) {
+        val launch = launchBookProgram(project, entry, debug = false)
+        try {
+            val handler = launch.started.await()
+            while (!launch.stdout.toString().contains("Enter an integer from 0 to 255: ")) delay(50)
+            if (editWhileWaiting) editComment("An in-flight result must not credit this new source revision.")
+            withContext(Dispatchers.IO) { deliverBookStandardInput(handler, "$input\n") }
+            check(launch.exit.await() == 0)
+            val byte = input and 255
+            val expected = "Enter an integer from 0 to 255: Unsigned byte: $byte\nSigned byte: ${if (byte < 128) byte else byte - 256}\n"
+            check(launch.stdout.toString() == expected)
+            runReceipts += mapOf("id" to id, "integerInput" to input, "stdout" to expected,
+                "sourceChangedWhileWaiting" to editWhileWaiting, "exitCode" to 0)
+        } finally { launch.close() }
+    }
+    if (plan.resume) {
+        check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) } == plan.expectedEntryDigests.getValue(archive.sha256))
+        continueLesson()
         awaitText("Which complete value will seb place in t1?")
         check(!bookModalUi { lessonVisibleText(root).contains("A. Eight") })
         capture("resumed-third-prediction", "Which complete value will seb place in t1?")
@@ -102,10 +130,38 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
         click("0x0000000000000096", true)
         capture("extended-feedback", "That is the zero-extended masked value in t0.")
         click("0xFFFFFFFFFFFFFF96", true)
+        if (plan.nativeExecution) {
+            awaitText("Start a fresh Run of byte-inspector.asm. Enter 150")
+            click("Open a hint")
+            capture("run-hint", "Use Run on this imported byte-inspector.asm file.")
+            run(406, "wrong-input")
+            capture("wrong-input-feedback", "This run did not consume the requested integer inputs.")
+            run(150, "stale-source", editWhileWaiting = true)
+            capture("stale-source-feedback", "The source or this check changed during execution.")
+            run(150, "first-current-run")
+            awaitText("Which two numbers should the program print for input 128?")
+            editComment("Earlier Run credit must be rechecked after this edit.")
+            continueLesson()
+            capture("recheck-after-edit", "Start a fresh Run of byte-inspector.asm. Enter 150")
+            check(!bookModalUi { bookInlineChoiceOffset(lessonVisibleText(root), "128 and -128") != null })
+            run(150, "rechecked-current-run")
+        }
         awaitText("Which two numbers should the program print for input 128?")
         focus("boundary", "move")
         click("128 and -128", true)
-        capture("predictions-complete", "Run the program with 0, 127, 128 and 255.")
+        if (plan.nativeExecution) {
+            for ((input, instruction) in listOf(
+                128 to "Start a fresh Run and enter 128.",
+                0 to "Start a fresh Run and enter 0.",
+                127 to "Start a fresh Run and enter 127.",
+                255 to "Start a fresh Run and enter 255.",
+            )) {
+                awaitText(instruction)
+                run(input, "boundary-$input")
+            }
+            while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
+            capture("execution-complete", "The five checked runs cover the example and the byte boundaries")
+        } else capture("predictions-complete", "Run the program with 0, 127, 128 and 255.")
     } else {
         capture("first-prediction", "How many bit positions can remain nonzero after the mask?")
         focus("mask", "andi")
@@ -130,12 +186,13 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
         }
     }
     val digest = withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) }
-    if (plan.resume) check(digest == plan.expectedEntryDigests.getValue(archive.sha256))
+    if (plan.resume && !plan.nativeExecution) check(digest == plan.expectedEntryDigests.getValue(archive.sha256))
     withContext(Dispatchers.IO) {
         Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
             "resumed" to plan.resume, "entryDigests" to mapOf(archive.sha256 to digest),
-            "nativeQuizLinksClicked" to true, "sourcePointersVerified" to true,
-            "scope" to "Conceptual predictions and hints; execution and independent-writing credit are not claimed",
+            "nativeQuizLinksClicked" to true, "sourcePointersVerified" to true, "runs" to runReceipts,
+            "scope" to if (plan.nativeExecution) "Predictions and actual Run observations; no Debug or independent-writing credit claimed"
+                else "Conceptual predictions and hints; execution and independent-writing credit are not claimed",
         )), CREATE_NEW)
     }
 }
