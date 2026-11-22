@@ -460,3 +460,22 @@ programs and exhaustive instructor checks remain private. Development captures a
 machine-verified cases support review; representative learners must still establish
 whether they can complete the sequence independently. The proposed opening account
 of MARS versus hardware remains deferred for author review.
+
+
+### Direct downloaded activity navigation
+
+Students can choose guided work or an independent source directly through the
+native Tools activity chooser. Continuing returns to the project's last selected
+activity in the exact retained edition. Independent lessons use the same source,
+cases, check identity, hints and assessment budget as the guided sequence.
+Changing modes does not reset history, supply prerequisite answers or grant a
+pass. Returning to guided work still checks its current source-bound evidence.
+
+Native platform tests cover selection, cancellation, edition binding, serialized
+state, live restrictions and both task routes. The separate authoring plugin
+exercised a completed unit in two fresh light-theme IDE processes: an independent
+source edit required rechecking, cancelled navigation preserved the destination,
+and independent continuation returned to the selected source. Guided completion
+then reused unchanged observations. These are development checks, with human
+learner and accessibility review still open. Broader per-course prerequisite
+selection and non-console contracts remain part of the active curriculum goal.
