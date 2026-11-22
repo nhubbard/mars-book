@@ -366,3 +366,6 @@ case("early depth 18446744073709551615 count 0", instructionLimit = 4000000) { s
 case("early depth 18446744073709551615 count 1", instructionLimit = 4000000) { sequenceCheck(bytes(""), 18446744073709551615uL.toLong(), 1uL.toLong(), 0) }
 case("selected prefix excludes unsupported suffix", instructionLimit = 4000000) { sequenceCheck(bytes("001818ff"), 0uL.toLong(), 3uL.toLong(), 0) }
 case("selected zero excludes real input", instructionLimit = 4000000) { sequenceCheck(bytes("ff"), 0uL.toLong(), 0uL.toLong(), 0) }
+case("sibling keeps inherited depth after helper overwrites a2", instructionLimit = 4000000) {
+    sequenceCheck(bytes("808180"), depth = 7)
+}
