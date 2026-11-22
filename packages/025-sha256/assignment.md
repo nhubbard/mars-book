@@ -86,7 +86,9 @@ initialization, update and finalization reported separately. It establishes no h
 elapsed-time or hardware-cycle ratios. The program is a teaching implementation, not
 NIST algorithm certification, a keyed authentication scheme or a production library.
 
-Student/instructor distributions are separate. Actual automated light-theme IDE captures,
-remote delivery, enforced hint/progression controls, the deferred author rewrite and
-independent accessibility validation remain pending. The four capture entries are plans;
-no capture PNGs or coordinate/annotation receipts are claimed.
+Student/instructor distributions are separate. The original capture plan remains a
+construction draft. The revised written companion has four actual light-theme Debug
+captures with native annotations and receipts under `revision/captures/sha`; see
+`revision/sha-unit.md` for the tested scope and automated PDF accessibility evidence.
+Remote delivery, enforced hint/progression controls, author/learner review and
+assistive-technology review remain pending.

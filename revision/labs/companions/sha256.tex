@@ -1,0 +1,353 @@
+\section{Companion lab: compute a SHA-256 fingerprint}
+\label{revision-lab:sha256}
+
+A ChaCha20 block generates bytes to combine with a message. SHA-256 instead
+reduces a message to a fixed 32-byte \emph{digest}, also called a fingerprint.
+The calculation must depend on every input byte and on where the message ends.
+A useful implementation therefore needs more than a compression loop: it needs
+a representation of unfinished input and an explicit finalization operation.
+This companion revises original project \texttt{025-sha256}.
+
+Implement the six entries in \texttt{revision/labs/files/sha256.asm}.
+The file supplies the caller, data arenas and fixed constants; each unfinished
+entry stops with \texttt{break}. The complete contracts and public feedback are
+in \texttt{packages/025-sha256}. Your functions may choose their own private
+labels, temporaries, helpers and frames. The main-book chapters on functions,
+file ownership and word transformations supply the prerequisites.
+
+The algorithm is specified in
+\href{https://doi.org/10.6028/NIST.FIPS.180-4}{FIPS 180-4}.
+\href{https://www.rfc-editor.org/rfc/rfc6234.html}{RFC 6234} provides additional
+implementation and test material. Use those references for the fixed definitions,
+not as a substitute for tracing your own state transitions. The local assignment
+specifies our context layout, bounded calls and simulator file interface.
+
+\subsection*{Distinguish input bytes, numeric words and printed digits}
+
+Start with the three ASCII bytes for \texttt{abc}: hexadecimal
+\texttt{61 62 63}. No terminating zero or newline is part of this message.
+Its digest has 32 bytes. Printing each byte as two hexadecimal digits produces
+64 characters; those characters are a representation of the digest, not another
+32-byte message to hash.
+
+Internally, SHA-256 processes 64-byte blocks. Its first sixteen schedule words
+interpret successive groups of four block bytes in big-endian order.
+The bytes \texttt{61 62 63 80} therefore represent numeric word
+\texttt{61626380}. Loading that group with a native little-endian word load
+would instead produce \texttt{80636261}. Decode the bytes deliberately, even
+though the block happens to lie at an aligned address in one example.
+The interface also accepts unaligned block starts.
+
+After decoding, the schedule is an array of \emph{numeric} words. A normal word
+store in this simulator represents \texttt{61626380} in memory as
+\texttt{80 63 62 61}. That storage order is correct for the schedule array.
+The final digest has a different interface: it must be written as big-endian
+bytes. Decide what an object represents before deciding whether its byte order
+is wrong. A byte view and a word view can both be correct.
+
+Implement \texttt{sha256\_schedule(a0 block,a1 schedule)} first. It reads
+exactly 64 block bytes and replaces all 64 words of a word-aligned, 256-byte
+schedule. Previous workspace contents must not affect the result. Source and
+output are disjoint. Run \texttt{checks/kernel.kts} while developing; failures
+for entries you have not implemented are expected. Use the individual case names
+to distinguish a completed schedule from incomplete compression or streaming.
+
+\subsection*{Expand a schedule with four explicit predecessors}
+
+The first sixteen words come directly from the block. For indices 16 through
+63, compute a wrapping word sum:
+\[
+ W_t=W_{t-16}+\sigma_0(W_{t-15})+W_{t-7}+\sigma_1(W_{t-2})
+ \pmod {2^{32}}.
+\]
+The two small-sigma functions combine rotations and a logical shift:
+\[
+\begin{aligned}
+\sigma_0(x)&=\operatorname{rotr}(x,7)\mathbin{\oplus}
+ \operatorname{rotr}(x,18)\mathbin{\oplus}(x\gg3),\\
+\sigma_1(x)&=\operatorname{rotr}(x,17)\mathbin{\oplus}
+ \operatorname{rotr}(x,19)\mathbin{\oplus}(x\gg10).
+\end{aligned}
+\]
+Here the right shifts insert zeros. An arithmetic shift would copy the sign bit
+and change the function for words whose high bit is one. All rotations and sums
+operate on 32-bit words, just as in the quarter-round chapter.
+
+If a pointer names the destination for $W_t$, then its four predecessors are
+at byte offsets $-64$, $-60$, $-28$ and $-8$. Derive each offset by multiplying
+the index difference by four. This gives a way to debug an incorrect recurrence
+without guessing at constants.
+
+\MARSCodeLabel{One possible allocation for the first small-sigma term}
+\begin{minted}{mars-idea}
+    lw $t2, -60($t0)
+    rotr $t3, $t2, 7
+    rotr $t4, $t2, 18
+    xor $t3, $t3, $t4
+    srl $t4, $t2, 3
+    xor $t3, $t3, $t4
+\end{minted}
+
+This fragment assumes \texttt{t0} points to the next schedule word, not to the
+start of the schedule. It retains the unmodified input in \texttt{t2} until
+both rotations and the shift are complete. A different allocation is equally
+valid if it preserves that dependency.
+
+For the padded \texttt{abc} block developed below, $W_0$ is
+\texttt{61626380}, $W_1$ through $W_{14}$ are zero, and $W_{15}$ is
+\texttt{00000018}. The next four words are \texttt{61626380},
+\texttt{000f0000}, \texttt{7da86405} and \texttt{600003c6}.
+Predict $W_{16}$ using its four predecessors before running. Then inspect all
+four expanded words. If $W_{16}$ is correct and $W_{17}$ is wrong, examine which
+predecessors changed between those two iterations.
+
+\input{revision/figures/sha/native-schedule}
+
+\subsection*{Keep a round's old state until its new values are ready}
+
+\texttt{sha256\_compress(a0 state,a1 block,a2 workspace)} receives eight
+aligned numeric state words, one 64-byte block and a 256-byte workspace.
+It expands that block's schedule, performs 64 rounds and adds the working
+results to the original state words. The source block is preserved. This is one
+compression operation; it does not choose the initial state or add padding.
+
+Name the eight working words $a$ through $h$. The large-sigma functions contain
+three rotations each:
+\[
+\begin{aligned}
+\Sigma_0(x)&=\operatorname{rotr}(x,2)\mathbin{\oplus}
+ \operatorname{rotr}(x,13)\mathbin{\oplus}\operatorname{rotr}(x,22),\\
+\Sigma_1(x)&=\operatorname{rotr}(x,6)\mathbin{\oplus}
+ \operatorname{rotr}(x,11)\mathbin{\oplus}\operatorname{rotr}(x,25).
+\end{aligned}
+\]
+They are different functions from the small sigmas in the schedule.
+Two further functions operate independently at each bit position.
+\emph{Choice}, $\operatorname{Ch}(e,f,g)$, selects the bit from $f$ when the
+corresponding bit of $e$ is one, and from $g$ otherwise. \emph{Majority},
+$\operatorname{Maj}(a,b,c)$, is one when at least two of those three input bits
+are one. They can be expressed as
+$(e\mathbin{\&}f)\mathbin{\oplus}(\mathord{\sim}e\mathbin{\&}g)$ and
+$(a\mathbin{\&}b)\mathbin{\oplus}(a\mathbin{\&}c)
+\mathbin{\oplus}(b\mathbin{\&}c)$, respectively, taking complements within
+the word.
+
+At round $t$, form two temporary word sums from the \emph{old} working state:
+\[
+\begin{aligned}
+T_1&=h+\Sigma_1(e)+\operatorname{Ch}(e,f,g)+K_t+W_t,\\
+T_2&=\Sigma_0(a)+\operatorname{Maj}(a,b,c).
+\end{aligned}
+\]
+The supplied table gives the fixed $K_t$ values; do not derive them from message
+bytes. The new working sequence is
+$(T_1+T_2,a,b,c,d+T_1,e,f,g)$, with all sums modulo $2^{32}$.
+Both new $a$ and new $e$ need $T_1$, and new $e$ needs old $d$.
+
+\Needspace{15\baselineskip}
+For example, if \texttt{s0} through \texttt{s7} hold $a$ through $h$, and
+\texttt{t0/t1} hold $T_1/T_2$, the following order avoids destroying a value
+before its last use:
+
+\MARSCodeLabel{Publish one round's eight new working words}
+\begin{minted}{mars-idea}
+    move $s7, $s6
+    move $s6, $s5
+    move $s5, $s4
+    addu $s4, $s3, $t0
+    move $s3, $s2
+    move $s2, $s1
+    move $s1, $s0
+    addu $s0, $t0, $t1
+\end{minted}
+
+Trace why reversing these moves fails. Moving $a$ into $b$ before preserving old
+$b$ for $c$, for example, duplicates $a$ instead of shifting the old state.
+Using saved registers for working words also means the function must save and
+restore the caller's complete 64-bit values. The fact that the calculation uses
+only words does not narrow the calling convention.
+
+Starting with the supplied SHA-256 initial values and the padded \texttt{abc}
+block, the first round gives $T_1=$\texttt{54da50e8} and
+$T_2=$\texttt{08909ae5}. New $a$ is \texttt{5d6aebcd}; new $e$ is
+\texttt{fa2a4622}. Use this early boundary to separate a wrong Boolean function
+or constant from an error later in the loop. After round 64, add each working
+word to its corresponding \emph{original} state word. Storing only the working
+sequence omits feed-forward.
+
+The next block of the same message starts from this updated chaining state.
+Its rounds therefore depend on the preceding block. The independent columns
+that made the ChaCha20 MSA arrangement useful are absent here. Several messages
+could be processed independently, but that would require keeping a separate
+context for each message.
+
+\subsection*{Represent unfinished input in the context}
+
+A caller should be able to supply \texttt{abc} at once or as updates containing
+\texttt{a} and \texttt{bc}. The digest must be the same. Padding each update
+would insert extra bytes between those chunks, so an update cannot finalize the
+message merely because its current input ends.
+
+\input{revision/figures/sha/context}
+
+\texttt{sha256\_init(a0 context)} installs the eight standard initial words
+and sets total and used to zero independently of old contents. It need not clear
+unused storage. \texttt{sha256\_update(a0 context,a1 source,a2 count)} accepts
+counts zero through 4096. Total original message bytes remain below $2^{61}$.
+The context, source and other supplied objects are disjoint.
+
+\Needspace{7\baselineskip}
+On return from update, the chaining words describe all complete message blocks,
+used equals total modulo 64, and the live buffer prefix contains the remaining
+original bytes. These three facts are the invariant. Once used reaches 64,
+compress the buffer and reset used to zero. Buffer bytes beyond the new used
+prefix are stale storage, not additional input.
+
+For a 65-byte message supplied as 63 bytes and then two, the first call leaves
+used 63. The next byte completes a block; compress it. The final byte becomes
+buffer byte zero, leaving total 65 and used one. Before coding, trace the source
+pointer, remaining count and used value at all three points. Do not let a nested
+compression call destroy the outer source walker.
+
+An empty update reads no source bytes, even if its source pointer is deliberately
+invalid. It can still inspect its valid context. Calling update on two contexts
+in alternating order must preserve each one's independent state and tail.
+Shared read-only constants are safe; one shared mutable buffer is not.
+
+The supplied caller can exercise the full memory pipeline with mode zero.
+Its three-byte message is selected by \texttt{length}; the unused bytes after
+that interval are not part of the input. During development, stop after update
+and verify total three, used three and live bytes \texttt{61 62 63} before
+investigating the digest.
+
+\subsection*{Prove whether padding needs one block or two}
+
+\texttt{sha256\_final(a0 context,a1 output32)} consumes a prepared context
+and publishes exactly 32 bytes. Finalization appends a single one bit, followed
+by enough zero bits and the original message's 64-bit bit length. Since our
+messages contain whole bytes, the marker byte is \texttt{80}. It is not a
+terminator to search for in the original message; an original \texttt{80} byte
+is ordinary data.
+
+The final eight bytes of the last block hold the length, most significant byte
+first. For \texttt{abc}, the marker is at buffer offset three, zeros extend
+through offset 55, and offsets 56--63 contain
+\texttt{00 00 00 00 00 00 00 18}. The final byte is hexadecimal 18 because
+three original bytes contain 24 bits.
+
+\input{revision/figures/sha/padding}
+
+\Needspace{9\baselineskip}
+With 55 buffered bytes, the marker fits at offset 55 and the length starts at
+56 in the same block. With 56 buffered bytes, the marker occupies offset 56,
+where the length would need to start. Zero the rest of that block and compress
+it first. Then create a second block with zeros through offset 55 and the
+length in the last eight bytes. A full original 64-byte block has already been
+compressed by update, but finalization still needs a padding block.
+
+\input{revision/figures/sha/native-padding}
+
+\Needspace{8\baselineskip}
+Compute the bit length from the original byte total using a doubleword left
+shift by three. Serialize all eight bytes with full-width shifts. A word shift
+cannot extract the upper half correctly. Recipe \texttt{s34-2} constructs a
+context with total $2^{29}+3$ and tail \texttt{abc}. Its length field must be
+\texttt{00 00 00 01 00 00 00 18}. This is a synthetic length-serialization
+observation, not evidence that the simulator read a file of that size.
+
+After the final compression, serialize each of the eight numeric state words
+most significant byte first. For \texttt{abc}, the first four digest bytes are
+\texttt{ba 78 16 bf}. Storing numeric word \texttt{ba7816bf} with a native
+word store would reverse those four output bytes. Check the complete digest,
+not only this prefix, against an independent digest implementation.
+
+\input{revision/figures/sha/native-digest}
+
+\Needspace{6\baselineskip}
+Finalization consumes the context. Its contents afterward are unspecified,
+and calling final twice is outside the interface. Initialize it again before
+hashing another message. Do not add padding bytes to the saved original-byte
+count while calculating their own length field.
+
+\subsection*{Finalize a file only after successful EOF}
+
+The file function receives a terminated path, scratch pointer, capacity from one
+through 256, and a 32-byte digest destination. It owns a fresh private context.
+It opens the path read-only, initializes that context and repeatedly reads a
+positive request no larger than capacity.
+
+A positive result tells how many bytes are now available in scratch. Supply
+exactly that count to update. A short positive result does not mean EOF; the next
+read may produce more data. A negative result is a read error. Zero is successful
+EOF, at which point finalization can publish the digest.
+
+Suppose capacity is seven but a controlled reader returns three bytes, then two,
+then minus one. The context has consumed five successful bytes, but there is no
+complete file digest to publish. Return status two, close the acquired descriptor
+and preserve all 32 destination bytes. Hashing the requested seven bytes would
+incorporate stale scratch contents; treating minus one as EOF would publish a
+digest of a prefix.
+
+\input{revision/figures/sha/native-read-error}
+
+An open failure returns status one and acquires no descriptor. On success and
+read failure, close the descriptor actually returned by open, which need not be
+three. Keep that descriptor separate from argument registers reused by update
+and finalization. Also keep the result status across the close syscall so that
+its return value does not replace the function's intended status.
+
+\Needspace{12\baselineskip}
+With caller defaults retained (\texttt{mode} two, \texttt{length} three and
+\texttt{buffer\_capacity} seven), prepare an ordinary host-file observation from
+your completed source. From the book checkout, choose a fresh output path:
+
+\Needspace{7\baselineskip}
+\begin{Verbatim}[fontsize=\small]
+python3 packages/025-sha256/prepare.py s45-1 \
+  --source path/to/your/main.asm \
+  --output /private/tmp/sha-file-observation.asm \
+  --fixture-output /private/tmp/sha-input.bin
+\end{Verbatim}
+
+The tool refuses existing outputs. The resulting file contains deterministic
+binary bytes and the source names that exact host path. An ordinary file run
+checks real file integration; it does not force a short read or injected error.
+The public file checks supply those separate controls.
+
+\subsection*{Build evidence at the boundary that can fail}
+
+Use fresh prepared sources for separate observations. The preparation tool can
+apply \texttt{s03-1} for the padded schedule input, \texttt{s11-1} for a
+compression input with the standard initial state, \texttt{s28-2} for crossing
+a buffered block boundary, and \texttt{s37-3} for two-block finalization.
+These recipes install data and controls while retaining your instruction text.
+Do not reuse a context after finalization just because its old buffer still
+looks plausible.
+
+Implement and test schedule, compression, initialization, update, finalization
+and file ownership in that dependency order. The public completed suites are
+\texttt{kernel.kts}, \texttt{file.kts}, \texttt{program.kts} and
+\texttt{reuse.kts} under the package's \texttt{checks} directory. Run each with
+\texttt{java -jar /path/to/cli.jar grade CHECK SOURCE}.
+The caller stops at \texttt{main\_done} before storing its returned status and
+at \texttt{results\_ready} after the store. These are different observation
+boundaries; the later exit syscall changes \texttt{v0}.
+
+Write a test plan covering 0, 3, 55, 56, 63, 64 and 65 bytes, then binary input
+containing zeros and bytes above 127. For each length, compare one update with
+several splits, including empty updates. Interleave two contexts and initialize
+a used context again. Move the selected slices within their supplied arenas.
+A correct digest at a fixed address does not establish correct pointer use or
+memory ownership.
+
+For error diagnosis, check the first wrong schedule word, first wrong round,
+first wrong context invariant or first wrong serialized byte. A complete
+fingerprint is valuable as an end-to-end check, but it cannot identify which
+of those boundaries first diverged.
+
+Finally, an unkeyed digest does not identify a sender. A party that can replace
+both a message and its advertised digest can recompute them together. Keyed
+message authentication requires a defined construction, such as \href{https://www.rfc-editor.org/rfc/rfc2104.html}{HMAC}; appending
+a secret to this exercise is not its specification. The work here is a precise
+bounded SHA-256 implementation with reproducible observations. Explain its
+state and ownership promises alongside the passing results.

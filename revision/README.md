@@ -47,7 +47,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–22 (145 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–22 and companions (146 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–22 and companions (153 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -240,3 +240,8 @@ unchanged. Original projects 017 and 018 now have revised written companion trea
 their native lessons remain open. The next main chapter develops ChaCha20 word operations.
 
 The Chapter 22 scope and finite qualification are recorded in [chacha-unit.md](chacha-unit.md).
+
+The SHA-256 companion is section 22.7, lab pages 146–153. It connects schedule and
+round dependencies to incremental contexts, padding and file completion. The shared
+lab chapter is now “Word transformations.” Its finite qualification and remaining
+review are in [sha-unit.md](sha-unit.md); the main proof remains 145 pages.
