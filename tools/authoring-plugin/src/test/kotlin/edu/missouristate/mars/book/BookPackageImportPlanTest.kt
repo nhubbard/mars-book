@@ -215,6 +215,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `fixed walkthrough isolates its exact source and single private fixture`() {
+        val fixed = plan.copy(archives = listOf(archive.copy(id = "012-fixed-point", entry = "fixed-point-ball.asm")),
+            nativePredictions = true, fixedUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/fixed-interpolate.asm", "/tmp/fixed.asm", "c".repeat(64))))
+        fixed.validate()
+        fixed.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(fixed.copy(nativePredictions = false), fixed.copy(nativeExecution = true),
+            fixed.copy(nativeDebug = true), fixed.copy(memoryUnit = true), fixed.copy(loopUnit = true),
+            fixed.copy(functionUnit = true), fixed.copy(spriteUnit = true), fixed.copy(rasterUnit = true), fixed.copy(lifeUnit = true), fixed.copy(sortingUnit = true), fixed.copy(assessmentFixtures = emptyList()),
+            fixed.copy(archives = listOf(archive)), fixed.copy(resumeCompleted = true), fixed.copy(fixedUnit = false),
+            fixed.copy(activityNavigation = true), fixed.copy(prerequisiteControls = true),
+            fixed.copy(assessmentFixtures = fixed.assessmentFixtures + fixed.assessmentFixtures),
+            fixed.copy(assessmentFixtures = listOf(fixed.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
