@@ -68,7 +68,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import org.jdom.Element
 import training.ui.LearningUiHighlightingManager
 
 /** Opt-in batch driver for a dedicated authoring IDE. No action runs in an ordinary student launch. */
@@ -199,12 +198,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
                 val runType = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
                 val name = "Book figure: " + figure.id
                 val settings = runManager.createConfiguration(name, runType.configurationFactories.single())
-                val configuration = settings.configuration
-                val state = Element("configuration").setAttribute("marsExecutionDefaults", "1")
-                state.addContent(Element("option").setAttribute("name", "sourcePath").setAttribute("value", path.toString()))
-                state.addContent(Element("option").setAttribute("name", "workingDirectory").setAttribute("value", path.parent.toString()))
-                configuration.readExternal(state)
-                configuration.checkConfiguration()
+                configureBookCaptureLaunch(settings.configuration, path)
                 ownedSessionName = name
                 ExecutionEnvironmentBuilder.create(DefaultDebugExecutor.getDebugExecutorInstance(), settings).buildAndExecute()
             }
