@@ -1,0 +1,234 @@
+{
+  "formatVersion": 4,
+  "introduction": "This unit follows values from registers into memory and back. Read the complete program alongside the main chapter. Predict before executing, then compare the memory bytes, register copies and Bitmap display at named instruction boundaries.",
+  "conclusion": "You have compared old register copies with later memory contents and checked two independent programs. Continue the written lab\u2019s wrong-offset and wrong-width investigations. Final-state checks support your reasoning; they do not establish the absence of every intermediate bad write.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "address-and-value",
+      "explanation": "la prepares the location of pixel in t0; li prepares the color in t1. Neither instruction has stored the color in memory.",
+      "question": "Immediately before sw, which register holds the destination address?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "t0",
+          "feedback": "The base operand in 0(t0) supplies the address. t1 supplies the value to store."
+        },
+        {
+          "id": "b",
+          "text": "t1",
+          "feedback": "t1 holds 0x00336699, the color value. Using that value as the base would select a different address."
+        },
+        {
+          "id": "c",
+          "text": "Both registers",
+          "feedback": "Both hold bits, but the program assigned them different roles. Their values are not equal."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "store_color",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "word-byte-order",
+      "explanation": "The word to store is 0x00336699. Little-endian memory places the least significant byte at the lowest address. Offsets count bytes.",
+      "question": "Which bytes follow pixel in increasing address order?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "00 33 66 99",
+          "feedback": "That places the most significant byte first. This exercise uses little-endian memory."
+        },
+        {
+          "id": "b",
+          "text": "99 66 33 00",
+          "feedback": "The lowest eight bits are 0x99, then 0x66, 0x33 and 0x00."
+        },
+        {
+          "id": "c",
+          "text": "99 00 66 33",
+          "feedback": "Each byte occupies one consecutive address. No padding is inserted within a word."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "store_color",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "signed-load",
+      "explanation": "lbu and lb both read the byte 0x99 at pixel. The earlier chapter explained zero extension and sign extension.",
+      "question": "Which decimal values should the two loads produce?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "153 and 153",
+          "feedback": "The unsigned interpretation is 153. The signed byte has its sign bit set, so lb extends a negative value."
+        },
+        {
+          "id": "b",
+          "text": "153 and -103",
+          "feedback": "0x99 is unsigned 153; as a signed byte its value is 153 minus 256, or -103."
+        },
+        {
+          "id": "c",
+          "text": "-103 and -103",
+          "feedback": "lbu zero extends the byte. Its value remains positive even though bit seven is one."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "inspect_initial",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "retained-register-copy",
+      "explanation": "t2 received the first word through lw. A later sb writes one byte in memory. No instruction writes t2 again.",
+      "question": "After sb changes blue to 255, what does t2 retain?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x003366FF",
+          "feedback": "That is the new memory word. t2 retains the value copied by the earlier load."
+        },
+        {
+          "id": "b",
+          "text": "0x000000FF",
+          "feedback": "sb uses t5 as its source and changes memory. It does not replace t2 with the stored byte."
+        },
+        {
+          "id": "c",
+          "text": "0x00336699",
+          "feedback": "A register copy is separate state. A subsequent load is needed to obtain the changed memory word."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "change_blue",
+        "mnemonic": "sb",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-stores",
+      "explanation": "Start fresh Debug on memory-pixel.asm. Set breakpoints at store_color and change_blue. No console input is needed. Inspect memory and Bitmap alongside each checked register boundary. Machine edits or Backstep require a fresh session to record the ordered observations.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "before-word-store",
+          "explanation": "Pause on sw at store_color. Confirm t0 is the address and t1 is the color. Inspect the still-zero destination word before resuming.",
+          "anchor": {
+            "label": "store_color",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010000",
+            "$t1": "0x0000000000336699"
+          },
+          "success": "The source registers are ready; the store is still next to execute."
+        },
+        {
+          "id": "before-byte-store",
+          "explanation": "Resume to sb at change_blue. The word and byte loads have completed. Inspect all sixteen digits of t4 and compare the same byte read as signed and unsigned. Memory still contains 0x00336699. Wait for this observation before stepping.",
+          "anchor": {
+            "label": "change_blue",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000336699",
+            "$t3": "0x0000000000000099",
+            "$t4": "0xFFFFFFFFFFFFFF99",
+            "$t5": "0x00000000000000FF"
+          },
+          "success": "The earlier loads copied their values before the later byte store."
+        },
+        {
+          "id": "after-byte-store",
+          "explanation": "Step Over once to lw at inspect_final. Inspect changed memory bytes FF 66 33 00. The checked t2 is still the earlier copy. This boundary precedes the reload into t6.",
+          "anchor": {
+            "label": "inspect_final",
+            "mnemonic": "lw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000336699",
+            "$t3": "0x0000000000000099",
+            "$t4": "0xFFFFFFFFFFFFFF99"
+          },
+          "success": "The earlier register copies remain unchanged. The memory-byte observation is yours to inspect."
+        },
+        {
+          "id": "after-reloads",
+          "explanation": "Step Over the two lw instructions. Stop on li before exit. Compare t2 with t6 and inspect the loaded guard in t7. The word now in t6 comes from memory after sb.",
+          "anchor": {
+            "label": "inspect_final",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000336699",
+            "$t6": "0x00000000003366FF",
+            "$t7": "0x0000000013579BDF"
+          },
+          "success": "The reload sees the changed blue byte while the old register copy and adjacent guard retain their values."
+        }
+      ],
+      "success": "Resume to normal termination. Explain the two different word values by naming their load boundaries, then use the written lab to investigate wrong offsets and store widths.",
+      "hints": [
+        {
+          "id": "boundaries",
+          "text": "The highlighted instruction is next to execute. Use Resume between the first two breakpoints and Step Over for the final stores and loads."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "independent-red-component",
+      "explanation": "Change only red. Open independent/red-component.asm and read independent/README.md. Its starter only exits. Write the input and memory operations, investigate the result in Run and Debug, then use Check this program. The six public cases inspect normal termination, the prompt and exact final bytes, including the adjacent guards.",
+      "source": "independent/red-component.asm",
+      "caseProfile": "independent/red-component.cases.json",
+      "success": "The current program passed its six stated final-memory cases. Explain why your operations retain the other components and guard words for an arbitrary admitted input.",
+      "hints": [
+        {
+          "id": "draw-layout",
+          "text": "Write the address of every byte in each four-byte object. Locate red using the little-endian order before choosing an offset."
+        },
+        {
+          "id": "first-wrong-write",
+          "text": "For a failing case, compare each store address and width with your object map. A legal store can reach the wrong object without raising an exception."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "independent-copy",
+      "explanation": "Retain an independent memory copy. Open independent/independent-copy.asm and read independent/README.md. Its starter only exits. Write the input and memory operations, investigate the result in Run and Debug, then use Check this program. The six public cases inspect normal termination, the prompt and exact final bytes, including the adjacent guards.",
+      "source": "independent/independent-copy.asm",
+      "caseProfile": "independent/independent-copy.cases.json",
+      "success": "The current program passed its six stated final-memory cases. Explain why your operations retain the other components and guard words for an arbitrary admitted input.",
+      "hints": [
+        {
+          "id": "draw-layout",
+          "text": "Write the address of every byte in each four-byte object. Locate red using the little-endian order before choosing an offset."
+        },
+        {
+          "id": "first-wrong-write",
+          "text": "For a failing case, compare each store address and width with your object map. A legal store can reach the wrong object without raising an exception."
+        }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,14 @@ class ConsoleCaseTests(unittest.TestCase):
             with self.assertRaises(FrozenInstanceError):
                 cases[0].name = 'changed'
 
+    def test_memory_lesson_scripts_match_their_exported_data_profiles(self):
+        root = Path(__file__).resolve().parents[1] / 'revision/lessons/002-single-pixel/independent'
+        for variant in ['red-component', 'independent-copy']:
+            cases = checks.load(root / (variant + '.cases.json'))
+            self.assertEqual((root / (variant + '.kts')).read_text(), checks.render(cases))
+            self.assertEqual(6, len(cases))
+            self.assertTrue(all(case.memory for case in cases))
+
     def test_json_shapes_duplicate_fields_constants_and_names_are_rejected(self):
         invalid = [b'', b'[]', b'null', b'{"formatVersion":1,"formatVersion":1,"cases":[]}',
                    b'{"formatVersion":NaN,"cases":[]}', b'{"formatVersion":1,"cases":[' + b'[' * 1100,
