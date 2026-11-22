@@ -1,0 +1,204 @@
+\chapter{Follow prediction, validation and seeking}
+\MARSChapterHeading{Follow prediction, validation and seeking}
+\label{revision-lab:lossless-video}
+
+Read Chapter 25 of the main book with this lab. The complete worked source is
+\path{revision/labs/files/lossless-video.asm}; the new independent entry is in
+\texttt{video-change-bounds.asm}. The original
+\texttt{packages/034-lossless-video/} retains callable contracts and staged
+construction for the full codec. Its 122 observations are supporting material,
+not 122 separate concepts to memorize.
+
+The worked file keeps earlier example callers under distinct labels, with the
+complete file/player caller named \texttt{main}. Launch that entry for the
+end-to-end pipeline. Use the public function names when checking an individual
+stage; do not combine the separate historical examples as additional definitions.
+If a wrapper places its selected \texttt{main} after another executable example,
+export it with \texttt{.globl main} and enable start-at-main. That launch option
+uses the exported entry; a grading call can select a callable label directly.
+The example's compact arenas have 262144-byte capacities. This accommodates the
+supplied clips without reducing the callable format limits. Maximum-size grading
+supplies its own separate storage.
+
+\section{Predict one update before applying a record}
+
+Generate the moving fixture in a fresh directory. Its observations describe the
+records, while its PPM files expose independently planned RGB frames. Identify
+which stored values are big-endian file fields and which in-memory values are
+native words. Explain why four native bytes per pixel become three serialized
+bytes and why XOR compares numerical words independently of memory byte order.
+
+Trace the eleven-byte first delta. After skip zero/change one, write the pixel
+cursor and the first updated word. Then consume skip 4095/change zero. The
+cursor ends at 4096, and no terminator is needed. For the two-by-two patch, the
+linear indices are 325, 326, 389 and 390. Explain why the second skip is 62,
+using the cursor after the preceding two changed pixels rather than their start.
+
+Now make the last command zero/zero and repair the CRC. A checksum failure
+would not test the command walk. Predict the status and every image/context
+byte that must remain unchanged. Inspect \texttt{record\_call\_return} in the
+standalone record example, or invoke \texttt{video\_apply\_record} through its
+public checks. Locate the first pixel store and establish why no later format
+validation can still fail after it.
+
+For the XOR kernel, compare output aliases of the left and right inputs with
+a disjoint result. Explain why both source words must be loaded before their
+store. Include a zero-count call with unusable pointers and a difference of
+hexadecimal \texttt{80000000}. Neither a positive signed comparison nor an
+extra alignment condition belongs in the count contract.
+
+\section{Make the cost model include its headers}
+
+Derive $4k+3m$ for $k$ commands and $m$ changed pixels. For an unchanged frame,
+a tail-only change and a first-pixel-only change, derive payload counts four,
+seven and eleven. Each record also needs sixteen header bytes. Then compare
+an all-changed frame with an alternating change pattern. Counting changed words
+alone cannot decide which representation is smaller.
+
+The worked encoder validates all source colors before writing. Change the high
+byte of the final source word and check that output, previous image and final
+context remain unchanged. For a nonperiodic record, also validate previous-image
+colors; at a mandatory full position, old pixels are irrelevant. A scratch XOR
+array may change on failure, but the next committed sequence must not.
+
+Try a capacity just below the selected result and retry with enough space.
+The retry must compare against the original previously committed image. Do not
+initialize an independent decoder with the encoder's newly updated previous
+image; preserve the actual old image and decode the produced record against it.
+Otherwise a broken transition can be hidden by giving the decoder its expected
+answer as starting state.
+
+Additional full records are legal. Public feedback accepts their structure and
+reconstructed pixels instead of requiring the worked greedy byte sequence.
+If a course asks specifically for compression gains or vector code, state that
+extra objective separately from format correctness.
+
+\section{Keep a directory tied to its validated file}
+
+Calculate all eight record offsets from the moving fixture's payload lengths.
+Add the sixteen-byte record header each time. The last end must be 24795.
+Directory entries are native offsets, not addresses or pixel indices. Before
+adding one to a file base, establish that its record header and exact interval
+belong to the retained file.
+
+Index the whole file, then alter a late record in a separate candidate. Failure
+must preserve the previous successful directory and context. Scratch may have
+changed. Explain how the two-pass publisher obtains this guarantee without
+requiring a second complete file-sized allocation. Keep the admitted source
+immutable throughout both passes and for the directory's lifetime.
+
+Seek to six from an unrelated display image. Moving data must replay records
+four, five and six. The extra-full fixture stores five independently, so it can
+start there and replay only five and six. Both produce the same requested words.
+Repeat with targets zero and three. Starting from a periodic boundary alone
+misses optional full frames; applying only the target delta misses its history.
+
+A seek reconstructs in separate scratch and copies only after success. Reject
+an out-of-range target, an offset before byte 24, a short record interval and
+a misaligned native directory before the corresponding invalid access. The
+whole-file validation precondition still applies: local interval checks do not
+turn arbitrary directory bytes into a trusted index.
+
+\section{Check the schedule without measuring the host by accident}
+
+For anchor 1000 and forty-millisecond intervals, write deadlines through the
+last frame. An unchanged frame and the final frame each require their interval.
+For observed readings 1010, 1035 and 1040, predict sleeps thirty and five.
+For a late reading 1047, record lateness seven and keep the next deadline 1080.
+Do not move the anchor forward by seven or silently discard a frame.
+
+The scripted grading clock supplies exact observations and records sleep
+requests without real waiting. It can check backward readings, high-bit time
+halves, deadline overflow and early wakeups reproducibly. Real service thirty
+and thirty-two calls can be late. Record actual lateness separately from
+logical duration and from simulator instruction counts. A screen photograph
+cannot prove the instant at which the host presented a frame.
+
+Pause before a clock request after an accepted frame and inspect the complete
+working image. On a later playback failure, the accepted count and last visible
+image remain meaningful, while final context outputs are unchanged. Compare
+this with seek failure, which publishes no new image. Avoid a single blanket
+claim about output rollback across all interfaces.
+
+The store routine follows positive returned byte counts and closes its acquired
+descriptor on every completed path. It does not promise atomic replacement.
+Its published transport contract includes a readable guard byte after the source
+extent because the current educational write service prefetches one byte; that
+guard is not transferred. Keep this service boundary separate from the exact
+selected-word windows of your own numerical kernels. Reloading establishes bytes;
+index the reloaded content before playing it.
+
+\section{Implement minimal exclusive change bounds}
+
+Replace the deliberate \texttt{break} at \texttt{video\_change\_bounds} in the
+independent file. Arguments are previous words in \texttt{a0}, current words in
+\texttt{a1}, result pointer in \texttt{a2}, and settings pointer in
+\texttt{a3}. Settings contain two native unsigned doublewords, width and height,
+each one through 64. This numerical extension accepts those smaller dimensions
+for checking; the MLV1 file format itself remains fixed at 64 by 64.
+
+Each input has exactly $wh$ native words and requires four-byte alignment. The
+inputs may coincide. Compare all 32 bits, including a differing high bit; this
+primitive does not validate serialized RGB colors. Settings and result require
+eight-byte alignment. Their selected extents are sixteen and 32 bytes. Settings
+and output are disjoint from each other and both input intervals. Do not add
+partial-output alias support implicitly.
+
+On success, return zero in \texttt{v0} and the number of unequal words in
+\texttt{v1}. Publish four native doublewords $(x_0,y_0,x_1,y_1)$, where
+$x_1,y_1$ are exclusive ends. Every changed position lies inside, and each
+nonempty side is minimal. If inputs are equal, publish four zeros and count
+zero. Input words and settings remain unchanged. Write no caller byte outside
+the selected result.
+
+Reject invalid dimensions or alignment with status one and count zero, without
+reading image words or changing any caller byte. Test settings alignment before
+loading settings. Preserve all saved registers, frame pointer, stack pointer and
+the supplied return continuation; the incoming stack is sixteen-byte aligned.
+Do no console or file I/O in the function.
+
+The default demo has width two and height three. Indices one and four differ,
+which means coordinates $(1,0)$ and $(0,2)$. The result is $(0,0,2,3)$ with
+count two. Its rectangular area is six. Pause at
+\texttt{bounds\_demo\_return} to inspect \texttt{v0/v1} and the native result
+before the caller records status/count. A minimum/maximum linear-index interval
+alone cannot determine the minimum horizontal bounds across multiple rows.
+
+For one pass, keep a row and column cursor, changed count and four extrema.
+Initialize minimum coordinates beyond any selected position, and maxima to zero;
+handle the empty result explicitly. For another valid approach, first count and
+locate changed rows, then find horizontal extrema in a second pass. The feedback
+has an explicit finite execution budget that admits both approaches. It grades
+exact coordinates and state rather than an instruction sequence or pass count.
+
+\section{Check the extension and full codec separately}
+
+Run the independent feedback from the public book repository:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Check changed-pixel coordinates and ownership}
+\begin{Verbatim}
+java -jar "$CLI" grade \
+  revision/labs/checks/video-change-bounds.kts \
+  revision/labs/files/video-change-bounds.asm
+\end{Verbatim}
+It covers both byte orders, full-width invalid dimensions, word alignment
+without extra vector alignment, coincident inputs, empty changes, single edges,
+row crossings, the moving patch and repeated calls. Use sparse corners to show
+that changed count and rectangle area can differ substantially. Repeat a
+nonempty result followed by an unchanged pair to expose stale extrema.
+
+The original codec uses its separate harness and domains:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Check one completed codec stage}
+\begin{Verbatim}
+python3 packages/034-lossless-video/grade.py \
+  revision/labs/files/lossless-video.asm --domain seek \
+  --cli "$CLI" --java "$JAVA"
+\end{Verbatim}
+Here \texttt{JAVA} is the full JDK 25 Java executable. Omit \texttt{--domain}
+to check all eleven public domains. Reserve the \texttt{videoCheck\_} and
+\texttt{videoPrivate\_} prefixes and their grading storage. The independent
+bounds function has its own checks; the file-codec runner does not grade it.
+Finally compare every decoded frame and every seek target with the generated
+PPM previews, retaining the actual encoded file and source revision with your
+observations.

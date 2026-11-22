@@ -1,6 +1,11 @@
 # Lossless video: student package
 
-Follow the native reading and its 122 construction steps, or use `starter/main.asm`
+The revised main-book Chapter 25 and written lab explain the codec as a connected
+sequence. `revision/labs/files/lossless-video.asm` is the complete worked example;
+`revision/labs/files/video-change-bounds.asm` is its independent extension, with
+feedback in `revision/labs/checks/video-change-bounds.kts`.
+
+For the original full-codec assignment, follow its 122 construction steps, or use `starter/main.asm`
 for free writing; `starter/interfaces.asm` is a smaller entry-only alternative.
 Nine construction folders retain the smaller stages. Keep XOR work
 separate until the delta attachment imports it; prepare each observation using its
@@ -34,4 +39,10 @@ word lanes/count, record publication, index publication, independent seek, manda
 full-record selection, and completed playback. The playback plate records real
 host-clock lateness separately from the scripted-clock checks. Independent
 accessibility review and the author's substantive editing remain separate work.
-No completed assembly codec or quiz keys are included in this student distribution.
+The original student distribution retains unfinished full-codec templates. The
+revised book supplies a complete worked codec separately; the new bounds exercise
+remains unfinished. Instructor alternatives, private boundary cases and quiz keys
+remain in the private repository. Four additional revised-book Debug figures show
+accepted/rejected records, independent seek and completed playback; the six original
+construction figures remain available. Screenshot automation is a separate authoring
+plugin depending on MARS. Advanced native lesson delivery remains future work.

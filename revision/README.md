@@ -265,3 +265,8 @@ forward filter and supplies a host wrapper for student-produced rows. The main p
 now has 162 pages and the lab 170. [png-unit.md](png-unit.md) records 10626 positive
 qualification-case executions, fourteen rejected faults, thirty-two real-file
 observations, four new native Debug figures and remaining review. Lossless video is next.
+
+The revised lossless-video unit is described in [lossless-unit.md](lossless-unit.md).
+It adds Chapter 25, its written lab, a complete worked codec/player and an
+independent changed-pixel-bounds exercise. The main proof is now 171 pages and the
+lab 175 pages. H.263 compositions and advanced native delivery remain open.

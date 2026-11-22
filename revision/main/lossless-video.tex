@@ -1,0 +1,332 @@
+\chapter{Retain state between lossless video frames}
+\MARSChapterHeading{Retain state between lossless video frames}
+\label{revision:lossless-video}
+
+A sequence of PNG images can represent a video, but it describes each image
+independently. Often only a small part of the next picture changes. We can
+store those changes and retain the preceding decoded image as state. The
+saving comes with a new responsibility: a delta has meaning only in relation
+to the correct previous frame.
+
+This chapter develops MLV1, the book's small lossless teaching format. Every
+picture is 64 by 64 pixels. Some records contain complete RGB images; others
+contain XOR changes. A directory supports seeking from an independent image,
+and a player gives accepted pictures their display intervals. The complete
+\texttt{lossless-video.asm} in \texttt{revision/labs/files} contains the codec
+and player. The original construction package remains available for building
+all its entries; the independent lab locates the rectangle containing changes.
+
+This work assumes the earlier native RGB words, CRC, bounded buffers, file I/O
+and MSA chapters. MLV1 is a local format, not a stream that a general-purpose
+video player is expected to recognize. The following H.263 chapters will apply
+related state reasoning to a restricted interoperable codec.
+
+\section{Give the previous frame an exact meaning}
+
+One serialized image contains $4096\cdot3=12288$ RGB bytes. Its working image
+contains 4096 native \texttt{0x00RRGGBB} words, or 16384 bytes, with a packed
+64-word row stride. Load a native word numerically and extract its channels
+when writing RGB. The file bytes for word \texttt{0x00123456} are
+\texttt{12 34 56} in either target byte order.
+
+For corresponding previous and current words $P_i,C_i$, form
+\[
+ D_i=P_i\mathbin{\oplus}C_i.
+\]
+Then $P_i\mathbin{\oplus}D_i=C_i$. XOR reverses itself. A zero delta preserves
+the word; a nonzero delta marks a changed pixel. After accepting the transition,
+the next delta must use $C$, not the image that preceded $P$. Reusing an older
+full image would lose every intervening change that the new delta leaves zero.
+
+The scalar and MSA XOR entries receive two word arrays, an output and a count
+zero through 4096. Output may be disjoint or exactly equal to an input. Load
+both corresponding inputs before storing, making those exact aliases safe.
+Partial overlap is outside this contract. Count zero succeeds without any
+pointer access. For positive counts, word alignment suffices; a vector route
+must not silently require sixteen-byte alignment.
+
+A complete vector group performs four XOR words:
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Compute four independent pixel differences}
+\begin{minted}{mars-idea}
+    ld.w $w0, 0($a0)
+    ld.w $w1, 0($a1)
+    xor.v $w2, $w0, $w1
+    st.w $w2, 0($a2)
+\end{minted}
+The function also returns the number of nonzero words. Compare all 32 bits
+with zero; hexadecimal \texttt{80000000} is nonzero even though a signed word
+interpretation is negative. This numerical kernel accepts all word patterns,
+whereas serialized image colors require a zero high byte. When it compares
+previous and current images, its count is changed pixels. When it applies XOR
+data to an image, the same count describes nonzero results instead. Name the
+meaning at the call site.
+
+\section{Describe a frame record without losing its boundaries}
+
+The 24-byte file header begins with ASCII \texttt{MLV1}, then big-endian
+unsigned width and height of two bytes each. Both must be 64. A four-byte frame
+count admits one through 256; a two-byte full-frame period admits one through
+64; two flag bytes are zero. A four-byte duration admits one through 1000
+milliseconds, and the final four reserved bytes are zero. These bounds must be
+established before indexing, allocating or dividing by the period.
+
+Each record has a sixteen-byte header: kind at byte zero, three zero reserved
+bytes, four-byte sequence at offset four, payload count at eight, and CRC-32
+at twelve. Kind zero means a full RGB image and kind one a delta. Sequence
+starts at zero and advances exactly once per record. The CRC covers the first
+twelve header bytes followed by the payload, excluding its own four bytes.
+There is no implicit padding between records.
+
+A full payload is exactly 12288 bytes. A delta consists of commands, each with
+a big-endian two-byte skip and two-byte changed count followed by three XOR
+bytes per changed pixel. Begin the pixel cursor at zero for every delta. Skip
+leaves words unchanged; changed triples XOR into the following words. Each
+command must advance by at least one pixel, and both pixel and payload extents
+must finish exactly. A zero/zero command is invalid. A final nonzero skip with
+no changed pixels is valid and needs no terminator.
+
+For the one-pixel update, the payload is
+\texttt{00 00 00 01 01 00 00 0f ff 00 00}. Its first command skips zero and
+changes one pixel using red XOR one. The cursor is now one. The second command
+skips 4095 and changes zero, finishing at 4096. Eleven payload bytes describe
+this transition. The three bytes \texttt{01 00 00} are a difference, not the
+new pixel's complete color.
+
+Each command has four header bytes, and there are at most 4096 commands and
+4096 changed triples. Thus the conservative delta payload bound is
+$4\cdot4096+3\cdot4096=28672$ bytes. The complete-file bound is
+$24+256(16+28672)=7344152$ bytes. These bounds admit even inefficient valid
+command streams; they do not prescribe an encoder's output size.
+
+\section{Validate the update before publishing it}
+
+\texttt{video\_apply\_record} takes one exact record window, a working image
+and a native context. The context supplies image capacity, expected sequence
+and period. Successful publication advances the expected sequence and records
+the accepted kind and 16384 active image bytes. Failure returns one and zero,
+retaining every image and context byte. Input bytes remain immutable.
+
+First admit alignment, capacities, header extent, kind, reserved fields,
+sequence, required full-frame positions, payload length and CRC. Then walk a
+delta without writing pixels. After each skip, compare the changed count with
+the remaining pixels, and compare its required triples with remaining payload
+bytes. If all checks succeed, replay the immutable commands to apply them.
+The second pass uses boundaries already established by the first.
+
+Why pay for two walks? Suppose the first command changes a visible pixel but
+the final command is zero/zero. A decoder that applies while validating has
+already damaged the displayed image when it discovers the final error. A valid
+CRC does not make those commands meaningful. The accepted and rejected native
+observations below use the same initial image but different record validity.
+\input{revision/figures/lossless/native-record}
+\input{revision/figures/lossless/native-rejected-record}
+
+At sequence indices divisible by the positive period, require a full record.
+Other indices may also use full records. A full frame replaces previous pixels
+and establishes a fresh prediction state. A delta requires the immediately
+preceding accepted image. Preserve saved registers, frame pointer and entry
+stack pointer throughout; nested codec calls use a sixteen-byte-aligned stack.
+Temporary frames and contexts belong to the current call, not a shared cursor
+that another playback session might change.
+
+\section{Choose an encoding after measuring its byte cost}
+
+Start with a full encoder. Validate all 4096 source words, including the last
+high byte, and admit output capacity before writing. Emit RGB channels and a
+complete header/CRC, then update the encoder's previous image and next sequence.
+If validation or capacity fails, record output, previous image and context
+remain unchanged. An uncommitted source image must not become the prediction
+state for a later retry.
+
+For a nonperiodic frame, compute XOR words in private scratch. Walk maximal
+unchanged runs and changed runs. If $k$ commands cover $m$ changed pixels,
+the planned payload is $4k+3m$ bytes. The changed count alone omits the command
+cost. An alternating image can have fewer changed pixels than a uniformly
+changed image yet require more command headers.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{l r r r l}
+\toprule
+Transition & Changes & Commands & Delta payload & Worked choice \\
+\midrule
+Unchanged & 0 & 1 & 4 & Delta \\
+Only final pixel & 1 & 1 & 7 & Delta \\
+Only first pixel & 1 & 2 & 11 & Delta \\
+Two-by-two patch & 4 & 3 & 24 & Delta \\
+Every pixel & 4096 & 1 & 12292 & Full \\
+\bottomrule
+\end{tabular}
+\caption{Payload cost includes command headers, in addition to changed triples.}
+\end{table}
+
+The worked encoder chooses full when the planned delta is at least 12288 bytes,
+including a tie. Otherwise it checks room for sixteen header bytes plus that
+payload, then repeats the run walk to emit it. A mandatory full position takes
+precedence over this comparison. Equivalent encoders may choose additional
+full frames or different valid command boundaries. A changed span may even
+contain a zero XOR triple. Correct decoding and format constraints determine
+validity; a particular greedy partition is not the file format.
+
+The complete-file encoder owns different failure boundaries from the single
+record encoder. It retains immutable packed source images and publishes its
+file count and record count only on complete success. Its staging bytes,
+previous-image scratch and XOR scratch may already have changed when a later
+frame fails. Keep any old animation in separate storage if it must survive an
+attempted replacement.
+
+\section{Index the whole file, then seek from a full frame}
+
+The moving fixture has period four and eight frames. Its record directory is:
+\Needspace{16\baselineskip}
+\begin{table}[!ht]
+\centering
+\begin{tabular}{r l r r}
+\toprule
+Sequence & Kind & File offset & Payload bytes \\
+\midrule
+0 & Full & 24 & 12288 \\
+1 & Delta & 12328 & 11 \\
+2 & Delta & 12355 & 24 \\
+3 & Delta & 12395 & 4 \\
+4 & Full & 12415 & 12288 \\
+5 & Delta & 24719 & 17 \\
+6 & Delta & 24752 & 7 \\
+7 & Delta & 24775 & 4 \\
+\bottomrule
+\end{tabular}
+\caption{The final record ends at file byte count 24795. Directory entries are offsets.}
+\end{table}
+
+\texttt{video\_index} validates the global header and every record, including
+sequence, periodic full positions and exact file completion. Its scratch image
+can change during validation. The public directory and context remain unchanged
+on failure. A second pass can publish offsets only after the whole immutable
+file is accepted. One offset occupies eight native bytes; it becomes an address
+only after adding the retained file base.
+
+A seek receives a validated file and directory and a target index. The displayed
+image could belong to an unrelated position, so reconstruct in separate scratch.
+Scan backward from the target to the latest full record, apply it and every
+following delta through the target, then copy the complete image to display
+and publish target, replay start and replay count. Failure retains the old
+destination and context, though scratch may have changed.
+
+For target six, the moving fixture replays four, five and six. An equivalent
+fixture that stores frame five as an extra full image replays only five and
+six, yielding identical pixels. Computing only the required periodic boundary
+would miss that nearer full frame. Period bounds how far backward a valid seek
+must look; it does not identify every full frame that an encoder may choose.
+\input{revision/figures/lossless/replay}
+\input{revision/figures/lossless/native-seek}
+
+Loading and indexing are separate promises. A loader establishes a complete
+nonempty byte count using actual read results and EOF. Indexing establishes
+that those bytes form this format. After storing and reloading a file, validate
+the reloaded bytes afresh before trusting any earlier directory. Likewise,
+overwriting staging storage invalidates an old directory referring to it.
+\texttt{video\_store} is a transport routine, not an atomic file replacement:
+a write failure can leave a truncated output. Validate staged content before
+opening its output path.
+
+\section{Keep logical display intervals separate from execution time}
+
+An unchanged frame still occupies an interval. For the moving file, eight
+frames at forty milliseconds specify 320 milliseconds of logical duration.
+That does not promise the host or IDE will finish or repaint in 320 milliseconds.
+The player validates input before reading its initial clock anchor or changing
+display pixels, then seeks independently to its start frame.
+
+Let the initial anchor be 1000 and duration forty. The first deadline is 1040,
+the second 1080, and the eighth 1320. Advance this original schedule after each
+accepted frame, even when an earlier one was late. If time is below the current
+deadline, request only the positive remaining interval and read time again.
+An early wakeup needs another check. Equal time is on time; later time records
+lateness once for that interval. This player does not drop frames or re-anchor.
+
+For readings 1010, 1035 and 1040 after the anchor, sleep requests are thirty
+and five milliseconds. For readings 1030 then 1047, request ten and record
+seven milliseconds late. A later reading below the preceding observed time
+is an error. Deadlines and readings are full unsigned doublewords; reject
+an overflowing deadline before presenting that interval.
+
+Service thirty returns time halves in two registers. The helper zero-extends
+the low half before joining it to the shifted high half:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Join the two time-service result halves}
+\begin{minted}{mars-idea}
+    dsll $t0, $a0, 32
+    dsrl $t0, $t0, 32
+    dsll $v1, $a1, 32
+    or $v1, $v1, $t0
+\end{minted}
+A low half with bit 31 set must not fill the result's upper half with sign bits.
+The scripted grading clock checks the protocol without host waiting: one anchor,
+a reading after each accepted frame and a reading after each sleep request.
+Actual Debug observations use the host clock. The final native context below
+separates accepted count and logical duration from observed lateness.
+\input{revision/figures/lossless/native-playback}
+
+Only complete playback success publishes the four final timing/result fields.
+A failure returns the actual number of already accepted frames and leaves
+those images visible; it does not roll them back. Its final context fields
+remain unchanged. This differs from a failed seek, which publishes no new
+image. State the guarantee for each operation rather than assuming every
+function has one universal failure transaction.
+
+\section{Run in a fresh directory and inspect a transition}
+
+The worked caller encodes its native source frames, indexes the staged file,
+checks an independent seek, writes \texttt{animation.mlv}, reloads it and plays
+the validated result. Run in a fresh working directory: the program opens that
+output for writing. Here \texttt{CLI} names the full path of the built MARS JAR.
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Run the complete file codec and player}
+\begin{Verbatim}
+java -jar "$CLI" --start-at-main \
+  /path/to/mars-book/revision/labs/files/lossless-video.asm
+\end{Verbatim}
+Success prints \texttt{Video file loaded and played.} In IntelliJ, select the
+caller for MARS Run or Debug and use the same fresh working directory. Connect
+a 64-column bitmap to the actual \texttt{playback\_frame+4} address when
+following presentation. A completed store establishes simulator state; it does
+not establish when the screen repainted.
+
+The fixture writer can also create an independently planned moving file and
+PPM previews in a new output folder:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Create an independently planned animation for inspection}
+\begin{Verbatim}
+python3 packages/034-lossless-video/construction/video-fixtures/fixture.py \
+  moving --output moving-input
+\end{Verbatim}
+That file can have a different valid representation from an equivalent encoder's
+output. Compare reconstructed pixels and valid record structure rather than
+requiring identical bytes from every solution. The lab tests an additional full
+record, malformed late commands and retries before assigning changed bounds.
+
+\Needspace{30\baselineskip}
+\section{Locate changes without confusing count and area}
+
+Implement \texttt{video\_change\_bounds} in the independent file. It compares
+two native word images and returns the smallest axis-aligned rectangle
+containing their changed pixels, with exclusive right and bottom coordinates,
+plus the changed-word count. An unchanged pair returns four zero bounds and
+count zero. This describes a region; it does not encode a delta or replace the
+format's sequence and validation rules.
+
+The moving two-by-two patch occupies $x=5,6$ and $y=5,6$, giving bounds
+$(5,5,7,7)$ and count four. If only opposite corners of a 64-square picture
+change, the rectangle covers all 4096 positions while the changed count is two.
+A rectangular repaint region, a run-coded payload and a changed count answer
+different questions about the same transition. The independent interface also
+accepts smaller dimensions for checking. Its two-by-three demo changes two
+separated words whose containing rectangle covers six cells.
+\input{revision/figures/lossless/change-bounds}
+
+Choose a single scan with explicit coordinates, or separate passes that first
+locate changed rows and then their horizontal extent. Both must compare original
+corresponding words and preserve inputs. The lab specifies dimensions, native
+alignment, exact result publication, aliases and invalid-input behavior. The
+full decoder and encoder construction remains a separate capstone route.
