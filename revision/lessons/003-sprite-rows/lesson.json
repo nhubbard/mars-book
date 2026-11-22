@@ -1,0 +1,323 @@
+{
+  "formatVersion": 6,
+  "introduction": "This unit expands one-bit row decisions into full color words. Use the main chapter\u2019s complete sprite program to derive addresses, predict a mirrored row and follow two calls to one renderer. Then change row order independently and check the result against prefilled destinations.",
+  "conclusion": "Use your trace to connect a source byte, a bit position, a destination coordinate and a complete word-sized access. A plausible picture is one observation; explain the boundaries and preservation obligations that make the renderer usable by another caller.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "pixel-size",
+      "explanation": "The source stores eight black-or-white decisions in each byte. The Bitmap Display expects a full 32-bit RGB word for each logical pixel. The worked program expands the representation while drawing; it does not copy the source bytes directly to the frame.",
+      "question": "How much space does the sixteen-by-eight destination frame occupy?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "512 bytes",
+          "feedback": "There are 128 pixels, each represented by four bytes."
+        },
+        {
+          "id": "b",
+          "text": "128 bytes",
+          "feedback": "That counts one byte per pixel. This display uses a four-byte RGB word for each pixel."
+        },
+        {
+          "id": "c",
+          "text": "8 bytes",
+          "feedback": "Eight bytes describe the source decisions. They are not the destination color words."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "row_loop",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "mirrored-columns",
+      "explanation": "The first source byte, 0x16, has set bits at local columns three, five and six when bit seven is leftmost. Reversal gives 0x68, whose set columns are one, two and four. The right image begins at framebuffer column eight.",
+      "question": "Which framebuffer columns are white in the mirrored half of the first row?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "9, 10 and 12",
+          "feedback": "Add the right half\u2019s starting column, eight, to local columns one, two and four."
+        },
+        {
+          "id": "b",
+          "text": "1, 2 and 4",
+          "feedback": "Those are local columns. The right-hand destination begins at column eight."
+        },
+        {
+          "id": "c",
+          "text": "3, 5 and 6",
+          "feedback": "Those describe the original source row, before reversal and the destination offset."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "row_reversed",
+        "mnemonic": "sb",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "row-stride",
+      "explanation": "One row contains sixteen four-byte pixels. Moving to the next row changes the row base, while a renderer advances its argument through only eight pixels. Keep those two cursors distinct.",
+      "question": "How far should the outer loop advance its framebuffer row base?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "64 bytes",
+          "feedback": "Sixteen pixels times four bytes gives the distance between equal columns in consecutive rows."
+        },
+        {
+          "id": "b",
+          "text": "32 bytes",
+          "feedback": "Thirty-two bytes cover one eight-pixel half. They do not reach the next sixteen-pixel row."
+        },
+        {
+          "id": "c",
+          "text": "16 bytes",
+          "feedback": "Sixteen is the number of pixels, not the number of bytes."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "row_drawn",
+        "mnemonic": "daddiu",
+        "occurrence": 2
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-rows",
+      "explanation": "Start a fresh Debug session for sprite-rows.asm. Follow these eight boundaries in one execution. Use temporary breakpoints deliberately: remove store_pixel after its first hit, and add row_loop only when you are ready to observe the next row. The written lab explains the corresponding Memory and Bitmap Display observations; the native steps below check the stated registers.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "reversed-byte",
+          "explanation": "Break at row_reversed before sb. The first input is still in s4, and the reversed byte is in v0. s1 points to its separate byte destination; s2 points to the beginning of the framebuffer row.",
+          "anchor": {
+            "label": "row_reversed",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s4": "0x0000000000000016",
+            "$v0": "0x0000000000000068",
+            "$s0": "0x0000000010010204",
+            "$s1": "0x000000001001020c",
+            "$s2": "0x0000000010010000",
+            "$s3": "0x0000000000000008"
+          },
+          "success": "The reverse helper returned a byte value. The caller has not yet stored that byte or drawn its pixels."
+        },
+        {
+          "id": "right-entry",
+          "explanation": "Resume to the first draw_row entry. The caller has stored the reversed byte and prepared the right half\u2019s pattern and address. The renderer\u2019s first instruction is still pending.",
+          "anchor": {
+            "label": "draw_row",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000068",
+            "$a1": "0x0000000010010020",
+            "$s2": "0x0000000010010000"
+          },
+          "success": "The right half starts thirty-two bytes after the saved row base."
+        },
+        {
+          "id": "first-black",
+          "explanation": "Resume to the first store_pixel, before sw. Bit seven of 0x68 is clear, so t3 contains black. This store still matters when the destination previously contained another color.",
+          "anchor": {
+            "label": "store_pixel",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000010010020",
+            "$t0": "0x0000000000000068",
+            "$t1": "0x0000000000000008",
+            "$t2": "0x0000000000000000",
+            "$t3": "0x0000000000000000"
+          },
+          "success": "A clear source bit selects an explicit zero word. The pointer still names the pixel whose store is pending."
+        },
+        {
+          "id": "right-returned",
+          "explanation": "Resume to right_row_drawn. The helper has completed eight pixel stores and returned. Compare its advanced a1 with the unchanged row base in s2. The outer row count has not changed.",
+          "anchor": {
+            "label": "right_row_drawn",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000010010040",
+            "$s2": "0x0000000010010000",
+            "$s3": "0x0000000000000008",
+            "$s0": "0x0000000010010204"
+          },
+          "success": "The moving argument has reached the end of the right half. The saved base still names this row\u2019s beginning."
+        },
+        {
+          "id": "left-entry",
+          "explanation": "Resume to the second draw_row entry. The caller supplies the original byte in a0 and the saved row base in a1. This is the same renderer, now drawing the left half.",
+          "anchor": {
+            "label": "draw_row",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000016",
+            "$a1": "0x0000000010010000",
+            "$s2": "0x0000000010010000",
+            "$s3": "0x0000000000000008"
+          },
+          "success": "The caller prepared a new destination argument instead of treating the previous advanced argument as a row base."
+        },
+        {
+          "id": "row-finished",
+          "explanation": "Resume to row_drawn, before the first outer update. Both halves are complete. s0, s1 and s2 still describe row zero, and s3 still counts eight rows including that just-completed row.",
+          "anchor": {
+            "label": "row_drawn",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010204",
+            "$s1": "0x000000001001020c",
+            "$s2": "0x0000000010010000",
+            "$s3": "0x0000000000000008",
+            "$a1": "0x0000000010010020"
+          },
+          "success": "Completion of the inner work and advancement of the outer iteration are separate boundaries."
+        },
+        {
+          "id": "next-row",
+          "explanation": "Resume to the next visit to row_loop, before lbu. The two byte pointers have advanced by one, the frame base by sixty-four, and the count has decreased by one.",
+          "anchor": {
+            "label": "row_loop",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010205",
+            "$s1": "0x000000001001020d",
+            "$s2": "0x0000000010010040",
+            "$s3": "0x0000000000000007"
+          },
+          "success": "The next source byte and destination row now describe the same outer iteration."
+        },
+        {
+          "id": "complete-frame",
+          "explanation": "Resume to frame_complete. Both byte cursors are one past their eight-byte objects, the row base is one past the 512-byte frame, and the remaining count is zero. The exit service is next.",
+          "anchor": {
+            "label": "frame_complete",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x000000001001020c",
+            "$s1": "0x0000000010010214",
+            "$s2": "0x0000000010010200",
+            "$s3": "0x0000000000000000"
+          },
+          "success": "One-past pointers are stopping state here; they must not supply another source load or pixel store."
+        }
+      ],
+      "success": "Finish or stop this Debug session before ordinary Run. Explain the saved row base, the renderer\u2019s moving argument, and the outer loop\u2019s entry state separately."
+    },
+    {
+      "kind": "prediction",
+      "id": "black-store",
+      "explanation": "The independent checks prefill the frame with nonzero words. A clear source bit means black in this renderer, rather than transparency. A fresh zero-filled frame would conceal a skipped zero store.",
+      "question": "What should the renderer do for a clear source bit?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Store a zero word",
+          "feedback": "This replaces the prior color with black."
+        },
+        {
+          "id": "b",
+          "text": "Skip the store",
+          "feedback": "That retains the prior destination color, which implements a different contract."
+        },
+        {
+          "id": "c",
+          "text": "Reuse the previous color",
+          "feedback": "A previous white pixel would then color a later clear bit incorrectly."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "store_pixel",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-sprite",
+      "explanation": "Run sprite-rows.asm using ordinary Run. It should finish without console text. Inspect the original sprite, its horizontal mirror, the eight mirrored row bytes and both guards as the written lab describes. Silent exit alone does not establish those memory values.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The worked program exited silently. The independent activity next checks a different row-order contract against prefilled frames."
+    },
+    {
+      "kind": "prediction",
+      "id": "vertical-order",
+      "explanation": "A horizontal mirror changes which bit supplies each column. A vertical flip changes which source byte supplies each destination row. The independent exercise keeps bit seven leftmost and changes only row order.",
+      "question": "Which source row supplies destination row zero in a vertical flip of eight rows?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Source row seven",
+          "feedback": "Rows seven through zero supply destination rows zero through seven."
+        },
+        {
+          "id": "b",
+          "text": "Source row zero with its bits reversed",
+          "feedback": "That changes within-row order rather than selecting the last source row."
+        },
+        {
+          "id": "c",
+          "text": "Source row eight",
+          "feedback": "Row eight is outside the source object; eight rows have indices zero through seven."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "row_loop",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "vertical-sprite",
+      "source": "independent/vertical-sprite.asm",
+      "caseProfile": "independent/vertical-sprite.cases.json",
+      "checkKind": "function",
+      "explanation": "Write draw_vertical in independent/vertical-sprite.asm, replacing its break body. a0 supplies eight source bytes and a1 a sixteen-by-eight frame. Draw source rows seven through zero into destination rows zero through seven, using columns eight through fifteen and keeping bit seven leftmost. Preserve the left half, source bytes, guards, saved registers, caller stack bytes and incoming sp. The helper is available, but an equivalent inline renderer is accepted. Read independent/README.md before checking: each public case calls your function twice with different continuations, and checks memory at both returns.",
+      "success": "The current source passes all five public sprite cases. Explain your first and final source addresses, the 64-byte destination stride and the stopping condition. Relate a rejected fault to its first incorrect read, store or preserved value; then complete the written lab\u2019s address-error investigations.",
+      "hints": [
+        {
+          "id": "addresses",
+          "text": "Destination row y begins at frame + 64*y. Its right half begins another 32 bytes later. Select source byte 7-y for that row."
+        },
+        {
+          "id": "calls",
+          "text": "If you call draw_row, keep the source cursor, destination row base, remaining count and outer continuation available across the call."
+        },
+        {
+          "id": "endpoints",
+          "text": "An update can leave the backwards source cursor before the object after the final row. Test the remaining count before another load; do not dereference that stopping value."
+        }
+      ]
+    }
+  ]
+}

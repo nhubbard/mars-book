@@ -704,3 +704,41 @@ the figure pages were also checked in grayscale. The final PDF SHA-256 is
 1,728 rules and 899,942 checks with zero failures. All embedded fonts
 retain Unicode mappings, including Minion Pro, Noto Sans Math and JetBrains Mono.
 This automated result does not claim human assistive-technology review.
+
+
+### Sixth native unit: memory-contract foundation and instructional draft
+
+The sprite exercise requires memory setup, label-relative data pointers and
+memory comparisons at function returns. MARS now supplies these through the
+existing prepared function checker and bounded function-case profile version 2;
+native lesson format 6 retains the same assessment controls. Register-only
+version-1 profiles retain their strict field set. Results can be declared in
+memory without inventing a v0 contract. Setup and return-byte comparisons use
+the existing grading DSL; no separate interpreter or simulator path was added.
+
+The CLI regression passes 156 tests. The full plugin regression passes 1,183
+and required meaningful coverage checks; the function reader covers all 75 lines
+and 104 branches. One additional exact-archive regression passes separately.
+Real sprite qualification accepts both helper-calling and inline implementations
+at two data locations and rejects seven faulty programs as complete profiles.
+The skip-black fault correctly passes the all-white case, where that fault is
+unobservable; mixed and all-black cases expose it. Qualification retained two
+initial authoring mistakes (a duplicate fault label and the overly strict
+all-white expectation) separately before the corrected run.
+
+The new development archive `003-sprite-rows` has five explanatory predictions,
+eight ordered Debug stops, silent Run and an independent vertical-flip activity.
+Five public patterns exercise two incoming continuations each, prefilled frame
+words, source/guard preservation and full-width saved state. An actual CLI trace
+matches every authored register boundary. The generated public DSL checks accept
+both equivalent implementations. All 456 book-tool tests pass. Archive SHA-256:
+`66193918c851eb2d4573e34e1c7aa5873ac82a2f4f14fc2e8f0ef80bb52b55f0`. Private implementations and qualification faults remain
+outside the public book. The main chapter and native LaTeX lab remain authoritative;
+this step does not regenerate or change either PDF.
+
+The sixth unit still needs its actual native IDE walkthrough and fresh-process
+resume verification, renewed light-theme publication evidence where appropriate,
+and direct LaTeX lab integration. Existing sprite figures remain historical
+capture evidence. Human learner and accessibility reviews are not claimed. All
+unrelated manual MARS edits are preserved, including in the assignment file where
+only the authorized new setup overload was staged and committed.
