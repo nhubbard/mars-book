@@ -1,0 +1,549 @@
+{
+  "formatVersion": 6,
+  "introduction": "Prove each read permitted, apply ordered validation, and distinguish tentative state from accepted output. Then implement an LF-delimited binary parser whose bounds, failure stores and borrowed pointers follow a different stated grammar.",
+  "conclusion": "Explain a parser using its input window, ordered decisions, accepted output and borrowed-storage lifetime. Use an exact counterexample to locate the first illegal read, store, pointer truncation or continuation.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "header-first",
+      "explanation": "The packet format needs an eight-byte header before any field is interpreted. Available is the caller’s permission to read a prefix, even when further bytes are mapped in memory. Error priority is part of this parser’s contract.",
+      "question": "With seven available bytes and a wrong first magic byte, which status is required?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Wrong magic, minus two",
+          "feedback": "The contract checks complete-header availability before interpreting even the first magic byte."
+        },
+        {
+          "id": "b",
+          "text": "Need more, minus one",
+          "feedback": "The parser has not established an eight-byte header and must return before any input load."
+        },
+        {
+          "id": "c",
+          "text": "Checksum failure, minus six",
+          "feedback": "Checksum scanning requires a complete permitted packet, not just a mapped arena."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "parse_packet",
+        "mnemonic": "bltuc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "wire-and-native",
+      "explanation": "The sequence field contains big-endian wire bytes 12 34 hexadecimal. The parser forms the integer 4660, then stores it as a native word. This book’s default MARS image uses little-endian native words.",
+      "question": "Which four bytes represent that output word in increasing address order?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "12 34 00 00",
+          "feedback": "That preserves the wire byte order inside a native word and would represent a different integer here."
+        },
+        {
+          "id": "b",
+          "text": "00 00 12 34",
+          "feedback": "Those are big-endian word bytes, whereas this output uses the image’s native little-endian order."
+        },
+        {
+          "id": "c",
+          "text": "34 12 00 00",
+          "feedback": "The decoded value is 0x00001234. Its low byte is stored first in this native layout."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "packet_fields",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "three-lengths",
+      "explanation": "The default packet declares three payload bytes. Its available prefix includes the eight-byte header, three payload bytes and one trailer. A successful caller advances by the complete consumed packet length.",
+      "question": "How many bytes does this call consume on success?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Twelve",
+          "feedback": "Eight header bytes plus three payload bytes plus one checksum trailer."
+        },
+        {
+          "id": "b",
+          "text": "Three",
+          "feedback": "That is the payload length, not the amount a caller skips to reach the next record."
+        },
+        {
+          "id": "c",
+          "text": "Eight",
+          "feedback": "That establishes only a complete header. The body and checksum must also be present and checked."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "packet_length",
+        "mnemonic": "addiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-accepted",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for bounded-packet.asm. Keep the default twelve-byte packet and available twelve. Follow eight ordered stops with one line breakpoint at a time. Stops are before the selected instruction executes. Learn checks registers; inspect record words and the caller’s metadata using the written lab.",
+      "stops": [
+        {
+          "id": "packet-entry",
+          "explanation": "Break at parse_packet before its first instruction. The arguments name packet, available twelve and record_a. The caller aligned sp. The record still contains four sentinel words.",
+          "anchor": {
+            "label": "parse_packet",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$a0": "0x0000000010010004",
+            "$a1": "0x000000000000000c",
+            "$a2": "0x0000000010010108",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The call begins with a bounded input and selected destination, not implicit global arguments."
+        },
+        {
+          "id": "length-entry",
+          "explanation": "Resume to packet_length. Magic, version and flags have passed. Flags are one in t1; v0 still contains the tentative flags error -4. The length field has not yet been loaded at this stop.",
+          "anchor": {
+            "label": "packet_length",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$a1": "0x000000000000000c",
+            "$t1": "0x0000000000000001",
+            "$v0": "0xfffffffffffffffc",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "A tentative status inside the function is not yet a returned interface result."
+        },
+        {
+          "id": "fields-entry",
+          "explanation": "Resume to packet_fields. The declared length is three in t0, required total twelve in t8, and both bounds passed. The next instruction begins sequence decoding. No output stores have occurred.",
+          "anchor": {
+            "label": "packet_fields",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t1": "0x0000000000000001",
+            "$t8": "0x000000000000000c",
+            "$t9": "0x0000000000000040",
+            "$v0": "0xffffffffffffffff",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The second bound justifies the payload and trailer accesses before checksum scanning."
+        },
+        {
+          "id": "first-payload",
+          "explanation": "Resume to the first payload_sum. Header total t3 is 232, payload total t4 is zero, cursor t5 names packet plus eight and three payload bytes remain in t6. Sequence t2 is 4660.",
+          "anchor": {
+            "label": "payload_sum",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t2": "0x0000000000001234",
+            "$t3": "0x00000000000000e8",
+            "$t4": "0x0000000000000000",
+            "$t5": "0x000000001001000c",
+            "$t6": "0x0000000000000003",
+            "$v0": "0xffffffffffffffff",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The header and payload accumulators describe different parts of the checked prefix."
+        },
+        {
+          "id": "second-payload",
+          "explanation": "Resume to the next payload_sum. Raw byte 127 has been added: t3 is 359, t4 is 127, the cursor advanced one byte and two payload bytes remain. The next load has not executed.",
+          "anchor": {
+            "label": "payload_sum",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t2": "0x0000000000001234",
+            "$t3": "0x0000000000000167",
+            "$t4": "0x000000000000007f",
+            "$t5": "0x000000001001000d",
+            "$t6": "0x0000000000000002",
+            "$v0": "0xffffffffffffffff",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "A binary remaining-count loop does not stop on a byte value of zero."
+        },
+        {
+          "id": "trailer-entry",
+          "explanation": "Resume to trailer_sum. All three payload bytes have been visited. Header plus payload is 742 in t3, raw payload sum is 510 in t4 and the cursor names the trailer. No payload bytes remain.",
+          "anchor": {
+            "label": "trailer_sum",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t3": "0x00000000000002e6",
+            "$t4": "0x00000000000001fe",
+            "$t5": "0x000000001001000f",
+            "$t6": "0x0000000000000000",
+            "$v0": "0xffffffffffffffff",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The trailer contributes to the complete checksum, not to the reported payload sum."
+        },
+        {
+          "id": "accepted-before-stores",
+          "explanation": "Resume to packet_commit before its first instruction. Complete checksum residue t3 is zero, but record_a is still untouched. Raw payload sum t4 is 510 and v0 still contains tentative checksum error -6.",
+          "anchor": {
+            "label": "packet_commit",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t1": "0x0000000000000001",
+            "$t2": "0x0000000000001234",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x00000000000001fe",
+            "$t8": "0x000000000000000c",
+            "$v0": "0xfffffffffffffffa",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Validation can be complete before the function publishes any output or prepares successful return registers."
+        },
+        {
+          "id": "accepted-return",
+          "explanation": "Resume to parse_ready before its nop. The function has returned consumed count twelve and payload pointer packet plus eight. Inspect record_a words [1,4660,3,254]. Main has not stored status or payload_address yet.",
+          "anchor": {
+            "label": "parse_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t2": "0x0000000000001234",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x00000000000000fe",
+            "$v0": "0x000000000000000c",
+            "$v1": "0x000000001001000c"
+          },
+          "success": "The four decoded fields and returned borrowed slice agree at this completed function boundary."
+        }
+      ],
+      "success": "Finish or stop this Debug execution before the next worked source. Explain the two bounds, separate sums and acceptance-before-stores boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "tentative-status",
+      "explanation": "At packet_commit the checksum residue was zero but v0 still contained -6. Four stores and the successful return-register assignments followed. At parse_ready, the function returned twelve and the payload pointer.",
+      "question": "Why did minus six at packet_commit not mean the returned call failed?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The debugger had the wrong register value",
+          "feedback": "The tentative register value is real; it simply precedes the success assignments."
+        },
+        {
+          "id": "b",
+          "text": "The success assignments had not executed yet",
+          "feedback": "A pause inside the routine can precede publication and the final return interface."
+        },
+        {
+          "id": "c",
+          "text": "Minus six also means a valid empty packet",
+          "feedback": "The contract assigns minus six to checksum failure, not to empty success."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "packet_commit",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-short",
+      "source": "worked/packet-short.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/packet-short.asm. This complete copy changes only available to seven. Follow two stops and inspect the unchanged record. The written lab distinguishes the permitted input prefix from mapped bytes and the parser’s output from main’s later status stores.",
+      "stops": [
+        {
+          "id": "short-entry",
+          "explanation": "Break at parse_packet in worked/packet-short.asm. Only seven bytes are available, although the arena still contains the complete default packet. The first availability test must return before any input load.",
+          "anchor": {
+            "label": "parse_packet",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$a0": "0x0000000010010004",
+            "$a1": "0x0000000000000007",
+            "$a2": "0x0000000010010108",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Mapped bytes beyond the supplied prefix do not grant permission to inspect a header."
+        },
+        {
+          "id": "short-return",
+          "explanation": "Resume to parse_ready. Status is need-more (-1), payload pointer zero, and all four record words retain their sentinels. Main’s subsequent metadata stores are separate from the failed parser’s output contract.",
+          "anchor": {
+            "label": "parse_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$a1": "0x0000000000000007",
+            "$t9": "0x0000000000000008",
+            "$v0": "0xffffffffffffffff",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The incomplete-header path neither inspects input nor publishes a decoded record."
+        }
+      ],
+      "success": "Finish or stop Debug. Explain why this path returns need-more before interpreting a possible header defect."
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-payload-trailer",
+      "explanation": "The packet’s payload can be empty. Its header still occupies eight bytes and the format always has a checksum trailer. A borrowed payload pointer can name packet plus eight while its payload length is zero.",
+      "question": "How many available bytes are needed to accept an empty payload packet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Eight",
+          "feedback": "That includes the header but omits the checksum trailer."
+        },
+        {
+          "id": "b",
+          "text": "Zero",
+          "feedback": "An empty payload does not remove the surrounding packet fields."
+        },
+        {
+          "id": "c",
+          "text": "Nine",
+          "feedback": "Eight header bytes and the mandatory trailer must be available and validated."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "packet_length",
+        "mnemonic": "bltuc",
+        "occurrence": 1
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-checksum",
+      "source": "worked/packet-checksum.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/packet-checksum.asm. This copy changes only the checksum trailer from 26 to 27. Follow the two stops, compare the tentative sums with the accepted run and inspect the unchanged record on return.",
+      "stops": [
+        {
+          "id": "bad-checksum-trailer",
+          "explanation": "Break at trailer_sum in worked/packet-checksum.asm. Header and payload totals are unchanged: 742 and 510. The trailer in this copy is 27 rather than 26; the next load and checksum reduction will expose the mismatch.",
+          "anchor": {
+            "label": "trailer_sum",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t2": "0x0000000000001234",
+            "$t3": "0x00000000000002e6",
+            "$t4": "0x00000000000001fe",
+            "$t5": "0x000000001001000f",
+            "$t6": "0x0000000000000000",
+            "$v0": "0xffffffffffffffff",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Only the trailer changed, so its contribution must be interpreted after the complete input bound."
+        },
+        {
+          "id": "bad-checksum-return",
+          "explanation": "Resume to parse_ready. Checksum residue is one, returned status -6 and payload pointer zero. Inspect four unchanged sentinel words in record_a. A matching final picture alone does not prove the absence of temporary stores.",
+          "anchor": {
+            "label": "parse_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000003",
+            "$t3": "0x0000000000000001",
+            "$t4": "0x00000000000001fe",
+            "$v0": "0xfffffffffffffffa",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Checksum rejection returns no borrowed slice and publishes no output record."
+        }
+      ],
+      "success": "Finish or stop Debug before ordinary Run. Explain why unchanged final bytes are necessary but insufficient evidence for the no-store failure rule."
+    },
+    {
+      "kind": "prediction",
+      "id": "store-history",
+      "explanation": "A failed parser must not write the selected record. A routine could write tentative fields and then restore the old sentinel values before returning, leaving the same final words.",
+      "question": "Which observation distinguishes that forbidden write-and-restore path?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The execution store history",
+          "feedback": "It records the forbidden stores even when the final bytes match their original values."
+        },
+        {
+          "id": "b",
+          "text": "Only the final record words",
+          "feedback": "Restoring the old values makes that final-state observation identical."
+        },
+        {
+          "id": "c",
+          "text": "Only the returned negative status",
+          "feedback": "A negative return does not describe the memory operations performed earlier."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "packet_commit",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-accepted",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run bounded-packet.asm using ordinary Run. It should exit silently and retain status 12 in the caller’s metadata. Inspect record_a and the full payload_address. This whole-program observation includes main’s stores after the earlier parse_ready boundary.",
+      "success": "The worked program exited silently. Distinguish the retained caller metadata from the parser’s output and returned registers."
+    },
+    {
+      "kind": "run",
+      "id": "run-short",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/packet-short.asm using ordinary Run. It should exit silently and retain status -1 in the caller’s metadata. Inspect record_a and the full payload_address. This whole-program observation includes main’s stores after the earlier parse_ready boundary.",
+      "success": "The worked program exited silently. Distinguish the retained caller metadata from the parser’s output and returned registers.",
+      "source": "worked/packet-short.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-checksum",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/packet-checksum.asm using ordinary Run. It should exit silently and retain status -6 in the caller’s metadata. Inspect record_a and the full payload_address. This whole-program observation includes main’s stores after the earlier parse_ready boundary.",
+      "success": "The worked program exited silently. Distinguish the retained caller metadata from the parser’s output and returned registers.",
+      "source": "worked/packet-checksum.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "delimiter-at-capacity",
+      "explanation": "The independent format accepts at most 32 payload bytes followed by LF, byte 0A. Its grammar differs from a fixed header: at the next available byte, test whether it is the delimiter before rejecting a 33rd payload byte.",
+      "question": "What result is required for 32 non-LF bytes followed by LF?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Too-long, minus two",
+          "feedback": "The byte at index 32 is a delimiter, not a 33rd payload byte."
+        },
+        {
+          "id": "b",
+          "text": "Success consuming thirty-three bytes",
+          "feedback": "The payload length is 32 and the consumed count includes its LF."
+        },
+        {
+          "id": "c",
+          "text": "Need-more, minus one",
+          "feedback": "The delimiter is already inside the supplied window."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "packet_length",
+        "mnemonic": "bltuc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "line-bounds",
+      "source": "independent/bounded-line.asm",
+      "caseProfile": "independent/bounded-line-bounds.cases.json",
+      "checkKind": "function",
+      "explanation": "Implement read_line in the independent source, replacing break. Read independent/README.md. Check bounded scanning, delimiter priority, unchanged failure output, both continuations, caller preservation and full pointers. This profile has 139 prefix, boundary and default-caller cases.",
+      "success": "The current source passes all 139 public cases in this profile. Retain the exact failing input when a future edit changes a result.",
+      "hints": [
+        {
+          "id": "next-byte",
+          "text": "Before every load, establish that its byte index is smaller than available. Zero bytes and high bytes are payload unless the byte is LF."
+        },
+        {
+          "id": "limit-order",
+          "text": "At payload length 32, an available LF succeeds. A non-LF byte establishes too-long. With no next byte yet, return need-more."
+        },
+        {
+          "id": "publish",
+          "text": "Keep tentative length and sum away from the selected output until acceptance. Return the original full input pointer, preserve caller state and use the incoming continuation."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "line-bytes",
+      "source": "independent/bounded-line.asm",
+      "caseProfile": "independent/bounded-line-bytes.cases.json",
+      "checkKind": "function",
+      "explanation": "Check the same independent source against all 256 possible first-byte values, including zero, LF and high bytes. Each case calls twice through different continuations. A different correct scan or sum method is accepted; permitted input bounds still end at the first LF.",
+      "success": "The current source passes all 256 public cases in this profile. Retain the exact failing input when a future edit changes a result.",
+      "hints": [
+        {
+          "id": "next-byte",
+          "text": "Before every load, establish that its byte index is smaller than available. Zero bytes and high bytes are payload unless the byte is LF."
+        },
+        {
+          "id": "limit-order",
+          "text": "At payload length 32, an available LF succeeds. A non-LF byte establishes too-long. With no next byte yet, return need-more."
+        },
+        {
+          "id": "publish",
+          "text": "Keep tentative length and sum away from the selected output until acceptance. Return the original full input pointer, preserve caller state and use the incoming continuation."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/bounded-line.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "checkKind": "console",
+      "explanation": "Check the same independent source as a complete program. The prefix/boundary profile observed the caller’s stored status and full borrowed pointer before line_done. This check requires silent normal exit without a trap or output.",
+      "success": "The independent parser passes both public function profiles and complete silent execution. Explain the exact-capacity delimiter, one incomplete prefix and why a failed call cannot write and restore the record."
+    }
+  ]
+}

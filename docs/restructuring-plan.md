@@ -1039,3 +1039,44 @@ All 41 manual MARS source edits and historical evidence remain preserved.
 Later native units, companion integration and remaining instructional-system
 work are open; the full goal is not complete. The MARS-versus-hardware opening
 remains deferred.
+
+
+### Bounded-interfaces native foundation (22 November 2026)
+
+The next draft `013-bounded-interfaces` preserves original project 013 and its
+complete packet parser. Two complete variants change only available count or
+checksum trailer. Seven predictions and twelve measured Debug states distinguish
+permitted reads, ordered checks, tentative values, accepted fields and the
+caller's later status/pointer stores. Three Runs precede independent LF-delimited
+binary parsing. These are proposed native activities with actual CLI state
+bindings; no new IDE or screenshot proof is inferred from them.
+
+Native checking now preserves previously missing script assertions: returned and
+stored full data pointers, caller-wide store windows resolved from assembly
+labels, and a forbidden continuation interval. This detects truncated pointers,
+temporary/restored padding writes and an incorrect return that falls through to
+the requested stop. Function-profile version 6 remains bounded data. Older formats
+reject new fields and retain their earlier behavior. No simulator accuracy or
+execution semantics changed, and authoring code remains separate.
+
+The unmodified Kotlin public input construction exports all 393 function inputs;
+every name, byte sequence, count and offset matches the native generator. Profiles
+have 139 prefix/boundary/caller cases and 256 first-byte cases, with repeated
+continuations giving 789 checked returns. The original standalone script retains
+394 checks. Four correct methods pass both routes in ordinary/relocated layouts,
+plus a wide-address fixture: 18 positive JVM processes. Nine faults and the starter
+are rejected through both routes: 20 negative processes. These are finite corpora.
+
+The complete checker passes 194 CLI and 1203 plugin tests and required coverage
+checks. Parser coverage is 126/126 lines and 142/142 branches. The exact student
+archive passes native import afterward. All 477 book-tool tests pass, and the
+final exact plugin build passes API verification. Full reports were frozen before
+focused tests. A superseded partial build was explicitly canceled after finding
+the continuation gap; it is not reported as passing. All 41 manual MARS edits and
+historical evidence are preserved.
+
+The twelfth unit is not yet complete: its separate authoring walkthrough, real
+IDE/resume, written lab integration and renewed publication verification remain.
+Human learner review is open; no new photograph or PDF validation is claimed.
+The full curriculum goal stays active, including later units and companions.
+The MARS-versus-hardware opening remains deferred.
