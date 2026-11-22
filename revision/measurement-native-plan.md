@@ -47,8 +47,8 @@ was one of the original eight function inputs.
 
 The original checker records access history, not just final output. Each selected
 output byte must be written during the current call before its first partial-sum
-read. Native function-profile version 7 is being added upstream to express this
-requirement using per-call byte bitmaps. Correct row, reverse reduction, private
+read. Native function-profile version 7 now expresses this requirement upstream using
+per-call byte bitmaps (MARS commit 11ecad96). Correct row, reverse reduction, private
 stack and zero-then-accumulate schedules should pass. Read-then-repair and
 incomplete high-word writes should fail even when old caller bytes hide the fault.
 
@@ -78,3 +78,20 @@ the resulting PDF. The older measurement-chapter-01 evidence remains historical;
 it does not prove a new native lesson or GUI reset. Human learner and
 assistive-technology review remain separate. The proposed MARS-versus-hardware
 opening stays deferred.
+
+
+## Output-initialization checker milestone, 22 November 2026
+
+The new checker passes 206 CLI and 1208 plugin tests and the required plugin
+coverage gates. The function-profile parser has 132/132 lines and 145/145 branches
+covered. Twelve CLI tests and four parser tests exercise the new assertion and
+its versioned data. Five complete matrix-vector implementations pass separate
+initialization/product qualification, including reverse reduction, a private
+stack frame, output partial sums and addresses above four GiB. Each qualifies
+the default product and positive 2^31 across two continuations. Read-then-repair
+and incomplete high-word-store faults fail. These seven actual JVM executions
+verify this assertion, not the full independent exercise contract or native
+lesson. Exact reports and private sources are retained under
+`verification/restructuring/native-output-init-01` in the instructor repository.
+All 41 unrelated manual MARS edits are preserved. No new screenshot, IDE
+walkthrough or PDF validation is claimed for this checker-only milestone.
