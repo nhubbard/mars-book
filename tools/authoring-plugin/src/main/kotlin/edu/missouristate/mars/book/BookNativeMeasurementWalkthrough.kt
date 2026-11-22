@@ -132,7 +132,7 @@ internal suspend fun captureBookNativeMeasurement(
                         }
                     } else check(withContext(Dispatchers.IO) { Files.readString(path) } == "# Recheck this edited independent source.\n" + bytes.toString(Charsets.UTF_8))
                     click("Check this program", false)
-                    capture("measurement-passed", "The current source passes all 11 public cases in this profile.")
+                    capture("measurement-passed", step.get("success").asString)
                     record(id, mapOf("source" to relative, "solutionSha256" to fixture.sha256, "completedPublicCases" to 11,
                         "starterPassedPublicCases" to if (plan.resume) "not rerun" else "0 of 11", "checkedUnsavedText" to !plan.resume))
                 } else {
