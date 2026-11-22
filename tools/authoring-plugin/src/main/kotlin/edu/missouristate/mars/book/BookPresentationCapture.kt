@@ -200,8 +200,9 @@ internal suspend fun captureBookPresentation(project: Project, plan: BookCapture
                 }
                 withContext(Dispatchers.IO) {
                     val png = output.resolve(figure.id + ".png")
+                    val photograph = requireBookLightPhotograph(image)
                     Files.newOutputStream(png, CREATE_NEW).use { check(ImageIO.write(image, "png", it)) }
-                    val receipt = mapOf("figure" to figure.id, "mode" to figure.mode, "theme" to "IntelliJ Light", "assertionsPassed" to true,
+                    val receipt = mapOf("figure" to figure.id, "mode" to figure.mode, "theme" to "IntelliJ Light", "assertionsPassed" to true, "photograph" to photograph,
                         "package" to plan.packageId, "packageVersion" to plan.packageVersion, "publicCommit" to plan.publicCommit,
                         "upstreamCommit" to plan.upstreamCommit, "upstreamDirtyFiles" to plan.upstreamDirtyFiles, "source" to figure.source,
                         "sourceSha256" to figure.sourceSha256, "pngSha256" to captureSha256(Files.readAllBytes(png)),

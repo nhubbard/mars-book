@@ -101,11 +101,12 @@ internal suspend fun captureBookComponent(root: JComponent, output: Path, id: St
     }
     withContext(Dispatchers.IO) {
         val image = Robot().createScreenCapture(bounds)
+        val photograph = requireBookLightPhotograph(image)
         val png = output.resolve("$id.png")
         Files.newOutputStream(png, CREATE_NEW).use { check(ImageIO.write(image, "png", it)) }
         Files.writeString(output.resolve("$id.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
             "theme" to "IntelliJ Light", "assertionsPassed" to true, "observedText" to text,
-            "width" to image.width, "height" to image.height, "pngSha256" to captureSha256(Files.readAllBytes(png)),
+            "photograph" to photograph, "width" to image.width, "height" to image.height, "pngSha256" to captureSha256(Files.readAllBytes(png)),
         )), CREATE_NEW)
     }
 }

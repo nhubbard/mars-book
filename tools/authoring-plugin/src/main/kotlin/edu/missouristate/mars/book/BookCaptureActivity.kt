@@ -526,6 +526,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         // authoring plugin uses the same JDK screen-capture facility, limited to its own IDE root.
         val screenImages = withContext(Dispatchers.IO) { Robot().createMultiResolutionScreenCapture(snapshot.first).resolutionVariants }
         val image = screenImages.first() as BufferedImage
+        val photograph = requireBookLightPhotograph(image)
         var screenEvidence: BookBitmapScreenEvidence? = null
         var labEvidence: Map<String, Any>? = null
         var botEvidence: Map<String, Any>? = null
@@ -603,7 +604,7 @@ class BookCaptureActivity : ProjectActivity, PluginAware {
         withContext(Dispatchers.IO) {
             Files.newOutputStream(png, CREATE_NEW).use { check(ImageIO.write(image, "png", it)) }
             val receipt = mapOf(
-                "figure" to figure.id, "theme" to "IntelliJ Light", "assertionsPassed" to true,
+                "figure" to figure.id, "theme" to "IntelliJ Light", "assertionsPassed" to true, "photograph" to photograph,
                 "package" to plan.packageId, "packageVersion" to plan.packageVersion,
                 "publicCommit" to plan.publicCommit, "upstreamCommit" to plan.upstreamCommit,
                 "upstreamDirtyFiles" to plan.upstreamDirtyFiles,
