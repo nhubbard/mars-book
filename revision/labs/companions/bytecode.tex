@@ -1,0 +1,263 @@
+\Needspace{13\baselineskip}
+\section{Companion lab: interpret a bytecode program}
+\label{revision-lab:bytecode}
+
+The expression evaluator reads characters whose grammar determines the next
+operation. A bytecode interpreter reads an already encoded sequence of operations.
+The bytes still need validation, and their effects belong to a second machine
+that your MIPS program maintains. This companion revises original project
+\texttt{018-tiny-bytecode-interpreter}.
+
+Implement \texttt{run\_vm} in \texttt{revision/labs/files/bytecode-vm.asm}.
+The independent entry stops with \texttt{break} until replaced. Its caller
+and data arenas are supplied; private labels, frames and dispatch design are
+yours to choose. Original final checks remain under
+\texttt{packages/018-tiny-bytecode-interpreter}. The preceding nested-data
+chapter supplies bounds and validation reasoning; the expression companion
+supplies checked-word arithmetic. Review functions and stack preservation as
+needed. These activities use ordinary Run and Debug; their native guided lesson
+remains unfinished.
+
+\subsection*{Keep the guest machine distinct from the executing MIPS program}
+
+The MIPS program counter selects instructions such as \texttt{lbu},
+\texttt{beqzc} and \texttt{sw}. A \emph{guest PC} is an integer byte offset into
+the supplied bytecode image. A guest opcode chooses which native handler to run.
+For a guest branch to offset four, your interpreter updates that integer and
+returns to its dispatch loop. It does not jump the native machine into the
+program's data bytes.
+
+The guest operand stack is another caller-owned data array. The native stack
+addressed by \texttt{sp} stores your saved registers and private work. A guest
+DUP adds a value to the operand array; it does not duplicate a native return
+address. Keep guest depth and native frame size separate even if both happen
+to be small integers.
+
+\input{revision/figures/bytecode/descriptor}
+
+The public arguments are full code address, selected length, full descriptor
+address and guest instruction budget in \texttt{a0} through \texttt{a3}.
+Length and budget each lie between zero and 64. Code is a byte slice inside a
+96-byte arena and may be unaligned. The descriptor's input pointer names a
+word-aligned stack subview with capacity zero through eight words inside a
+sixteen-word allocation. Only the selected capacity is available. Extra
+physical cells are not permission to push, read ahead or clear a larger array.
+
+Every call starts at guest PC zero, depth zero and retired count zero. Ignore
+the old output fields, even if they describe a previous budget return. The
+caller may replace the image at the same address and length. This interface
+reports a bounded execution; it does not resume that report on the next call.
+
+\subsection*{Decode instruction boundaries before accepting branches}
+
+\input{revision/figures/bytecode/encoding}
+
+Walk the entire image from offset zero. At each established instruction start,
+read the opcode, determine its size and prove that the complete record fits
+before advancing. PUSH8's immediate is a signed byte; PUSH32 carries four
+little-endian bytes representing any signed-word bit pattern. Unlike the
+expression language's positive decimal literal, PUSH32 can encode minus
+2147483648 directly as \texttt{02 00 00 00 80}.
+
+Record every instruction start. With at most 64 code bytes, a doubleword bitmap
+can use bit $p$ for start offset $p$. A private array of 64 byte markers is
+another choice. A bitmap needs a doubleword shift, including at offset 63;
+a word shift would alias upper-half positions. Do not infer a start merely
+because an operand byte happens to equal an opcode.
+
+Only after this structural pass succeeds, scan all encoded branches in image
+order. Their unsigned target byte must be below the selected length and belong
+to the decoded start set. A target equal to length is invalid. Check unreachable
+branches and untaken conditional targets too. A valid runtime path does not
+repair an invalid encoded program.
+
+Structural failure takes priority over every bad target. For the bytes
+\texttt{30 01 ff}, the first record is a JMP with a bad target into its operand,
+but the structural pass next finds invalid opcode \texttt{ff} at offset two.
+Report invalid opcode there; target checking never begins. Similarly,
+\texttt{00 ff} fails validation after its HALT byte. No guest instruction has
+executed, and no guest budget has been consumed in either case.
+
+\Needspace{25\baselineskip}
+\input{revision/figures/bytecode/countdown}
+
+Change the target operand at offset six of this image from \texttt{10} to
+\texttt{06}. Six is inside the image, but not an instruction start. Even at
+zero guest budget, validation must return bad-target status minus three, fault
+offset five, PC/depth/retired zero. The fault identifies the branch instruction,
+not the operand's location or its target value. This distinction is a useful
+check against a range-only validator.
+
+\input{revision/figures/bytecode/native-bad-target}
+
+\subsection*{Trace a guest loop through stack effects}
+
+The countdown starts by pushing accumulator zero and counter three. Write the
+live stack oldest to newest: \([0,3]\). At offset four, DUP copies the counter,
+giving \([0,3,3]\). JZ then consumes the copied condition on either path.
+For a nonzero counter, execution falls through to seven with \([0,3]\).
+The original counter is still present because DUP made the condition copy.
+
+SWAP gives \([3,0]\), and OVER copies the second value from the top, giving
+\([3,0,3]\). ADD consumes the older left operand zero and top right operand
+three, producing \([3,3]\). After SWAP, PUSH8 1 and SUB, the stack is
+\([3,2]\): accumulated sum three and next counter two. JMP selects offset four.
+The next iterations return there with \([5,1]\), then \([6,0]\).
+
+The next DUP/JZ pair takes the exit, leaving \([6,0]\). DROP removes the old
+counter, and HALT finishes with the single live value six. A native Memory row
+can display inactive words after that live value. Their contents are not more
+guest results: the descriptor's depth determines which prefix is meaningful.
+The valid countdown needs room for three simultaneous values even though its
+final result has depth one.
+
+\input{revision/figures/bytecode/native-halted}
+
+\input{revision/figures/bytecode/prefixes}
+
+\Needspace{8\baselineskip}
+Use the fixed fixture helper after implementing your entry. It edits bytecode
+and caller controls while preserving the native instruction text:
+\Needspace{6\baselineskip}
+\begin{verbatim}
+python3 tools/revision_vm_programs.py countdown /tmp/vm-four.asm \
+  --source /path/to/your/bytecode-vm.asm --budget 4
+\end{verbatim}
+Open the generated copy and break at \texttt{vm\_ready}. The descriptor already
+contains the return state; the caller has not stored \texttt{last\_status} and
+\texttt{last\_steps} yet. Expect PC seven, depth two, retired four, status zero,
+fault minus one and live values zero and three. The helper refuses existing
+outputs and writes a receipt naming the selected image and controls. It
+supplies no interpreter implementation.
+
+\input{revision/figures/bytecode/native-budget}
+
+\subsection*{Prove stack requirements before committing an operation}
+
+For a binary operation, depth must be at least two before either operand is
+loaded. The older value is left and top is right. Thus pushing seven, then
+two, then SUB produces five, not minus five. Load each as a signed word, form
+a wide candidate, and check signed-word range before replacing the pair.
+The arithmetic reasoning from the expression lab applies, but this VM uses
+its own status codes.
+
+Division first requires both operands, then rejects a zero right operand,
+then checks the quotient range. Its quotient truncates toward zero. Minimum
+signed word divided by minus one is arithmetic overflow. A failure leaves the
+pre-instruction live prefix and depth intact; it also leaves PC and retired
+count at their pre-instruction values. Inactive cells within capacity are
+unspecified workspace, so preserving the live prefix does not mean clearing
+or comparing every physical stack word.
+
+DUP needs one value and room for another. OVER needs two and room for another.
+Check underflow before room. With an empty stack and capacity zero, DUP reports
+underflow, not overflow. With the countdown, capacity two and budget two produce
+an ordinary budget return at PC four with \([0,3]\). Budget three instead attempts
+DUP and reports stack overflow: status minus six, PC four, depth two, retired
+two, fault four, with that same live prefix. The failed DUP has not retired.
+
+Use a fresh \texttt{countdown} fixture with \texttt{--capacity 2 --budget 3}
+to reproduce that case. The native figures show a completed interpreter at the
+same public caller boundary; your empty skeleton cannot yet produce them.
+Private handler registers and frames are not required to match those figures.
+
+\input{revision/figures/bytecode/native-capacity}
+
+For \texttt{add-overflow}, the helper generates PUSH32 2147483647, PUSH8 1,
+ADD and HALT. ADD fails at PC seven after two retirements, preserving both
+operands. For \texttt{zero-divisor}, it generates PUSH8 7, PUSH8 0, DIV and
+HALT; DIV fails at PC four after two retirements. Neither failure is a license
+to execute the later HALT or report its success.
+
+\subsection*{Retire successful instructions and check budget before fetch}
+
+Maintain a pending next PC until the instruction succeeds. Sequential operations
+add their encoded byte size; JMP selects its target; JZ chooses target or PC+2
+and pops its condition on both paths. Successful retirement installs that next
+PC, increments the retired count and consumes one guest budget unit. HALT also
+advances and retires once, then returns halt immediately.
+
+Budget exhaustion is checked before the next fetch. For the two-byte image
+PUSH8 7, budget one returns status zero at PC two with one retired instruction.
+Budget two instead attempts another fetch and reports fetch-at-end, status minus
+four, PC two, retired one. The first instruction's state remains visible.
+An empty image with zero budget returns budget exhaustion; with positive budget
+it reports fetch at the image end. A valid one-byte HALT with budget one returns
+halt, not budget exhaustion.
+
+\Needspace{17\baselineskip}
+Do the whole-image validation even when budget is zero. The guest count measures
+semantic transitions, not the MIPS work needed to establish that they are safe.
+The public measurement helper runs a known countdown image at budgets zero and
+64 and counts the complete \texttt{run\_vm} call:
+\Needspace{6\baselineskip}
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/bytecode-work.kts \
+  /path/to/your/bytecode-vm.asm
+\end{verbatim}
+
+\input{revision/figures/bytecode/work}
+
+These measured designs both satisfy the same behavior. The helper reproduces
+the measurement procedure on your implementation; it need not reproduce their
+exact counts. Grade correctness first. A faster routine that skips validation
+at zero budget is implementing a different contract. A self-branch can retire
+the same guest instruction repeatedly until budget exhaustion, even though its
+PC never advances to a new byte.
+
+\subsection*{Publish the result and test fresh invocations}
+
+Return status in \texttt{v0} and retired guest count in \texttt{v1}. Every return
+also writes PC, depth, retired count, status and fault in the descriptor. This
+includes validation failure and zero budget. Capacity and the full stack pointer
+are preserved inputs. Unlike a decoder that promises untouched output on
+failure, this entry must publish a complete failure report.
+
+Statuses zero and one mean budget exhaustion and halt; fault is minus one in
+both. Validation failures are minus one for opcode, minus two for truncation
+and minus three for target; they publish zero PC, depth and retired count,
+with the offending instruction start as fault. Runtime failures are minus four
+for fetch at end, minus five for underflow, minus six for stack overflow,
+minus seven for arithmetic overflow and minus eight for zero division. They
+publish the failing PC as fault and retain the preceding live stack state.
+Inspect status before interpreting a negative value as either a guest operand
+or an error code.
+
+All caller access must fit the selected code slice, the 32-byte descriptor or
+the selected stack capacity. Code is read-only. Only the five output fields
+and selected stack capacity may be written, including temporary writes.
+Guards, descriptor inputs, other arenas and cells outside capacity are preserved.
+Use full addresses when adding guest offsets or stack indices. Preserve every
+bit of the public saved registers, frame and stack pointers, and return through
+the incoming native return address. Submission-owned constants and private
+native frames are allowed. Produce no console output.
+
+Start construction with record classification and boundary marking, then add
+target validation and complete publication of errors. Establish budget/fetch
+order before implementing handlers. Make push and simple stack operations work,
+then checked arithmetic and the two branches. Keep the common retirement path
+separate from failures so adding one handler does not accidentally charge a
+failed instruction. These are design stages rather than required private labels
+or a fixed frame layout.
+
+\Needspace{7\baselineskip}
+Run the public interface checks against your completed working source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/018-tiny-bytecode-interpreter/checks/kernel.kts \
+  /path/to/your/bytecode-vm.asm
+\end{verbatim}
+\Needspace{12\baselineskip}
+Repeat with \texttt{program.kts}. The independent skeleton deliberately fails.
+Equivalent decoders, boundary sets and dispatch organization are accepted;
+exact native instruction counts and inactive workspace contents are not graded.
+
+Finally, replace an image between calls without changing its address or length.
+An all-HALT image marks every byte as a start. A replacement containing operands
+must not inherit those markers. Reinitialize private boundary storage and all
+logical execution state from the new invocation. Reusing the old boundary map
+can make a branch into an operand appear valid; resuming old output PC can skip
+new instructions. Test those possibilities after both a success and an error.
+Retain your byte-boundary map, a guest-state trace and an explanation of each
+return field alongside your working implementation.
