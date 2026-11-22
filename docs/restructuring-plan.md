@@ -479,3 +479,27 @@ and independent continuation returned to the selected source. Guided completion
 then reused unchanged observations. These are development checks, with human
 learner and accessibility review still open. Broader per-course prerequisite
 selection and non-console contracts remain part of the active curriculum goal.
+
+
+### Instructor-selected prerequisites for downloaded work
+
+The instructor can configure each independent exercise using earlier predictions,
+Run observations, Debug sequences and independent checks from the exact selected
+edition. Dependencies of a required independent check also apply, so requiring
+that check preserves its own prerequisites. The existing global access, preceding
+prediction, hint and attempt controls continue to apply. The Settings page now
+identifies the built-in first program's named requirements explicitly.
+
+Saved rules live in shareable project policy; progress remains personal. Draft
+choices survive switching exercises, Cancel leaves policy intact, and Save
+applies the edition's rules atomically. Source changes, including offline edits,
+cannot retain execution credit. A blocked or outdated check uses no attempt.
+The student's written lab explains returning to listed guided activities.
+
+Native tests cover ordering, transitive and shared dependencies, policy reload,
+unknown-rule repair, missing source, grading races and long scrollable lists.
+Actual light-theme IDE controls verify rule selection, visible checkbox access,
+source-dependent blocking, fresh-process policy, selective release and current
+source requirements. Remaining work includes the later units' non-console state
+contracts, their native lesson content and human learner/accessibility review.
+The proposed opening orientation remains deferred.
