@@ -269,6 +269,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `measurement walkthrough isolates its exact source and single private fixture`() {
+        val measurement = plan.copy(archives = listOf(archive.copy(id = "022-measuring-programs", entry = "matrix-measure.asm")),
+            nativePredictions = true, measurementUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/matrix-vector.asm", "/tmp/measurement.asm", "c".repeat(64))))
+        measurement.validate()
+        measurement.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(measurement.copy(nativePredictions = false), measurement.copy(nativeExecution = true),
+            measurement.copy(nativeDebug = true), measurement.copy(memoryUnit = true), measurement.copy(loopUnit = true),
+            measurement.copy(functionUnit = true), measurement.copy(spriteUnit = true), measurement.copy(rasterUnit = true), measurement.copy(lifeUnit = true), measurement.copy(sortingUnit = true), measurement.copy(fixedUnit = true), measurement.copy(localityUnit = true), measurement.copy(boundedUnit = true), measurement.copy(assessmentFixtures = emptyList()),
+            measurement.copy(archives = listOf(archive)), measurement.copy(resumeCompleted = true), measurement.copy(measurementUnit = false),
+            measurement.copy(activityNavigation = true), measurement.copy(prerequisiteControls = true),
+            measurement.copy(assessmentFixtures = measurement.assessmentFixtures + measurement.assessmentFixtures),
+            measurement.copy(assessmentFixtures = listOf(measurement.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
