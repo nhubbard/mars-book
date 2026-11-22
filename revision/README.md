@@ -287,3 +287,12 @@ The final narrative unit is described in [h263-stream-unit.md](h263-stream-unit.
 The table above gives the current proof sizes; earlier unit notes retain their
 publication-milestone counts. Coverage/prerequisite audit, advanced native lessons
 and the remaining instructional-system requirements are still open.
+
+
+A draft downloadable prediction asset for the second chapter is under
+[lessons/004-byte-inspector](lessons/004-byte-inspector/README.md). Its four
+questions use the existing byte-inspector program. The plugin validates the
+versioned content before archive preview; native lesson rendering and resumption
+are the next integration step. The draft does not replace the chapter, written
+lab, execution investigations or independent variations, and does not alter
+publication composition.

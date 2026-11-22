@@ -1,0 +1,151 @@
+{
+  "formatVersion": 1,
+  "introduction": "Read the complete byte-inspector program before changing it. This prediction segment accompanies Chapter 2 and its written lab. Assume MIPS64 Release 6, the Default layout and the supplied instructions. You will separate width, stored bits and numerical interpretation.",
+  "conclusion": "Run the program with 0, 127, 128 and 255. In Debug, stop at interpret and inspect t0 after andi, then t1 after seb, using full-width hexadecimal. Explain each high bit before changing the output variation in the written lab. These predictions do not replace the execution and independent-writing activities.",
+  "steps": [
+    {
+      "id": "mask-bits",
+      "explanation": "The mask 0xFF has ones in positions 0 through 7. The register still has 64 bits; the AND operation clears the other positions. Assume the supplied instructions are unchanged.",
+      "question": "How many bit positions can remain nonzero after the mask?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Eight",
+          "feedback": "Only positions 0 through 7 have matching ones in the mask. The other 56 register bits become zero."
+        },
+        {
+          "id": "b",
+          "text": "Sixteen",
+          "feedback": "The immediate field can encode sixteen bits, but 0xFF contains only eight ones."
+        },
+        {
+          "id": "c",
+          "text": "Sixty-four",
+          "feedback": "The destination remains a 64-bit register, but the mask clears its high 56 bits."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "write-mask",
+          "text": "Write 0xFF as binary and count the one bits."
+        }
+      ]
+    },
+    {
+      "id": "unsigned-value",
+      "explanation": "Use input 150. Its low byte is 0x96, or 10010110 in binary. Read the set bits with unsigned place values before interpreting a sign bit.",
+      "question": "What unsigned value does that byte represent?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "96",
+          "feedback": "96 is the pair of hexadecimal digits read as decimal text. In hexadecimal, the high digit contributes 9 times 16."
+        },
+        {
+          "id": "b",
+          "text": "150",
+          "feedback": "The set positions contribute 128 + 16 + 4 + 2 = 150. The hexadecimal notation describes the same bits."
+        },
+        {
+          "id": "c",
+          "text": "-106",
+          "feedback": "That is the signed eight-bit interpretation. The unsigned interpretation assigns bit seven weight +128."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "andi",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "place-values",
+          "text": "Start with the contribution of bit seven, then add the lower set bits."
+        },
+        {
+          "id": "hexadecimal",
+          "text": "Alternatively, calculate 9 times 16 plus 6."
+        }
+      ]
+    },
+    {
+      "id": "extended-value",
+      "explanation": "The next instruction, seb, sign extends the low byte into the complete register. For 0x96, bit seven is one. Sign extension copies that bit into all higher positions.",
+      "question": "Which complete value will seb place in t1?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x0000000000000096",
+          "feedback": "That is the zero-extended masked value in t0. It does not copy the byte sign bit into the higher positions."
+        },
+        {
+          "id": "b",
+          "text": "0x000000000000006A",
+          "feedback": "This changes the low-byte pattern. Sign extension preserves those low eight bits."
+        },
+        {
+          "id": "c",
+          "text": "0xFFFFFFFFFFFFFF96",
+          "feedback": "The low byte remains 0x96 and the upper bits become ones. As a signed 64-bit value, the result is -106."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "interpret",
+        "mnemonic": "seb",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "sign-position",
+          "text": "Locate bit seven of the byte, not bit 63 of the masked register."
+        },
+        {
+          "id": "retain-low-byte",
+          "text": "Keep the final two hexadecimal digits 96. Decide which digit fills every higher position."
+        }
+      ]
+    },
+    {
+      "id": "boundary-output",
+      "explanation": "Now consider a fresh launch with input 128. The same two instructions produce the unsigned and signed interpretations in separate registers. The reporting code copies each result into the output argument when it is needed.",
+      "question": "Which two numbers should the program print for input 128?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "128 and 128",
+          "feedback": "The low byte has bit seven set, so its signed eight-bit interpretation is negative. The second result uses sign extension."
+        },
+        {
+          "id": "b",
+          "text": "128 and -128",
+          "feedback": "The masked value is 128. Assigning bit seven weight -128 gives the signed value -128, retained by sign extension."
+        },
+        {
+          "id": "c",
+          "text": "-128 and -128",
+          "feedback": "Sign extension changes t1, while the unsigned masked value remains in t0. The first output uses that unchanged value."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "report",
+        "mnemonic": "move",
+        "occurrence": 0
+      },
+      "hints": [
+        {
+          "id": "two-results",
+          "text": "Trace t0 and t1 separately. A destination written by seb does not replace its source register."
+        }
+      ]
+    }
+  ]
+}
