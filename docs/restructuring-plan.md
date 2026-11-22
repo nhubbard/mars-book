@@ -539,3 +539,27 @@ callouts and alternative text. Main MARS contains no screenshot controller or
 private solution fixture. The later units' instructional integration, representative
 learner review and human accessibility review remain open. The proposed general
 MARS-versus-hardware opening remains deferred.
+
+
+### Fourth-unit preparation: input fixtures and actual histories
+
+Case-profile version 3 connects the existing grader's store histories and permitted
+read intervals to data-only native assessments. Per-case ordinary user-data setup
+happens before execution; trace observers remain separate for every fresh case.
+Version 1/2 behavior and existing generated scripts are retained. The native check
+path rejects a missing repeated transaction even when final state agrees.
+
+The preparatory seven-segment exercise now has ten public cases with complete
+input/guard data, exact ordered byte stores and read boundaries. The count-based
+and end-pointer implementations pass all public cases and all 153 admitted ranges
+for each of three glyph tables: 938 positive executions. Eight assembled faults
+and the incomplete starter are distinguished. Empty, one-entry and repeated-mask
+cases appropriately pass some faulty programs; no one case is represented as a
+proof of the whole algorithm.
+
+This is grader and exercise groundwork, not completion of the fourth native unit.
+The guided full/empty/tail observations need versioned per-source Run/Debug binding
+and corresponding prerequisite-source tracking. Do not weaken source invalidation
+to accommodate edits between those variants. The lesson archive, actual IDE flow,
+new chapter-four captures and native LaTeX integration remain pending. Historical
+publications and the completed memory unit are unchanged by this step.

@@ -24,12 +24,31 @@ class MemoryCheck:
 
 
 @dataclass(frozen=True)
+class StoreCheck:
+    address: int
+    length: int
+    port: int | None = None
+    bytes: str = ''
+
+
+@dataclass(frozen=True)
+class ReadCheck:
+    address: int
+    length: int
+    allowed_address: int
+    allowed_length: int
+
+
+@dataclass(frozen=True)
 class ConsoleCase:
     name: str
     input: str
     stdout: str
     instruction_limit: int
     memory: tuple[MemoryCheck, ...] = ()
+    initial_memory: tuple[MemoryCheck, ...] = ()
+    stores: tuple[StoreCheck, ...] = ()
+    reads: tuple[ReadCheck, ...] = ()
 
 
 def _object(pairs):
@@ -54,7 +73,7 @@ def parse(data):
         raise ValueError('Console-case JSON is nested too deeply') from error
     if not isinstance(root, dict) or set(root) != {'formatVersion', 'cases'}:
         raise ValueError('Expected exactly formatVersion and cases')
-    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2):
+    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3):
         raise ValueError('Unsupported console-case format')
     rows = root['cases']
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_CASES:
@@ -62,7 +81,8 @@ def parse(data):
     cases, names = [], set()
     for row in rows:
         fields = {'name', 'input', 'stdout', 'instructionLimit'}
-        if not isinstance(row, dict) or not (set(row) == fields or (root['formatVersion'] == 2 and set(row) == fields | {'memory'})):
+        allowed = fields | ({'memory'} if root['formatVersion'] == 2 else {'memory', 'initialMemory', 'stores', 'reads'} if root['formatVersion'] == 3 else set())
+        if not isinstance(row, dict) or not fields <= set(row) <= allowed:
             raise ValueError('Unsupported or missing console-case fields')
         name = row['name']
         if not isinstance(name, str) or not name.strip() or len(name) > 128 or not name.isprintable():
@@ -78,7 +98,12 @@ def parse(data):
         if type(limit) is not int or not 1 <= limit <= MAX_CASE_INSTRUCTIONS:
             raise ValueError('Case instruction limit must be an integer from 1 through 1000000')
         memory = parse_memory(row['memory']) if 'memory' in row else ()
-        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory))
+        initial = parse_memory(row['initialMemory']) if 'initialMemory' in row else ()
+        stores = parse_stores(row['stores']) if 'stores' in row else ()
+        reads = parse_reads(row['reads']) if 'reads' in row else ()
+        if len(stores) + len(reads) > 64 or sum(len(item.bytes) // 2 for item in stores) > 65536:
+            raise ValueError('Declare at most 64 trace checks and 65536 expected store bytes per case')
+        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads))
     if sum(case.instruction_limit for case in cases) > MAX_TOTAL_INSTRUCTIONS:
         raise ValueError('Combined case instruction limits exceed 10000000')
     return tuple(cases)
@@ -109,6 +134,66 @@ def parse_memory(rows):
     return tuple(ranges)
 
 
+def address(row, field):
+    value = row[field]
+    if not isinstance(value, str) or not re.fullmatch(r'0x[0-7][0-9a-fA-F]{15}', value):
+        raise ValueError('Memory addresses must be nonnegative 64-bit hexadecimal strings')
+    return int(value[2:], 16)
+
+
+def integer(row, field, *, zero=False):
+    value = row[field]
+    if type(value) is not int or not (0 if zero else 1) <= value <= MAX_BYTES:
+        raise ValueError('Expected an exact bounded integer: ' + field)
+    return value
+
+
+def trace_rows(rows):
+    if not isinstance(rows, list) or len(rows) > 64 or any(not isinstance(row, dict) for row in rows):
+        raise ValueError('Declare at most 64 trace-check objects')
+    return rows
+
+
+def trace_region(row):
+    start, length = address(row, 'address'), integer(row, 'length')
+    if start + length - 1 > 0x7fffffffffffffff:
+        raise ValueError('Trace region overflows its address')
+    return start, length
+
+
+def parse_stores(rows):
+    result = []
+    for row in trace_rows(rows):
+        base = {'kind', 'address', 'length'}
+        kind = row.get('kind')
+        if kind == 'none' and set(row) == base:
+            result.append(StoreCheck(*trace_region(row)))
+        elif kind == 'bytes' and set(row) == base | {'port', 'bytes'}:
+            start, length = trace_region(row)
+            port, hex_bytes = address(row, 'port'), row['bytes']
+            if not start <= port < start + length:
+                raise ValueError('Expected port must be inside the traced region')
+            if not isinstance(hex_bytes, str) or len(hex_bytes) > 65536 * 2 or not re.fullmatch(r'(?:[0-9a-fA-F]{2})*', hex_bytes):
+                raise ValueError('Store expectations need hexadecimal byte pairs, at most 65536 bytes')
+            result.append(StoreCheck(start, length, port, hex_bytes))
+        else:
+            raise ValueError('Unsupported store check kind or fields')
+    return tuple(result)
+
+
+def parse_reads(rows):
+    result = []
+    for row in trace_rows(rows):
+        if set(row) != {'address', 'length', 'allowedAddress', 'allowedLength'}:
+            raise ValueError('A read check needs its traced and permitted regions')
+        start, length = trace_region(row)
+        allowed, size = address(row, 'allowedAddress'), integer(row, 'allowedLength', zero=True)
+        if not start <= allowed <= start + length or size > start + length - allowed:
+            raise ValueError('Permitted reads must form a subrange of the traced region')
+        result.append(ReadCheck(start, length, allowed, size))
+    return tuple(result)
+
+
 def load(path):
     with path.open('rb') as source:
         return parse(source.read(MAX_BYTES + 1))
@@ -134,20 +219,35 @@ def kotlin_string(value):
     return '"' + ''.join(escaped) + '"'
 
 
+def byte_arguments(hex_bytes):
+    if not hex_bytes:
+        return ''
+    if len(hex_bytes) <= 64:
+        return ', ' + ', '.join('0x' + hex_bytes[start:start + 2] for start in range(0, len(hex_bytes), 2))
+    return ', *(' + kotlin_string(hex_bytes) + '.chunked(2).map { it.toInt(16) }.toIntArray())'
+
+
 def render(cases):
     lines = [GENERATED, '// Each case runs in a fresh simulator; labels and scratch registers are not checked.\n\n']
     for case in cases:
         lines.append(f'case({kotlin_string(case.name)}, input = {kotlin_string(case.input)}, instructionLimit = {case.instruction_limit}) {{\n')
+        for initial in case.initial_memory:
+            lines.append(f'    setBytes(0x{initial.address:016x}L{byte_arguments(initial.bytes)})\n')
+        for index, store in enumerate(case.stores):
+            lines.append(f'    val stores{index} = traceMemoryStores(0x{store.address:016x}L, {store.length})\n')
+        for index, read in enumerate(case.reads):
+            lines.append(f'    val reads{index} = traceMemoryAccesses(0x{read.address:016x}L, {read.length})\n')
         lines.append('    runToExit()\n')
         lines.append(f'    expectOutput({kotlin_string(case.stdout)})\n')
         for memory in case.memory:
-            address = f'0x{memory.address:016x}L'
-            if len(memory.bytes) <= 64:
-                values = ', '.join('0x' + memory.bytes[start:start + 2] for start in range(0, len(memory.bytes), 2))
-                lines.append(f'    expectBytes({address}, {values})\n')
+            lines.append(f'    expectBytes(0x{memory.address:016x}L{byte_arguments(memory.bytes)})\n')
+        for index, store in enumerate(case.stores):
+            if store.port is None:
+                lines.append(f'    stores{index}.expectNone()\n')
             else:
-                values = kotlin_string(memory.bytes) + '.chunked(2).map { it.toInt(16) }.toIntArray()'
-                lines.append(f'    expectBytes({address}, *({values}))\n')
+                lines.append(f'    stores{index}.expectByteStores(0x{store.port:016x}L{byte_arguments(store.bytes)})\n')
+        for index, read in enumerate(case.reads):
+            lines.append(f'    reads{index}.expectReadsWithin(0x{read.allowed_address:016x}L, {read.allowed_length})\n')
         lines.append('}\n\n')
     return ''.join(lines).removesuffix('\n')
 

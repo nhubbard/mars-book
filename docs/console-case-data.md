@@ -99,3 +99,75 @@ check as native assessments. Large byte arrays are decoded at runtime, and long
 text literals use runtime string chunks to stay within JVM constant-pool limits.
 Short version 1 scripts retain their existing generated contents. These changes
 add no downloaded code execution to the native lesson reader.
+
+## Input data and execution histories (case-profile version 3)
+
+Version 3 preserves the version 1/2 fields and adds optional `initialMemory`,
+`stores` and `reads` arrays. Older versions reject these additions. These are
+bounded data declarations for the existing grader, not downloaded programs.
+The native lesson format remains independent of the case-profile version.
+
+`initialMemory` uses the same exact address/hexadecimal-byte ranges as `memory`.
+It supplies input bytes to ordinary user data before any instruction executes.
+Each range is validated before it changes data; surrounding bytes and the image's
+byte order are preserved. Only addresses classified as user data by the session layout are admitted;
+text, MMIO and kernel storage are not fixture inputs. Full addresses above 4 GiB retain their high bits. Setup is an external
+stopped-session edit and does not enter execution histories or backstep history.
+Overlapping setup ranges, more than 64 ranges or more than 1 MiB of setup bytes
+per case are rejected. The existing whole-document bound also applies.
+
+A `stores` entry has one of two exact shapes:
+
+```json
+{"kind":"none","address":"0x0000000010010000","length":32}
+```
+
+```json
+{"kind":"bytes","address":"0x00000000ffff0000","length":65536,
+ "port":"0x00000000ffff0010","bytes":"070706"}
+```
+
+The first forbids every execution store overlapping that region, including a
+write subsequently restored. The second requires exactly the declared ordered
+byte stores at its port, with no additional store in the traced region. Repeated
+bytes remain separate transactions. A wider store fails even when its low byte
+matches. An empty sequence requires zero stores in the region. The port must lie
+inside the region. A trace region has one through 1048576 bytes and cannot overflow
+its nonnegative 64-bit address. Expected store data is at most 65536 bytes per case.
+
+A `reads` entry declares a traced region and a permitted subrange:
+
+```json
+{"address":"0x0000000010010000","length":20,
+ "allowedAddress":"0x0000000010010000","allowedLength":16}
+```
+
+Every execution data read overlapping the traced region must fit wholly within
+the permitted interval. Access widths and repeated reads are unrestricted within
+that interval. `allowedLength: 0` permits no such reads. A crossing access retains
+its complete address and width and therefore cannot hide a boundary violation.
+Instruction fetch, external setup/inspection and backstep are not forward data
+accesses. Writes have their separate store contracts. The checker does not claim
+anything about accesses outside its declared observation regions.
+
+There may be at most 64 combined store/read checks per case. Each observation has
+a 65536-event capacity; overflow fails explicitly rather than accepting a truncated
+history. Existing instruction, text, total-work and document bounds still apply.
+Definitions are snapshotted before the first case machine is created. Each case
+owns fresh simulator, I/O, data and trace state, and closes its observers on success,
+failure or cancellation. The grader never uses the student's active Run/Debug
+machine. A source-dependent mapping error is a failed case, not permission to write
+to a different region.
+
+Generated CLI scripts initialize bytes with `setBytes(address: Long, ...)`, attach
+`traceMemoryStores`/`traceMemoryAccesses`, execute normally, then apply the same
+`expectNone`, `expectByteStores` and `expectReadsWithin` assertions as native checks.
+The setup writer uses the existing stopped-session word-edit policy after calculating
+and validating each complete byte-range update; it adds no alternative memory model.
+
+The preparatory range-counter contract is in
+`revision/lessons/005-seven-segment-counter/independent/`. Its ten public cases
+include empty and tail ranges, repeated transactions and alternate glyph data.
+Its native lesson archive is still pending; the existing written lab is not yet
+claimed as an interactive unit. Final display pixels alone do not prove its output
+history, and an unchanged exit guard does not prove the absence of a write.
