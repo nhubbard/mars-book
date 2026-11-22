@@ -409,3 +409,29 @@ This is a second-unit runtime milestone. Downloaded independent-writing
 assessment, the remaining interactive units, broader I/O contracts, finer
 instructor progression policies and human learner/accessibility review remain
 open. The general MARS-versus-hardware opening remains deferred.
+
+
+## Independent byte-inspector contracts — 22 November 2026
+
+Student edition 0.3.1 supplies two incomplete program bodies for the Chapter 2
+variations, exact public input/output contracts, generated existing-DSL checks,
+and instructions for using the CLI grader. The ordinary sum and eight-bit
+narrowed sum remain separate files. The main book and written lab explain the
+interface, result lifetime, discriminating input 255, input echo and checking a
+saved source file. No book prose is generated from the case data.
+
+The existing MARS grader was sufficient: reference and alternative algorithms
+pass every admitted input from 0 through 255. Public cases reject the incomplete
+starters and expose missing narrowing, unwanted narrowing, lost sign extension
+and a wrong output argument. Private instructor archives pin the exact student
+archive digest and keep solutions and exhaustive checks separate. Bounded data
+validation and actual Kotlin literal compilation support later data-only native
+assessment without executing downloaded scripts at import.
+
+The new edition was imported over HTTPS and resumed through its existing native
+prediction, Run and Debug sequence in two fresh IDE processes. Added files were
+compared byte for byte, and imported public checks were executed on the incomplete
+starters. This verifies package delivery and CLI checking. Downloaded independent
+assessment, its inline feedback, saved assessment counts and mode/progression
+controls are still to be connected to Learn. Human learner and accessibility
+review remain open; the general MARS-versus-hardware opening remains deferred.

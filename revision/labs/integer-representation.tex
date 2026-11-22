@@ -126,13 +126,54 @@ would hide the full-width difference this experiment is designed to expose.
 
 \section{Work without the conversion recipe}
 
-Implement the main book's third output twice: first the unsigned byte value plus
-one, then that sum narrowed to eight bits. For input 255, the two versions should
-print 256 and zero respectively. Keep the original unsigned and signed outputs
-correct in both versions.
+Open \texttt{independent/plus-one.asm} from the student package. Its strings
+are supplied, but its body only exits. Write the input, calculation and output
+instructions before that exit request, or replace the body with your own complete
+program. Keep the original unsigned and signed outputs, then add a third line
+with prefix \texttt{Unsigned byte plus one: } and the unsigned value plus one.
+For input 255, this third result must be 256.
+
+Keep that solution and work separately in
+\texttt{independent/wrapped-byte.asm}. Narrow the sum to its low eight bits
+before printing the third line with prefix \texttt{Wrapped byte plus one: }.
+For input 255, that result must be zero. Keep the original first two outputs
+correct in both programs. Choose your own labels and temporary registers; the
+public checks compare the console interface.
 
 Before running, name the register that retains each result and the instruction
 that supplies each output argument. If a test fails, inspect the value after its
 calculation and again before output. Use those observations to decide whether the
 fault lies in arithmetic, narrowing or argument preparation. Explain your final
 choice of tests and the property each test distinguishes.
+
+\subsection{Check the result that distinguishes the tasks}
+
+Use the public cases 0, 1, 127, 128, 150, 254 and 255. For 254, the third result
+is 255 in both programs; for 255, the ordinary sum is 256 and the narrowed sum
+is zero. A check that only exercises the smaller inputs cannot distinguish
+these contracts. Explain the retained carry bit in the first program and the
+operation that discards it in the second.
+
+The \texttt{independent} folder contains a public input/output contract and a
+Kotlin check file for each task. These optional checks use JDK 25 and the
+course's MARS command-line JAR. Save your source, open a terminal in that folder,
+and replace the example JAR path with its actual location:
+
+\begin{verbatim}
+java -jar "/path/to/mars-cli.jar" grade \
+  plus-one.kts plus-one.asm
+java -jar "/path/to/mars-cli.jar" grade \
+  wrapped-byte.kts wrapped-byte.asm
+\end{verbatim}
+
+Each named case runs in a fresh simulator, compares the exact program output
+and requires normal termination. The supplied strings define the prompt,
+prefixes and newlines. Input echoed by the IDE console is separate from the
+program output. A 20,000-instruction limit ends a check that does not finish.
+These checks do not inspect scratch registers or source labels, so another
+instruction sequence can pass the same interface.
+
+If a case fails, use its input in Debug and find the first incorrect state.
+Then save the revision and check it again. Passing cases support your explanation
+of the algorithm for the full range; they do not replace that explanation or
+mark the worked program's guided observations complete.

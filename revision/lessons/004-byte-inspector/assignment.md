@@ -39,4 +39,11 @@ Downloaded MARS Lab** to repeat the activities that need checking; prediction
 answers and revealed hints remain. After the checked Debug stops, resume
 execution and trace the output arguments. The deliberate faults, word-width
 experiment and independent variations in the written lab remain manual.
+Two independent starters and their public behavior checks are supplied in
+`independent/`. Read `independent/README.md`, then write `plus-one.asm` and
+`wrapped-byte.asm`. Keep the two solutions separately. Their checks accept your
+choice of labels, temporary registers and equivalent instruction sequences.
+The command-line checks assess these programs separately from the worked
+program's guided Learn observations.
+
 This development package remains subject to human learner review.
