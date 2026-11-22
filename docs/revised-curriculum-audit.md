@@ -54,11 +54,12 @@ questions and checks; importing an old package does not turn it into that lesson
 ## What remains to review
 
 Structural coverage does not establish that a learner can complete a chapter.
-The instructional audit still needs explicit concept prerequisites and a
-three-to-five-outcome assessment map for each chapter, as required by the
-restructuring plan. It must examine actual prose, exercises and feedback rather
-than infer learning from file presence or package titles. Electives must remain
-optional for the codec progression.
+The [chapter prerequisite and assessment map](revised-learning-outcomes.md) now
+identifies entry concepts and three assessable outcomes per chapter, linked to
+existing written activities. It exposed a missing first-use explanation of logical
+shifts, OR and XOR in Chapter 5; the native chapter now explains them. This map
+requires author and learner review. It must not infer achieved learning from
+file presence or package titles. Electives remain optional for the codec progression.
 
 The first unit has native interactive support. The remaining revised units use
 ordinary Run and Debug; downloadable native lesson delivery and broader course

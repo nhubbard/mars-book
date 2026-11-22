@@ -1,9 +1,9 @@
 # Revised functions and stack unit
 
 The native main chapter is `main/functions-and-stack.tex`; its written lab is
-`labs/functions-and-stack.tex`. The current combined proofs contain 30 main-book
-pages and 19 lab pages. Chapter five begins on main page 24 and lab page 17.
-These are growing revision proofs, not the completed curriculum.
+`labs/functions-and-stack.tex`. The initial unit qualification contained 30 main-book
+pages and 19 lab pages. Those counts describe the historical unit proof; see
+[the current proof index](README.md) for the full revised books.
 
 The main chapter derives a small standalone calling convention through one byte
 reversal and a routine that calls it twice. It explains the compact call's return
@@ -56,3 +56,20 @@ claimed in this text/source milestone. The execution boundaries are core-session
 observations, not screenshots of debugger pauses. Author and representative
 learner review remain open. Arrays and images are next in the agreed main-book
 sequence. The opening MARS-versus-hardware explanation remains deferred.
+
+
+## Prerequisite correction after the full-sequence audit
+
+The chapter now names its actual entry requirements: byte masks, loads, stores
+and compact branches. Its leaf-function section introduces `sll`, `srl` and
+`or`, including operand order, discarded bits, zero filling, word width and the
+cleared-bit invariant used to assemble the reversed byte. The independent
+exercise explains XOR and `xori` before asking the reader to invert the result.
+This corrects a first-use explanation gap; the three literal listings and
+independent function contract are unchanged.
+
+The [chapter assessment map](../docs/revised-learning-outcomes.md) relates the
+current written activities to three outcomes per chapter. It records opportunities
+to assess learning, not achieved student outcomes. Renewed executable, visual and
+automated PDF/UA-2 evidence is retained in the private
+`functions-prerequisites-01` record. No native lesson or new IDE capture is claimed.

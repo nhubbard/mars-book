@@ -13,8 +13,9 @@ second program must keep the first result while computing the second, and it mus
 return to its own caller after making those calls. These requirements explain why
 some values can stay in temporary registers and others need a saved location.
 
-This chapter assumes the bit operations, loads, stores and compact branches from
-the preceding chapters. By its end, you should be able to state a function's
+This chapter assumes byte masks, loads, stores and compact branches from the
+preceding chapters. The reversal introduces logical shifts and bitwise OR before
+we use them to follow a call. By its end, you should be able to state a function's
 inputs and effects, trace a call and return, distinguish temporary values from
 values that must survive another call, and explain a stack frame byte by byte.
 
@@ -72,6 +73,21 @@ A function that calls no other function is a \emph{leaf function}. This one need
 no memory for local state: its remaining input, result and count fit in temporary
 registers. The listing is a function body. The complete program later in the
 chapter supplies its caller and entry point.
+
+The shift instructions move bits between positions. In
+\texttt{sll \$v0, \$v0, 1}, the destination comes first, the source second,
+and the final operand says to shift left by one position. A zero enters at the
+right; a bit shifted beyond the 32-bit word is discarded.
+\texttt{srl \$t0, \$t0, 1} shifts the word right by one, discards its low bit
+and fills the vacated high position with zero. These are word operations, whose
+32-bit result is sign extended to register width. Our masked input and partial
+reversal stay between zero and 255, so the upper register bits remain zero.
+
+The \texttt{or} instruction combines two registers bit by bit: an output bit is
+one if either corresponding input bit is one. Here the left shift has made room
+by clearing the result's low bit. The \texttt{andi} selects the remaining input's
+low bit into \texttt{\$t2}, and \texttt{or \$v0, \$v0, \$t2} puts that bit
+in the cleared position without changing the other result bits.
 
 \noindent\begin{minipage}{\linewidth}
 \MARSCodeLabel{A leaf routine with one register argument and result}
@@ -328,6 +344,12 @@ Finally, implement a separate \texttt{reverse\_and\_invert} routine. It receives
 the same low-byte argument, uses \texttt{reverse\_byte}, and returns the reversed
 byte with every one of its eight bits inverted. For \texttt{0x16}, reversing
 gives \texttt{0x68}; XOR with \texttt{0xFF} gives \texttt{0x97}, decimal 151.
+
+XOR produces one where two corresponding bits differ and zero where they agree.
+With mask \texttt{0xFF}, it toggles each low-byte bit and leaves all higher bits
+unchanged. The instruction \texttt{xori} supplies that mask as an immediate
+operand; its destination and source come first, as with \texttt{andi}.
+
 Keep the same preservation convention. Plan the value that must survive the call,
 write the routine, then test all 256 byte inputs. The lab provides a caller and
 public checks. The checks compare behavior and preservation; they do not require
