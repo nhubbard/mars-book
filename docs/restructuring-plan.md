@@ -451,8 +451,9 @@ supports revised-source checks, stale-result rejection, resumable source-bound
 passes, per-activity attempt counts and instructor control of access, preceding
 predictions and graduated hints. It does not establish a secure examination system
 or replace an explanation of the algorithm for the full admitted input range.
-The current downloaded console contract is single-source; later file, memory,
-vector and media objectives need appropriately specific public state contracts.
+That downloaded console contract is single-source. The memory unit below adds
+exact final-byte contracts; later file, vector and media objectives still need
+appropriately specific public state contracts.
 
 The lab's checking guidance is authored directly in native LaTeX. Screenshot and
 walkthrough automation remains in the separate authoring plugin. Completed fixture
@@ -503,3 +504,38 @@ source-dependent blocking, fresh-process policy, selective release and current
 source requirements. Remaining work includes the later units' non-console state
 contracts, their native lesson content and human learner/accessibility review.
 The proposed opening orientation remains deferred.
+
+
+### Third native unit: addresses and memory
+
+The revised single-pixel package, edition 0.2.0, accompanies the main book's
+addresses-and-memory chapter and its directly authored LaTeX lab. Four inline
+predictions distinguish addresses, values, byte order, extension and old register
+copies. Four ordered pauses observe the worked store/load sequence in one fresh
+Debug session. Ordinary Run is also exercised, but an empty console is not treated
+as a memory-correctness check.
+
+Independent red-component and memory-copy programs each declare six public RGB
+inputs, normal termination, exact prompt output and final bytes including guard
+words. Case-profile version 2 extends the same data-only native assessment path;
+no downloaded Kotlin executes. Private byte-store and word-computation alternatives
+pass, and starters and four store/copy faults are rejected by the CLI. The written
+lab distinguishes final guards from write history and retains manual load/readback
+reasoning that the final-state contract does not prove.
+
+The actual light-theme walkthrough completed in two fresh IDE processes. Correct
+predictions survived source edits; changed worked source required fresh Debug
+observations, changed independent source required another check, and an unchanged
+independent program retained its pass and count. The first trial exposed a lesson
+pointer assuming a selected text editor while a non-text tab was active. The fix
+uses native nullable selection and lifecycle-owned selection events without moving
+focus from the student's view. A separate authoring-only write-context error was
+corrected and both complete walkthroughs were repeated without either error.
+
+The established separate publication driver captured the unchanged worked source
+at both sides of the byte store, recording native address/byte cell coordinates.
+The LaTeX lab composes readable details over those originals with editable native
+callouts and alternative text. Main MARS contains no screenshot controller or
+private solution fixture. The later units' instructional integration, representative
+learner review and human accessibility review remain open. The proposed general
+MARS-versus-hardware opening remains deferred.

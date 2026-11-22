@@ -5,12 +5,36 @@
 This lab accompanies the main book's addresses and memory chapter. Use its
 complete \texttt{memory-pixel.asm} source, also supplied in
 \texttt{revision/labs/files}. Select MIPS64 Release 6 and the Default memory
-layout. The written sequence uses ordinary Run and Debug; this third revised
-unit is not yet a native interactive MARS Learning lesson.
+layout with little-endian memory. Import the supplied \texttt{002-single-pixel}
+lesson, version \texttt{0.2.0}, and open its \texttt{memory-pixel.asm}. It is the
+same complete program as the main book's listing. Learn presents four predictions,
+an ordered Debug activity and two independent programs. This chapter explains
+what those activities observe and extends them with deliberate faults.
 
 The program changes memory rather than printing a result. Its display cell is a
 useful visual check, while the byte values let you state exactly what happened.
 Work from predictions about addresses and bytes before interpreting a color.
+
+\section{Use the source, lesson and debugger together}
+
+Answer the questions through their links in Learn. The source pointer identifies
+the operation under discussion; it does not execute that operation. During Debug,
+the execution highlight identifies the next instruction to execute. The lesson
+can move its pointer to a later operation after recognizing your current pause.
+Use the debugger's execution position when deciding which writes have happened.
+
+A normal Run prints nothing because this program has no output request. It should
+finish, but its empty console cannot establish whether a store was correct.
+For the guided observations, put line breakpoints on \texttt{sw} under
+\texttt{store\_color} and on \texttt{sb} under \texttt{change\_blue}, then launch
+Debug. Resume between those two breakpoints. After the second pause, use Step Over
+for the byte store and the final loads. The lesson observes four boundaries in
+one fresh forward session; no console input is needed.
+
+The source header also opens Bitmap Display. You can inspect that view and return
+to the source without ending the lesson. Keep each observation attached to the
+session that executed this file. Backstep and machine edits are useful for
+investigation, but the guided sequence requires a fresh Debug session afterward.
 
 \section{Separate the address from the color}
 
@@ -44,11 +68,19 @@ Only its lowest-addressed byte should have changed. The three earlier register
 values should be unchanged. Explain why a later store cannot retroactively alter
 a value that was copied into a register by an earlier load.
 
+Figure~\ref{fig:revision-memory-byte-store} shows the memory difference at these
+boundaries. Read the address column before comparing the bytes. Both rows begin
+at \texttt{pixel}; the second picture does not show a different destination.
+
+
 Step over the final word loads and compare the earlier word in \texttt{\$t2}
 with the current word in \texttt{\$t6}. Check the neighbor in \texttt{\$t7}.
 For every observation, name the location and the execution boundary. ``The color
 is unchanged'' is ambiguous if it refers to an old register copy rather than to
 current memory.
+
+\clearpage
+\input{revision/figures/memory/byte-store}
 
 \section{Use the display as a second observation}
 
@@ -94,17 +126,68 @@ different questions. A store can reach writable memory and still damage an objec
 the program was supposed to preserve. Record both the requested pixel change and
 the unchanged neighboring word when you justify your result.
 
-\section{Work from a new component}
+\section{Write the two independent programs}
 
-Implement the main book's red-component variation in a separate copy. Choose the
-byte offset from the little-endian layout rather than from the component's visual
-position in the written word. Read the modified component back with \texttt{lbu}
-and inspect the complete word as well. Confirm that the other components and guard
-are unchanged.
+The main book's variations use the worked color to make your first predictions
+concrete. The imported lesson supplies separate starters in \texttt{independent/}
+and applies those same operations to several input colors. This adds no new
+input mechanism: use the integer-input service from the preceding chapter. Keep
+both programs rather than replacing one with the other.
 
-For the memory-copy variation, draw the source, destination and guard as separate
-four-byte objects. A register used temporarily during the copy is another
-location, not the destination object itself. Trace the load from the source and
-the store to the destination, then change the source pixel. Explain why the copied
-word remains independent. Use that trace to diagnose any version in which both
-objects unexpectedly change or the destination was never written.
+Each program must print \texttt{Enter an RGB integer: } and read one decimal
+integer from zero through 16,777,215. That range supplies the low 24 bits of an
+RGB word, with a zero high byte. For the worked hexadecimal color
+\texttt{0x00336699}, enter decimal 3,368,601 without separators. The console input
+is not part of program output. After its memory work, the program should exit
+normally and print no additional result. Its result is in memory.
+
+In \texttt{red-component.asm}, store the input color at \texttt{0x10010000}
+and change red to \texttt{0xAA}. Preserve green, blue and the zero high byte, as
+well as the guard word \texttt{0x13579BDF} at \texttt{0x10010004}. Derive the
+red byte's address from the little-endian layout before writing the store.
+Read it back with \texttt{lbu} and inspect the complete word in Debug. For the
+worked input, the complete new word is \texttt{0x00AA6699}; explain how the
+component readback and that word describe the same memory.
+
+In \texttt{independent-copy.asm}, retain the complete original color in a separate
+word while changing the first pixel's red component. The starter places the
+first pixel at \texttt{0x10010000}, a guard at \texttt{0x10010004}, the copy at
+\texttt{0x10010008}, and a second guard at \texttt{0x1001000C}. The guards begin
+as \texttt{0x13579BDF} and \texttt{0x2468ACE0}. Draw those four objects before
+writing instructions. The final copy must contain the original input color,
+while the first pixel contains the changed color. A register used temporarily
+during the copy is another location, not the destination memory object.
+
+Trace the value you retain for the copy. A load before the change gives you a
+snapshot of the original memory word. Retaining the original input in a register
+can also supply that value. Explain which value each later store consumes. The
+checks accept equivalent computations, labels and scratch registers; the fixed
+addresses specify the shared memory interface.
+
+\section{Interpret the check result}
+
+Run and debug each program, then use \textbf{Check this program} in Learn.
+The checker assembles your current editor text and executes six public input
+cases in separate sessions. It requires normal termination, the stated prompt,
+and exact final bytes for the pixel and guard words. The copy task also checks
+the copied word and its second guard. Your active Run or Debug session remains
+separate from those check sessions.
+
+For a failure, read the named case and its message. An output mismatch calls for
+checking the prompt before investigating the memory result. If the message reports
+a differing byte, compute which object contains its address. A wrong component suggests an offset
+error; a changed guard suggests that the address or width reached another object.
+Compare those possibilities with the actual store operands. The absence of an
+exception is not evidence that the assignment's memory boundary was respected.
+
+A passing result supports the stated final-state contract. It does not establish
+that you used \texttt{lbu}, that no intermediate write touched a guard, or that
+six inputs prove the entire admitted range. Keep the readback observation and
+explain why your operations preserve green and blue for an arbitrary admitted
+color. A guard restored before exit can pass a final-value check even though an
+earlier write was wrong; use Debug to investigate that sequence.
+
+Edits invalidate execution results for the affected source. Correct prediction
+answers remain available when you continue the lesson. If an instructor requires
+earlier observations or restricts hints, Learn reports those requirements before
+starting a check. A blocked request does not consume a completed assessment attempt.

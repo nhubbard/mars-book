@@ -376,7 +376,8 @@ the capture. No simulator memory or register values are changed by the driver.
 
 The fixture and its registry are entirely in this separate plugin. MARS supplies
 only the general public `MarsSyscallEnvironmentCustomizer` extension point. The
-MARS distribution has no authoring classes or Features Trainer dependency.
+MARS distribution has no authoring classes or capture controller. Its student
+instructional system uses the native Features Trainer independently of this plugin.
 
 For complete local API verification, supply both immutable plugin archives to the
 Plugin Verifier's supported `@file` list. Verify that the dependency tree resolves
@@ -397,3 +398,35 @@ cancellation distinct. Read-only fixtures retain their strict guest-close contra
 All virtual contents and cursors belong to one launch, and no fixture output reaches
 the host filesystem. The implementation uses MARS's existing public syscall hook
 and the native execution lifetime; the MARS plugin contains no authoring code.
+
+
+## Native memory-unit walkthrough
+
+A package-import plan may select `memoryUnit: true` together with
+`nativePredictions: true`. This selects the memory driver instead of the older
+byte-inspector-specific `nativeExecution`/`nativeDebug` switches; leave those
+switches false. Bind one exact `002-single-pixel` archive with `memory-pixel.asm`
+as its entry and two pinned local fixtures for `independent/red-component.asm`
+and `independent/independent-copy.asm`. Completed fixture contents stay private.
+The same path/hash checks apply before either source is used.
+
+The first process clicks the actual inline questions, runs the unchanged worked
+program, observes four ordered native Debug pauses, compares rendered register
+and memory values, rejects both incomplete starters, and checks unsaved edited
+programs. It then adds ordinary source notes and continues to the now-invalidated
+Debug activity. It saves and closes the project normally. A second plan with
+`resume: true` and the exact returned `entryDigests` reopens that project. It
+repeats the invalidated Debug sequence and red-component check while preserving
+the unchanged copy result and quiz history. It does not write saved progress or
+inject source in the resumed process.
+
+Document commands, saves and the Continue action use a write-safe nonmodal EDT
+context. Read-only UI inspection may use the existing modal-inspection helper.
+The complete receipt lists observations actually performed in that process; a
+resumed check is not described as another starter failure or an unsaved edit.
+Both routes require the actual `clean cleanSandbox runIde` tasks before launch.
+
+These walkthrough images are development evidence. Publication details use the
+existing `BookCapturePlan` memory views and native cell-coordinate receipts, then
+native LaTeX composition over unchanged PNGs. Never substitute a state model or
+predicted pixel array for an IDE photograph.
