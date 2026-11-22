@@ -1155,3 +1155,35 @@ controls and resume, written lab integration and publication verification are
 still required before this unit is integrated. Human learner and accessibility
 review remain open, and the full curriculum goal stays active. The proposed
 MARS-versus-hardware opening stays deferred.
+
+
+### Thirteenth native unit: measuring programs (22 November 2026)
+
+The measurement foundation is now integrated with the written lab and real IDE
+controls. Two accepted light-theme walkthroughs exercise nine inline predictions,
+nineteen guided Debug stops, five ordinary Runs and both independent assessments.
+The starter fails; unsaved correct source passes. Six source edits clear twelve
+execution passes. A fresh process retains ten quiz attempts and re-earns every
+execution pass while all six source hashes remain unchanged. Both projects close
+normally; all eleven installed JARs match pinned builds and neither accepted IDE
+log has ERROR or SEVERE entries. Actual clean cleanSandbox runIde tasks precede
+each launch, including a retained partial diagnostic run.
+
+Both accepted sessions click the visible native Reset button at the stopped
+call boundary under each method. One access/miss becomes zero; return counters
+then show 8744/5388 or 12840/1068. Guided launch observations and the caller's later
+store remain separate. This is actual GUI reset evidence, extending the older
+core-only proof. The separate authoring companion follows pinned lesson content
+and uses real student controls; no progress setters or new MARS authoring code
+are introduced. Its 123 Jupiter tests and all 481 book-tool tests pass. The exact
+MARS and corrected authoring archives pass paired API verification.
+
+The native LaTeX lab now explains the observed route and independent evidence.
+It retains original real photographs and native annotations. Its six pages
+93–98 and both adjacent boundaries were visually inspected, with both figures
+also reviewed in grayscale. The complete supplement has 202 pages and passes
+1728 PDF/UA-2 rules / 953365 checks with zero failures. Embedded Minion Pro,
+Noto Sans Math and JetBrains Mono remain in use. All 41 manual MARS edits and
+historical verification are preserved. Human learner and assistive-technology
+reviews, later native units, companion integration and remaining system work
+remain open. The full goal stays active and the proposed opening remains deferred.

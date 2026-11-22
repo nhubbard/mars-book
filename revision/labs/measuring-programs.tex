@@ -2,24 +2,48 @@
 \MARSChapterHeading{Products and measurement boundaries}
 \label{revision-lab:measurement}
 
-Use the complete \texttt{matrix-measure.asm} and independent
-\texttt{matrix-vector.asm} in \texttt{revision/labs/files}. Read the main
-chapter's arithmetic contract and measurement scopes first. Both public matrix
-entries are complete worked functions; the vector interface is your independent
-exercise. These activities use ordinary Run and Debug. The native interactive
-version of this unit remains unfinished.
+Import the development lesson \texttt{022-measuring-programs} and choose Continue
+in Learn. Read the main chapter's arithmetic contract and measurement scopes first.
+Its complete \texttt{matrix-measure.asm} is also supplied in
+\texttt{revision/labs/files}; both public matrix entries are worked functions.
+The matrix-vector interface is your independent exercise.
+
+Learn follows the ordinary dot product, a wide sum, the blocked partial sums and
+two larger cache observations through nineteen Debug stops. Nine predictions and
+ordinary Run of five complete sources lead to the independent checks. The
+alternate files are in \texttt{worked}: \texttt{matrix-wide.asm} selects the
+positive $2^{31}$ example, \texttt{matrix-tiled.asm} selects method one, and
+\texttt{cache-ordinary.asm}/\texttt{cache-tiled.asm} contain deterministic
+sixteen-by-sixteen inputs with tile edge four. Keep these separate from the default
+source. Without Learn, use the same boundaries below and make disposable copies
+for changes.
 
 \section{Predict a product and its stored width}
 
 Derive all four default output values from rows and columns, then write each as
-two little-endian words. Break at \texttt{matmul\_done}. The function has returned,
+two little-endian words. Start a fresh Debug session for \texttt{matrix-measure.asm}
+and use one line breakpoint at a time. At the first \texttt{naive\_dot}, the
+reduction index and accumulator are zero. The input cursors name the first row
+and column pair. Resume to the next visit: the first product, seven, is in
+\texttt{\$t3}, while the left cursor advanced four bytes and the right cursor
+eight. Those strides follow different input layouts, even though both elements
+occupy one word.
+
+Move to \texttt{naive\_store}. All three pairs have contributed to
+\texttt{\$t3}=58; the output store has not executed yet. An output cell becomes
+complete only when that full sum is stored. Learn's source highlight identifies
+the next requested stop; Debug's selected stack frame identifies the actual pause.
+Continue to \texttt{matmul\_done}. The function has returned,
 but the caller has not stored its count in \texttt{completed}. Compare the four
 doublewords and \texttt{\$v0}=4 with your calculation. Continue to
 \texttt{results\_ready} to inspect the published count before exit.
 
-Use a disposable copy with shape $1,2,1,2$ and both active inputs set to
-$[-32768,-32768]$. Predict the low and high output words for positive $2^{31}$.
-Then replace doubleword accumulation with word accumulation in a copy. Find the
+Finish or stop that execution before opening \texttt{worked/matrix-wide.asm}.
+Its shape is $1,2,1,2$ and both active inputs are $[-32768,-32768]$. Predict the
+low and high output words for positive $2^{31}$. Break at \texttt{naive\_store}
+to inspect the complete positive accumulator before its store, then compare the
+doubleword at \texttt{matmul\_done}. At \texttt{results\_ready}, the caller
+has published count one before selecting exit. In a disposable copy, replace doubleword accumulation with word accumulation. Find the
 first lost upper bit rather than diagnosing the result as a problem with negative
 input values. Restore the original before taking reference measurements.
 
@@ -32,13 +56,15 @@ performs a multiplication.
 
 \section{Inspect the handoff between reduction blocks}
 
-Select method one in the default source. At the first \texttt{block\_reduction}
+Start a fresh Debug session for \texttt{worked/matrix-tiled.asm}; only method
+selection differs from the default source. At the first \texttt{block\_reduction}
 visit, \texttt{\$t0} is zero and the product has been initialized. At its second
 visit, \texttt{\$t0} is two; inspect partial outputs $[25,28,73,82]$ in row-major
 order. Use a conditional breakpoint on \texttt{\$t0 == 2} or continue past the
 first visit. The final reduction contributes the remaining $q=2$ terms.
 
-Follow the clipped reduction end in \texttt{\$a2}. It becomes three, not four,
+Move to \texttt{reduction\_bound} to inspect the clipped reduction end in
+\texttt{\$a2}. It becomes three, not four,
 when $L=2$, $K=3$ and $T=2$. Source pointers begin at that reduction offset;
 restarting them at column zero would add earlier terms twice. Replacing the loaded
 partial sum with zero would keep only the final block. Try each fault separately
@@ -78,11 +104,15 @@ completed instructions and explain why their units differ.
 
 \section{Connect the native cache view to the measured scope}
 
-For the large observation, set shape to $16,16,16,4$ and method zero. The source
-header selects sixteen four-word lines with fully associative LRU placement.
-Run Debug to \texttt{matmul\_done} and open Data Cache Simulator for that execution.
-The initial view counts the whole launch, including the method read. Repeat in a
-fresh launch with method one and compare the same boundary.
+Use \texttt{worked/cache-ordinary.asm} for the large ordinary observation and
+\texttt{worked/cache-tiled.asm} for its blocked comparison. Each contains the
+same deterministic signed inputs, shape $16,16,16,4$ and original allocation
+sizes. Its header selects sixteen four-word lines with fully associative LRU
+placement. Start a fresh Debug session and open Data Cache Simulator for that
+execution. At \texttt{matmul\_call}, the arguments are ready, but the caller has
+already read method: the launch view has one access and one miss. Keep that
+state for Learn's reference launch, then resume to \texttt{matmul\_done}.
+Repeat in a fresh launch of the other complete source at the same boundary.
 
 The expected launch access counts are 8745 and 12841, with full misses 5388 and
 1068. The main chapter's cold function table has one fewer access in each case.
@@ -92,11 +122,22 @@ of the actual address trace and model, not a general rule for caller work.
 
 \input{revision/figures/measurement/cache-comparison}
 
-For a function-only cache observation, pause at \texttt{matmul\_call}, reset the
-cache while stopped, then continue to \texttt{matmul\_done}. The call instruction
-has no data notice, so this cache interval matches function entry. Record the
-reset and its boundary with the counters. A reset after partial multiplication
-would measure a suffix instead.
+Before leaving each guided execution, continue to \texttt{results\_ready}.
+The caller's store changes the ordinary totals to 8746 accesses and 5389 misses;
+the blocked totals become 12842 and 1069. It is the same product measured over
+a longer interval. Finish or stop Debug before the next launch. When ordinary
+Run is requested, all five worked sources exit silently; their retained
+\texttt{completed} counts are four, one, four, 256 and 256 for ordinary, wide,
+blocked and the two large sources.
+
+For a separate function-only experiment, start another fresh Debug session and
+pause at \texttt{matmul\_call}. Select that execution in Data Cache Simulator
+and click Reset while it is stopped. Verify zero accesses, hits and misses before
+resuming to \texttt{matmul\_done}. The ordinary interval now has 8744 accesses
+and 5388 misses; the blocked interval has 12840 and 1068. The call instruction
+has no data notice, so this reset interval matches function entry. Record the
+reset and both boundaries with the counters. A reset after partial multiplication
+would measure a suffix instead; do not combine it with the reference launch.
 
 Change only tile edge to eight and compare again under each stated placement.
 Use the measured table to explain the direct-mapped regression. Increasing tile
@@ -124,7 +165,9 @@ are not general correctness criteria.
 
 \section{Implement a matrix-vector reduction independently}
 
-Open \texttt{matrix-vector.asm} and replace \texttt{matvec}'s failing body.
+Open \texttt{independent/matrix-vector.asm} in the imported lesson and replace
+\texttt{matvec}'s failing body. Its original standalone copy is also supplied in
+the lab files.
 Arguments are matrix, vector, output and shape pointers in \texttt{\$a0} through
 \texttt{\$a3}. The shape contains only two words $M,K$. The packed matrix has
 $M$ rows and $K$ word columns; the vector has $K$ word elements. Each output is
@@ -142,14 +185,39 @@ and initialized output. Private stack storage is allowed. The output starts with
 arbitrary bytes and must be initialized during this call before any partial-sum
 read. Produce no console I/O and return through the supplied continuation.
 
-\begin{samepage}
-Run the public checks on your completed source:
+\noindent\begin{minipage}{\linewidth}
+Run the original public script on your completed source:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/matrix-vector.kts \
+  revision/lessons/022-measuring-programs/independent/matrix-vector.kts \
   /path/to/your/matrix-vector.asm
 \end{verbatim}
-\par\end{samepage}
+\end{minipage}
+\par\medskip
+
+Learn checks the current source in two activities. The first retains all eight
+original function input families and the complete default caller, adding a direct
+default-input function case and an explicit positive $2^{31}$ case. Each of the
+ten function cases calls twice through different continuations; the eleventh
+case checks the caller's two complete sums and published count before its exit
+selector. Each case has a cumulative 100000-instruction budget. The second
+activity requires the same source to continue to silent normal exit. The original
+standalone script above retains its nine checks.
+
+Final bytes and access histories answer different questions. Native checking
+observes the assembled caller span, including unnamed alignment padding, while
+permitting selected inputs, descriptor and initialized output. A temporary store
+outside selected output is still forbidden after restoration. A read of old
+output still fails after a later repair produces the right sum. Every output
+byte must be initialized again in each call; earlier setup and a previous call
+do not count. Private stack frames and different valid reduction orders remain
+available. Exact instruction, traffic and miss counts are not acceptance targets.
+
+Both native checks must pass for the current source. Editing a worked or
+independent file clears its execution credit; Continue returns to the first
+activity that needs fresh evidence while retaining prediction history. Keep
+extra fault experiments in disposable copies so the guided sources remain
+reproducible.
 
 Keep a row invariant, a zero-$K$ trace and a signed-width counterexample with your
 passing results. After establishing correctness, propose a measurement interval

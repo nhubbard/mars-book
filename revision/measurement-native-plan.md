@@ -126,3 +126,23 @@ This is not an IDE walkthrough: separate authoring automation, actual IDE/resume
 GUI reset verification, written lab integration and renewed publication checks
 remain open. Existing publication evidence is preserved as historical. Human
 learner/accessibility review and the deferred opening remain separate.
+
+
+## Completed automated integration, 22 November 2026
+
+The separate authoring implementation and two real IDE processes now complete
+the requirements above. Accepted sessions exercise every native activity, a
+failed starter, unsaved correct source, source invalidation, fresh-process resume
+and actual visible stopped cache Reset under both methods. Ten quiz attempts,
+twelve re-earned execution passes and six unchanged source hashes are checked.
+Both exact archives pass API verification; all eleven installed JARs match.
+Authoring Jupiter tests pass 123 and book tooling passes 481. The earlier partial
+success-message wait is retained as a diagnostic, not completion evidence.
+
+The native LaTeX lab is integrated and reviewed on pages 93–98 of the 202-page
+supplement, with adjacent boundaries and grayscale figures inspected. The exact
+PDF passes 1728 PDF/UA-2 rules / 953365 checks with zero failures. Native sources,
+real photographs, annotations and established fonts remain authoritative. Human
+learner/assistive-technology review, later units and companions remain open.
+Exact current evidence is retained privately in native-measurement-ide-01;
+foundation and historical milestone evidence are preserved separately.
