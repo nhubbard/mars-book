@@ -38,11 +38,12 @@ internal class BookProgramCapture(val connection: MessageBusConnection, private 
     override fun close() { Disposer.dispose(lifetime); pauses.close() }
 }
 
-internal suspend fun launchBookProgram(project: Project, source: Path, debug: Boolean): BookProgramCapture {
+internal suspend fun launchBookProgram(project: Project, source: Path, debug: Boolean,
+    name: String = if (debug) "Book imported Debug" else "Book imported Run",
+): BookProgramCapture {
     val lifetime = Disposer.newDisposable("MARS book execution capture")
     Disposer.register(project, lifetime)
     val launch = BookProgramCapture(project.messageBus.connect(lifetime), lifetime)
-    val name = if (debug) "Book imported Debug" else "Book imported Run"
     try {
         launch.connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
             override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {

@@ -233,6 +233,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `locality walkthrough isolates its exact source and single private fixture`() {
+        val locality = plan.copy(archives = listOf(archive.copy(id = "011-memory-locality", entry = "matrix-locality.asm")),
+            nativePredictions = true, localityUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/matrix-rotate.asm", "/tmp/locality.asm", "c".repeat(64))))
+        locality.validate()
+        locality.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(locality.copy(nativePredictions = false), locality.copy(nativeExecution = true),
+            locality.copy(nativeDebug = true), locality.copy(memoryUnit = true), locality.copy(loopUnit = true),
+            locality.copy(functionUnit = true), locality.copy(spriteUnit = true), locality.copy(rasterUnit = true), locality.copy(lifeUnit = true), locality.copy(sortingUnit = true), locality.copy(fixedUnit = true), locality.copy(assessmentFixtures = emptyList()),
+            locality.copy(archives = listOf(archive)), locality.copy(resumeCompleted = true), locality.copy(localityUnit = false),
+            locality.copy(activityNavigation = true), locality.copy(prerequisiteControls = true),
+            locality.copy(assessmentFixtures = locality.assessmentFixtures + locality.assessmentFixtures),
+            locality.copy(assessmentFixtures = listOf(locality.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
