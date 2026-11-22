@@ -1,0 +1,329 @@
+\section{Companion lab: extend arithmetic beyond one register}
+\label{revision-lab:rsa}
+
+Word operations have a fixed width. When a result needs more bits, an assembly
+program must keep those bits explicitly. This companion develops unsigned
+multiword arithmetic through a small RSA calculation. It revises original project
+\texttt{027-rsa-arithmetic}; the numerical interfaces also work for composite
+moduli unrelated to an RSA key.
+
+Implement the seven entries in
+\texttt{revision/labs/files/rsa-arithmetic.asm}. The skeleton supplies caller
+objects and an aligned stack area, with a deliberate \texttt{break} at each
+unfinished function. The original package retains its cumulative guided source
+and public checks. Your completed functions can choose different helpers,
+registers, frames and exponent scans. Start with the scalar cases before extending
+the representation to four limbs.
+
+\subsection*{Use the gcd to explain a small exponent pair}
+
+For positive modulus $N$, the \emph{residue} of $x$ is the remainder in the
+range zero through $N-1$. Two integers are congruent modulo $N$ when their
+difference is divisible by $N$. Reducing intermediate values to residues keeps
+the numbers smaller without changing the final modular result.
+
+Two integers are coprime when their greatest common divisor is one.
+For an RSA arithmetic example, choose primes 61 and 53. Their product is
+$N=3233$. The count of residues coprime to this product is
+$(61-1)(53-1)=3120$. Choose public exponent 17. Its greatest common divisor
+with 3120 is one, which makes an inverse modulo 3120 possible.
+
+\input{revision/figures/rsa/euclid}
+
+\texttt{rsa\_gcd64(a0 A,a1 B)} accepts full unsigned 64-bit values.
+At each iteration, compute the unsigned remainder and replace both operands.
+The loop stops when $B$ is zero, returning the current $A$. Thus
+$\gcd(A,0)=A$; our local convention also defines $\gcd(0,0)=0$.
+Check for a zero divisor before computing the remainder.
+
+Work backward through the small example:
+\[
+ 1=9-8=2\cdot9-17=2\cdot3120-367\cdot17.
+\]
+Consequently $-367$ is an inverse of 17 modulo 3120. Its nonnegative residue is
+2753, and $17\cdot2753=15\cdot3120+1$. This derives the exponent used below;
+it is not a second constant to memorize. You need not implement key generation
+or an extended-gcd interface for this assignment.
+
+The gcd entry returns its numerical result in \texttt{v0} and success status
+zero in \texttt{v1}. Other entries return status in \texttt{v0} and write their
+numerical result to memory. The supplied caller pauses at \texttt{gcd64\_return}
+before moving the gcd status into \texttt{v0}. Inspect the gcd value at that
+first boundary; \texttt{main\_done} is too late to expect it in \texttt{v0}.
+A function returning a high-bit-set gcd must preserve all 64 result bits.
+
+\subsection*{Reduce a power without constructing the full integer}
+
+Take message integer 65. The small forward operation is
+$65^{17}\bmod3233=2790$, and the reverse calculation is
+$2790^{2753}\bmod3233=65$. Euler's theorem gives
+$65^{3120}\equiv1\pmod{3233}$ because 65 is coprime to 3233. Since
+$17\cdot2753=1+15\cdot3120$, the combined operation is
+$65(65^{3120})^{15}$, whose residue is 65.
+The program will compute the remainders without ever storing $65^{17}$ itself.
+
+\texttt{rsa\_pow32(a0 base,a1 exponent,a2 modulus,a3 output)} receives
+zero-extended unsigned word operands. Its successful output is one little-endian
+word. Start with result $r=1\bmod N$, current base $x=base\bmod N$ and remaining
+exponent $y=exponent$. At every loop boundary,
+\[
+ r\,x^y\equiv \mathit{base}^{\mathit{exponent}}\pmod N.
+\]
+If $y$ is odd, multiply $r$ by $x$ and reduce. Shift $y$ right logically by one,
+and square and reduce $x$ if another exponent bit remains. Each iteration
+removes one bit, rather than performing one multiplication for each unit of the
+original exponent.
+
+\input{revision/figures/rsa/power}
+
+Predict the five rows before running. Explain why the result stays 65 while
+remaining exponents eight, four and two are processed. Those iterations still
+change the current base; skipping their squaring would make the final odd bit
+multiply by the wrong power.
+
+\input{revision/figures/rsa/native-word}
+
+\Needspace{11\baselineskip}
+Two word residues can have a product requiring 64 bits. Use a doubleword
+multiply and an unsigned doubleword remainder for this path:
+
+\MARSCodeLabel{Keep the entire product until after reduction}
+\begin{minted}{mars-idea}
+    dmulu $t1, $t1, $t0
+    dmodu $t1, $t1, $a2
+\end{minted}
+
+Here \texttt{t1} is the accumulated residue, \texttt{t0} the current base and
+\texttt{a2} the zero-extended modulus. A word multiply discards needed high bits.
+A signed doubleword remainder also fails when the complete product's top bit is
+one. For base \texttt{fffffffe}, exponent two and modulus \texttt{ffffffff},
+the product is \texttt{fffffffc00000004} and the correct residue is one.
+Interpreting those product bits as a negative signed integer gives a different
+remainder. Use \texttt{lwu} when the caller loads unsigned word operands.
+
+Exponent zero returns $1\bmod N$, including for a zero base. For modulus one,
+that answer is zero. Modulus zero is an error: return status one without
+accessing the output. Test these cases separately from a large positive exponent.
+
+\subsection*{Represent a wider number with unsigned limbs}
+
+Let $\beta=2^{32}$. Four \emph{limbs}, each an unsigned word, represent
+\[
+ A=A_0+A_1\beta+A_2\beta^2+A_3\beta^3.
+\]
+The least significant limb is at the lowest address, and the bytes inside each
+limb are little-endian. This is the local arithmetic representation; it differs
+from the big-endian byte strings used by the RSA conversion primitives in
+\href{https://www.rfc-editor.org/rfc/rfc8017.html}{RFC 8017}.
+Do not treat a dump of these limbs as an encoded RSA message.
+
+Unsigned loads matter even when every stored limb is a perfectly valid word.
+Loading \texttt{ffffffff} with \texttt{lwu} produces the value $\beta-1$ in a
+64-bit register. Sign extension would instead change the upper bits used by
+later doubleword multiplication. Pointer arithmetic remains full width regardless
+of the limb width.
+
+\Needspace{7\baselineskip}
+\texttt{rsa\_mul128(a0 A,a1 B,a2 output)} writes the full eight-limb product.
+One schoolbook implementation clears all eight output words, then processes one
+input limb against each limb of the other input. For an inner product, add
+$A_iB_j$, the existing output limb and the incoming carry. Store the low word
+and retain the high word as the next carry.
+
+This ordering has a useful bound. Each operand, existing limb and carry is at
+most $\beta-1$, so the inner total is at most
+\[
+ (\beta-1)^2+(\beta-1)+(\beta-1)=\beta^2-1.
+\]
+It fits exactly within an unsigned doubleword. Summing several unreduced limb
+products at once would require a different bound and possibly more temporary
+bits. The reason this particular loop fits is its carry discipline.
+
+For a hand-checkable example, $(2\beta-1)^2$ has low-to-high limbs
+$1,\beta-4,3,0,0,0,0,0$. For the largest input $M=\beta^4-1$, its square has limbs
+$1,0,0,0,\beta-2,\beta-1,\beta-1,\beta-1$. Check all eight words and the bytes immediately
+after the selected 32-byte result. Returning only the low four words implements
+a different operation.
+
+\input{revision/figures/rsa/native-product}
+
+\subsection*{Keep the carry that lies beyond the output array}
+
+\texttt{rsa\_addmod128(a0 A,a1 B,a2 N,a3 output)} requires reduced inputs
+$A<N$ and $B<N$. Their sum is below $2N$, so at most one subtraction of $N$
+is needed. However, the unreduced sum can require 129 bits. Four stored result
+limbs alone cannot say whether that subtraction is necessary.
+
+Add from low limbs toward high limbs, retaining a carry into each next position.
+After the fourth limb, retain the final carry separately. If it is one, subtract
+$N$ even when the stored low 128 bits compare below $N$. Otherwise compare the
+four-limb sum with $N$, starting at the most significant limb, and subtract when
+the sum is at least $N$. Equality must produce zero.
+
+Consider $N=2^{128}-159$ and $A=B=N-1$. The mathematical sum is
+$2^{129}-320$. Its low 128 bits represent $2^{128}-320$, which is below $N$,
+but its carry is one. The correct reduced result is $N-2=2^{128}-161$.
+A comparison that ignores the carry would return the wrong provisional sum.
+When subtracting $N$ from the low limbs, the borrow consumes the retained high
+carry; the final reduced value fits in four limbs.
+
+\input{revision/figures/rsa/native-carry}
+
+\Needspace{7\baselineskip}
+Subtraction also proceeds from low to high, with an incoming borrow of zero
+or one. For zero-extended word operands, a negative limb difference occupies
+the high unsigned doubleword range; extract the borrow before retaining only
+the low word. Test a borrow that propagates across several zero limbs.
+
+This entry permits output to exactly alias either or both operands. A limbwise
+implementation can load both current operand limbs before replacing the current
+output limb, provided no later step needs those original limbs. The modulus
+stays disjoint from output. An arbitrary partial overlap has no such guarantee;
+a store could replace a higher source limb before it is read.
+
+\subsection*{Reduce arbitrary inputs before using residue-only helpers}
+
+\texttt{rsa\_reduce128(a0 A,a1 N,a2 output)} accepts any unsigned 128-bit
+input, not merely a value less than twice $N$. Repeatedly subtracting a small
+modulus could require an impractical number of iterations. Instead, visit the
+input bits from most significant to least significant.
+
+Maintain the residue $r$ of the prefix already visited. For next bit $b$, the
+new prefix has residue $(2r+b)\bmod N$. Since $r<N$, this step has a bounded
+amount of reduction work. For binary input \texttt{1101}, decimal 13, modulo
+five, the successive residues are one, three, one and three.
+The order of the bits matters: low-to-high scanning does not follow this prefix
+recurrence.
+
+One implementation uses the reduced addition helper to compute $r+r$ and then,
+when the incoming bit is one, to add one. Handle modulus one first: a literal
+one is not a reduced operand for that modulus. For $N>1$, both zero and one
+are valid residues. Initialize the running residue independently of any old
+output or private workspace contents.
+
+\Needspace{9\baselineskip}
+\texttt{rsa\_mulmod128(a0 A,a1 B,a2 N,a3 output)} accepts arbitrary inputs
+too. Reduce its current multiplicand before passing it to addmod. Keep accumulator
+$r=0$, reduced current value $x=A\bmod N$ and remaining multiplier $y=B$.
+When the low bit of $y$ is one, replace $r$ by $(r+x)\bmod N$. Shift $y$
+right and double $x$ modulo $N$ for the next bit. The invariant is
+$r+xy\equiv AB\pmod N$.
+
+\input{revision/figures/rsa/modproduct}
+
+This computes a modular product without first constructing a 256-bit temporary
+product. Both approaches can be correct, but a full-product approach also needs
+a reduction algorithm that accepts all 256 product bits. Passing only the low
+128 bits to \texttt{rsa\_reduce128} loses information.
+
+\subsection*{Shift the whole exponent and preserve the outer calculation}
+
+\texttt{rsa\_pow128(a0 base,a1 exponent,a2 N,a3 output)} uses the same power
+invariant as the scalar routine, with modular multiplication replacing the
+single-register product. All 128 exponent bits participate. Scanning only its
+first word or first doubleword silently changes high exponents to smaller ones.
+
+A whole-number right shift must bring bits across storage boundaries. If two
+registers hold the low and high 64-bit halves, one possible sequence is:
+
+\MARSCodeLabel{Move the high half's low bit into the low half}
+\begin{minted}{mars-idea}
+    dsrl $t0, $t0, 1
+    dsll $t2, $t1, 63
+    or $t0, $t0, $t2
+    dsrl $t1, $t1, 1
+\end{minted}
+
+For exponent $2^{64}+1$, the initial halves are one and one. After shifting,
+the low half must be \texttt{8000000000000000} and the high half zero.
+Shifting each half independently would instead produce a zero exponent.
+For base three modulo 19, the complete exponent $2^{64}+1$ gives 13, and
+$2^{127}$ gives nine. A truncated exponent can accidentally pass a test whose
+true result is one, so use a case that distinguishes the two calculations.
+
+Keep the outer result, current base, remaining exponent and modulus address
+across every nested helper call. Arguments and temporary registers are volatile.
+A saved return address preserves where execution resumes, not the caller's
+unfinished arithmetic state. Save and restore full preserved registers, including
+their upper halves, and keep local temporary arrays separate from saved addresses.
+
+The helpers allow exact sharing among read-only inputs, so squaring may pass the
+same input address twice. Modular-product and power outputs remain disjoint from
+their inputs. Only addmod has the additional output-alias permission. Establish
+those relationships before reusing a temporary array for another role.
+
+\subsection*{Check the modulus before following other pointers}
+
+For every modular multiword entry, first read its four-limb modulus and determine
+whether all limbs are zero. On zero, return status one before reading other caller
+inputs or accessing output. Those other pointers can be deliberately invalid in
+a test. Checking only the low modulus limb would incorrectly reject a valid
+modulus such as $2^{32}$.
+
+For positive modulus one, the result is zero, including an exponent-zero power.
+For a positive larger modulus and exponent zero, the result is one. These are
+successful arithmetic results, distinct from the zero-modulus error.
+
+The scalar operands of \texttt{rsa\_pow32} are values, not addresses; its output
+pointer still has the no-access promise on zero modulus. The gcd entry has no
+modulus error path. Write each function's arguments and return convention beside
+your test cases rather than applying one function's rules to all seven.
+
+\input{revision/figures/rsa/native-invalid}
+
+Success writes exactly four bytes for pow32, sixteen for modular multiword
+results and 32 for the full product. Failure preserves all caller objects.
+An unchanged final value alone does not prove that an illegal write never occurred:
+a store of the same byte is still a write. The public checks observe access
+intervals as well as final bytes.
+
+\subsection*{Use a small RSA example as an arithmetic test}
+
+Keep \texttt{mode} at its supplied default zero in the source passed to the
+preparation tool. To observe the scalar power in a fresh source from the book
+checkout, use:
+
+\Needspace{6\baselineskip}
+\begin{Verbatim}[fontsize=\small]
+python3 packages/027-rsa-arithmetic/prepare.py s06-1 \
+  --source revision/labs/files/rsa-arithmetic.asm \
+  --output /private/tmp/rsa-word-observation.asm
+\end{Verbatim}
+
+\Needspace{9\baselineskip}
+Replace the source path with your completed working source when testing your
+implementation. The tool installs data and mode in the output copy, refuses an
+existing output path and retains your instruction text. Recipes
+\texttt{s11-1}, \texttt{s18-1}, \texttt{s29-1} and \texttt{s36-1} select the
+full product, carry-sensitive addition, modular product and full-width power
+examples. An unfinished entry still stops with \texttt{break}; prepared inputs
+do not supply its implementation.
+
+For a separate scalar reverse run, set the first words of \texttt{left} and
+\texttt{right} to 2790 and 2753, keep modulus 3233 and select mode one.
+The full-width power caller uses mode six and reads its four-limb exponent from
+\texttt{exponent} instead of \texttt{right}. The function's argument registers,
+not the fixture labels themselves, determine which values it receives.
+
+Run the nine completed public scripts listed in
+\texttt{packages/027-rsa-arithmetic/package.json}. Their names separate gcd,
+word power, product, addition, reduction, modular product and full-width power,
+plus caller and repeated-call behavior. Use
+\texttt{java -jar /path/to/cli.jar grade CHECK SOURCE}. Keep the supplied caller
+when using its checks; private function labels and exact instruction counts are
+not part of free-writing acceptance.
+
+Build an independent test set that includes zero and one moduli, zero exponents,
+top-bit-set scalar products, carries and borrows across every limb, maximum
+full products, high exponent bits, exact addmod aliases and moved input/output
+slices. Compare values with an arbitrary-precision calculation, then check
+preservation and ownership separately. A round trip alone can hide two matching
+mistakes.
+
+The example explains RSA's modular-power arithmetic. A complete encryption or
+signature scheme additionally defines how messages are encoded and checked.
+RFC 8017 describes OAEP for an encryption scheme and PSS for a signature scheme;
+this exercise implements neither encoding. Its four-limb numbers are chosen so
+we can inspect the arithmetic, not as a usable RSA key size. Nor do the data-dependent
+loops establish constant-time execution. Keep those scheme and implementation
+questions separate from the numerical and memory contracts you have tested here.

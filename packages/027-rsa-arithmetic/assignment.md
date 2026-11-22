@@ -56,6 +56,10 @@ count or private label is required. Keep the supplied caller if using caller.kts
 Instructor policy fields describe quiz/check requirements, hints and allowed mode
 switching; a remote service enforcing those policies is still pending.
 
-The four IDE figure slots are planned. This bounded arithmetic lab is not a secure RSA
+The original IDE figure plan remains a construction draft. The revised written
+companion has four actual light-theme Debug figures with native annotations and
+receipts under `revision/captures/rsa`; `revision/rsa-unit.md` records their finite
+scope, automated accessibility evidence and remaining human review.
+This bounded arithmetic lab is not a secure RSA
 key size, key generator, constant-time implementation, encryption scheme or signature
 scheme. Read the native OAEP/PSS discussion after the arithmetic agrees.

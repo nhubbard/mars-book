@@ -47,7 +47,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–22 (145 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–22 and companions (153 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–22 and companions (161 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -245,3 +245,9 @@ The SHA-256 companion is section 22.7, lab pages 146–153. It connects schedule
 round dependencies to incremental contexts, padding and file completion. The shared
 lab chapter is now “Word transformations.” Its finite qualification and remaining
 review are in [sha-unit.md](sha-unit.md); the main proof remains 145 pages.
+
+The RSA-arithmetic companion is section 22.8, lab pages 154–161. It develops
+unsigned products, explicit carries, modular invariants and full-width exponents,
+with an independent seven-entry skeleton and four actual Debug figures.
+[rsa-unit.md](rsa-unit.md) records the added public feedback case and finite evidence.
+The main proof remains 145 pages; native advanced lessons and human reviews remain open.
