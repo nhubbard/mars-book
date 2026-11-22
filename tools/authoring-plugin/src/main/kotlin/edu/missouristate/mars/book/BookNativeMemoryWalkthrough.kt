@@ -12,6 +12,8 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.asContextElement
 import com.intellij.openapi.application.writeAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -48,7 +50,7 @@ internal suspend fun captureBookNativeMemory(
             Files.writeString(output.resolve("$id-observation.json"), GsonBuilder().setPrettyPrinting().create().toJson(facts), CREATE_NEW)
         }
     }
-    suspend fun continueLesson() = bookModalUi {
+    suspend fun continueLesson() = withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
         val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.ContinueDownloaded"))
         val event = AnActionEvent.createEvent(action, SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).build(),
             null, ActionPlaces.MAIN_MENU, ActionUiKind.NONE, null)
@@ -57,7 +59,7 @@ internal suspend fun captureBookNativeMemory(
     }
     suspend fun editNote(path: Path, note: String) {
         val file = withContext(Dispatchers.IO) { checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(path)) }
-        bookModalUi {
+        withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
             val document = checkNotNull(FileDocumentManager.getInstance().getDocument(file))
             WriteCommandAction.runWriteCommandAction(project) { document.insertString(0, "# $note\n") }
             FileDocumentManager.getInstance().saveDocument(document)
@@ -107,7 +109,7 @@ internal suspend fun captureBookNativeMemory(
         if (!plan.resume) {
             click("Check this program", false)
             capture("${path.fileName}-starter-failed", "Public cases passed: 0 of 6.")
-            bookModalUi {
+            withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
                 val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
                 check(FileDocumentManager.getInstance().getFile(editor.document)?.toNioPath() == path)
                 WriteCommandAction.runWriteCommandAction(project) { editor.document.setText(bytes.toString(Charsets.UTF_8)) }
@@ -119,7 +121,7 @@ internal suspend fun captureBookNativeMemory(
         }
         click("Check this program", false)
         capture("${path.fileName}-passed", "The current program passed its six stated final-memory cases.")
-        bookModalUi { FileDocumentManager.getInstance().saveAllDocuments() }
+        withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) { FileDocumentManager.getInstance().saveAllDocuments() }
         record("checked-${path.fileName}", mapOf("source" to source, "solutionSha256" to fixture.sha256,
             "starterFailedThisProcess" to !plan.resume, "passedPublicCases" to 6, "checkedUnsavedText" to !plan.resume))
     }
