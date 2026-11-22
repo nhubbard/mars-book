@@ -968,3 +968,43 @@ assessment attempts increase from two to three and exit assessment attempts
 from one to two. Old Debug, Run and both assessment passes are empty after the
 edit and are freshly earned in the resumed process. This is automation evidence;
 it does not claim a human learner completed the unit unaided.
+
+
+### Memory-locality native foundation (22 November 2026)
+
+The next native draft is `011-memory-locality`, preserving original project 011.
+Its source and independent task retain the existing mapping, bounded window,
+caller preservation and one-read/one-write contracts. A second complete worked
+source changes only METHOD to one, allowing separate ordinary and tiled Debug
+routes without editing the first route in place. Six predictions use different
+answer positions. Eight proposed stops were measured through actual execution,
+including the alternate program's real main entry and aligned caller stack.
+
+A public grader gap would otherwise have weakened the native rotation task:
+final memory and access bounds do not prove exactly one read/write per cell or
+read-before-corresponding-write. `FunctionTransferCheck` adds a bounded data-only
+permutation map, optional in native function-profile version 5. It observes
+existing forward execution notices, retains only visit state and the first
+failure, and resets per call. It accepts arbitrary valid traversal orders and
+private stack frames. Final bytes, inactive allocation accesses and protected
+stores remain separate checks. Existing simulator execution is unchanged.
+
+The public rotation profile has 21 shape cases, two continuations each, and a
+complete caller-result case; normal exit is checked separately. Qualification
+ran 36 processes: three correct algorithms in ordinary and relocated layouts,
+plus a wide-address case, pass both grading routes (14 positive processes).
+Ten faults and the starter are rejected through both routes (22 rejections).
+The script route preserves the original ten shapes; the prepared route checks
+the expanded 22 cases. These are deliberately different stated finite corpora.
+All 473 book-tool tests pass, including coordinate bijection/round-trip checks
+for all 289 dimension pairs and complete archive dependencies.
+
+This is native checking and lesson foundation, not a completed eleventh unit.
+Its exact native import passed, binding both execution sources and all transfer
+profiles. Full MARS checks pass 184 CLI and 1198 plugin tests, including required
+coverage gates; the focused exact-archive test passes afterward. The function
+profile parser covers all 109 lines and 131 branches. The final packaged build
+passes the API verifier. Authoring walkthrough, real IDE/resume, written lab
+integration and renewed publication checks remain to be performed.
+Human learner review remains pending. No new photograph or PDF validation is
+claimed by this foundation step; earlier chapter evidence remains preserved.

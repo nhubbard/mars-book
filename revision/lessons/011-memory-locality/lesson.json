@@ -1,0 +1,405 @@
+{
+  "formatVersion": 6,
+  "introduction": "Derive a rectangular transpose’s addresses before measuring it. Compare ordinary and clipped-tile traversal, identify the scope of cache counts, then implement clockwise rotation with a different mapping and an unrestricted valid traversal order.",
+  "conclusion": "Explain correctness using a coordinate mapping and bounded access trace. Explain a cache result using actual addresses, geometry, policy and interval; keep it distinct from an elapsed-time claim.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "destination-width",
+      "explanation": "A row-major source has three rows and five columns. Transpose sends source (i,j) to destination (j,i), making a five-row, three-column output. The two arrays therefore have different row widths.",
+      "question": "Where does source (0,1), containing one, go?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Output index one",
+          "feedback": "That keeps the same linear index instead of swapping the coordinates."
+        },
+        {
+          "id": "b",
+          "text": "Output index three",
+          "feedback": "The destination coordinate is (1,0). Its row width is three, giving index 1*3+0."
+        },
+        {
+          "id": "c",
+          "text": "Output index five",
+          "feedback": "Five is the source row width; the output row has three words."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "naive_cell",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "destination-stride",
+      "explanation": "The ordinary inner loop advances one source column at a time. Its source cursor advances four bytes. Its output cursor visits the same position in successive output rows, whose width is the source row count.",
+      "question": "For three source rows, how far does the output cursor advance?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four bytes",
+          "feedback": "That would fill consecutive output columns rather than following successive output rows."
+        },
+        {
+          "id": "b",
+          "text": "Twenty bytes",
+          "feedback": "Five is the source row width; this destination stride uses the row count, three."
+        },
+        {
+          "id": "c",
+          "text": "Twelve bytes",
+          "feedback": "Each next destination row is three four-byte words away."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "naive_cell",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "cold-lines",
+      "explanation": "The cold fully associative cache has eight lines of four words each. The first source read and first destination write refer to separate allocations, so they touch different memory lines. A store miss installs a line in this model.",
+      "question": "What happens on those first two data accesses?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both miss",
+          "feedback": "Neither memory line is resident in the initially empty cache."
+        },
+        {
+          "id": "b",
+          "text": "The read misses and the write hits",
+          "feedback": "The source line does not also contain the separately allocated destination."
+        },
+        {
+          "id": "c",
+          "text": "Both hit",
+          "feedback": "Cold cache state has no resident lines. The values being zero do not make a hit."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "naive_cell",
+        "mnemonic": "lw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-ordinary",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for matrix-locality.asm. Keep ROWS three, COLS five and METHOD zero. Use one line breakpoint at a time for the four requested stops. Learn checks the listed registers; use the written lab to inspect output and Data Cache Simulator counters. The cache annotation specifies eight four-word lines, fully associative placement and LRU replacement.",
+      "stops": [
+        {
+          "id": "arguments-ready",
+          "explanation": "Break at transpose_begin before the selected function call. Source and output pointers are ready, rows are three and columns five. Confirm a cold cache with zero accesses and hits.",
+          "anchor": {
+            "label": "transpose_begin",
+            "mnemonic": "jalrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$a0": "0x0000000010010000",
+            "$a1": "0x0000000010010440",
+            "$a2": "0x0000000000000003",
+            "$a3": "0x0000000000000005"
+          },
+          "success": "The measurement begins with ready arguments and no matrix traffic."
+        },
+        {
+          "id": "first-read",
+          "explanation": "Resume to the first naive_cell, before its load. The source cursor names input and the destination cursor names output. Both loop indices are zero; destination stride v1 is twelve bytes. The cache remains cold.",
+          "anchor": {
+            "label": "naive_cell",
+            "mnemonic": "lw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000010010000",
+            "$t3": "0x0000000010010440",
+            "$t4": "0x0000000010010440",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "Forming addresses has not itself loaded either matrix word."
+        },
+        {
+          "id": "second-read",
+          "explanation": "Resume to the next naive_cell. One read and write have completed. The source cursor advances four bytes, while the destination cursor advances twelve. The cache has two accesses, zero hits and two misses.",
+          "anchor": {
+            "label": "naive_cell",
+            "mnemonic": "lw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000001",
+            "$t2": "0x0000000010010004",
+            "$t3": "0x0000000010010440",
+            "$t4": "0x000000001001044c",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "The cursor recurrence follows the rectangular transpose mapping."
+        },
+        {
+          "id": "ordinary-return",
+          "explanation": "Resume to transpose_done before the caller stores copied. The function returned fifteen; output is five rows of three words. Inspect thirty cache accesses, twenty-two hits and eight misses. The pending caller store is outside that function-only interval.",
+          "anchor": {
+            "label": "transpose_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c",
+            "$t0": "0x0000000000000003",
+            "$t1": "0x0000000000000005"
+          },
+          "success": "The result is complete before the caller adds its count store to the data trace."
+        }
+      ],
+      "success": "Finish or stop Debug. Explain the source and destination cursor increments and identify the exact measurement boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "clipped-ends",
+      "explanation": "A four-by-four tile begins at source (0,0), but the complete source has only three rows and five columns. Each exclusive tile end is clipped to the actual dimension.",
+      "question": "What are the first tile’s exclusive row and column ends?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four and four",
+          "feedback": "There is no fourth source row in this three-row matrix."
+        },
+        {
+          "id": "b",
+          "text": "Three and four",
+          "feedback": "Rows zero through two and columns zero through three contain twelve cells."
+        },
+        {
+          "id": "c",
+          "text": "Three and five",
+          "feedback": "That describes the whole rectangle, including the final column outside this first tile."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "tile_begin",
+        "mnemonic": "addiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-tiled",
+      "source": "worked/matrix-tiled.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/matrix-tiled.asm. This complete copy changes only METHOD to one; leave the guided ordinary source unchanged. Follow four stops with the same cold cache geometry. Check the partial output and cache counts as the lab explains. A new session, rather than backstep, establishes the cold comparison.",
+      "stops": [
+        {
+          "id": "tile-origin",
+          "explanation": "Break at the first tile_begin in worked/matrix-tiled.asm. The tile origin is (0,0), v0 already holds fifteen and v1 holds the twelve-byte destination stride. No matrix accesses have occurred.",
+          "anchor": {
+            "label": "tile_begin",
+            "mnemonic": "addiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$a0": "0x0000000010010000",
+            "$a1": "0x0000000010010440",
+            "$a2": "0x0000000000000003",
+            "$a3": "0x0000000000000005",
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "The alternate worked source selects tiling while preserving the same data mapping."
+        },
+        {
+          "id": "tile-ends",
+          "explanation": "Resume to tile_columns_ready. Both exclusive ends are ready: t2 is three and t3 is four. The next instruction initializes the tile row index. There are still zero matrix accesses.",
+          "anchor": {
+            "label": "tile_columns_ready",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000000000003",
+            "$t3": "0x0000000000000004",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "Clipped bounds prevent an accidental read of a fourth source row."
+        },
+        {
+          "id": "first-tile-complete",
+          "explanation": "Resume to the next tile_begin. The new origin is row zero, column four. The preceding tile has completed twelve cells: output indices zero through eleven are final, while twelve through fourteen are untouched. Cache totals are twenty-four accesses, seventeen hits and seven misses.",
+          "anchor": {
+            "label": "tile_begin",
+            "mnemonic": "addiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000004",
+            "$t2": "0x0000000000000003",
+            "$t3": "0x0000000000000004",
+            "$t4": "0x0000000000000003",
+            "$t5": "0x0000000000000004",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "The completed source cells are columns zero through three of every row, not a contiguous source prefix."
+        },
+        {
+          "id": "tiled-return",
+          "explanation": "Resume to transpose_done before the caller store. The tiled function returns fifteen and produces the same output as ordinary traversal. The last narrow tile adds six accesses and one miss, giving thirty accesses and eight misses overall.",
+          "anchor": {
+            "label": "transpose_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffeff0",
+            "$t0": "0x0000000000000004",
+            "$t1": "0x0000000000000008",
+            "$t2": "0x0000000000000003",
+            "$t3": "0x0000000000000005",
+            "$t4": "0x0000000000000003",
+            "$t5": "0x0000000000000005",
+            "$v0": "0x000000000000000f",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "The small matrices already fit this cache, so tiling does not reduce their miss count."
+        }
+      ],
+      "success": "Finish or stop Debug before ordinary Run. Explain the completed tile’s shape and why it is not a contiguous source prefix."
+    },
+    {
+      "kind": "prediction",
+      "id": "measurement-scope",
+      "explanation": "For the measured sixteen-by-sixteen case, tiling reduces fully associative misses from 320 to 128 while increasing completed function instructions from 1643 to 2457. The cache tool records line presence and supplies no miss latency or processor cycle model.",
+      "question": "What conclusion do these two measurements support?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The tiled version must finish sooner",
+          "feedback": "That would require a justified cost for the misses and instructions or an appropriate timing experiment."
+        },
+        {
+          "id": "b",
+          "text": "The ordinary version must finish sooner",
+          "feedback": "Instruction count alone does not price the different memory behavior."
+        },
+        {
+          "id": "c",
+          "text": "Tiling uses more instructions and fewer misses in this stated model",
+          "feedback": "Those are the observed competing costs. Neither count by itself establishes elapsed time."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "tile_begin",
+        "mnemonic": "addiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-ordinary",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run matrix-locality.asm using ordinary Run. It should exit silently, store fifteen in copied and leave the same five-by-three transpose in output. The complete run includes the caller’s store; do not compare its final cache totals with the earlier function-only return boundary.",
+      "success": "The complete program exited silently. Compare the output mapping separately from the interval used for cache measurements."
+    },
+    {
+      "kind": "run",
+      "id": "run-tiled",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/matrix-tiled.asm using ordinary Run. It should exit silently, store fifteen in copied and leave the same five-by-three transpose in output. The complete run includes the caller’s store; do not compare its final cache totals with the earlier function-only return boundary.",
+      "success": "The complete program exited silently. Compare the output mapping separately from the interval used for cache measurements.",
+      "source": "worked/matrix-tiled.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "rotation-direction",
+      "explanation": "The independent function rotates clockwise rather than transposing. A two-row source [0,1,2] / [3,4,5] must become three output rows. Derive where the top-left and bottom-left source corners go before selecting a traversal.",
+      "question": "Which output is the clockwise quarter-turn?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Rows [3,0], [4,1], [5,2]",
+          "feedback": "Source (i,j) maps to output (j,R-1-i), reversing one axis as well as swapping coordinates."
+        },
+        {
+          "id": "b",
+          "text": "Rows [0,3], [1,4], [2,5]",
+          "feedback": "This swaps coordinates without reversing an axis, so it is a transpose."
+        },
+        {
+          "id": "c",
+          "text": "Rows [2,5], [1,4], [0,3]",
+          "feedback": "This turns the source counterclockwise."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "naive_cell",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "rotate-clockwise",
+      "source": "independent/matrix-rotate.asm",
+      "caseProfile": "independent/matrix-rotate.cases.json",
+      "checkKind": "function",
+      "explanation": "Implement rotate_clockwise in the independent source, replacing break. Read independent/README.md. Use the passed full-width pointers and dimensions, preserve inactive words and caller state, and copy each source word to its clockwise destination with one aligned read and write. Twenty-one shape cases call twice through different continuations; a twenty-second case checks the complete caller result. Different traversal orders and private stack frames are accepted.",
+      "success": "The current source passes all twenty-two public rotation cases. Check complete normal exit next, then explain the coordinate mapping and one access-trace counterexample.",
+      "hints": [
+        {
+          "id": "corners",
+          "text": "Derive destination index j*rows+(rows-1-i). Check two corners in a rectangle before choosing pointer increments."
+        },
+        {
+          "id": "bounds",
+          "text": "Check either zero dimension before the first matrix access. Index products are bounded, but add their byte displacements to full-width pointers."
+        },
+        {
+          "id": "visits",
+          "text": "Final words do not show repeated reads or temporary output reads. Copy each active source word once, then write its mapped destination once. A different valid order is allowed."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/matrix-rotate.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "checkKind": "console",
+      "explanation": "Check the same independent source as a complete program. The previous check observed the caller’s output and copied count before rotate_exit. This check requires execution to continue to silent normal exit without a trap or output.",
+      "success": "The independent source passes both the transfer/caller contract and complete silent execution. Complete the written cache comparison using a stated geometry, workload and observation interval."
+    }
+  ]
+}
