@@ -72,6 +72,7 @@ requires JDK 25 and a built MARS CLI JAR.
 
 ```sh
 python3 tools/course.py validate
+python3 tools/audit_curriculum.py
 python3 -m unittest discover -s tools -p 'test_*.py'
 python3 tools/book.py validate
 python3 tools/course.py build

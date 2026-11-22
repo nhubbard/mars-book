@@ -43,6 +43,10 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
+For the project-to-chapter coverage index and repeatable structural checks, see
+[the revised curriculum audit](../docs/revised-curriculum-audit.md). It distinguishes
+original package prerequisites from revised introductory exercises.
+
 ## Reading the current proofs
 
 For restructuring review, open these local build outputs:
