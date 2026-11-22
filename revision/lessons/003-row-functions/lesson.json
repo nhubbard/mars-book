@@ -1,0 +1,321 @@
+{
+  "formatVersion": 6,
+  "introduction": "This unit follows values and continuations through a leaf helper and a non-leaf caller. Read the main chapter’s complete reverse-rows program. Predict what a call supplies, inspect its frame and two helper returns, then write a related function and check its result and preservation contract.",
+  "conclusion": "Use your trace to explain a call as control flow plus an incoming continuation. Distinguish callee-preserved state, temporary work, returned results and caller stores. The written lab’s lost-register, lost-link and truncated-save investigations remain part of this unit.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "compact-link",
+      "explanation": "A compact call needs a continuation so the callee can return. The label selects the destination; the link register records where execution should continue afterward.",
+      "question": "What does balc place in ra?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The address of the next machine instruction",
+          "feedback": "balc records its own address plus four. The next instruction waits until the callee returns."
+        },
+        {
+          "id": "b",
+          "text": "The destination function’s address",
+          "feedback": "That address selects the call target. It would not tell the callee which caller instruction should follow the return."
+        },
+        {
+          "id": "c",
+          "text": "The next source line number",
+          "feedback": "A source line can expand to several machine instructions. Compare machine addresses in Disassembly."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "main_call",
+        "mnemonic": "balc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "frame-size",
+      "explanation": "reverse_pair saves three full-width values: ra, s0 and s1. Each slot occupies eight bytes. The caller has aligned sp to sixteen bytes.",
+      "question": "Why does this frame reserve thirty-two bytes for twenty-four bytes of saved values?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To keep sp aligned at the inner calls",
+          "feedback": "Thirty-two is a multiple of sixteen. Eight bytes remain unused padding."
+        },
+        {
+          "id": "b",
+          "text": "Each saved register needs a twelve-byte slot",
+          "feedback": "An integer register is eight bytes here. The extra space is alignment padding."
+        },
+        {
+          "id": "c",
+          "text": "A call instruction requires every function to use this frame",
+          "feedback": "balc records a link but allocates no frame. The routine chooses space for the state it needs."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "reverse_pair",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "result-lifetime",
+      "explanation": "The first helper call returns 0x68 in v0. The second helper call will return its own result in that same register. reverse_pair must retain the first result across that call.",
+      "question": "Where does the worked pair routine keep the first result while reversing the second byte?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "s1",
+          "feedback": "The move at pair_first_ready keeps the first result in s1 until both results can be placed in v0 and v1."
+        },
+        {
+          "id": "b",
+          "text": "Only in v0",
+          "feedback": "The next call is supposed to replace v0. Retaining the first result only there would lose it."
+        },
+        {
+          "id": "c",
+          "text": "In the outer caller’s result memory automatically",
+          "feedback": "Calls do not store results automatically. The two stores in main run after reverse_pair returns."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pair_first_ready",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-calls",
+      "explanation": "Start a fresh Debug session for reverse-rows.asm. Break at main_call. Use Step Into for the outer call so you can inspect the callee before its frame is allocated. Later named breakpoints let you follow both inner calls and restoration in one session. Learn observes registers at these boundaries; inspect the eight-byte stack slots as directed in the written lab.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "caller",
+          "explanation": "At main_call, the input words are prepared in a0 and a1, s0 holds the result address, and sp has been aligned. Record the caller’s pointer before entering the call.",
+          "anchor": {
+            "label": "main_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000016",
+            "$a1": "0x0000000000000081",
+            "$s0": "0x0000000010010008",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The caller has prepared arguments and an aligned pointer; the function has not yet reserved its frame."
+        },
+        {
+          "id": "callee-entry",
+          "explanation": "Step Into balc to reverse_pair. The first daddiu is next. ra now names after_pair at 0x00400064; the stores in main have not executed.",
+          "anchor": {
+            "label": "reverse_pair",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$ra": "0x0000000000400064",
+            "$s0": "0x0000000010010008",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The compact call changed the continuation and control flow. Frame allocation remains the callee’s next instruction."
+        },
+        {
+          "id": "frame-ready",
+          "explanation": "Resume to pair_frame_ready, before move. sp is thirty-two bytes lower. Inspect the saved s1, s0 and ra slots at offsets eight, sixteen and twenty-four in Memory. s0 still holds the incoming result pointer at this boundary.",
+          "anchor": {
+            "label": "pair_frame_ready",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$sp": "0x000000007fffefd0",
+            "$s0": "0x0000000010010008",
+            "$s1": "0x0000000000000000",
+            "$ra": "0x0000000000400064"
+          },
+          "success": "The 32-byte frame contains three eight-byte slots and eight bytes of padding. The next move will give s0 a new temporary role."
+        },
+        {
+          "id": "first-ready",
+          "explanation": "Resume to pair_first_ready. The first reversal, 0x68, is in v0. s0 now retains the second input, 0x81. ra identifies this inner call’s continuation while the outer continuation remains in the frame.",
+          "anchor": {
+            "label": "pair_first_ready",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000068",
+            "$s0": "0x0000000000000081",
+            "$sp": "0x000000007fffefd0",
+            "$ra": "0x000000000040008c"
+          },
+          "success": "The first result and the second input are both live. The following moves preserve the result and prepare the next argument."
+        },
+        {
+          "id": "second-call",
+          "explanation": "Step over the two moves to pair_second_call. s1 now retains the first result and a0 supplies the second input. The pending balc will replace ra again.",
+          "anchor": {
+            "label": "pair_second_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x0000000000000068",
+            "$a0": "0x0000000000000081",
+            "$s0": "0x0000000000000081",
+            "$v0": "0x0000000000000068"
+          },
+          "success": "The first result is no longer dependent on v0 surviving the second helper call."
+        },
+        {
+          "id": "second-ready",
+          "explanation": "Resume to pair_second_ready, before either result move. The second reversal is 0x81 in v0; the first result is still 0x68 in s1.",
+          "anchor": {
+            "label": "pair_second_ready",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000081",
+            "$s1": "0x0000000000000068",
+            "$ra": "0x0000000000400098",
+            "$sp": "0x000000007fffefd0"
+          },
+          "success": "The same helper body returned through a different continuation. The next two moves establish the result pair."
+        },
+        {
+          "id": "restored",
+          "explanation": "Resume to pair_return before jrc. Both results are ready, the incoming s0 and s1 have been restored, and sp has returned to the caller’s value. ra again identifies after_pair.",
+          "anchor": {
+            "label": "pair_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000068",
+            "$v1": "0x0000000000000081",
+            "$s0": "0x0000000010010008",
+            "$s1": "0x0000000000000000",
+            "$sp": "0x000000007fffeff0",
+            "$ra": "0x0000000000400064"
+          },
+          "success": "Restoration gives the caller back its own register values and stack pointer before control returns."
+        },
+        {
+          "id": "returned",
+          "explanation": "Step Into the return to after_pair. The first result store is next. s0 still holds the result address, so main can store the returned words at offsets zero and four.",
+          "anchor": {
+            "label": "after_pair",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000068",
+            "$v1": "0x0000000000000081",
+            "$s0": "0x0000000010010008",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The callee has returned its values and preserved the address needed by the caller’s pending stores."
+        }
+      ],
+      "success": "Finish or stop this Debug session before ordinary Run. Explain which value occupied s0 at each boundary, and how restoring it allowed the caller’s stores to use the correct address."
+    },
+    {
+      "kind": "prediction",
+      "id": "released-frame",
+      "explanation": "At pair_return, sp has been restored. Loading saved values and moving the pointer do not erase the frame’s old memory bytes.",
+      "question": "What does releasing this frame mean?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The callee has finished using those slots",
+          "feedback": "The bytes may remain visible until later code overwrites them. Their presence does not keep the frame active."
+        },
+        {
+          "id": "b",
+          "text": "All thirty-two bytes have been cleared",
+          "feedback": "No clearing stores appear in this routine. Pointer arithmetic alone does not erase memory."
+        },
+        {
+          "id": "c",
+          "text": "The caller should continue to use the saved slots as variables",
+          "feedback": "A later call can reuse that storage. The caller uses its restored registers and current frame."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pair_return",
+        "mnemonic": "jrc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "exit-selector",
+      "explanation": "After returning, main stores v0 and v1 in results, then selects exit service ten in v0. The program prints nothing.",
+      "question": "Where should you inspect the first reversal after running to exit?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The first results word",
+          "feedback": "Its value is 0x00000068. The exit selector has reused v0 since the function returned."
+        },
+        {
+          "id": "b",
+          "text": "The final v0 must still contain 104",
+          "feedback": "v0 held the result at the return boundary, but main later replaced it with the exit service number."
+        },
+        {
+          "id": "c",
+          "text": "The empty console proves that the stored values are correct",
+          "feedback": "An empty transcript only establishes that no console text was produced."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-rows",
+      "explanation": "Run reverse-rows.asm using ordinary Run. It should finish with no console text. Inspect the result words 0x00000068 and 0x00000081 and the unchanged guard in Memory, as the written lab describes. The empty transcript itself does not verify those words.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The worked program exited silently. The independent activity checks a related function directly at its return boundaries."
+    },
+    {
+      "kind": "assessment",
+      "id": "reverse-and-invert",
+      "source": "independent/reverse-and-invert.asm",
+      "caseProfile": "independent/reverse-and-invert.cases.json",
+      "checkKind": "function",
+      "explanation": "Write reverse_and_invert in independent/reverse-and-invert.asm, replacing its break body. Use the provided reverse_byte helper and return the reversed low byte XOR 0xff in v0. Preserve s0 through s7, fp, gp and sp, and return through each incoming continuation. Read independent/README.md: the native checks call the function directly, rather than running main. Each of three public cases contains 256 calls with changing arguments and return sites. The supplied main remains available for ordinary Run and Debug.",
+      "success": "The current source passes all three public function cases. Explain which value must survive the helper call, why the incoming continuation remains valid, and how your implementation also works for another aligned caller stack. Then complete the written lab’s deliberate preservation faults.",
+      "hints": [
+        {
+          "id": "lifetime",
+          "text": "A nested call replaces ra. Retain the continuation you still need before making that call."
+        },
+        {
+          "id": "result",
+          "text": "The helper returns a value from zero through 255. xori with 0xff toggles its eight low bits."
+        },
+        {
+          "id": "restore",
+          "text": "Place results before restoring saved state, restore the incoming pointer, and return through the retained continuation. A correct tail-transfer design can avoid creating another continuation."
+        }
+      ]
+    }
+  ]
+}

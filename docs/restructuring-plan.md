@@ -640,3 +640,35 @@ Its versioned function-case reader, native assessment wiring, explanatory
 interactive activities, actual IDE walkthrough and publication captures remain
 next. No new native content is represented as importable yet; no PDF or figure
 changed in this step. All 41 unrelated MARS files retain their prior content hashes.
+
+
+### Fifth-unit native integration and instructional draft
+
+Native lesson format 6 now selects explicit function assessments. Strict bounded
+function data is parsed into immutable definitions before import preview; the
+existing source-bound checkpoint dispatches to the prepared function checker.
+Console assessments and formats 1–5 retain their behavior. Unsaved correct code
+and an equivalent tail transfer pass through the native checkpoint; correct
+arithmetic with damaged full-width saved state fails. The full plugin suite passed
+1,177 tests and all required meaningful coverage/notice checks. Two additional
+regressions import the actual public profile/archive. The packaged API verifier
+reports Compatible with 91 public experimental usages.
+
+The development 003-row-functions archive now has five explanatory predictions,
+eight measured call/frame/return Debug boundaries, a silent Run and the independent
+function exercise. It extracts operations from original project 003 without
+replacing that project's later sprite work. A repeatable tool authors the public
+three-case grid and matching standalone DSL script: 256 calls per case, varied
+upper bits/saved values/stack locations, alternating caller continuations. Both
+private implementations pass all 1,536 calls across their two qualifications;
+the incomplete starter and six assembled result/preservation/helper/return faults
+are rejected. The worked program's eight boundaries and final words/guard also
+pass actual CLI execution. The 453 book-tool tests verify source consistency,
+expected data, generated-file freshness and exact student exports.
+
+This supplies an importable development lesson, not a completed native on-screen
+walkthrough. The fifth unit still needs its authoring-only driver, actual IDE
+Run/Debug/check/resume experience, new light-theme frame figures and direct LaTeX
+lab integration. No PDF changed in this step and no human learner review is
+claimed. Complete independent fixtures and private checks stay outside the public
+book repository. All 41 unrelated MARS file hashes remain unchanged.
