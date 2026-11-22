@@ -251,6 +251,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `bounded walkthrough isolates its exact source and single private fixture`() {
+        val bounded = plan.copy(archives = listOf(archive.copy(id = "013-bounded-interfaces", entry = "bounded-packet.asm")),
+            nativePredictions = true, boundedUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/bounded-line.asm", "/tmp/bounded.asm", "c".repeat(64))))
+        bounded.validate()
+        bounded.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(bounded.copy(nativePredictions = false), bounded.copy(nativeExecution = true),
+            bounded.copy(nativeDebug = true), bounded.copy(memoryUnit = true), bounded.copy(loopUnit = true),
+            bounded.copy(functionUnit = true), bounded.copy(spriteUnit = true), bounded.copy(rasterUnit = true), bounded.copy(lifeUnit = true), bounded.copy(sortingUnit = true), bounded.copy(fixedUnit = true), bounded.copy(localityUnit = true), bounded.copy(assessmentFixtures = emptyList()),
+            bounded.copy(archives = listOf(archive)), bounded.copy(resumeCompleted = true), bounded.copy(boundedUnit = false),
+            bounded.copy(activityNavigation = true), bounded.copy(prerequisiteControls = true),
+            bounded.copy(assessmentFixtures = bounded.assessmentFixtures + bounded.assessmentFixtures),
+            bounded.copy(assessmentFixtures = listOf(bounded.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
