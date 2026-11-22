@@ -616,3 +616,27 @@ and reviewed. The exact final PDF passed the pinned PDF/UA-2 profile: 1,728 rule
 892,967 checks, zero failures. Minion Pro, Noto Sans Math and JetBrains Mono remain
 embedded. Automated tagged-PDF validation does not substitute for human reading
 order, assistive-technology or learner review. The main learning PDF is unchanged.
+
+
+### Fifth-unit grading foundation: callable contracts
+
+The functions-and-stack unit already promises all 256 low-byte inputs, helper
+execution, arbitrary upper argument bits, full-width saved registers, stack
+restoration, caller-owned bytes and correct incoming continuations. A whole-program
+console or final-memory check would not preserve that contract. MARS now provides
+PreparedFunctionChecks, a bounded data-only counterpart of the existing assignment
+DSL's function-call and observation operations. Each case owns a fresh machine;
+repeated calls retain its memory and cumulative budget. Cancellation propagates
+between bounded calls and owned sessions close on success, failure and cancellation.
+
+The full CLI suite passes 151 tests. A saved-link wrapper and an equivalent tail
+transfer pass all 256 byte inputs with alternating continuations. Deliberate result,
+upper-half preservation, pointer, caller-byte, output, helper and return failures
+are rejected. Image isolation uses byte-order-sensitive reads on both targets.
+The existing public chapter text and script remain the educational contract.
+
+This is the grading foundation, not completion of the fifth native lesson.
+Its versioned function-case reader, native assessment wiring, explanatory
+interactive activities, actual IDE walkthrough and publication captures remain
+next. No new native content is represented as importable yet; no PDF or figure
+changed in this step. All 41 unrelated MARS files retain their prior content hashes.
