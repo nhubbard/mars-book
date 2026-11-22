@@ -4,6 +4,9 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import zipfile
+
+from native_lesson import bundle
 
 import partition_lesson_cases as partition
 
@@ -63,3 +66,23 @@ class PartitionLessonCasesTests(unittest.TestCase):
             self.assertEqual(partition.profile(),json.loads((directory/'partition-negative.cases.json').read_text()))
             (directory/'partition-negative.kts').write_text('stale')
             with self.assertRaises(ValueError):partition.build(directory,check=True)
+
+    def test_student_archive_preserves_the_half_exchange_and_every_activity_dependency(self):
+        unit=Path(__file__).resolve().parents[1]/'revision/lessons/009-sorting-costs'
+        lesson=json.loads((unit/'lesson.json').read_text());manifest=json.loads((unit/'package.json').read_text())
+        self.assertEqual(6,lesson['formatVersion'])
+        self.assertEqual(5,sum(s['kind']=='prediction' for s in lesson['steps']))
+        debug=next(s for s in lesson['steps'] if s['kind']=='debug')
+        self.assertEqual([],debug['integerInputs'])
+        self.assertEqual(8,len(debug['stops']))
+        self.assertEqual({'label':'insertion_compare_end','mnemonic':'sw','occurrence':1},debug['stops'][2]['anchor'])
+        with tempfile.TemporaryDirectory() as temporary:
+            with zipfile.ZipFile(bundle(unit,Path(temporary)/'student.zip')) as archive:
+                names=set(archive.namelist())
+                self.assertEqual({manifest['id']+'/'+name for name in ['package.json',manifest['entry'],manifest['assignment'],manifest['nativeLesson'],*manifest['supportingFiles']]},names)
+                for step in lesson['steps']:
+                    self.assertIn(manifest['id']+'/'+step.get('source',manifest['entry']),names)
+                    if step['kind']=='assessment':
+                        self.assertEqual('function',step['checkKind'])
+                        self.assertIn(manifest['id']+'/'+step['caseProfile'],names)
+                self.assertFalse(any('solution' in name or 'reference' in name or 'alternative' in name for name in names))

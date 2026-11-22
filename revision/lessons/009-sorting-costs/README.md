@@ -1,29 +1,35 @@
-# Sorting and stable partition: development foundation
+# Sorting, exchanges and measured work: development edition
 
-The ninth revised unit is being developed around the existing native LaTeX
-sorting chapter and lab. sorting-costs.asm is their exact worked source.
-The independent starter retains a failing break and adds an explicit guard
-before its backing array so access observers can cover both boundaries.
+This ninth revised unit preserves original project 009 and the chapter's exact
+worked source. Five inline predictions lead through eight ordered Debug stops,
+ordinary Run and an independent stable sign partition. The half-exchange anchor
+selects the second sw under insertion_compare_end, before it executes. The
+lesson distinguishes complete array changes from their publication and routine
+work from the rendering work triggered by exchanges.
 
-The generated version-4 function profile contains 56 public cases and two calls
-per case. It covers every valid offset/length in an eight-word fixture, signed
-extremes, stable order, idempotence, inactive words, preserved state, observed
-access bounds and caller-stack store protection. The direct length argument
-differs from the preserved global count word. Private implementations remain in
-the separate instructor repository.
+The version-4 profile has 56 public cases, two continuations each, every valid
+active offset/length in an eight-word fixture, signed extremes, stable order,
+inactive words, full-width saved state, observed access bounds and caller-stack
+store protection. Two private algorithms pass all cases in ordinary and
+relocated layouts through both grading routes. Six faults and the unfinished
+starter are rejected. That foundation is retained separately. Passing public
+samples does not prove all possible signed arrays.
 
-This is not yet an installable native lesson: its predictions, Debug steps,
-manifest, archive import and actual IDE walkthrough remain to be completed.
-The native LaTeX chapter and lab remain the publication authority. No new
-screenshot, PDF validation or learner review is claimed by this foundation.
+All 466 book tests, eight exact archive importer tests and 119 separate authoring
+Jupiter tests pass. The MARS production ZIP remains the tested access-check build
+with its complete 168-test CLI and 1194-test plugin regression and required
+coverage checks. The new archive test is additional focused evidence, not a new
+full regression claimed at 1195 tests. Both plugin builds pass the API verifier.
 
+Two real light-theme IDE walkthroughs pass inline answers and source pointers,
+all eight Debug stops, ordinary Run, failing starter feedback, unsaved correct
+source, edit invalidation and fresh-process resume retaining quiz history.
+Both projects close normally and the exact installed plugin JARs are verified.
 
-The foundation passes all 465 book-tool tests. Its core extension passes the
-full 168-test CLI and 1194-test plugin regression with required coverage checks.
-Two private algorithms pass all 56 cases in ordinary and relocated layouts,
-through both the public script and prepared function API. Six deliberate faults
-and the unfinished starter are rejected through both routes. The sorting
-measurement tool reproduces the chapter's instruction and rendering counts with
-the pinned new CLI. The packaged plugin passes the IntelliJ API verifier.
-These results qualify the checking foundation; they do not claim a completed
-lesson narrative, native archive import, IDE walkthrough or new publication.
+The native LaTeX lab now connects those controls to the reasoning. Its revised
+sorting material occupies pages 59–63 of the 198-page supplement. A new figure
+on page 60 uses two details from the same automated half-exchange photograph;
+LaTeX supplies its crops and outlines while the PNG stays unchanged. Final pages
+were inspected in color and the figure in grayscale. The PDF passes automated
+PDF/UA-2 validation. Human accessibility and representative learner reviews,
+later native units and companion integration remain outstanding.

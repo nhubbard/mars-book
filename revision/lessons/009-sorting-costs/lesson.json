@@ -1,0 +1,328 @@
+{
+  "formatVersion": 6,
+  "introduction": "Follow a sorting invariant through a temporary duplicate, a complete exchange and its published observation. Then distinguish the work of sorting from the work of rendering, and implement a stable sign partition with a different ordering contract.",
+  "conclusion": "Explain a result using its invariant, complete state and observation boundary. State what each measurement includes, and use a counterexample to separate ordering, preservation and access faults.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "signed-order",
+      "explanation": "The first insertion comparison loads the right key -2 and left key two using lw. The word load sign extends, and bgec compares signed register values. An exchange is needed when the right key is smaller.",
+      "question": "Which key moves left in the first exchange?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The key -2",
+          "feedback": "Negative two is less than two under the signed ordering used by this sorter."
+        },
+        {
+          "id": "b",
+          "text": "The key 2",
+          "feedback": "That would put the larger signed key first. Read the loaded values using the comparison\u2019s signed interpretation."
+        },
+        {
+          "id": "c",
+          "text": "Neither key",
+          "feedback": "They are different keys in the wrong order; the branch falls through to the two stores."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "insertion_compare",
+        "mnemonic": "bgec",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "half-exchange",
+      "explanation": "The first store copies the right key into the left word. The original left key must remain available until the second store writes it into the right word. Inspect the two loaded registers and both pending stores.",
+      "question": "Where does the algorithm retain the displaced key after the first store?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Register t2",
+          "feedback": "Both first array words then contain -2; t2 still contains two until the second store completes the exchange."
+        },
+        {
+          "id": "b",
+          "text": "The first array word",
+          "feedback": "The first store has overwritten that word. Its old value survives in a register."
+        },
+        {
+          "id": "c",
+          "text": "The exchange counter",
+          "feedback": "The counter records complete exchanges, not the displaced key."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "insertion_compare_end",
+        "mnemonic": "sw",
+        "occurrence": 1
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "sorted-prefix",
+      "explanation": "Before an insertion outer iteration at index i, words before i form a sorted prefix. The inner loop inserts the current word into that prefix without discarding a key. The rest of the active array has not yet been processed.",
+      "question": "At outer index two, which words form the sorted prefix?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The first two words",
+          "feedback": "Indices zero and one are the established prefix. Index two is the next key to insert."
+        },
+        {
+          "id": "b",
+          "text": "The entire array",
+          "feedback": "The invariant concerns only the prefix, even when some later keys happen to be in order."
+        },
+        {
+          "id": "c",
+          "text": "Only the word at index two",
+          "feedback": "A one-word input is sorted, but the outer invariant retains the work already done on earlier words."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "insertion_outer",
+        "mnemonic": "bgec",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-exchanges",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for sorting-costs.asm. Follow these eight observations with insertion selected and count eight. Move one line breakpoint at a time. The half-exchange stop is the second sw under insertion_compare_end, not the preceding nop or first store. Learn checks registers; inspect array words, phase, swap_count and frame as the written lab describes.",
+      "stops": [
+        {
+          "id": "initial-publication",
+          "explanation": "Break at the first sort_ready. Phase and exchange count are zero and the frame describes the original eight words. This is the initial publication, before either sorting routine has run.",
+          "anchor": {
+            "label": "sort_ready",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The initial image is a complete observation of unsorted input."
+        },
+        {
+          "id": "signed-compare",
+          "explanation": "Resume to the first insertion_compare. Inspect the sign-extended right key -2, left key two and the address of the right word. The sorter\u2019s 48-byte frame keeps its cursor and return link across helper calls.",
+          "anchor": {
+            "label": "insertion_compare",
+            "mnemonic": "bgec",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010108",
+            "$t1": "0xfffffffffffffffe",
+            "$t2": "0x0000000000000002",
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$sp": "0x000000007fffefc0"
+          },
+          "success": "The signed comparison permits the exchange; both keys are still available before either store."
+        },
+        {
+          "id": "half-exchange",
+          "explanation": "Resume to the second sw under insertion_compare_end, before it executes. The first store is complete: both first array words now contain -2. Register t2 still holds two. Inspect memory while the frame and publication metadata remain unchanged.",
+          "anchor": {
+            "label": "insertion_compare_end",
+            "mnemonic": "sw",
+            "occurrence": 1
+          },
+          "registers": {
+            "$t0": "0x0000000010010108",
+            "$t1": "0xfffffffffffffffe",
+            "$t2": "0x0000000000000002",
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$sp": "0x000000007fffefc0"
+          },
+          "success": "The temporary duplicate in memory does not mean the key was lost: the second store is still pending."
+        },
+        {
+          "id": "completed-exchange",
+          "explanation": "Resume to insertion_exchanged. Both stores are complete and the first two words are [-2,2]. The helper has not yet updated phase, exchange count or the frame. Inspect the array separately from its published observation.",
+          "anchor": {
+            "label": "insertion_exchanged",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$sp": "0x000000007fffefc0"
+          },
+          "success": "A complete exchange precedes the helper that publishes it."
+        },
+        {
+          "id": "exchange-publication",
+          "explanation": "Resume to the next sort_ready. Phase is one, exchange count is one and the renderer has drawn the exchanged array. The nested publication frame puts sp 64 bytes below the caller\u2019s aligned value; the sorter\u2019s saved cursors remain live.",
+          "anchor": {
+            "label": "sort_ready",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$sp": "0x000000007fffefb0"
+          },
+          "success": "The metadata and complete frame now describe the same exchanged array."
+        },
+        {
+          "id": "next-prefix",
+          "explanation": "Resume to the next insertion_outer. Index two is about to be processed and the first two words form the sorted prefix. The inner cursor reached zero on the preceding iteration. The publication helper has returned and only the sorter\u2019s frame remains.",
+          "anchor": {
+            "label": "insertion_outer",
+            "mnemonic": "bgec",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000002",
+            "$s3": "0x0000000000000000",
+            "$sp": "0x000000007fffefc0"
+          },
+          "success": "The outer invariant records completed prefix work; it does not say the whole array is sorted."
+        },
+        {
+          "id": "sort-returned",
+          "explanation": "Resume to sort_end. Insertion has returned and restored the caller\u2019s stack. All eight words are sorted and the exchange count is 17. Phase still describes an exchange publication; the caller is about to publish its final phase.",
+          "anchor": {
+            "label": "sort_end",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Finishing the sorter and publishing the final observation are different boundaries."
+        },
+        {
+          "id": "final-publication",
+          "explanation": "Resume to done before the exit selector is loaded. Phase is two, the count is 17 and the frame contains the sorted array. The initial frame, 17 exchange frames and final frame make 19 complete publications.",
+          "anchor": {
+            "label": "done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010104",
+            "$s1": "0x0000000000000008",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "A consistent final image is useful evidence, while a cost claim still needs a stated measurement scope."
+        }
+      ],
+      "success": "Finish or stop Debug before ordinary Run. Explain where both keys exist during the exchange and when its observation becomes consistent."
+    },
+    {
+      "kind": "prediction",
+      "id": "publication-count",
+      "explanation": "The visualizer draws the initial array, draws after every complete exchange and draws a final frame. The measured default insertion run makes 17 exchanges. Each render overwrites all 64 framebuffer words, including black pixels.",
+      "question": "How many complete frames accompany seventeen exchanges?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Nineteen frames",
+          "feedback": "Add the initial and final publications to the 17 exchange publications: 19 frames and 1216 word stores."
+        },
+        {
+          "id": "b",
+          "text": "Seventeen frames",
+          "feedback": "That omits the initial and final observations."
+        },
+        {
+          "id": "c",
+          "text": "Eighteen frames",
+          "feedback": "Both boundary publications are present, not just one."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "publish_exchange",
+        "mnemonic": "balc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-sorting",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run sorting-costs.asm using ordinary Run. It should exit silently with sorted words [-4,-3,-2,-1,0,1,2,3], phase two and exchange count 17. Inspect the retained state. A fast display need not visibly repaint all 19 frames. The written lab\u2019s measurement tool distinguishes routine instructions from the complete visualized run.",
+      "success": "The worked insertion run exited silently. Use the written measurements to distinguish algorithm work from the observation work triggered by exchanges."
+    },
+    {
+      "kind": "prediction",
+      "id": "stable-groups",
+      "explanation": "The independent task groups negative words before nonnegative words while retaining each group\u2019s original relative order. Its default input is [2,-2,3,-4,0,1,-3,-1]. The contract asks for a stable sign partition rather than numerical sorting.",
+      "question": "Which negative prefix meets the partition contract?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[-2, -4, -3, -1]",
+          "feedback": "These negative keys appear in their original order. The returned count is four."
+        },
+        {
+          "id": "b",
+          "text": "[-4, -3, -2, -1]",
+          "feedback": "This is ascending order, which changes the negative group\u2019s original relative order."
+        },
+        {
+          "id": "c",
+          "text": "[-1, -3, -4, -2]",
+          "feedback": "Reversing a group also violates stability, even when every negative key is present."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "insertion_compare",
+        "mnemonic": "bgec",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "stable-partition",
+      "source": "independent/partition-negative.asm",
+      "caseProfile": "independent/partition-negative.cases.json",
+      "checkKind": "function",
+      "explanation": "Write partition_negative in independent/partition-negative.asm, replacing its break body. Read independent/README.md. Use the passed pointer and active length, preserve order within both sign groups, return the negative count, and preserve inactive words and caller state. Fifty-six public cases call through both continuations, vary the active span and global metadata, and observe array access bounds and caller-stack stores. Private frame layouts and equivalent correct algorithms are accepted.",
+      "success": "The current source passes all fifty-six public partition cases. Explain why both group order and access bounds hold, including an empty span and the most negative word. Complete the written measurement comparison and the deliberate ordering and boundary faults.",
+      "hints": [
+        {
+          "id": "group-invariant",
+          "text": "Track where the negative prefix ends and which input positions are already processed. Moving a negative word must keep earlier negative and nonnegative words in their original relative order."
+        },
+        {
+          "id": "span-first",
+          "text": "The active address is the passed a0, which can point inside the allocation. Length a1 is authoritative. For zero length, return without loading an array word."
+        },
+        {
+          "id": "private-storage",
+          "text": "A temporary buffer can live in a private stack frame below the incoming sp. Preserve the caller\u2019s bytes above that entry pointer, restore sp, and return through the incoming continuation."
+        }
+      ]
+    }
+  ]
+}

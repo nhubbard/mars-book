@@ -2,11 +2,19 @@
 \MARSChapterHeading{Sorting and search}
 \label{revision-lab:algorithms-and-cost}
 
-Use \texttt{sorting-costs.asm} from \texttt{revision/labs/files} with ordinary
-MARS Run and Debug. Read the main chapter's two invariants before following the
-loops. The purpose is to explain a measured difference, including the work done
-to show the algorithm. These exercises use source breakpoints and the public
-measurement tool; they do not require a new interactive lesson to be installed.
+Read the main chapter, then import the student package
+\texttt{009-sorting-costs} and continue its downloaded lesson in Learn. Answer
+the inline predictions using their source pointers, then use the imported
+\texttt{sorting-costs.asm} for the guided Debug sequence. Keep its default
+insertion algorithm and eight-word count for those observations. Use separate
+copies for the smaller inputs, selection sort and deliberate faults below.
+
+The worked source is also available at
+\path{revision/labs/files/sorting-costs.asm} for ordinary Run and Debug. Read
+the two invariants before following the loops. The purpose is to explain a
+measured difference, including the work done to show the algorithm. The native
+lesson checks register observations; this lab connects them with complete array,
+metadata and framebuffer state and the public measurement tool.
 
 \section{Predict complete exchanges}
 
@@ -35,13 +43,25 @@ first visit, identify the right and left keys in \texttt{\$t1} and
 \texttt{\$t2}, and derive both store addresses from \texttt{\$t0}. The right key
 is $-2$ and the left key is two. The signed comparison permits the exchange.
 
-Step through the branch and the following \texttt{nop}, then execute just the
-first store. Inspect the array: its first two words now both contain $-2$.
+The guided sequence begins at the initial \texttt{sort\_ready}, then reaches
+this first comparison. Its next stop is the second \texttt{sw} under
+\texttt{insertion\_compare\_end}, before that store executes. Move your single
+line breakpoint to that instruction and resume. To reach the same boundary
+manually, step through the branch and the following \texttt{nop}, then execute
+just the first store. Inspect the array: its first two words now both contain $-2$.
 The value two still exists in a register, awaiting the second store. Explain
 why this temporary memory image is not a completed sorting result. Execute the
 second store and stop at \texttt{insertion\_exchanged}. The prefix now starts
 $[-2,2,3,-4]$, but phase, exchange count and framebuffer still describe the initial
 publication. Those fields are updated by the helper call that follows.
+
+Figure~\ref{fig:revision-sort-half-exchange} shows the actual pause before the
+second store. The hexadecimal value in \texttt{\$t1} is the sign-extended $-2$;
+\texttt{\$t2} still contains two. The memory inspection and the register
+inspection answer different questions: what is already stored, and what remains
+available to finish the operation.
+
+\input{revision/figures/sorting/half-exchange}
 
 Continue to \texttt{sort\_ready}. Phase should be one, the count should be one,
 and the frame should describe the exchanged array. Derive one white and one
@@ -54,6 +74,18 @@ The renderer may change argument and temporary registers. Find the insertion
 cursor and array pointer that survive in saved registers, and inspect the saved
 return links in the nested frames. Continuing the loop must not depend on a
 temporary register retaining a value across either call.
+
+The next guided stop is \texttt{insertion\_outer} at index two. Its first two
+words form the sorted prefix, while the next key is about to be processed. The
+inner cursor reached zero on the previous iteration. The publication helper has
+returned, so only the sorter's 48-byte frame remains.
+
+After the sorter returns, stop at \texttt{sort\_end}. The caller's stack pointer
+is restored and all eight words are sorted, but phase still describes the last
+exchange publication. The final guided stop, \texttt{done}, follows the caller's
+phase-two publication. Finish or stop Debug before ordinary Run. Learn retains
+predictions and checks across project closure; edits require fresh execution
+evidence for the changed source.
 
 At the final visit, phase is two and the count is 17 for insertion or five for
 selection on the default input. Both final arrays are
@@ -128,7 +160,8 @@ performance claim should identify which behavior changed and which work was coun
 
 \section{Write a stable sign partition independently}
 
-Open \texttt{partition-negative.asm}. Implement \texttt{partition\_negative}
+Open the imported \texttt{independent/partition-negative.asm}. Implement
+\texttt{partition\_negative}
 with an array pointer in \texttt{\$a0} and a length from zero through eight in
 \texttt{\$a1}. Return the number of negative words in \texttt{\$v0}. Place the
 negative words first and nonnegative words second, retaining their original
@@ -155,13 +188,34 @@ is permitted, but writes into the caller's frame are not.
 
 Test empty input, one negative word, one zero, all-negative and all-nonnegative
 inputs, repeated values and the most negative signed word. Explain why comparing
-with zero directly avoids needing to negate that extreme value. Then run the
-public checks from the repository root:
+with zero directly avoids needing to negate that extreme value. Use \textbf{Check this program} in Learn to check the current editor text,
+including an unsaved edit. The unfinished starter should fail. For the same
+public cases outside the IDE, run from the repository root:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/partition-negative.kts \
+  revision/lessons/009-sorting-costs/independent/partition-negative.kts \
   /path/to/your/partition-negative.asm
 \end{verbatim}
+The 56 cases include all 45 valid offset/length pairs in an eight-word fixture,
+alongside signed extremes and repeated keys. They pass a length different from
+the preserved global \texttt{count} word. A pointer to the middle of the array
+and its passed length define the active span; the fixture's base and global
+count do not replace that interface.
+
+An explicit guard precedes the imported array. Access histories watch that
+guard, the complete backing array and its following guard, requiring overlapping
+reads and stores to fit wholly within the active span. Separate store histories
+protect metadata, guards and the 32 caller-owned stack bytes above the aligned
+incoming pointer. A same-value or later-restored caller store is still a
+violation. Private frames below that pointer remain permitted. These bounded
+observations do not prescribe a frame layout or claim to audit every address.
+
+Each case calls through both supplied continuations. The second call receives
+the already partitioned span, which should retain its values and negative
+count. A pass establishes 112 returned calls on the public inputs, rather than
+every possible signed array. Keep an invariant and counterexample beside the
+report.
+
 The starter deliberately stops until you replace its missing function. On a failed
 case, identify whether the disagreement concerns group order, relative order,
 returned count, access bounds or preserved state. Repair that requirement, then

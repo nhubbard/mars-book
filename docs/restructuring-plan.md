@@ -884,3 +884,34 @@ sequence, manifest, exact archive import, real IDE/resume walkthrough and LaTeX
 lab integration remain. No new screenshot or PDF validation is claimed, and the
 verified 197-page lab PDF remains unchanged. Later units, companion integration,
 human accessibility and learner review also remain part of the active goal.
+
+
+### Ninth native unit: sorting exchanges (22 November 2026)
+
+The checking foundation is now connected to a complete native lesson: five
+predictions, eight Debug observations, ordinary Run and the 56-case stable
+partition. The second-store anchor makes an intermediate duplicate visible
+without adding labels to the worked program. A new execution probe verifies
+all states, complete arrays, publication metadata and framebuffer contents.
+The exact archive passes eight importer tests. The book suite passes 466 tests;
+the separate authoring plugin passes 119. Production MARS is the same ZIP as
+the foundation with its full 168 CLI / 1194 plugin regression and required
+coverage; this step adds a focused archive test rather than claiming a new
+complete regression. Both plugins pass the packaged API verifier.
+
+The light-theme IDE walkthrough and fresh-process resume pass actual inline
+links, source pointers, the half-exchange breakpoint, all other pauses, Run,
+starter failure, an unsaved correct implementation and source-edit invalidation.
+Quiz history survives. Both projects close normally, the eleven installed JARs
+match their pins and IDE logs have no errors. Authoring remains separate.
+
+The native lab now explains those controls and the checking scope. It adds a
+figure from one actual automated photograph: one detail shows the pending store,
+the other t2 retaining the displaced key. The raw PNG is unchanged; LaTeX owns
+crops, headings and outlines. Color and grayscale render review is complete.
+Sorting occupies pages 59–63, its figure page 60, and the maze companion starts
+on 63. The final lab PDF has 198 pages. Fonts retain embedding and Unicode maps.
+PDF/UA-2 passes 1728 rules and 926302 checks with zero failures. Final PDF SHA-256:
+`c2edf4616b81c13e0a6ebb7389d4610a54fae0aeab0aabd957cbeed3bacedd31`.
+The main learning PDF is unchanged. Learner and human accessibility review,
+later native units and companion integration remain outstanding.
