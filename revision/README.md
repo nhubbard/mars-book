@@ -270,3 +270,8 @@ The revised lossless-video unit is described in [lossless-unit.md](lossless-unit
 It adds Chapter 25, its written lab, a complete worked codec/player and an
 independent changed-pixel-bounds exercise. The main proof is now 171 pages and the
 lab 175 pages. H.263 compositions and advanced native delivery remain open.
+
+The first H.263 unit is described in [h263-prediction-unit.md](h263-prediction-unit.md).
+Chapter 26 follows prediction, transform/quantization and local reconstruction; its
+lab adds an independent signed reconstruction exercise. Both current proofs are
+180 pages. Stream coding and independent decoding follow in Chapter 27.

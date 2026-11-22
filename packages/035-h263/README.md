@@ -63,3 +63,14 @@ light-theme IDE figures now retain verified original captures, native LaTeX anno
 numbered legends and reviewed color/grayscale proofs. Capture
 implementation belongs in the separate authoring plugin depending on MARS.
 Independent accessibility review and later substantive editing remain separate.
+
+The revised main book treats this project across Chapters 26 and 27. Chapter 26
+and its written lab explain numerical prediction and local reconstruction;
+`revision/labs/files/h263-encoder.asm` is the book's complete worked source.
+`revision/labs/files/h263-reconstruct8.asm` supplies an independent unfinished
+reconstruction exercise with separate feedback under `revision/labs/checks/`.
+The original package keeps the full-encoder assignment unfinished. Four additional
+revised-book Debug figures show exact numerical observations; the six original
+construction figures remain available. Renewed whole-stream verification and the
+second revised chapter are in progress. Instructor alternatives, private checks
+and quiz keys remain private.

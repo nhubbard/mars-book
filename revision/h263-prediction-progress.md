@@ -1,4 +1,8 @@
-# H.263 prediction unit: implementation checkpoint
+# H.263 prediction unit: historical implementation checkpoint
+
+This checkpoint predates publication. See [h263-prediction-unit.md](h263-prediction-unit.md)
+for the completed unit and current verification scope. The following text retains
+the earlier implementation boundary.
 
 Chapter 26 and its written lab are being composed directly in
 `main/predicting-pictures.tex` and `labs/predicting-pictures.tex`. They are not yet
