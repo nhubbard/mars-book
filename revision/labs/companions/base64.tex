@@ -1,0 +1,252 @@
+\section{Companion lab: regrouping bytes as Base64 text}
+\label{revision-lab:base64}
+
+The delta codec assigns short spellings to small integers. Base64 has a different
+purpose: represent arbitrary bytes using a restricted text alphabet. It expands
+three input bytes into four characters and uses padding for an incomplete final
+group. It neither compresses nor encrypts the data. This companion revises
+original project \texttt{028-base64}; use the complete
+\texttt{base64-codec.asm} in \texttt{revision/labs/files}. It supplies scalar and
+MSA whole-buffer entries plus exact-size vector kernels. The independent
+\texttt{base64url.asm} starter changes the alphabet and omits padding.
+
+You will need unsigned byte loads, masks and shifts, function calls, the earlier
+MSA lane/shuffle chapter and the distinction between validation and publication.
+Read the scalar bit grouping before the vector schedule. These activities use
+ordinary Run and Debug; the native guided lesson remains unfinished. Keep source
+copies for changed inputs. Original project checks and input recipes remain in
+\texttt{packages/028-base64}.
+
+\subsection*{Derive four indices from three bytes}
+
+Let the three unsigned bytes be $a,b,c$. Concatenate their bits in that order,
+most significant bit first, then split the 24 bits into four groups of six.
+The resulting indices are
+\[
+ q_0=a\mathbin{\gg}2,\qquad
+ q_1=((a\mathbin{\&}3)\mathbin{\ll}4)\mathbin{|}(b\mathbin{\gg}4),
+\]
+\[
+ q_2=((b\mathbin{\&}15)\mathbin{\ll}2)\mathbin{|}(c\mathbin{\gg}6),\qquad
+ q_3=c\mathbin{\&}63.
+\]
+Each $q$ lies between zero and 63. These are numerical indices, often called
+\emph{sextets}; they are not yet character codes. The two middle sextets cross
+input-byte boundaries, so shifting each byte independently is insufficient.
+
+For bytes hexadecimal \texttt{4d 61 6e}, the text \texttt{Man}, the indices are
+$19,22,5,46$. The standard alphabet assigns indices zero through 25 to
+\texttt{A} through \texttt{Z}, 26 through 51 to lowercase letters, 52 through
+61 to digits, and 62/63 to \texttt{+/}. The four indices become
+\texttt{TWFu}, bytes \texttt{54 57 46 75}. The zero index means character
+\texttt{A}, ASCII 65, not byte zero. The zero byte remains valid binary input.
+
+\input{revision/figures/base64/bit-groups}
+
+The scalar encoder loads with \texttt{lbu}. In its first two-character operation,
+\texttt{\$t0}=a, \texttt{\$t1}=b, \texttt{\$s4} points to the alphabet and
+\texttt{\$s2} points to output. After writing the first character, this fragment
+forms and publishes the second:
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Join two input bytes into sextet one}
+\begin{minted}{mars-idea}
+andi $t3, $t0, 3
+sll $t3, $t3, 4
+srl $t4, $t1, 4
+or $t3, $t3, $t4
+daddu $t4, $s4, $t3
+lbu $t4, 0($t4)
+sb $t4, 1($s2)
+\end{minted}
+The masks justify the small word shifts; the alphabet address still uses full-
+width arithmetic. A numerical result of 22 becomes ASCII 87 only at the lookup.
+Investigate those as separate states if the bit grouping looks correct but the
+stored text does not.
+
+Run the unchanged caller, whose mode two selects scalar encoding of
+\texttt{Man}. Break at \texttt{encode\_scalar\_return}, before
+\texttt{main\_done}. Status \texttt{\$v0}=0 and count \texttt{\$v1}=4 are
+live; destination begins \texttt{TWFu}, and its next byte remains the sentinel
+\texttt{a5}. This interface writes an explicit length, without a NUL terminator.
+The caller publishes status and count at \texttt{main\_done}, then exits.
+
+\subsection*{An incomplete group still has four characters}
+
+One final input byte has eight useful bits. It fills $q_0$ and the high two bits
+of $q_1$; the low four bits of $q_1$ must be zero. Emit those two alphabet
+characters followed by \texttt{==}. Two final bytes fill $q_0,q_1$ and the high
+four bits of $q_2$; its low two bits must be zero. Emit three characters followed
+by one \texttt{=}. Padding is a marker, not an extra sextet with value 64.
+
+For \texttt{M}, the result is \texttt{TQ==}; for \texttt{Ma}, it is
+\texttt{TWE=}; for \texttt{Man}, \texttt{TWFu}. Predict these before changing
+count to one, two or three in a copy. Keep the larger source allocation, but
+explain why the encoder must not read missing bytes from that backing storage.
+Its scalar path initializes absent $b$ or $c$ to zero and loads them only when
+the selected input contains them.
+
+For nonnegative count $n$, the required standard output length is
+$4\lceil n/3\rceil$. Three bytes need four output bytes; four need eight.
+The whole encoder first rejects an over-limit unsigned count, then accepts
+empty input, then checks the complete required capacity before reading source.
+Insufficient capacity returns status three with written count zero and no
+caller access. A high-bit-set capacity is a large unsigned capacity, not a
+negative signed capacity.
+
+\subsection*{Validate all text before publishing decoded bytes}
+
+The decoder accepts canonical standard-alphabet text: length is a multiple of
+four, padding appears only in its legal final positions, unused bits are zero,
+and whitespace and nonalphabet bytes are rejected. \texttt{TR==} has the same
+high useful bits as \texttt{TQ==}, but its second sextet is 17 rather than 16.
+Its low four bits are nonzero, so it is rejected. Similarly, \texttt{TWF=}
+would discard nonzero low bits from its third sextet and is rejected, while
+\texttt{TWE=} is canonical.
+
+The worked helper \texttt{b64\_validate} scans the complete input and computes
+the decoded length without writing output. The whole decoder checks capacity
+only after validation succeeds, then decodes. Thus malformed text takes precedence
+over insufficient capacity; every failure has written count zero and leaves
+all output untouched. This is a whole-buffer guarantee, unlike the delta
+codec's accepted-prefix guarantee. State which guarantee a caller can rely on.
+
+Prepare a decoder copy with mode three, count eight, source text
+\texttt{TWFuTR==} and any sufficient capacity. The first quartet is valid, but
+the final quartet has nonzero unused bits. Stop at
+\texttt{decode\_scalar\_return}. Expect malformed status two, written count
+zero and an entirely unchanged destination. Then set capacity zero and repeat;
+malformed still wins. Replace the text with \texttt{TWFuTQ==} and repeat with
+capacity zero: now valid text reaches the capacity test and returns status three.
+
+\input{revision/figures/base64/validation}
+
+Decoding reverses the bit grouping. For validated sextets, the bytes are
+$(q_0\ll2)|(q_1\gg4)$, $((q_1\mathbin{\&}15)\ll4)|(q_2\gg2)$ and
+$((q_2\mathbin{\&}3)\ll6)|q_3$. Padding determines which of these bytes
+exist; do not store three bytes for every final quartet. Exact in-place decoding
+is allowed because each four-character group is read before its shorter output
+is stored. Earlier stores cannot reach a future quartet. Shifted partial overlap
+is outside this interface, as is in-place encoding that expands into unread input.
+
+\subsection*{Vectorize the same bit argument with exact footprints}
+
+The direct encoder kernel takes exactly twelve source bytes and writes sixteen
+characters. Its caller has already established those bytes exist. A sixteen-byte
+vector load directly from source would overread by four, even if its unused
+lanes were later ignored. The worked kernel copies twelve bytes into a private
+sixteen-byte stack slot whose remaining bytes are zero, then performs its vector
+load there. The private allocation supports sixteen bytes; the source slice does
+not. A different valid schedule may assemble the vector another way.
+
+The shuffle and shift tables construct sixteen sextets. Four groups of three
+input bytes become four groups of four output lanes. For \texttt{ManManManMan},
+register \texttt{\$w1} at \texttt{after\_enc12\_right} contains byte lanes
+$[19,22,5,46]$ repeated four times. The later alphabet conversion produces
+\texttt{TWFuTWFuTWFuTWFu} in \texttt{\$w4}. Set mode four and count twelve
+in a source copy to observe this direct kernel. Its input/output pointers are
+in \texttt{\$a0/\$a1}, unlike the whole entry's \texttt{\$a0/\$a2} pair.
+
+\input{revision/figures/base64/sextets}
+
+\Needspace{8\baselineskip}
+The direct decoder starts with exactly sixteen valid, unpadded alphabet
+characters and produces twelve bytes. Its vector result initially has unused
+positions between three-byte groups. A compaction shuffle gathers the twelve
+useful bytes. The kernel stores that vector to private stack storage, then copies
+only twelve bytes to the caller. A direct sixteen-byte output store would violate
+the interface even when its first twelve bytes were correct. Direct-kernel input
+validity is a precondition, not a promise to reject malformed arbitrary text.
+
+Whole MSA entries combine these kernels with the same validation, capacity and
+scalar-tail rules as their scalar counterparts. They select the encoder kernel
+only when at least twelve raw bytes remain. Decoder vector work applies only to
+complete unpadded groups. Explain the boundary at eleven/twelve/thirteen raw
+bytes and at the last padded quartet. Reusing a vector operation does not transfer
+its stronger preconditions to every whole-buffer input.
+
+\subsection*{Check the complete contract, then compare work}
+
+Whole entries take full source pointer, unsigned count, full destination pointer
+and unsigned capacity in \texttt{\$a0} through \texttt{\$a3}. Status in
+\texttt{\$v0} is zero success, one count limit, two malformed decoder text or
+three capacity. \texttt{\$v1} is exact output length on success and zero on
+failure. Encoders accept up to 4096 input bytes, requiring at most 5464 text
+bytes. Decoders accept up to 5464 text bytes, which can describe as many as 4098
+binary bytes. Those two limits are not inverse bounds on the same set of inputs.
+
+All pointers may be byte-unaligned. Preserve saved registers, frame pointer,
+stack pointer and their full bits, return through the supplied continuation and
+perform no console I/O. Read selected input/output slices and write only the
+exact successful result. Private constants and stack storage are allowed. The
+8192-byte source/destination arenas and private workspace are backing capacities,
+not permission to overread, overstore or append a terminator.
+
+\Needspace{12\baselineskip}
+Run the existing completed-interface suites against the complete source. For
+example:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/028-base64/checks/canonical.kts \
+  revision/labs/files/base64-codec.asm
+java -jar /path/to/cli.jar grade \
+  packages/028-base64/checks/kernels.kts \
+  revision/labs/files/base64-codec.asm
+\end{verbatim}
+The same directory has encoding, decoding, bounds, caller and repeated-session
+suites. Use a late error, an exact in-place decode, a maximum input and an empty
+input in addition to short familiar words. Check all bytes and preserved state;
+a round trip alone cannot establish canonical acceptance or exact footprints.
+
+If comparing scalar and vector work, use the same whole-buffer interval and
+include validation, calls, private copies, alphabet conversion and tails. A fast
+kernel with extra copying can have a different whole-function cost. Keep
+completed instructions separate from host time and hardware cycles, as in the
+main chapter's measurement discussion.
+
+\subsection*{Write an unpadded URL-safe encoder independently}
+
+Complete \texttt{b64url\_encode} in \texttt{base64url.asm}, retaining its caller
+and allocations. Use the same six-bit groups but map indices 62 and 63 to
+\texttt{-\_} instead of \texttt{+/}. Omit all \texttt{=} padding. This is the
+URL-safe alphabet and explicitly unpadded variant for this exercise; the name
+alone does not imply that padding may always be omitted in another protocol.
+
+Inputs are full source pointer, unsigned byte count zero through 64, full
+destination pointer and unsigned capacity in \texttt{\$a0} through
+\texttt{\$a3}. Return status zero success, one over-limit count or three capacity
+in \texttt{\$v0}, with exact written length or zero in \texttt{\$v1}.
+Over-limit count wins before pointer access; empty input then succeeds without
+pointer access; capacity is checked before reading nonempty source. Buffers are
+disjoint and may begin at arbitrary byte addresses. Preserve other caller data,
+saved registers, frame pointer and stack pointer, return through the supplied
+continuation and produce no console I/O. No padding, NUL or rejected output may
+be written, including temporary stores restored before return.
+
+Derive output length from complete groups and a remainder of zero, one or two:
+$4\lfloor n/3\rfloor$ plus zero, two or three. The maximum is 86 bytes for
+64 inputs. Do not reserve or report the standard padded length for a short tail.
+The default four input bytes are hexadecimal \texttt{fb ff ff ff}, whose
+unpadded URL result is \texttt{-\_\_\_\_w}, six bytes. Derive its indices to
+check both special symbols and its one-byte remainder.
+
+Establish a scalar implementation, then choose whether and how to reuse vector
+sextet generation. Changing a scalar alphabet table does not automatically change
+a vector arithmetic classifier. Keep a one-byte input, a two-byte input, all
+special-symbol lanes and a twelve-byte group as evidence for your choices.
+\Needspace{6\baselineskip}
+Run the public checks:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/base64url.kts \
+  /path/to/your/base64url.asm
+\end{verbatim}
+Checks accept equivalent solutions; they do not require a particular frame,
+classifier or vector schedule. Explain the bit grouping, tail length and exact
+footprint separately from any performance claim.
+
+The alphabet, grouping and padding conventions follow
+\href{https://www.rfc-editor.org/rfc/rfc4648.html}{RFC 4648}; the whole-function
+limits, strict decoder policy, precedence and memory guarantees are the lab's
+explicit interface. The public package retains its larger construction sequence
+and recipes for optional practice. This written companion supplies the reasoning
+and independent assignment without requiring that sequence of editor actions.

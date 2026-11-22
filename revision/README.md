@@ -39,7 +39,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–17 (111 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–17 and companions (100 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–17 and companions (105 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -196,4 +196,11 @@ Chapter 17 starts on main page 105 and lab page 96. See [delta-unit.md](delta-un
 for the complete delta codec, independent read-only scanner, candidate/prefix
 observations and repeatable byte-size/instruction-work comparisons. The main
 proof now has 111 pages and the lab proof 100. The advanced PCM/H.263 excerpt
-remains unchanged. Base64 is the next companion in the encoding sequence.
+remains unchanged. Base64 now follows as the encoding companion in section 17.7.
+
+The Base64 companion is section 17.7 on lab pages 100–105. See
+[base64-unit.md](base64-unit.md) for sextet/character reasoning, canonical padding,
+whole-buffer validation, exact vector footprints, the independent unpadded
+URL-safe encoder and three verified native Debug captures. The lab proof has
+105 pages; the main proof and advanced excerpt are unchanged by this companion.
+The next main chapter develops bounded file I/O and binary PPM.
