@@ -1,0 +1,288 @@
+\chapter{Checksums and streaming state}
+\MARSChapterHeading{Checksums and streaming state}
+\label{revision:crc}
+
+The image file from the preceding chapter has a precise byte representation.
+Suppose you copy it to another machine and want to notice an accidental change.
+Comparing file lengths cannot detect a changed sample. A checksum compresses
+information about the selected bytes into a value that can be recomputed and
+compared with a stored value.
+
+This chapter implements a cyclic redundancy check, or CRC, with a 32-bit state.
+Its result is an error-detection value, not a unique identity: distinct messages
+can have the same 32 bits. A CRC also does not establish who produced the bytes
+or prevent someone from deliberately changing both data and checksum. Here its
+purpose is to detect disagreement about the bytes a program received.
+
+The complete \texttt{crc32.asm} in \texttt{revision/labs/files} supplies bit,
+table and file routines. A second complete example, \texttt{crc32-stream.asm},
+continues one message across two updates. You will derive the update rule,
+explain why its state survives buffer boundaries, compare measured work and
+finish with an independent checker for a bounded chunk. Bytewise reasoning,
+logical shifts, function calls and the preceding chapter's file I/O are prerequisites.
+
+\section{Specify the message and the CRC variant}
+
+The name CRC-32 alone is insufficient to determine every convention. Our variant
+uses reflected feedback mask hexadecimal \texttt{edb88320}, initial raw state
+\texttt{ffffffff} and final XOR \texttt{ffffffff}. Reflected processing examines
+low bits first and shifts the state to the right. Those choices must agree with
+the writer of a stored checksum.
+
+The check message is exactly nine ASCII bytes \texttt{123456789}.
+It contains neither a newline nor a string terminator. Its reported checksum is
+\texttt{cbf43926}; the state before the final XOR is \texttt{340bc6d9}.
+Name these values differently in your notes. A raw state can continue a message;
+a reported checksum has already undergone the final transformation.
+
+The update interface receives source pointer in \texttt{\$a0}, selected count
+from zero through 4096 in \texttt{\$a1}, and a zero-extended raw state in
+\texttt{\$a2}. It returns the next zero-extended raw state in \texttt{\$v0}.
+The table version also receives its prepared table pointer in \texttt{\$a3}.
+An empty update returns the incoming state and reads neither source nor table.
+The source may be unaligned; the word table must be four-byte aligned. Updates
+write no caller data and preserve full saved registers, frame pointer and stack
+pointer. Counts outside the stated range are outside this kernel contract.
+
+Selecting the bytes is part of using the algorithm correctly. A checksum over
+an allocation's padding answers a different question from a checksum over a
+file's selected contents. The same applies to a text editor that silently adds
+a line ending. Begin with the nine-byte fixture before investigating a mismatch
+in a longer input.
+
+\section{Follow one byte through eight feedback steps}
+
+Let $r$ denote the current unsigned 32-bit state and $b$ the next unsigned byte.
+First replace $r$ with $r\mathbin{\mathrm{xor}}b$. Then perform eight steps.
+In each step, remember the old low bit, shift $r$ right logically by one, and
+XOR the feedback mask into the shifted state if the remembered bit was one.
+Remembering before shifting matters: the shift discards the bit that decides
+whether feedback is required.
+
+The feedback mask represents the selected generator polynomial in this bit
+orientation. In polynomial arithmetic with coefficients zero and one, adding
+and subtracting coefficients both act as XOR; there is no carry between bit
+positions. The shift and conditional XOR implement a polynomial remainder
+update. You can establish the program's behavior from the recurrence without
+memorizing a long polynomial expression. Replacing XOR with ordinary integer
+addition would introduce carries and implement a different operation.
+
+For the first ASCII byte \texttt{31}, initial XOR gives \texttt{ffffffce}.
+Its low bit is zero, so the first step produces \texttt{7fffffe7} without
+feedback. That state's low bit is one. The next shift produces
+\texttt{3ffffff3}; XOR with \texttt{edb88320} gives \texttt{d2477cd3}.
+Continue the same rule for the remaining six steps.
+
+\input{revision/figures/crc/first-byte}
+
+The worked inner loop expresses that decision directly:
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Retain the old low bit before shifting}
+\begin{minted}{mars-idea}
+andi $t2, $v0, 1
+dsrl $v0, $v0, 1
+beqzc $t2, bit_no_feedback
+nop
+xor $v0, $v0, $t3
+\end{minted}
+Here \texttt{\$t3} contains the zero-extended feedback mask.
+\texttt{bit\_no\_feedback} continues with the bit counter, which reaches zero
+after eight steps. The outer loop advances the source and decrements its byte
+count. The two loops count bit steps and source bytes respectively.
+
+\section{Carry raw state across buffer boundaries}
+
+Write $U(r,A)$ for the raw state after updating state $r$ with byte sequence $A$.
+The next step depends only on the current state and next byte. Therefore,
+for consecutive sequences $A$ and $B$,
+\[
+ U(r,A\mathbin{\|}B)=U(U(r,A),B),
+\]
+where $\|$ means concatenation. Splitting the source into buffers changes how
+bytes become available; it does not change the state transition for a byte.
+An empty buffer is an identity update: $U(r,\varnothing)=r$.
+
+\input{revision/figures/crc/stream-state}
+
+The complete stream example updates the first four bytes with the bit routine,
+retains the actual returned state, initializes a table, then updates the remaining
+five bytes with the table routine. At \texttt{stream\_first}, \texttt{\$v0}
+is \texttt{641c1f5c}. At \texttt{stream\_done}, it is \texttt{340bc6d9}.
+Changing update methods between buffers is valid because both implement the
+same raw transition. Resetting the state at the split would discard the prefix.
+
+Finalization occurs once, after the complete message. Feeding the complemented
+prefix value to the raw update would start the suffix with different bits.
+For an empty complete message, no update changes initial \texttt{ffffffff};
+its final XOR produces zero. That is compatible with an empty \emph{update}
+returning its incoming raw state unchanged. The two statements concern different
+interfaces.
+
+\section{Replace eight steps with a prepared table}
+
+There are only 256 possible low-byte values. Define $T[i]$ as the state obtained
+by applying eight reflected steps to initial state $i$, without adding a byte.
+The initializer builds all 256 entries from their indices, independent of old
+memory contents. It writes exactly 1024 bytes and returns 256 entries.
+For example, $T[0]=\texttt{00000000}$, $T[1]=\texttt{77073096}$,
+$T[128]=\texttt{edb88320}$ and $T[255]=\texttt{2d02ef8d}$.
+
+After XORing the next byte into $r$, separate that value into its low byte and
+remaining high bits. During eight right shifts, none of those high bits reaches
+the low-bit decision before the eighth shift has completed. Their contribution
+is therefore simply $r\gg8$. The low byte contributes the eight-step result
+stored in the table. Because shifts and this feedback recurrence distribute over
+XOR, the contributions combine as
+\[
+ i=(r\mathbin{\mathrm{xor}}b)\mathbin{\mathrm{and}}255,
+ \qquad r'=(r\gg8)\mathbin{\mathrm{xor}}T[i].
+\]
+The shift here is logical. The input byte affects the index and contributes no
+bits to $r\gg8$ because it occupied only the low eight positions.
+
+\Needspace{12\baselineskip}
+\MARSCodeLabel{One table update for one source byte}
+\begin{minted}{mars-idea}
+lbu $t0, 0($a0)
+xor $t0, $t0, $v0
+andi $t0, $t0, 255
+dsll $t0, $t0, 2
+daddu $t0, $a3, $t0
+lwu $t1, 0($t0)
+dsrl $v0, $v0, 8
+xor $v0, $v0, $t1
+\end{minted}
+
+The masked index selects an entry number. Multiplying it by four converts entries
+to byte offsets before adding the full table address. An unscaled index could
+select a misaligned word and would select the wrong bytes even on a machine
+that permitted such a load. The table must be prepared before nonempty updates;
+its mere allocation does not supply useful entries.
+
+\section{Keep a 32-bit state correct in 64-bit registers}
+
+The mathematical state has 32 bits, but MARS uses 64-bit general registers.
+Our interface represents a state with zeroes in the upper 32 bits. A signed word
+load of \texttt{edb88320} would instead extend its high bit through those positions.
+A subsequent full-width logical shift would move the unwanted high bits into
+the intended state. The initial word uses \texttt{lwu}, table entries use
+\texttt{lwu}, and full-register constants explicitly establish zero extension.
+A signed load followed by explicit extraction of its low 32 bits is an equivalent
+implementation.
+
+Unsigned byte loads matter too. Source byte \texttt{80} means 128; a signed byte
+load would supply a negative full-register value unless it were corrected before
+XOR. A 32-bit arithmetic right shift copies bit 31 and can introduce sign
+extension, so it does not express the unsigned recurrence. A full 64-bit arithmetic
+shift happens to agree with a logical shift while the upper half is zero, because
+bit 63 is then zero; that alternative remains correct under this invariant.
+The worked code uses logical shifts to state its intent directly. Trace a byte
+above 127 and a state with bit 31 set when checking a narrowed operation.
+
+Once a raw state is zero-extended, logical right shift keeps it so. XOR with the
+zero-extended mask or a zero-extended table entry cannot create upper bits.
+This gives a short invariant proving the representation after every step.
+Preserving only the low word of a saved register is insufficient for the separate
+calling convention, however. The tests seed saved registers with nonzero high
+halves so that an accidentally narrowed restore is observable.
+
+\section{Finish a file only after successful EOF}
+
+\texttt{crc32\_file} receives a terminated path, scratch pointer, capacity from
+one through 256 and method zero or one in \texttt{\$a0} through \texttt{\$a3}.
+It returns the finalized checksum in \texttt{\$v0} and status in
+\texttt{\$v1}: zero for success, one for open failure and two for read failure.
+On failure, checksum is zero. Check status first; zero is also the legitimate
+checksum of an empty file.
+
+After a successful open, retain its actual descriptor and initialize raw state
+once. For a positive read result $k$, update exactly those $k$ scratch bytes,
+using the previous raw result as the next seed. Scratch capacity controls the
+request, not the count of valid bytes after a short read. Continue until read
+returns zero. A negative result is failure, including after a prefix has already
+contributed to the state.
+
+The file routine holds the descriptor, scratch pointer, capacity, method/helper
+and raw state in saved registers across calls. It closes the acquired descriptor
+on both EOF and read failure, and never closes a failed open result. The close
+service uses \texttt{\$v0}, so the raw state must survive that service as well.
+Only the success path complements it and publishes a checksum with status zero.
+The scratch interval and the first 1024 table bytes are workspace; path and other
+caller bytes remain unchanged.
+
+A partial prefix has a perfectly defined raw state, but it does not stand for a
+successfully read complete file. Returning that value with success would hide
+an I/O failure. In the lab, an injected failure after five bytes verifies this
+case separately from an ordinary missing path and an ordinary EOF. Actual host
+runs independently compare both methods with Python's checksum, including the
+PPM file produced in Chapter~\ref{revision:files}.
+
+\section{Charge for preparation when comparing work}
+
+Both update methods must agree before their costs are compared. The table loop
+replaces repeated bit decisions with one indexed word load per byte. Its 1024-byte
+lookup object consumes memory, must be initialized and creates a different access
+pattern. Whether it is useful depends on how much input will reuse that preparation.
+
+\input{revision/figures/crc/work}
+
+For nine bytes, the update alone falls from 519 instructions to 120, but building
+its table first costs far more than either update. Even the 256-byte example uses
+fewer instructions with the bit routine when construction is charged to that one
+message. For 4096 bytes, construction plus table update uses 67599 instructions,
+compared with 233206 for the bit method.
+
+The table may instead be prepared once and reused across many raw updates. Add
+construction once to their total, not once per buffer. The supplied file routine
+builds its table once per table-method file call; it does not maintain a hidden
+cache across file calls. A caller managing a persistent prepared table has a
+different setup boundary and should say so explicitly.
+
+Counts include explicit \texttt{nop} instructions and data-dependent feedback
+branches. They do not establish elapsed-time or hardware-cycle ratios. Cache
+effects, simulator work and file I/O need separate measurements. Reuse the public
+benchmark's exact inputs when comparing a changed routine.
+
+\section{Check a bounded chunk independently}
+
+A later PNG decoder needs CRCs over selected fields rather than every byte in a
+record. Complete \texttt{crc32\_check\_chunk} in \texttt{crc32-chunk.asm}.
+Its selected buffer contains four big-endian length bytes, four type bytes,
+$n$ payload bytes and four big-endian stored-checksum bytes. It accepts selected
+counts from twelve through 4096 and requires exactly $n+12$ bytes.
+
+\input{revision/figures/crc/chunk-layout}
+
+Arguments are byte pointer, unsigned selected count and prepared word-aligned table
+pointer in \texttt{\$a0/\$a1/\$a2}. Reject an out-of-range count before accessing
+source or table. Otherwise read the four length bytes and prove the exact extent
+before reading another field or accessing the table. Comparing $n$ with
+$\mathit{selectedCount}-12$ avoids an overflowing addition when the encoded length is huge.
+
+For a proved extent, compute the finalized CRC of type plus payload. Return it
+in \texttt{\$v0}, with \texttt{\$v1}=0 if it matches the stored value or one
+if it differs. Extent rejection returns zero and status two. Preserve caller
+bytes and full saved state, make no console or file calls, and return through
+the supplied continuation. The byte buffer may be unaligned; objects are disjoint.
+You may reuse either completed update routine. The prepared table is available
+if your design uses it.
+
+An empty payload still has four covered type bytes. The twelve-byte \texttt{IEND}
+example ends with stored bytes \texttt{ae 42 60 82}. Reading them as a native
+little-endian word would compare against the wrong number. Covering the length,
+excluding the type or covering the stored checksum would each compute a different
+value. The lab makes these mistakes distinguishable with independent cases.
+
+This checker does not validate type spelling, required chunk order, compressed
+contents or a complete PNG. The unrestricted four type bytes are part of its
+checksum input. Keep the function's evidence within that contract.
+
+\section*{Sources and laboratory connection}
+The raw transition, interfaces and ownership rules are implemented and checked
+against the supplied MARS program. The
+\href{https://www.w3.org/TR/2025/REC-png-3-20250624/}{PNG Third Edition Recommendation},
+sections 5.3 and 5.5, specifies the chunk fields, CRC coverage, processing conventions
+and stored byte order used by the independent exercise. Its size limits and error
+precedence are our local interface. The lab follows actual states through a split
+message, tests complete-file success versus failure and produces the bounded
+checker without requiring a particular register allocation or frame.
