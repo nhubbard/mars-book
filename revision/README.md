@@ -3,7 +3,7 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first twenty main-book chapters: the complete console
+- `learning.tex` includes the first twenty-one main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -27,13 +27,14 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   ownership and actual host artifacts. CRC-32 follows with raw versus finalized
   state, bit/table equivalence, preparation costs and streamed file checks. QOI then
   develops remembered decoder state, RGBA preservation, validated publication,
-  equivalent encodings and reflected output placement.
+  equivalent encodings and reflected output placement. CBOR then separates head,
+  item and schema validation through nested continuations and deterministic projection.
   The chapters use connected explanations
   and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first twenty written lab supplements: predictions,
+- `lab-book.tex` includes the first twenty-one written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 
@@ -43,8 +44,8 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–20 (132 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–20 and companions (122 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main-book chapters 1–21 (139 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–21 and companions (127 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -215,3 +216,9 @@ for all six QOI operations, independent reflected decoding, strict host-file
 verification and five annotated native Debug observations. The combined proofs
 have 132 main pages and 122 lab pages; the advanced pilot remains unchanged.
 The QOI guided lesson and later curriculum work remain open.
+
+Chapter 21 begins on main page 133 and lab page 123. See [cbor-unit.md](cbor-unit.md)
+for bounded nested traversal, late-error publication, exact preferred sizing,
+independent sequence scanning and four verified native Debug observations. Current
+proofs have 139 main pages and 127 lab pages; the advanced excerpt is unchanged.
+The expression/bytecode companions and later native lessons remain open.

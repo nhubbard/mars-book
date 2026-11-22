@@ -1,0 +1,265 @@
+\chapter{Reading nested data}
+\MARSChapterHeading{Reading nested data}
+\label{revision:cbor}
+
+A sensor message may contain a counter, a binary device identifier and several
+signed readings. A fixed record could put each field at a predetermined offset.
+A structured message instead carries descriptions of its values. The readings
+can be an array, and an optional field can contain another map. Finding the next
+field requires understanding where that whole nested value ends.
+
+\href{https://www.rfc-editor.org/rfc/rfc8949.html}{CBOR}, the Concise Binary Object
+Representation, supplies those descriptions. Our worked program accepts a bounded
+subset and projects a telemetry message into a flat application record. It then
+writes a deterministic encoding of the required fields. The program is complete
+in \texttt{revision/labs/files/cbor-telemetry.asm}; its caller selects the head
+reader, walker, decoder, size calculator, encoder or their combined pipeline.
+
+This chapter assumes unsigned bounds, byte order, bit fields, nested function
+calls and validation before publication. Its new problem is retaining a parent's
+unfinished work while visiting children. The independent exercise changes the
+outer framing: it recognizes an entire sequence of supported items instead of
+one telemetry record.
+
+\section{Separate a value's description from its contents}
+
+Each CBOR item starts with a \emph{head}. The initial byte divides into a major
+type in its upper three bits and additional information in its lower five.
+For this exercise, types zero and one describe nonnegative and negative integers,
+two a byte string, four an array, and five a map. A byte string is counted binary
+data; neither a zero byte nor a byte resembling a head ends its payload.
+
+For \texttt{82}, shifting right five produces type four, and masking with 31
+produces argument two. This is an array containing two items. For \texttt{42},
+the same argument instead counts two payload bytes because the type is two.
+An argument acquires its unit from the type. A map argument counts pairs, so a
+map of two pairs still requires two keys and two values.
+
+\input{revision/figures/cbor/head-widths}
+
+Low field 24 requests a following argument byte. Thus \texttt{18 17} represents
+unsigned 23, while \texttt{18 18} represents unsigned 24. Field 25 requests two
+bytes; \texttt{19 01 00} represents 256. The head reader accepts supported arguments
+in wider-than-necessary heads. Later, the writer chooses their shortest form.
+Acceptance and preferred output spelling are separate decisions.
+
+The full-width counter head is \texttt{1b 01 02 03 04 05 06 07 08}. Establish
+that all nine head bytes are available before reading its eight argument bytes.
+Starting with zero, shift the accumulator left eight and combine each unsigned
+byte. The result is \texttt{0102030405060708}. Use a doubleword shift:
+\texttt{dsll} retains the full 64-bit accumulation; a word shift would discard
+part of this counter.
+
+\MARSCodeLabel{Accumulate the argument without narrowing it}
+\begin{minted}{mars-idea}
+    daddiu $t5, $t5, 1
+    lbu $t0, 0($t5)
+    dsll $t6, $t6, 8
+    or $t6, $t6, $t0
+    addiu $t3, $t3, -1
+    bnezc $t3, head_bytes
+    nop
+\end{minted}
+
+All counter bit patterns are valid, including eight
+\texttt{ff} bytes, regardless of a debugger's signed interpretation.
+
+\texttt{cbor\_head} receives byte pointer and unsigned available count in
+\texttt{a0/a1}. Successful \texttt{v1} counts head bytes; \texttt{a2} is the type
+and \texttt{a3} the unsigned argument bits. A successful head establishes neither
+a byte-string payload nor any array children. On failure, status is one and all
+three result registers are zero. Zero available bytes fail before pointer access;
+a large count does not make an unsupported type valid.
+
+\section{Keep one continuation for every unfinished container}
+
+Consider the optional value in the worked message:
+\texttt{a2 01 82 42 80 ff 21 00 80}. It is a two-pair map. Key one maps to an
+array of two values: byte string \texttt{80 ff}, then integer minus two, encoded
+\texttt{21}. Key zero maps to an empty array, \texttt{80}. The byte \texttt{ff}
+inside the string is payload. Treating it as a separate head would lose the
+boundary established by \texttt{42}.
+
+\input{revision/figures/cbor/parent-state}
+
+A walker keeps a cursor and remaining byte budget. A primitive integer ends
+after its head. A byte string additionally consumes its checked payload count.
+An array consumes its declared number of child items. A map consumes a checked
+key and one complete child value per pair. After a child succeeds, advance by
+its returned byte extent and reduce both the byte budget and the parent's
+outstanding child or pair count.
+
+The worked walker uses recursive calls. Before calling the child, it saves the
+parent cursor, remaining bytes, depth, outstanding work and map mask in its own
+frame. A second implementation can keep these continuations in an explicit
+stack and run one loop. Both must retain the same information. Merely saving the
+return address preserves where instructions resume; it does not preserve the
+parent's data.
+
+One particularly easy mistake is leaving depth in \texttt{a2} across a call to
+\texttt{cbor\_head}. That helper returns the major type in \texttt{a2}. Save the
+inherited depth before the call; otherwise a type code becomes a nesting count.
+The provided recursive walker keeps depth in a saved register belonging to the
+current frame. Each recursive child preserves its caller's full saved values.
+
+\section{Apply local bounds to every nested value}
+
+Our application permits definite integers, byte strings of at most 32 bytes,
+arrays of at most 64 items, and maps of at most eight pairs. Every map uses
+unique unsigned keys zero through seven. These rules apply inside optional
+metadata too. Text, tags, floating-point and simple values, and indefinite
+lengths are outside this subset. Several are valid CBOR elsewhere; rejecting
+them describes this exercise's profile, not a defect in the general format.
+
+Track seen map keys with an eight-bit mask. For key $k$, form $1\ll k$, reject
+if that bit is already set, and then set it. Compare decoded keys: \texttt{00}
+and \texttt{18 00} name the same key zero. \MARSCodeLabel{Check decoded key identity in the current map}
+\begin{minted}{mars-idea}
+    li $t0, 1
+    sllv $t0, $t0, $a3
+    and $t1, $s5, $t0
+    bnezc $t1, skip_bad
+    nop
+    or $s5, $s5, $t0
+\end{minted}
+
+A nested map starts its own mask.
+Reusing the parent's mask would reject a valid child key; forgetting the mask
+would accept a repeated field with ambiguous ownership.
+
+At most eight containers may be open simultaneously. The telemetry root is
+one. Primitives do not add depth. With inherited depth seven, an empty array
+can open the eighth container and close immediately. At inherited depth eight,
+even an empty array would open a ninth and must fail. A sequence of sibling
+containers does not accumulate depth: each sibling starts with the same
+inherited count after its predecessor closes.
+
+\texttt{cbor\_skip} takes pointer, unsigned byte count and inherited depth in
+\texttt{a0/a1/a2}. It first rejects count above 1024 with status two, then depth
+above eight with status one, before pointer access. Zero count fails with one.
+Success returns the byte extent of \emph{one} supported item. The worked optional
+map begins at offset three and occupies nine bytes. The whole root occupies 52.
+A following byte does not enlarge either item. The telemetry decoder, rather
+than the generic walker, must establish that the selected input ends there.
+
+\section{Turn one complete map into an application record}
+
+The telemetry schema requires keys zero, one and two exactly once. Their values
+are respectively an unsigned 64-bit counter, a binary identifier of at most 32
+bytes, and an array of at most 64 signed 16-bit readings. Optional keys three
+through seven carry supported nested values. They must validate even though the
+flat output will not retain them. Dropping a field does not authorize ignoring
+its malformed contents.
+
+The 52-byte trace deliberately places optional key three first, readings second,
+identifier third and counter last. Its wider root head \texttt{b8 04} declares
+four pairs. After the nine-byte optional value, key two at offset twelve precedes
+the ten-reading array. Key one at 35 precedes identifier \texttt{00 ff 41}.
+The wider key-zero head at 41 precedes the full-width counter at 43. Required
+fields need not arrive in output order.
+
+\input{revision/figures/cbor/record-layout}
+
+CBOR negative integers use argument $u$ to mean $-1-u$. Thus \texttt{20} means
+minus one and \texttt{37} means minus 24. The head \texttt{38 18} carries
+argument 24 and means minus 25. To accept signed 16-bit readings, either
+integer type needs argument at most 32767. Type zero then gives 0 through 32767;
+type one gives minus one through minus 32768. Negating the argument alone would
+make every negative reading one too large.
+
+Keep the output private until the root, required-key mask and exact ending have
+all passed. The reference builds a candidate in its frame, then publishes only
+the prefix and active payloads. An alternative remembers checked input slices
+and revisits them after validation. Under the disjoint, read-only input contract,
+those bytes remain stable for the second pass. Neither strategy may expose a
+plausible identifier before discovering that the final counter is truncated.
+
+\texttt{telemetry\_decode} receives input, unsigned complete count and an
+eight-byte-aligned record pointer in \texttt{a0/a1/a2}. Count above 1024 fails
+with status two, and count below seven with one, before reading either pointer.
+Success returns the complete input count in \texttt{v1}. Failure returns zero
+there and leaves the whole caller record unchanged. A successfully walked root
+followed by another item is still a failed telemetry input.
+
+\section{Derive an exact size before writing}
+
+The flat record no longer contains optional metadata or original head widths.
+Encoding it is an application projection. It cannot reproduce the original map
+byte for byte, and it does not promise to do so. The writer emits required keys
+in order zero, one, two with shortest heads. For these small unsigned keys,
+that order agrees with the core deterministic ordering in RFC 8949.
+
+Let $H(u)$ count the shortest head bytes for unsigned argument $u$: one, two,
+three, five or nine according to the width table. Let $A(x)=x$ for a nonnegative
+reading and $A(x)=-1-x$ otherwise. For counter $T$, identifier length $L$ and
+reading count $N$, the exact encoded size is
+\[
+4+H(T)+H(L)+L+H(N)+\sum_{i=0}^{N-1}H(A(x_i)).
+\]
+The four fixed bytes are the root map head and three keys. Identifier contents
+do not affect the size; sample values do. The bound function therefore reads
+the sixteen-byte prefix and active samples, but no identifier payload.
+
+For the trace the terms are $4+9+1+3+1+19=37$. A zero counter with empty identifier
+and empty readings needs seven bytes. The maximum result is 241 bytes. Unlike
+QOI's conservative reservation contract, this encoder must accept the exact
+37-byte trace buffer; demanding 241 bytes would reject sufficient capacity.
+
+Both bound and encoder reject identifier length above 32 or reading count above
+64 before touching payload storage. Encoding then computes the size and checks
+capacity unsigned before reading identifier bytes or writing output. Once this
+preflight passes, every selected payload has a proved destination extent.
+Successful \texttt{v1} is the exact byte count. No terminator belongs after it.
+
+\section{Distinguish syntax, schema and projection when testing}
+
+A head reader, generic walker and telemetry decoder answer different questions.
+The head \texttt{98 40} is complete even without its 64 array elements. A complete
+array can be supported by the walker while failing the telemetry schema because
+the root must be a map. A valid telemetry map can have several accepted byte
+representations while projecting to one preferred required-field encoding.
+Use a separate counterexample for each boundary.
+
+Run mode five of the supplied caller to join head reading, walking, decoding,
+bounding and encoding. On the trace, walking and decoding each account for all
+52 input bytes, while the encoded output occupies 37. Compare decoded field
+values and required output bytes, not an expectation that the two byte counts
+must match. Inspect the binary identifier as three counted bytes; a console
+string routine would stop at its first zero.
+
+All five entries preserve the full saved registers, frame and stack pointers,
+and return through the incoming return address. They do no console or file I/O.
+Every completed failure clears \texttt{v1}; status one means unsupported or invalid
+structure, field or depth, and two means excessive selected input or insufficient
+output capacity as specified for that entry. Byte pointers may be unaligned;
+caller objects are disjoint. The lab's sentinels and access checks distinguish
+active fields from untouched tails and successful publication from early stores.
+
+\section{Recognize a complete sequence independently}
+
+Complete \texttt{cbor\_sequence\_count} in \texttt{cbor-sequence.asm}. It receives
+byte pointer, unsigned complete count and inherited depth in \texttt{a0/a1/a2}.
+Accept a concatenation of zero or more supported items under the same local
+value rules. Return status zero and the number of top-level items in \texttt{v1}.
+This is an item count, not a byte count or the number of descendants.
+
+Reject count above 1024 with status two before checking depth or reading the
+pointer. Then reject inherited depth above eight with status one. With a valid
+depth, an empty selected sequence succeeds with count zero without pointer
+access. Any malformed item, unsupported value or incomplete final suffix fails
+with one and clears \texttt{v1}, even after several valid items. Preserve all
+caller bytes and the same saved-register contract. Perform no I/O.
+
+For \texttt{00 82 01 02 40}, the result is three: integer zero, one two-element
+array, and one empty byte string. The array's two children do not add top-level
+items. Appending \texttt{1b} makes the entire sequence invalid because its final
+head requests eight missing bytes. A valid-prefix count is not the result on
+failure.
+
+The supplied walker may be reused. Keep the accumulated item count and original
+inherited depth across each call, advance by the successful byte extent, and
+require the whole selected interval to be consumed. An implementation using an
+end address can be equivalent to one using a remaining count. Explain why siblings
+reuse depth, why every successful iteration advances, and why a late failure
+must not return the accumulated prefix count. These arguments should guide your
+tests before you inspect the public feedback.

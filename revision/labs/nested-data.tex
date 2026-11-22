@@ -1,0 +1,182 @@
+\chapter{Find the boundary of a nested value}
+\MARSChapterHeading{Find the boundary of a nested value}
+\label{revision:lab-cbor}
+
+Use \texttt{cbor-telemetry.asm} and \texttt{cbor-sequence.asm} from
+\texttt{revision/labs/files}. Read the main chapter's head, continuation and
+projection explanations first. This lab uses ordinary Run and Debug. The later
+native guided lesson is not yet implemented.
+
+Keep the complete worked source separate from your independent sequence solution
+and from copies containing deliberate faults. The caller's mode selects one
+entry or the pipeline; changing the mode does not automatically arrange every
+entry's inputs. In particular, a fresh encode-only run needs a valid local
+record. Mode five obtains that record through actual decoding first.
+
+\section{Predict a head without assuming its payload exists}
+
+In a fresh worked copy, leave mode zero and break at \texttt{head\_return}.
+The selected trace begins \texttt{b8 04}. Before running, split \texttt{b8} into
+its high three bits and low five. Explain why the result should be type five,
+argument four, and a head extent of two bytes. The argument counts map pairs;
+the returned extent counts bytes used to describe that map. Neither is a
+complete message size.
+
+Inspect \texttt{a2}, \texttt{a3} and \texttt{v1} at the return boundary. The
+caller has not yet copied the argument results to its observation slots. A
+later stop at \texttt{results\_ready} observes those stores instead. Keep the
+boundary explicit when comparing registers with memory.
+
+In another copy, select only one byte through \texttt{byte\_count}. The same
+initial byte still identifies a two-byte head, but its argument byte is outside
+the selected interval. Predict status one, with zero in \texttt{v1/a2/a3}.
+A byte remains physically readable after the boundary; that does not authorize
+loading it. The public head checks use access history to test that distinction.
+
+Change the fixture to \texttt{1b 01 02 03 04 05 06 07 08} with count nine.
+Predict the full counter before stepping through \texttt{head\_bytes}. After
+three bytes the accumulator is \texttt{010203}; after eight it is
+\texttt{0102030405060708}. In a disposable faulty copy, replace the accumulator's
+\texttt{dsll} with \texttt{sll}. Find the first iteration at which the two
+accumulators disagree, rather than checking only the final low word. Restore
+the instruction before continuing.
+
+\section{Follow a child while retaining its parent's work}
+
+Select mode one to walk the trace and break at \texttt{skip\_return}. The
+successful extent should be 52 bytes. To study only the optional map, use a
+separate fixture beginning \texttt{a2 01 82 42 80 ff 21 00 80}, with count nine.
+Its successful extent is nine. Add another integer after that item and offer
+all ten bytes: the walker should still report nine because it consumes one item.
+
+Step into the recursive call at \texttt{skip\_child}. Identify the active
+container and the outstanding work in each frame. At the byte string, distinguish
+the array's two children from the two payload bytes of \texttt{42}. The string's
+\texttt{ff} byte is data, while the following \texttt{21} begins the second
+array child. When the array returns, the optional map must still process key
+zero and its empty-array value.
+
+Explain why saving only \texttt{ra} would be insufficient. The parent needs its
+cursor, byte budget, remaining pairs and key mask. Also identify where inherited
+depth survives the head-reader call. \texttt{a2} has changed meaning at that
+return: its new value is a major type, not the parent's depth.
+
+Use \texttt{inherited\_depth} to test the boundary with an empty array. Depth
+seven permits it; depth eight rejects it. Then try a primitive integer at depth
+eight, which needs no new container. Finally place two empty arrays in a sequence.
+They are siblings, not two additional levels. This distinction will matter in
+the independent scanner.
+
+A map \texttt{a2 00 00 18 00 00} repeats key zero using different head widths.
+Predict rejection before running. Contrast it with
+\texttt{a1 00 a1 00 00}: the inner map's key zero is independent of the outer
+map's key zero. Use a fresh per-map mask; a global mask would reject this valid
+nested item.
+
+\section{Publish required fields only after complete acceptance}
+
+Restore the original trace and select mode two. Break at
+\texttt{decode\_return}. The complete selected input is 52 bytes. The local
+record should now contain counter \texttt{0102030405060708}, identifier length
+three, reading count ten, identifier bytes \texttt{00 ff 41}, and readings
+\(0,23,24,-1,-24,-25,255,256,32767,-32768\).
+
+\Needspace{18\baselineskip}
+Inspect the counter as both a doubleword and bytes. Its local bytes are
+\texttt{08 07 06 05 04 03 02 01}; its wire argument used the opposite order.
+\input{revision/figures/cbor/native-record}
+
+The identifier remains \texttt{00 ff 41}. It is binary data, so there is no
+counter-style reversal and no terminating zero convention. The first zero is
+part of the identifier.
+
+\Needspace{18\baselineskip}
+At byte offset 48 in the record, inspect halfwords or pairs of bytes. Minus one
+has local bits \texttt{ffff}; minus 32768 has \texttt{8000}. Those are stored
+signed 16-bit codes, not CBOR heads. Explain how CBOR argument 32767 under
+negative type one became minus 32768 before storage.
+
+\input{revision/figures/cbor/native-samples}
+
+Inspect unused identifier bytes after offset 18 and unused sample bytes after
+67. They should retain their initial \texttt{a5} pattern. Success writes active
+fields rather than clearing the entire allocation. Record bytes beyond the
+176-byte interface are guards too.
+
+For a late error, offer only 51 bytes of the original trace. The final counter
+head lacks its last argument byte. Earlier required fields are plausible, but
+the entire caller record must remain unchanged. Do not accept a correct-looking
+identifier as evidence of successful decoding. \input{revision/figures/cbor/native-late}
+
+Repeat with the complete root
+followed by integer zero and selected count 53: the walker can identify the
+52-byte prefix, while complete telemetry decoding must reject the trailing item.
+
+\section{Account for the preferred output byte by byte}
+
+Use mode five in a fresh original copy. Break at \texttt{bound\_return}, then
+\texttt{encode\_return}. Derive the exact 37-byte bound before observing it.
+Count four fixed map/key bytes, nine counter bytes, one identifier head, three
+identifier bytes, one array head and nineteen reading bytes. Compare the result
+with the 52 selected input bytes. The encoder removes optional metadata and
+wider-than-needed spellings; it is not preserving the original map representation.
+
+The output begins \texttt{a3 00 1b 01 02 03 04 05 06 07 08}. The map now has
+three pairs, and key zero comes first. Locate \texttt{01 43 00 ff 41}, then the
+readings key and array. Input reading 23 used \texttt{18 17}; output uses
+\texttt{17}. Reading 24 still needs \texttt{18 18}. Explain why both changes
+follow the same shortest-head rule.
+
+\input{revision/figures/cbor/native-output}
+
+Reduce \texttt{byte\_capacity} to 36 in another fresh mode-five copy. Decoding
+may successfully publish the local record, but encoding must return capacity
+status two, zero count and untouched destination bytes. These are separate
+caller objects with separate publication boundaries. Restore capacity 37 and
+check success without requiring the maximum 241-byte reservation.
+
+\Needspace{7\baselineskip}
+The completed package checks remain useful for the worked interfaces:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/032-cbor-telemetry/checks/decode.kts \
+  revision/labs/files/cbor-telemetry.asm
+\end{verbatim}
+Repeat with head, skip, format, bound, encode and caller as appropriate. Their
+finite domains test the declared behavior; they do not prove every possible
+nested input. Generic-decoder interoperability is a separate check, especially
+because optional fields are intentionally absent from the projected output.
+
+\section{Count top-level items in your own scanner}
+
+Complete only \texttt{cbor\_sequence\_count} in a working copy of
+\texttt{cbor-sequence.asm}. Keep its caller and complete helpers. Mode eight
+invokes the new entry; its default trace contains one complete top-level item.
+The interface and exact early-error order are stated in the main chapter.
+
+Begin with \texttt{00 82 01 02 40}. Draw three top-level intervals: the initial
+integer, the array including both children, and the empty string. Derive three
+as the result, then decide what information must survive a walker call. Preserve
+the original inherited depth for each sibling; the helper may overwrite argument
+registers. Keep item count separate from its returned byte extent.
+
+Try an empty selected sequence with a deliberately invalid pointer. With valid
+depth it must succeed without a read. Then test one valid item followed by
+\texttt{1b}. The incomplete final head must clear the count on failure, rather
+than returning credit for the first item. A failure result is not a resumable
+prefix count in this interface.
+
+\Needspace{7\baselineskip}
+Use the public behavioral checks:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/cbor-sequence.kts \
+  /path/to/your/cbor-sequence.asm
+\end{verbatim}
+The initial source deliberately stops at its unfinished entry. Equivalent
+implementations can retain remaining bytes or an end address, reuse the walker
+or organize traversal independently. Acceptance does not prescribe a frame size,
+scratch registers or an instruction count. Explain termination and failure
+behavior, then retain counterexamples for siblings at the depth boundary,
+duplicate keys in separate maps, a malformed suffix and a selected interval
+ending before physically readable extra bytes.
