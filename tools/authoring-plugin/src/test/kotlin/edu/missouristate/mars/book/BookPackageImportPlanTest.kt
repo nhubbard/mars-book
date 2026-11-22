@@ -51,6 +51,21 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `assessment walkthrough requires both pinned local fixtures and the preceding native sequence`() {
+        val plus = BookAssessmentFixture("independent/plus-one.asm", "/tmp/private-plus.asm", "c".repeat(64))
+        val wrapped = BookAssessmentFixture("independent/wrapped-byte.asm", "/tmp/private-wrapped.asm", "d".repeat(64))
+        val complete = plan.copy(nativePredictions = true, nativeExecution = true, nativeDebug = true,
+            assessmentFixtures = listOf(plus, wrapped))
+        complete.validate()
+        assertThrows<IllegalArgumentException> { complete.copy(nativeDebug = false).validate() }
+        assertThrows<IllegalArgumentException> { complete.copy(assessmentFixtures = listOf(plus)).validate() }
+        assertThrows<IllegalArgumentException> { complete.copy(assessmentFixtures = listOf(plus, wrapped, plus)).validate() }
+        for (bad in listOf(plus.copy(source = "../private.asm"), plus.copy(path = "relative.asm"), plus.copy(sha256 = "bad"))) {
+            assertThrows<IllegalArgumentException> { complete.copy(assessmentFixtures = listOf(bad, wrapped)).validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

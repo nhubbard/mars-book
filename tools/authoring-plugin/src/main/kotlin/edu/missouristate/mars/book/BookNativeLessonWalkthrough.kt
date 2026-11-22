@@ -90,6 +90,7 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
     val entry = archive.directory(Path.of(plan.projectRoot)).resolve(archive.entry)
     val runReceipts = mutableListOf<Map<String, Any>>()
     val debugReceipts = mutableListOf<Map<String, Any>>()
+    val assessmentReceipts = mutableListOf<Map<String, Any>>()
     suspend fun continueLesson() {
         withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
             val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.ContinueDownloaded"))
@@ -124,9 +125,15 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
     if (plan.resumeCompleted) {
         check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) } == plan.expectedEntryDigests.getValue(archive.sha256))
         continueLesson()
-        awaitText("The five checked runs and the ordered Debug observations")
+        val finalText = if (plan.assessmentFixtures.isEmpty()) "The five checked runs and the ordered Debug observations"
+            else "The guided runs, ordered Debug observations and two independent checks"
+        for (fixture in plan.assessmentFixtures) {
+            val source = archive.directory(Path.of(plan.projectRoot)).resolve(fixture.source)
+            check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(source)) } == fixture.sha256)
+        }
+        awaitText(finalText)
         while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
-        capture("resumed-complete", "The five checked runs and the ordered Debug observations")
+        capture("resumed-complete", finalText)
         check(!bookModalUi { lessonVisibleText(root).contains("Start a fresh Run of byte-inspector.asm. Enter 150") })
     } else if (plan.resume) {
         check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) } == plan.expectedEntryDigests.getValue(archive.sha256))
@@ -168,7 +175,12 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
                 run(input, "boundary-$input")
             }
             if (plan.nativeDebug) {
-                debugReceipts += captureBookNativeDebug(project, entry, ::awaitText, ::capture, ::focus)
+                debugReceipts += captureBookNativeDebug(project, entry, ::awaitText, ::capture, ::focus,
+                    if (plan.assessmentFixtures.isEmpty()) null else "Keep the ordinary sum. Work in independent/plus-one.asm.")
+                if (plan.assessmentFixtures.isNotEmpty()) {
+                    assessmentReceipts += captureBookNativeAssessments(project, archive.directory(Path.of(plan.projectRoot)),
+                        plan.assessmentFixtures, ::awaitText, ::capture, ::click)
+                }
             } else {
                 while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
                 capture("execution-complete", "The five checked runs cover the example and the byte boundaries")
@@ -203,8 +215,9 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
         Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
             "resumed" to plan.resume, "entryDigests" to mapOf(archive.sha256 to digest),
             "nativeQuizLinksClicked" to true, "sourcePointersVerified" to true, "runs" to runReceipts,
-            "debug" to debugReceipts, "resumedCompleted" to plan.resumeCompleted,
-            "scope" to if (plan.nativeDebug) "Predictions, actual Run and ordered Debug observations; no independent-writing credit claimed"
+            "debug" to debugReceipts, "assessments" to assessmentReceipts, "resumedCompleted" to plan.resumeCompleted,
+            "scope" to if (plan.assessmentFixtures.isNotEmpty()) "Predictions, actual Run, ordered Debug and two independent public-case assessments"
+                else if (plan.nativeDebug) "Predictions, actual Run and ordered Debug observations; no independent-writing credit claimed"
                 else if (plan.nativeExecution) "Predictions and actual Run observations; no Debug or independent-writing credit claimed"
                 else "Conceptual predictions and hints; execution and independent-writing credit are not claimed",
         )), CREATE_NEW)

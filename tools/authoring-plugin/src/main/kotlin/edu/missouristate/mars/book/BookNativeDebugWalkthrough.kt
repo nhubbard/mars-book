@@ -18,7 +18,7 @@ import training.learn.lesson.LessonManager
 internal suspend fun captureBookNativeDebug(
     project: Project, entry: Path,
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
-    focus: suspend (String, String) -> Unit,
+    focus: suspend (String, String) -> Unit, nextActivity: String? = null,
 ): List<Map<String, Any>> {
     awaitText("Stop any earlier Debug session.")
     val file = bookModalUi { checkNotNull(LocalFileSystem.getInstance().findFileByNioFile(entry)) }
@@ -66,9 +66,10 @@ internal suspend fun captureBookNativeDebug(
                 withContext(Dispatchers.EDT) { session.stepOver(false) }
                 check(launch.pauses.receive() == report)
                 val extended = awaitBookDebugRegisters(project, handler, mapOf("\$t0" to 150L, "\$t1" to -106L))
-                awaitText("The five checked runs and the ordered Debug observations")
-                while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
-                capture("debug-complete", "The five checked runs and the ordered Debug observations")
+                val next = nextActivity ?: "The five checked runs and the ordered Debug observations"
+                awaitText(next)
+                if (nextActivity == null) while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
+                capture("debug-complete", next)
                 receipts += mapOf("id" to "after-extension", "line" to report + 1, "renderedRegisters" to extended,
                     "completedInOneSession" to true)
                 withContext(Dispatchers.EDT) { session.resume() }

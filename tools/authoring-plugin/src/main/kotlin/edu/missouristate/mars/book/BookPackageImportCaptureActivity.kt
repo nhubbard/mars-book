@@ -61,6 +61,14 @@ internal data class BookImportArchive(
     fun directory(project: Path): Path = project.resolve("mars-labs/packages/$id/$version/$sha256")
 }
 
+/** Local authoring-only source fixture. Its contents never enter student distributions. */
+internal data class BookAssessmentFixture(val source: String = "", val path: String = "", val sha256: String = "") {
+    fun validate() {
+        require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm"))
+        require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
+    }
+}
+
 internal data class BookPackageImportPlan(
     val projectRoot: String = "", val outputDirectory: String = "", val archives: List<BookImportArchive> = emptyList(),
     val resume: Boolean = false, val expectedEntryDigests: Map<String, String> = emptyMap(),
@@ -69,6 +77,7 @@ internal data class BookPackageImportPlan(
     val nativeExecution: Boolean = false,
     val nativeDebug: Boolean = false,
     val resumeCompleted: Boolean = false,
+    val assessmentFixtures: List<BookAssessmentFixture> = emptyList(),
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -78,6 +87,12 @@ internal data class BookPackageImportPlan(
         require(!nativePredictions || archives.size == 1)
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
+        if (assessmentFixtures.isNotEmpty()) {
+            require(nativeDebug)
+            require(assessmentFixtures.map { it.source }.toSet() == setOf("independent/plus-one.asm", "independent/wrapped-byte.asm"))
+            require(assessmentFixtures.size == 2)
+            assessmentFixtures.forEach(BookAssessmentFixture::validate)
+        }
         require(!resumeCompleted || (resume && nativeDebug))
         if (resume) {
             require(expectedEntryDigests.keys == archives.map { it.sha256 }.toSet())
