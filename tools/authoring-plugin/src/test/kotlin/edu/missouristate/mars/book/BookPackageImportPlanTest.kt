@@ -161,6 +161,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `raster walkthrough isolates its exact source and single private fixture`() {
+        val raster = plan.copy(archives = listOf(archive.copy(id = "007-integer-raster", entry = "integer-line.asm")),
+            nativePredictions = true, rasterUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/dashed-line.asm", "/tmp/dashed.asm", "c".repeat(64))))
+        raster.validate()
+        raster.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(raster.copy(nativePredictions = false), raster.copy(nativeExecution = true),
+            raster.copy(nativeDebug = true), raster.copy(memoryUnit = true), raster.copy(loopUnit = true),
+            raster.copy(functionUnit = true), raster.copy(spriteUnit = true), raster.copy(assessmentFixtures = emptyList()),
+            raster.copy(archives = listOf(archive)), raster.copy(resumeCompleted = true), raster.copy(rasterUnit = false),
+            raster.copy(activityNavigation = true), raster.copy(prerequisiteControls = true),
+            raster.copy(assessmentFixtures = raster.assessmentFixtures + raster.assessmentFixtures),
+            raster.copy(assessmentFixtures = listOf(raster.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

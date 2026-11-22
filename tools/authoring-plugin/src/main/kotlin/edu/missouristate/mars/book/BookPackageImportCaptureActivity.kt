@@ -66,7 +66,7 @@ internal data class BookAssessmentFixture(val source: String = "", val path: Str
     fun validate() {
         require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
             "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm",
-            "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm"))
+            "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -88,6 +88,7 @@ internal data class BookPackageImportPlan(
     val loopUnit: Boolean = false,
     val functionUnit: Boolean = false,
     val spriteUnit: Boolean = false,
+    val rasterUnit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -98,19 +99,25 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit)
+            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit)
             val expected = when {
                 memoryUnit -> setOf("independent/red-component.asm", "independent/independent-copy.asm")
                 loopUnit -> setOf("independent/end-pointer.asm")
                 functionUnit -> setOf("independent/reverse-and-invert.asm")
                 spriteUnit -> setOf("independent/vertical-sprite.asm")
+                rasterUnit -> setOf("independent/dashed-line.asm")
                 else -> setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
             }
             require(assessmentFixtures.map { it.source }.toSet() == expected)
             require(assessmentFixtures.size == expected.size)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
         }
-        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit).count { it } <= 1)
+        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit).count { it } <= 1)
+        if (rasterUnit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
+            require(archives.single().id == "007-integer-raster" && archives.single().entry == "integer-line.asm")
+        }
         if (spriteUnit) {
             require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
             require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
