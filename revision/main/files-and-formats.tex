@@ -1,0 +1,293 @@
+\chapter{File boundaries and binary images}
+\MARSChapterHeading{File boundaries and binary images}
+\label{revision:files}
+
+A framebuffer is useful while the program is running. A file lets another program
+recover the image later, but the file must describe more than its pixel values.
+The reader needs dimensions, a sample representation and an exact boundary
+between the description and the pixels. It also needs to distinguish malformed
+content from a failed attempt to read that content.
+
+The complete \texttt{ppm-codec.asm} in \texttt{revision/labs/files} reads,
+decodes, serializes and saves a small binary PPM image. PPM means Portable Pixel
+Map. We use a documented subset of its P6 form rather than implementing every
+permitted PPM variant. This chapter assumes byte addressing, bounded parsing,
+RGB words and nested function calls. Its independent task produces a complementary color image while preserving the source framebuffer.
+
+\section{Know where text ends and samples begin}
+
+The default two-by-two file begins with eleven ASCII header bytes:
+\begin{verbatim}
+P6\n2 2\n255\n
+\end{verbatim}
+Here \texttt{\textbackslash n} denotes one LF byte, hexadecimal \texttt{0a};
+it is not a backslash followed by the letter n in the file. \texttt{P6} identifies
+the binary form. Decimal width and height are followed by Maxval 255, meaning
+that each component uses one byte with values zero through 255. The remaining
+twelve bytes describe four pixels, each as red, green and blue, row by row from
+top left to bottom right.
+
+\input{revision/figures/ppm/layout}
+
+A header gap may contain ASCII space, bytes nine through thirteen, or a
+\texttt{\#} comment terminated by LF. Gaps are required after the magic and
+between numeric tokens. Our subset requires positive decimal dimensions from
+one through 64 without leading zeros, Maxval exactly 255, and exactly one LF
+immediately after that token. It accepts one image, a header no longer than
+256 bytes and no bytes after the raster. Other valid PPM variants may fall
+outside these local rules.
+
+After that final LF, all bytes are raster samples. A newline, space, zero or
+\texttt{\#} has no lexical role there. A one-by-one file can end in bytes
+\texttt{0a 23 00}, representing red ten, green 35 and blue zero. A generic
+whitespace/comment skipper called after Maxval would eat part of that pixel.
+The parser must change interpretation at the specified boundary.
+
+The parser returns a sixteen-byte descriptor: unsigned word width at offset
+zero, unsigned word height at four, and an unsigned doubleword raster offset
+at eight. The offset is measured from the supplied file-buffer base. It is not
+an absolute pointer. Another caller may supply the same bytes at a different
+address without changing the descriptor's offset.
+
+\section{Prove the complete extent before publishing metadata}
+
+\texttt{ppm\_parse} receives full byte pointer \texttt{\$a0}, unsigned selected
+byte count \texttt{\$a1}, and an eight-byte-aligned metadata pointer
+\texttt{\$a2}. It rejects a count above 12544 before pointer access. This bound
+is 256 possible header bytes plus $64\cdot64\cdot3$ raster bytes. Empty input
+is malformed, not a successful zero-pixel image.
+
+The scan limit is the smaller of selected count and 256. Every header byte load
+must be below that limit, including bytes inside a comment or decimal token.
+The decimal accumulator starts only on a digit one through nine; subsequent
+digits use $\mathit{value}=10\cdot\mathit{value}+\mathit{digit}$. The worked parser rejects an accumulator
+above 255 immediately, then applies the smaller dimension bound where required.
+This avoids accepting a long overflowing decimal string through wraparound.
+
+Let $H$ be the position immediately after the required final LF. The parser has
+proved $H\leq \mathit{selectedCount}$ and $H\leq256$. For accepted width $W$ and height
+$T$, require
+\[
+ \mathit{selectedCount}-H=3WT.
+\]
+The product is bounded by 12288, and the subtraction is safe because the scan
+already established its ordering. Equality rejects both a missing sample and
+extra trailing data. Mapped padding does not make either selected extent valid.
+
+Only after this check does the parser publish the descriptor:
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Publish metadata after the complete extent check}
+\begin{minted}{mars-idea}
+sw $t6, 0($a2)
+sw $t7, 4($a2)
+sd $t0, 8($a2)
+move $v0, $zero
+jrc $ra
+nop
+\end{minted}
+Here \texttt{\$t6/\$t7} are accepted width/height, \texttt{\$t0} is $H$, and
+\texttt{\$v1} already holds the pixel count. A failure returns status one for
+malformed data or two for count bound, with \texttt{\$v1}=0 and metadata
+unchanged. Writing plausible dimensions early would violate that guarantee if
+a later raster-length check failed.
+
+\section{Convert sample order rather than copying words}
+
+\texttt{ppm\_decode} validates into a private descriptor before checking the
+unsigned pixel capacity in \texttt{\$a3}. Malformed content therefore wins over
+insufficient capacity. On success it publishes one framebuffer word
+\texttt{0x00RRGGBB} per pixel. The framebuffer pointer is four-byte aligned;
+file bytes may begin at an arbitrary byte address.
+
+File triplet \texttt{12 34 56} becomes word \texttt{00123456}. In our
+little-endian memory that word occupies bytes \texttt{56 34 12 00}.
+A four-byte copy from the file would mix neighboring pixel data and confuse
+file component order with memory word order. The worked loop loads exactly
+three unsigned bytes, shifts red by sixteen and green by eight, combines the
+components and stores one word.
+
+\input{revision/figures/ppm/pixel-order}
+
+The default raster is red, green, blue and white. Decoded words are
+\texttt{00ff0000}, \texttt{0000ff00}, \texttt{000000ff}, \texttt{00ffffff}.
+The decoder returns dimensions packed in \texttt{\$v1}: height in the high
+32 bits and width in the low 32. This differs from the parser's pixel count.
+For two by two, the packed value is hexadecimal \texttt{0000000200000002},
+not four. Keep the units and representation of each result beside its interface.
+
+The encoder takes this packed dimension value in \texttt{\$a1}, a framebuffer
+pointer in \texttt{\$a0}, byte destination in \texttt{\$a2}, and unsigned byte
+capacity in \texttt{\$a3}. It validates both dimensions before capacity, and
+both before accessing caller memory. It emits the canonical header shown above,
+followed by RGB triplets, ignoring each input word's high byte. No terminator
+belongs to the file.
+
+For these bounded dimensions, header length is eleven plus one for each
+two-digit dimension. Total output length is therefore
+$3WT+11+[W\geq10]+[T\geq10]$, where a bracket contributes one when its
+condition holds. Width nine and height ten need a twelve-byte header. The
+length proof permits a complete capacity check before the first store. The
+encoder returns exact byte length in \texttt{\$v1}; all its failures return
+zero length and leave output unchanged.
+
+\section{Use a descriptor to continue a file operation}
+
+MARS supplies educational file services through \texttt{syscall}. Put a service
+number in \texttt{\$v0}, prepare its arguments, then execute the instruction.
+These service numbers belong to the simulator's environment; they are not a
+portable hardware or operating-system interface.
+
+\begin{center}
+\begin{tabular}{r l l}
+\toprule
+Service & Inputs & Result\\
+\midrule
+13 Open & \texttt{\$a0} path, \texttt{\$a1} flags & descriptor or negative failure\\
+14 Read & descriptor, destination, requested bytes & transferred count, zero EOF, or negative failure\\
+15 Write & descriptor, source, requested bytes & accepted count or negative failure\\
+16 Close & \texttt{\$a0} descriptor & no count result used here\\
+\bottomrule
+\end{tabular}
+\end{center}
+For read/write, arguments occupy \texttt{\$a0/\$a1/\$a2} in the order shown.
+Paths are NUL-terminated strings. Their termination rule does not apply to raster
+bytes or serialized file contents. Open flag zero selects reading; flag one
+selects writing with truncation. Relative paths are resolved from the configured
+working directory, which the lab makes explicit.
+
+A successful open returns a small integer descriptor. Retain that returned
+number; do not assume it is always three or confuse it with the path pointer.
+The program owns the descriptor until it closes it. Every path after a successful
+open, including read/write failure, must close exactly that descriptor once.
+A failed open returns no descriptor to close.
+
+The read/write result overwrites \texttt{\$v0}, so reload the service number
+before the next call. Keep live pointers, totals and descriptor in preserved
+registers or private storage across helper calls. A returned transfer count is
+progress within the current file operation, not the file's total length.
+
+\section{Read through EOF, including at an exact capacity boundary}
+
+\texttt{ppm\_load} receives path, byte buffer, unsigned byte capacity and metadata
+pointer in \texttt{\$a0} through \texttt{\$a3}. It accepts capacity one through
+12544 before accessing paths, buffers or files. Its byte buffer may contain a
+prefix on failure, but metadata remains unchanged until complete validation.
+
+Keep $used$ bytes already read. Request $capacity-used$ bytes into
+$buffer+used$. A positive result advances $used$ by that result, even if smaller
+than the request. A short read is not EOF: continue until a read returns zero.
+A negative result is I/O failure. The worked loop's request preparation is:
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Read into the unfilled suffix}
+\begin{minted}{mars-idea}
+move $a0, $s3
+daddu $a1, $s0, $s4
+dsubu $a2, $s1, $s4
+li $v0, 14
+syscall
+\end{minted}
+The saved state holds descriptor in \texttt{\$s3}, buffer base in
+\texttt{\$s0}, capacity in \texttt{\$s1}, and used count in \texttt{\$s4}.
+The surrounding loop checks errors, zero and the updated capacity invariant.
+
+When $used=capacity$, another buffer read would overrun the selected destination,
+but reaching capacity alone cannot establish EOF. The function requests one
+extra byte into its private stack probe. Zero means the file ended exactly at
+capacity. A positive result means the file is too large and returns bound status
+two; a negative result is I/O status three. The probe byte never goes into caller
+padding. This distinguishes an exactly full valid file from its one-byte-longer
+counterexample.
+
+After EOF, close the descriptor, then call the parser on exactly $used$ bytes.
+Only successful parsing publishes metadata. Success returns file byte count in
+\texttt{\$v1}. A new open starts again at the beginning; no hidden descriptor or
+cursor survives a call. The lab tests these rules with short transfers and errors
+as well as ordinary host files.
+
+\section{Validate before truncation, then finish short writes}
+
+\texttt{ppm\_save} takes path, serialized byte pointer and unsigned selected
+count in \texttt{\$a0/\$a1/\$a2}. It checks the bound and complete format
+before opening the output in truncate mode. Otherwise malformed data could destroy
+an existing good file before the function discovered its error.
+
+Once open succeeds, keep a count of bytes already accepted. Request the remaining
+suffix, advance only by the positive returned count, and repeat until all selected
+bytes have been accepted. Treat a zero write as failure to make progress, rather
+than looping forever. Close the descriptor on both completion and failure.
+Success returns the count; I/O failure returns status three and zero count.
+
+This is not a transaction on the host filesystem. A failure after truncation may
+leave a partial file. The stronger guarantee is that format rejection occurs
+before opening, and that the function neither invents a successful full length
+nor leaks its descriptor after an I/O error. A higher-level application that
+needs replacement as one operation would need a different file protocol.
+
+The current MARS write service reads one byte beyond its requested memory range
+while preparing its host buffer. Our serialized allocations retain a readable
+guard after the selected bytes for that implementation behavior. The guard is
+not part of PPM, not a terminator to serialize, and not included in the requested
+or returned file length. The selected file count remains authoritative. This
+requirement is specific to the current service implementation.
+
+\section{Join verified functions into a complete artifact}
+
+The worked caller's mode zero parses its embedded image without file access.
+Modes one and two decode and encode; three and four load and save. Mode five
+composes load, decode, encode and save. It passes the loader's byte count to the
+decoder, the decoder's packed dimensions to the encoder, and the encoder's byte
+count to the saver. An error stops that chain before a later stage can interpret
+an error result as a size or dimension value.
+
+The public \texttt{tools/run\_revision\_ppm.py} makes a fresh working directory,
+creates a deterministic input, selects pipeline mode in a separate source copy,
+runs the actual MARS CLI and verifies the host output's canonical bytes. It also
+starts with a longer old output to check truncation. A commented input may
+produce a shorter canonical header while retaining the same samples. A byte-for-
+byte comparison with the original file would then test the wrong property.
+
+\begin{MARSWorkedExample}{Four colors through the complete pipeline}
+The input has eleven header bytes and twelve raster bytes. Load returns 23,
+parse describes width two, height two and offset eleven, decode produces four
+words and packed dimensions, encode returns 23, and save accepts those 23 bytes.
+The output is a complete image file. None of the path terminators, framebuffer
+high bytes, backing padding or write guard belongs to that file.
+\end{MARSWorkedExample}
+
+All functions preserve full saved registers, frame pointer, stack pointer and
+return path, and perform no console I/O. Input and output objects are disjoint.
+Status zero means success, one malformed content or invalid dimensions, two a
+count/capacity bound, and three a file I/O failure. Failure length is zero, with
+the publication limits already stated for each interface. The lab's public
+checks test those limits independently of the worked register allocation.
+
+\section{Produce complementary colors independently}
+
+Complete \texttt{ppm\_encode\_negative} in \texttt{ppm-negative.asm}. Its arguments,
+dimension range, canonical header, count/capacity rules and failure publication
+match \texttt{ppm\_encode}. For each source channel $x$, serialize $255-x$;
+ignore the high byte and leave every source word unchanged. Red becomes cyan,
+green becomes magenta, blue becomes yellow and white becomes black.
+
+You may reuse the supplied encoder and other helpers. One design changes the
+sample calculation while emitting the raster; another encodes successfully then
+transforms only its raster bytes. Explain how each design keeps the header
+unchanged, locates the exact raster, preserves source and saved state, and
+performs no output writes on failure. The accepted output interval may be
+written during a successful computation; an unchanged final buffer alone does
+not establish a failure guarantee.
+
+Use a high-byte value other than zero, dimensions across the nine/ten boundary,
+exact and insufficient capacity, and a later successful call after failure.
+The independent task includes a complete host-file run using your implementation,
+not only an inspection of its in-memory prefix. The written lab supplies the
+checks and commands without prescribing a frame or instruction schedule.
+
+\section*{Sources and laboratory connection}
+The \href{https://netpbm.sourceforge.net/doc/ppm.html}{Netpbm PPM specification}
+defines the P6 header and raster model. The local rules in
+\path{packages/029-binary-ppm/} deliberately restrict dimensions, numeric spelling,
+Maxval, final separator and image count. The educational file ABI and guard
+behavior are checked against the pinned MARS syscall implementations. The lab
+connects source-byte boundaries, descriptor publication, actual host artifacts,
+short-transfer reasoning and the independent complementary-color encoder.

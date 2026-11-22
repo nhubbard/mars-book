@@ -3,7 +3,7 @@
 These are directly edited native LaTeX drafts for the authorized restructuring goal.
 The initial manuscript remains at the original `main.tex` and `includes/` baseline.
 
-- `learning.tex` includes the first seventeen main-book chapters: the complete console
+- `learning.tex` includes the first eighteen main-book chapters: the complete console
   program, then integer representation through a byte inspector and a word-width
   experiment, addresses and memory through a complete pixel program, then decisions
   and repetition through a bounded seven-segment range counter. Functions and
@@ -22,13 +22,15 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   then derives clipping evidence, mask reduction, exact aliases and tail behavior.
   FIR filtering follows with Q15 units, exact wide sums, one final rounding and
   explicit stream history. Compact encodings then derive full-width differences,
-  canonical bytes, atomic prefixes and measured representation tradeoffs.
+  canonical bytes, atomic prefixes and measured representation tradeoffs. PPM files
+  then connect bounded headers, RGB representation, partial transfers, descriptor
+  ownership and actual host artifacts.
   The chapters use connected explanations
   and debugger reasoning.
 - `advanced-pilots.tex` includes the PCM mixing chapter and H.263 local
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
-- `lab-book.tex` includes the first seventeen written lab supplements: predictions,
+- `lab-book.tex` includes the first eighteen written lab supplements: predictions,
   observations, fault diagnosis and independent variations. The first unit has
   native interactive support; the later units currently use ordinary Run and Debug.
 

@@ -1,0 +1,207 @@
+\chapter{From bytes to an image file}
+\MARSChapterHeading{From bytes to an image file}
+\label{revision-lab:files}
+
+Use the complete \texttt{ppm-codec.asm} in \texttt{revision/labs/files}.
+The main chapter establishes the restricted P6 format, caller-owned intervals
+and file-service interfaces. This lab follows an image across those boundaries.
+You should finish with an actual image file and an explanation of why its bytes
+are correct. A viewer accepting a file is useful evidence, but it does not check
+saved registers, untouched memory or an error path.
+
+These activities use ordinary Run and Debug. A native guided lesson for this
+unit remains unfinished. Keep a clean copy of the worked source and use separate
+copies for deliberate faults. The supplied complete implementation provides
+helpers for the final independent exercise; you need not rebuild every function
+before producing a file.
+
+\section{Read the default image without opening a file}
+
+Keep \texttt{mode} zero. Locate \texttt{source}, \texttt{byte\_count},
+\texttt{metadata}, \texttt{status} and \texttt{count}. There are 23 selected
+source bytes, although the allocation is larger. Read the eleven-byte ASCII
+header and account for the remaining twelve bytes. Predict width, height,
+raster offset and pixel count before starting Debug.
+
+Break at \texttt{parse\_return}. Expect status zero in \texttt{\$v0} and
+four pixels in \texttt{\$v1}. The descriptor holds width two and height two
+in its first two words, then offset eleven in its doubleword. The descriptor
+contains an offset rather than the address of a pixel. The caller's
+\texttt{status} and \texttt{count} objects still hold their initial $-1$ values:
+this breakpoint precedes the caller's publication at \texttt{results\_ready}.
+Do not confuse those objects with the live function results.
+
+In a fresh copy, select only 22 bytes. Do not alter the backing allocation.
+The header still describes four pixels, but the selected interval is missing
+one sample. Predict the error and which metadata bytes may change. At return,
+status is one, length zero, and the metadata retains its hexadecimal
+\texttt{a5} sentinel bytes. Repeat with selected count 24. An additional mapped
+byte also makes this single-image extent invalid. Explain why accepting a
+plausible header would not be enough for either case.
+
+\section{Put punctuation in the raster}
+
+Make a one-by-one fixture with header \texttt{P6\textbackslash n1 1\textbackslash n255\textbackslash n}
+and sample bytes ten, 35 and zero. Its assembly initializer is:
+\begin{verbatim}
+source: .byte 80,54,10,49,32,49,10,50,53,53,10,10,35,0
+    .byte -91:12562
+\end{verbatim}
+Set \texttt{byte\_count} to fourteen. The filler keeps the source arena at
+12576 bytes so that later objects stay at the same addresses; filler does not
+belong to the selected file. Before running, identify which LF ends the header
+and which LF is the first red sample. Identify the byte that resembles a
+comment marker but is actually green.
+
+At \texttt{parse\_return}, the descriptor must contain one, one and eleven.
+The parser must not skip either raster sample. The native observation below
+shows that descriptor for this exact fixture.
+
+\input{revision/figures/ppm/parser}
+
+Switch to mode one in another copy of the same fixture. Break at
+\texttt{decode\_return}. Expect status zero and packed dimensions
+\texttt{0x0000000100000001}. The first framebuffer word is
+\texttt{0x000a2300}; in little-endian byte view it appears as
+\texttt{00 23 0a 00}. Explain every byte before interpreting the color.
+
+For a diagnosis exercise, imagine a parser that invokes its general gap skipper
+after Maxval. Follow it across the two consecutive LF bytes and the following
+\texttt{\#}. Which selected bytes would it misclassify? Describe the missing
+pixel boundary rather than merely saying that the resulting image looks wrong.
+
+\section{Serialize dimensions that have different digit counts}
+
+Return to an unchanged worked source, choose mode two and set
+\texttt{dimensions} to decimal 42949672969. This packs height ten in the high
+word and width nine in the low word. The framebuffer allocation has sufficient
+capacity; its initialized first four words are red, green, blue and white, and
+later words contain the fixture sentinel pattern. This is a header experiment,
+not a claim that the remaining pixels form a designed picture.
+
+Derive the canonical header \texttt{P6\textbackslash n9 10\textbackslash n255\textbackslash n}.
+Its length is twelve: one dimension needs a second decimal digit. The raster
+needs $9\cdot10\cdot3=270$ bytes, so success returns 282 bytes in
+\texttt{\$v1}. Break at \texttt{encode\_return} and inspect the destination.
+The first red sample follows the twelfth header byte immediately.
+
+\input{revision/figures/ppm/header}
+
+Change capacity to 281 in a separate copy. Predict status two, zero length and
+an unchanged entire destination, including the header positions. The encoder
+calculates and checks the complete extent before emitting either text or samples.
+Then restore exact capacity 282 and verify success without a trailing NUL.
+Why would checking only the three-byte-per-pixel raster requirement be too weak?
+
+\section{Run the complete pipeline on actual files}
+
+The worked mode-five caller loads, decodes, encodes and saves. The following
+command runs a source copy in a newly created directory and verifies the output
+bytes. Run it from the public book repository, replacing the two tool paths.
+Choose an output directory that does not exist; the helper refuses to reuse one.
+\begin{verbatim}
+python3 tools/run_revision_ppm.py \
+  --java /path/to/java --cli /path/to/cli.jar \
+  --output /tmp/ppm-first-run
+\end{verbatim}
+The helper writes \texttt{input.ppm}, prepares \texttt{pipeline.asm}, executes
+MARS and checks \texttt{output.ppm}. The default image is two by two: red, green,
+blue and white. The output has 23 bytes. It replaces a deliberately longer old
+output, testing that a successful save truncates it rather than leaving stale
+trailing bytes. Console silence is expected; the result is a file.
+
+Keep the resulting directory. Its receipt records the executed command and
+hashes, and its output file can be opened with a PPM-capable image viewer. At
+this tiny size, use magnification without smoothing when identifying individual
+pixels. A successful receipt checks the exact canonical bytes; it does not
+measure performance or certify every PPM variant.
+
+Repeat in another new directory with \texttt{--width 9 --height 10 --commented}.
+The input contains a comment adjacent to the magic and uses a tab between the
+dimensions, both accepted by our local parser. The canonical output replaces
+that header and retains the samples. Some external readers, including the
+FFmpeg version used for this draft's verification, do not recognize that
+comment-adjacent-magic input. The generated canonical output was independently
+decoded successfully. Keep local acceptance rules and a particular viewer's
+behavior distinct.
+
+\section{Account for partial transfers and ownership}
+
+A file descriptor belongs to the function that obtained it until it is closed.
+It is neither a path pointer nor necessarily the integer three. A read request
+is a maximum; a positive result may be smaller. After accepting $k$ bytes, the
+loader asks for the remaining capacity at \texttt{buffer+k}. Zero means EOF;
+a negative result means failure. Explain why a positive short read alone does
+not establish EOF.
+
+\input{revision/figures/ppm/pipeline}
+
+This Debug observation uses a deterministic virtual file installed by the
+separate authoring plugin. It begins with the same 23 input bytes and forces
+reads and writes of at most seven bytes. Descriptor 19 is opened and closed for
+loading, then opened and closed for saving. The output bytes match the input's
+canonical image. The screenshot establishes the decoded words at that checkpoint;
+the archived operation receipt establishes the forced transfers and closes.
+The earlier command separately exercises actual host files.
+
+When an input fills the offered capacity exactly, the loader still needs to
+know whether the file has another byte. Its one-byte probe uses private stack
+storage, outside the caller's result interval. EOF accepts the full buffer;
+one extra byte reports a capacity error. Drawing that extra byte into
+\texttt{buffer+capacity} would write outside the offered interval even if more
+physical memory happened to be mapped.
+
+The saver validates the complete selected image before its truncating open.
+Once open, it repeats writes until the selected count is accepted. A negative
+return or a zero return for a nonempty request is an I/O failure; repeating the
+same zero-progress request indefinitely cannot complete the file. The grader
+has an explicit zero-progress control to test that case. A failure after an
+open may leave a partial output file, but the descriptor must be closed and
+the returned length must be zero. A malformed source, by contrast, must leave
+an existing output file unopened and unchanged.
+
+In your notes, draw separate timelines for an invalid source, a failure after
+eleven accepted bytes, and a successful sequence of short writes. Mark the
+first operation permitted to alter the output file. State what is guaranteed
+about file contents and descriptor ownership on each return path.
+
+\section{Write a complementary-color serializer}
+
+Complete \texttt{ppm\_encode\_negative} in a copy of
+\texttt{revision/labs/files/ppm-negative.asm}. Keep its supplied helpers and
+caller. Arguments and failures match \texttt{ppm\_encode}: full framebuffer
+pointer, packed dimensions, byte destination and unsigned capacity. Serialize
+$255-x$ for each red, green and blue component; ignore the input word's high
+byte. Preserve the source, saved registers, frame pointer and stack pointer.
+Return status zero and the exact canonical byte count on success, otherwise
+the specified error and zero count without output writes. Objects are disjoint.
+
+For the default four colors, predict cyan, magenta, yellow and black. Write the
+expected twelve raster bytes before running. The header remains the ordinary
+PPM header: complementing it would destroy the file format. You may serialize
+the complemented channels directly, or reuse the supplied encoder and transform
+only the accepted raster after success. Neither design may temporarily change
+the source or write rejected output and restore it later.
+
+Use the public behavior checks:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  revision/labs/checks/ppm-negative.kts \
+  /path/to/your/ppm-negative.asm
+\end{verbatim}
+The unchanged starter deliberately fails. The checks accept equivalent correct
+implementations and test selected dimension, offset and capacity boundaries,
+source preservation and caller state. Passing them does not prove every possible
+pixel combination. Keep a high input byte other than zero, both one- and
+two-digit dimensions, exact capacity and one byte less in your own explanation.
+
+Finally run your completed routine through the actual file pipeline:
+\begin{verbatim}
+python3 tools/run_revision_ppm.py \
+  --java /path/to/java --cli /path/to/cli.jar \
+  --source /path/to/your/ppm-negative.asm --negative \
+  --output /tmp/ppm-negative-run
+\end{verbatim}
+The helper selects your routine in a separate pipeline copy and checks the
+canonical header and complemented raster. Keep the image and receipt, and
+explain one prediction you corrected.
