@@ -89,6 +89,7 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
     val archive = plan.archives.single()
     val entry = archive.directory(Path.of(plan.projectRoot)).resolve(archive.entry)
     val runReceipts = mutableListOf<Map<String, Any>>()
+    val debugReceipts = mutableListOf<Map<String, Any>>()
     suspend fun continueLesson() {
         withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
             val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.ContinueDownloaded"))
@@ -120,7 +121,14 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
                 "sourceChangedWhileWaiting" to editWhileWaiting, "exitCode" to 0)
         } finally { launch.close() }
     }
-    if (plan.resume) {
+    if (plan.resumeCompleted) {
+        check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) } == plan.expectedEntryDigests.getValue(archive.sha256))
+        continueLesson()
+        awaitText("The five checked runs and the ordered Debug observations")
+        while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
+        capture("resumed-complete", "The five checked runs and the ordered Debug observations")
+        check(!bookModalUi { lessonVisibleText(root).contains("Start a fresh Run of byte-inspector.asm. Enter 150") })
+    } else if (plan.resume) {
         check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) } == plan.expectedEntryDigests.getValue(archive.sha256))
         continueLesson()
         awaitText("Which complete value will seb place in t1?")
@@ -159,8 +167,12 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
                 awaitText(instruction)
                 run(input, "boundary-$input")
             }
-            while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
-            capture("execution-complete", "The five checked runs cover the example and the byte boundaries")
+            if (plan.nativeDebug) {
+                debugReceipts += captureBookNativeDebug(project, entry, ::awaitText, ::capture, ::focus)
+            } else {
+                while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
+                capture("execution-complete", "The five checked runs cover the example and the byte boundaries")
+            }
         } else capture("predictions-complete", "Run the program with 0, 127, 128 and 255.")
     } else {
         capture("first-prediction", "How many bit positions can remain nonzero after the mask?")
@@ -191,7 +203,9 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
         Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
             "resumed" to plan.resume, "entryDigests" to mapOf(archive.sha256 to digest),
             "nativeQuizLinksClicked" to true, "sourcePointersVerified" to true, "runs" to runReceipts,
-            "scope" to if (plan.nativeExecution) "Predictions and actual Run observations; no Debug or independent-writing credit claimed"
+            "debug" to debugReceipts, "resumedCompleted" to plan.resumeCompleted,
+            "scope" to if (plan.nativeDebug) "Predictions, actual Run and ordered Debug observations; no independent-writing credit claimed"
+                else if (plan.nativeExecution) "Predictions and actual Run observations; no Debug or independent-writing credit claimed"
                 else "Conceptual predictions and hints; execution and independent-writing credit are not claimed",
         )), CREATE_NEW)
     }

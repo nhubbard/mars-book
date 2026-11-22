@@ -37,6 +37,11 @@ class BookPackageImportPlanTest {
     fun `native prediction walkthrough binds one edition and retains resume source checks`() {
         plan.copy(nativePredictions = true).validate()
         plan.copy(nativePredictions = true, nativeExecution = true).validate()
+        plan.copy(nativePredictions = true, nativeExecution = true, nativeDebug = true).validate()
+        assertThrows<IllegalArgumentException> { plan.copy(nativeDebug = true).validate() }
+        assertThrows<IllegalArgumentException> { plan.copy(resumeCompleted = true).validate() }
+        plan.copy(nativePredictions = true, nativeExecution = true, nativeDebug = true, resume = true, resumeCompleted = true,
+            expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64))).validate()
         assertThrows<IllegalArgumentException> { plan.copy(nativeExecution = true).validate() }
         plan.copy(nativePredictions = true, resume = true,
             expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64))).validate()

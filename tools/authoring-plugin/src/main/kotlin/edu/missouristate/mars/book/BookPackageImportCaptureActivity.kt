@@ -67,6 +67,8 @@ internal data class BookPackageImportPlan(
     val closeProjectAfterCapture: Boolean = false,
     val nativePredictions: Boolean = false,
     val nativeExecution: Boolean = false,
+    val nativeDebug: Boolean = false,
+    val resumeCompleted: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -75,6 +77,8 @@ internal data class BookPackageImportPlan(
         archives.forEach(BookImportArchive::validate)
         require(!nativePredictions || archives.size == 1)
         require(!nativeExecution || nativePredictions)
+        require(!nativeDebug || nativeExecution)
+        require(!resumeCompleted || (resume && nativeDebug))
         if (resume) {
             require(expectedEntryDigests.keys == archives.map { it.sha256 }.toSet())
             require(expectedEntryDigests.values.all { it.matches(Regex("[a-f0-9]{64}")) })
