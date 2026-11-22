@@ -92,6 +92,7 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
     val debugReceipts = mutableListOf<Map<String, Any>>()
     val assessmentReceipts = mutableListOf<Map<String, Any>>()
     val navigationReceipts = mutableListOf<Map<String, Any>>()
+    val prerequisiteReceipts = mutableListOf<Map<String, Any>>()
     suspend fun continueLesson() {
         withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
             val action = checkNotNull(ActionManager.getInstance().getAction("Mars.Learning.ContinueDownloaded"))
@@ -123,7 +124,9 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
                 "sourceChangedWhileWaiting" to editWhileWaiting, "exitCode" to 0)
         } finally { launch.close() }
     }
-    if (plan.activityNavigation) {
+    if (plan.prerequisiteControls) {
+        prerequisiteReceipts += captureBookNativePrerequisites(project, plan, entry, ::awaitText, ::capture, ::click)
+    } else if (plan.activityNavigation) {
         navigationReceipts += captureBookNativeActivityNavigation(project, plan, entry, ::awaitText, ::capture, ::click)
     } else if (plan.resumeCompleted) {
         check(withContext(Dispatchers.IO) { captureSha256(Files.readAllBytes(entry)) } == plan.expectedEntryDigests.getValue(archive.sha256))
@@ -217,9 +220,12 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
     withContext(Dispatchers.IO) {
         Files.writeString(output.resolve("complete.json"), GsonBuilder().setPrettyPrinting().create().toJson(mapOf(
             "resumed" to plan.resume, "entryDigests" to mapOf(archive.sha256 to digest),
-            "nativeQuizLinksClicked" to true, "sourcePointersVerified" to true, "runs" to runReceipts,
-            "debug" to debugReceipts, "assessments" to assessmentReceipts, "navigation" to navigationReceipts, "resumedCompleted" to plan.resumeCompleted,
-            "scope" to if (plan.activityNavigation) "Native guided and independent selection, preserved check history and direct fresh-process continuation"
+            "nativeQuizLinksClicked" to !plan.resumeCompleted, "sourcePointersVerified" to !plan.resumeCompleted, "runs" to runReceipts,
+            "debug" to debugReceipts, "assessments" to assessmentReceipts, "navigation" to navigationReceipts, "prerequisites" to prerequisiteReceipts, "resumedCompleted" to (plan.resumeCompleted && !plan.prerequisiteControls),
+            "startedFromCompletedUnit" to plan.resumeCompleted,
+            "lessonRunningAtCaptureEnd" to bookModalUi { LessonManager.instance.lessonIsRunning() },
+            "scope" to if (plan.prerequisiteControls) "Native instructor prerequisites, transitive current-source checks, saved policy and deliberate release"
+                else if (plan.activityNavigation) "Native guided and independent selection, preserved check history and direct fresh-process continuation"
                 else if (plan.assessmentFixtures.isNotEmpty()) "Predictions, actual Run, ordered Debug and two independent public-case assessments"
                 else if (plan.nativeDebug) "Predictions, actual Run and ordered Debug observations; no independent-writing credit claimed"
                 else if (plan.nativeExecution) "Predictions and actual Run observations; no Debug or independent-writing credit claimed"

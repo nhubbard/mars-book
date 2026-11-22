@@ -79,6 +79,19 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `instructor prerequisite captures require a completed exact independent unit and isolate their continuation`() {
+        val fixtures=listOf(BookAssessmentFixture("independent/plus-one.asm","/tmp/plus.asm","c".repeat(64)),
+            BookAssessmentFixture("independent/wrapped-byte.asm","/tmp/wrapped.asm","d".repeat(64)))
+        val controls=plan.copy(nativePredictions=true,nativeExecution=true,nativeDebug=true,resume=true,resumeCompleted=true,
+            assessmentFixtures=fixtures,expectedEntryDigests=mapOf(archive.sha256 to "b".repeat(64)),prerequisiteControls=true)
+        controls.validate(); controls.copy(resumePrerequisites=true).validate()
+        assertThrows<IllegalArgumentException> { controls.copy(resumeCompleted=false).validate() }
+        assertThrows<IllegalArgumentException> { controls.copy(assessmentFixtures=emptyList()).validate() }
+        assertThrows<IllegalArgumentException> { controls.copy(activityNavigation=true).validate() }
+        assertThrows<IllegalArgumentException> { controls.copy(prerequisiteControls=false,resumePrerequisites=true).validate() }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
