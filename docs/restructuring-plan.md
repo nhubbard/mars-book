@@ -783,3 +783,40 @@ or representative learner review. The main learning PDF is unchanged.
 The final source-restoration regression completes all 1,184 plugin tests and
 required coverage checks. The 456 book-tool tests also pass after the final
 LaTeX and figure integration. All unrelated manual MARS edits are preserved.
+
+
+### Seventh native unit: integer raster (22 November 2026)
+
+The seventh revised unit now has five inline predictions, eight ordered Debug
+observations, ordinary Run and an independent dashed-raster function check.
+Sixteen public cases use two continuations each, prefilled full-word frames,
+varied colors and preserved caller state. Painted halfway cases expose a choice
+that a skipped midpoint could hide. The direct color argument differs from its
+global word, enforcing the function interface without prescribing its algorithm.
+
+An essential missing grader check was added upstream: protected input ranges
+reject execution stores even when they write the same value or restore it later.
+Setup occurs before tracing; final-frame and caller-stack comparisons retain
+their separate meaning. Version-3 profiles state these ranges explicitly.
+Two correct private algorithms pass all cases in ordinary and relocated layouts;
+the unfinished starter and ten deliberate faults are rejected. The worked
+source's eight boundary states were measured, rather than inferred from prose.
+
+The separate authoring plugin exercised actual inline answers and source
+pointers, Debug, Run, failing starter feedback, unsaved correct source and edits
+that invalidate prior checks. A fresh IDE process retained the quiz history and
+required fresh execution checks. Both projects closed normally, the installed
+plugin JARs matched their pinned builds, and no IDE errors occurred. The
+authoring code remains separate from MARS. Raw screenshots are verification
+evidence; no new screenshot figure is claimed for this publication step.
+
+The written raster supplement is now connected to that native lesson. The lab
+PDF has 196 pages, with the revised unit on pages 44–48; all five pages were
+rendered and inspected. Fonts retain embedding and Unicode mappings. PDF/UA-2
+passes 1728 rules and 914963 checks with zero failures. PDF SHA-256:
+`5d7f7a179809a1aa6596ee1eac896fae6679d813f9768d7734ae43e4e056f10d`.
+The main learning PDF is unchanged. Automated checks passed 161 CLI tests,
+1188 plugin regression tests with required coverage, a subsequent six-test exact
+archive importer run, 459 book tests and 117 authoring-plugin tests. These checks
+do not replace representative learner or human accessibility review. The
+remaining curriculum work continues without claiming completion of all 35 projects.

@@ -2,10 +2,19 @@
 \MARSChapterHeading{Tracing an integer rasterizer}
 \label{revision-lab:integer-algorithms}
 
-Use \texttt{integer-line.asm} from \texttt{revision/labs/files}. Read the main
-chapter's cell-selection rule before running it. These activities use ordinary
-MARS Run and Debug; the seventh revised unit is not yet a native interactive
-lesson. The separate \texttt{dashed-line.asm} file is your independent work area.
+Read the main chapter's cell-selection rule, then import the student package
+\texttt{007-integer-raster}. Continue its downloaded lesson in Learn. Work in the
+imported \texttt{integer-line.asm}; the lesson opens the separate
+\texttt{independent/dashed-line.asm} when you reach the independent exercise.
+The worked source is also available at
+\path{revision/labs/files/integer-line.asm} for ordinary Run and Debug outside
+the guided lesson.
+
+The inline questions ask for a prediction before execution supplies the answer.
+Their source pointers identify the relevant instruction; select an answer in
+Learn rather than opening Find Action. A wrong answer gives feedback and allows
+another attempt. Keep a short written trace as well: a correct choice cannot
+show how you obtained the next cursor, error or address.
 
 Your evidence should connect the selected cells, the integer state and the actual
 stores. A finished line can look plausible even when a tie is inconsistent or an
@@ -54,6 +63,40 @@ After returning to \texttt{line\_complete}, step over the count store. The label
 instruction step. Check \texttt{line\_count} before and after the exit-selector load. A later
 \texttt{\$v0=10} does not mean that the function returned ten; it means the caller
 has reused the register for another purpose.
+
+\section{Follow the guided Debug boundaries}
+
+Start a fresh Debug session when the lesson requests it. Use one line breakpoint
+at a time, removing the previous one before resuming. A breakpoint left at
+\texttt{line\_pixel} would stop on every visit, obscuring which observation the
+lesson currently needs. The eight observations are:
+
+\begin{enumerate}
+\item First \texttt{line\_pixel}, before address calculation: cursor $(1,1)$,
+error two, count zero.
+\item First \texttt{line\_decide}, before freezing the doubled error: the same
+cursor and error, count one.
+\item Second \texttt{line\_pixel}: cursor $(2,2)$, error four, count one.
+\item Second \texttt{line\_decide}: cursor $(2,2)$, error four, count two.
+\item \texttt{skip\_x} on that transition: cursor $(3,2)$, updated error one,
+saved doubled error eight, count two.
+\item Third \texttt{line\_pixel}: cursor $(3,2)$, error one, count two.
+\item \texttt{line\_return}: endpoint $(6,4)$ already painted, count six.
+\item \texttt{line\_complete}: the caller has regained control; its count store
+is still pending.
+\end{enumerate}
+
+Record whether each store is pending or complete. At the fifth observation,
+explain why the vertical comparison uses eight even though the error register
+now contains one. At the last observation, inspect \texttt{line\_count} before
+stepping through the caller's store and exit-selector load. Finish or stop Debug
+before the ordinary Run requested next. An empty console is expected; use the
+bitmap and memory to inspect the raster and retained count.
+
+The lesson saves predictions and successful checks. After editing a checked
+source, continue the lesson to repeat its execution observations; an earlier
+pass does not verify the edited program. The independent check uses the current
+editor text, including an unsaved edit. A passing report refers to that revision.
 
 \section{Make a fault explain itself}
 
@@ -107,7 +150,10 @@ visit two, and continue alternating. Preserve every skipped cell's original word
 every cell outside the line, the endpoint/color inputs, all guards, saved registers,
 stack pointer and caller-owned stack bytes. Return the number actually painted in
 \texttt{\$v0}, produce no console output and return to the supplied continuation.
-The caller stores the count and exits. You may use a different correct raster
+The supplied caller calls twice through different continuations, storing each
+returned count before continuing. Direct function checks stop at those
+continuations before the caller stores anything. Preserve its \texttt{line\_count}
+word during each direct call. You may use a different correct raster
 algorithm; no particular temporary registers, private labels or stack layout are
 required.
 
@@ -117,15 +163,41 @@ cell. Using $x$ parity for the pattern fails on a vertical line. Incrementing th
 result count on every visit returns the solid-line count instead of the number
 painted. Neither mistake requires changing the geometric recurrence to repair it.
 
-Use these public formative checks with JDK 25:
+Use \textbf{Check this program} in Learn for feedback on the independent source.
+The unfinished starter should fail; replace its \texttt{break} body and retry.
+Equivalent solutions may use a different raster algorithm, private labels or
+temporary registers. The public contract concerns the selected words, returned
+count and preserved state, rather than a copy of the worked recurrence.
+
+For the same public cases outside the IDE, use JDK 25 and the adjacent script:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/dashed-line.kts \
+  revision/lessons/007-integer-raster/independent/dashed-line.kts \
   /path/to/your/dashed-line.asm
 \end{verbatim}
-They vary the color, endpoint order and existing frame, including a black line on
-nonzero pixels. They check the returned count, complete final words, protected
+The sixteen cases vary the color, endpoint order and existing frame, including a
+black line on nonzero pixels. Each case makes two calls in one machine. The
+function must use its passed color, even when the global color word differs. They check the returned count, complete final words, protected
 input stores and preserved function state. A correct result is accepted without
 matching the worked source. Keep your predicted default dashed cells and a vertical
 counterexample beside the report; a passing report alone does not explain why the
 pattern follows visits rather than coordinates.
+
+
+The protected endpoint record, color word and four guards must receive no
+execution stores, including same-value stores or values later restored. Other
+memory checks compare bytes at return; they are not a history of every access.
+The checks do not prescribe the order of framebuffer stores. The caller's stack
+bytes and count word must retain their values at each direct return.
+
+Include $(0,0)$ to $(4,1)$ in your own tests. Its halfway choice occurs at visit
+two, which the dashed routine paints. A wrong halfway choice at a skipped visit
+could leave the final image unchanged. Compare this with $(0,0)$ to $(2,1)$,
+whose halfway choice is at skipped visit one. Choose a counterexample where the
+incorrect decision has an observable consequence.
+
+Passing the sixteen public cases establishes 32 returned calls for those inputs;
+it is not an exhaustive proof over all 4096 endpoint tuples, colors or previous
+frames. Keep your predicted default dashed cells, vertical counterexample and
+painted halfway case beside the report. Explain a failed word or count before
+making another edit.

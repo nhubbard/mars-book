@@ -1,0 +1,327 @@
+{
+  "formatVersion": 6,
+  "introduction": "This unit connects a visible raster with an integer invariant. Read the main chapter\u2019s endpoint and halfway contract, predict its cells, and follow one saved decision through two coordinate tests. Then add a dash pattern without changing the underlying geometry.",
+  "conclusion": "Use a counterexample to explain a wrong cell, count or store. Distinguish the old decision used by a transition from its updated accumulator, and distinguish canonical visits from the cells actually painted.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "inclusive-endpoints",
+      "explanation": "The default line goes from (1,1) to (6,4). Its horizontal difference is five. The raster paints the starting cell, each following selected cell and the endpoint; a difference counts transitions rather than cells.",
+      "question": "How many cells does this solid raster paint?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Six",
+          "feedback": "Five horizontal transitions connect six visited columns, including both endpoints."
+        },
+        {
+          "id": "b",
+          "text": "Five",
+          "feedback": "That omits one endpoint. The difference and the number of included cells are different quantities."
+        },
+        {
+          "id": "c",
+          "text": "Eight",
+          "feedback": "Eight is the frame width. This line does not visit every column."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "line_pixel",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "two-decisions",
+      "explanation": "For the first transition, dx is five, stored dy is minus three and e is two. The saved doubled value is four. Both comparisons read that same snapshot: four is at least minus three and at most five.",
+      "question": "Which coordinates advance after the first cell?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both x and y",
+          "feedback": "The two tests independently permit their updates. Treating them as if/else would discard one required step."
+        },
+        {
+          "id": "b",
+          "text": "Only x, because its test comes first",
+          "feedback": "The later test still applies. Passing the first condition does not make the second an alternative."
+        },
+        {
+          "id": "c",
+          "text": "Neither coordinate",
+          "feedback": "At least one coordinate must advance on a nonfinal transition; this particular transition advances both."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "line_decide",
+        "mnemonic": "sll",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "canonical-tie",
+      "explanation": "Order endpoints by x, breaking equal-x ties by y. For (0,0) to (4,1), the ideal height at x=2 is exactly one half. The chapter\u2019s halfway convention takes the minor-coordinate step toward the ordered endpoint B, independent of the supplied direction.",
+      "question": "Which cell is selected at x=2 for this halfway case?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "(2,1)",
+          "feedback": "The halfway choice advances toward B. Reversing the supplied endpoints must produce the same canonical raster."
+        },
+        {
+          "id": "b",
+          "text": "(2,0)",
+          "feedback": "That chooses the other equally near row. It differs from the stated convention."
+        },
+        {
+          "id": "c",
+          "text": "Both (2,0) and (2,1)",
+          "feedback": "The contract selects one cell at each major-axis position, rather than filling both halfway candidates."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "draw_line",
+        "mnemonic": "lw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-raster",
+      "explanation": "Start a fresh Debug session for integer-line.asm. Follow these eight observations in one execution, moving one temporary breakpoint at a time. Several labels are revisited: the second line_decide and following skip_x expose the saved-decision issue. Learn checks the stated registers; use the written lab to connect them with actual stores and framebuffer addresses.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "first-pixel",
+          "explanation": "Break at the first line_pixel before its address calculation and store. Identify the cursor, ordered target, signed differences, vertical direction and initial error. No cell has been painted yet.",
+          "anchor": {
+            "label": "line_pixel",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000001",
+            "$t1": "0x0000000000000001",
+            "$t2": "0x0000000000000006",
+            "$t3": "0x0000000000000004",
+            "$t4": "0x0000000000000005",
+            "$t5": "0xfffffffffffffffd",
+            "$t6": "0x0000000000000001",
+            "$t7": "0x0000000000000002",
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The integer state describes the first pending cell, not an already completed store."
+        },
+        {
+          "id": "first-decision",
+          "explanation": "Resume to the first line_decide. The first store and count increment are complete. The next sll will freeze twice the current error; predict both coordinate updates before proceeding.",
+          "anchor": {
+            "label": "line_decide",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000001",
+            "$t1": "0x0000000000000001",
+            "$t7": "0x0000000000000002",
+            "$v0": "0x0000000000000001"
+          },
+          "success": "One painted cell and a pending transition are different boundaries."
+        },
+        {
+          "id": "second-pixel",
+          "explanation": "Resume to the next line_pixel. Both coordinates advanced, and both error updates contributed. The second cell is still pending, so v0 remains one.",
+          "anchor": {
+            "label": "line_pixel",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000002",
+            "$t1": "0x0000000000000002",
+            "$t7": "0x0000000000000004",
+            "$v0": "0x0000000000000001"
+          },
+          "success": "The first old-state decision produced cursor (2,2) and error four."
+        },
+        {
+          "id": "second-decision",
+          "explanation": "Resume to the second line_decide. Cell (2,2) has been painted and the count is two. Its error is four, so the pending snapshot must become eight. Predict whether the vertical comparison should permit another y step.",
+          "anchor": {
+            "label": "line_decide",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000002",
+            "$t1": "0x0000000000000002",
+            "$t7": "0x0000000000000004",
+            "$v0": "0x0000000000000002"
+          },
+          "success": "The next snapshot is eight; do not substitute a later, updated error for it."
+        },
+        {
+          "id": "frozen-decision",
+          "explanation": "Resume to skip_x on this second transition, before its vertical comparison. The horizontal update changed e from four to one and advanced x to three. The saved doubled value is still eight.",
+          "anchor": {
+            "label": "skip_x",
+            "mnemonic": "bltc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000003",
+            "$t1": "0x0000000000000002",
+            "$t7": "0x0000000000000001",
+            "$t8": "0x0000000000000008",
+            "$t4": "0x0000000000000005",
+            "$v0": "0x0000000000000002"
+          },
+          "success": "The comparison sees five less than eight and skips y. Recomputing twice the new error would make the wrong decision."
+        },
+        {
+          "id": "third-pixel",
+          "explanation": "Resume to the next line_pixel. The next selected cell is (3,2), rather than (3,3). Its store is pending; two cells have been painted so far.",
+          "anchor": {
+            "label": "line_pixel",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000003",
+            "$t1": "0x0000000000000002",
+            "$t7": "0x0000000000000001",
+            "$v0": "0x0000000000000002"
+          },
+          "success": "The retained snapshot explains the unchanged y coordinate."
+        },
+        {
+          "id": "returned-count",
+          "explanation": "Resume to line_return. The endpoint has already been painted, the count is six and no further coordinate transition is required. Inspect the final word through Memory before returning.",
+          "anchor": {
+            "label": "line_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000006",
+            "$t1": "0x0000000000000004",
+            "$t7": "0x0000000000000002",
+            "$v0": "0x0000000000000006",
+            "$v1": "0x0000000010010098",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The function has finished its six stores and is about to return their count."
+        },
+        {
+          "id": "caller-boundary",
+          "explanation": "Resume to line_complete. The caller\u2019s count store is still pending and v0 still holds six. This label-addressed store expands to machine instructions; the written lab explains how to inspect its completion before the exit selector changes v0.",
+          "anchor": {
+            "label": "line_complete",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000006",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Returning the count and storing it in caller memory are separate operations."
+        }
+      ],
+      "success": "Finish or stop Debug before ordinary Run. Explain why both tests use the old doubled error even though the accumulator changes between them."
+    },
+    {
+      "kind": "prediction",
+      "id": "caller-count",
+      "explanation": "The function returns six in v0. The caller stores that count in line_count and then loads exit service ten into v0. A final register value belongs to its latest writer.",
+      "question": "Where does the completed program retain the painted-cell count?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The line_count word",
+          "feedback": "The caller saved the result before reusing v0 for the exit service."
+        },
+        {
+          "id": "b",
+          "text": "The final v0 must still be six",
+          "feedback": "The later exit-selector instruction replaces it with ten."
+        },
+        {
+          "id": "c",
+          "text": "The empty console contains the count",
+          "feedback": "This program prints no count. Silent exit does not establish the framebuffer or result word."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "line_complete",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-raster",
+      "explanation": "Run integer-line.asm using ordinary Run. It should exit silently. Inspect line_count=6, the six selected pixel words and the unchanged inputs and guards as the written lab describes. A plausible line or empty console alone does not establish the complete overlay contract.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The worked solid raster exited silently. The next activity separates visit state from painted-cell count."
+    },
+    {
+      "kind": "prediction",
+      "id": "dash-state",
+      "explanation": "In the solid routine every visit paints, so visits and stores have the same count. The independent routine will skip every other store while following the same canonical cells. Geometry, visit index and number actually painted then have different roles.",
+      "question": "Which state should select alternating painted and skipped cells?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The position in the canonical visit sequence",
+          "feedback": "Paint visit zero, skip one, paint two and continue. This also works when x stays constant on a vertical line."
+        },
+        {
+          "id": "b",
+          "text": "The parity of x",
+          "feedback": "On a vertical line x never changes, so this would select all cells or none."
+        },
+        {
+          "id": "c",
+          "text": "The number already painted",
+          "feedback": "That count does not advance on a skipped cell. It cannot by itself alternate the next decision."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "line_pixel",
+        "mnemonic": "addiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "dashed-raster",
+      "source": "independent/dashed-line.asm",
+      "caseProfile": "independent/dashed-line.cases.json",
+      "checkKind": "function",
+      "explanation": "Write draw_dashed in independent/dashed-line.asm, replacing its break body. Use the chapter\u2019s canonical endpoint and halfway rules, paint visit zero and every other visit, preserve skipped and unrelated words, and return the number actually painted in v0. Read independent/README.md: sixteen public cases call the function twice each, vary the frame and arguments, and prohibit execution stores to the endpoint record, color word and guards. Reordering working registers is allowed; temporarily writing and restoring a protected input is not.",
+      "success": "The current source passes all sixteen public raster cases. Explain the saved decision, the canonical visit index, the count actually painted and the values preserved for the caller. Complete the written lab\u2019s refreshed-error, exclusive-update and endpoint counterexamples.",
+      "hints": [
+        {
+          "id": "separate-state",
+          "text": "Keep the geometry transition independent of whether the current visit is stored. Every visited cell advances the visit state; only a painted cell increments the returned count."
+        },
+        {
+          "id": "old-decision",
+          "text": "Freeze twice the error once per transition. Both coordinate comparisons must use that snapshot, even after an earlier update changes the accumulator."
+        },
+        {
+          "id": "interface",
+          "text": "Load the endpoint record into working registers before ordering it. Use the passed frame pointer and color, preserve caller-owned state, and return through the incoming continuation."
+        }
+      ]
+    }
+  ]
+}
