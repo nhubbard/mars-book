@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import unittest
 
 import console_cases as checks
@@ -18,6 +19,12 @@ class TraceCaseDataTests(unittest.TestCase):
 
     def reject(self, profile):
         with self.assertRaises(ValueError): self.parse(profile)
+
+    def test_checked_in_loop_profile_and_generated_script_remain_identical(self):
+        root = Path(__file__).resolve().parents[1] / 'revision/lessons/005-seven-segment-counter/independent'
+        cases = checks.load(root / 'end-pointer.cases.json')
+        self.assertEqual(10, len(cases))
+        self.assertEqual((root / 'end-pointer.kts').read_text(), checks.render(cases))
 
     def test_rendered_setup_and_trace_checks_match_the_declared_observational_contract(self):
         case = self.parse()[0]
