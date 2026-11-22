@@ -563,3 +563,19 @@ and corresponding prerequisite-source tracking. Do not weaken source invalidatio
 to accommodate edits between those variants. The lesson archive, actual IDE flow,
 new chapter-four captures and native LaTeX integration remain pending. Historical
 publications and the completed memory unit are unchanged by this step.
+
+
+### Fourth-unit source-specific lesson draft
+
+Native lesson format 5 adds explicit Run/Debug source selection while retaining
+per-source invalidation and instructor prerequisite tracking. The new lesson
+archive has the published full-range program and separate empty and tail variants,
+four explanatory predictions, ten ordered register observations, a no-console-output
+Run and the end-pointer independent task. Actual CLI execution matches all ten
+register observations across the three variants. The 450 book-tool tests pass,
+including publication/source consistency and exact public export boundaries.
+
+This step supplies the instructional draft and package, not a completed native
+walkthrough. The new IDE interaction, light-theme chapter-four captures, native
+LaTeX integration and human learner review remain outstanding. The current PDF
+editions and historical validation evidence are unchanged.

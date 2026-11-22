@@ -1,0 +1,341 @@
+{
+  "formatVersion": 5,
+  "introduction": "A loop combines a control-flow decision with changing data state. Use the main chapter’s complete range counter to identify the pointer, remaining count and display port. In this lab you will predict its byte operations, observe named Debug boundaries for full, empty and tail ranges, then write an end-pointer version. Read the written lab alongside the interactive steps.",
+  "conclusion": "Explain the loop using its entry state, test, body, updates and terminating state. Your own version should handle an empty range without reading a glyph and a tail range without reading beyond the table. The written lab’s wrong-stride, missing-decrement and forbidden-slot investigations remain part of this unit.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "port-address",
+      "explanation": "RIGHT_DISPLAY names address 0x00000000ffff0010. dli puts that complete address in t7. The later sb uses t7 as its base and t3 as its value.",
+      "question": "Which operand chooses the display port?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "t7",
+          "feedback": "The address is the base value in 0(t7). The zero offset adds no displacement."
+        },
+        {
+          "id": "b",
+          "text": "t3",
+          "feedback": "t3 supplies the segment mask. Treating it as the address would select unrelated memory."
+        },
+        {
+          "id": "c",
+          "text": "The byte value 0x3f",
+          "feedback": "0x3f describes lit segments for zero; it is data to send to the port."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "port_write",
+        "mnemonic": "sb",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "glyph-width",
+      "explanation": "glyphs contains sixteen consecutive bytes, one mask per hexadecimal digit. The address starts at glyphs plus first_digit; the index counts bytes.",
+      "question": "After writing one glyph, how far should t0 advance?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "One byte",
+          "feedback": "Each glyph occupies one byte, so daddiu t0,t0,1 selects the next glyph."
+        },
+        {
+          "id": "b",
+          "text": "Four bytes",
+          "feedback": "Four is a word stride. It would skip three entries in this byte table."
+        },
+        {
+          "id": "c",
+          "text": "Sixteen bytes",
+          "feedback": "Sixteen is the length of the whole table, not the distance between entries."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "displayed",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-full",
+      "explanation": "Use range-counter.asm unchanged. Start a fresh Debug session. Break first at loop, then at port_write, displayed and iteration_done as directed below. A highlighted instruction is next to execute. You will compare a load, a port store and the updates that make the next iteration possible.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "first-test",
+          "explanation": "Pause at loop before beqzc. The current pointer selects glyph zero; sixteen entries remain. The zero test runs before any glyph load.",
+          "anchor": {
+            "label": "loop",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010000",
+            "$t1": "0x0000000000000010",
+            "$t2": "0x0000000000000000"
+          },
+          "success": "The initial state describes the entire sixteen-entry range."
+        },
+        {
+          "id": "first-mask",
+          "explanation": "Resume to port_write. lbu has loaded mask 0x3f for digit zero, but sb has not executed. Inspect t3 and the address in t7.",
+          "anchor": {
+            "label": "port_write",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010000",
+            "$t1": "0x0000000000000010",
+            "$t3": "0x000000000000003f",
+            "$t7": "0x00000000ffff0010"
+          },
+          "success": "The source table address and the destination device address are different values."
+        },
+        {
+          "id": "first-store",
+          "explanation": "Step over sb to displayed. The display port has received one byte. The pointer and count have not changed yet. Inspect Digital Lab; its view illustrates the device write, while this checkpoint compares registers.",
+          "anchor": {
+            "label": "displayed",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010000",
+            "$t1": "0x0000000000000010",
+            "$t3": "0x000000000000003f"
+          },
+          "success": "Executing a store changes its destination; it does not automatically advance the source pointer."
+        },
+        {
+          "id": "advance",
+          "explanation": "Step over the three update instructions and pause at iteration_done before bc. t0 and t2 have advanced once, and t1 has decreased once.",
+          "anchor": {
+            "label": "iteration_done",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010001",
+            "$t1": "0x000000000000000f",
+            "$t2": "0x0000000000000001"
+          },
+          "success": "The state now selects the next byte and records fifteen remaining entries."
+        },
+        {
+          "id": "second-mask",
+          "explanation": "Resume to the next visit to port_write. If other breakpoints interrupt, resume without editing registers. The second mask is 0x06 for digit one.",
+          "anchor": {
+            "label": "port_write",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010001",
+            "$t1": "0x000000000000000f",
+            "$t2": "0x0000000000000001",
+            "$t3": "0x0000000000000006"
+          },
+          "success": "A new visit to the same source instruction uses the updated pointer and count."
+        }
+      ],
+      "success": "Stop this Debug session before beginning the next source variant. The loop repeats because bc returns control to the test; its data state changes because the body updates the pointer and count."
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-test",
+      "explanation": "Consider first_digit = 16 and digit_count = 0. Preparation computes an address immediately after the glyph table. That address is a useful boundary value, but it does not designate a glyph to read.",
+      "question": "What must happen at the first visit to loop?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Branch to done before lbu",
+          "feedback": "beqzc sees zero and transfers control to done. No glyph load or display store is needed."
+        },
+        {
+          "id": "b",
+          "text": "Read the byte at index sixteen, then stop",
+          "feedback": "The table has indices zero through fifteen. A zero-length range must not read the following guard."
+        },
+        {
+          "id": "c",
+          "text": "Display zero once",
+          "feedback": "A range with zero entries has no first glyph. Showing zero would issue an extra port write."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "loop",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-empty",
+      "explanation": "The lesson opens ranges/empty.asm, whose inputs are first_digit = 16 and digit_count = 0. Start a new Debug session for this file and break at loop. Keep the original full-range file unchanged.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "empty-test",
+          "explanation": "Before beqzc, t0 is one byte past the sixteen-entry table and t1 is zero. The program can compare this state without reading the address in t0.",
+          "anchor": {
+            "label": "loop",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010010",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000000000010"
+          },
+          "success": "An end address can be retained in a register without being dereferenced."
+        },
+        {
+          "id": "empty-exit",
+          "explanation": "Step over beqzc. The next instruction is li at done. The intervening nop and the entire loop body have been skipped. No delay-slot instruction executes for this compact branch.",
+          "anchor": {
+            "label": "done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010010",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000000000010"
+          },
+          "success": "The branch reached the exit directly. These register observations support the trace; the independent checks also observe reads and port stores."
+        }
+      ],
+      "success": "Stop the empty-range session. A previously displayed glyph may remain visible: issuing no store does not clear the device.",
+      "source": "ranges/empty.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "tail-range",
+      "explanation": "Consider first_digit = 14 and digit_count = 2. The selected indices are fourteen and fifteen. After two iterations the next index is sixteen and the remaining count is zero.",
+      "question": "Which sequence should be sent to the right-hand display port?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x79, then 0x71",
+          "feedback": "These table bytes encode E and F. The next zero test exits before reading index sixteen."
+        },
+        {
+          "id": "b",
+          "text": "0x79 only",
+          "feedback": "The initial count is two. One iteration leaves one entry still to display."
+        },
+        {
+          "id": "c",
+          "text": "0x79, 0x71, then the guard byte",
+          "feedback": "The guard is outside the table. The zero test must prevent that third load."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "loop",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-tail",
+      "explanation": "The lesson opens ranges/tail.asm with first_digit = 14 and digit_count = 2. Start a fresh Debug session for it and break at port_write. This range reaches the table boundary after exactly two iterations.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "e-mask",
+          "explanation": "At the first port_write, the current pointer selects glyph fourteen and lbu has produced mask 0x79. The store is still next to execute.",
+          "anchor": {
+            "label": "port_write",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000001001000e",
+            "$t1": "0x0000000000000002",
+            "$t2": "0x000000000000000e",
+            "$t3": "0x0000000000000079"
+          },
+          "success": "The tail begins at E rather than repeating the first table entry."
+        },
+        {
+          "id": "f-mask",
+          "explanation": "Resume to the next visit to port_write. The current pointer selects glyph fifteen, mask 0x71, with one entry remaining.",
+          "anchor": {
+            "label": "port_write",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000001001000f",
+            "$t1": "0x0000000000000001",
+            "$t2": "0x000000000000000f",
+            "$t3": "0x0000000000000071"
+          },
+          "success": "The second iteration selects F and will issue the second byte store."
+        },
+        {
+          "id": "tail-exit",
+          "explanation": "Set a breakpoint at done and resume there. The pointer is now one past the glyph table. The zero test has prevented another lbu.",
+          "anchor": {
+            "label": "done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000010010010",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000000000010"
+          },
+          "success": "The terminating state agrees with the empty-range boundary, reached after two entries rather than zero."
+        }
+      ],
+      "success": "Stop this Debug session. The unchanged full, empty and tail files keep their own execution evidence. Editing one file requires observing that file again.",
+      "source": "ranges/tail.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-full",
+      "explanation": "Run range-counter.asm using ordinary Run, after stopping Debug. The file selects all sixteen glyphs. It prints no console text. Digital Lab may redraw too slowly to show each short-lived glyph; the final display alone cannot establish the sequence of port writes.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The full-range program exited normally without console output. The independent checks below verify store order and width, protected data and the empty-range read boundary.",
+      "anchor": {
+        "label": "loop",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "end-pointer",
+      "source": "independent/end-pointer.asm",
+      "caseProfile": "independent/end-pointer.cases.json",
+      "explanation": "Write the end-pointer version described in the written lab. Retain a current pointer and an exclusive end pointer, test before loading, and issue one sb to RIGHT_DISPLAY for each selected glyph. Read the supplied first_digit and digit_count words. Preserve the complete input block. The ten public cases include full, tail and empty ranges and different glyph bytes. Open independent/README.md for the data layout and exact observations; passing an empty case with the exit-only starter is not a completed loop.",
+      "success": "The current source passes the public transaction, read-boundary and preserved-data checks. Explain why current == end prevents the first load for an empty range, and why a one-byte increment reaches the end after the selected number of entries. Then complete the written lab’s fault investigations.",
+      "hints": [
+        {
+          "id": "end",
+          "text": "Compute the exclusive end from the initial current pointer plus digit_count before entering the loop."
+        },
+        {
+          "id": "test",
+          "text": "At the top of each iteration, compare current and end before lbu. Exit when they are equal."
+        },
+        {
+          "id": "body",
+          "text": "Load one unsigned byte, store that byte to the right display port, advance current by one and return to the test. Place an ordinary non-control-transfer instruction after a conditional compact branch so its forbidden slot is safe when the branch is not taken."
+        }
+      ]
+    }
+  ]
+}
