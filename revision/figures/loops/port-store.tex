@@ -1,0 +1,29 @@
+% Native editable annotations over unchanged, automatically captured IDE PNGs.
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[alt={Three light-theme Digital Lab observations from separate fresh Debug sessions. Before the first byte store, both displays are blank and the right mask is 0x00. After the first store, the right mask is 0x3f, lighting six outer bars to form zero. At done for the empty range, both displays remain blank and the right mask is 0x00. Numbered boxes mark the right display in each view.}]
+\node[anchor=north west,font=\small\bfseries,inner sep=0] (atitle) at (0,0) {Before the first store};
+\node[anchor=north west,inner sep=0] (a) at ([yshift=-2mm]atitle.south west) {\MARSRevisionCrop{revision/captures/loops/loop-before-store.png}{0.45\linewidth}{0.640625000}{0.652222222}{0.195312500}{0.207777778}};
+\node[anchor=north west,font=\small\bfseries,inner sep=0] (btitle) at ([xshift=8mm]atitle.north west -| a.north east) {After the first store};
+\node[anchor=north west,inner sep=0] (b) at (btitle.south west |- a.north west) {\MARSRevisionCrop{revision/captures/loops/loop-after-store.png}{0.45\linewidth}{0.640625000}{0.652222222}{0.195312500}{0.207777778}};
+\node[anchor=north,font=\small\bfseries,inner sep=0] (ctitle) at ($(a.south west)!0.5!(b.south east)+(0,-8mm)$) {Empty range at the exit};
+\node[anchor=north,inner sep=0] (c) at ([yshift=-2mm]ctitle.south) {\MARSRevisionCrop{revision/captures/loops/loop-empty.png}{0.45\linewidth}{0.640625000}{0.652222222}{0.195312500}{0.207777778}};
+\foreach \panel/\markerNumber in {a/1,b/2,c/3} {
+\begin{scope}[shift={(\panel.south west)},x={($(\panel.south east)-(\panel.south west)$)},y={($(\panel.north west)-(\panel.south west)$)}]
+\draw[black,line width=0.7pt] (0.433333333,0.206349206) rectangle (0.652380952,0.785714286);
+\node[draw=black,fill=white,circle,inner sep=1.5pt,font=\footnotesize] (marker) at (0.84,0.64) {\markerNumber};
+\draw[black,->,line width=0.7pt] (marker.west) -- (0.67,0.54);
+\end{scope}}
+\end{tikzpicture}
+\par\medskip
+\begin{minipage}{\linewidth}
+\small
+\begin{enumerate}
+\item At \texttt{port\_write}, the mask is ready in a register, but \texttt{sb} has not yet sent it to the device.
+\item At \texttt{displayed}, the right port has received \texttt{0x3F}. This mask forms the digit zero; it is not a store of the numeric value zero.
+\item With first index sixteen and count zero, the branch reaches \texttt{done} before a glyph load or store. This fresh session retains its initial blank display.
+\end{enumerate}
+\end{minipage}
+\caption{Observed device states at three instruction boundaries. Each capture uses a separate fresh Debug session and the stated input file. The raw photographs retain their execution-selection receipts; these details enlarge the native display. A blank or final display by itself does not prove a write history. The independent checks observe those transactions directly.}
+\label{fig:revision-loop-port-store}
+\end{figure}

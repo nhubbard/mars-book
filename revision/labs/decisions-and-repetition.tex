@@ -2,17 +2,55 @@
 \MARSChapterHeading{Following a loop through both paths}
 \label{revision:lab-decisions-and-repetition}
 
-This lab accompanies the main book's range counter. Use the supplied
-\texttt{range-counter.asm} program. It is stored under
-\texttt{revision/labs/files}. Select MIPS64 Release 6 and the Default memory
-layout. The source header connects Digital Lab Sim.
-These activities use ordinary Run and Debug; the fourth revised native MARS
-Learning unit is not yet implemented.
+This lab accompanies the main book's range counter. Import the supplied
+\texttt{005-seven-segment-counter} lesson, version \texttt{0.1.0}. Its
+\texttt{range-counter.asm} is the same complete program as the main chapter's
+listing, also supplied under \texttt{revision/labs/files}. Use MIPS64 Release 6,
+the Default memory layout and little-endian memory. The source header connects
+Digital Lab Sim.
 
-The final display is only the latest mask. Your task is to explain how many
-stores occurred, why those stores had the required values, and why an empty range
-performs none. The existing seven-segment project provides public protocol checks
-alongside the manual investigation.
+Learn supplies four predictions, three Debug activities, an ordinary Run and an
+independent program. This chapter explains the observations and adds deliberate
+fault investigations. The final display is only the latest mask. Your task is
+to explain how many stores occurred, why those stores had the required values,
+and why an empty range performs none.
+
+\section{Keep the source and execution together}
+
+Answer the predictions through their inline choices in Learn. Its source pointer
+identifies the operation under discussion. During Debug, use the debugger's
+execution highlight to decide which operation is next: the lesson may already
+be pointing to a later observation after recognizing the current pause.
+
+The guided activities open three files with the same instructions and different
+input words. Keep those supplied files unchanged while following the observations.
+Stop one Debug session before launching the next, and check the launch's source
+file if you reuse a saved configuration. Opening a different file does not change
+the source of a configuration that already names a file.
+
+\begin{center}
+\begin{tabular}{@{}lrrl@{}}
+\toprule
+Source & First index & Count & Selected entries \\
+\midrule
+\texttt{range-counter.asm} & 0 & 16 & 0 through F \\
+\texttt{ranges/empty.asm} & 16 & 0 & None \\
+\texttt{ranges/tail.asm} & 14 & 2 & E, then F \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Each execution activity belongs to its file's current revision. Editing one
+variant requires fresh observations for that variant; an unchanged variant
+keeps its own pass. Correct prediction answers remain available when you return
+through Continue Downloaded MARS Lab. Machine edits and Backstep are useful for
+investigation, but use a fresh forward Debug session for the guided observations.
+
+Digital Lab also has an Execution selector. Choose the session that is running
+this file before interpreting its display. A retained older execution can still
+show its last mask. Even for the correct session, a rapid Run may repaint too
+slowly to show every glyph. Neither the selected final mask nor an empty console
+establishes the whole sequence of device writes.
 
 \section{Predict before the first store}
 
@@ -32,6 +70,11 @@ At \texttt{port\_write}, the store has not executed. Step once to
 have not yet changed. Use these two pauses to distinguish a prepared transaction
 from a completed one.
 
+Figure~\ref{fig:revision-loop-port-store} compares these boundaries with the
+empty range. Its hex mask labels remain useful when the page is printed in gray.
+
+\input{revision/figures/loops/port-store}
+
 \section{Follow one complete iteration}
 
 Step through the three updates and stop at \texttt{iteration\_done}. The table
@@ -50,16 +93,17 @@ the digit already displayed. At that boundary it names the next entry.
 
 \section{Exercise the taken path}
 
-Change the inputs to first index sixteen and count zero. Restart Debug from the
-beginning so setup reads the new data. At \texttt{loop}, predict a taken branch
+Use the supplied \texttt{ranges/empty.asm}, whose inputs are first index sixteen
+and count zero. Start Debug from the beginning so setup reads that file's data. At \texttt{loop}, predict a taken branch
 to \texttt{done}. The following \texttt{nop} should be skipped, along with the
 load and store. A one-past-table pointer is computed but not read through.
 
-Check a second empty range with first index zero. Its pointer differs, while the
-required output history is still empty. This distinguishes the rule ``count zero
+After the guided activity, use a working copy to check a second empty range with
+first index zero. Its pointer differs, while the required output history is
+still empty. This distinguishes the rule ``count zero
 means no work'' from a special case that stops only at index sixteen.
 
-Next select first index fourteen and count two. Predict the masks for E and F,
+For the next guided activity, use \texttt{ranges/tail.asm}, with first index fourteen and count two. Predict the masks for E and F,
 then trace the count from two to one to zero. The index sixteen at termination
 is an exclusive boundary; loading glyph sixteen would go beyond the table.
 
@@ -86,9 +130,10 @@ not repair the nonzero path. Restore the safe \texttt{nop} afterward.
 
 \section{Check the output protocol}
 
-Use the public checks in the seven-segment project. They observe actual device
-stores, including their byte width and address, and reject writes to protected
-input/table data. A final F-shaped display cannot establish that all sixteen
+The independent activity's ten public cases observe actual device stores,
+including their byte width, destination and order. They also reject writes to
+the protected table and input block, including a temporary write restored before
+exit. A final F-shaped display cannot establish that all sixteen
 requested writes occurred. Repeated mask values also require repeated stores:
 writing the same value twice can represent two distinct requested entries.
 
@@ -104,13 +149,45 @@ end pointer. Plan both addresses for an empty range before writing its branch.
 List the register values that change and those that remain fixed. Keep the branch
 comparison before the first load and keep its forbidden slot safe.
 
-Use the same public checks, including the empty and end-of-table cases. An
-equivalent implementation can use different registers, labels and updates while
-producing the same ordered port writes and preserving the protected data.
-Explain the condition that establishes a valid read on every iteration.
+Open \texttt{independent/end-pointer.asm}. Its exit-only starter is intentionally
+incomplete. Read the adjacent \texttt{README.md} for the input layout and the
+public case profile. At the start of each case, a fresh simulator receives a
+sixteen-byte glyph table and the supplied first-index and count words. Your
+program must read those inputs and preserve the complete 32-byte block, including
+its guard words. Use the supplied input interface rather than replacing it with
+a fixed table and count.
 
-The elective MarsBot square project below applies this loop reasoning
-to another device. Its movement protocol is a separate interface to study; the
-counter's display masks and port addresses do not carry over to it.
+The admitted ranges satisfy $0 \leq \mathit{first} \leq 16$ and
+$0 \leq \mathit{count} \leq 16-\mathit{first}$. Handling invalid ranges is outside
+this exercise's stated contract. The public cases include empty, single-entry,
+full and tail ranges, repeated masks and an alternative glyph table. Repeated
+bytes still require repeated stores: equal values can belong to distinct entries.
+
+For a nonempty range, the read observer permits accesses within the sixteen-byte
+glyph table; it does not require one particular load instruction or forbid
+repeated reads within that table. For an empty range, it permits no glyph reads.
+A read into the following guard is outside the permitted interval. The store
+observer compares the byte transactions at the right display port and rejects
+other writes within its observed device region. These are stated observation
+regions, not a proof that no unrelated memory address was ever accessed.
+
+Select Check this program in Learn. Checking assembles the current editor text,
+including unsaved changes, and executes each case in a separate machine. It does
+not overwrite your active Run or Debug state. The exit-only starter passes the
+three empty cases and fails the seven nonempty cases. Read the first failing
+case's expected and actual evidence before changing the program; a nonzero
+number of passed cases is not completion of the task.
+
+An equivalent correct implementation can use different registers, labels and
+updates while producing the same ordered port writes and preserving the protected
+data. The behavior checks alone cannot establish that you used an end-pointer
+algorithm. Explain how you computed the exclusive end, why the test precedes the
+load, and why advancing by one byte reaches that end after exactly the requested
+number of entries. Instructor settings may control prerequisites, attempts and
+hint release; requesting a hint does not satisfy an execution check.
+
+The elective MarsBot square below applies this loop reasoning to movement.
+Study its device protocol separately: its commands use different registers
+and values.
 
 \input{revision/labs/companions/marsbot}

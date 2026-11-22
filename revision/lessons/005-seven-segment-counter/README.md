@@ -16,10 +16,19 @@ student archive and public repository.
 Every authored Debug register boundary passes against actual CLI instruction
 execution: five full-range, two empty-range and three tail-range observations.
 This evidence verifies source and expected state, not the native on-screen flow.
-The new complete IDE walkthrough, chapter-four captures and native LaTeX
-integration remain pending. Do not present this directory as a completed student
-experience until those have been exercised. No representative learner has
-reviewed this unit.
+The actual light-theme IDE walkthrough completed in two fresh processes.
+Four inline predictions, all ten Debug observations, wrong-source Run rejection,
+ordinary Run and the independent checks were exercised. The starter passed three
+of ten cases; the unsaved end-pointer fixture passed all ten. After source edits
+and normal project close, the next process retained the five quiz attempts and
+unchanged empty/tail observations, while requiring new full-range Debug/Run and
+another independent check. No progress was injected.
+
+Three separate publication sessions captured the full-range program before and
+after its first byte store and the empty range at its exit. The native LaTeX lab
+uses readable details over unchanged original PNGs, with editable callouts and
+semantic descriptions. The main plugin contains no capture or private fixture
+code. No representative learner has reviewed this unit.
 
 The independent contract is qualified through the actual CLI grader. Correct
 remaining-count and end-pointer algorithms pass all ten public cases. The

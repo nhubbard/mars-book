@@ -579,3 +579,40 @@ This step supplies the instructional draft and package, not a completed native
 walkthrough. The new IDE interaction, light-theme chapter-four captures, native
 LaTeX integration and human learner review remain outstanding. The current PDF
 editions and historical validation evidence are unchanged.
+
+
+### Fourth native unit: verified source switching and continuation
+
+The loop unit's actual light-theme walkthrough completed with four inline
+predictions, all ten full/empty/tail Debug observations, an ordinary Run, rejection
+of a wrong-source Run, and independent transaction/read checks. The exit-only
+starter passed three empty cases out of ten. The unsaved end-pointer fixture
+passed all ten. After comment edits to the worked and independent sources and a
+normal project close, a fresh IDE process retained five quiz attempts and the
+unchanged empty/tail passes. It required new full-range Debug and Run and a third
+independent assessment. Eleven installed JARs matched the pinned archives in both
+processes. Both final logs contain zero ERROR/SEVERE entries.
+
+The first authoring trial waited for an absent introductory sentence before
+checking; it is retained as incomplete evidence. The corrected driver was tested
+and both complete processes started independently of that trial. All controller
+and private-fixture code remains in the separate authoring plugin. The packaged
+API verdicts remain Compatible with 91/20 public experimental usages.
+
+Three real publication captures verify the selected executions and photographed
+segment states before/after the first store and at the empty exit. Native LaTeX
+callouts and semantic descriptions compose those unchanged images into the
+written lab. The lab now explains source/configuration selection, retained device
+views, the exact admitted inputs and observation scope, and why an empty-case
+pass cannot establish a complete loop. The elective MarsBot companion remains.
+Later units, representative learner review and human accessibility review are
+still open; the general MARS-versus-hardware opening remains deferred.
+
+
+The integrated lab PDF is 190 pages. The revised loop supplement occupies pages
+17–21, including the native display figure on page 19; its preserved MarsBot
+companion begins on page 22. Changed pages and grayscale callouts were rendered
+and reviewed. The exact final PDF passed the pinned PDF/UA-2 profile: 1,728 rules,
+892,967 checks, zero failures. Minion Pro, Noto Sans Math and JetBrains Mono remain
+embedded. Automated tagged-PDF validation does not substitute for human reading
+order, assistive-technology or learner review. The main learning PDF is unchanged.
