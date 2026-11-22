@@ -2,11 +2,21 @@
 \MARSChapterHeading{Snapshots and reusable storage}
 \label{revision-lab:state-and-buffers}
 
-Use \texttt{life-buffers.asm} from \texttt{revision/labs/files} with ordinary MARS
-Run and Debug. Its default seed is a horizontal row of three live cells, and it
-requests two updates. Read the main chapter's distinction between a fixed allocation
-and its changing role before tracing the program. The important result is a sequence
-of complete states, not just the final picture.
+Read the main chapter, then import the student package
+\texttt{008-life-buffers} and continue its downloaded lesson in Learn. Work in
+the imported \texttt{life-buffers.asm}. Its default seed is a horizontal row of
+three live cells, and it requests two updates. The worked source is also available
+at \path{revision/labs/files/life-buffers.asm} for ordinary Run and Debug outside
+the guided lesson.
+
+Read the distinction between a fixed allocation and its changing role before
+tracing the program. Answer the inline predictions using the highlighted source
+instructions, then collect the eight Debug observations in one fresh execution.
+Use one line breakpoint at a time: a breakpoint left at a helper would interrupt
+every cell, and one left at \texttt{generation\_ready} would stop once per
+publication. Remove the preceding breakpoint before resuming toward the next
+requested observation. The result to explain is a sequence of complete states,
+not just the final picture.
 
 \section{Predict cells, counts and allocation roles}
 
@@ -43,6 +53,18 @@ remaining-row and remaining-column counts, and accumulated live-cell count. Expl
 why they must survive a helper call. Inspect the 48-byte frame and its saved return
 link, then verify that the caller's stack pointer is restored after return.
 
+The guided sequence begins at \texttt{generation\_ready} for generation zero,
+then reaches the first helper entry and the first \texttt{store\_cell}. At that
+pending store, the top-left cell has no live neighbors and its next byte in
+\texttt{\$t1} is zero. The source and destination cursors are each at base plus
+11, in different allocations. The remaining row and column counts are both
+eight. The stack pointer is 48 bytes below the caller's aligned value.
+
+Explain why this store is necessary even though the destination initially happens
+to be zero. The function's contract permits arbitrary old destination bytes;
+the value calculated from the source is what determines the new cell. An
+initially zero allocation is one test input, not a reason to omit dead results.
+
 For a boundary investigation, use a seed touching the upper-left corner. Predict
 its next state using dead positions outside the board. If the result appears to
 wrap to another edge, check the row stride and halo assumptions before changing
@@ -65,8 +87,24 @@ and the displayed frame is still horizontal.
 Step through the three pointer moves. Use the temporary value to explain why both
 addresses survive. After the count increment, stop again at
 \texttt{generation\_ready}; the generation word is now one, B is current and the
-frame is vertical. Record A's retained previous generation. Repeat for generation
-two, when A becomes current again and B retains generation one.
+frame is vertical. Record A's retained previous generation.
+
+Next stop at the second \texttt{generation\_built}. A already contains the complete
+horizontal successor, while the caller's current pointer, generation word and
+frame still describe vertical generation one. Only after the role exchange and
+render does the next \texttt{generation\_ready} publish generation two. A is now
+current again and B retains generation one. Identify the same separation between
+a built result and its publication that you observed on the first call.
+
+The final guided stop is \texttt{life\_done}, before the exit selector is loaded.
+Check the generation word and both boards, then finish or stop Debug before the
+ordinary Run requested by Learn. Run exits silently. Its horizontal final image
+cannot show whether generation one existed; your earlier ready checkpoint can.
+
+The lesson retains predictions and successful checks across project closure.
+After changing a checked source, continue the lesson to collect fresh execution
+evidence. A saved pass applies to the checked revision, rather than to every
+later edit of the same file.
 
 This sequence is stronger evidence than seeing the final horizontal image. If Run
 appears to jump straight to that image, use Debug to inspect the ready boundaries.
@@ -119,15 +157,42 @@ it is complete. State where each comparison obtains its old and new values, and
 which values must survive any helper call. If you count afterward, the preserved
 source makes a second pass possible without reconstructing history.
 
-Run these public formative checks with JDK 25:
+Use \textbf{Check this program} in Learn to check the current independent
+editor text, including an unsaved edit. The unfinished starter should fail;
+replace its \texttt{break} body and retry. Use the feedback to locate a wrong
+board byte, returned count or preserved value before editing again.
+
+For the same public formative cases outside the IDE, use JDK 25:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/life-changes.kts \
+  revision/lessons/008-life-buffers/independent/life-changes.kts \
   /path/to/your/life-changes.asm
 \end{verbatim}
-The checks include empty, full, stable, oscillating, edge and asymmetric patterns,
-with poisoned destination interiors. They compare complete board bytes, returned
-counts, protected-store histories and saved state. Keep your prediction and a trace
-of one changed and one unchanged cell alongside the report.
+The fourteen cases include empty, full, stable, oscillating, edge and asymmetric
+patterns, in both physical allocation orders. Destinations begin with nonzero
+interiors. The source is the allocation passed in \texttt{\$a0}, even when that
+allocation is B. Fixed allocation names must not substitute for the argument's
+current role.
+
+Each case calls your function twice using the same unchanged source. On the
+second call the destination already contains the first result. Both calls must
+return the same changed-cell count, since both compare that result with the
+same old snapshot. These calls test repeatability, not two successive
+generations: the direct checker does not exchange the pointer roles. It supplies
+two different return continuations and stops before executing their caller code.
+The ordinary starter retains the chapter's generation loop.
+
+The checks compare complete board bytes, returned counts and preserved caller
+state. Execution-store histories protect the source and halos, so restoring a
+forbidden write is insufficient. Caller-stack checks compare bytes at return;
+they do not prescribe a stack layout or record all accesses. Equivalent correct
+algorithms are accepted, including a second pass that counts differences after
+building the destination.
+
+Passing the public cases establishes 28 returned calls on these seven patterns
+and two allocation orders; it does not exhaust all possible boards. Keep your
+prediction and a trace of one changed and one unchanged cell beside the report.
+For a failed change count, distinguish a birth, death and surviving live cell
+before changing the update rule.
 
 \input{revision/labs/companions/ring-buffer}

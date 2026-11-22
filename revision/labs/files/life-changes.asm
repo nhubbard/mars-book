@@ -68,7 +68,7 @@ life_done:
     li $v0, 10
     syscall
 
-# a0/a1: separate 100-byte padded source/destination boards, binary interiors.
+# a0/a1: separate 100-byte padded source/destination boards, binary source interior.
 # Both halos are zero and must receive no stores. Preserve the full source.
 # Return v0 = number of changed interior cells, not the live-cell count.
 # Preserve saved registers, sp and caller-owned stack bytes. Silent normal return.

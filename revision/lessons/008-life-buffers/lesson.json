@@ -1,0 +1,335 @@
+{
+  "formatVersion": 6,
+  "introduction": "This unit follows one source snapshot through a complete Life update, pointer exchange and rendered publication. Predict the state before observing it, then implement a changed-cell result without changing which generation is computed.",
+  "conclusion": "Explain a transition using the old source, complete destination and publication boundary. Use a counterexample that distinguishes an incorrect rule, an overwritten snapshot and an incomplete output.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "publish-complete",
+      "explanation": "A next-generation cell can depend on any of its eight old neighbors. The current board therefore remains the source while every next interior cell is written to a separate destination. The allocation names stay fixed when their roles change.",
+      "question": "When may the destination become the current board?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "After all 64 next cells have been computed",
+          "feedback": "The completed destination is a snapshot. Exchange pointer roles after the update returns."
+        },
+        {
+          "id": "b",
+          "text": "After its first row has been computed",
+          "feedback": "Later decisions still require old neighbors. A partially completed array is not the next snapshot."
+        },
+        {
+          "id": "c",
+          "text": "As soon as the two pointers have different values",
+          "feedback": "Distinct allocations prevent aliasing, but do not establish that the result is complete."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "generation_built",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "halo-size",
+      "explanation": "Each board is ten bytes wide and ten rows high. Only its central eight-by-eight interior contains logical cells. The surrounding zero bytes make all eight neighbor loads valid at an edge.",
+      "question": "How many bytes belong to the halo?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "36 bytes",
+          "feedback": "Subtract 64 interior bytes from the 100-byte allocation. Corners belong to the border once each."
+        },
+        {
+          "id": "b",
+          "text": "32 bytes",
+          "feedback": "Four sides of length eight omit the four corners of the ten-by-ten allocation."
+        },
+        {
+          "id": "c",
+          "text": "100 bytes",
+          "feedback": "That is the whole allocation, including the 64 interior cells."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "count_neighbors",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "first-interior",
+      "explanation": "A logical cell at (x,y) occupies board+10(y+1)+(x+1). The first physical row is the upper halo; the first byte of each following row is the left halo.",
+      "question": "Where is logical cell (0,0) relative to its board base?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "At byte offset 11",
+          "feedback": "Skip the ten-byte upper border and one left-border byte."
+        },
+        {
+          "id": "b",
+          "text": "At byte offset zero",
+          "feedback": "Offset zero is the upper-left halo corner, not a logical cell."
+        },
+        {
+          "id": "c",
+          "text": "At byte offset eight",
+          "feedback": "Eight is the interior width, not the padded row stride."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "life_step",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-snapshots",
+      "explanation": "Start a fresh Debug session for life-buffers.asm. Follow these eight observations in order, moving one line breakpoint at a time. Learn checks the listed registers; inspect the board bytes, generation word and bitmap as the written lab describes. Several stops reuse the same label in later generations.",
+      "stops": [
+        {
+          "id": "generation-zero",
+          "explanation": "Break at the first generation_ready. The seed has been copied and rendered. A is current, B is available as destination, and the published generation is zero. Inspect the generation word and horizontal frame before beginning the update.",
+          "anchor": {
+            "label": "generation_ready",
+            "mnemonic": "beqc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010148",
+            "$s1": "0x00000000100101b0",
+            "$s2": "0x0000000000000000",
+            "$s3": "0x0000000000000002",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Initialized generation zero is already a complete snapshot."
+        },
+        {
+          "id": "first-neighbors",
+          "explanation": "Resume to the first count_neighbors entry. The update has a 48-byte frame and its saved cursors address the two first interior bytes. Derive the eight source load addresses from a0. No load should use the center itself.",
+          "anchor": {
+            "label": "count_neighbors",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010153",
+            "$s0": "0x0000000010010153",
+            "$s1": "0x00000000100101bb",
+            "$s2": "0x0000000000000008",
+            "$s3": "0x0000000000000008",
+            "$s4": "0x0000000000000000",
+            "$sp": "0x000000007fffefc0"
+          },
+          "success": "The halo supplies real zero bytes for the first cell\u2019s out-of-board neighbors."
+        },
+        {
+          "id": "first-destination",
+          "explanation": "Resume to the first store_cell. The first corner has zero neighbors, so its next value is zero. The sb has not executed yet. The source cursor and destination cursor refer to different allocations.",
+          "anchor": {
+            "label": "store_cell",
+            "mnemonic": "sb",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010153",
+            "$s1": "0x00000000100101bb",
+            "$s2": "0x0000000000000008",
+            "$s3": "0x0000000000000008",
+            "$s4": "0x0000000000000000",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$sp": "0x000000007fffefc0"
+          },
+          "success": "A dead result still needs a destination store; old output bytes are not inputs."
+        },
+        {
+          "id": "first-built",
+          "explanation": "Resume to the first generation_built. The update has returned three live cells and restored the caller\u2019s stack. B is a complete vertical board, while A, the published generation word and the frame still describe generation zero.",
+          "anchor": {
+            "label": "generation_built",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010148",
+            "$s1": "0x00000000100101b0",
+            "$s2": "0x0000000000000000",
+            "$s3": "0x0000000000000002",
+            "$v0": "0x0000000000000003",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "A built destination and a published current generation are different boundaries."
+        },
+        {
+          "id": "generation-one",
+          "explanation": "Resume to the next generation_ready. The pointers exchanged roles, the generation became one and the renderer consumed B. Inspect the vertical frame and the horizontal snapshot retained in A.",
+          "anchor": {
+            "label": "generation_ready",
+            "mnemonic": "beqc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000100101b0",
+            "$s1": "0x0000000010010148",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000002",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The allocation addresses did not move; B now has the current role."
+        },
+        {
+          "id": "second-built",
+          "explanation": "Resume to the second generation_built. A now contains the complete horizontal successor of B. The caller still names B as current and the visible frame remains generation one until it exchanges roles and renders again.",
+          "anchor": {
+            "label": "generation_built",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000100101b0",
+            "$s1": "0x0000000010010148",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000002",
+            "$v0": "0x0000000000000003",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The older allocation can be reused because every decision reads the other snapshot."
+        },
+        {
+          "id": "generation-two",
+          "explanation": "Resume to the next generation_ready. A is current again, B retains the vertical preceding generation and the published count is two. A final horizontal picture alone would not prove that either update occurred.",
+          "anchor": {
+            "label": "generation_ready",
+            "mnemonic": "beqc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010148",
+            "$s1": "0x00000000100101b0",
+            "$s2": "0x0000000000000002",
+            "$s3": "0x0000000000000002",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The intermediate vertical snapshot and role history distinguish two updates from none."
+        },
+        {
+          "id": "completed-request",
+          "explanation": "Resume to life_done before the exit selector is loaded. The requested two updates are complete and the current allocation remains A. Inspect generation=2, both board interiors and their zero halos.",
+          "anchor": {
+            "label": "life_done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000010010148",
+            "$s1": "0x00000000100101b0",
+            "$s2": "0x0000000000000002",
+            "$s3": "0x0000000000000002",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Termination tests the completed generation count; it does not perform another update."
+        }
+      ],
+      "success": "Finish or stop Debug before ordinary Run. Explain when the destination was complete, when its role changed and when the renderer published it.",
+      "integerInputs": []
+    },
+    {
+      "kind": "prediction",
+      "id": "allocation-role",
+      "explanation": "Generation zero starts in A. Each completed update writes the other allocation and then exchanges the current and destination pointers. The ordinary program requests two updates.",
+      "question": "Which allocation is current after two updates?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Board A",
+          "feedback": "A is current at generations zero and two; B is current at generation one."
+        },
+        {
+          "id": "b",
+          "text": "Board B",
+          "feedback": "B is current after the first update, before the second role exchange."
+        },
+        {
+          "id": "c",
+          "text": "Both allocations are current",
+          "feedback": "Each has a valid snapshot, but the current pointer names only the newest one."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "generation_ready",
+        "mnemonic": "beqc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-life",
+      "explanation": "Run life-buffers.asm using ordinary Run. It should exit silently with generation two published. The default final image is horizontal, just like generation zero. Use your Debug observations to explain why matching final pictures do not establish that the intermediate generation was computed.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The worked program exited silently. Separate the final publication from the transition evidence collected in Debug."
+    },
+    {
+      "kind": "prediction",
+      "id": "changed-count",
+      "explanation": "The independent function computes the same next board but returns how many interior cells changed. In the default oscillator, the center survives, two horizontal endpoints die and two vertical endpoints are born.",
+      "question": "How many cells change in one oscillator update?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four",
+          "feedback": "Two deaths and two births change four positions; the surviving center does not change."
+        },
+        {
+          "id": "b",
+          "text": "Three",
+          "feedback": "Three is the live-cell count in either orientation, not the number of differing positions."
+        },
+        {
+          "id": "c",
+          "text": "Two",
+          "feedback": "Counting only births misses the two live cells that become dead."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "store_cell",
+        "mnemonic": "addu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "life-changes",
+      "source": "independent/life-changes.asm",
+      "caseProfile": "independent/life-changes.cases.json",
+      "checkKind": "function",
+      "explanation": "Write life_changes in independent/life-changes.asm, replacing its break body. Read the padded source as one unchanged snapshot, write the complete next interior and return the number of changed cells. Read independent/README.md for the exact contract: fourteen public cases use both source/destination allocation orders, poisoned destinations, protected source and halo store histories, full-width saved state and two supplied continuations per case. The available helper is optional; equivalent algorithms are accepted.",
+      "success": "The current source passes all fourteen public Life cases. Explain one birth, one death and one unchanged cell, and distinguish changed-cell count from live-cell count. Complete the written lab\u2019s in-place and skipped-zero counterexamples.",
+      "hints": [
+        {
+          "id": "count-differences",
+          "text": "For each interior position, compare its old binary value with its newly computed binary value. A difference counts once whether it is a birth or a death."
+        },
+        {
+          "id": "keep-snapshot",
+          "text": "Read all neighbors from the source pointer. Destination bytes may contain arbitrary old values and cannot contribute to this update\u2019s decisions."
+        },
+        {
+          "id": "preserve-halo",
+          "text": "Advance the interior cursor by one byte for each of eight columns, then skip two border bytes before the next row. Source and halo stores are forbidden, even if their old values are restored later."
+        }
+      ]
+    }
+  ]
+}

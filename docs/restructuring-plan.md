@@ -820,3 +820,42 @@ The main learning PDF is unchanged. Automated checks passed 161 CLI tests,
 archive importer run, 459 book tests and 117 authoring-plugin tests. These checks
 do not replace representative learner or human accessibility review. The
 remaining curriculum work continues without claiming completion of all 35 projects.
+
+
+### Eighth native unit: Life snapshots (22 November 2026)
+
+Original project 008 now has five inline predictions, eight Debug observations,
+ordinary Run and an independent changed-cell function exercise. The lesson
+connects a stable source, a complete destination, exchanged pointer roles and a
+published generation. Fourteen public cases use seven patterns in both physical
+allocation orders. Repeated calls keep the same old source, so changing output
+storage cannot change the returned difference count. The existing version-3
+protection model watches source and halo stores; no new grader API was needed.
+
+Two correct algorithms pass all cases in ordinary and relocated layouts, and
+nine faults plus the unfinished starter are rejected. A direct probe measures
+every authored state, complete boards, generation words and framebuffer values.
+Host oracle tests cover all 512 local center/neighbor combinations; that is
+separate from sampled simulated execution and does not prove all possible boards.
+
+The actual light-theme IDE walkthrough and fresh-process resume pass inline
+answers, source pointers, all Debug stops, Run, starter failure, unsaved correct
+source and source-edit invalidation. Quiz history is retained. Both projects
+close normally, eleven installed JARs match their pins and IDE logs have no
+errors. Authoring remains in the separate plugin. Raw captures are UI evidence;
+this publication step adds no new annotated screenshot figure.
+
+All 462 book tests, seven native importer tests and 118 authoring tests pass.
+The MARS production ZIP is unchanged from the raster build with its complete
+1188-test regression and required coverage checks; this step adds focused exact
+archive evidence rather than claiming a new complete regression. Both plugin
+archives pass the packaged API verifier (91 and 20 public experimental usages).
+
+The native lab PDF now has 197 pages; Life occupies pages 49–52 and the
+ring-buffer companion starts on 53. Final rendered pages were inspected. Fonts
+retain embedding and Unicode maps. PDF/UA-2 passes 1728 rules and 920586 checks
+with zero failures. Final PDF SHA-256:
+`daea77730b36406190d84f9ac90e523969875d85fe9d2ba6949ce2c666e70bc2`.
+The earlier build and validation remain as evidence of the sequence clarification.
+The main learning PDF is unchanged. Human accessibility and learner reviews,
+the later native units and companion exercises remain outstanding.
