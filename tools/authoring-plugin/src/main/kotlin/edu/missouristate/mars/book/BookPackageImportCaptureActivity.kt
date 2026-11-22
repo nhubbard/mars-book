@@ -83,12 +83,14 @@ internal data class BookPackageImportPlan(
     val projectRoot: String = "", val outputDirectory: String = "", val archives: List<BookImportArchive> = emptyList(),
     val resume: Boolean = false, val expectedEntryDigests: Map<String, String> = emptyMap(),
     val closeProjectAfterCapture: Boolean = false,
+    val nativePredictions: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
         require(Path.of(projectRoot).normalize() != Path.of(outputDirectory).normalize())
         require(archives.size in 1..64 && archives.map { it.sha256 }.distinct().size == archives.size)
         archives.forEach(BookImportArchive::validate)
+        require(!nativePredictions || archives.size == 1)
         if (resume) {
             require(expectedEntryDigests.keys == archives.map { it.sha256 }.toSet())
             require(expectedEntryDigests.values.all { it.matches(Regex("[a-f0-9]{64}")) })
@@ -129,6 +131,12 @@ class BookPackageImportCaptureActivity : ProjectActivity {
         }
         val first = plan.archives.first()
         val firstEntry = first.directory(root).resolve(first.entry)
+        if (plan.nativePredictions) {
+            if (plan.resume) verifyEntries(plan, root, plan.expectedEntryDigests)
+            else importArchive(project, first, output, "native", capture = true)
+            captureBookNativePredictions(project, plan, output)
+            return
+        }
         if (plan.resume) {
             verifyEntries(plan, root, plan.expectedEntryDigests)
             importArchive(project, first, output, "reopened", capture = true)

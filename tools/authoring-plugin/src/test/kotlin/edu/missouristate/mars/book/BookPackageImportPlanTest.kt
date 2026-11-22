@@ -34,6 +34,16 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `native prediction walkthrough binds one edition and retains resume source checks`() {
+        plan.copy(nativePredictions = true).validate()
+        plan.copy(nativePredictions = true, resume = true,
+            expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64))).validate()
+        assertThrows<IllegalArgumentException> {
+            plan.copy(nativePredictions = true, archives = listOf(archive, archive.copy(sha256 = "c".repeat(64)))).validate()
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
