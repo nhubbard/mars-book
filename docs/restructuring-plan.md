@@ -742,3 +742,44 @@ and direct LaTeX lab integration. Existing sprite figures remain historical
 capture evidence. Human learner and accessibility reviews are not claimed. All
 unrelated manual MARS edits are preserved, including in the assignment file where
 only the authorized new setup overload was staged and committed.
+
+
+### Sixth native unit: actual IDE, resume and publication integration
+
+The separate authoring plugin completes the sprite unit through real inline
+choices, eight ordered debugger boundaries, ordinary Run, 0/5 starter rejection
+and 5/5 acceptance of an unsaved inline renderer. Source comments then invalidate
+its execution evidence. A new IDE process retains all six quiz attempts and
+requires new Debug, Run and independent checks; the independent attempt count
+advances from two to three. Both student walkthrough projects close and dispose
+normally. All eleven installed plugin JARs match the pinned archives in each
+accepted process. The native host now reopens the prediction's source after a Run
+selects Bitmap Display; an editor-selection regression and the actual walkthrough
+verify that fix.
+
+Earlier interrupted attempts remain separate. One exposed unavailable screen
+capture, another documented a macOS permission prompt, and the restored capture
+showed the source-tab transition clearly. The author handled OS permissions.
+Lesson, Debug and presentation captures now reject uniform gray/black/white
+photographs rather than treating a visible Swing model as enough evidence. All
+116 authoring tests pass. This check supplements each figure's semantic and pixel
+assertions and still requires visual review.
+
+Two new light-theme sprite photographs verify all 128 logical pixels each, with
+zero RGB error. The source and expected color hashes match the earlier captures;
+the new provenance binds the current plugin and authoring builds. Raw PNGs stay
+unchanged and LaTeX supplies the crops, divider, labels and semantic alternative.
+Both plugin archives pass the packaged API verifier (91 MARS and 20 authoring
+public experimental usages). No internal-API exception was used.
+
+The revised lab PDF has 194 pages. The core sprite lab occupies pages 32–36,
+with its figure on page 34; the clipping companion begins on page 37. Those pages
+were rendered and checked, and the figure was reviewed in grayscale. Final PDF
+SHA-256: `9868a708e87beb769f72cc8817b6db2dca7902e9300fb4402ff744cf19e2fe31`. PDF/UA-2 passes all
+1,728 rules and 905,642 checks with zero failures. Fonts remain embedded
+with Unicode mappings. Automated validation does not claim human accessibility
+or representative learner review. The main learning PDF is unchanged.
+
+The final source-restoration regression completes all 1,184 plugin tests and
+required coverage checks. The 456 book-tool tests also pass after the final
+LaTeX and figure integration. All unrelated manual MARS edits are preserved.

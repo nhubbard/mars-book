@@ -1059,3 +1059,20 @@ actual `clean cleanSandbox runIde` tasks.
 Native instruction pointers and Debug highlights in these development captures
 do not make them publication-ready figures. Publication reuse requires the
 normal native annotation, semantic-description and coordinate-receipt workflow.
+
+
+## Rejecting unusable desktop captures
+
+Lesson, Debug and presentation capture paths now inspect the actual photograph
+before writing a successful receipt. A uniformly gray screen can accompany a
+valid Swing model when macOS denies recording; model visibility and theme alone
+are not sufficient evidence. The guard requires a light background and visible
+foreground contrast and records its sampled counts. It rejects uniform gray,
+black and white images. Specific bitmap and tool plans still verify their actual
+rendered values independently, and final visual review remains necessary.
+
+Native lesson captures retain visible text alongside the unmodified PNG and
+coordinate receipt. This helps distinguish a missing lesson transition from a
+wrong active editor or a desktop permission prompt. Keep failed or interrupted
+attempts separate from accepted captures; do not treat a model-only receipt as a
+usable photograph. Ask the author to handle operating-system permission choices.

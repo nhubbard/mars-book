@@ -2,10 +2,18 @@
 \MARSChapterHeading{Source rows and pixel addresses}
 \label{revision:lab-arrays}
 
-Use \texttt{sprite-rows.asm} from \texttt{revision/labs/files} with this chapter.
-It pairs the main book's byte representation, row renderer and compact-branch
-caller. These activities use normal MARS Run and Debug; the sixth revised unit
-is not yet a native interactive lesson.
+This lab accompanies Chapter~6 of the main book. Import the student package for
+\emph{Sprite rows and pixel addresses} and continue it in Learn. Its worked
+\texttt{sprite-rows.asm} combines the byte representation, row renderer and
+compact-branch caller explained in the chapter. Five inline predictions, eight
+Debug observations and an ordinary Run lead into the separate vertical-flip
+exercise under \texttt{independent/}.
+
+Use the package's working copies so Learn can associate each observation with
+its current source. The files in \texttt{revision/labs/files} retain the earlier
+standalone examples. Learn checks the registers stated at each Debug boundary;
+this lab develops the address calculations and Memory and Bitmap Display
+observations that explain those values.
 
 Your task is to connect a source bit, a destination coordinate and an actual word
 store. Keep the row's base address separate from the renderer's moving argument
@@ -26,7 +34,14 @@ access has a beginning and an end.
 
 \section{Pause before the first renderer call}
 
-Break at \texttt{row\_reversed}. The next instruction stores the computed reversed
+Start a fresh Debug session and break at \texttt{row\_reversed}. Set one named
+breakpoint at a time as you follow the sequence. Remove the current breakpoint
+before resuming to the next one. In particular, remove \texttt{store\_pixel}
+after its first hit; otherwise each subsequent pixel will stop there. Add
+\texttt{row\_loop} only when you are ready to observe the next outer iteration.
+These temporary breakpoints distinguish repeated visits to the same instruction.
+
+At \texttt{row\_reversed}, the next instruction stores the computed reversed
 byte; that store has not executed yet. Inspect the original row in
 \texttt{\$s4}, the result in \texttt{\$v0}, the reversed-byte destination in
 \texttt{\$s1}, and the framebuffer row base in \texttt{\$s2}. Predict which
@@ -43,11 +58,24 @@ has advanced to \texttt{frame}+64; the saved row base still points to
 \texttt{frame}. The next call prepares a new argument for the left half. Explain
 why the advanced argument alone is not the next iteration's complete state.
 
+Resume to \texttt{draw\_row} again. Its entry now receives \texttt{0x16}
+in \texttt{\$a0} and the original frame base in \texttt{\$a1}. Compare this
+with the first entry's \texttt{0x68} and \texttt{frame}+32. The helper's
+instructions have not changed; the caller has selected another input and span.
+
 Continue to \texttt{row\_drawn}, before the outer updates. Both halves of row zero
 are complete, while the source and output-row pointers still name row zero.
 After the updates, they name row one. Check the remaining count at the next visit
 to \texttt{row\_loop}. State the execution boundary when recording a pointer or
 count; the same register can legitimately describe different stages of an iteration.
+
+Finally, resume to \texttt{frame\_complete}. The remaining count is zero.
+The source and reversed-byte pointers are each one past their eight-byte object,
+and the frame pointer is one past its 512-byte allocation. Those values describe
+the stopping state. They do not authorize another load or store at that address.
+Finish or stop Debug before the lesson's ordinary Run. The worked program exits
+silently; an empty console establishes neither the pixel colors nor the guard
+values, so inspect those separately.
 
 Figure~\ref{fig:revision-sprite-progress} connects the first completed row with
 the finished pair. Compare these pictures with your recorded pointers and count;
@@ -66,7 +94,11 @@ which row supplies each visible position.
 Next use an all-zero row followed by an all-one row. Confirm that the first row
 is black even if its framebuffer words held nonzero values before drawing.
 Skipping a black store would behave like transparency and violate this renderer's
-contract. A new session's initial zeros can conceal that mistake.
+contract. A new session's initial zeros can conceal that mistake. An all-white
+source cannot reveal it either, because no clear bit requests black. The public
+cases therefore include mixed patterns and an all-black source as well as an
+all-white source. Relate a test input to the specific fault it can expose rather
+than treating every input as interchangeable evidence.
 
 A horizontal mirror reverses the bits within each byte. A vertical flip reverses
 the order in which the bytes supply rows. Combining the two performs both changes.
@@ -93,8 +125,9 @@ not a different definition of the source pattern.
 
 \section{Draw a vertical variation independently}
 
-The separate \texttt{vertical-sprite.asm} caller supplies a source of eight bytes
-and a sixteen-by-eight framebuffer. Implement \texttt{draw\_vertical}, replacing
+The package's \texttt{independent/vertical-sprite.asm} supplies a source of
+eight bytes and a sixteen-by-eight framebuffer. Its ordinary caller reloads the
+arguments and calls the routine a second time, with a different continuation. Implement \texttt{draw\_vertical}, replacing
 the failing \texttt{break} body. Its arguments are the source address in
 \texttt{\$a0} and the frame base in \texttt{\$a1}. It draws eight rows into
 columns eight through fifteen, with source row seven supplying output row zero
@@ -112,19 +145,50 @@ writing instructions. If you call the helper, decide which state must survive
 that call. A backwards source cursor may become one byte before the source after
 the final update; your stopping condition must prevent another load there.
 
-Run the public checks using JDK~25:
+Use \emph{Check this program} in Learn after replacing the \texttt{break}
+body. The unfinished starter fails all five public cases. A check uses the current
+editor text, including an unsaved edit. Read the failure details, locate the
+violated obligation, and revise your function before checking again. A correct
+helper-calling implementation and a correct inline renderer satisfy the same
+contract; invoking the provided helper is optional here.
+
+Each public case replaces the source and guards and prefills every frame word
+with a distinct nonzero value. The five patterns are the asymmetric sprite,
+a single-bit diagonal, mixed edge bits, all black and all white. The checker
+passes the actual assembled addresses of the public source and frame labels,
+starts at \texttt{draw\_vertical}, and pauses before the requested continuation.
+It calls the function twice in that case's machine, using
+\texttt{after\_vertical} and \texttt{after\_repeat}. The caller's next
+instructions do not run during those direct checks.
+
+After each return, the checks compare all 128 frame words as bytes, including the
+preserved left half, and compare the source, guards, full-width saved registers,
+stack pointer and caller-owned stack bytes. They require silent execution. These
+are after-return comparisons; they do not establish a complete write history or
+forbid a temporary write that is later restored. Memory and scratch state persist
+between the two calls. Each case starts in a fresh machine and has a cumulative
+budget of 20000 executed instructions.
+
+Five passing cases therefore represent ten returned calls for those five
+patterns. They do not exhaust the possible eight-byte sources. Keep your own
+address derivation and a trace of the first and final rows alongside the report.
+The checks do not prescribe scratch registers, private labels or frame layout.
+Preserve the public fixture labels so the checker can find the objects; their
+allocation addresses may change.
+
+The adjacent README, data profile and Kotlin script describe the public cases.
+For the same checks outside the IDE, use JDK~25 and a MARS CLI with label-relative
+byte setup. Run from the package's \texttt{independent} directory:
 
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/vertical-sprite.kts \
-  /path/to/your/vertical-sprite.asm
+  vertical-sprite.kts vertical-sprite.asm
 \end{verbatim}
 
-The checks replace the source and prefill the frame with varied values. They
-compare all destination words, preserve the left half, source and guards, and
-check saved registers and the restored stack pointer. They do not prescribe your
-scratch registers, private labels or frame layout. Keep your own address derivation
-and a trace of the first and final rows alongside a passing report.
+Editing a completed source makes its execution evidence pending. Continue
+returns to the first activity needing current evidence, while correct predictions
+remain in your history. A new check of the independent file verifies the new
+source rather than carrying forward its old result.
 
 The companion below adds partial source and destination intersections.
 Before attempting it, be able to explain this fully in-bounds operation for an
