@@ -45,7 +45,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–21 (139 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–21 and companions (127 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–21 and companions (133 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -222,3 +222,10 @@ for bounded nested traversal, late-error publication, exact preferred sizing,
 independent sequence scanning and four verified native Debug observations. Current
 proofs have 139 main pages and 127 lab pages; the advanced excerpt is unchanged.
 The expression/bytecode companions and later native lessons remain open.
+
+The expression-evaluator companion is section 21.6 on lab pages 128–133. See
+[expression-unit.md](expression-unit.md) for grammar-driven parsing, pending state,
+checked arithmetic, procedural diagnostics and three verified native Debug observations.
+The full evaluator remains an independent assignment; a separate complete arithmetic
+example supports the explanation. The lab proof now has 133 pages. Main and advanced
+proofs are unchanged. Original project 018's bytecode companion is next.

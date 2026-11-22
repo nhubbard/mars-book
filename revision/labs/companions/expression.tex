@@ -1,0 +1,244 @@
+\section{Companion lab: evaluate an expression language}
+\label{revision-lab:expression}
+
+CBOR makes nested structure explicit in its heads and container counts. A text
+expression instead uses punctuation, operator rules and a byte cursor. This lab
+asks you to implement a small language whose result depends on those rules, not
+merely to replace characters with arithmetic instructions. It revises original
+project \texttt{017-expression-evaluator}.
+
+Use \texttt{expression-evaluator.asm} in \texttt{revision/labs/files} as your
+working skeleton. Implement \texttt{eval\_expr}; the entry deliberately stops with
+\texttt{break} until replaced. Keep the supplied caller and data arenas. The
+separate complete \texttt{expression-arithmetic.asm} demonstrates checked
+operations without supplying the parser. Original grammar and feedback remain
+in \texttt{packages/017-expression-evaluator}.
+
+The prerequisites are bounded byte access, signed-word representation, full-width
+function frames and the parent-state reasoning in the nested-data chapter.
+The new work connects grammar to control flow, retains pending operations across
+calls, and reports the first failed requirement precisely. These activities use
+ordinary Run and Debug; their native guided lesson remains unfinished.
+
+\subsection*{Give the input a grammar before writing the loop}
+
+For \texttt{18 - 3 * (2 + -4)}, first evaluate the group to minus two, then the
+product to minus six, then subtract that product from eighteen. The result is
+24. A loop that immediately applies each operator to the next number would
+instead reach fifteen before seeing multiplication. Operator precedence tells
+you which larger operand must complete before an operation can run.
+
+\input{revision/figures/expression/grammar}
+
+Read the expression rule as: parse one term, then repeatedly accept a plus or
+minus followed by another complete term. The term rule does the same for
+multiplication and division, using unary values as operands. A unary sign owns
+a whole following unary value, so \texttt{--5} means the negation of minus five.
+A primary is either a decimal literal or a group containing another expression.
+The group owns both parentheses; the inner expression does not consume its
+caller's closing parenthesis.
+
+The loops implement left association. In \texttt{9-6/2-1}, the first right term
+is \texttt{6/2}, giving three; the expression loop computes \(9-3=6\), then
+\(6-1=5\). A recursive call for an unrestricted expression after each minus
+could consume the rest as its right operand and change that association.
+One routine per precedence level is a useful recursive-descent design, not a
+required private organization.\footnote{For background on grammar-driven
+recursive descent, see Robert Nystrom, \emph{Crafting Interpreters},
+\href{https://craftinginterpreters.com/parsing-expressions.html}{Parsing expressions}.
+This exercise defines its own grammar, numeric bounds and diagnostic order.}
+
+Accept only ASCII digits, the six operator/grouping characters, and space,
+tab, carriage return or line feed between tokens. The input is a selected byte
+slice, not a zero-terminated string. An embedded zero is invalid. A vertical tab
+is also invalid, even if another language calls it whitespace. \texttt{12 34}
+contains two literals without an intervening operator; whitespace does not
+turn it into 1234. No identifiers, comments, implicit multiplication, hexadecimal
+or floating-point forms belong to this language.
+
+\subsection*{Make the cursor and suspended work explicit}
+
+Represent the input by a full base address, current byte offset and authoritative
+length. Before any load, establish that the complete load lies in the slice.
+An unsigned byte load is enough to distinguish ASCII punctuation and digits.
+Reaching the end while skipping whitespace is ordinary progress; reaching it
+while waiting for a primary or closing parenthesis is a syntax failure.
+
+A useful private helper result is a value together with an advanced shared
+cursor and an error state. When a term calls a unary parser, it must retain its
+left value, pending operator and that operator's source offset. The recursive
+child advances the cursor. Restoring the old cursor on return would undo the
+child's progress and can repeat the same token indefinitely.
+
+\input{revision/figures/expression/trace}
+
+The term awaiting the group in the worked input retains left value three,
+operator \texttt{*} and offset seven. The group creates a nested expression
+whose pending addition retains two and offset twelve. The unary parser remembers
+the minus sign at fourteen while reading literal four. After that child
+returns, negation gives minus four; the group gives minus two; the waiting
+multiplication can finally run. Each frame owns its pending operation while
+the cursor records shared forward progress.
+
+Distinguish the public calling convention from private parser state. The public
+\texttt{eval\_expr} must preserve every bit of \texttt{s0} through \texttt{s7},
+\texttt{fp} and \texttt{sp}, and return through its incoming \texttt{ra}. A private
+helper convention may deliberately share some saved registers as parser state,
+provided the public wrapper restores the original caller values. Document that
+convention; mechanically restoring every shared parse register in every private
+helper would erase progress or the first error. Save return addresses and live
+operands in full-width, balanced, properly aligned frames.
+
+Another valid design uses a precedence threshold and one binary-expression
+routine. After an operator of precedence $p$, parse its right operand with a
+threshold excluding another operator of that same precedence; the enclosing
+loop then performs equal-precedence operations left to right. This is often
+called precedence climbing. Choose a design you can trace. Equivalent private
+helpers and explicit stacks are accepted when they preserve the whole contract.
+
+\subsection*{Compute widely, then prove the signed-word range}
+
+Decimal literals are limited to zero through 2147483647. For current literal
+value $n$ and next digit $d$, form $10n+d$ in a doubleword and test the result
+before accepting that digit. The previous accepted value was at most 2147483647,
+so this one-digit candidate fits comfortably in 64 bits. Record the current
+digit's offset if it exceeds the positive limit. Long leading zeros are legal
+within the 64-byte input bound.
+
+Every intermediate arithmetic value must fit signed 32 bits, from minus
+2147483648 through 2147483647. A wide candidate prevents word arithmetic from
+hiding overflow before the test. Addition and subtraction of two word values
+fit a signed doubleword; their product has magnitude at most \(2^{62}\).
+After excluding zero division, a wide quotient also fits. The special quotient
+\(-2147483648/-1=2147483648\) is a valid wide result that must fail the narrower
+language range.
+
+\Needspace{17\baselineskip}
+Run the complete arithmetic example and break at \texttt{product\_ready}, then
+\texttt{arithmetic\_ready}. Its first call computes \(3(-2)=-6\); the second
+computes \(18-(-6)=24\). Both return zero status. At
+\texttt{arithmetic\_stored}, the three native words hold product minus six,
+status zero and result 24. The caller does not print them. Both supplied callers round the initial stack
+pointer down to a sixteen-byte boundary before their first call.
+
+\input{revision/figures/expression/native-arithmetic}
+
+\Needspace{14\baselineskip}
+In \texttt{checked\_binary}, \texttt{a0/a1} contain signed-word operands,
+\texttt{a2} is the ASCII code for one of \texttt{+-*/}, and \texttt{a3} is that
+operator's byte offset. It returns status in \texttt{v0} and value or error
+offset in \texttt{v1}. The complete helper checks zero before executing
+\texttt{ddiv}. Once \texttt{t0} holds a wide arithmetic candidate, its range
+comparison begins:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Compare a wide candidate with its sign-extended low word}
+\begin{minted}{mars-idea}
+    sll $t1, $t0, 0
+    beqc $t1, $t0, checked_value
+    nop
+\end{minted}
+
+Here the word-sized \texttt{sll} intentionally discards the upper half and
+sign-extends the low word. Equality with the original doubleword proves that
+no information needed for a signed-word value was lost. It is a test using a
+copy, not permission to replace the original candidate with a wrapped word.
+For 2147483648, the copy is minus 2147483648, so equality fails.
+
+Use \texttt{revision/labs/checks/expression-arithmetic.kts} to check the worked
+helper and caller. Its operands and operators are already supplied as numbers;
+it neither parses a token nor diagnoses malformed text. Your evaluator may
+reuse or adapt it, with an explicit private interface, or implement equivalent
+checked arithmetic differently.
+
+\subsection*{Treat diagnostics as part of evaluation}
+
+Return status zero and the signed value on success. Failure status minus one
+means syntax, minus two overflow, and minus three division by zero. On failure,
+\texttt{v1} changes meaning: it is a zero-based byte offset. The offset can equal
+the input length when an item is missing at the end. Do not confuse a successful
+numeric result such as ten with an error offset ten; inspect status first.
+
+\input{revision/figures/expression/errors}
+
+In \texttt{2147483647+1?}, the right term one has completed, and the addition
+fails at offset ten before final consumption checks the question mark. With
+\texttt{2147483647+1*?}, that right term cannot finish: multiplication still
+needs its right unary operand at thirteen. The syntax failure therefore occurs
+before the outer addition can be attempted. A whole-input syntax prevalidation
+pass would change the required diagnosis in the first example.
+
+The following diagnostic figures use a completed evaluator with the same public
+caller and data layout as your skeleton. At \texttt{expression\_stored}, the
+row begins with length, status and value-or-offset, followed by a guard.
+
+\input{revision/figures/expression/native-overflow}
+
+Likewise, \texttt{1/(2-2} does not provide a denominator. The inner subtraction
+has produced zero, but the group still needs its closing parenthesis at offset
+six. Division cannot inspect that provisional group value as a completed operand.
+After the closing parenthesis is present, the same denominator completes and
+zero division is reported at the slash, offset one.
+
+\input{revision/figures/expression/native-missing-close}
+
+The leading minus in \texttt{-2147483648} is a unary operator, not part of the
+literal. Its operand literal exceeds 2147483647 at the final digit, offset ten,
+so the evaluator never reaches negation. Use \texttt{(-2147483647-1)} to obtain
+the minimum through valid literals and an in-range subtraction. Negating that
+completed value fails at the outer sign. An eventual multiplication by zero
+does not excuse an earlier overflow in \texttt{(2147483647+1)*0}.
+
+Keep the first error while returning through parents. A child failure prevents
+its parent's pending arithmetic or closing-byte check from replacing that error.
+Only a successful outer expression proceeds to final whitespace skipping and
+complete-consumption checking. Useful offset records belong to different events:
+a literal remembers the current digit; unary remembers its sign; binary remembers
+its operator; missing syntax uses the current cursor or the input end.
+
+\subsection*{Build and investigate your complete evaluator}
+
+The public entry receives a full input pointer in \texttt{a0} and a length from
+zero through 64 in \texttt{a1}. The slice lies in a 96-byte arena and may be
+unaligned. All caller data, including input and guards, are read-only even for
+temporary stores. Read only the selected slice among caller objects. Your own
+constant tables and private stack may be used. Produce no console output.
+The preserved caller source contains the worked 17-byte expression; it stores
+the returned status and result after \texttt{expression\_ready}.
+
+Implement and test boundaries that you can explain. A whitespace skip must
+terminate at the slice end. A literal must stop before a nondigit and identify
+the first excessive digit. A group must retain its value while checking its
+closing byte. A unary sign must wait for a complete operand. A term must finish
+multiplication and division before an expression loop uses its value. Connect
+those pieces under the public saved-state wrapper, then require complete input
+consumption. Intermediate helper tests support construction; they are not final
+acceptance of the language.
+
+After your evaluator is complete, break at \texttt{expression\_ready} for the
+worked input and expect \texttt{v0}=0, \texttt{v1}=24. At
+\texttt{expression\_stored}, inspect its stored words before exit overwrites the
+service selector. The native figures use those shared caller boundaries in a
+completed implementation; your private helpers need not match its layout.
+Change only the selected input and length for each diagnostic case, using a
+fresh copy or resetting the machine between ordinary Debug runs.
+
+\Needspace{7\baselineskip}
+Run the original public kernel and caller checks against your working source:
+\begin{verbatim}
+java -jar /path/to/cli.jar grade \
+  packages/017-expression-evaluator/checks/kernel.kts \
+  /path/to/your/expression-evaluator.asm
+\end{verbatim}
+Repeat with \texttt{program.kts}. The unfinished skeleton is expected to fail.
+The kernel accepts different parsing strategies; it does not prescribe helper
+names, frame sizes, traversal order or instruction counts. The caller checks
+add observation and stored-result behavior. Passing finite cases does not prove
+all 64-byte inputs.
+
+Retain a prediction and explanation for \texttt{9-6/2-1}, consecutive unary
+signs, separated digit sequences, the two question-mark examples and the two
+denominator groups. Then call the function again after an error using another
+input arena. A successful previous call must not seed the next parse, and a
+previous failure must not remain as its error state. Compare return status,
+value or byte offset, source preservation and balanced caller state; a program
+that obtains the right arithmetic value while reading a guard is still incorrect.
