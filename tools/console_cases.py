@@ -7,6 +7,7 @@ MARS executes the student's program; Python does not emulate MIPS instructions.
 import argparse
 from dataclasses import dataclass
 import json
+import re
 from pathlib import Path
 
 MAX_BYTES = 1024 * 1024
@@ -17,11 +18,18 @@ GENERATED = '// Generated public behavior checks; edit the adjacent .cases.json 
 
 
 @dataclass(frozen=True)
+class MemoryCheck:
+    address: int
+    bytes: str
+
+
+@dataclass(frozen=True)
 class ConsoleCase:
     name: str
     input: str
     stdout: str
     instruction_limit: int
+    memory: tuple[MemoryCheck, ...] = ()
 
 
 def _object(pairs):
@@ -46,14 +54,15 @@ def parse(data):
         raise ValueError('Console-case JSON is nested too deeply') from error
     if not isinstance(root, dict) or set(root) != {'formatVersion', 'cases'}:
         raise ValueError('Expected exactly formatVersion and cases')
-    if type(root['formatVersion']) is not int or root['formatVersion'] != 1:
+    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2):
         raise ValueError('Unsupported console-case format')
     rows = root['cases']
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_CASES:
         raise ValueError('Declare one through 256 console cases')
     cases, names = [], set()
     for row in rows:
-        if not isinstance(row, dict) or set(row) != {'name', 'input', 'stdout', 'instructionLimit'}:
+        fields = {'name', 'input', 'stdout', 'instructionLimit'}
+        if not isinstance(row, dict) or not (set(row) == fields or (root['formatVersion'] == 2 and set(row) == fields | {'memory'})):
             raise ValueError('Unsupported or missing console-case fields')
         name = row['name']
         if not isinstance(name, str) or not name.strip() or len(name) > 128 or not name.isprintable():
@@ -68,10 +77,36 @@ def parse(data):
         limit = row['instructionLimit']
         if type(limit) is not int or not 1 <= limit <= MAX_CASE_INSTRUCTIONS:
             raise ValueError('Case instruction limit must be an integer from 1 through 1000000')
-        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit))
+        memory = parse_memory(row['memory']) if 'memory' in row else ()
+        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory))
     if sum(case.instruction_limit for case in cases) > MAX_TOTAL_INSTRUCTIONS:
         raise ValueError('Combined case instruction limits exceed 10000000')
     return tuple(cases)
+
+
+def parse_memory(rows):
+    if not isinstance(rows, list) or len(rows) > 64:
+        raise ValueError('Declare at most 64 memory expectation ranges')
+    ranges = []
+    total = 0
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != {'address', 'bytes'}:
+            raise ValueError('Expected memory address and bytes only')
+        address, hex_bytes = row['address'], row['bytes']
+        if not isinstance(address, str) or not re.fullmatch(r'0x[0-7][0-9a-fA-F]{15}', address):
+            raise ValueError('Memory addresses must be nonnegative 64-bit hexadecimal strings')
+        if not isinstance(hex_bytes, str) or not re.fullmatch(r'(?:[0-9a-fA-F]{2})+', hex_bytes):
+            raise ValueError('Memory expectations need nonempty hexadecimal byte pairs')
+        address = int(address[2:], 16)
+        length = len(hex_bytes) // 2
+        total += length
+        if total > MAX_BYTES or address + length - 1 > 0x7fffffffffffffff:
+            raise ValueError('Memory expectations exceed 1 MiB per case or overflow their address')
+        ranges.append(MemoryCheck(address, hex_bytes))
+    ordered = sorted(ranges, key=lambda item: item.address)
+    if any(a.address + len(a.bytes) // 2 > b.address for a, b in zip(ordered, ordered[1:])):
+        raise ValueError('Memory expectation ranges must not overlap')
+    return tuple(ranges)
 
 
 def load(path):
@@ -80,7 +115,10 @@ def load(path):
 
 
 def kotlin_string(value):
-    """Escape data as one Kotlin string, including interpolation and JSON-only escapes."""
+    """Escape Kotlin data and avoid the JVM constant-pool string size limit."""
+    if len(value) > 4096:
+        chunks = [kotlin_string(value[start:start + 4096]) for start in range(0, len(value), 4096)]
+        return 'listOf(' + ', '.join(chunks) + ').joinToString("")'
     escaped = []
     special = {'"': '\\"', '\\': '\\\\', '$': '\\$', '\n': '\\n', '\r': '\\r', '\t': '\\t', '\b': '\\b'}
     for char in value:
@@ -102,6 +140,14 @@ def render(cases):
         lines.append(f'case({kotlin_string(case.name)}, input = {kotlin_string(case.input)}, instructionLimit = {case.instruction_limit}) {{\n')
         lines.append('    runToExit()\n')
         lines.append(f'    expectOutput({kotlin_string(case.stdout)})\n')
+        for memory in case.memory:
+            address = f'0x{memory.address:016x}L'
+            if len(memory.bytes) <= 64:
+                values = ', '.join('0x' + memory.bytes[start:start + 2] for start in range(0, len(memory.bytes), 2))
+                lines.append(f'    expectBytes({address}, {values})\n')
+            else:
+                values = kotlin_string(memory.bytes) + '.chunked(2).map { it.toInt(16) }.toIntArray()'
+                lines.append(f'    expectBytes({address}, *({values}))\n')
         lines.append('}\n\n')
     return ''.join(lines).removesuffix('\n')
 

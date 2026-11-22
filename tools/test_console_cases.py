@@ -32,7 +32,7 @@ class ConsoleCaseTests(unittest.TestCase):
                    b'{"formatVersion":NaN,"cases":[]}', b'{"formatVersion":1,"cases":[' + b'[' * 1100,
                    self.encode([]), self.encode([self.row(), self.row()])]
         base = json.loads(self.encode())
-        for field, value in [('formatVersion', True), ('formatVersion', 1.0), ('formatVersion', 2), ('cases', {}), ('script', 'run this')]:
+        for field, value in [('formatVersion', True), ('formatVersion', 1.0), ('formatVersion', 3), ('cases', {}), ('script', 'run this')]:
             item = dict(base); item[field] = value; invalid.append(json.dumps(item).encode())
         for name in ['', ' ', 'line\nname', '\x1b[31mred', 'x' * 129, None, 4]:
             row = self.row(); row['name'] = name; invalid.append(self.encode([row]))
@@ -68,6 +68,41 @@ class ConsoleCaseTests(unittest.TestCase):
         rendered = checks.render((checks.ConsoleCase('case', '"}; error("bad") // $x', '', 1000),))
         self.assertIn('\\"}; error(\\"bad\\") // \\$x', rendered)
         self.assertIn('expectOutput("")', rendered)
+
+    def memory_profile(self, memory):
+        return json.dumps(dict(formatVersion=2, cases=[self.row(memory=memory)])).encode()
+
+    def test_memory_ranges_preserve_byte_order_and_generate_address_checks(self):
+        memory = [{'address': '0x0000000010010000', 'bytes': '9966AA00df9b5713'}]
+        cases = checks.parse(self.memory_profile(memory))
+        self.assertEqual((checks.MemoryCheck(0x10010000, '9966AA00df9b5713'),), cases[0].memory)
+        self.assertIn('expectBytes(0x0000000010010000L, 0x99, 0x66, 0xAA, 0x00, 0xdf, 0x9b, 0x57, 0x13)', checks.render(cases))
+        self.assertEqual((), checks.parse(self.memory_profile([]))[0].memory)
+        raw = self.memory_profile(memory).replace(b'"formatVersion": 2', b'"formatVersion": 1')
+        with self.assertRaises(ValueError): checks.parse(raw)
+        ranges = [{'address': f'0x{i:016x}', 'bytes': '00'} for i in range(65)]
+        self.assertEqual(64, len(checks.parse(self.memory_profile(ranges[:64]))[0].memory))
+        self.assertEqual(0x7fffffffffffffff, checks.parse(self.memory_profile([{'address': '0x7fffffffffffffff', 'bytes': 'ff'}]))[0].memory[0].address)
+        invalid = [None, {}, 0, ranges, [None], [{'address': '0x10010000', 'bytes': 'ff'}], memory * 2]
+        for field, values in [('address', [None, 42, [], '0xffffffffffffffff', '0X0000000010010000']),
+                              ('bytes', [None, 42, [], '', '0', 'gg', '00 ff', '+1'])]:
+            for value in values:
+                invalid.append([dict(memory[0], **{field: value})])
+        invalid += [[dict(memory[0], extra='script')], [{'address': '0x7fffffffffffffff', 'bytes': '0000'}]]
+        for value in invalid:
+            with self.subTest(value=str(value)[:100]), self.assertRaises(ValueError):
+                checks.parse(self.memory_profile(value))
+        with self.assertRaises(ValueError): checks.parse_memory([{'address': '0x0000000000000000', 'bytes': '00' * (checks.MAX_BYTES + 1)}])
+
+    def test_large_literals_and_memory_use_runtime_chunks_without_changing_small_v1_scripts(self):
+        for value in ['a' * 65536, '🙂' * 10000]:
+            rendered = checks.kotlin_string(value)
+            self.assertTrue(rendered.startswith('listOf('))
+            self.assertTrue(rendered.endswith('.joinToString("")'))
+        cases = checks.parse(self.memory_profile([{'address': '0x0000000010010000', 'bytes': '00' * 4096}]))
+        rendered = checks.render(cases)
+        self.assertIn('expectBytes(0x0000000010010000L, *(listOf(', rendered)
+        self.assertIn('.chunked(2).map { it.toInt(16) }.toIntArray()', rendered)
 
     def test_generation_checks_staleness_and_preserves_handwritten_files(self):
         with tempfile.TemporaryDirectory() as folder, contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
