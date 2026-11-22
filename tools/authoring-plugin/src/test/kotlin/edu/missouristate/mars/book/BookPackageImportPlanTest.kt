@@ -108,6 +108,23 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `loop walkthrough confines source variants and its single independent fixture`() {
+        val loop = plan.copy(archives = listOf(archive.copy(id = "005-seven-segment-counter", entry = "range-counter.asm")),
+            nativePredictions = true, loopUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/end-pointer.asm", "/tmp/end-pointer.asm", "c".repeat(64))))
+        loop.validate()
+        loop.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(loop.copy(nativePredictions = false), loop.copy(nativeExecution = true),
+            loop.copy(nativeDebug = true), loop.copy(memoryUnit = true), loop.copy(assessmentFixtures = emptyList()),
+            loop.copy(archives = listOf(archive)), loop.copy(resumeCompleted = true), loop.copy(loopUnit = false),
+            loop.copy(activityNavigation = true), loop.copy(prerequisiteControls = true),
+            loop.copy(assessmentFixtures = loop.assessmentFixtures + loop.assessmentFixtures),
+            loop.copy(assessmentFixtures = listOf(loop.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

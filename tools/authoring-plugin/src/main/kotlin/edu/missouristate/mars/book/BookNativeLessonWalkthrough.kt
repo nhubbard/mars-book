@@ -86,6 +86,10 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
             Files.writeString(output.resolve("$id-focus.json"), GsonBuilder().setPrettyPrinting().create().toJson(observation), CREATE_NEW)
         }
     }
+    if (plan.loopUnit) {
+        captureBookNativeLoop(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
+        return
+    }
     if (plan.memoryUnit) {
         captureBookNativeMemory(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
         return

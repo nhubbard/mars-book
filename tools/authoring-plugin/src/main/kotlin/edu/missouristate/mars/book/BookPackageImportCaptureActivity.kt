@@ -65,7 +65,7 @@ internal data class BookImportArchive(
 internal data class BookAssessmentFixture(val source: String = "", val path: String = "", val sha256: String = "") {
     fun validate() {
         require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
-            "independent/red-component.asm", "independent/independent-copy.asm"))
+            "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -84,6 +84,7 @@ internal data class BookPackageImportPlan(
     val prerequisiteControls: Boolean = false,
     val resumePrerequisites: Boolean = false,
     val memoryUnit: Boolean = false,
+    val loopUnit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -94,17 +95,25 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug || memoryUnit)
-            val expected = if (memoryUnit) setOf("independent/red-component.asm", "independent/independent-copy.asm")
-                else setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
+            require(nativeDebug || memoryUnit || loopUnit)
+            val expected = when {
+                memoryUnit -> setOf("independent/red-component.asm", "independent/independent-copy.asm")
+                loopUnit -> setOf("independent/end-pointer.asm")
+                else -> setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
+            }
             require(assessmentFixtures.map { it.source }.toSet() == expected)
-            require(assessmentFixtures.size == 2)
+            require(assessmentFixtures.size == expected.size)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
         }
         if (memoryUnit) {
             require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
             require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 2)
             require(archives.single().id == "002-single-pixel" && archives.single().entry == "memory-pixel.asm")
+        }
+        if (loopUnit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted && !memoryUnit)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
+            require(archives.single().id == "005-seven-segment-counter" && archives.single().entry == "range-counter.asm")
         }
         require(!resumeCompleted || (resume && nativeDebug))
         require(!activityNavigation || (resumeCompleted && assessmentFixtures.size == 2))
