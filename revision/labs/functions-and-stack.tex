@@ -4,9 +4,17 @@
 
 This lab accompanies Chapter~5 of the main book. Use its
 \texttt{reverse-rows.asm} worked program before attempting the separate
-\texttt{reverse-and-invert.asm} exercise. The files are in
-\texttt{revision/labs/files}. These activities use ordinary MARS Run and Debug;
-this fifth revised unit is not yet a native interactive lesson.
+\texttt{reverse-and-invert.asm} exercise. Import the student package for
+\emph{Functions and saved state} and continue it in Learn. The package opens the
+worked source, asks five inline prediction questions, and follows eight Debug
+boundaries before ordinary Run and the independent function check. Read this lab
+alongside those activities: Learn checks the stated registers, while the memory
+inspection and deliberate faults below develop your explanation of what happened.
+
+Use the package's working copies. The independent source is under
+\texttt{independent/}; it includes two ordinary calls with distinct continuations.
+The files in \texttt{revision/labs/files} retain the earlier standalone examples.
+You can read the worked program first and then use Learn to test your predictions.
 
 Your evidence should connect a value to the call over which it must remain
 available. A final memory dump can show two correct results, but it cannot by
@@ -45,6 +53,12 @@ is \texttt{0x7FFFEFD0}. The saved return address begins at
 ends at \texttt{0x7FFFEFEF}. The caller's first byte at
 \texttt{0x7FFFEFF0} is outside the frame.
 
+Figure~\ref{fig:revision-function-memory} enlarges the saved slots and the
+caller's later stores. Read the byte groups relative to the address at the start
+of each sixteen-byte row.
+
+\input{revision/figures/functions/saved-slots}
+
 These addresses describe this run, not constants to put into the function.
 Its offset-based accesses also work when a caller supplies a different valid,
 aligned stack pointer. Explain why loading a saved slot after restoring the
@@ -52,21 +66,30 @@ pointer would address a different location.
 
 \section{Follow two calls through the same helper}
 
-At the first visit to \texttt{reverse\_byte}, record \texttt{\$ra}. It now names
-\texttt{pair\_first\_ready}, while the outer return address remains in memory.
+At \texttt{pair\_first\_ready}, record \texttt{\$ra}. It names this inner
+call's continuation, while the outer return address remains in memory. For an
+additional investigation after the guided trace, break at \texttt{reverse\_byte}
+and inspect the link on entry to each invocation.
 The helper does not reserve another frame because its temporary state fits in
 registers and it calls no other function. Predict the eight iterations for the
 first byte, then compare the returned \texttt{0x68} with your trace.
 
 At \texttt{pair\_second\_call}, find the retained second input in both the saved
 register and the prepared argument. Find the retained first result in
-\texttt{\$s1}. Step into the same helper again. Its instruction addresses are
-unchanged, but its input and return continuation differ from the first invocation.
+\texttt{\$s1}. Resume to \texttt{pair\_second\_ready} as Learn directs. The
+same helper body has run with a different input and return continuation. In your
+additional investigation, Step Into this call to compare the helper's entry state
+with its first invocation.
 
 At \texttt{pair\_second\_ready}, the second result is in \texttt{\$v0}. Predict
 the two moves that place it in \texttt{\$v1} and restore the first result to
 \texttt{\$v0}. Then inspect \texttt{pair\_return}: the caller's registers and
 pointer must be restored before the return executes.
+
+Figure~\ref{fig:revision-function-restored} shows the result pair and restored
+saved values together before the return.
+
+\input{revision/figures/functions/restored-state}
 
 Continue to \texttt{after\_pair} and inspect the still-pending result stores.
 Only then run to exit and inspect both result words and the guard. This separates
@@ -94,7 +117,7 @@ even though the row data uses only eight.
 
 \section{Write a related function independently}
 
-The independent file supplies a caller, a visible continuation and the same
+The independent file supplies two calls, two visible continuations and the same
 \texttt{reverse\_byte} helper. Replace the failing \texttt{break} body with
 \texttt{reverse\_and\_invert}. It must use the helper and return a result in
 \texttt{\$v0} from zero through 255. It must return to its incoming continuation,
@@ -111,21 +134,39 @@ For input \texttt{0x16}, the caller should retain \texttt{0x97} in
 performed by the supplied caller, after the callee's preservation obligation ends.
 The exit service reuses \texttt{\$v0}; inspect the return boundary or the caller's
 retained result rather than interpreting the final service selector as the answer.
+The second call supplies \texttt{0x81} and retains \texttt{0x7E} in
+\texttt{\$s1}. Check both return sites before trusting a routine that happened
+to work for one caller.
 
-Run the public checks with JDK~25 and the MARS CLI:
+Select \emph{Check this program} in Learn. The unfinished \texttt{break} body
+fails all three public cases. After an edit, the checker uses the current editor
+text, including an unsaved change. Use the failure details to locate the violated
+promise, revise your function, and check again. Editing a completed source makes
+its execution evidence pending; Continue resumes from the first activity that
+needs current evidence. Previously answered predictions remain available in your
+history.
+
+Each public case makes 256 direct calls, covering every low-byte input. Three
+cases vary the upper argument bits, stack locations and full-width saved-register
+seeds; the return sites alternate. The checker starts at your function and pauses
+before each requested continuation. It does not run the caller's stores or exit
+service during these checks. It verifies the returned value, actual execution in
+the provided helper, the restored pointer, saved registers, caller bytes and
+silent execution. Memory and scratch registers persist between calls within a
+case; each case starts in a fresh machine and has a cumulative budget of 100000
+instructions. The caller-byte comparison observes the bytes after each return;
+it does not establish that no temporary write occurred.
+
+The adjacent public data file and README describe these formative checks. Three
+passing cases represent 768 successful returns, but a pass does not replace your
+explanation of the call boundaries. For the same case grid outside the IDE, use
+JDK~25 and a MARS CLI with prepared function checks. Run from the package's
+\texttt{independent} directory:
 
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/reverse-and-invert.kts \
-  /path/to/your/reverse-and-invert.asm
+  reverse-and-invert.kts reverse-and-invert.asm
 \end{verbatim}
-
-The public check exercises every low-byte input, adds nonzero upper argument bits,
-and makes repeated calls with full-width saved-register values. It verifies the
-result, execution of the provided helper, the restored pointer, saved registers,
-caller-owned stack bytes and silent
-execution. These are formative checks you can read. A pass does not replace your
-explanation of the call boundaries.
 
 An equivalent implementation may use different temporaries and frame slots. As an
 extension, consider inverting the input byte first and transferring directly to

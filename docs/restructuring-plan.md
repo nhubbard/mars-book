@@ -672,3 +672,35 @@ Run/Debug/check/resume experience, new light-theme frame figures and direct LaTe
 lab integration. No PDF changed in this step and no human learner review is
 claimed. Complete independent fixtures and private checks stay outside the public
 book repository. All 41 unrelated MARS file hashes remain unchanged.
+
+
+### Fifth native unit: actual IDE and publication verification
+
+The separate authoring plugin now drives the functions unit through actual inline
+choices, eight ordered debugger boundaries, ordinary Run, starter rejection and an
+unsaved implementation check. All 113 authoring tests pass. A second fresh IDE
+process retained all six quiz attempts (one deliberate wrong answer and five
+correct answers), skipped those completed predictions, and required new Debug,
+Run and function-check evidence after source edits. The independent attempt count
+advanced from two to three. Both student walkthrough projects closed and disposed
+normally; all eleven installed plugin JARs matched the pinned archives in both
+processes. The verifier reports both plugins Compatible, with 91 MARS and 20
+authoring public experimental usages and no internal-API exception.
+
+Three verified light-theme publication captures show the saved frame, restored
+results/state and the caller's later stores. The initial capture recipe assumed
+eight-byte row addresses; it was corrected to the native table's sixteen-byte
+rows, and its observations are retained separately. Raw PNGs are unchanged;
+publication crops and numbered annotations live in native LaTeX. The lab now
+explains the actual interactive sequence, two ordinary caller continuations,
+768 direct checked returns, source-bound progress and the limits of after-return
+memory comparisons. The broader curriculum and representative learner review
+remain unfinished. Detailed receipts remain in the private verification archive.
+
+The final lab PDF is 192 pages, with the fifth unit on pages 27–31 and its two
+annotated figures on pages 28–29. Those pages were rendered and visually checked;
+the figure pages were also checked in grayscale. The final PDF SHA-256 is
+`00709a9c2fc3c5a5142312620812d630f7f9328d326fdb8956b15088dac26d20`. Automated PDF/UA-2 validation passes
+1,728 rules and 899,942 checks with zero failures. All embedded fonts
+retain Unicode mappings, including Minion Pro, Noto Sans Math and JetBrains Mono.
+This automated result does not claim human assistive-technology review.
