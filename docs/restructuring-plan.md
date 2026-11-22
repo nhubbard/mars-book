@@ -1080,3 +1080,40 @@ IDE/resume, written lab integration and renewed publication verification remain.
 Human learner review is open; no new photograph or PDF validation is claimed.
 The full curriculum goal stays active, including later units and companions.
 The MARS-versus-hardware opening remains deferred.
+
+
+### Twelfth native unit: bounded interfaces (22 November 2026)
+
+The foundation above is now integrated with the written lab and actual IDE
+controls. A separate authoring walkthrough clicks seven inline predictions,
+including one incorrect answer and recovery, observes all twelve Debug boundaries
+and executes three ordinary Runs. The independent starter fails; unsaved corrected
+source passes 139 bound/caller cases, 256 byte cases and normal exit. Source edits
+clear all nine execution passes. Reopening in a fresh IDE process retains eight
+quiz attempts and re-earns every pass; the four source hashes remain unchanged.
+Both projects close normally. All eleven installed JARs match the pinned builds,
+and neither verified IDE log has ERROR or SEVERE entries. Both launches use the
+actual clean cleanSandbox runIde tasks.
+
+The separate authoring companion passes 122 Jupiter tests and all 477 book tests
+pass. The exact MARS and authoring archives pass the API verifier. This stage
+reuses the preceding checker build and its full regression/coverage results;
+it makes no further production MARS changes. All 41 manual MARS edits match their
+preserved content. Grading qualification remains finite input evidence, with
+independent algorithms and deliberate faults retained privately.
+
+The directly edited LaTeX lab explains the three complete sources, all requested
+pauses, tentative values, publication stores, next-stop highlighting, repeated
+checks and full-width pointers. The seven-byte guided header failure is now
+explicitly distinguished from the existing eight-byte photograph, which passes
+the header bound before failing the full-packet bound. Existing real photographs
+and native annotations are retained. The complete supplement is 201 pages;
+Chapter 12 occupies pages 81–92, including its unchanged UTF-8 written companion.
+All twelve pages were visually inspected, with both packet figures also checked
+in grayscale. Fonts remain embedded Minion Pro, Noto Sans Math and JetBrains Mono.
+The final exact PDF passes 1728 PDF/UA-2 rules / 947016 checks with zero failures.
+
+This completes automated integration of the twelfth main unit. Human learner
+and assistive-technology reviews are still pending. Later native units, native
+companion integration and remaining instructional-system work remain open; the
+full curriculum goal stays active. The MARS-versus-hardware opening stays deferred.

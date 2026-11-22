@@ -1,9 +1,11 @@
 # Bounded interfaces unit
 
-Chapter 12, `main/bounded-interfaces.tex`, begins on main page 72; its written
-supplement, `labs/bounded-interfaces.tex`, begins on lab page 55. The combined
-proofs at the chapter milestone contained 78 and 59 pages; see README.md for
-the latest combined totals. Native LaTeX remains authoritative.
+Chapter 12 uses `main/bounded-interfaces.tex` and the written supplement
+`labs/bounded-interfaces.tex`. The original chapter milestone began on main page
+72 and lab page 55, in proofs of 78 and 59 pages. Those figures describe that
+historical milestone, not the current full composition. Native LaTeX remains
+authoritative. The original verification below is retained; the native interactive
+integration is recorded afterward.
 
 The chapter uses an invented binary packet format to explain supplied bounds,
 three distinct lengths, explicit byte order, error priority, checksum arithmetic,
@@ -52,11 +54,51 @@ no ERROR or SEVERE entries. All new pages and representative grayscale figures
 were reviewed, and both final PDFs pass automated PDF/UA-2. Established Minion
 Pro, Noto Sans Math and IntelliJ-derived minted styling remain in use.
 
-Human learner/assistive-technology reviews and a native interactive version of
-this lab remain open. The UTF-8 companion now follows in section 12.6; see
+Human learner/assistive-technology reviews remain open. The native interactive
+version was subsequently integrated as recorded below. The UTF-8 companion now follows in section 12.6; see
 utf8-unit.md. The clipped-sprite companion is now section 6.6; see clipped-unit.md.
 The MarsBot companion is now section 4.7; see marsbot-unit.md. Later chapters
 and remaining instructional-system work are unfinished. Reaching
 twelve main chapters does not complete the foundational phase or overall goal.
 The proposed MARS-versus-hardware opening remains deferred. The original manuscript
 and unrelated MARS edits are preserved.
+
+
+## Native interactive integration, 22 November 2026
+
+`lessons/013-bounded-interfaces` now supplies seven predictions, twelve Debug
+boundaries, three ordinary Runs and three independent assessments. The accepted,
+short-header and checksum sources are complete and separate. The short source
+supplies seven bytes, failing before the first input read. The existing return
+figure supplies eight bytes, passing the header bound before failing the complete
+packet bound; the lab now explicitly distinguishes these examples. The lab also
+explains the next-stop highlight, actual paused stack frame, tentative error
+values and the caller's later metadata stores.
+
+The independent exercise retains all original input families. Native profiles
+cover 139 boundary/caller cases, 256 first-byte cases and normal program exit,
+including 789 function returns across repeated continuations. They check full
+returned and stored pointers, label-relative access bounds and forbidden execution
+intervals. The new checker was implemented and tested upstream rather than
+weakening the original script's requirements. Four correct algorithms, relocated
+layouts, wide addresses and deliberate faults have separate private qualification
+evidence. The historical statement that no grader change was needed applies only
+to the earlier script route.
+
+Two fresh-process IDE walkthroughs passed. Actual inline choices include an
+incorrect answer followed by recovery. Debug, Run and independent-check controls
+use the production student system. The unfinished starter fails; unsaved correct
+source passes. Edits clear all nine execution passes. Reopening retains eight
+quiz attempts and re-earns every execution pass without changing the four source
+hashes. All eleven installed JARs match pinned archives and both IDE logs have
+no ERROR or SEVERE entries. The separate authoring plugin passes 122 Jupiter tests;
+all 477 book tests pass. The exact MARS and authoring archives pass API verification.
+The reused MARS checker has 194 CLI / 1203 plugin regression results and required
+coverage gates, followed by an exact archive import test. These are automated
+results, not learner review. All 41 manual MARS edits remain preserved.
+
+The written lab is integrated directly in native LaTeX. Final PDF rendering,
+grayscale figure review, embedded-font inspection and renewed PDF/UA-2 evidence
+are retained privately under `verification/restructuring/native-bounded-ide-01`.
+The unchanged UTF-8 companion follows the main lab; its native interactive
+integration remains separate work. The full curriculum goal remains active.

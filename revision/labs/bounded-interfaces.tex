@@ -2,11 +2,22 @@
 \MARSChapterHeading{Parsing, bounds and unchanged output}
 \label{revision-lab:bounded-interfaces}
 
-Use \texttt{bounded-packet.asm} from \texttt{revision/labs/files}. It is the
-complete worked implementation of original project
-\texttt{013-binary-packet-parser}; both original public checks apply. Read the
-main chapter's invented format and ordered decisions first. This lab uses ordinary
-Run and Debug, then an independent binary delimiter parser.
+Import the development lesson \texttt{013-bounded-interfaces} and choose
+Continue in Learn. Its complete \texttt{bounded-packet.asm} is also supplied in
+\texttt{revision/labs/files}; both implement original project
+\texttt{013-binary-packet-parser}, and the original checks still apply. Read the
+main chapter's invented format and ordered decisions first. This supplement
+explains the input, intermediate states and failure investigations alongside
+the interactive route.
+
+Learn follows an accepted packet through eight Debug stops, then a short header
+and a bad checksum through two stops each. Its complete alternate sources are
+\texttt{worked/packet-short.asm}, changing only available to seven, and
+\texttt{worked/packet-checksum.asm}, changing only the checksum trailer. Keep
+these files separate from the default program. Seven predictions and ordinary
+Run of all three sources lead to independent binary delimiter parsing. When
+working without Learn, make the corresponding copies and use the same observed
+boundaries below.
 
 \section{Predict bytes, fields and three lengths}
 
@@ -30,12 +41,20 @@ not change merely because the caller supplied a longer window.
 
 \section{Follow the first bound and the ordered errors}
 
-Break at \texttt{parse\_packet} and use a copy with available set to seven.
-Step through the initial comparison. The function must return need-more before
+For Learn's short-header route, open \texttt{worked/packet-short.asm} and
+break at \texttt{parse\_packet}. The available argument is seven even though
+the arena still contains the complete default packet. Step through the initial
+comparison. The function must return need-more before
 executing an input load. Stop at \texttt{parse\_ready}: \texttt{\$v0} is $-1$,
 \texttt{\$v1} is zero, and all four output words retain their original values.
 Continue through main and distinguish its status/pointer metadata stores from
 forbidden writes inside the failed parser.
+
+Figure~\ref{fig:revision-bounded-returns} compares the accepted twelve-byte
+packet with a different incomplete prefix of eight bytes. Eight bytes establish
+the whole header but still fail the complete-packet bound. The guided seven-byte
+copy fails the earlier header bound before any input load. Both return
+need-more, although they reach that result at different decisions.
 
 \input{revision/figures/bounded/returns}
 
@@ -58,7 +77,27 @@ happens to contain a suitable checksum byte.
 
 \section{Inspect acceptance before and after publication}
 
-Run the valid default packet and break at \texttt{packet\_commit}. At this point
+Learn's accepted route uses the unchanged default \texttt{bounded-packet.asm}.
+Move one line breakpoint at a time and resume to each requested stop. Learn's
+source highlight identifies the next requested stop. If it moves before you
+resume, use the selected stack frame in Debug to locate the actual pause. At
+\texttt{parse\_packet}, the input, available twelve and selected record are
+ready before the first function instruction. At \texttt{packet\_length}, magic,
+version and flags have passed; \texttt{\$v0} still holds the tentative flags
+error $-4$, and the length field is about to be read. At
+\texttt{packet\_fields}, the decoded length is three and the required total
+twelve. Only now has the routine established the complete input bound before
+sequence decoding and checksum scanning.
+
+The first \texttt{payload\_sum} stop has header total 232, payload total zero,
+three bytes remaining and cursor $input+8$. At its next visit, the first byte,
+127, has raised those totals to 359 and 127; the cursor moved one byte and two
+payload bytes remain. At \texttt{trailer\_sum}, header plus payload totals
+742, raw payload sum is 510 and the remaining count is zero. The cursor now
+names the trailer. These pauses describe the bytes already visited, before
+the selected next load executes.
+
+Continue to \texttt{packet\_commit}. At this point
 the checksum residue is zero, but the selected record has not received a store.
 Inspect tentative flags, sequence, length and payload sum in the source's temporary
 registers. The raw payload sum is 510; its low-byte residue will be 254. The
@@ -71,8 +110,10 @@ Locate the native bytes of the sequence output word. They are
 \texttt{34 12 00 00}, while the input sequence field remains \texttt{12 34}.
 Use the wire format and native memory representation to explain both observations.
 
-Change only the checksum trailer from hexadecimal \texttt{1A} to \texttt{1B}.
-The returned status is $-6$, the payload pointer is zero and the record remains
+For Learn's checksum-failure route, use \texttt{worked/packet-checksum.asm}.
+Only the trailer changes, from hexadecimal \texttt{1A} to \texttt{1B}. Break at
+\texttt{trailer\_sum} to compare the same tentative totals, then resume to
+\texttt{parse\_ready}. The returned status is $-6$, the payload pointer is zero and the record remains
 at its sentinel values. That picture is consistent with no output writes, but
 does not prove their absence: the grader checks the store history too. A failed
 routine that writes and restores the old words is still incorrect.
@@ -83,6 +124,21 @@ The payload pointer borrows the caller's input storage. In a disposable experime
 change a payload byte after success and inspect through the returned address.
 Explain why the pointer sees the changed byte: no separate payload copy was made.
 The caller must preserve the input until it has finished using the slice.
+
+Finish or stop each Debug execution before starting the next worked source.
+Learn can present its next question while the earlier execution remains paused;
+meeting a checkpoint does not finish that suspended program. When ordinary Run
+is requested, all three worked sources exit silently and normally. Their normal
+process exit code is independent of the parser's status. Inspect retained
+\texttt{status}, \texttt{payload\_address} and the records after Run: accepted
+status is twelve with the borrowed pointer, while the two failed parses retain
+$-1$ or $-6$ and a zero pointer. Main's metadata stores occur after the earlier
+function-return observation.
+
+An edit to a worked or independent source invalidates execution credit tied to
+its previous revision. Continue returns to the first activity that needs fresh
+evidence while retaining the prediction history. Use disposable copies for
+extra faults so their altered behavior does not replace the guided sources.
 
 \section{Diagnose byte and checksum mistakes}
 
@@ -148,18 +204,53 @@ can be equivalent to accumulating while searching. Preserve failure outputs by
 holding tentative values until acceptance. Do not use the output record as scratch
 storage or inspect a following record speculatively.
 
-\begin{samepage}
+\noindent\begin{minipage}{\linewidth}
 Run the public checks from the repository root:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/bounded-line.kts \
+  revision/lessons/013-bounded-interfaces/independent/bounded-line.kts \
   /path/to/your/bounded-line.asm
 \end{verbatim}
-\par\end{samepage}
-The starter deliberately stops until implemented. The cases vary incomplete
-prefixes, byte values, cap boundaries, input offsets, destination records and
-return continuations. Keep each failed case and derive its permitted read prefix
-before changing the scan condition. A larger available window is not permission
-to continue reading after this task's stopping boundary.
+\end{minipage}\par\medskip
+
+The starter deliberately stops until implemented. Learn checks the current
+source in three activities. First, 139 prefix, boundary and default-caller cases
+exercise incomplete input, exact capacity, input offsets, selected records and
+complete caller behavior. Then 256 cases cover every possible first-byte value.
+Together they retain all 393 original function inputs, add a direct default-input
+function case and retain the complete caller. Each function case calls twice
+through different continuations, giving 789 checked returns across the profiles.
+Each case has a cumulative 5000-instruction budget. The independent algorithm's
+private register allocation and frame layout remain your choice.
+
+The final activity requires silent normal exit of the same source. The caller
+case has already observed stored status and the full eight-byte borrowed pointer
+before the exit selector replaces \texttt{\$v0}. Returning the correct pointer
+but storing only its low word would lose information when input lives above
+four gigabytes. Checking the assembled address, rather than a fixed low numeric
+constant, permits relocation and exposes that truncation.
+
+Expected results and access histories serve different purposes. Read bounds end
+at the first LF or the first 33 supplied bytes, even if later bytes are mapped.
+Store checks protect caller data, including padding between public objects; a
+write followed by restoration is still a forbidden write. Continuation checks
+also distinguish returning through the supplied address from jumping to an earlier
+continuation and falling through to the requested stop. Both function profiles
+and the normal-exit check must pass for the current source revision.
+
+The command-line script above preserves all 394 original checks. The adjacent
+JSON profiles are Learn's bounded data, not executable scripts. Keep each failed
+input, available count, window offset and selected record. Derive its permitted
+read prefix before changing the scan condition. A larger available window still
+does not extend this parser's stopping boundary past LF or byte 33.
+
+In disposable copies, use zero as a terminator, then include LF in the payload
+sum. Find a concrete counterexample for each and locate its first wrong decision
+or update. Finally, write one tentative output word before proving the delimiter
+present, then restore it on failure. Explain why the final record can look
+unchanged while the no-store contract still fails. Restore the working source
+and rerun all three checks before leaving the exercise. These finite samples
+support the result; the bounds and delayed-publication argument must cover the
+whole stated input domain.
 
 \input{revision/labs/companions/utf8}
