@@ -29,8 +29,10 @@ assembly with that directory as its working directory. The helper refuses to rep
 does not create a host file or force short reads and writes.
 
 The environment is the development MARS MIPS64 Release 6 CLI on JDK 25, pinned in the
-manifest. It includes the public grading APIs listed there. The four IntelliJ Light
-capture plans have no captured PNGs or annotation receipts yet. Remote progression and
-hint enforcement, independent accessibility validation and substantive prose editing
-remain pending. Instructor solutions, private cases and quiz keys are distributed
+manifest. It includes the public grading APIs listed there. The original four capture plans remain historical recipes. The revised Chapter 23
+and lab under revision/ now include four verified IntelliJ Light Debug captures with
+native annotations, a worked split-file program and an independent frame-reversal
+exercise; see revision/wav-unit.md from the repository root for finite verification
+and current proof locations. The revised native proofs pass automated PDF/UA-2 checks;
+human accessibility review and advanced native lesson delivery remain pending. Instructor solutions, private cases and quiz keys are distributed
 separately and are absent from this archive.

@@ -251,3 +251,10 @@ unsigned products, explicit carries, modular invariants and full-width exponents
 with an independent seven-entry skeleton and four actual Debug figures.
 [rsa-unit.md](rsa-unit.md) records the added public feedback case and finite evidence.
 The main proof remains 145 pages; native advanced lessons and human reviews remain open.
+
+Chapter 23 follows a complete WAV image through parsing, per-channel FIR filtering,
+canonical encoding and file ownership. Its lab independently reverses whole frames,
+including exact aliasing, after the worked filter. The main proof now has 154 pages
+and the lab 165. [wav-unit.md](wav-unit.md) records the 3087 positive grading-case
+executions, fourteen rejected faults, fourteen host observations, four actual native
+Debug figures and remaining human/native-lesson review. PNG and video treatment follow.

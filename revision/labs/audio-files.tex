@@ -1,0 +1,180 @@
+\chapter{Follow the audio across its boundaries}
+\MARSChapterHeading{Follow the audio across its boundaries}
+\label{revision-lab:wav}
+
+Read Chapter~23 of the main book alongside this lab. The worked
+program is \texttt{wav-pipeline.asm}; its six public functions and FIR helper
+are in \texttt{wav-functions.asm}. Both are under \texttt{revision/labs/files}.
+Run and debug the caller file, keeping the helper beside it. The independent
+\texttt{wav-reverse-frames.asm} uses the same helper and leaves only the new
+frame-order function unfinished. You can also implement the original six
+functions from the starter in \texttt{packages/031-pcm-wav/}; its assignment
+retains the complete original interface.
+
+\section{Predict the parser's next address}
+
+Generate the trace using the main chapter's fixture command. On paper, begin
+at chunk offset twelve and calculate each successive header using the declared
+payload length and odd-byte padding. Keep the complete 82-byte extent separate
+from the sixteen-byte PCM extent. Explain why the first sample begins at 56,
+why a data length of sixteen means four stereo frames, and why the parser must
+continue at offset 72 after finding those samples.
+
+Prepare the parse observation for step \texttt{s06-1}:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Select a parser observation without changing instructions}
+\begin{Verbatim}
+python3 packages/031-pcm-wav/prepare.py s06-1 \
+  --source revision/labs/files/wav-pipeline.asm \
+  --output revision/labs/files/wav-parse.asm
+\end{Verbatim}
+Set a breakpoint at \texttt{parse\_return} and Debug the prepared caller.
+Before continuing, interpret the metadata bytes as the five fields in the
+main chapter. The expected record is $(16000,2,4,56,16)$, with widths
+$(4,4,8,8,8)$ bytes. A display of \texttt{38} at descriptor offset sixteen
+means a file-relative displacement, not a pointer to address hexadecimal 38.
+The parser returns four frames in \texttt{v1} at this boundary.
+
+Inspect a second observation whose trailing \texttt{note} claims three payload
+bytes while the complete count remains 82. Predict the required next offset
+before running. Initialize metadata to a recognizable pattern, then check that
+all 32 bytes retain it after format error one. If fields change, locate the
+first store to the public record and ask what validation still remains there.
+Merely obtaining an error status does not satisfy the publication guarantee.
+
+For an additional boundary experiment, let an unknown chunk declare length
+hexadecimal \texttt{ffffffff}. Derive its padded extent in 64-bit arithmetic.
+State which comparison must reject it before any payload access. This is a
+parser arithmetic test, not a request to allocate a multi-gigabyte input.
+
+\section{Separate the two channel histories}
+
+Prepare step \texttt{s29-1} and pause at \texttt{filter\_return}. Decode each
+pair of bytes as one signed sample, then group adjacent pairs into stereo
+frames. Derive the first two frames by hand using seven zeros of history per
+channel. A left output influenced by the right input indicates that the gather
+address has confused a frame stride with a sample stride.
+
+For a more discriminating experiment, use unequal coefficients and a left-only
+impulse. An all-equal average cannot expose reversed coefficient order, and
+identical channels cannot expose accidental cross-channel mixing. Predict
+which coefficient meets the impulse at the first output, then follow that
+sample as the window moves.
+
+Break at \texttt{filter\_history} after a block. Identify the $7+m$ input
+samples in the temporary window and select its final seven. For $m=3$, write
+which four come from the old history and which three are new. Then inspect a
+recording longer than 64 frames on both sides of that block boundary. If the
+second block begins with another zero-history transient, the caller has reset
+state too early. If it uses preceding filtered values, it has introduced a
+recurrence that the FIR contract never requested.
+
+\section{Inspect the file before saving it}
+
+The original encode observation is step \texttt{s43-1}. It selects PCM already
+stored in the caller's \texttt{samples} arena; an encode-only run does not first
+filter it. To inspect the filtered trace's complete output, use pipeline step
+\texttt{s63-1} with the generated input and pause at \texttt{encode\_return}.
+This distinction matters when comparing an isolated function with a composed
+program.
+
+Locate the four-byte data length and the first PCM byte at output offset 44.
+For four stereo frames, predict the complete byte count, RIFF size, block
+alignment and byte rate before reading them. Check the first bytes beyond the
+sixty-byte image as well. A correct header does not excuse writing an extra
+sample into the guard region.
+
+Try a capacity of 59 for this image and a destination filled with sentinels.
+The encoder must report capacity error two without changing any selected
+caller memory. A valid zero-frame prefix instead needs 44 bytes and no PCM
+access. Neither case requires a special fake sample to make the format work.
+
+Now trace the load and save loops. At each successful transfer, identify the
+remaining count and next byte pointer. Explain why a positive short read is
+not yet EOF, why a full input buffer needs a separate one-byte probe, and why
+a zero-byte write cannot be retried indefinitely. Test malformed input against
+an existing output file: validation should fail before output opening. Keep
+that guarantee separate from a later disk-write error, which may leave a
+partially written file.
+
+\section{Write a frame reversal that can share its buffer}
+
+Implement \texttt{wav\_reverse\_frames} in the independent caller. Its arguments
+are PCM pointer in \texttt{a0}, eight-byte-aligned descriptor prefix pointer in
+\texttt{a1}, and output PCM pointer in \texttt{a2}. The prefix contains the
+same rate, channel and full-width frame count as the worked program; validate
+it under that program's profile. The selected PCM length is $2CN$. Pointers
+may be byte-unaligned. Input and output are either disjoint or exactly equal;
+other overlap is outside the contract. The prefix is disjoint from both.
+
+On success, return zero in \texttt{v0} and original frame count $N$ in
+\texttt{v1}. Output frame $i$ must equal original frame $N-1-i$, with all
+$2C$ bytes within each frame unchanged. On profile failure, return one and zero
+without changing caller objects. For a valid zero-frame prefix, return success
+without touching either PCM pointer. You may call \texttt{wav\_bound} to
+validate the prefix, but its successful byte-count result is not this function's
+frame-count result.
+
+Preserve every bit of \texttt{s0} through \texttt{s7}, \texttt{fp}, \texttt{sp}
+and the supplied return continuation. The incoming stack is eight-byte aligned;
+restore it on each exit. Write only the selected output interval and your
+private stack frame. Disjoint input remains unchanged; exact aliasing permits
+changes only within that common PCM interval. Do no console or file I/O in the
+new function. Caller-saved scalar and vector registers need not be retained.
+
+Begin with three mono frames whose two-byte codes are all distinct, then three
+stereo frames whose left and right values differ. Write down the expected bytes.
+Reversing individual bytes would exchange each sample's significance. Reversing
+individual samples would exchange the channels within stereo frames. Both can
+sound different while still producing a superficially valid WAV header.
+
+For disjoint output, one possible loop reads frames from the end and writes
+from the beginning. For exact aliasing, reason about an endpoint pair before
+storing either one. You can exchange a frame byte at a time with two loaded
+bytes, or exchange its channels as complete two-byte codes. The odd middle
+frame needs no change. Establish a loop invariant that states which endpoint
+frames are final and which original frames are still available.
+
+\Needspace{7\baselineskip}
+The provided caller invokes your function after successful filtering, using
+\texttt{samples} as both source and destination, then encodes and saves.
+For the trace, the sixteen output PCM bytes must be
+\texttt{f4 11 f4 f1 f4 01 f4 01 dc 05 f4 01 dc 05 24 fa}.
+The output still has four stereo frames at 16000 Hz. Its prefix needs no change.
+Its first frame comes from the end of the filtered sequence, not from the end
+of the unfiltered input.
+
+\section{Check the function and its integration separately}
+
+The new public behavioral check is
+\path{revision/labs/checks/wav-reverse-frames.kts}. It selects different valid
+prefixes, byte offsets, exact-alias and disjoint buffers, invalid full-width
+counts, repeated calls and a complete file pipeline. It compares state and
+bytes, without requiring the loop above or particular temporary registers.
+Declare the helper explicitly when using the grader, which freezes only the
+sources you supply:
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Grade the independent caller with its include dependency}
+\begin{Verbatim}
+java -jar "$CLI" grade \
+  revision/labs/checks/wav-reverse-frames.kts \
+  revision/labs/files/wav-reverse-frames.asm \
+  --include revision/labs/files/wav-functions.asm
+\end{Verbatim}
+A deliberate \texttt{break} marks the unfinished entry. Replace it with your
+implementation before expecting these checks to pass. Ordinary assembly and
+IDE launching resolve the file include beside the caller; the grader's explicit
+\texttt{--include} also declares that dependency for its frozen submission.
+
+The original six-function checks remain in the package. Run them against
+\texttt{wav-pipeline.asm}, again declaring its helper. Their original caller
+check expects filtering without reversal, so it is not the full-pipeline oracle
+for the new independent caller. Keep the two intended outputs distinct when
+interpreting a failure.
+
+Finally run the two-second generated input through your completed independent
+pipeline. Check rate, channels, frame count, complete byte count and exact PCM
+against the filtered sequence reversed by whole frames. Compare a fresh run
+with a repeat run and inspect the status before opening an output for listening.
+Explain why a valid WAV file alone cannot prove that filtering, reversal or
+preservation was correct.

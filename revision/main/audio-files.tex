@@ -1,0 +1,353 @@
+\chapter{An audio file through the whole program}
+\MARSChapterHeading{An audio file through the whole program}
+\label{revision:wav}
+
+The filter in Chapter~\ref{revision:filtering} accepts sample codes in memory.
+A recording on disk contains more information: its sampling rate, the number
+of channels, a description of the sample representation, and boundaries around
+those bytes. To filter that recording, a caller must first establish where the
+samples are and what they mean. It must then arrange them for the numerical
+kernel and write a file that another program can interpret.
+
+This chapter joins those operations in \texttt{wav-pipeline.asm}, with shared
+functions in \texttt{wav-functions.asm}, both under \texttt{revision/labs/files}.
+Keep the two files together: the caller includes the functions by filename.
+The functions implement a deliberately restricted PCM WAV profile. We will
+follow a four-frame file through parsing, filtering and writing, then use the
+same program on a two-second generated input. The independent lab changes the
+order of whole frames after filtering.
+
+\section{Keep three counts distinct}
+
+A sample code is one signed sixteen-bit amplitude. A \emph{frame} contains one
+sample code for every channel at one instant. In stereo, the stored sequence is
+left zero, right zero, left one, right one, and so on. At a sampling rate of
+16000 frames per second, 32000 stereo frames describe two seconds, not four.
+The PCM payload occupies $32000\cdot2\cdot2=128000$ bytes. A file also contains
+headers and may contain unrelated chunks, so its byte count is larger.
+
+Write $R$ for frames per second, $C$ for channel count and $N$ for frame count. The payload length is
+$D=2CN$ bytes. Our accepted profile has $C\in\{1,2\}$, sampling rate 8000
+through 48000, and $0\leq N\leq65536$. It accepts integer PCM format code one
+with sixteen bits per sample. Compressed audio, floating-point samples and other
+channel counts are outside this interface. Rejecting those inputs does not mean
+that they are invalid WAV files in general.
+
+\Needspace{15\baselineskip}
+The parser produces the following little-endian descriptor. It is an internal
+record, separate from the file's header layout.
+\begin{table}[!ht]
+\centering
+\begin{tabular}{rll}
+\toprule
+Byte offset & Width & Meaning \\
+\midrule
+0 & 4 & Frames per second \\
+4 & 4 & Channel count $C$ \\
+8 & 8 & Frame count $N$ \\
+16 & 8 & PCM offset from the file buffer's base \\
+24 & 8 & PCM byte count $D$ \\
+\bottomrule
+\end{tabular}
+\caption{The parser publishes all 32 descriptor bytes together.}
+\label{revision:wav-descriptor-layout}
+\end{table}
+
+The first sixteen bytes suffice to describe a separate PCM array. Accordingly,
+\texttt{wav\_bound}, \texttt{wav\_filter} and \texttt{wav\_encode} consume only
+that prefix. They do not follow the offset at byte sixteen. Once the caller has
+computed a PCM pointer, adding the file offset again would select the wrong
+input. The offset remains meaningful only relative to the original file buffer.
+
+\section{Walk the file by its declared boundaries}
+
+A RIFF file starts with four bytes spelling \texttt{RIFF}, a little-endian
+unsigned word size, and four bytes spelling \texttt{WAVE}. The size excludes
+the first eight bytes. In the trace input it is 74, giving 82 bytes in the whole
+file. Our profile requires that exact extent: a shorter buffer is incomplete,
+and extra bytes outside the declared image are rejected.
+
+After these twelve bytes, each chunk has a four-byte identifier, an unsigned
+four-byte payload length $L$, and $L$ payload bytes. An odd payload length has
+one additional padding byte. The next chunk therefore starts at
+\[
+ q'=q+8+L+(L\bmod2),
+\]
+where $q$ is the current chunk's header offset. The padding belongs to the
+chunk's storage extent but is excluded from its payload length.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{r l r r r}
+\toprule
+Header & Identifier & Payload start & Payload bytes & Next header \\
+\midrule
+12 & \texttt{JUNK} & 20 & 3 & 24 \\
+24 & \texttt{fmt\textvisiblespace} & 32 & 16 & 48 \\
+48 & \texttt{data} & 56 & 16 & 72 \\
+72 & \texttt{note} & 80 & 1 & 82 \\
+\bottomrule
+\end{tabular}
+\caption{Chunk boundaries in the 82-byte trace input. Offset 82 is the end,
+so there is no further header there.}
+\label{revision:wav-chunks}
+\end{table}
+
+The \texttt{fmt } identifier ends with an ASCII space. Its payload describes
+PCM format, channels, rate, byte rate, block alignment and bits per sample.
+Block alignment is the number of bytes in a frame, $2C$; byte rate must be
+$2CR$. These redundant fields must agree. Our profile accepts a sixteen-byte
+format payload or an eighteen-byte payload whose two-byte extension count is
+zero. It requires exactly one format chunk before exactly one data chunk.
+Duplicate format or data chunks are errors. Other chunks are skipped by extent,
+including chunks after the data.
+
+Searching memory for the four letters \texttt{data} would be incorrect. Those
+letters could occur inside opaque payload bytes. Only an identifier reached by
+the boundary walk identifies a chunk. Nor can the parser return as soon as it
+finds a valid data chunk: the trailing \texttt{note} still needs its own valid
+extent. In our trace, the odd padding bytes are \texttt{a5} and \texttt{7f}.
+This local profile requires their presence without requiring their value to be
+zero.
+
+Check for eight available header bytes before reading the length. Decode the
+unsigned word into a doubleword, then calculate the padded extent at that wider
+width. A declared length of hexadecimal \texttt{ffffffff} needs 4294967296
+bytes including padding. A word-sized addition would wrap that requirement to
+zero. The parser uses the following sequence after decoding $L$ into
+\texttt{\$t8}; \texttt{\$s3} holds $q$ and \texttt{\$s1} the complete file
+byte count.
+\Needspace{12\baselineskip}
+\MARSCodeLabel{Include padding before comparing the next boundary}
+\begin{minted}{mars-idea}
+    andi $t7, $t8, 1
+    daddu $t7, $t7, $t8
+    daddiu $t4, $s3, 8
+    daddu $t4, $t4, $t7
+    sltu $t0, $s1, $t4
+    bnezc $t0, parse_invalid
+    nop
+\end{minted}
+The last comparison asks whether the required end lies beyond the buffer. It
+is unsigned. At this stage the complete file count is already bounded by
+266240 bytes, so these widened additions cannot overflow a doubleword.
+Only a proven in-bounds payload can be interpreted or skipped.
+
+After locating data, require $D$ to be divisible by $2C$ and derive $N=D/(2C)$.
+The profile also limits non-PCM overhead to 4096 bytes, including headers and
+padding. Thus the largest permitted complete file is
+$4096+65536\cdot4=266240$ bytes. An empty recording is permitted: $N=D=0$,
+with a valid format and an empty data chunk.
+
+\section{Publish a descriptor only after the walk succeeds}
+
+During parsing, keep candidate fields in registers or private storage. Finish
+the boundary walk, verify all profile constraints, then copy the final record
+to the caller's descriptor. If any test fails, all 32 original descriptor bytes
+must remain unchanged. A plausible PCM region is not enough to publish a
+partially trusted record.
+
+For the trace input the result is rate 16000, two channels, four frames, offset
+56 and length sixteen. In hexadecimal, 16000 is \texttt{3e80}; memory displays
+its least significant byte first as \texttt{80 3e 00 00}. Likewise offset 56
+appears as \texttt{38 00 00 00 00 00 00 00}. The native Debug view below shows
+both halves of the completed record.
+\input{revision/figures/wav/native-descriptor}
+
+Now change the trailing \texttt{note} length from one to three, keeping the
+complete file at 82 bytes. Its payload would require bytes 80 through 82 and a
+padding byte at 83. That exceeds the file even though format and PCM are intact.
+The parser must return format error one and leave the caller's sentinel record
+unchanged. This experiment distinguishes complete validation from returning
+at the data chunk.
+\input{revision/figures/wav/native-late-error}
+
+\Needspace{19\baselineskip}
+\section{Give each channel its own time history}
+The four input frames and their filtered results are:
+\begin{table}[!ht]
+\centering
+\begin{tabular}{r rr rr}
+\toprule
+ & \multicolumn{2}{c}{Input codes} & \multicolumn{2}{c}{Filtered codes} \\
+Frame & Left & Right & Left & Right \\
+\midrule
+0 & 12000 & $-12000$ & 1500 & $-1500$ \\
+1 & 0 & 16000 & 1500 & 500 \\
+2 & $-8000$ & 0 & 500 & 500 \\
+3 & 32767 & $-32768$ & 4596 & $-3596$ \\
+\bottomrule
+\end{tabular}
+\caption{An eight-tap average with seven initial zero samples in each channel.}
+\label{revision:wav-filter-trace}
+\end{table}
+
+Each of the eight coefficients is Q15 code 4096, representing one eighth.
+The left output at frame two is $(12000+0-8000)/8=500$. At frame three,
+$36767/8=4595.875$ rounds to 4596. The right calculation uses only right
+samples: its frame-three sum is $-12000+16000+0-32768=-28768$, giving
+$-3596$. No value clips.
+
+Passing interleaved stereo bytes directly to a single-channel FIR would average
+neighboring left and right samples. Instead, the wrapper gathers one channel
+into a contiguous temporary window, calls the earlier kernel, and scatters
+results back into the interleaved output. For frame $f$ and channel $c$, the
+sample begins at byte displacement $2(fC+c)$. Here $0\leq c<C$.
+
+The gather loop has block-start frame in \texttt{\$s6}, within-block index in
+\texttt{\$t0}, channel count in \texttt{\$s2}, channel index in
+\texttt{\$s5}, and original PCM base in \texttt{\$s0}:
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Select one channel from an interleaved frame}
+\begin{minted}{mars-idea}
+    daddu $t1, $s6, $t0
+    mul $t1, $t1, $s2
+    daddu $t1, $t1, $s5
+    dsll $t1, $t1, 1
+    daddu $t1, $s0, $t1
+\end{minted}
+The word multiplication is safe for the validated frame and channel bounds:
+$fC+c$ is at most 131071. The final addition to an address remains a
+64-bit operation. Address width and index range are different arguments.
+
+For each channel, initialize seven history codes to zero, then process blocks
+of at most 64 new samples. A block of $m$ samples occupies a window of $7+m$
+samples. After filtering, the seven values needed for the next call are the
+last seven \emph{input} samples of that window. Their starting index is
+$(7+m)-7=m$, a byte displacement of $2m$. This remains true for a short block:
+if $m=3$, four of the retained values still come from the old history.
+Retaining filtered outputs instead would introduce feedback and change the
+specified FIR operation. Resetting history at each block would introduce a new
+startup transient every 64 frames.
+
+The kernel accumulates the exact eight products in doublewords, adds 16384,
+shifts arithmetically right by fifteen, then clamps once. The wrapper totals
+clipped sample codes across all channels and blocks. That count can reach
+131072; it is neither a frame count nor a sixteen-bit quantity. Count zero
+returns before reading PCM or coefficients, although the descriptor prefix
+must still be valid.
+\input{revision/figures/wav/native-filter}
+
+\section{Write a canonical representation}
+
+The output writer emits a twelve-byte RIFF/WAVE prefix, one sixteen-byte format
+payload with its eight-byte chunk header, and a data header followed by the PCM.
+The fixed overhead is $12+24+8=44$ bytes. Consequently
+\texttt{wav\_bound} and a successful \texttt{wav\_encode} report
+$B=44+2CN$. Our four-frame stereo output is sixty bytes; its RIFF size field
+is 52. The input's unrelated chunks are deliberately omitted.
+
+The file's channel count and block alignment are two-byte fields, while the
+internal descriptor stores its channel count in four bytes. Do not copy the
+internal prefix into a file header. Encode each required field at its specified
+width and little-endian byte order. An empty recording still needs all 44
+header bytes, with a data length of zero.
+
+Validate the prefix and compare required $B$ with the unsigned output capacity
+before writing any byte. Insufficient capacity returns status two and leaves
+the destination unchanged; an invalid prefix returns one. A capacity with its
+high bit set is large, rather than negative. The caller must still provide a
+mapped destination interval of the actual required length. After successful
+validation, copy exactly $D$ PCM bytes. No extra sample is needed for alignment.
+\input{revision/figures/wav/native-encoded}
+
+\section{Treat file handles and partial transfers as state}
+
+\texttt{wav\_load(path,buffer,capacity,descriptor)} first checks capacity,
+which must be between one and 266240. It then opens the input and accumulates
+positive read counts. A short positive read is progress, not proof of EOF.
+If the buffer becomes exactly full, a private one-byte probe distinguishes
+an exact fit from an input that needs another byte. The probe does not write
+past the caller's buffer. Only EOF establishes the complete input count;
+parsing then decides whether that image is acceptable. Every acquired file
+handle is closed, including on read or parse failure.
+
+A failed load may have filled part of the byte buffer. Its guarantee concerns
+the descriptor: no record is published for an incomplete or invalid input.
+The caller must test the returned status before using either the record or any
+assumed complete image. A failed load returns zero in \texttt{v1}.
+
+\texttt{wav\_save(path,bytes,count)} validates the complete image before opening
+an output that might truncate an existing file. Format rejection therefore
+preserves that existing file. After opening, positive writes advance by exactly
+the returned count until all selected bytes have been written. A zero-byte
+write with data remaining is an error; retrying forever would make no progress.
+A negative transfer result also fails. Close the acquired handle on either path.
+An error after opening may leave a truncated or partially written output: this
+interface does not implement a temporary-file rename transaction.
+
+The numerical and file interfaces all return status in \texttt{v0}: zero for
+success, one for format or profile error, two for a byte-count or capacity
+error, and three for I/O failure. Successful \texttt{v1} has an interface-specific
+unit: canonical bytes for bound, frames for parse, clipped sample codes for
+filter, and complete file bytes for encode, load and save. Failed calls return
+zero there. All preserve the full saved registers, frame pointer, stack pointer
+and return continuation. Byte buffers and PCM may be unaligned; descriptor
+records are eight-byte aligned. Selected input and output regions are disjoint
+in the worked pipeline.
+
+\section{Run a generated recording through the caller}
+
+The fixture script creates deterministic bytes without replacing an existing
+file. Start with the small trace so that the file boundaries and every output
+sample remain inspectable. In the following commands, \texttt{CLI} denotes the
+built MARS CLI JAR; use its full path when working elsewhere.
+\Needspace{10\baselineskip}
+\MARSCodeLabel{Create an input and prepare the pipeline controls}
+\begin{Verbatim}
+python3 packages/031-pcm-wav/fixtures/fixture.py input.wav --fixture trace
+python3 packages/031-pcm-wav/prepare.py s63-1 \
+  --source revision/labs/files/wav-pipeline.asm \
+  --output revision/labs/files/wav-trace.asm
+java -jar "$CLI" --start-at-main revision/labs/files/wav-trace.asm
+\end{Verbatim}
+The prepared source stays beside \texttt{wav-functions.asm}, so its include
+continues to resolve. The paths in this recipe are \texttt{input.wav} and
+\texttt{output.wav}, relative to the process's working directory. The preparer
+changes caller data and controls while retaining the authored instructions.
+It refuses to replace an existing output source. Use a fresh working directory
+or move previous results before repeating an experiment.
+
+Mode six loads, filters, encodes and saves in that order. Each stage tests
+status before continuing. The global \texttt{clips} retains the filter's count;
+\texttt{status} and \texttt{count} retain the final status and byte count.
+For the trace, expect status zero, clips zero and count sixty. Break at
+\texttt{filter\_return} to inspect PCM before the writer changes its
+representation; break at \texttt{encode\_return} to inspect the complete
+memory image before any file write. These caller boundaries have different
+meanings even when the eventual output file is correct.
+
+Next generate a fresh input with \texttt{--fixture listen} and prepare step
+\texttt{s64-1}. This recording contains 32000 stereo frames at 16000 Hz.
+Its input is 128056 bytes; its canonical filtered output is 128044 bytes.
+The left channel contains a 200 Hz triangle pattern, the right a 250 Hz pattern,
+and both include an alternating component at 8000 Hz with opposite signs.
+An eight-sample average cancels that alternating component once its full
+history is present. The first seven frames have the specified zero-history
+transient. Listening may help connect codes to sound, but it cannot establish
+rounding, channel order, clipping counts or memory bounds; compare those
+numerically as well.
+
+\section{Change frame order independently}
+
+The lab's \texttt{wav-reverse-frames.asm} uses the same completed helpers and
+adds one unfinished function. Reverse whole PCM frames after filtering and
+before encoding. Each frame keeps its channels together, and each sixteen-bit
+sample keeps its byte order. The trace output should begin with the filtered
+frame $(4596,-3596)$ and finish with $(1500,-1500)$.
+
+The function must also support exactly in-place reversal. Explain which original
+bytes are needed before an endpoint store can overwrite them. An out-of-place
+backward traversal and an in-place endpoint swap may use different loops.
+Filtering after reversal would give a different signal because initial history
+would attach to the other end; follow the caller's stated stage order.
+The lab supplies the full independent contract and public behavioral checks.
+
+\section*{Sources and laboratory connection}
+The accepted profile and original six-function checks are in
+\path{packages/031-pcm-wav/}. Microsoft and IBM's
+\href{https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf}{Multimedia
+Programming Interface and Data Specifications} describes the RIFF/WAVE
+container and PCM fields. The profile restrictions, descriptor transaction and
+kernel rounding policy in this chapter are local contracts. The written lab
+uses the small trace to test those contracts before assigning frame reversal.
