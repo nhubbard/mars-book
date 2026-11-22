@@ -65,6 +65,23 @@ fail: those results do not establish that the third calculation is correct.
 Input 255 distinguishes the two third-result contracts even when every smaller
 public input agrees. Use that difference when explaining your tests.
 
+## Check in Learn
+
+After the worked program’s predictions, Run checks and Debug observations, Learn
+opens each independent starter in turn. Keep that file selected and use **Check
+this program** in the lesson. It checks your current editor text, including
+unsaved edits, against the seven public cases in separate simulator sessions.
+Your own Run or Debug session keeps its state.
+
+Read the first failing case’s feedback, investigate its input and revise the
+program. Assembly errors and cancelled or outdated checks do not consume an
+assessment attempt. A completed set of cases counts as one attempt, whether it
+passes or fails. Your instructor can control access, hints and attempt limits.
+Editing a completed program invalidates its pass while preserving the history.
+
+A pass checks the declared interface. Be prepared to explain the algorithm for
+the whole input range and why the boundary cases are useful.
+
 ## Run the public command-line checks
 
 These optional checks use the MARS command-line JAR and JDK 25. Obtain the JAR

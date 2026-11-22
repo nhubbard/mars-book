@@ -34,7 +34,11 @@ The private instructor repository contains separate reference and alternative
 programs and exhaustive checks for the admitted byte range. The public archive
 exports only the two incomplete starters, stated public cases, generated checks
 and student explanations. Its digest is pinned by the private distribution.
-Importing these files never executes their checks. In native lesson format 3,
-Learn records the worked program's predictions and observed Run/Debug sequence;
-these independent checks are run separately through the existing CLI grader.
-Connecting independent assessment to the downloaded lesson host remains open.
+Importing these files never executes their checks. Native lesson format 4 binds
+an independent activity to an exported assembly source and case profile. Learn
+opens the source and offers an inline Check this program control. The host
+assembles current editor text and evaluates the immutable archived cases in
+fresh sessions through the existing console grader. It does not run downloaded
+Kotlin scripts. The adjacent scripts remain optional CLI checks of the same
+public behavior. Instructor limits, source-bound saved results, retries and hints
+apply independently to each activity and package digest.

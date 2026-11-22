@@ -435,3 +435,28 @@ starters. This verifies package delivery and CLI checking. Downloaded independen
 assessment, its inline feedback, saved assessment counts and mode/progression
 controls are still to be connected to Learn. Human learner and accessibility
 review remain open; the general MARS-versus-hardware opening remains deferred.
+
+
+### Native independent checks: byte-inspector edition 0.4.0
+
+The first downloaded independent-writing activities follow the worked predictions,
+Run observations and ordered Debug sequence in the byte-inspector unit. Learn opens
+the incomplete ordinary-sum and narrowed-sum programs separately. An inline check
+assembles the current editor text and evaluates the archived public cases in fresh
+simulator sessions. Students retain their choice of labels, registers and correct
+instruction sequences. The optional CLI scripts express the same case data.
+
+This extends the working end-to-end unit through independent implementation. It
+supports revised-source checks, stale-result rejection, resumable source-bound
+passes, per-activity attempt counts and instructor control of access, preceding
+predictions and graduated hints. It does not establish a secure examination system
+or replace an explanation of the algorithm for the full admitted input range.
+The current downloaded console contract is single-source; later file, memory,
+vector and media objectives need appropriately specific public state contracts.
+
+The lab's checking guidance is authored directly in native LaTeX. Screenshot and
+walkthrough automation remains in the separate authoring plugin. Completed fixture
+programs and exhaustive instructor checks remain private. Development captures and
+machine-verified cases support review; representative learners must still establish
+whether they can complete the sequence independently. The proposed opening account
+of MARS versus hardware remains deferred for author review.
