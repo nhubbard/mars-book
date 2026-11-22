@@ -258,3 +258,10 @@ including exact aliasing, after the worked filter. The main proof now has 154 pa
 and the lab 165. [wav-unit.md](wav-unit.md) records the 3087 positive grading-case
 executions, fourteen rejected faults, fourteen host observations, four actual native
 Debug figures and remaining human/native-lesson review. PNG and video treatment follow.
+
+Chapter 24 follows the PNG pipeline across five representations, with worked bit,
+match, row-prediction and vector-packing reasoning. Its lab assigns an independent
+forward filter and supplies a host wrapper for student-produced rows. The main proof
+now has 162 pages and the lab 170. [png-unit.md](png-unit.md) records 10626 positive
+qualification-case executions, fourteen rejected faults, thirty-two real-file
+observations, four new native Debug figures and remaining review. Lossless video is next.

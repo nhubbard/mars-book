@@ -1,0 +1,226 @@
+\chapter{Check each representation of the PNG}
+\MARSChapterHeading{Check each representation of the PNG}
+\label{revision-lab:png}
+
+Chapter 24 of the main book follows a complete decoder. This lab asks you to
+establish what each stage proves, then implement a forward row filter without
+copying the decoder's reconstruction loop. The worked caller is
+\texttt{revision/labs/files/png-viewer.asm}. The independent file beside it is
+\texttt{png-filter-scanline.asm}. Both use MIPS64 Release 6.
+
+For the larger capstone assignment, the original
+\texttt{packages/033-png/starter/main.asm} leaves the loader, collector, inflater,
+scalar/MSA reconstruction, packing and complete decode entries unfinished.
+The construction directory retains staged attachments and observations for
+those entries. Follow the published interfaces; private register choices,
+frames and equivalent algorithms may differ. The worked program is available
+for inspection, but the independent task below requires you to reason in the
+opposite transformation direction.
+
+\section{Make a boundary ledger before debugging}
+
+Generate the two-by-five trace. Record file extent, each chunk's header and
+payload extent, joined stream count, expected row count and active pixel count.
+Your ledger should explain 115, 46, 35, 30 and 40 without calling them all the
+image size. Calculate the compressed bytes contributed by each IDAT. Explain
+why concatenation must precede zlib interpretation when the header is split
+between the two chunks.
+
+At \texttt{collector\_return}, the complete decoder has a private successful
+collector descriptor. Its capacity is not a width field. The public complete
+decode context has not yet published its result fields. Inspect
+\texttt{compressed\_address}, then follow that stored pointer to the joined
+bytes. Distinguish the address of this caller variable from the address stored
+inside it. Do the same for \texttt{row\_address} and
+\texttt{framebuffer\_address} rather than assuming one fixed heap address for
+all configurations.
+
+Change a payload byte without updating its chunk CRC. Predict the stage that
+will fail and which public objects must remain unchanged. Then repair the CRC
+but make the compressed stream invalid. The collector may now succeed while
+inflation fails. Those experiments test different promises; neither should
+publish pixels or complete-decoder context results.
+
+\section{Build a bit reader and a table decoder deliberately}
+
+For the stored trace, identify the final flag, block type, byte alignment,
+length and complement. Test a bad complement, a truncated payload and a valid
+empty stored block separately. The general inflater can accept expected output
+zero even though a supported PNG's positive dimensions predict nonzero rows.
+Require the exact produced count before accepting its trailer.
+
+For compressed blocks, derive canonical codes from code lengths. Count symbols
+of each length and order equal-length symbols by numeric value. Track available
+prefix slots with $K_0=1$ and
+\[
+ K_\ell=2K_{\ell-1}-count_\ell.
+\]
+A negative value means too many codes. A complete tree finishes at zero.
+Remaining slots require one of the explicitly permitted sparse cases: a single
+one-bit literal/length or distance code, or an empty distance alphabet that
+cannot serve a match. The code-length alphabet must be complete. An unused
+branch is never a valid decoded symbol, and the literal/length alphabet must
+include end-of-block symbol 256.
+
+Use the main chapter's three-symbol alphabet to decode A, length three,
+distance one, end-of-block. Write the arriving bits and the produced bytes.
+Then compare code \texttt{10} with the numerical field extracted from the same
+two arriving bits. That small discrepancy should explain which helper can read
+extra-bit counts and which algorithm must decode symbols.
+
+Dynamic headers expand repeat operations. Symbol 16 repeats the previous length
+three through six times; 17 supplies three through ten zeros; 18 supplies eleven
+through 138 zeros. Their extra bits select a count within those ranges. Before
+expanding, compare the selected count with remaining array positions. Test a
+repeat without a previous length and a repeat that would exceed the final
+position by one. Reset per-block tables and retain only the produced-byte
+history across blocks. A successful fixed block followed by a malformed dynamic
+block must not reuse a stale table to make the latter appear valid.
+
+The original construction material supplies the base/extra-bit tables and
+separate inflater cases. Keep those syntax tables at hand while implementing;
+they need not be memorized. Test reserved literal/length and distance symbols
+before using them as table indices.
+
+\section{Trace history and row dependencies}
+
+Begin a match with one produced byte A and request six bytes at distance one.
+Write the output and source cursor after each store. Explain why loading six
+source bytes in advance would consume unproduced data. Then test distance
+larger than produced history and length larger than remaining output. A mapped
+address is not proof of valid history or selected output capacity.
+
+Pause the complete program at \texttt{inflate\_return}. Interpret the buffer
+as five groups of seven bytes. For the first Up row, derive samples 15, 25, 35,
+45, 55 and 65. Continue to \texttt{publication\_rows\_return} and compare.
+The selectors remain in place; sample values change. For the Sub row, follow
+one red channel across pixels and identify the reconstructed left neighbor
+before using it.
+
+Predict an Average sum of 400 before halving it: the predictor is 200, not 72.
+For Paeth, test $a=255,b=0,c=85$. The estimate is 170, and $a$ ties $c$ at
+distance 85; $a$ wins. For $a=0,b=3,c=1$, $b$ ties $c$ at distance one and
+wins. Changing a strict comparison in a tie decision can corrupt only a few
+pixels, so a typical image is a weak test of that policy.
+
+Make the final selector five while keeping outer and Adler checksums valid.
+The reconstruction function must detect every selector before changing any
+samples. The complete decoder must leave framebuffer and context unchanged.
+Neither guarantee requires restoring the inflater's scratch bytes to their
+old contents. Describe failure boundaries by object, rather than using an
+unqualified promise that all memory rolls back.
+
+\section{Explain the vector result at both widths}
+
+Use widths fifteen, sixteen and seventeen. For packing, mark exactly which
+48 RGB bytes feed a complete sixteen-pixel group, which four output vectors
+receive them, and which samples the tail handles. Derive the mask for pixel
+five across input vectors zero and one. Explain why the shuffle destination
+must be restored from a retained mask before reuse.
+
+Compare numerical framebuffer words under both byte orders. The first trace
+pixel remains \texttt{0x000a141e} even though its four memory bytes differ.
+With stride seventeen, mark the five eight-byte active rows and the four
+sixty-byte gaps. Derive the required extent 280, and explain why 340 would
+incorrectly require a final padding gap. Check those gaps for retained bytes;
+a correct active pixel count does not authorize stores into padding.
+
+Up reconstruction can add independent byte groups from the completed previous
+row. Sub reconstruction depends on new values three bytes earlier in its
+current row. State those dependencies before proposing vector code. When
+comparing scalar and MSA modes, use identical file bytes and stride, establish
+exact output equality, then separate complete decode work from loading and
+assembly. The original observation tables retain their historical measurement
+scope; reproduce a measurement before treating it as a result for your program.
+
+\section{Implement the forward row filter}
+
+Replace the intentional \texttt{break} at \texttt{png\_filter\_scanline} in
+the independent file. Arguments are current RGB pointer in \texttt{a0}, previous
+RGB pointer in \texttt{a1}, output pointer in \texttt{a2}, and settings pointer
+in \texttt{a3}. Settings are three aligned native unsigned doublewords: width,
+filter selector and output capacity. Width must be one through 512 and selector
+zero through four. The required output length is $1+3w$. Capacity is unsigned;
+a high-bit-set value is large, rather than a negative shortage.
+
+After validating settings, emit the selector followed by $3w$ residual bytes.
+Use the original current-row sample three bytes earlier as $a$, the previous-row
+sample as $b$, and its preceding same-channel sample as $c$. Missing left
+neighbors are zero. A null previous pointer means the first image row, so $b$
+and $c$ are zero. Filters None and Sub never read the previous pointer, even
+if it is nonnull. Preserve full predictor precision and the stated Paeth tie
+order before subtracting modulo 256.
+
+The RGB byte intervals may be unaligned and may coincide with each other,
+since both are read-only. Output must be disjoint from both inputs and settings;
+settings must be disjoint from the RGB intervals. Only the first 24 settings
+bytes and the selected input/output intervals belong to the call. Return zero
+and $1+3w$ on success. An invalid setting returns one and zero before accessing
+any RGB or output byte and changes no caller object. Preserve every bit of
+\texttt{s0} through \texttt{s7}, \texttt{fp}, \texttt{sp} and the return
+continuation. The incoming stack is eight-byte aligned. Do no I/O in the entry.
+
+The supplied demo uses width two, Average, current RGB
+\texttt{25,35,45,55,65,75} and previous RGB \texttt{20,30,40,50,60,70}.
+It must produce seven hexadecimal bytes
+\texttt{03 0f 14 19 12 12 12}. Pause at \texttt{filter\_demo\_return} to see
+\texttt{v0/v1} before the caller records them in \texttt{filter\_status} and
+\texttt{filter\_count}. The expected count is seven bytes, rather than six
+samples or two pixels.
+
+Start with None, then Sub and Up, then Average and Paeth. Compare a forward
+loop with a backward loop: both can read original neighbors because neither
+writes its input. This is a different dependency proof from in-place unfiltering.
+Do not add exact-alias output support silently; that would require preserving
+original neighbors before output stores can overwrite them.
+
+\section{Check exact bytes and the inverse}
+
+Run the public independent feedback from the book repository:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Grade the new forward transformation}
+\begin{Verbatim}
+java -jar "$CLI" grade \
+  revision/labs/checks/png-filter-scanline.kts \
+  revision/labs/files/png-filter-scanline.asm
+\end{Verbatim}
+The check covers every filter, top-row and previous-row cases, both byte
+orders, unaligned byte intervals, boundary widths, full-width invalid settings,
+unsigned capacities, coincident read-only inputs, repeated calls and explicit
+Paeth ties. It compares exact residuals and retained caller state, then applies
+an inverse recurrence to recover every original sample. A matching checksum
+alone would be weaker evidence.
+
+For the original complete decoder, keep its separate harness out of your source
+and use its supplied runner:
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Check the complete pipeline with separate grading storage}
+\begin{Verbatim}
+python3 packages/033-png/grade.py \
+  revision/labs/files/png-viewer.asm --domain decode \
+  --cli "$CLI" --java "$JAVA"
+\end{Verbatim}
+Here \texttt{JAVA} is the full JDK 25 Java executable. Omit \texttt{--domain}
+to check all eight domains. The runner supplies \texttt{checks/harness.asm}
+as another assembly source. Preserve the public callable entries and reserve
+the \texttt{pngCheck\_} prefix for those resources. The independent forward
+function has its own feedback; the original decoder runner does not grade it.
+
+Finally collect five forward-filtered rows in order, using a null previous
+pointer for the first and the preceding original RGB row for each later one.
+Export those 35 binary bytes as \texttt{rows.bin}; include each selector, with
+no text addresses, spaces or hexadecimal characters. The supplied host wrapper
+provides compression and container writing without implementing your filter:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Wrap the simulator-produced rows in a complete PNG}
+\begin{Verbatim}
+python3 revision/labs/files/png-from-rows.py rows.bin result.png \
+  --width 2 --height 5 --compression fixed
+\end{Verbatim}
+It validates dimensions, exact row count and selectors, then creates one zlib
+stream split across two consecutive IDAT chunks. It refuses an existing output.
+Keep \texttt{result.png} separate from your original input, then select it for
+the decoder or place a copy named \texttt{image.png} in a fresh working directory.
+Decode with the worked program and an independent image reader and compare
+exact RGB samples. This separates your prediction logic from compression and
+gives an artifact whose pixels can be checked outside MARS.

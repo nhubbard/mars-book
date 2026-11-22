@@ -49,7 +49,12 @@ public control labels for caller feedback.
 Instructor materials, keys, completed MIPS implementations and private grading
 remain in the separate private distribution. Instructors can specify hint,
 progression and mode policies; remote enforcement is not implemented. Five actual
-light-theme IDE figures now include native annotations and retained receipts. An
-independent accessibility audit remains pending.
+light-theme IDE figures now include native annotations and retained receipts. These original figures remain with the initial construction material. Revised Chapter 24
+and its written lab now include four further verified Debug observations, a complete
+worked viewer, an independent forward row-filter exercise and a host PNG wrapper. See
+revision/png-unit.md from the repository root for current proofs and finite evidence.
+The revised proofs pass automated PDF/UA-2 validation; human accessibility review
+remains pending.
 The native fragments use book-repository paths when composed into the publication.
-Substantive editorial work is a separate future goal.
+The directly edited revised main and lab entries are the current reading sequence;
+original construction fragments remain preserved as supporting material.

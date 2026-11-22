@@ -1,0 +1,344 @@
+\chapter{Decode a PNG through several representations}
+\MARSChapterHeading{Decode a PNG through several representations}
+\label{revision:png}
+
+A PNG file does not contain the display words that the bitmap tool reads. Its
+chunks contain a compressed stream; that stream expands into filtered rows;
+those rows must be reconstructed before their red, green and blue samples can
+be packed into words. A plausible result at one boundary does not establish
+that the next representation is valid.
+
+The complete \texttt{png-viewer.asm} in \texttt{revision/labs/files} joins these
+stages. This chapter follows a two-by-five image through the program, explains
+the state required for DEFLATE, and derives the dependencies that permit some
+vector operations while preventing others. It assumes the earlier CRC, bounded
+file, QOI and RGB/MSA work. The lab retains the full decoder construction route
+and assigns a forward row filter independently.
+
+Our local profile accepts noninterlaced RGB PNGs with eight bits per channel,
+width and height from one through 512, and at most 1 MiB of file bytes. It
+supports stored, fixed-Huffman and dynamic-Huffman DEFLATE blocks and all five
+PNG row filters. It rejects other color formats, transparency and animation.
+It preserves sample numbers without color management. Those restrictions define
+this exercise, rather than all valid PNG files.
+
+\section{Give each stage a different count}
+
+The trace fixture contains ten pixels. Its complete file is 115 bytes, its
+joined compressed stream is 46 bytes, and its inflated rows occupy 35 bytes.
+The RGB samples account for thirty of those bytes; five more select the row
+filters. The packed display pixels occupy forty active bytes.
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{l r l}
+\toprule
+Representation & Trace bytes & Size for width $w$, height $h$ \\
+\midrule
+Complete PNG & 115 & Bounded supplied file count \\
+Joined IDAT payloads & 46 & Sum of consecutive IDAT lengths \\
+Inflated row buffer & 35 & $h(1+3w)$ \\
+RGB sample bytes & 30 & $3wh$ \\
+Active display pixels & 40 & $4wh$ \\
+\bottomrule
+\end{tabular}
+\caption{Each boundary establishes a different representation and count.}
+\end{table}
+
+The ordinary framebuffer has a stride of 512 words: successive image rows
+start 2048 bytes apart. Its forty active bytes are therefore spread across
+five rows. With a tightly packed stride of two words, they would be adjacent.
+Stride changes destination placement; it does not change the compressed stream
+or the image's pixel count.
+
+The caller reserves separate file, compressed, row and framebuffer storage.
+Its context holds stride and framebuffer capacity, compressed address and
+capacity, then row address and capacity, as six native doublewords at offsets
+zero through forty. The final three doublewords at offsets 48, 56 and 64 are
+width, height and active pixel-byte results. Native fields follow the selected
+MARS byte order. File fields retain the byte order defined by their format.
+
+\section{Collect one stream from checked chunks}
+
+After the eight-byte PNG signature, each chunk has a big-endian unsigned
+four-byte payload length, four type bytes, its payload and a four-byte CRC.
+There is no odd-byte padding. For header offset $q$ and payload length $L$,
+the next header is at $q+12+L$. Prove the envelope fits before reading its
+payload or stored CRC. Decode the length unsigned and perform offset arithmetic
+at address width.
+
+In the trace, IHDR begins at offset eight, has thirteen payload bytes, and
+ends at 33. Two IDAT chunks start at 33 and 46, holding one and 45 payload
+bytes respectively. IEND starts at 103 and ends at 115. The first IDAT contains
+only \texttt{78}; the next begins \texttt{01}. Even the two-byte zlib header
+crosses this chunk boundary. A fresh inflater for each IDAT would be wrong.
+Concatenate their payloads, excluding chunk envelopes, to obtain one stream.
+
+Require IHDR first, one uninterrupted IDAT run, and an empty IEND at the exact
+file end. Check every chunk's CRC over its type and payload, including an
+unknown ancillary chunk that will be skipped. Length bytes are excluded from
+that CRC. Validate four ASCII letters in each type and an uppercase reserved
+third letter. Unknown critical chunks fail. Our profile permits an optional
+valid PLTE before IDAT, but truecolor samples do not index it. It explicitly
+rejects \texttt{tRNS} and animation chunks; ignoring those could display a
+misleading image. An ancillary chunk after IDAT closes that run.
+
+\texttt{png\_collect(file,count,compressed,descriptor)} takes destination
+capacity in the descriptor's first native doubleword. On success, it writes
+width, height, joined length and predicted inflated length into the following
+four doublewords, and returns zero with joined length in \texttt{v1}.
+On failure it returns one and zero and retains the whole descriptor. Compressed
+scratch may already contain a copied prefix. The prediction $h(1+3w)$ derives
+from validated dimensions; it is not evidence that the stream will produce
+those bytes. Collection deliberately leaves that question to the inflater.
+
+\section{Separate the wrapper, bits and symbols}
+
+The joined stream begins with a zlib header and ends with a big-endian Adler-32
+checksum. Validate DEFLATE as the method, the advertised window, the header's
+check bits and absence of a preset dictionary. Reserve the four trailer bytes
+from the compressed-bit input window. A bit refill must not borrow checksum
+bytes to finish a truncated block.
+
+The trace stream begins \texttt{78 01 01 23 00 dc ff}. The first two bytes
+are the wrapper. The next byte begins a final stored block: its low bit marks
+the final block, its next two bits select stored data, and the remaining bits
+are discarded to reach a byte boundary. The little-endian stored length is
+\texttt{23 00}, or 35. Its complement is \texttt{dc ff}. Exactly 35 row bytes
+follow, then Adler-32. Even within this one stream, the wrapper's multibyte
+fields and stored-block length have different byte orders.
+
+A bit reservoir keeps unread bits and a separate available-bit count. To read
+an ordinary $n$-bit field, refill with bounded byte loads, take the low $n$
+bits, shift right by $n$, and decrease the count. Block type one uses a fixed
+Huffman alphabet; type two transmits code lengths from which alphabets are
+built; type three is invalid. Nonfinal blocks continue into another block
+header without resetting produced history.
+
+Huffman codes require a separate interpretation. Suppose an alphabet has codes
+\texttt{0}, \texttt{10} and \texttt{11}. Arriving bits one then zero select
+code \texttt{10}. Interpreting those arrivals as an ordinary low-bit-first
+two-bit number gives one. A symbol decoder can consume one bit at a time,
+append it to the developing code, and compare against the canonical codes of
+that length. Keep code numbering separate from the reservoir's numerical
+field extraction.
+
+A dynamic block first describes the alphabet used to encode its own code
+lengths, then the literal/length and distance alphabets. Length zero means a
+symbol is absent. Repeat operations expand earlier lengths or runs of zeros;
+prove each run fits the remaining length array before storing it. A repeat of
+the previous length is invalid before any previous length exists. Clear and
+rebuild each block's tables so a preceding block cannot supply missing entries.
+
+\Needspace{13\baselineskip}
+\begin{table}[!ht]
+\centering
+\begin{tabular}{r l r l}
+\toprule
+Symbol & Meaning & Code length & Canonical code \\
+\midrule
+65 & Literal A & 1 & \texttt{0} \\
+256 & End of block & 2 & \texttt{10} \\
+257 & Length three & 2 & \texttt{11} \\
+\bottomrule
+\end{tabular}
+\caption{A small complete literal/length alphabet. Other symbols have length zero.}
+\end{table}
+
+Canonical assignment orders shorter codes first and equal-length codes by
+symbol number. After the one-bit code zero, the next available prefix shifts
+left to binary ten; symbols 256 and 257 receive ten and eleven. Count available
+prefixes while building the table: too many codes at any length is an error.
+Incomplete alphabets also need explicit validation, including the permitted
+single-symbol and empty-distance cases. The lab develops those rules before
+asking you to process arbitrary dynamic headers.
+
+\section{Expand matches into bytes that really exist}
+
+A literal emits one byte. A length/distance pair copies earlier output. In the
+small alphabet above, a literal A followed by length three and distance one
+produces four A bytes. End-of-block then finishes that compressed block.
+A distance of zero, a distance beyond produced history or the advertised window,
+a reserved symbol, or a match exceeding remaining output space must fail before
+the corresponding load or store.
+
+A match can overlap itself. Starting with one A, length six and distance one
+appends six more A bytes. The byte just written supplies the next iteration.
+The worked copy loop begins only after distance and output bounds have been
+established. Register \texttt{\$t0} is the history source, \texttt{\$s4} the
+next output address and \texttt{\$t1} the required output end:
+\Needspace{11\baselineskip}
+\MARSCodeLabel{Allow newly produced bytes to extend a match}
+\begin{minted}{mars-idea}
+    lbu $t2, 0($t0)              # forward copy also handles overlapping matches
+    sb $t2, 0($s4)
+    daddiu $t0, $t0, 1
+    daddiu $s4, $s4, 1
+    bnec $s4, $t1, copy_match
+    nop
+\end{minted}
+Preloading the whole match in a vector could read bytes that have not yet been
+produced. A backward overlap copy would also change this expansion rule.
+Optimize only after distinguishing matches whose inputs already exist from
+those that extend their own history.
+
+\texttt{png\_inflate(stream,count,rows,expected)} requires the exact expected
+output count, rather than merely a capacity ceiling. On success it returns zero
+and that produced count. A short stream cannot succeed by leaving old workspace
+bytes in place, even if a checksum collision makes the final Adler value agree.
+Adler-32 starts with $s_1=1,s_2=0$ and updates $s_1$ with each produced byte,
+then $s_2$ with the new $s_1$, modulo 65521. Count only bytes actually emitted.
+Require final block completion, the exact output end, a complete wrapper trailer
+and no extra compressed bytes under this interface's exact-stream contract.
+Failure returns one and zero; selected row scratch may have changed.
+
+\section{Reconstruct colors using reconstructed neighbors}
+
+Inflated data is still not RGB. Every row starts with a filter selector and
+then $3w$ residual bytes. For each sample byte, call the reconstructed sample
+of the same channel in the previous pixel $a$, the one above $b$, and the upper
+left one $c$. Missing neighbors are zero. The channel spacing is three bytes,
+so the left red sample is three bytes earlier, not the immediately preceding
+blue sample.
+
+The five predictors are zero for None, $a$ for Sub, $b$ for Up,
+$\lfloor(a+b)/2\rfloor$ for Average, and a selected neighbor for Paeth.
+Paeth forms $p=a+b-c$ and chooses the neighbor closest to $p$, breaking ties
+in the order $a$, then $b$, then $c$. Compute differences and the Average sum
+without byte wrapping. Reconstruction stores
+$(residual+prediction)\bmod256$. This wrapping restores an unsigned sample;
+it is not the audio saturation rule.
+
+\Needspace{16\baselineskip}
+\begin{table}[!ht]
+\centering
+\begin{tabular}{r l l l}
+\toprule
+Row & Filter & Residuals, decimal & Reconstructed RGB bytes \\
+\midrule
+0 & None & 10 20 30 40 50 60 & 10 20 30 40 50 60 \\
+1 & Up & 5 5 5 5 5 5 & 15 25 35 45 55 65 \\
+2 & Sub & 20 30 40 30 30 30 & 20 30 40 50 60 70 \\
+3 & Average & 15 20 25 18 18 18 & 25 35 45 55 65 75 \\
+4 & Paeth & 5 5 5 5 5 5 & 30 40 50 60 70 80 \\
+\bottomrule
+\end{tabular}
+\caption{Five filters reconstruct a five-row image, one row at a time.}
+\end{table}
+
+For the second red value in row two, residual 30 adds the newly reconstructed
+left red value 20, yielding 50. In row three the second red predictor is
+$\lfloor(25+50)/2\rfloor=37$; residual 18 restores 55. Using residuals as
+left neighbors would produce the wrong recurrence.
+
+\texttt{png\_unfilter} and \texttt{png\_unfilter\_msa} receive buffer, exact
+count, width and height. Before changing any sample, validate dimensions,
+$h(1+3w)$ and every selector. A bad selector in the final row must leave all
+rows unchanged. On success, reconstruct in place while retaining selectors;
+the same buffer still occupies 35 bytes. The two native views below show the
+first sixteen bytes before and after that operation. The Up residuals become
+samples, while row boundaries keep their positions.
+\input{revision/figures/png/native-inflated}
+\input{revision/figures/png/native-reconstructed}
+
+Up has no dependency on a newly reconstructed byte in its current row: add the
+previous row's samples with vector byte addition for complete groups, then a
+bounded scalar tail. Sub, Average and Paeth depend on reconstructed left
+samples. Loading a vector of left residuals does not satisfy that dependency.
+The worked MSA route accelerates safe Up groups and packing; selecting MSA
+mode does not imply that every stage becomes vector code.
+
+\section{Publish numerical words within active rows}
+
+RGB bytes \texttt{0a 14 1e} represent the first pixel. Its display word is
+\texttt{0x000a141e}. A little-endian word store writes \texttt{1e 14 0a 00};
+a big-endian store writes \texttt{00 0a 14 1e}. Both store the same numerical
+color. Never infer a word's meaning solely from the order of a screenshot's
+bytes without knowing the target byte order.
+
+Packing accepts reconstructed rows, exact count, framebuffer and a descriptor
+with native width, height, stride in words and capacity in bytes. Require a
+word-aligned destination, $w\leq s\leq512$, and capacity at least
+\[
+ 4((h-1)s+w).
+\]
+For width two, height five and stride seventeen, the selected extent is 280
+bytes, but only forty bytes belong to pixels. The intervening sixty-byte gaps
+between rows remain caller-owned padding. No trailing gap is needed after the
+last active row. Validate this layout before any framebuffer store.
+
+For sixteen pixels, load exactly 48 RGB bytes into three byte vectors and
+produce four word vectors. Pixel five straddles the first two input vectors:
+its RGB indices are 15, 16 and 17. The second output vector uses selectors
+\texttt{14,13,12,128}, \texttt{17,16,15,128}, and so on, creating B,G,R,zero
+byte lanes for pixels four through seven. A selector with bit seven set gives
+zero. With that retained mask in \texttt{\$w5}, the two input vectors in
+\texttt{\$w0/\$w1}, and output base in \texttt{\$t0}:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Pack words across the first input-vector boundary}
+\begin{minted}{mars-idea}
+    move.v $w3, $w5
+    vshf.b $w3, $w1, $w0
+    st.w $w3, 16($t0)
+\end{minted}
+The destination initially holds selectors and is overwritten by the shuffle,
+so copy a retained mask for each use. Store words with \texttt{st.w} to preserve
+native numerical colors in either byte order. Prove a full sixteen-pixel group
+exists before the three loads; finish a shorter row with the scalar tail.
+Do not borrow bytes from a row selector or padding to make a vector load fit.
+\input{revision/figures/png/native-packed}
+
+The complete decoder publishes its context results only after collection,
+exact inflation, reconstruction and packing succeed. A format or capacity
+failure leaves the whole context and framebuffer unchanged, although both
+workspaces may have changed. An image with valid chunk CRCs and Adler-32 but
+a bad final filter must therefore display no partial result. On success the
+complete decoder returns zero with $4wh$ in \texttt{v1}, and publishes width,
+height and that active byte count in the context.
+\input{revision/figures/png/native-context}
+
+\section{Run, compare and change the prediction direction}
+
+From the public book repository, generate the trace before launching the worked
+caller. The script refuses an existing output. Here \texttt{CLI} is the full
+path of the built MARS CLI JAR.
+\Needspace{9\baselineskip}
+\MARSCodeLabel{Generate the small image and run its complete decoder}
+\begin{Verbatim}
+python3 packages/033-png/construction/png-fixtures/fixture.py image.png
+java -jar "$CLI" --start-at-main revision/labs/files/png-viewer.asm
+\end{Verbatim}
+The ordinary process working directory must contain \texttt{image.png}.
+In IntelliJ, select the caller for MARS Run or Debug and set that working
+directory explicitly. The successful console line is \texttt{PNG displayed.}
+Inspect the bitmap tool together with the context and rows; the message alone
+is not evidence of exact pixels. Set \texttt{vector\_mode} to zero for scalar
+or one for MSA. Compare the same file and layout, first for exact state and then
+for measured work. File loading, assembly and the complete decode call are
+different measurement scopes.
+
+Next generate a fresh seventeen-by-five image with fixed compression and one
+with automatic compression. Those names select encoder strategies; automatic
+compression does not promise a dynamic block on every input. Record the actual
+block types when studying a stream. Change the IDAT split without changing the
+joined payload, then verify that decoded samples remain identical. Widths
+fifteen, sixteen and seventeen distinguish a scalar tail, one full packing
+group, and a group followed by a tail.
+
+The independent \texttt{png-filter-scanline.asm} reverses the row transformation:
+from known RGB and a selected predictor, emit the selector and residual bytes.
+Compute each residual as $(sample-prediction)\bmod256$. It uses original
+current-row neighbors, so a backward traversal is valid when inputs and output
+are disjoint. This differs from reconstruction's left-to-right dependency.
+The lab specifies the complete interface, tie cases and inverse checks.
+
+\section*{Sources and laboratory connection}
+\path{packages/033-png/} retains the exact accepted profile, independent entry
+contracts and staged construction material. The
+\href{https://www.w3.org/TR/png-3/}{PNG specification},
+\href{https://www.rfc-editor.org/rfc/rfc1950}{RFC 1950} and
+\href{https://www.rfc-editor.org/rfc/rfc1951}{RFC 1951} define the container,
+zlib wrapper and DEFLATE syntax. Local size, publication and preservation
+contracts are stated separately in this exercise. Use the written lab to
+reason about the boundaries before implementing the complete decoder from its
+starter or extending the worked program.
