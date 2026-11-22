@@ -2,11 +2,20 @@
 \MARSChapterHeading{Motion, rounding and arithmetic range}
 \label{revision-lab:fixed-point}
 
-Use \texttt{fixed-point-ball.asm} from \texttt{revision/labs/files}. The complete
-program follows original project \texttt{012-fixed-point-ball}; its original
-kernel and program checks apply. Read the main chapter's raw-value interpretation
-and reflection rule first. This lab uses ordinary Run and Debug, with a separate
-independent interpolation task.
+Import the development lesson \texttt{012-fixed-point} and choose Continue
+in Learn. Its \texttt{fixed-point-ball.asm} is the same complete program supplied
+in \texttt{revision/labs/files}; it follows original project
+\texttt{012-fixed-point-ball}. Read the main chapter's raw-value interpretation
+and reflection rule first. Learn supplies inline predictions, source pointers,
+eight ordered Debug observations, ordinary Run and two independent checks.
+This supplement explains what those observations mean and provides experiments
+beyond the checked route.
+
+Keep the guided source at \texttt{DEMO} zero, \texttt{round\_mode} zero and eight
+steps. Use separate copies for nearest-cell rendering and the overflow probe.
+Those variants intentionally have different observations. An edit invalidates
+execution credit for the previous source revision; Continue returns to the
+first check that needs fresh evidence while retaining the prediction history.
 
 \section{Predict the model before drawing it}
 
@@ -43,6 +52,26 @@ Continue to the next ready boundary and verify that both axes, tick, ID and
 frame agree. Each requested update adds one publication to the initial one.
 Do not count tool repaints during a fast Run: the screen can skip intermediate
 frames even though the simulator executes each render.
+
+For the guided route, move one line breakpoint at a time and resume to the
+next requested stop. Reusing a label means stopping at its next visit; a pause
+is before the selected instruction executes. The first \texttt{frame\_ready}
+shows tick zero and pixel nine. At the first \texttt{advance\_axis}, arguments
+are horizontal raw position 320 and velocity 192. At the next call, the new
+horizontal result 512 is already in \texttt{\$s0}; the vertical arguments are
+448 and 320. The following ready boundary publishes tick one, position
+$(512,768)$ and pixel 26. This mixed register state between calls is expected;
+it is not yet a complete published tick.
+
+Continue to \texttt{reflect\_high}. The vertical trial is 2048 before the
+reflection instructions execute. The published memory still describes tick
+four, $(1088,1728)$, even though \texttt{\$s0} already holds the next horizontal
+position 1280. The next ready boundary publishes tick five at $(1280,1536)$
+with vertical velocity $-320$ and pixel 53. At the next upper reflection,
+the horizontal trial is 1856; the old horizontal position is 1664. Finally,
+\texttt{frame\_ready} publishes tick eight at $(1728,576)$, velocity
+$(-192,-320)$ and pixel 22. Finish or stop Debug before starting ordinary Run.
+It should exit silently. Inspect guards as well as the visible white pixel.
 
 Set mode to one in a copy and inspect ticks seven and eight. In both frames,
 the ball is in column seven. At tick seven its raw $x$ is 1664 and velocity is
@@ -133,11 +162,36 @@ numerators. Verify values immediately around a half tie in both directions.
 Then run the public checks:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/fixed-interpolate.kts \
+  revision/lessons/012-fixed-point/independent/fixed-interpolate.kts \
   /path/to/your/fixed-interpolate.asm
 \end{verbatim}
-The checker exercises endpoint weights, signed-word extremes, half boundaries,
-sampled full-word inputs and preserved caller state. An unfinished starter fails
-explicitly. On a mismatch, retain the input triple and derive its exact wide
-numerator before changing the rounding or return instruction. A correct default
-answer does not justify narrower arithmetic for the full stated domain.
+Learn checks the same independent file twice. Its first check has seven
+fresh-machine groups containing all 3368 scalar calls from the original public
+corpus, followed by an eighth case that runs the caller through its result
+store. Each group has at most 512 calls and a budget of 100000 instructions.
+The two continuations alternate, global fixture values differ from passed
+arguments, and saved registers contain full doubleword patterns. Store traces
+reject writes to inputs or the caller's 32 stack bytes even when the bytes are
+subsequently restored. Private stack frames below the incoming pointer are
+permitted; no instruction sequence is prescribed.
+
+The caller-result case pauses before \texttt{interpolate\_exit}, after the
+caller has stored raw $-64$ in \texttt{answer}. It observes the returned
+\texttt{\$v0} before the exit selector replaces it. Learn's second check runs
+the complete source to silent normal exit with a 1000-instruction budget.
+A trap after the result store therefore cannot earn completion. Both checks
+must pass for the current source. The command-line script above combines the
+scalar corpus with a whole-caller execution check; the JSON profiles packaged
+beside it are Learn's data, not executable scripts.
+
+On a mismatch, retain the case name, one-based call number and supplied input
+triple from the diagnostic. Derive its exact wide numerator before changing
+the rounding or return instruction. An unfinished starter fails explicitly.
+A correct default answer does not justify narrower arithmetic for the full
+stated domain, and a finite passing corpus does not replace the range proof.
+
+In disposable copies, introduce one word-width product, then one logical shift
+of a negative numerator. Find a counterexample for each and explain the first
+instruction that loses the needed information. Finally, change the caller's
+result store and show why function-only results would miss that error. Restore
+the working source and rerun both Learn checks before leaving the exercise.

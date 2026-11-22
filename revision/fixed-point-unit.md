@@ -1,8 +1,10 @@
 # Revised fixed-point unit
 
 The tenth main chapter is `main/fixed-point.tex` and its written supplement is
-`labs/fixed-point.tex`. They begin on main page 59 and lab page 46. The current
-combined proofs contain 64 and 49 pages. Composition remains native LaTeX.
+`labs/fixed-point.tex`. The current full learning book has 189 pages; the lab supplement has 199.
+The fixed-point lab occupies pages 70–74. Composition remains native LaTeX.
+The later paragraphs retain the original chapter-pilot verification separately
+from the native lesson integration below.
 
 The chapter uses a complete public bouncing-point program to explain raw/256,
 units per update, representable versus accepted range, reflection of an overshoot,
@@ -59,7 +61,46 @@ and representative grayscale figures were visually reviewed; both final PDFs
 pass automated PDF/UA-2 with Minion Pro, Noto Sans Math and JetBrains Mono. The
 original manuscript and unrelated MARS edits remain preserved.
 
-Human learner and assistive-technology reviews are pending. Native interactive
-support for this unit, later chapters, additional companions and remaining
-instructional-system features are open. The proposed opening explanation about
+Human learner and assistive-technology reviews are pending. Later native units,
+additional companions and remaining instructional-system features are open. The proposed opening explanation about
 MARS versus hardware remains deferred. The curriculum goal is not complete.
+
+
+## Native lesson integration, 22 November 2026
+
+The development student package is `lessons/012-fixed-point`, version 0.1.0.
+Five inline predictions and eight ordered Debug stops lead from raw/256 scaling
+to a mixed register pair between calls, complete publication, two overshoots,
+ordinary silent Run and independent signed interpolation. Guided observations
+use floor mode throughout. The existing nearest-mode photographs remain labeled
+as experiments in a separate copy; their pixel IDs are intentionally different.
+
+The new public profile retains all 3368 original scalar triples in seven bounded
+fresh-machine cases, then runs the complete caller through its answer store in
+an eighth case. A separate console assessment checks silent normal exit. Both
+assessments use the same source and bind credit to its current revision. Three
+correct forms, including private stack use, pass both grading routes in ordinary
+and relocated data layouts. Eight injected faults and the starter are rejected.
+The additional caller-store and abnormal-exit faults establish why the two
+caller observations are needed. These are finite tests, not exhaustive proof.
+
+The grader now includes the failed call number, entry, continuation and supplied
+scalar arguments in feedback. Three new Jupiter tests check captured arguments,
+empty arguments and cancellation propagation. Full checks passed 171 CLI and
+1195 plugin tests, with required coverage checks; the exact fixed-point archive
+adds a focused importer test afterward. All 469 book tests and 120 separate
+authoring Jupiter tests pass. Exact builds pass the IntelliJ API verifier.
+
+Desktop and fresh-process verification are recorded in the restructuring plan.
+The initial automated attempt stopped after all eight Debug states because its
+Run-text expectation omitted “the unchanged”; this authoring-only mismatch was
+corrected and retested. Retained evidence distinguishes that incomplete attempt
+from completed walkthroughs. It is not student or representative learner review.
+
+The updated native lab includes the full ordered observation narrative,
+negative tie and range reasoning, both check boundaries and reproducible error
+inputs. Pages 70–74 and the contact figure in grayscale were inspected. The
+199-page PDF passes automated PDF/UA-2: 1728 rules and 932432 checks, no failures.
+Minion Pro, Noto Sans Math and JetBrains Mono are embedded. Original figures,
+manuscript history and all 41 manual MARS edits remain preserved. The deferred
+opening explanation about MARS and hardware has not been added.

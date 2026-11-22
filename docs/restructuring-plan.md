@@ -915,3 +915,56 @@ PDF/UA-2 passes 1728 rules and 926302 checks with zero failures. Final PDF SHA-2
 `c2edf4616b81c13e0a6ebb7389d4610a54fae0aeab0aabd957cbeed3bacedd31`.
 The main learning PDF is unchanged. Learner and human accessibility review,
 later native units and companion integration remain outstanding.
+
+
+### Tenth native unit: fixed-point motion (22 November 2026)
+
+The development package `012-fixed-point` now preserves the worked motion source
+and the complete original 3368-call interpolation corpus. Five inline predictions,
+eight ordered Debug boundaries and silent Run distinguish scaled values, display
+quantization, partly updated registers and complete published frames. Both upper
+reflections retain overshoot. The guided route stays in floor mode; nearest mode
+and the overflow probe belong in separate copies, as the revised lab explains.
+
+Independent writing has two checks on the same source. Seven bounded groups
+exercise all scalar triples through alternating continuations, varying saved
+state and protecting inputs and caller-stack stores. An eighth case observes the
+complete caller's answer store before the exit selector overwrites the return
+register. A separate console check requires silent normal exit. Three correct
+arithmetic forms pass both checking routes in ordinary and relocated layouts;
+eight faults and the starter fail. The two added caller faults demonstrate the
+need to check the stored result and subsequent exit separately.
+
+A small public grader improvement supplies the failed call number, entry,
+continuation and actual supplied scalar inputs. It preserves cancellation and
+existing execution semantics. Full required checks passed 171 CLI and 1195 plugin
+tests; the exact new archive test passed afterward. All 469 book-tool and 120
+separate authoring Jupiter tests pass. Both exact plugin builds pass the public
+API verifier. Full regression reports were frozen before focused tests ran.
+
+The native lab supplement now occupies 199 pages, with this unit on pages 70–74.
+Those pages and the existing contact figure in grayscale were visually inspected.
+The final PDF passes automated PDF/UA-2 with 1728 rules and 932432 checks, no
+failures. Minion Pro, Noto Sans Math and JetBrains Mono remain embedded. Native
+annotations and unchanged source PNGs are retained. Human learner and assistive
+technology reviews remain pending. The original manuscript, historical chapter
+checks and all 41 manual MARS source edits are preserved.
+
+The first authoring attempt observed all eight Debug states but stalled on its
+own ordinary-Run text expectation. The separate automation was corrected and
+retested; the incomplete attempt remains labeled in private evidence. Completed
+desktop/resume evidence is recorded below when verified, rather than inferred
+from command-line checks. Later native units and companion integration remain
+open. The proposed MARS-versus-hardware opening remains deferred.
+
+
+Two completed light-theme IDE walkthroughs now verify actual inline choices and
+source pointers, all eight Debug snapshots, ordinary Run, failing starter
+feedback, unsaved correct source, both independent checks, source-edit
+invalidation and fresh-process continuation. Both projects closed normally;
+all eleven installed JARs match their pins, and both IDE logs contain no ERROR
+or SEVERE entries. Saved progress retains the same six quiz attempts. Function
+assessment attempts increase from two to three and exit assessment attempts
+from one to two. Old Debug, Run and both assessment passes are empty after the
+edit and are freshly earned in the resumed process. This is automation evidence;
+it does not claim a human learner completed the unit unaided.

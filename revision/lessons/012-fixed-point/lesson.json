@@ -1,0 +1,383 @@
+{
+  "formatVersion": 6,
+  "introduction": "Trace fractional motion as scaled integers, distinguish raw state from displayed cells, and reflect overshoot at a boundary. Then implement a signed weighted interpolation whose intermediate arithmetic must be wider than its result.",
+  "conclusion": "State the raw scale, arithmetic width, rounding rule and observation boundary of a calculation. Use concrete counterexamples to test these choices independently of the picture.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "raw-scale",
+      "explanation": "A raw integer represents a position multiplied by 256. The eight low bits represent fractions of one pixel. advance_axis adds a raw velocity to a raw position without changing that scale.",
+      "question": "What velocity does raw 192 represent?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Three quarters of a pixel per tick",
+          "feedback": "192/256 is 0.75. Several updates can accumulate motion smaller than one displayed cell."
+        },
+        {
+          "id": "b",
+          "text": "192 pixels per tick",
+          "feedback": "The raw integer includes the scale factor; divide by 256 to interpret it."
+        },
+        {
+          "id": "c",
+          "text": "One pixel per tick",
+          "feedback": "Rendering may hide a fraction, but it does not round the stored velocity."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "advance_axis",
+        "mnemonic": "addu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "quantization",
+      "explanation": "render_ball receives raw x and y in a1 and a2. Mode zero shifts the nonnegative raw coordinate right by eight. Mode one adds 128 before that shift. It writes a complete framebuffer but does not change the motion registers.",
+      "question": "What changes when you select nearest-cell rendering?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The displayed cell, while the raw trajectory stays the same",
+          "feedback": "Rounding is part of observation. The next update still uses the full raw position and velocity."
+        },
+        {
+          "id": "b",
+          "text": "The stored raw velocity",
+          "feedback": "The renderer does not write the motion registers."
+        },
+        {
+          "id": "c",
+          "text": "The reflection boundary",
+          "feedback": "Both modes use the same raw boundary, 1792. The displayed cell is not the reflection test."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "render_ball",
+        "mnemonic": "sll",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "overshoot",
+      "explanation": "The upper wall is raw 1792. A trial position can cross that wall in one update. reflect_high computes twice the wall minus the trial position and negates the velocity.",
+      "question": "Where does a trial position of 2048 reflect?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Raw 1536",
+          "feedback": "3584 minus 2048 is 1536. The overshoot of 256 becomes the same distance inside the wall."
+        },
+        {
+          "id": "b",
+          "text": "Raw 1792",
+          "feedback": "Clamping at the wall would discard the overshoot."
+        },
+        {
+          "id": "c",
+          "text": "Raw 2048",
+          "feedback": "The returned position must be inside the permitted interval."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "reflect_high",
+        "mnemonic": "subu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-motion",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for fixed-point-ball.asm. Use an unchanged source with DEMO zero, round_mode zero and eight steps. Follow these eight stops in order. Move one line breakpoint at a time and resume; a label stop is before its selected instruction executes. Learn checks registers. Compare the retained memory and framebuffer with the written lab at each publication.",
+      "stops": [
+        {
+          "id": "initial-publication",
+          "explanation": "Break at the first frame_ready. Tick zero publishes raw position (320,448), velocity (192,320) and floor-rendered pixel nine. Inspect x_raw through pixel_id and all 64 frame words.",
+          "anchor": {
+            "label": "frame_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000140",
+            "$s1": "0x00000000000001c0",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0x0000000000000140",
+            "$s4": "0x0000000000000008",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000",
+            "$v0": "0x0000000000000009",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The initial image is a complete observation before either axis advances."
+        },
+        {
+          "id": "horizontal-input",
+          "explanation": "Resume to the first advance_axis. This call receives horizontal position 320 and velocity 192. Its first instruction has not executed; the published state still describes tick zero.",
+          "anchor": {
+            "label": "advance_axis",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000140",
+            "$s1": "0x00000000000001c0",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0x0000000000000140",
+            "$s4": "0x0000000000000008",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000",
+            "$a0": "0x0000000000000140",
+            "$a1": "0x00000000000000c0",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000000",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Read the arguments before the instruction that computes their sum."
+        },
+        {
+          "id": "vertical-input",
+          "explanation": "Resume to the next advance_axis. The horizontal result has been copied into s0, now 512. This call receives vertical position 448 and velocity 320. Memory and the picture still describe tick zero.",
+          "anchor": {
+            "label": "advance_axis",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000200",
+            "$s1": "0x00000000000001c0",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0x0000000000000140",
+            "$s4": "0x0000000000000008",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000",
+            "$a0": "0x00000000000001c0",
+            "$a1": "0x0000000000000140",
+            "$v0": "0x0000000000000200",
+            "$v1": "0x00000000000000c0",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The working registers can contain a partly updated pair between axis calls."
+        },
+        {
+          "id": "first-tick",
+          "explanation": "Resume to frame_ready. Both updates have finished, tick is one, seven updates remain, and the published position is (512,768). Pixel 26 is white in the floor-rendered frame.",
+          "anchor": {
+            "label": "frame_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000200",
+            "$s1": "0x0000000000000300",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0x0000000000000140",
+            "$s4": "0x0000000000000007",
+            "$s5": "0x0000000000000001",
+            "$s6": "0x0000000000000000",
+            "$v0": "0x000000000000001a",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The observation boundary publishes both updated axes together."
+        },
+        {
+          "id": "vertical-overshoot",
+          "explanation": "Resume to the first reflect_high. The vertical trial is 2048; a0 still holds its old position 1728 and a1 its velocity 320. The horizontal update for tick five is already in s0. Published memory remains at tick four, (1088,1728), pixel 52.",
+          "anchor": {
+            "label": "reflect_high",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000500",
+            "$s1": "0x00000000000006c0",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0x0000000000000140",
+            "$s4": "0x0000000000000004",
+            "$s5": "0x0000000000000004",
+            "$s6": "0x0000000000000000",
+            "$a0": "0x00000000000006c0",
+            "$a1": "0x0000000000000140",
+            "$v0": "0x0000000000000800",
+            "$v1": "0x0000000000000140",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "A trial outside the interval is an intermediate value, before reflection."
+        },
+        {
+          "id": "reflected-publication",
+          "explanation": "Resume to frame_ready. Tick five publishes position (1280,1536) and vertical velocity -320. The reflected vertical position is 256 raw units inside the wall; pixel 53 is white.",
+          "anchor": {
+            "label": "frame_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000500",
+            "$s1": "0x0000000000000600",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0xfffffffffffffec0",
+            "$s4": "0x0000000000000003",
+            "$s5": "0x0000000000000005",
+            "$s6": "0x0000000000000000",
+            "$v0": "0x0000000000000035",
+            "$v1": "0xfffffffffffffec0",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "The overshoot is retained as distance inside the boundary."
+        },
+        {
+          "id": "horizontal-overshoot",
+          "explanation": "Resume to the next reflect_high. The horizontal trial is 1856 from old position 1664 plus velocity 192. Published memory is still tick seven, position (1664,896), pixel 30. The first reflection instruction has not executed.",
+          "anchor": {
+            "label": "reflect_high",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000680",
+            "$s1": "0x0000000000000380",
+            "$s2": "0x00000000000000c0",
+            "$s3": "0xfffffffffffffec0",
+            "$s4": "0x0000000000000001",
+            "$s5": "0x0000000000000007",
+            "$s6": "0x0000000000000000",
+            "$a0": "0x0000000000000680",
+            "$a1": "0x00000000000000c0",
+            "$v0": "0x0000000000000740",
+            "$v1": "0x00000000000000c0",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Apply the same one-dimensional rule to the other axis."
+        },
+        {
+          "id": "final-publication",
+          "explanation": "Resume to frame_ready. Tick eight publishes (1728,576), velocity (-192,-320), zero remaining updates and floor-rendered pixel 22. The nine complete frames include the initial publication.",
+          "anchor": {
+            "label": "frame_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000000006c0",
+            "$s1": "0x0000000000000240",
+            "$s2": "0xffffffffffffff40",
+            "$s3": "0xfffffffffffffec0",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000008",
+            "$s6": "0x0000000000000000",
+            "$v0": "0x0000000000000016",
+            "$v1": "0xfffffffffffffec0",
+            "$sp": "0x000000007fffeff0"
+          },
+          "success": "Both reflected velocities and the final raw position are visible at one complete boundary."
+        }
+      ],
+      "success": "Finish or stop Debug before ordinary Run. Explain the difference between a partly updated register pair and a complete published frame."
+    },
+    {
+      "kind": "prediction",
+      "id": "exact-contact",
+      "explanation": "advance_axis uses blezc for the lower wall and bgec for the upper wall. Both comparisons include equality. At an exact contact the coordinate is unchanged by reflection and the velocity changes sign.",
+      "question": "What should the returned velocity do at exact upper-wall contact?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Point inward immediately",
+          "feedback": "The upper comparison includes equality, so the velocity is negated at contact."
+        },
+        {
+          "id": "b",
+          "text": "Remain outward until the next tick",
+          "feedback": "That would require a strict upper comparison and would produce a different boundary convention."
+        },
+        {
+          "id": "c",
+          "text": "Become zero",
+          "feedback": "This model reflects motion rather than stopping it."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "advance_axis",
+        "mnemonic": "bgec",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-motion",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the unchanged fixed-point-ball.asm using ordinary Run. It exits silently after nine complete publications. Inspect tick eight, raw position (1728,576), velocity (-192,-320), pixel 22 and the guards. A fast display need not visibly repaint each intermediate frame. Use separate copies for nearest rendering or the overflow demonstration.",
+      "success": "The motion program exited silently. Its final image is consistent with the full-precision state and floor-rendering rule."
+    },
+    {
+      "kind": "prediction",
+      "id": "signed-half-tie",
+      "explanation": "The independent task computes a weighted mean of two signed raw words, then rounds to the nearest raw integer. An exact half tie goes toward positive infinity. The signed numerator needs wider arithmetic before scaling; the worked add_fixed_probe distinguishes word wrapping from doubleword addition.",
+      "question": "What result is required for left -1, right 0 and weight 128?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Raw zero",
+          "feedback": "The exact mean is -0.5. Its tie is rounded toward positive infinity, to zero."
+        },
+        {
+          "id": "b",
+          "text": "Raw -1",
+          "feedback": "That rounds this half tie toward negative infinity instead."
+        },
+        {
+          "id": "c",
+          "text": "Raw -128",
+          "feedback": "That is the unscaled weighted numerator, not the returned raw result."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "add_fixed_probe",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "interpolate-raw",
+      "source": "independent/fixed-interpolate.asm",
+      "caseProfile": "independent/fixed-interpolate.cases.json",
+      "checkKind": "function",
+      "explanation": "Implement interpolate_raw in the independent source, replacing break. Read independent/README.md. The function consumes the passed signed raw words and weight, returns their rounded weighted mean, and preserves saved state, input memory and the caller stack. Eight public cases include 3368 scalar calls across two continuations and a complete caller-result check. Equivalent correct arithmetic and private stack frames are accepted.",
+      "success": "All interpolation calls and the complete caller-result check pass for the current source. The next activity checks ordinary exit separately.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Bound the weighted numerator before choosing instructions. A signed word product or a word-width difference can overflow for valid endpoints even when the final mean fits."
+        },
+        {
+          "id": "rounding",
+          "text": "Write the rounding expression using an exact signed numerator. Test negative half ties as well as positive ones. Logical right shift does not preserve a negative result."
+        },
+        {
+          "id": "interface",
+          "text": "Use a0, a1 and a2 rather than the caller\u2019s global fixtures. Restore sp and saved registers, return through the incoming continuation, and leave caller and input bytes unwritten."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/fixed-interpolate.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "checkKind": "console",
+      "explanation": "Check the same independent source as a complete program. After interpolate_raw returns, main must store -64 in answer and reach its silent normal exit. The preceding activity observed that store before the exit selector overwrote v0; this activity checks that execution can continue through exit without a trap or output.",
+      "success": "The independent source passes both its function contract and its complete silent execution. Explain one negative tie, one extreme endpoint pair and one caller-preservation failure before leaving the lab."
+    }
+  ]
+}
