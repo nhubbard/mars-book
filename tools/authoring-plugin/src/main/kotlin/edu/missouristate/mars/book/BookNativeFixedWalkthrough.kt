@@ -80,7 +80,7 @@ internal suspend fun captureBookNativeFixed(
     if (!plan.resume) {
         predict("exact-contact", "What should the returned velocity do at exact upper-wall contact?", "Point inward immediately", "bgec")
     }
-    awaitText("Run fixed-point-ball.asm using ordinary Run.")
+    awaitText("Run the unchanged fixed-point-ball.asm using ordinary Run.")
     selected(entry)
     val run = launchBookProgram(project, entry, debug = false)
     try {
@@ -171,7 +171,7 @@ private suspend fun captureFixedDebug(
         FixedPause("reflect_high", mapOf("\$s0" to 1664L, "\$s1" to 896L, "\$s2" to 192L, "\$s3" to -320L, "\$s4" to 1L, "\$s5" to 7L, "\$s6" to 0L, "\$a0" to 1664L, "\$a1" to 192L, "\$v0" to 1856L, "\$v1" to 192L, "\$sp" to 2147479536L),
             "Resume to frame_ready."),
         FixedPause("frame_ready", mapOf("\$s0" to 1728L, "\$s1" to 576L, "\$s2" to -192L, "\$s3" to -320L, "\$s4" to 0L, "\$s5" to 8L, "\$s6" to 0L, "\$v0" to 22L, "\$v1" to -320L, "\$sp" to 2147479536L),
-            if (resumed) "Run fixed-point-ball.asm using ordinary Run." else "What should the returned velocity do at exact upper-wall contact?"),
+            if (resumed) "Run the unchanged fixed-point-ball.asm using ordinary Run." else "What should the returned velocity do at exact upper-wall contact?"),
     )
     val lines = withContext(Dispatchers.IO) { Files.readAllLines(entry) }
     fun line(label: String) = lines.indexOfFirst { it.trim() == "$label:" }.also { check(it >= 0) } + 1
