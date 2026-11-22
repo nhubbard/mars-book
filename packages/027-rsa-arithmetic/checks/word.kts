@@ -83,3 +83,8 @@ fun AssemblyCase.invalidModulus(target:String){
 }
 for(n in listOf(zero,one,BigInteger.valueOf(3233),max32))for(e in listOf(zero,one,BigInteger.valueOf(2),BigInteger.valueOf(17),max32))case("public scalar power $n $e"){runArithmetic("pow32",max32.subtract(one),e,n,index=e.toInt() and 15)}
 case("scalar invalid output on zero modulus"){invalidModulus("pow32")}
+
+case("unsigned accumulator product keeps its high bit") {
+ val n=max32.subtract(BigInteger.valueOf(4))
+ runArithmetic("pow32",n.subtract(BigInteger.valueOf(60000)),BigInteger.valueOf(3),n,index=7)
+}
