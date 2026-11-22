@@ -23,7 +23,7 @@ class BookCaptureLaunchTest {
     fun `native MARS configuration retains explicit main entry for later main fixtures`() = timeoutRunBlocking {
         val path = Files.createTempFile("book-later-main-", ".asm")
         try {
-            Files.writeString(path, ".text\nearlier_example: nop\nmain: nop\n")
+            Files.writeString(path, ".text\n.globl main\nearlier_example: nop\nmain: nop\n")
             withContext(Dispatchers.EDT) {
                 val type = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
                 val configuration = RunManager.getInstance(fixture.project)
