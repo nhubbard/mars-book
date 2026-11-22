@@ -1008,3 +1008,34 @@ passes the API verifier. Authoring walkthrough, real IDE/resume, written lab
 integration and renewed publication checks remain to be performed.
 Human learner review remains pending. No new photograph or PDF validation is
 claimed by this foundation step; earlier chapter evidence remains preserved.
+
+
+### Eleventh native unit: locality IDE and written supplement (22 November 2026)
+
+The `011-memory-locality` development unit now completes two actual light-theme
+IDE walkthroughs. Six inline predictions use real source highlights and quiz
+links. Both four-stop Debug routes verify the measured registers and displayed
+native cache counters, selecting the corresponding ordinary/tiled execution.
+Both complete Runs exit silently. Independent writing checks the failing starter,
+unsaved correct source, all 22 rotation cases and normal exit. Three source edits
+clear all six execution passes. A fresh process retains seven quiz attempts and
+rechecks both Debug routes, both Runs and both assessments. Projects close
+normally; all eleven installed JARs match, with no ERROR or SEVERE log entries.
+
+The separate authoring plugin passes 121 Jupiter tests; all 473 book tests pass.
+The existing fully tested transfer build is reused without new MARS source
+changes. Exact MARS and authoring archives pass the API verifier. The written
+native LaTeX supplement explains source switching, complete observation intervals,
+cache counts, the pending caller store and per-call independent access evidence.
+It remains usable without replaying the IDE controls. Existing actual cache
+photographs and native annotations are retained.
+
+The final supplement has 200 pages, with locality on pages 75–80. All six pages
+were visually inspected, including the cache figure in grayscale. A command
+initially split across pages was grouped and the corrected PDF revalidated.
+It passes 1728 PDF/UA-2 rules / 938435 checks with zero failures and established
+embedded fonts. Human learner/assistive-technology review remains pending.
+All 41 manual MARS source edits and historical evidence remain preserved.
+Later native units, companion integration and remaining instructional-system
+work are open; the full goal is not complete. The MARS-versus-hardware opening
+remains deferred.

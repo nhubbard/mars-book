@@ -2,11 +2,22 @@
 \MARSChapterHeading{Addresses, tiles and cache observations}
 \label{revision-lab:locality}
 
-Use \texttt{matrix-locality.asm} from \texttt{revision/labs/files}. The complete
-program implements original project \texttt{011-matrix-transpose}'s two functions.
-Read the main chapter's source/output mapping before inspecting performance.
-This lab uses ordinary Run and Debug and the native Data Cache Simulator, followed
-by an independent clockwise-rotation task.
+Import the development lesson \texttt{011-memory-locality} and choose Continue
+in Learn. Its complete \texttt{matrix-locality.asm} is also supplied in
+\texttt{revision/labs/files}; both implement original project
+\texttt{011-matrix-transpose}'s functions. Read the main chapter's source/output
+mapping before interpreting performance. Learn supplies six inline predictions,
+two four-stop Debug routes, two complete Runs and independent clockwise rotation.
+This supplement explains the observations and extends the cache investigation.
+
+The two worked sources keep the same three-by-five matrix and mapping.
+\texttt{matrix-locality.asm} selects ordinary traversal; the imported
+\texttt{worked/matrix-tiled.asm} changes only \texttt{METHOD} to one. Keep them
+as separate files so that the two guided routes have stable source settings.
+The native Data Cache Simulator observes each execution separately. A new run
+starts a new comparison; merely opening the other source does not replay it.
+If working without Learn, make the corresponding copy of the supplied source
+and use the same breakpoints and observations below.
 
 \section{Predict addresses in a rectangular matrix}
 
@@ -34,12 +45,33 @@ function should have 30 cache accesses and eight misses. Stepping through the
 following caller store adds another data operation; do not compare that later
 boundary with the function-only measurement.
 
+Learn's ordinary route starts at \texttt{transpose\_begin}, where the arguments
+are ready but the call has not executed. Resume to the first
+\texttt{naive\_cell}, before its load. Both loop indices are zero; the source
+cursor names \texttt{input}, the destination cursor names \texttt{output},
+and \texttt{\$v1} holds the twelve-byte destination stride. Forming those
+addresses did not read either matrix, so the cache still has zero accesses.
+
+At the next visit to \texttt{naive\_cell}, one complete cell copy has occurred.
+The source cursor is four bytes past its base and the destination cursor twelve
+bytes past its base. Both first accesses missed in the cold cache. The copied
+value happens to be zero, which was already in the output allocation; looking
+only at that word would not establish that the store occurred. Use the two
+observed data notices as well. The fourth stop is the return boundary described
+above: fifteen copied words, thirty accesses and eight misses, before the
+caller store. Finish or stop this Debug execution before starting the tiled
+one. Learn can present the next question while the debugger is still paused;
+meeting a checkpoint does not itself finish the suspended program.
+
 \section{Inspect the first clipped tile}
 
-Set \texttt{METHOD} to one in a copy while keeping \texttt{ROWS}=3 and
-\texttt{COLS}=5. At the first \texttt{tile\_begin}, identify origin $(0,0)$.
-Derive exclusive ends three and four. The first tile has twelve cells; there is
-no fourth source row to read.
+Use \texttt{worked/matrix-tiled.asm} for Learn's tiled route, keeping
+\texttt{ROWS}=3 and \texttt{COLS}=5. At the first \texttt{tile\_begin}, identify
+origin $(0,0)$. The cache still has no matrix traffic. Derive exclusive ends
+three and four, then resume to \texttt{tile\_columns\_ready} to inspect those
+ends in \texttt{\$t2} and \texttt{\$t3}. The first tile has twelve cells; there
+is no fourth source row to read. The bounds calculation itself has not read
+a matrix cell.
 
 Continue to the next \texttt{tile\_begin}. Its column origin is four and its row
 origin remains zero. The preceding tile is now complete. Output indices zero
@@ -53,6 +85,16 @@ and seven misses. Derive those seven resident lines: four source lines and three
 destination lines. The final tile adds six accesses and one new destination line,
 bringing totals to 30 and eight. Use the stopped source boundary and the cache log
 to distinguish an unfinished tile from a completed small matrix.
+
+The final guided stop is \texttt{transpose\_done}, before the same caller
+count store used by the ordinary comparison. Finish or stop Debug, then use
+ordinary Run on each worked file when Learn requests it. Each complete program
+should exit silently, store fifteen in \texttt{copied} and retain the same
+five output rows. The complete run includes the caller's extra store; its
+final counter value is a different observation interval from the earlier
+function-only pause. An edit invalidates credit tied to the old source revision.
+Continue returns to the first execution activity requiring fresh evidence while
+retaining the prediction history.
 
 Make a disposable copy with the row end left at four instead of clipped to three.
 Locate the first load outside the active source window. A readable allocation byte
@@ -149,13 +191,50 @@ Test empty shapes before entering a loop. Test both a single row and a single
 column, then a rectangle and an interior window whose pointer differs from its
 allocation label. Include words with high bits set: the required operation copies
 bit patterns, not just small positive numbers. Run:
+\noindent\begin{minipage}{\linewidth}
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/matrix-rotate.kts \
+  revision/lessons/011-memory-locality/independent/matrix-rotate.kts \
   /path/to/your/matrix-rotate.asm
 \end{verbatim}
-The unfinished starter stops explicitly. When a case fails, preserve its shape,
-window offsets and first incorrect mapped coordinate. Establish the mapping and
-bounds before experimenting with cache scheduling. Once correct, compare the
-access patterns of two valid traversals under a stated cache policy; keep that
-performance investigation separate from the function's acceptance criteria.
+\end{minipage}
+The unfinished starter stops explicitly. Learn's first check has twenty-one
+shape cases called twice through different continuations, then a twenty-second
+case that runs the complete caller through its result store. The passed windows
+move inside the allocations where space permits. Input patterns include both
+signed extremes, saved state contains full doubleword values, and both complete
+allocations are compared after return. Each function case has a cumulative
+100000-instruction budget. It is a safety bound, not a target instruction count.
+
+The access observation checks each call separately. It records whether every
+source word was read and every mapped destination word written, rejects a
+second visit, and requires each mapped read to precede its write. Reading all
+source cells first and then writing their destinations is permitted, as is a
+correct streaming order. Auxiliary private stack traffic is outside the matrix
+windows and remains subject to caller preservation. Allocation bounds checks
+also reject inactive accesses and an empty matrix's accidental first read.
+Expected output and store protection are separate observations: a repeated load
+can leave correct final words, and restoring a forbidden store cannot erase
+the write that occurred.
+
+Learn's next check executes the same source to silent normal exit with a
+10000-instruction budget. The caller-result case observed the output and count
+before the exit selector replaced \texttt{\$v0}; a trap after that point must
+still fail the complete execution check. Both assessments must pass for the
+current source revision. The public command-line script retains the original
+ten shape checks, including per-cell trace order and complete caller behavior.
+The adjacent JSON profiles are Learn's bounded data, not executable scripts.
+
+When a case fails, preserve its shape, window offsets and named source or
+destination element. Establish the mapping and bounds before experimenting
+with cache scheduling. In a disposable correct copy, repeat one source load
+without changing the computed output. Confirm that final words still look right
+but the access check rejects the duplicate. Restore the source, then test a
+second destination store and an output read used as temporary workspace.
+Explain why a cache experiment on any of those faulty traces would answer a
+different question from the required one-read/one-write rotation.
+
+Once correct, compare the access patterns of two valid traversals under a stated
+cache policy. Keep that performance investigation separate from acceptance.
+A finite passing corpus does not replace a coordinate argument showing that
+every legal source cell maps to exactly one legal destination cell.

@@ -1,8 +1,9 @@
 # Revised memory access and locality unit
 
 The eleventh main chapter is `main/memory-locality.tex`; the written supplement is
-`labs/memory-locality.tex`. They begin on main page 65 and lab page 50. Current
-combined proofs contain 71 and 54 pages. Native LaTeX remains authoritative.
+`labs/memory-locality.tex`. The current full lab supplement has 200 pages; this unit occupies pages 75–80.
+Native LaTeX remains authoritative. The following original pilot evidence is
+retained separately from the later native integration below.
 
 The chapter derives rectangular transpose addresses before introducing locality.
 It explains active windows, relative-index versus pointer width, arbitrary word
@@ -65,7 +66,37 @@ representative grayscale figures were visually reviewed; both PDFs pass automate
 PDF/UA-2 with the established fonts. The original manuscript and unrelated MARS
 edits are preserved.
 
-Human learner and assistive-technology reviews remain open. A native interactive
-locality lesson, later chapters, further companions and remaining instructional-
-system work are unfinished. The proposed MARS-versus-hardware opening remains
+Human learner and assistive-technology reviews remain open. Later native units, further companions and remaining instructional-system work
+are unfinished. The proposed MARS-versus-hardware opening remains
 deferred. This unit does not complete the curriculum goal.
+
+
+## Native integration, 22 November 2026
+
+The development lesson `011-memory-locality` 0.1.0 preserves the worked ordinary
+source, adds a complete copy changing only METHOD to one, and retains the full
+rotation contract. Six predictions lead through two four-stop Debug routes,
+two ordinary Runs and independent transfer/caller and normal-exit checks.
+The native JSON profiles and standalone script are separately stated public
+corpora. See the restructuring plan for their scope and equivalent-solution
+qualification; neither prescribes a private traversal or cache count.
+
+Two actual light-theme IDE processes verify source switching and source pointers,
+all eight register snapshots, native cache counters, ordinary Runs, failing
+starter feedback, unsaved correct text and both assessments. Source edits clear
+all six execution passes. Fresh-process comparison retains seven quiz attempts
+and freshly earns all six checks. Both projects close normally, all eleven
+installed JARs match and logs contain no ERROR or SEVERE entries. Capture and
+fixture code remain in the separate authoring plugin.
+
+All 473 book tests and 121 authoring Jupiter tests pass. The reused production
+build's full 184 CLI / 1198 plugin regression and coverage are retained separately
+from its subsequent focused exact-archive test. Both exact plugin ZIPs pass the
+API verifier. The written lab now explains the two routes, pending caller store,
+read/write evidence, revision credit and independent checking boundaries.
+Pages 75–80 and the cache figure in grayscale were inspected. The corrected
+200-page proof passes automated PDF/UA-2: 1728 rules / 938435 checks, zero
+failures. Minion Pro, Noto Sans Math and JetBrains Mono remain embedded. Existing
+actual photographs, native annotations and all 41 manual MARS edits are preserved.
+Human learner and assistive-technology review remain pending; the full curriculum
+goal remains active.
