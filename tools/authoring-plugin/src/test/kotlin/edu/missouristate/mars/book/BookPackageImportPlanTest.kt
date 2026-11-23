@@ -600,6 +600,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `H263 stream corpus plans bind one archive and private fixture and retain fresh-process resume`() {
+        val h263 = plan.copy(archives = listOf(archive.copy(id = "035-h263-stream", version = "0.1.0", entry = "worked/append-fields.asm")),
+            nativePredictions = true, h263StreamUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/h263-read-bits.asm", "/tmp/h263.asm", "c".repeat(64))))
+        h263.validate()
+        h263.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(h263.copy(nativePredictions = false), h263.copy(nativeExecution = true),
+            h263.copy(nativeDebug = true), h263.copy(resumeCompleted = true), h263.copy(chachaUnit = true),
+            h263.copy(h263PredictionUnit = true), h263.copy(losslessUnit = true), h263.copy(pngUnit = true), h263.copy(wavUnit = true), h263.copy(rsaUnit = true), h263.copy(shaUnit = true), h263.copy(cborUnit = true), h263.copy(qoiUnit = true), h263.copy(crcUnit = true), h263.copy(memoryUnit = true),
+            h263.copy(h263StreamUnit = false), h263.copy(activityNavigation = true), h263.copy(prerequisiteControls = true),
+            h263.copy(assessmentFixtures = emptyList()),
+            h263.copy(assessmentFixtures = h263.assessmentFixtures + h263.assessmentFixtures),
+            h263.copy(assessmentFixtures = listOf(h263.assessmentFixtures.single().copy(source = "independent/chacha20.asm"))),
+            h263.copy(archives = listOf(h263.archives.single().copy(id = "026-chacha20"))),
+            h263.copy(archives = listOf(h263.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `vector photograph focus names an observed register including packed w3 only stops`() {
         assertEquals("\$w3", bookCorpusVectorFocus(setOf("\$w3")))
         assertEquals("\$w4", bookCorpusVectorFocus(setOf("\$w0", "\$w3", "\$w4")))

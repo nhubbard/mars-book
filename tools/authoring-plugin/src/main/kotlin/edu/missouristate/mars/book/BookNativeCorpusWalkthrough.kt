@@ -43,8 +43,8 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     // Production MARS has already validated/imported this exact archive and every activity.
@@ -111,7 +111,8 @@ internal suspend fun captureBookNativeCorpus(
                 val oldOutput = if (plan.ppmUnit && id == "trace-save-invalid") withContext(Dispatchers.IO) {
                     Files.readAllBytes(directory.resolve("worked/output.ppm"))
                 } else null
-                captureCorpusDebug(project, path, ::record, awaitText, capture, id, stops)
+                val expectedOutput = steps.singleOrNull { it.get("kind").asString == "run" && it.get("source")?.asString == relative }?.get("stdout")?.asString ?: ""
+                captureCorpusDebug(project, path, ::record, awaitText, capture, id, stops, expectedOutput)
                 if (oldOutput != null) {
                     val after = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("worked/output.ppm")) }
                     check(after.contentEquals(oldOutput)) { "Invalid source changed the existing host output" }
@@ -123,8 +124,8 @@ internal suspend fun captureBookNativeCorpus(
                 awaitText(visible(step)); selected(path)
                 val run = launchBookProgram(project, path, debug = false)
                 try {
-                    run.started.await(); check(run.exit.await() == 0 && run.stdout.toString().isEmpty())
-                    record(id, mapOf("source" to relative, "exitCode" to 0, "stdout" to ""))
+                    run.started.await(); check(run.exit.await() == 0 && run.stdout.toString() == step.get("stdout").asString)
+                    record(id, mapOf("source" to relative, "exitCode" to 0, "stdout" to run.stdout.toString()))
                 } finally { run.close() }
                 if (plan.ppmUnit && id == "run-pipeline") {
                     val input = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("worked/input.ppm")) }
@@ -205,7 +206,7 @@ private data class CorpusPause(val label: String, val mnemonic: String, val occu
 private suspend fun captureCorpusDebug(
     project: Project, entry: Path, record: suspend (String, Map<String, Any>) -> Unit,
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
-    prefix: String, stops: List<CorpusPause>,
+    prefix: String, stops: List<CorpusPause>, expectedOutput: String,
 ) {
     var targetLine = corpusBreakpointLine(project, entry, stops.first())
     val file = withContext(Dispatchers.IO) { checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(entry)) }
@@ -236,7 +237,7 @@ private suspend fun captureCorpusDebug(
         }
         writeAction { breakpoints.forEach(manager::removeBreakpoint); breakpoints.clear() }
         bookModalUi { session.resume() }
-        check(launch.exit.await() == 0 && launch.stdout.toString().isEmpty())
+        check(launch.exit.await() == 0 && launch.stdout.toString() == expectedOutput)
     } finally {
         withContext(NonCancellable + Dispatchers.EDT) {
             launch.session?.stop()
