@@ -136,3 +136,62 @@ accepted books and historical H.263 accuracy/conformance receipts are unchanged;
 this foundation claims no new screenshot, PDF or accessibility validation.
 Private native-h263-reconstruction-foundation-01 retains exact original/model,
 qualification, parser and source-preservation receipts.
+
+
+## Native numerical student-unit draft, 23 November 2026
+
+The draft `revision/lessons/035-h263-prediction` contains six worked sources,
+twelve inline predictions, eighteen Debug boundaries across six activities,
+one silent Run and six assessment stages. Five experiments call unchanged
+supplied numerical helpers and retain the exact transform basis. They cover
+active-row SAD and widened lanes, motion-search geometry/ties, diagonal
+prediction, the transform/reconstruction chain, and negative-motion six-block
+coordination. The last source explicitly models signed final addition and
+native stride width without providing the independent function.
+
+The chain begins with a separate actual forward transform of residual two,
+showing DC sixteen before the complete encoder's level one, coefficient 23,
+inverse three and pixel 131. Its second block uses the reconstructed reference
+and remains 131. Constant examples do not replace asymmetric or full inverse-
+accuracy qualification. The six-block metadata rejection is identified as an
+upfront validation failure; this run does not claim a failure after successful
+children. Whole-stream interoperability remains the next unit's separate work.
+
+Six source-bound core probes verify all eighteen stop register/vector snapshots
+and subsequent normal silent exits. They additionally verify admitted SAD row
+reads, every predicted byte and signed residual, complete forward coefficients,
+all four 448-byte block-output regions, all six coordinated records, and no
+output store on rejected prediction/coordinator metadata. Original initial probes
+remain separate from the final strengthened probes. No host file or clock is
+required for any native numerical observation.
+
+The continuing independent starter is byte-identical to the existing
+`h263-reconstruct8.asm`. Five stages retain 60 sample, 24 alias, 36 metadata,
+sixteen rejection and two reuse cases, followed by all 138 on the same source.
+The final stage preserves both byte orders, 146 calls and every original budget.
+Its exact exported form passes all 138 cases with three private instructor bodies,
+including wide-address placement; the unfinished body fails all 138. These 552
+qualification outcomes add no assembly solution to the public distribution.
+
+Five public unit tests bind helper/basis identity, profile staging, complete
+vectors and representation values, deterministic explicit seventeen-file export,
+and the actual QCIF generator. The default generator produces the exact eight
+raw frames, 304128 bytes, plane extents, whole-file hash and intended repeated
+pictures, and refuses existing output. Its default rate and duration satisfy the
+course limits. The full tooling suite passes 618 tests. Two Jupiter tests through
+the actual importer and native PSI retain all 25 activities and resolve all
+thirty prediction/Debug source anchors. Production plugin/simulator code is
+unchanged; all 41 manual edits remain preserved.
+
+Build the archive with:
+
+```sh
+python3 tools/native_lesson.py revision/lessons/035-h263-prediction \
+  --output build/native-lessons/035-h263-prediction-0.1.0-student.zip
+```
+
+Actual IDE first use, unsaved checking, source invalidation, fresh-process resume,
+public capture and native LaTeX integration remain next. No new screenshot,
+publication PDF, accessibility validation, inverse-accuracy gate or stream
+conformance run is claimed by this draft. Private native-h263-prediction-unit-01
+retains exact probe, package and exported-starter receipts.

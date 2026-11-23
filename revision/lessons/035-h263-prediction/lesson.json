@@ -1,0 +1,891 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 26 and its written lab. Six bounded experiments connect active windows, motion, prediction, transform representations and final reconstruction. Use inline predictions and ordinary Debug at named boundaries. Only the continuing independent reconstruction function is unfinished.",
+  "conclusion": "Explain each representation and admitted window, then implement final signed reconstruction with complete validation and exact alias behavior. Numerical observations do not establish inverse accuracy over all inputs or whole-stream interoperability; the following stream unit has its own verification.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "active-extent",
+      "source": "worked/sad-windows.asm",
+      "anchor": {
+        "label": "lesson_sad_compared",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Sixteen active rows contain sixteen samples each, with stride 176 between their starts.",
+      "question": "What minimal containing extent and active sample count follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2656 and 256",
+          "feedback": "Fifteen row advances plus sixteen samples contain the window. Padding inside that extent is not an active row."
+        },
+        {
+          "id": "b",
+          "text": "2816 and 2816",
+          "feedback": "The final row needs no trailing stride gap, and padding is not selected input."
+        },
+        {
+          "id": "c",
+          "text": "256 and 256",
+          "feedback": "The active count is 256, but the containing extent includes gaps."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "sad-lane-width",
+      "source": "worked/sad-windows.asm",
+      "anchor": {
+        "label": "sad_vector_accumulated",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Every absolute difference is 255. Adjacent bytes are widened before accumulating sixteen rows.",
+      "question": "What does each halfword accumulator contain?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "224",
+          "feedback": "Wrapping a byte accumulator would discard carries before horizontal reduction."
+        },
+        {
+          "id": "b",
+          "text": "8160",
+          "feedback": "Two differences times sixteen rows times 255 equals 8160."
+        },
+        {
+          "id": "c",
+          "text": "65280",
+          "feedback": "65280 is the complete score, not one of eight halfword lanes."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-sad",
+      "source": "worked/sad-windows.asm",
+      "explanation": "Compare scalar/MSA scores, widened lanes and an exact same-window alias.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "lanes",
+          "anchor": {
+            "label": "sad_vector_accumulated",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x000000000000ff00"
+          },
+          "explanation": "Eight halfword accumulators each contain 8160.",
+          "success": "Eight halfword accumulators each contain 8160.",
+          "vectorRegisters": {
+            "$w4": "0x1fe01fe01fe01fe01fe01fe01fe01fe0"
+          }
+        },
+        {
+          "id": "scores",
+          "anchor": {
+            "label": "lesson_sad_compared",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000ff00",
+            "$s0": "0x000000000000ff00",
+            "$s1": "0x000000000000ff00"
+          },
+          "explanation": "Both modes produce the maximum complete score.",
+          "success": "Both modes produce the maximum complete score."
+        },
+        {
+          "id": "same",
+          "anchor": {
+            "label": "lesson_sad_same_window",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "explanation": "The exact same pointer and stride select identical samples.",
+          "success": "The exact same pointer and stride select identical samples."
+        }
+      ],
+      "success": "Finish the process and explain the observed representation.",
+      "hints": [
+        {
+          "id": "forward-debug",
+          "text": "Use ordinary Debug and the named boundaries. Inspect state before the anchored instruction. After exploring with edits or backsteps, start a fresh forward session to record the sequence."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "search-count",
+      "source": "worked/motion-ties.asm",
+      "anchor": {
+        "label": "lesson_motion_interior",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The radius is two and the origin is interior to the admitted luma plane.",
+      "question": "How many candidate positions must be compared?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Nine",
+          "feedback": "Nine is the corner count after clipping both displacement intervals."
+        },
+        {
+          "id": "b",
+          "text": "Five",
+          "feedback": "Both displacement axes vary."
+        },
+        {
+          "id": "c",
+          "text": "Twenty-five",
+          "feedback": "Five horizontal positions times five vertical positions."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "flat-tie",
+      "source": "worked/motion-ties.asm",
+      "anchor": {
+        "label": "lesson_motion_corner",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "All current and reference samples are zero, so every admitted candidate has score zero.",
+      "question": "Which displacement wins a minimum tie?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The centre displacement zero,zero",
+          "feedback": "The required tie policy prefers the centre independently of traversal order."
+        },
+        {
+          "id": "b",
+          "text": "The first negative displacement visited",
+          "feedback": "Traversal order cannot replace the stated tie policy."
+        },
+        {
+          "id": "c",
+          "text": "The last candidate visited",
+          "feedback": "An alternative traversal must preserve the same result."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-motion",
+      "source": "worked/motion-ties.asm",
+      "explanation": "Compare the interior, corner and single-edge candidate counts on tied data.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "interior",
+          "anchor": {
+            "label": "lesson_motion_interior",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000019",
+            "$s0": "0x0000000000000000",
+            "$s1": "0x0000000000000000",
+            "$s2": "0x0000000000000000"
+          },
+          "explanation": "Twenty-five candidates tie, and the centre wins.",
+          "success": "Twenty-five candidates tie, and the centre wins."
+        },
+        {
+          "id": "corner",
+          "anchor": {
+            "label": "lesson_motion_corner",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000009"
+          },
+          "explanation": "Both displacement intervals are clipped at the corner.",
+          "success": "Both displacement intervals are clipped at the corner."
+        },
+        {
+          "id": "edge",
+          "anchor": {
+            "label": "lesson_motion_edge",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000000f"
+          },
+          "explanation": "One axis has three positions and the other five.",
+          "success": "One axis has three positions and the other five."
+        }
+      ],
+      "success": "Finish the process and explain the observed representation.",
+      "hints": [
+        {
+          "id": "forward-debug",
+          "text": "Use ordinary Debug and the named boundaries. Inspect state before the anchored instruction. After exploring with edits or backsteps, start a fresh forward session to record the sequence."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "diagonal-sum",
+      "source": "worked/diagonal-prediction.asm",
+      "anchor": {
+        "label": "lesson_prediction_values",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The first reference neighbours are 128,128,128,96 and the current sample is 128.",
+      "question": "What prediction and signed residual follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "128 and zero",
+          "feedback": "Diagonal phase selects four neighbours."
+        },
+        {
+          "id": "b",
+          "text": "120 and eight",
+          "feedback": "One four-neighbour rounded sum gives 120; current minus prediction gives eight."
+        },
+        {
+          "id": "c",
+          "text": "Eight and 120",
+          "feedback": "The predicted sample and residual have different meanings."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "single-rounding",
+      "source": "worked/diagonal-prediction.asm",
+      "anchor": {
+        "label": "lesson_single_rounding",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The four neighbours are zero,zero,zero,one.",
+      "question": "What is the diagonally predicted sample?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "One",
+          "feedback": "That can arise from rounding the intermediate pair averages."
+        },
+        {
+          "id": "b",
+          "text": "Two",
+          "feedback": "The rounding bias is not itself the output."
+        },
+        {
+          "id": "c",
+          "text": "Zero",
+          "feedback": "Add two once, then divide the sum by four. Two rounded pair averages can disagree."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-prediction",
+      "source": "worked/diagonal-prediction.asm",
+      "explanation": "Inspect predicted bytes, signed residuals, single rounding and invalid phase publication.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "values",
+          "anchor": {
+            "label": "lesson_prediction_values",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000020",
+            "$s0": "0x0000000000000078",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000080"
+          },
+          "explanation": "Four outputs touch the changed reference sample, producing total magnitude 32.",
+          "success": "Four outputs touch the changed reference sample, producing total magnitude 32."
+        },
+        {
+          "id": "rounding",
+          "anchor": {
+            "label": "lesson_single_rounding",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000000",
+            "$s1": "0x0000000000000000"
+          },
+          "explanation": "The one-valued neighbour rounds to zero under the single diagonal formula.",
+          "success": "The one-valued neighbour rounds to zero under the single diagonal formula."
+        },
+        {
+          "id": "phase",
+          "anchor": {
+            "label": "lesson_prediction_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "explanation": "Phase two is invalid and must not replace the preceding output.",
+          "success": "Phase two is invalid and must not replace the preceding output."
+        }
+      ],
+      "success": "Finish the process and explain the observed representation.",
+      "hints": [
+        {
+          "id": "forward-debug",
+          "text": "Use ordinary Debug and the named boundaries. Inspect state before the anchored instruction. After exploring with edits or backsteps, start a fresh forward session to record the sequence."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "four-arrays",
+      "source": "worked/reconstruction-chain.asm",
+      "anchor": {
+        "label": "lesson_first_reconstruction",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "An INTER block has current 130, prediction 128 and quantizer eight.",
+      "question": "Which first values belong to levels, reconstructed coefficients, inverse values and pixels?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "One,23,three,131",
+          "feedback": "The level sent to syntax is not the coefficient consumed by the inverse transform."
+        },
+        {
+          "id": "b",
+          "text": "Sixteen,sixteen,two,130",
+          "feedback": "That omits quantization and its reconstruction loss."
+        },
+        {
+          "id": "c",
+          "text": "One,one,one,129",
+          "feedback": "Storage width does not make the representations interchangeable."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "next-reference",
+      "source": "worked/reconstruction-chain.asm",
+      "anchor": {
+        "label": "lesson_second_reconstruction",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The next raw block is 132. The first reconstructed block is 131.",
+      "question": "Which prediction belongs in the local encoder loop?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Earlier raw 130",
+          "feedback": "That can disagree with the decoder even if a local residual appears smaller."
+        },
+        {
+          "id": "b",
+          "text": "Reconstructed 131",
+          "feedback": "The decoder can reproduce the reconstructed reference, not the earlier raw input."
+        },
+        {
+          "id": "c",
+          "text": "Always 128",
+          "feedback": "INTER prediction follows the reference state, not a fixed neutral value."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-chain",
+      "source": "worked/reconstruction-chain.asm",
+      "explanation": "Keep transform input/DC, selected level and reconstructed reference distinct.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "forward",
+          "anchor": {
+            "label": "lesson_forward_dc",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000040",
+            "$s0": "0x0000000000000002",
+            "$s1": "0x0000000000000010"
+          },
+          "explanation": "A separate forward transform of constant signed residual two produces DC sixteen and 64 coefficients.",
+          "success": "The complete block encoder follows the same residual and transform relation before quantization."
+        },
+        {
+          "id": "first",
+          "anchor": {
+            "label": "lesson_first_reconstruction",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000001",
+            "$s0": "0x0000000000000001",
+            "$s1": "0x0000000000000017",
+            "$s2": "0x0000000000000003",
+            "$s3": "0x0000000000000083"
+          },
+          "explanation": "Levels, reconstructed coefficients, inverse residuals and pixels occupy distinct output regions.",
+          "success": "Levels, reconstructed coefficients, inverse residuals and pixels occupy distinct output regions."
+        },
+        {
+          "id": "second",
+          "anchor": {
+            "label": "lesson_second_reconstruction",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000000",
+            "$s1": "0x0000000000000000",
+            "$s2": "0x0000000000000000",
+            "$s3": "0x0000000000000083"
+          },
+          "explanation": "Residual one quantizes to zero, retaining reconstructed sample 131.",
+          "success": "Residual one quantizes to zero, retaining reconstructed sample 131."
+        }
+      ],
+      "success": "Finish the process and explain the observed representation.",
+      "hints": [
+        {
+          "id": "forward-debug",
+          "text": "Use ordinary Debug and the named boundaries. Inspect state before the anchored instruction. After exploring with edits or backsteps, start a fresh forward session to record the sequence."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "negative-odd-motion",
+      "source": "worked/negative-motion.asm",
+      "anchor": {
+        "label": "lesson_negative_origin",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Full-luma motion is minus one at macroblock origin (16,32). Chroma begins at (8,16).",
+      "question": "What integer reference origin and half phases follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "(8,16), with both phases zero",
+          "feedback": "Truncation toward zero loses the negative fractional displacement."
+        },
+        {
+          "id": "b",
+          "text": "(6,14), with both phases zero",
+          "feedback": "Chroma motion is not an unchanged full-luma displacement."
+        },
+        {
+          "id": "c",
+          "text": "(7,15), with both phases one",
+          "feedback": "Arithmetic floor division of minus one by two gives minus one, with a half phase remaining."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "coordinator-publication",
+      "source": "worked/negative-motion.asm",
+      "anchor": {
+        "label": "lesson_coordinator_rejected",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The coordinator stages six prediction records before publishing its caller output.",
+      "question": "What may an invalid chroma stride change in that output?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Nothing",
+          "feedback": "Invalid metadata must retain the preceding caller result."
+        },
+        {
+          "id": "b",
+          "text": "The first four Y records",
+          "feedback": "A partial caller result is not an admitted success."
+        },
+        {
+          "id": "c",
+          "text": "Only the last chroma record",
+          "feedback": "Rejecting one part does not authorize publishing another part."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-coordinator",
+      "source": "worked/negative-motion.asm",
+      "explanation": "Compare signed motion decomposition, six published records and retained output on metadata rejection.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "origin",
+          "anchor": {
+            "label": "lesson_negative_origin",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0xffffffffffffffff",
+            "$s1": "0xffffffffffffffff",
+            "$s2": "0x0000000000000000",
+            "$s3": "0x0000000000000001",
+            "$s4": "0x0000000000000007",
+            "$s5": "0x000000000000000f"
+          },
+          "explanation": "Floor and truncation differ for a negative odd displacement.",
+          "success": "Floor and truncation differ for a negative odd displacement."
+        },
+        {
+          "id": "six",
+          "anchor": {
+            "label": "lesson_six_blocks",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000080",
+            "$s1": "0x0000000000000000",
+            "$s2": "0x0000000000000080",
+            "$s3": "0x0000000000000000"
+          },
+          "explanation": "Constant planes predict all six blocks exactly.",
+          "success": "Constant planes predict all six blocks exactly."
+        },
+        {
+          "id": "invalid",
+          "anchor": {
+            "label": "lesson_coordinator_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000080",
+            "$s1": "0x0000000000000080"
+          },
+          "explanation": "Reference chroma stride 87 is invalid; preceding records remain.",
+          "success": "Reference chroma stride 87 is invalid; preceding records remain."
+        }
+      ],
+      "success": "Finish the process and explain the observed representation.",
+      "hints": [
+        {
+          "id": "forward-debug",
+          "text": "Use ordinary Debug and the named boundaries. Inspect state before the anchored instruction. After exploring with edits or backsteps, start a fresh forward session to record the sequence."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "signed-halfword",
+      "source": "worked/signed-reconstruction.asm",
+      "anchor": {
+        "label": "lesson_signed_sum",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The inverse halfword has bits ff7f and prediction is 128.",
+      "question": "What inverse value and pre-clipping sum follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "65407 and 65535",
+          "feedback": "Unsigned loading changes a negative correction into a large positive value."
+        },
+        {
+          "id": "b",
+          "text": "Minus129 and minus one",
+          "feedback": "Signed halfword loading recovers the correction; clip only after the addition."
+        },
+        {
+          "id": "c",
+          "text": "Zero and 128",
+          "feedback": "Premature byte clipping loses the correction before addition."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "strict-clipped-count",
+      "source": "worked/signed-reconstruction.asm",
+      "anchor": {
+        "label": "lesson_clipped_endpoints",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Two sums are exactly 255 and 256.",
+      "question": "Which contribute to the clipped count?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both",
+          "feedback": "An endpoint is not an out-of-range value."
+        },
+        {
+          "id": "b",
+          "text": "Neither",
+          "feedback": "256 must be reduced to the representable upper endpoint."
+        },
+        {
+          "id": "c",
+          "text": "Only 256",
+          "feedback": "255 is already representable; a clipped event requires a value outside the interval."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-reconstruction",
+      "source": "worked/signed-reconstruction.asm",
+      "explanation": "Inspect signed interpretation, strict endpoint counts and full native stride width.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "signed",
+          "anchor": {
+            "label": "lesson_signed_sum",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0xffffffffffffff7f",
+            "$s1": "0x000000000000ff7f",
+            "$s2": "0xffffffffffffffff",
+            "$s3": "0x0000000000000001"
+          },
+          "explanation": "Signed and unsigned loads interpret identical halfword bits differently.",
+          "success": "Signed and unsigned loads interpret identical halfword bits differently."
+        },
+        {
+          "id": "endpoints",
+          "anchor": {
+            "label": "lesson_clipped_endpoints",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s4": "0x00000000000000ff",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000100",
+            "$s7": "0x0000000000000001"
+          },
+          "explanation": "The exact endpoint is not counted; the larger sum is.",
+          "success": "The exact endpoint is not counted; the larger sum is."
+        },
+        {
+          "id": "stride",
+          "anchor": {
+            "label": "lesson_native_stride",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000100000008",
+            "$s1": "0x0000000000000008",
+            "$s2": "0x0000000000000000"
+          },
+          "explanation": "The full stride is invalid even though its low word looks like eight.",
+          "success": "The full stride is invalid even though its low word looks like eight."
+        }
+      ],
+      "success": "Finish the process and explain the observed representation.",
+      "hints": [
+        {
+          "id": "forward-debug",
+          "text": "Use ordinary Debug and the named boundaries. Inspect state before the anchored instruction. After exploring with edits or backsteps, start a fresh forward session to record the sequence."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-local-chain",
+      "source": "worked/reconstruction-chain.asm",
+      "explanation": "Run the complete two-block numerical experiment normally. It reads no video file and produces no bitstream. Its normal silent exit records process completion; the Debug observations establish the selected state boundaries.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "Explain the reconstructed reference after both calls."
+    },
+    {
+      "kind": "assessment",
+      "id": "check-samples",
+      "source": "independent/h263-reconstruct8.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/samples.json"
+      ],
+      "explanation": "Implement signed addition, final clipping and strict clipped counts over independently strided rows.",
+      "success": "Explain the signed samples, clipped count, active row permissions and publication boundary.",
+      "hints": [
+        {
+          "id": "validate-all",
+          "text": "Metadata failure admits no sample reads. Sample failure admits no output stores. Validate every signed inverse correction before publishing, particularly under the exact prediction alias."
+        },
+        {
+          "id": "endpoints",
+          "text": "Keep the sum wide until clipping. Count only sums below zero or above 255. Read active rows, not stride gaps."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-aliases",
+      "source": "independent/h263-reconstruct8.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/aliases.json"
+      ],
+      "explanation": "Support the exact prediction alias without losing input values.",
+      "success": "Explain the signed samples, clipped count, active row permissions and publication boundary.",
+      "hints": [
+        {
+          "id": "validate-all",
+          "text": "Metadata failure admits no sample reads. Sample failure admits no output stores. Validate every signed inverse correction before publishing, particularly under the exact prediction alias."
+        },
+        {
+          "id": "endpoints",
+          "text": "Keep the sum wide until clipping. Count only sums below zero or above 255. Read active rows, not stride gaps."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-metadata",
+      "source": "independent/h263-reconstruct8.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/metadata.json"
+      ],
+      "explanation": "Validate all native strides, alignments and non-wrapping extents before sample access.",
+      "success": "Explain the signed samples, clipped count, active row permissions and publication boundary.",
+      "hints": [
+        {
+          "id": "validate-all",
+          "text": "Metadata failure admits no sample reads. Sample failure admits no output stores. Validate every signed inverse correction before publishing, particularly under the exact prediction alias."
+        },
+        {
+          "id": "endpoints",
+          "text": "Keep the sum wide until clipping. Count only sums below zero or above 255. Read active rows, not stride gaps."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-rejection",
+      "source": "independent/h263-reconstruct8.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rejection.json"
+      ],
+      "explanation": "Validate every correction before output publication, including a last invalid correction under an exact alias.",
+      "success": "Explain the signed samples, clipped count, active row permissions and publication boundary.",
+      "hints": [
+        {
+          "id": "validate-all",
+          "text": "Metadata failure admits no sample reads. Sample failure admits no output stores. Validate every signed inverse correction before publishing, particularly under the exact prediction alias."
+        },
+        {
+          "id": "endpoints",
+          "text": "Keep the sum wide until clipping. Count only sums below zero or above 255. Read active rows, not stride gaps."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-reuse",
+      "source": "independent/h263-reconstruct8.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/reuse.json"
+      ],
+      "explanation": "Retain correct counts and outputs across repeated calls in one machine.",
+      "success": "Explain the signed samples, clipped count, active row permissions and publication boundary.",
+      "hints": [
+        {
+          "id": "validate-all",
+          "text": "Metadata failure admits no sample reads. Sample failure admits no output stores. Validate every signed inverse correction before publishing, particularly under the exact prediction alias."
+        },
+        {
+          "id": "endpoints",
+          "text": "Keep the sum wide until clipping. Count only sums below zero or above 255. Read active rows, not stride gaps."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-completed-source",
+      "source": "independent/h263-reconstruct8.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/samples.json",
+        "independent/aliases.json",
+        "independent/metadata.json",
+        "independent/rejection.json",
+        "independent/reuse.json"
+      ],
+      "explanation": "Recheck all 138 original cases on this same completed source. Renew earlier execution evidence after edits, then predict an input of your own.",
+      "success": "Explain the signed samples, clipped count, active row permissions and publication boundary.",
+      "hints": [
+        {
+          "id": "validate-all",
+          "text": "Metadata failure admits no sample reads. Sample failure admits no output stores. Validate every signed inverse correction before publishing, particularly under the exact prediction alias."
+        },
+        {
+          "id": "endpoints",
+          "text": "Keep the sum wide until clipping. Count only sums below zero or above 255. Read active rows, not stride gaps."
+        }
+      ]
+    }
+  ]
+}

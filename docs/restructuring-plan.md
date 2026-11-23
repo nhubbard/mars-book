@@ -1408,3 +1408,16 @@ This is the grading foundation; the native numerical lesson and actual IDE/
 written integration remain next, followed by native stream delivery. Existing
 full inverse-accuracy and restricted H.263 interoperability evidence remains
 separate. See `revision/h263-prediction-unit.md` for scope.
+
+
+### H.263 native numerical student-unit draft, 23 November 2026
+
+Six bounded experiments now connect unchanged SAD, motion, prediction, block
+transform/reconstruction and six-plane coordination helpers to the continuing
+independent reconstruction task. Twelve predictions, eighteen Debug boundaries,
+one Run and staged/final assessments form the native draft. Complete-byte/core
+probes, exact exported-starter qualification and actual package/PSI tests pass.
+First/resume desktop verification and direct native LaTeX integration remain,
+followed by the separate restricted H.263 stream unit. Numerical example success
+is not a renewed inverse-accuracy or interoperability claim. See
+`revision/h263-prediction-unit.md` for the exact evidence scope.
