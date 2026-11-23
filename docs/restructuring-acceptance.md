@@ -51,7 +51,7 @@ complete the promised native guided delivery.
 
 | Original subject | Existing written location | Required integration |
 | --- | --- | --- |
-| 006 MarsBot | `revision/labs/companions/marsbot.tex` | Observe actual movement and trail; grade the stated device contract, including forbidden coordinate-feedback writes |
+| 006 MarsBot | `revision/labs/companions/marsbot.tex` | Device/trail assessment is implemented and qualified; the native draft passes import/PSI tests. Actual first-use/resume IDE interaction, instructor edition binding and written integration remain |
 | 010 Maze | `revision/labs/companions/maze.tex` | Guided state/invariant observations and independent path/search checks |
 | 014 Ring buffer | `revision/labs/companions/ring-buffer.tex` | Wrap/full/empty reasoning and independent state-transition checks |
 | 015 UTF-8 | `revision/labs/companions/utf8.tex` | Streaming boundaries, invalid sequences and independent decoder checks |
@@ -94,3 +94,21 @@ Final automated PDF/UA-2 passes 1,728 rules in each book, with 1,148,311 checks
 for the main book and 1,154,721 for the lab book, with zero failures. These are
 technical publication checks, not the open human reviews above. The seven native
 companions and course-wide distribution/evidence audit remain implementation work.
+
+## MarsBot assessment and native draft milestone
+
+Console-case format 5 now exposes actual MarsBot state and complete ordered
+trails without changing the simulator. Three equivalent private implementations
+each pass all 7,623 documented side/rate pairs. Twelve negative processes fail
+their distinguishing profiles, including restored forbidden writes and a delay
+calibrated to the default request. Full implementation regression passes 298 CLI
+and 1,336 plugin tests with full required line/branch and parser coverage; two
+additional generated-profile tests pass separately.
+
+The new `006-marsbot-feedback` draft adds a thirtieth downloadable native package.
+Its seven predictions, two three-stop Debug sequences and two assessments pass
+actual archive/import and all fourteen PSI source-pointer checks (two more plugin
+tests). Public tooling passes 636 tests. The draft is not yet a completed native
+IDE delivery: first-use/resume interaction, instructor distribution binding and
+written-lab integration remain. MarsBot stays in the unfinished list above until
+those gates pass; the other six companions still need native packages.

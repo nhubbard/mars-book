@@ -62,11 +62,13 @@ requires author and learner review. It must not infer achieved learning from
 file presence or package titles. Electives remain optional for the codec progression.
 
 Native interactive support now includes both H.263 units and the earlier revised
-lessons under `revision/lessons`. There are 29 downloadable native packages, plus
-the built-in first-program unit. Seven elective companions still lack native
-guided packages: MarsBot, maze search, ring buffers, UTF-8, clipped sprites,
-expression evaluation and bytecode interpretation. Their written labs and public
-checks remain available, but ordinary Run and Debug do not complete that delivery.
+lessons under `revision/lessons`. There are 29 previously exercised downloadable native packages, plus
+the built-in first-program unit. A thirtieth package, the MarsBot draft, now passes
+archive/import and source-pointer tests; its actual first-use/resume IDE delivery
+and written integration remain. Six companions still lack native packages: maze
+search, ring buffers, UTF-8, clipped sprites, expression evaluation and bytecode
+interpretation. Their written labs and public checks remain available, but ordinary
+Run and Debug do not complete that delivery.
 
 The [acceptance ledger](restructuring-acceptance.md) tracks these gaps and the
 course-wide integration review. Technical verification notes retain the scope of

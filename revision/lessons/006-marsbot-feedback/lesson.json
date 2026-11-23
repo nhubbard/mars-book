@@ -1,0 +1,366 @@
+{
+  "formatVersion": 11,
+  "introduction": "A device command and its completed effect are separate events. Use the complete east-leg program to reason about progress, fresh feedback and independent movement/pen state. Then write the square without a construction template for its four legs. Read the decisions-and-repetition companion lab alongside these activities.",
+  "conclusion": "Explain why the stop condition reads feedback, why reached is different from stopped, and why an origin coordinate does not establish a square. Keep the written lab's deliberately misleading success cases as debugging exercises. The documented correctness domain is side 1–63 at integer rates 8–128, not arbitrary directions or rates.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "commands-and-feedback",
+      "explanation": "The device block begins at 0x00000000ffff8000. Offsets 0x10, 0x20 and 0x50 accept heading, pen and movement commands. Offsets 0x30 and 0x40 report coordinates. A store finishes before the requested movement is complete.",
+      "question": "How should the program establish that an eastward leg has reached its endpoint?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Repeatedly load x and compare it with side.",
+          "feedback": "A fresh load observes the device's current progress. The comparison decides when to stop."
+        },
+        {
+          "id": "b",
+          "text": "Store side to the x coordinate word.",
+          "feedback": "That word is feedback, not a destination command. Such a store is forbidden in this assignment."
+        },
+        {
+          "id": "c",
+          "text": "Read x once, then compare that register repeatedly.",
+          "feedback": "The register retains one observation. The moving device cannot refresh it without another load."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "heading-at-the-origin",
+      "explanation": "The board origin is its upper-left corner. x increases eastward and y increases southward. Headings 0, 90, 180 and 270 point north, east, south and west.",
+      "question": "What happens if the first movement starts with heading zero at the origin?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The robot begins the first horizontal side.",
+          "feedback": "Heading zero is north. The first side requires an increasing x coordinate."
+        },
+        {
+          "id": "b",
+          "text": "The robot stays at the clamped upper edge.",
+          "feedback": "North would decrease y below zero. The board clamps that coordinate, so the first side does not begin."
+        },
+        {
+          "id": "c",
+          "text": "The heading automatically changes to east.",
+          "feedback": "Clamping a position does not choose a new heading. The program must issue the heading command."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "li",
+        "occurrence": 1
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "fresh-feedback",
+      "explanation": "At east_wait, lw obtains x in t2. bnec compares that observation with side in s1. A taken branch returns to the load. The following nop is safe in the compact branch's forbidden slot.",
+      "question": "Why return to lw rather than just repeat bnec?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The comparison consumes the value in t2.",
+          "feedback": "Reading a register does not consume its bits. A repeated comparison would keep the same value."
+        },
+        {
+          "id": "b",
+          "text": "Each branch itself moves the robot one pixel.",
+          "feedback": "The device advances after its configured number of completed instructions while movement is enabled, rather than once per branch."
+        },
+        {
+          "id": "c",
+          "text": "The next iteration needs a new coordinate observation.",
+          "feedback": "The robot can move while the loop runs. A new load allows the loop's data state to reflect that progress."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "east_wait",
+        "mnemonic": "lw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "reached-and-stopped",
+      "explanation": "When the loop exits, x has reached side. At east_stop the sw that writes zero to movement control is still next to execute.",
+      "question": "What can you conclude at this pause?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The endpoint has been reached, but movement is still enabled.",
+          "feedback": "The comparison established the coordinate condition. Executing the following store establishes the stopped condition."
+        },
+        {
+          "id": "b",
+          "text": "The endpoint comparison has already stopped the device.",
+          "feedback": "A branch changes control flow. It does not issue the missing movement command."
+        },
+        {
+          "id": "c",
+          "text": "The pen has already lifted.",
+          "feedback": "The pen is a separate command word. Neither the comparison nor the pending stop store lifts it."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "east_stop",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "observe-east",
+      "source": "worked/east.asm",
+      "explanation": "Start a fresh Debug session for worked/east.asm. Its requested side is 16. Set the named stops and follow them in order. The lesson compares source boundaries and registers; inspect actual movement and pen flags in MarsBot. Stop this session before selecting another source.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "reached",
+          "explanation": "Pause before the movement-stop store. Inspect s1 and t2, then open MarsBot and compare its position, movement and pen state. The displayed endpoint is not evidence that the robot has stopped.",
+          "anchor": {
+            "label": "east_stop",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000ffff8000",
+            "$s1": "0x0000000000000010",
+            "$t2": "0x0000000000000010"
+          },
+          "success": "The registers agree on the endpoint. The pending store still has work to do."
+        },
+        {
+          "id": "stopped",
+          "explanation": "Step over the stop store. Before the pen store, compare the same registers and MarsBot again. Position is retained; movement is disabled and the pen remains down.",
+          "anchor": {
+            "label": "east_stopped",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000ffff8000",
+            "$s1": "0x0000000000000010",
+            "$t2": "0x0000000000000010"
+          },
+          "success": "The stop command changes movement without changing the endpoint or lifting the pen."
+        },
+        {
+          "id": "pen-up",
+          "explanation": "Step over the pen store and pause at done before li. Inspect MarsBot once more: the final state is stopped with its pen up. The register copies need not change.",
+          "anchor": {
+            "label": "done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000ffff8000",
+            "$s1": "0x0000000000000010",
+            "$t2": "0x0000000000000010"
+          },
+          "success": "The final command changes pen state. Unchanged register copies do not imply unchanged device state."
+        }
+      ],
+      "success": "Explain the separate reached, stopped and pen-up conditions. The next assessment checks the actual final device state and complete trail in independent sessions."
+    },
+    {
+      "kind": "prediction",
+      "id": "pen-is-independent",
+      "explanation": "At east_stopped, the movement control already contains zero. The next sw targets the separate pen word at offset 0x20.",
+      "question": "Why is that pen store still necessary?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Stopping always clears the pen, so the store is redundant.",
+          "feedback": "The device retains pen state independently. A stopped robot can still have its pen down."
+        },
+        {
+          "id": "b",
+          "text": "The final contract asks for a lifted pen as well as stopped motion.",
+          "feedback": "The two words control different state. This store completes the pen-up requirement."
+        },
+        {
+          "id": "c",
+          "text": "Lifting the pen erases the existing line.",
+          "feedback": "The recorded trail remains. Pen state controls ink during subsequent movement."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "east_stopped",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "observe-slow-short",
+      "source": "worked/east-slow.asm",
+      "explanation": "Start a fresh Debug session for worked/east-slow.asm. Its requested side is 2. Set the named stops and follow them in order. The lesson compares source boundaries and registers; inspect actual movement and pen flags in MarsBot. Stop this session before selecting another source.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "reached",
+          "explanation": "Pause before the movement-stop store. Inspect s1 and t2, then open MarsBot and compare its position, movement and pen state. The displayed endpoint is not evidence that the robot has stopped.",
+          "anchor": {
+            "label": "east_stop",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000ffff8000",
+            "$s1": "0x0000000000000002",
+            "$t2": "0x0000000000000002"
+          },
+          "success": "The registers agree on the endpoint. The pending store still has work to do."
+        },
+        {
+          "id": "stopped",
+          "explanation": "Step over the stop store. Before the pen store, compare the same registers and MarsBot again. Position is retained; movement is disabled and the pen remains down.",
+          "anchor": {
+            "label": "east_stopped",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000ffff8000",
+            "$s1": "0x0000000000000002",
+            "$t2": "0x0000000000000002"
+          },
+          "success": "The stop command changes movement without changing the endpoint or lifting the pen."
+        },
+        {
+          "id": "pen-up",
+          "explanation": "Step over the pen store and pause at done before li. Inspect MarsBot once more: the final state is stopped with its pen up. The register copies need not change.",
+          "anchor": {
+            "label": "done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000ffff8000",
+            "$s1": "0x0000000000000002",
+            "$t2": "0x0000000000000002"
+          },
+          "success": "The final command changes pen state. Unchanged register copies do not imply unchanged device state."
+        }
+      ],
+      "success": "Explain the separate reached, stopped and pen-up conditions. The next assessment checks the actual final device state and complete trail in independent sessions."
+    },
+    {
+      "kind": "prediction",
+      "id": "feedback-and-rate",
+      "explanation": "The second source requests side 2 and 128 completed instructions per movement tick, instead of side 16 and rate 64. Its feedback loop is otherwise unchanged.",
+      "question": "What makes the same loop suitable for both requests?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It executes exactly the same number of iterations.",
+          "feedback": "The changed distance and movement rate can change the number of polls before reaching the endpoint."
+        },
+        {
+          "id": "b",
+          "text": "The host waits a fixed number of milliseconds after every branch.",
+          "feedback": "This device uses completed simulator instructions, not a wall-clock delay tied to editor or debugger speed."
+        },
+        {
+          "id": "c",
+          "text": "It polls the requested coordinate condition instead of assuming a delay.",
+          "feedback": "Fresh feedback determines progress. The written lab bounds the short loop's response argument to the documented side/rate domain."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "east_wait",
+        "mnemonic": "bnec",
+        "occurrence": 0
+      },
+      "source": "worked/east-slow.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-east",
+      "source": "worked/east.asm",
+      "explanation": "Stop Debug, select worked/east.asm and run it normally. It has no console input or output. Inspect the final line and device state, but do not treat an empty console transcript alone as a checked route.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The worked program exited normally without console output. Use the actual-device assessment next to check more than this transcript.",
+      "anchor": {
+        "label": "east_wait",
+        "mnemonic": "lw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "check-east",
+      "source": "worked/east.asm",
+      "caseProfile": "worked/east.cases.json",
+      "explanation": "Check the complete one-leg program against all sixteen public length/rate pairs. Each fresh device must draw the complete eastward line, finish stopped with the pen up, preserve the side/guard and avoid coordinate stores. This confirms the worked experiment; the square remains your independent program.",
+      "success": "The final-state and actual-trail cases pass. The written lab's original east checker separately tests the earlier stopped/pen-down boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "whole-route-contract",
+      "explanation": "The independent square starts at the origin and must visit (side,0), (side,side), (0,side) and (0,0), drawing those four sides in order. Finish stopped, facing north, with the pen up.",
+      "question": "Which evidence is sufficient for the route requirement?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Final coordinates (0,0).",
+          "feedback": "A robot that never moved can have those coordinates. They do not establish any ink or side."
+        },
+        {
+          "id": "b",
+          "text": "The complete actual ordered trail, together with final position, heading and flags.",
+          "feedback": "These observations distinguish the requested route from no movement, missing ink, extra strokes or an unfinished final state."
+        },
+        {
+          "id": "c",
+          "text": "An array containing the four intended corners.",
+          "feedback": "That array describes a plan. It does not establish that the device actually traveled between the corners."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "break",
+        "occurrence": 0
+      },
+      "source": "independent/square.asm"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-square",
+      "source": "independent/square.asm",
+      "caseProfile": "independent/square.cases.json",
+      "explanation": "Replace the deliberate break in independent/square.asm with your four-leg implementation. Retain its data layout and exit code. Read side rather than assuming sixteen. Use fresh coordinate loads to decide when to stop each leg. Read independent/README.md for the complete contract; the starter is expected to fail until implemented.",
+      "success": "The public square cases pass actual ordered trail, final state, unchanged input and forbidden-write checks. Explain each leg's invariant and why changing distance or movement rate does not require a new calibrated delay. Private course grading can add cases.",
+      "hints": [
+        {
+          "id": "route",
+          "text": "List each leg's heading, changing coordinate and endpoint before writing its loop. The return legs approach coordinate zero."
+        },
+        {
+          "id": "commands",
+          "text": "While stopped, select the next heading. Lower the pen for the route, start movement, poll the changing coordinate and stop when the leg's endpoint is reached."
+        },
+        {
+          "id": "finish",
+          "text": "The northward return ends at the clamped origin. Explicitly stop movement and lift the pen before the supplied exit. Coordinate equality alone does not complete those commands."
+        }
+      ]
+    }
+  ]
+}
