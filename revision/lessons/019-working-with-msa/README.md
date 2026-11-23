@@ -1,48 +1,48 @@
-# MSA native unit foundation
+# Working with MSA native unit
 
-This draft native unit accompanies Chapter 14, original project 019. Its exact
-student archive passes import through the production MARS lesson reader. The
-existing directly edited LaTeX chapter and supplement remain authoritative.
+This draft unit accompanies Chapter 14, original project 019. It contains nine
+inline predictions, six complete Debug/Run sources with 31 observation stops,
+and independent RGB555 function/caller and normal-exit assessments. The complete
+worked RGB565 source and independent starter/script preserve their written
+counterparts. Each count variant changes only the requested count.
 
-`rgb-formats.asm` preserves the complete written RGB565 example. The five
-`worked/count-*.asm` files change only the requested count to 0, 7, 8, 9 or 17.
-Measured stops cover loaded windows, gathered channels, placed fields, the next
-vector group, scalar tails, the returned count and caller publication. Native
-lesson format 7 adds complete 128-bit register observations, using the same
-immutable snapshot as the debugger. The lesson contains nine predictions, six Debug/Run paths with 31 stops and two
-independent assessments. Exact archive import passes; full student IDE route
-verification is in progress.
+The explanations connect numerical pixel values, memory byte order, lane views,
+overlapping loads, shuffle selectors, preserved controls, scalar tails and
+caller publication. Debug checks compare complete 128-bit vectors from the same
+immutable snapshot as native Variables. Intermediate expectations belong to this
+worked schedule, not arbitrary independent solutions.
 
-`independent/rgb555.asm` and `independent/rgb555.kts` are unchanged copies of the
-published starter and its 34 public checks. `rgb555.cases.json` expresses the same
-33 count trials and complete caller in native function-profile format 8. Each
-count trial uses both continuations, for 67 calls in total. A separate console
-profile checks normal silent exit. The selected source and destination slices,
-full surrounding buffers, saved registers, stack restoration and assembled
-read/write policies remain observable. Equivalent algorithms are accepted;
-there is no required instruction schedule or MSA instruction count.
+The exact student archive passes import through MARS's production lesson reader.
+All 486 book-tool tests and 125 separate-authoring Jupiter tests pass. The
+preceding checker regression passed 217 CLI and 1220 plugin tests and required
+coverage checks; the exact-archive Jupiter test ran afterward. Lesson format 7
+requires MARS commit 923e114f or later. Both pinned plugins pass paired API
+verification against IntelliJ 2026.3 using public APIs.
 
-Reproduce the checking data with `python3 tools/rgb555_lesson_cases.py --help`.
-All 33 original Kotlin input constructions were independently exported and
-compared. Private qualification accepts scalar, vector, halfword and wide-address
-alternatives, including relocation, and rejects the starter and selected faults.
-Unaligned Release 6 halfword loads/stores are valid: the historical fixture whose
-filename calls its tail store a fault is an accepted equivalent implementation.
-It is not used as evidence of fault detection.
+Two actual light-theme IDE walkthroughs exercised every guided boundary and Run,
+inline questions with a wrong first answer and recovery, the failing starter,
+correct unsaved source and both assessments. After seven source edits cleared
+fourteen execution passes, a fresh IDE process retained ten quiz attempts and
+re-earned every execution pass. All seven source hashes remained unchanged on
+reopening. Installed JARs matched both pinned archives and accepted IDE logs
+contained no ERROR or SEVERE entries. Screenshot automation remains entirely in
+the separate dependent authoring plugin; it does not set student progress.
 
-Exact intermediate vector expectations apply to the worked program only. They
-must not become restrictions on independent RGB555 solutions. Vector values use
-32 hexadecimal digits, with the most significant digit first; lane zero occupies
-the least significant bits. A memory byte listing is a different representation.
+The independent native profile preserves all 33 original count trials and the
+complete caller, with 67 calls through two direct continuations plus the caller.
+All original Kotlin input constructions match the generated data. Private
+qualification accepts scalar, vector, halfword, relocated and wide-address
+alternatives and rejects selected faults. The historical fixture labeled as an
+aligned-tail-store fault is correctly accepted: Release 6 permits the halfword
+access it uses. No exact MSA instruction count is required for acceptance.
 
-The composition step passes 486 book-tool tests and its exact archive passes a
-Jupiter import test. The separate authoring plugin passes 125 Jupiter tests.
-The GUI walkthrough is still in progress. No new PDF rebuild, human learner
-review or accessibility review is claimed here. Previous verified LaTeX figures
-remain unchanged.
+The directly edited LaTeX supplement explains the full guided route, independent
+checks, useful failure investigation and progress after edits. Existing actual
+photographs and native annotations remain unchanged. Human learner and
+assistive-technology reviews remain pending. The main curriculum goal is active;
+later native units and remaining instructional-system work are still open.
 
-The foundation passes 484 book-tool tests, 217 CLI tests and 1220 plugin tests.
-Required plugin package line/branch coverage and the generated-parser ledger
-checks pass. The vector observation implementation is committed as MARS
-`923e114f`. Full regression XML and exact archive hashes are retained privately.
-All 41 manually edited upstream files match the preservation baseline.
+The final lab supplement remains 202 pages, with this unit on pages 99–102.
+Those pages and adjacent boundaries were visually inspected; the native figure
+was reviewed in grayscale. The exact final PDF passes 1728 PDF/UA-2 rules and
+955669 checks with zero failures and retains the required embedded fonts.

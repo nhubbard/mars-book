@@ -1187,3 +1187,40 @@ Noto Sans Math and JetBrains Mono remain in use. All 41 manual MARS edits and
 historical verification are preserved. Human learner and assistive-technology
 reviews, later native units, companion integration and remaining system work
 remain open. The full goal stays active and the proposed opening remains deferred.
+
+## Native MSA integration, 22 November 2026
+
+The fourteenth main unit now has an exact importable student archive, nine
+inline predictions, 31 Debug stops across six complete sources, six ordinary
+Runs and independent RGB555 function/caller plus normal-exit assessments.
+The complete vector observations use native lesson format 7 and the same
+immutable register snapshot as Variables. Every original count trial remains
+in the independent profile, with two continuations and a complete caller
+(34 cases, 67 calls); no specific MSA schedule is required for acceptance.
+
+Both actual light-theme IDE walkthroughs complete every guided observation and
+assessment. The first includes an incorrect prediction followed by recovery,
+the failing starter and correct unsaved source. Seven source edits clear all
+fourteen execution passes; a fresh process retains ten quiz attempts and
+re-earns every pass with all seven source hashes unchanged. Eleven installed
+JARs match pinned archives and accepted IDE logs contain no ERROR/SEVERE
+entries. Both projects close normally before their owned processes stop.
+Actual clean cleanSandbox runIde tasks precede both launches. Capture automation
+remains in the separate dependent authoring plugin.
+
+All 486 book-tool and 125 separate-authoring Jupiter tests pass. The previous
+checker regression remains 217 CLI / 1220 plugin tests and passing coverage
+gates; the exact student archive import test ran afterward. Paired plugin API
+verification reports compatible public APIs, with the existing 91 MARS and
+20 authoring experimental notices. No new full regression is claimed for the
+additional archive-only test. All 41 manually edited MARS files are preserved.
+
+The directly edited LaTeX supplement explains the guided route, caller stores,
+independent checks, useful failure investigation and progress after edits.
+It retains existing actual photographs and native annotations. Pages 99–102
+and adjacent boundaries 98/103 were visually inspected; page 100's figure was
+reviewed in grayscale. The complete supplement remains 202 pages and passes
+1728 PDF/UA-2 rules / 955669 checks with zero failures. Embedded Minion Pro,
+Noto Sans Math and JetBrains Mono remain in use. Human learner and assistive-
+technology reviews, later native units and remaining system work stay open.
+The full curriculum goal stays active; the proposed opening remains deferred.
