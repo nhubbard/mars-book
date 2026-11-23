@@ -37,8 +37,11 @@ cleanSandbox runIde tasks precede both launches. Capture automation remains in
 the separate dependent plugin.
 
 The directly edited LaTeX supplement explains the route, complete source
-variations, independent groups and first-mismatch investigations. Final printed
-layout and accessibility review are in progress; no final new PDF review is
-claimed here yet. Existing historical figures and native annotations remain.
+variations, independent groups and first-mismatch investigations. The final 206-page proof places this unit on pages 115–120. Those six pages
+and adjacent boundaries were visually reviewed; the two existing annotated
+figures were also reviewed in grayscale. The final PDF passes 1728 PDF/UA-2
+rules / 970910 checks with zero failures and retains embedded Minion Pro,
+Noto Sans Math and JetBrains Mono. Existing historical figures and native
+annotations remain.
 Human learner and assistive-technology reviews remain pending. Later native
 units and remaining instructional-system work stay open.

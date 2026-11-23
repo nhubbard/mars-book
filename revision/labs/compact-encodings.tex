@@ -2,12 +2,20 @@
 \MARSChapterHeading{Candidate bytes and committed values}
 \label{revision-lab:encodings}
 
-Use the complete \texttt{delta-codec.asm} and independent \texttt{delta-scan.asm}
-in \texttt{revision/labs/files}. Read the main chapter's mapping, seven-bit groups
-and prefix invariant first. These activities use ordinary Run and Debug; a native
-guided lesson for this unit remains unfinished. Keep disposable copies for input
-changes and intentional faults. Treat byte lengths, reading counts and capacities
-as quantities with different units.
+Import development lesson \texttt{023-delta-varint} and choose Continue in Learn.
+Read the main chapter's mapping, seven-bit groups and prefix invariant first.
+The complete \texttt{delta-codec.asm} is the worked program;
+\texttt{independent/delta-scan.asm} is your independent exercise. Both are also
+supplied in \texttt{revision/labs/files} for work without Learn. Ten inline
+predictions connect the representation to candidate and committed state.
+
+Follow the supplied complete source variations with one line breakpoint at a
+time. Learn highlights the next requested operation; the selected Debug frame
+shows the actual pause. Resume each program to normal exit after its last
+observation before opening another source. Three ordinary Runs complement those
+paused investigations. Keep disposable copies for input changes and intentional
+faults. Treat byte lengths, reading counts and capacities as quantities with
+different units.
 
 \section{Recover the wire from the readings}
 
@@ -24,9 +32,10 @@ three result words are still $-1$. At \texttt{results\_ready}, those words
 contain five, eight and zero. Exit subsequently uses \texttt{\$v0}, so retain
 the function result at the intended boundary.
 
-To decode that stream in a fresh copy, set \texttt{method} to one, initialize
-the eight bytes explicitly, set \texttt{byte\_count} to eight and retain word
-capacity 32. Keep 192 total stream bytes by reducing its trailing filler to 184.
+Open \texttt{worked/decode-default.asm} for the complete inverse example. It
+sets \texttt{method} to one, initializes the eight bytes explicitly, sets
+\texttt{byte\_count} to eight and retains word capacity 32. Its 184 trailing
+filler bytes preserve the total 192-byte stream arena.
 Bytes above 127 can be written as signed initializer spellings: 208 as $-48$,
 238 as $-18$, and 168 as $-88$. This changes assembler source notation, not the
 stored bit patterns. The decoder uses unsigned byte loads for interpretation.
@@ -37,7 +46,8 @@ Two routines can agree with each other while implementing the wrong format.
 
 \section{Observe unused capacity after a complete prefix}
 
-In an encoder copy, change only \texttt{byte\_capacity} from 160 to seven.
+Open \texttt{worked/capacity-seven.asm}. Its only change is
+\texttt{byte\_capacity}, from 160 to seven.
 Derive each candidate length and the remaining capacity before running.
 The first four readings need five bytes in total. The fifth needs three;
 it cannot fit in the two remaining positions.
@@ -50,9 +60,12 @@ contain a partly emitted final value.
 
 \input{revision/figures/delta/atomic-prefix}
 
-Inspect \texttt{enc\_check\_capacity} on a fresh execution. Its candidate length
-is three and remaining capacity is two. The function chooses \texttt{enc\_full}
-before computing and using the candidate's output cursor. Earlier accepted
+Break at \texttt{enc\_full} before its status instruction. Candidate length
+\texttt{\$t4} is three, capacity \texttt{\$s3} is seven and committed bytes
+\texttt{\$s6} are five: the remaining capacity is two. At this boundary
+\texttt{\$t5} holds the comparison result one, having replaced the earlier
+remaining-byte calculation. The function chose \texttt{enc\_full} before
+computing and using the candidate's output cursor. Earlier accepted
 readings remain committed. A final-memory comparison is not sufficient to prove
 that a rejected candidate was never written; the public checks also observe
 memory accesses, including stores later restored.
@@ -65,8 +78,8 @@ Explain the ordering from the loop's top tests.
 
 \section{Distinguish scanning from committing}
 
-Prepare a decoder copy with method one, byte count three and stream
-\texttt{02 80 00}, followed by 189 filler bytes. Keep the default word arena
+Open \texttt{worked/redundant-zero.asm}, with method one, byte count three
+and stream \texttt{02 80 00}, followed by 189 filler bytes. It keeps the default word arena
 so an unmodified second word is recognizable as 1002. The first byte maps to
 difference one and commits reading one. The next candidate represents unsigned
 zero using two bytes, which violates shortest spelling.
@@ -87,11 +100,12 @@ working values in \texttt{\$s4/\$s5/\$s6} no longer describe the loop state.
 Use the return registers after this boundary. Advancing committed input to the
 scan index would incorrectly claim the rejected candidate had been consumed.
 
-Now reduce word capacity to one. The function accepts the first byte and stops
+Now open \texttt{worked/capacity-precedence.asm}, whose word capacity is one. The function accepts the first byte and stops
 with status one, without examining either malformed tail byte. This is a
 capacity result, not a malformed result, because the next candidate is outside
 the amount of output the caller allowed the function to attempt.
 
+\Needspace{14\baselineskip}
 \section{Separate byte syntax from reading range}
 
 Classify these streams before executing them from predecessor zero:
@@ -104,18 +118,24 @@ Classify these streams before executing them from predecessor zero:
 80 80 80 80 80     fifth byte still requests continuation
 ff ff ff ff 1f     valid spelling, reconstructed reading out of range
 \end{verbatim}
-The last three examples distinguish a width rule, a termination rule and a
-signed reading rule. For a malformed fifth continuation, the decoder must not
+Use \texttt{worked/fifth-width.asm}, \texttt{worked/fifth-continued.asm} and
+\texttt{worked/range-failure.asm} for the last three examples. They distinguish
+a width rule, a termination rule and a signed reading rule. For a malformed fifth continuation, the decoder must not
 read a sixth byte even if padding is mapped. For \texttt{ff ff ff ff 1f},
 unsigned value 8589934591 reverses to difference $-4294967296$; only the reading
 range check rejects it. Use status two for byte syntax and three for range.
 
-Next encode the readings minimum word, maximum word, minimum word. The second
+Next open \texttt{worked/extremes.asm}, encoding minimum word, maximum word,
+minimum word. The second
 difference is 4294967295 and the third is $-4294967295$. Their mapped spellings
 are \texttt{fe ff ff ff 1f} and \texttt{fd ff ff ff 1f}. The first reading
 uses \texttt{ff ff ff ff 0f}. Explain why a word subtraction can pass small
 examples while corrupting these transitions. Find the first incorrect arithmetic
-result before investigating the later byte loop.
+result before investigating the later byte loop. For the smaller negative
+example, \texttt{worked/negative-one.asm} shows exact difference $-1$ at
+\texttt{enc\_map}, then mapped unsigned one at \texttt{enc\_length}.
+\texttt{worked/empty-encode.asm} selects zero readings and zero capacity;
+observe success at \texttt{enc\_return} before the return counters are copied.
 
 The kernel, caller and same-session checks accept equivalent complete codecs:
 \Needspace{15\baselineskip}
@@ -136,6 +156,7 @@ original package's eight-byte-aligned incoming stack; the ordinary caller uses
 sixteen-byte alignment. A new call begins from predecessor zero even after a
 partial or failed call.
 
+\Needspace{10\baselineskip}
 \section{Compare bytes separately from execution work}
 
 Run the repeatable public measurement tool with a new output directory:
@@ -191,5 +212,36 @@ java -jar /path/to/cli.jar grade \
 Keep your candidate/prefix invariant, one rejected-candidate observation and an
 explanation of error precedence with the implementation. Behavioral checks do
 not require the worked decoder's temporary registers or source spelling.
+
+Learn checks the current independent source in three groups: all eight public
+sequences under every supported reading limit; all eight rejected-tail families
+under their four public limits; and caller publication plus repeated-call state.
+These retain the complete original 297 public cases and add one five-call reuse
+case. Native function checks contain 298 cases and 303 calls. A separate fourth
+assessment checks the default caller's complete silent exit.
+
+The data use multiple bounded profiles behind one Check this program action.
+Every original one-million-instruction case budget remains. A failure in a later
+profile prevents completion; all profiles belong to the same current source and
+one assessment attempt. Repeated-call checks give each invocation its own input
+window, so a previous nonempty call cannot justify a read during zero-limit or
+empty work. Equivalent scanner schedules and temporary registers are accepted.
+
+\section{Choose an observation from the first mismatch}
+
+If a wire spelling differs, separate the exact difference, signed mapping and
+seven-bit groups. If a rejected candidate changes returned counts, compare its
+scan cursor with the accepted prefix before the epilogue. A wrong status at a
+reached limit calls for checking the loop's test order. A forbidden access with
+otherwise correct values calls for tracing the exact load or store, including
+writes that restore an old value. These are questions to test, not a diagnosis
+inferred from the failure category alone.
+
+Use graduated hints when they help choose the next observation, then retry your
+current source. Editing a worked or independent file clears its execution
+evidence. Continue returns to the first activity requiring another observation;
+reopening retains source and quiz history. Keep the candidate/prefix argument
+beside passing checks rather than treating an old pass as evidence about a
+later edit.
 
 \input{revision/labs/companions/base64}

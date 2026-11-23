@@ -40,7 +40,7 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
 - `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
-  observations, fault diagnosis and independent variations. The first sixteen main units have native interactive support. Later units and
+  observations, fault diagnosis and independent variations. The first seventeen main units have native interactive support. Later units and
   unfinished companion lessons currently use ordinary Run and Debug.
 
 For the project-to-chapter coverage index and repeatable structural checks, see
@@ -54,7 +54,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27 and companions (204 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27 and companions (206 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -304,3 +304,12 @@ route, invocation-scoped grading correction, exact regression and two real IDE
 walkthroughs. The current 204-page lab proof places the FIR supplement on 109–114.
 Human walkthrough and accessibility review remain open. The next native unit is
 compact integer encoding, followed by its Base64 companion.
+
+
+The seventeenth native unit now integrates compact integer encoding and its
+independent read-only scanner. See
+[delta-unit.md](delta-unit.md#native-compact-encoding-integration-22-november-2026)
+for the complete original corpus, bounded assessment batches, two actual IDE
+walkthroughs and final publication evidence. The current lab proof has 206 pages;
+the delta supplement is on 115–120 and the existing Base64 companion is section
+17.8. Human walkthrough and accessibility review remain open. Native Base64 is next.

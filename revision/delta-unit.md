@@ -75,3 +75,66 @@ implementation change or missing grader capability was needed. The Base64
 companion follows this chapter before the file-format sequence. Later chapters,
 native lessons beyond the first unit, production policies/delivery and human
 review remain incomplete. The proposed MARS-versus-hardware opening is deferred.
+
+
+## Native compact-encoding integration, 22 November 2026
+
+The seventeenth main unit now has ten inline predictions, 25 Debug boundaries
+across eleven complete sources, three ordinary Runs and four independent
+assessments. Concrete sources distinguish exact signed differences, a 33-bit
+mapped value, canonical seven-bit groups, whole-value reservation, candidate
+scan versus committed input, capacity precedence, fifth-byte syntax and signed
+reading range. The independent task validates the same wire without writing
+caller data. Every worked variation retains the complete executed codec bodies.
+
+All 296 original function-trial constructions and expected results match an
+independent export from the unchanged Kotlin script, including complete arena
+bytes and seed-derived offsets. Native profiles retain all 297 original public
+cases and add one five-call reuse case: 298 function cases, 303 calls and
+separate silent exit. Twenty-four original/native qualification processes accept
+ten correct routes and reject fourteen faulty routes as expected. Reference,
+alternative, relocated and wide-address scanners remain accepted. Six known
+semantic faults and the unfinished starter remain rejected.
+
+The original one-million-instruction budgets require more than one bounded data
+file. MARS commit d2592fa6 adds native lesson format 8: one student assessment
+can reference up to 32 profiles. Each file keeps the existing strict reader and
+grader limits; the combined activity is bounded to 512 cases and 4096 function
+calls, with distinct names and safe paths. The existing background grader
+executes the validated batches in order and records one source-bound attempt.
+A later failure prevents completion; cancellation consumes no attempt and
+closes earlier machines. The public IntelliJ lesson host remains unchanged.
+The three function groups contain 264 sequence/limit cases, 32 rejected-tail
+cases and two caller/reuse cases. Per-invocation policies forbid accesses during
+zero-limit and empty work even after earlier nonempty invocations.
+
+Complete regression passes 226 CLI / 1238 plugin tests with zero failures,
+errors or skips and required coverage/parser gates. A later focused Jupiter
+test imports the exact student archive and verifies all observation and batch
+bindings; no second full regression is claimed for this fixture-only addition.
+All 505 book-tool and 128 separate-authoring tests pass. The exact packaged
+plugins pass paired public API verification with 91 MARS / 20 authoring
+experimental notices on the pinned IntelliJ target.
+
+Two actual light-theme IDE processes exercise every quiz, Debug boundary, Run
+and assessment. The first includes wrong-answer recovery, the starter at 0/264
+and a correct unsaved scanner at 264/32/2/1. Twelve source edits clear eighteen
+execution passes. Reopening retains eleven quiz attempts and twelve unchanged
+source hashes, then renews eighteen checks. Assessment counts advance from
+2/1/1/1 to 3/2/2/2. Eleven installed JARs match the pinned archives in each
+process; accepted logs contain no ERROR/SEVERE. Native close/disposal precede
+stopping only the owned IDE process. Actual clean cleanSandbox runIde tasks
+precede both launches; all capture automation remains in the separate plugin.
+
+The directly edited LaTeX supplement supplies the route, named source variations,
+first-mismatch investigations and saved-progress guidance. Final review kept
+short classification and command blocks with their headings after finding
+awkward page splits. The final 206-page lab proof places this unit on 115–120;
+its existing Base64 companion is now section 17.8. All six changed pages and
+adjacent boundaries were visually reviewed, including both annotated figures
+in grayscale. The exact final PDF passes 1728 PDF/UA-2 rules / 970910 checks,
+zero failures, with embedded Minion Pro, Noto Sans Math and JetBrains Mono.
+The main learning proof is unchanged. All 41 manual MARS files remain intact.
+Human learner and assistive-technology reviews remain pending. The full goal
+remains active; the proposed opening stays deferred. Native Base64 delivery is
+next, before bounded file I/O.
