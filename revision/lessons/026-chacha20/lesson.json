@@ -1,0 +1,1502 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 22 and its written lab. Work from word arithmetic to quarter-round dependencies, scalar selections, MSA lane arrangement and the counted-byte wrapper. Predictions are inline; each one opens the intended source. The worked sources are complete observation examples. Your independent implementation can use another register allocation, frame and decomposition under the four public contracts. Finish each launched process before starting another source.",
+  "conclusion": "Keep a word-width derivation, a scalar selection trace, a lane-provenance table and an argument for the wrapper\u2019s access and failure boundaries. For a new input, identify which boundary would first distinguish a wrong round, a wrong shuffle and a wrong byte walker. Explain why a fresh call uses its supplied state rather than a hidden continuation.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "word-width",
+      "source": "chacha20.asm",
+      "explanation": "The quarter-round loads four words through four addresses. Its additions use addu, so each sum is reduced to 32 bits even though the scalar registers hold 64 bits. The first inputs are a=11111111 and b=01020304 in hexadecimal.",
+      "question": "Which updated a value enters the first XOR?",
+      "choices": [
+        {
+          "text": "12131415",
+          "feedback": "The first group adds a and b before combining the new a with d.",
+          "id": "a"
+        },
+        {
+          "text": "11111111",
+          "feedback": "That is the old a. Later operations in the group depend on the newly computed sum.",
+          "id": "b"
+        },
+        {
+          "text": "10131215",
+          "feedback": "That is a XOR b. The first operation adds the two words; the XOR then consumes the new sum.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_qr_load",
+        "mnemonic": "addu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "rotation-direction",
+      "source": "chacha20.asm",
+      "explanation": "The four left rotations are 16, 12, 8 and 7 bits. MIPS rotr rotates right; a left rotation by n is a right rotation by 32\u2212n. A rotation wraps shifted bits around rather than discarding them.",
+      "question": "Which right rotation implements the second group\u2019s left rotation by 12?",
+      "choices": [
+        {
+          "text": "A logical left shift by 12",
+          "feedback": "A shift discards the high bits. The rotation also returns them to the low positions.",
+          "id": "a"
+        },
+        {
+          "text": "20 bits",
+          "feedback": "A right rotation by 20 and a left rotation by 12 put every word bit in the same destination position.",
+          "id": "b"
+        },
+        {
+          "text": "12 bits",
+          "feedback": "That rotates in the opposite direction. Sixteen happens to be its own complement, which can hide this mistake in the first group.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_qr_group1",
+        "mnemonic": "addu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "follow-quarter-dependencies",
+      "source": "chacha20.asm",
+      "explanation": "Debug the complete entry through the four groups, then main_done. t0\u2013t3 hold a,b,c,d in this worked implementation. Memory at the four selected words is published only by the stores after group four.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "after_qr_group1",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "explanation": "After group one, a is 12131415 and d is 51721330. b and c still hold their input words.",
+          "registers": {
+            "$t0": "0x0000000012131415",
+            "$t1": "0x0000000001020304",
+            "$t2": "0xffffffff9b8d6f43",
+            "$t3": "0x0000000051721330"
+          },
+          "success": "After group one, a is 12131415 and d is 51721330. b and c still hold their input words."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_qr_group2",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "explanation": "Group two uses the newly rotated d to update c, then uses the new c to update and rotate b.",
+          "registers": {
+            "$t0": "0x0000000012131415",
+            "$t1": "0xffffffffd8177edf",
+            "$t2": "0xffffffffecff8273",
+            "$t3": "0x0000000051721330"
+          },
+          "success": "Group two uses the newly rotated d to update c, then uses the new c to update and rotate b."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_qr_group3",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "explanation": "Group three returns to a and d, using the b produced by group two. Reusing an earlier b changes this boundary.",
+          "registers": {
+            "$t0": "0xffffffffea2a92f4",
+            "$t1": "0xffffffffd8177edf",
+            "$t2": "0xffffffffecff8273",
+            "$t3": "0x000000005881c4bb"
+          },
+          "success": "Group three returns to a and d, using the b produced by group two. Reusing an earlier b changes this boundary."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "after_qr_group4",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "explanation": "All four result words are now in t0\u2013t3: ea2a92f4, cb1cf8ce, 4581472e and 5881c4bb. Their high scalar bits reflect word sign extension.",
+          "registers": {
+            "$t0": "0xffffffffea2a92f4",
+            "$t1": "0xffffffffcb1cf8ce",
+            "$t2": "0x000000004581472e",
+            "$t3": "0x000000005881c4bb"
+          },
+          "success": "All four result words are now in t0\u2013t3: ea2a92f4, cb1cf8ce, 4581472e and 5881c4bb. Their high scalar bits reflect word sign extension."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The stores have published those four words and status is zero. Inspect quad offsets 0,20,40,60; the intervening a5 bytes remain caller data.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The stores have published those four words and status is zero. Inspect quad offsets 0,20,40,60; the intervening a5 bytes remain caller data."
+        }
+      ],
+      "success": "The four dependent groups explain both the register trace and the final four stored words.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "wrap-before-xor",
+      "source": "worked/word-wrap.asm",
+      "explanation": "This copy changes a to ffffffff and b to one. The first addition is still a word addition. Compute that sum before predicting the XOR or rotation.",
+      "question": "What is the new a immediately after that addition?",
+      "choices": [
+        {
+          "text": "0000000100000000",
+          "feedback": "That is the 64-bit sum. It would change the XOR input and no longer implement the stated word transformation.",
+          "id": "a"
+        },
+        {
+          "text": "ffffffff",
+          "feedback": "The instruction wraps; it does not saturate at the largest unsigned word.",
+          "id": "b"
+        },
+        {
+          "text": "00000000",
+          "feedback": "The carry beyond bit 31 is discarded; the new word is zero.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "after_qr_load",
+        "mnemonic": "addu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "observe-word-wrap",
+      "source": "worked/word-wrap.asm",
+      "explanation": "Follow the same four groups with the changed words. A visible high half is a representation detail; compare each low word with the arithmetic you derived.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "after_qr_group1",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "explanation": "The first a sum is zero. The d rotation therefore combines d with zero, not a 64-bit carry.",
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000001",
+            "$t2": "0xffffffff9b8d6f43",
+            "$t3": "0x0000000045670123"
+          },
+          "success": "The first a sum is zero. The d rotation therefore combines d with zero, not a 64-bit carry."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_qr_group2",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "explanation": "The new c and b follow from that rotated word. Derive them from this copy\u2019s values rather than the previous fixture.",
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000047067e0f",
+            "$t2": "0xffffffffe0f47066",
+            "$t3": "0x0000000045670123"
+          },
+          "success": "The new c and b follow from that rotated word. Derive them from this copy\u2019s values rather than the previous fixture."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_qr_group3",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "explanation": "The next a/d update retains the same dependency order after wrapping.",
+          "registers": {
+            "$t0": "0x0000000047067e0f",
+            "$t1": "0x0000000047067e0f",
+            "$t2": "0xffffffffe0f47066",
+            "$t3": "0x00000000617f2c02"
+          },
+          "success": "The next a/d update retains the same dependency order after wrapping."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "after_qr_group4",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "explanation": "The final word results are ready for publication; wrapping at an earlier addition has propagated through all later groups.",
+          "registers": {
+            "$t0": "0x0000000047067e0f",
+            "$t1": "0xffffffffbaf13382",
+            "$t2": "0x0000000042739c68",
+            "$t3": "0x00000000617f2c02"
+          },
+          "success": "The final word results are ready for publication; wrapping at an earlier addition has propagated through all later groups."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The function returned successfully and stored only the four selected words.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The function returned successfully and stored only the four selected words."
+        }
+      ],
+      "success": "Word wrapping occurs at each addition, before any operation that consumes its result.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "scalar-selections",
+      "source": "worked/scalar.asm",
+      "explanation": "A raw block is sixteen input words. A column quarter-round selects positions 0,4,8,12; its four addresses are 16 bytes apart. All four column selections are disjoint. The diagonal selections use different position sets.",
+      "question": "What does the first scalar call update?",
+      "choices": [
+        {
+          "text": "Only positions 0,4,8,12 in the working copy",
+          "feedback": "One quarter-round changes its four selected words. The remaining twelve await their own selections.",
+          "id": "a"
+        },
+        {
+          "text": "The first four adjacent words",
+          "feedback": "Adjacent positions form the first row; that is not the first column selection.",
+          "id": "b"
+        },
+        {
+          "text": "The original input and output together",
+          "feedback": "The function copies into a disjoint working output. The input remains available for feed-forward.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "scalar_double_round",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-scalar-block",
+      "source": "worked/scalar.asm",
+      "explanation": "This source selects mode one. After copying, follow the first column call, the end of the first double-round, the end of ten double-rounds and feed-forward. At main_done, inspect all 64 output bytes.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "after_scalar_copy",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "explanation": "The copy loop advanced through 64 bytes. The working output equals the input at this point, and the input is still unchanged.",
+          "registers": {
+            "$t0": "0x0000000000000040"
+          },
+          "success": "The copy loop advanced through 64 bytes. The working output equals the input at this point, and the input is still unchanged."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_scalar_call1",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "Only the first column has completed. t0\u2013t3 show that quarter-round\u2019s results; inspect the four selected output words before the next call.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$t0": "0xffffffffabbaa25c",
+            "$t1": "0x000000003a465196",
+            "$t2": "0x000000006b3ca454",
+            "$t3": "0xffffffffdec62ed2"
+          },
+          "success": "Only the first column has completed. t0\u2013t3 show that quarter-round\u2019s results; inspect the four selected output words before the next call."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_scalar_call8",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "The eighth call completed the first diagonal half. s2 is still ten: its decrement follows this checkpoint.",
+          "registers": {
+            "$s2": "0x000000000000000a",
+            "$t0": "0xfffffffff96de7dd",
+            "$t1": "0xffffffffc4b7cd22",
+            "$t2": "0x000000007eddd644",
+            "$t3": "0xffffffffd737f167"
+          },
+          "success": "The eighth call completed the first diagonal half. s2 is still ten: its decrement follows this checkpoint."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "scalar_feed",
+            "mnemonic": "daddu",
+            "occurrence": 0
+          },
+          "explanation": "All ten double-rounds have finished and s2 is zero. The original input has not yet been added to the working state.",
+          "registers": {
+            "$s2": "0x0000000000000000",
+            "$t0": "0x0000000000000000"
+          },
+          "success": "All ten double-rounds have finished and s2 is zero. The original input has not yet been added to the working state."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "after_scalar_feed",
+            "mnemonic": "ld",
+            "occurrence": 0
+          },
+          "explanation": "Feed-forward added corresponding original words modulo 2^32 and stored all sixteen sums. Interpret the first bytes 10 f1 e7 e4 as word e4e7f110.",
+          "registers": {
+            "$t0": "0x0000000000000040"
+          },
+          "success": "Feed-forward added corresponding original words modulo 2^32 and stored all sixteen sums. Interpret the first bytes 10 f1 e7 e4 as word e4e7f110."
+        },
+        {
+          "id": "boundary-6",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The completed block returned zero. Compare the full 64-byte result with the supplied independent checks.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The completed block returned zero. Compare the full 64-byte result with the supplied independent checks."
+        }
+      ],
+      "success": "Copy, selection, double-rounds and feed-forward have distinct observable boundaries.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "feed-forward",
+      "source": "worked/scalar.asm",
+      "explanation": "The twenty rounds operate on a working state. The block function then adds each corresponding original input word modulo 2^32. This final addition requires retaining the original state.",
+      "question": "Which two values produce output word zero?",
+      "choices": [
+        {
+          "text": "The first two working words",
+          "feedback": "The addition is position-wise, not a neighboring-word reduction.",
+          "id": "a"
+        },
+        {
+          "text": "Working word zero after all rounds plus original input word zero",
+          "feedback": "Feed-forward pairs equal positions in the working and original states.",
+          "id": "b"
+        },
+        {
+          "text": "Working word zero plus itself",
+          "feedback": "Doubling the transformed word loses the original input contribution.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "scalar_feed",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "lane-provenance",
+      "source": "worked/msa.asm",
+      "explanation": "The MSA source loads each row into one vector. In the column half, lane zero combines positions 0,4,8,12; lane one combines 1,5,9,13. Each lane runs its own quarter-round, with dependencies within that lane.",
+      "question": "Why can the four columns execute together?",
+      "choices": [
+        {
+          "text": "Every add, XOR and rotation is independent",
+          "feedback": "Later operations within a lane consume newly computed values. Vector width does not remove those dependencies.",
+          "id": "a"
+        },
+        {
+          "text": "The lane numbers are the state\u2019s numeric values",
+          "feedback": "Lane tables identify where values came from. Actual word contents change during the rounds.",
+          "id": "b"
+        },
+        {
+          "text": "Their selected words are disjoint",
+          "feedback": "The four quarter-rounds have separate words. Operations within any one quarter-round still depend on earlier results.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "msa_double_round",
+        "mnemonic": "addv.w",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "row-selection",
+      "source": "worked/msa.asm",
+      "explanation": "The immediate 57 has two-bit fields 1,2,3,0 from low to high. shf.w uses them to select the old source lane for each destination lane. Row one therefore becomes old lanes 1,2,3,0.",
+      "question": "Which source lane becomes destination lane zero?",
+      "choices": [
+        {
+          "text": "Source lane one",
+          "feedback": "The low two-bit field is one. Read selection fields in destination-lane order.",
+          "id": "a"
+        },
+        {
+          "text": "Source lane three",
+          "feedback": "That reverses the direction of this row selection.",
+          "id": "b"
+        },
+        {
+          "text": "The numeric word value one",
+          "feedback": "The immediate selects a lane position; it does not insert an integer literal.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_msa_column_b",
+        "mnemonic": "shf.w",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "follow-msa-rows",
+      "source": "worked/msa.asm",
+      "explanation": "In Debug\u2019s Threads & Variables tab, expand MSA vector registers, then expand each register and read its 32-bit integer lanes. Inspect w0\u2013w3 as working rows and w4\u2013w7 as retained originals. Record provenance separately from numeric values; diagonal shuffles rearrange values that the column half has already changed.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "msa_double_round",
+            "mnemonic": "addv.w",
+            "occurrence": 0
+          },
+          "explanation": "The working rows and their retained originals initially match. The loop counter is ten.",
+          "registers": {
+            "$t0": "0x000000000000000a"
+          },
+          "success": "The working rows and their retained originals initially match. The loop counter is ten.",
+          "vectorRegisters": {
+            "$w0": "0x6b20657479622d323320646e61707865",
+            "$w1": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w2": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w3": "0x000000004a0000000900000000000001",
+            "$w4": "0x6b20657479622d323320646e61707865",
+            "$w5": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w6": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w7": "0x000000004a0000000900000000000001"
+          }
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_msa_column_b",
+            "mnemonic": "shf.w",
+            "occurrence": 0
+          },
+          "explanation": "Four column quarter-rounds have completed in parallel. Working rows changed; retained rows did not.",
+          "registers": {},
+          "success": "Four column quarter-rounds have completed in parallel. Working rows changed; retained rows did not.",
+          "vectorRegisters": {
+            "$w0": "0x83d2dc697354fbdf1efa51eaabbaa25c",
+            "$w1": "0xf05b6976b12fb6281c7e64f63a465196",
+            "$w2": "0xe444df3bbf8a9ac908eb14b16b3ca454",
+            "$w3": "0x52a647f16e35b3458862cc77dec62ed2",
+            "$w4": "0x6b20657479622d323320646e61707865",
+            "$w5": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w6": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w7": "0x000000004a0000000900000000000001"
+          }
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_msa_select",
+            "mnemonic": "addv.w",
+            "occurrence": 0
+          },
+          "explanation": "Row selections align each diagonal in one lane. In lane zero, the four values came from positions 0,5,10,15 after the column half.",
+          "registers": {},
+          "success": "Row selections align each diagonal in one lane. In lane zero, the four values came from positions 0,5,10,15 after the column half.",
+          "vectorRegisters": {
+            "$w0": "0x83d2dc697354fbdf1efa51eaabbaa25c",
+            "$w1": "0x3a465196f05b6976b12fb6281c7e64f6",
+            "$w2": "0x08eb14b16b3ca454e444df3bbf8a9ac9",
+            "$w3": "0x6e35b3458862cc77dec62ed252a647f1",
+            "$w4": "0x6b20657479622d323320646e61707865",
+            "$w5": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w6": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w7": "0x000000004a0000000900000000000001"
+          }
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "after_msa_diagonal_b",
+            "mnemonic": "shf.w",
+            "occurrence": 0
+          },
+          "explanation": "The diagonal quarter-rounds are complete, but working rows still have the selected arrangement. The inverse row selections follow.",
+          "registers": {},
+          "success": "The diagonal quarter-rounds are complete, but working rows still have the selected arrangement. The inverse row selections follow.",
+          "vectorRegisters": {
+            "$w0": "0xf96de7ddb345739585ab03b4cd52e917",
+            "$w1": "0xc4b7cd22316c801ac95eb4615c2e187a",
+            "$w2": "0x7eddd6447bf7d740761246caf1a1bdf5",
+            "$w3": "0xd737f1676798471a6b0d58a3f173888d",
+            "$w4": "0x6b20657479622d323320646e61707865",
+            "$w5": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w6": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w7": "0x000000004a0000000900000000000001"
+          }
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "after_msa_repeat",
+            "mnemonic": "addv.w",
+            "occurrence": 0
+          },
+          "explanation": "After all ten double-rounds, inverse selections have restored canonical row positions and the loop counter is zero. Compare these words with the scalar pre-feed state.",
+          "registers": {
+            "$t0": "0x0000000000000000"
+          },
+          "success": "After all ten double-rounds, inverse selections have restored canonical row positions and the loop counter is zero. Compare these words with the scalar pre-feed state.",
+          "vectorRegisters": {
+            "$w0": "0x5950bb2fa67ae21ee238d763837778ab",
+            "$w1": "0x3f5ec7b78fa018fcfc62bb2fc4f2d0c7",
+            "$w2": "0x82e46ebdeabda8fcf29489f3335271c2",
+            "$w3": "0x4e3c50a29e83d0cbb04e16ded19c12b4",
+            "$w4": "0x6b20657479622d323320646e61707865",
+            "$w5": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w6": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w7": "0x000000004a0000000900000000000001"
+          }
+        },
+        {
+          "id": "boundary-6",
+          "anchor": {
+            "label": "after_msa_feed",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "explanation": "The four working rows now contain feed-forward sums and have been stored. Retained original rows remain unchanged.",
+          "registers": {
+            "$t0": "0x0000000000000000"
+          },
+          "success": "The four working rows now contain feed-forward sums and have been stored. Retained original rows remain unchanged.",
+          "vectorRegisters": {
+            "$w0": "0xc47120a31fdd0f5015593bd1e4e7f110",
+            "$w1": "0x4e6cd4c39aaa22040368c033c7f4d1c7",
+            "$w2": "0xa2028bd905d7c21409aa9f07466482d2",
+            "$w3": "0x4e3c50a2e883d0cbb94e16ded19c12b5",
+            "$w4": "0x6b20657479622d323320646e61707865",
+            "$w5": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w6": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w7": "0x000000004a0000000900000000000001"
+          }
+        },
+        {
+          "id": "boundary-7",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The MSA entry returned zero. Its 64 output bytes must match the scalar entry and the independent expected block.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The MSA entry returned zero. Its 64 output bytes must match the scalar entry and the independent expected block."
+        }
+      ],
+      "success": "Lane arithmetic and lane selection jointly implement the same scalar block transformation.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "inverse-selection",
+      "source": "worked/msa.asm",
+      "explanation": "After a diagonal half, the next column half needs the original row arrangement. Immediate 147 selects lanes 3,0,1,2 and undoes row one\u2019s 57 selection. Row two\u2019s 78 selection is its own inverse.",
+      "question": "What first goes wrong if row one\u2019s inverse is omitted?",
+      "choices": [
+        {
+          "text": "Only byte order at the final store changes",
+          "feedback": "The wrong row arrangement changes subsequent arithmetic before serialization.",
+          "id": "a"
+        },
+        {
+          "text": "The next column half combines the wrong positions",
+          "feedback": "The completed diagonal values can be correct while their arrangement is wrong for the following half-round.",
+          "id": "b"
+        },
+        {
+          "text": "The previous column arithmetic changes retroactively",
+          "feedback": "An omitted later shuffle cannot alter an already completed observation.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_msa_diagonal_b",
+        "mnemonic": "shf.w",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "exact-tail",
+      "source": "worked/stream-65.asm",
+      "explanation": "This copy supplies 65 patterned source bytes. A block supplies 64 keystream bytes, so the wrapper needs two blocks. The second fragment uses only one byte of its private block.",
+      "question": "How many destination bytes may the second fragment write?",
+      "choices": [
+        {
+          "text": "Sixty-four bytes",
+          "feedback": "That overwrites 63 bytes outside the selected destination interval.",
+          "id": "a"
+        },
+        {
+          "text": "Zero bytes",
+          "feedback": "The request includes a 65th source byte and cannot finish after only one block.",
+          "id": "b"
+        },
+        {
+          "text": "One byte",
+          "feedback": "Only one requested byte remains. A private 64-byte keystream allocation does not enlarge the destination interval.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "after_stream_validate",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "walk-two-fragments",
+      "source": "worked/stream-65.asm",
+      "explanation": "Follow count validation, counter preflight, the first block and two visits to after_stream_bytes. Resume after the first byte-loop checkpoint to reach the second visit. Keep the fragment length separate from the remaining request count.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "after_stream_validate",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "explanation": "The full-width count is 65 and was admitted before any state or message access.",
+          "registers": {
+            "$a3": "0x0000000000000041",
+            "$t0": "0x0000000000000001"
+          },
+          "success": "The full-width count is 65 and was admitted before any state or message access."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_stream_counter_check",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "explanation": "Two required counters fit. t1 contains initial counter one; t0 is zero after the overflow test.",
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000001"
+          },
+          "success": "Two required counters fit. t1 contains initial counter one; t0 is zero after the overflow test."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_stream_block",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "The first private block is ready while s2 still records all 65 requested bytes.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$s2": "0x0000000000000041"
+          },
+          "success": "The first private block is ready while s2 still records all 65 requested bytes."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "after_stream_bytes",
+            "mnemonic": "dsubu",
+            "occurrence": 0
+          },
+          "explanation": "The first fragment copied 64 bytes. s2 has not yet been reduced; s3 and s4 are both 64.",
+          "registers": {
+            "$s2": "0x0000000000000041",
+            "$s3": "0x0000000000000040",
+            "$s4": "0x0000000000000040"
+          },
+          "success": "The first fragment copied 64 bytes. s2 has not yet been reduced; s3 and s4 are both 64."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "after_stream_bytes",
+            "mnemonic": "dsubu",
+            "occurrence": 0
+          },
+          "explanation": "The second fragment copied one byte. s2, s3 and s4 are all one before the final subtraction.",
+          "registers": {
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$s4": "0x0000000000000001"
+          },
+          "success": "The second fragment copied one byte. s2, s3 and s4 are all one before the final subtraction."
+        },
+        {
+          "id": "boundary-6",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The caller received success. Exactly 65 destination bytes changed; source and input state remain unchanged.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The caller received success. Exactly 65 destination bytes changed; source and input state remain unchanged."
+        }
+      ],
+      "success": "Remaining count, fragment size and byte index explain both loop termination and the exact output footprint.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "in-place-order",
+      "source": "worked/in-place-65.asm",
+      "explanation": "Exact in-place operation gives the source and destination the same address. Each output byte depends on the original source byte and its keystream byte.",
+      "question": "Which order preserves that dependency?",
+      "choices": [
+        {
+          "text": "Load the source byte, combine it, then store the replacement",
+          "feedback": "Once the old source byte is in a register, writing that same address cannot destroy the needed input.",
+          "id": "a"
+        },
+        {
+          "text": "Store the keystream byte before loading the source",
+          "feedback": "The subsequent load would read the replacement rather than the original message byte.",
+          "id": "b"
+        },
+        {
+          "text": "Clear the source allocation first",
+          "feedback": "Clearing input destroys the message before it can be combined with the stream.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "stream_byte",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "compare-in-place-fragments",
+      "source": "worked/in-place-65.asm",
+      "explanation": "This copy supplies the same original bytes and state as the disjoint example, but mode three points destination at source. Follow the same six boundaries. Its transformed source must equal the disjoint destination.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "after_stream_validate",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "explanation": "The count is the same 65-byte request.",
+          "registers": {
+            "$a3": "0x0000000000000041",
+            "$t0": "0x0000000000000001"
+          },
+          "success": "The count is the same 65-byte request."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_stream_counter_check",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "explanation": "The same two counters are admitted; aliasing does not alter the counter calculation.",
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000001"
+          },
+          "success": "The same two counters are admitted; aliasing does not alter the counter calculation."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_stream_block",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "The first generated block is independent of the message buffer\u2019s aliasing.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$s2": "0x0000000000000041"
+          },
+          "success": "The first generated block is independent of the message buffer\u2019s aliasing."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "after_stream_bytes",
+            "mnemonic": "dsubu",
+            "occurrence": 0
+          },
+          "explanation": "The first 64 source bytes have been replaced after their original values were loaded.",
+          "registers": {
+            "$s2": "0x0000000000000041",
+            "$s3": "0x0000000000000040",
+            "$s4": "0x0000000000000040"
+          },
+          "success": "The first 64 source bytes have been replaced after their original values were loaded."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "after_stream_bytes",
+            "mnemonic": "dsubu",
+            "occurrence": 0
+          },
+          "explanation": "The final source byte has been replaced; no extra tail bytes are part of this fragment.",
+          "registers": {
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$s4": "0x0000000000000001"
+          },
+          "success": "The final source byte has been replaced; no extra tail bytes are part of this fragment."
+        },
+        {
+          "id": "boundary-6",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The in-place output equals the prior disjoint output for the same original input. The input state remains unchanged.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The in-place output equals the prior disjoint output for the same original input. The input state remains unchanged."
+        }
+      ],
+      "success": "Exact aliasing changes the destination location while preserving the transformation and byte boundaries.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "final-counter",
+      "source": "worked/last-counter-64.asm",
+      "explanation": "The last required counter is initialCounter + ceil(count/64) \u2212 1. With initial counter ffffffff and count 64, only that last available block is needed.",
+      "question": "Is this request admitted?",
+      "choices": [
+        {
+          "text": "Yes, by carrying into the nonce",
+          "feedback": "The counter cannot carry into nonce words. This request succeeds because it needs no carry.",
+          "id": "a"
+        },
+        {
+          "text": "Yes: its last required counter is ffffffff",
+          "feedback": "Subtracting one counts the initial block correctly. The interface permits using the final counter for its final block.",
+          "id": "b"
+        },
+        {
+          "text": "No: every request must leave a counter for another call",
+          "feedback": "The input state does not advance. A hypothetical later call is outside this request\u2019s preflight.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_stream_validate",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "use-final-counter",
+      "source": "worked/last-counter-64.asm",
+      "explanation": "Debug the 64-byte request at counter ffffffff. The counter is loaded unsigned. The wrapper can finish after its first fragment without incrementing it.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "after_stream_validate",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "explanation": "The bounded positive count is 64.",
+          "registers": {
+            "$a3": "0x0000000000000040",
+            "$t0": "0x0000000000000001"
+          },
+          "success": "The bounded positive count is 64."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "after_stream_counter_check",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "explanation": "The full-width preflight admits exactly the last available counter; t1 is 00000000ffffffff.",
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$t1": "0x00000000ffffffff"
+          },
+          "success": "The full-width preflight admits exactly the last available counter; t1 is 00000000ffffffff."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "after_stream_block",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "That block completed, with 64 message bytes still to transform.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$s2": "0x0000000000000040"
+          },
+          "success": "That block completed, with 64 message bytes still to transform."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "after_stream_bytes",
+            "mnemonic": "dsubu",
+            "occurrence": 0
+          },
+          "explanation": "The fragment processed all 64 requested bytes.",
+          "registers": {
+            "$s2": "0x0000000000000040",
+            "$s3": "0x0000000000000040",
+            "$s4": "0x0000000000000040"
+          },
+          "success": "The fragment processed all 64 requested bytes."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The caller received success and the original state, including counter and nonce, remains unchanged.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The caller received success and the original state, including counter and nonce, remains unchanged."
+        }
+      ],
+      "success": "The final available block is usable without an extra increment or a nonce carry.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "preflight-whole-request",
+      "source": "worked/last-counter-65.asm",
+      "explanation": "The same initial counter with count 65 would require counters ffffffff and 100000000. The second does not fit the 32-bit counter. The destination begins with a5 bytes.",
+      "question": "When must the wrapper reject it?",
+      "choices": [
+        {
+          "text": "After writing the first 64-byte block",
+          "feedback": "Returning status two after partial output violates the failure contract.",
+          "id": "a"
+        },
+        {
+          "text": "After wrapping the counter to zero",
+          "feedback": "Reusing counter zero changes the required stream and silently ignores exhaustion.",
+          "id": "b"
+        },
+        {
+          "text": "Before writing the first output byte",
+          "feedback": "The interface promises no output on counter failure, so the entire request must be checked before publication.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "after_stream_validate",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "reject-counter-exhaustion",
+      "source": "worked/last-counter-65.asm",
+      "explanation": "Stop at stream_counter_error before its status instruction executes, then main_done. The preflight has detected the overflow without publishing output.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "stream_counter_error",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "explanation": "t0 is one after shifting the last-required-counter sum by 32. t1 is the original unsigned ffffffff, and a3 is 65.",
+          "registers": {
+            "$t0": "0x0000000000000001",
+            "$t1": "0x00000000ffffffff",
+            "$a3": "0x0000000000000041"
+          },
+          "success": "t0 is one after shifting the last-required-counter sum by 32. t1 is the original unsigned ffffffff, and a3 is 65."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "Status is now two. The complete source, state and destination arenas remain unchanged.",
+          "registers": {
+            "$v0": "0x0000000000000002"
+          },
+          "success": "Status is now two. The complete source, state and destination arenas remain unchanged."
+        }
+      ],
+      "success": "A failure status and an unchanged destination are both required for counter exhaustion.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "full-count-before-pointers",
+      "source": "worked/large-count.asm",
+      "explanation": "This copy requests 0000000100000000 bytes. Its low 32 bits are zero, but the function receives an unsigned 64-bit count. It must decide whether the count is admissible before using supplied pointers.",
+      "question": "What is the result?",
+      "choices": [
+        {
+          "text": "Status one, with no state or message access",
+          "feedback": "The full count exceeds 4096. Truncating it to a word would turn an invalid request into a false empty success.",
+          "id": "a"
+        },
+        {
+          "text": "Empty success because the low word is zero",
+          "feedback": "The interface does not truncate the count to 32 bits.",
+          "id": "b"
+        },
+        {
+          "text": "Counter exhaustion after reading the state",
+          "feedback": "Count rejection precedes the state-dependent counter check.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "chacha_xor",
+        "mnemonic": "sltiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "reject-wide-count",
+      "source": "worked/large-count.asm",
+      "explanation": "Debug the full-width request. The first comparison rejects it before the state-dependent path.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "stream_length_error",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "explanation": "t0 is zero and a3 retains 0000000100000000 at the length-error boundary.",
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$a3": "0x0000000100000000"
+          },
+          "success": "t0 is zero and a3 retains 0000000100000000 at the length-error boundary."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "The caller received status one. No caller input or destination bytes changed.",
+          "registers": {
+            "$v0": "0x0000000000000001"
+          },
+          "success": "The caller received status one. No caller input or destination bytes changed."
+        }
+      ],
+      "success": "The count check uses every supplied count bit before any pointer-dependent work.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-before-state",
+      "source": "worked/empty.asm",
+      "explanation": "An admitted zero count requests no transformation. The native independent cases also supply unusable pointers for this path, so reading a state word is unnecessary and incorrect.",
+      "question": "Which work is required?",
+      "choices": [
+        {
+          "text": "Generate one block and discard it",
+          "feedback": "That performs pointer-dependent work the empty-call contract forbids.",
+          "id": "a"
+        },
+        {
+          "text": "Return success without using any supplied pointer",
+          "feedback": "No byte or block is needed. The interface defines the empty request independently of state contents.",
+          "id": "b"
+        },
+        {
+          "text": "Read the counter to decide whether zero is permitted",
+          "feedback": "Zero needs no counter, even when the current state would have no room for a positive request.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "chacha_xor",
+        "mnemonic": "sltiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "finish-empty-request",
+      "source": "worked/empty.asm",
+      "explanation": "Follow stream_empty and main_done. The data path is bypassed rather than run with a zero iteration count after a state load.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "stream_empty",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "explanation": "The bounded count is zero; the empty branch has been selected before state access.",
+          "registers": {
+            "$t0": "0x0000000000000001",
+            "$a3": "0x0000000000000000"
+          },
+          "success": "The bounded count is zero; the empty branch has been selected before state access."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "explanation": "Status is zero and every caller data arena is unchanged.",
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "Status is zero and every caller data arena is unchanged."
+        }
+      ],
+      "success": "Empty success has its own no-access contract.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Open the named source and Debug it. Set one requested breakpoint at a time; the highlighted instruction has not executed. Inspect the selected paused frame."
+        },
+        {
+          "id": "compare",
+          "text": "Compare the first incorrect boundary with the preceding correct one. A word is 32 bits; a scalar register display can also show its sign extension. For vectors, inspect word lanes zero through three."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-quarter-caller",
+      "source": "chacha20.asm",
+      "explanation": "Run the complete quarter-round entry to termination. It publishes four selected words and stores its status silently. Use the earlier Debug trace and the independent caller checks to explain those stores; an empty console alone does not verify the block or wrapper.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The quarter-round caller terminated normally.",
+      "anchor": {
+        "label": "main_done",
+        "mnemonic": "dla",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-quarter",
+      "source": "independent/chacha20.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/chacha-quarter-000.cases.json"
+      ],
+      "explanation": "Implement the quarter-round through four supplied addresses. The layouts are deliberately nonadjacent and permuted. Preserve caller gaps as well as the saved registers. The supplied construction source is intentionally incomplete; complete its four interfaces using independent/README.md.",
+      "success": "This interface group passes. Retain a trace or ownership argument that explains the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Write the four dependent groups on paper, labeling each version of a,b,c,d."
+        },
+        {
+          "id": "reason-2",
+          "text": "Compute each addition at word width and each rotation in the specified direction."
+        },
+        {
+          "id": "reason-3",
+          "text": "Load through the supplied addresses and store only the four selected words; do not infer an address stride."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-scalar",
+      "source": "independent/chacha20.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/chacha-scalar-000.cases.json"
+      ],
+      "explanation": "Implement the raw scalar block on arbitrary sixteen-word states. Keep the input unchanged and include ten double-rounds, position-wise feed-forward and all 64 serialized bytes. The supplied construction source is intentionally incomplete; complete its four interfaces using independent/README.md.",
+      "success": "This interface group passes. Retain a trace or ownership argument that explains the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "List all four column and four diagonal selections before writing the round driver."
+        },
+        {
+          "id": "reason-2",
+          "text": "Retain originals separately from the state being transformed."
+        },
+        {
+          "id": "reason-3",
+          "text": "Compare the first wrong boundary: copy, quarter-round, double-round, feed-forward or stored byte order."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-msa",
+      "source": "independent/chacha20.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/chacha-msa-000.cases.json"
+      ],
+      "explanation": "Complete the MSA block under the same raw-state and memory contract. The interface checks compare results and ownership; your own lane allocation may differ from the worked example. The supplied construction source is intentionally incomplete; complete its four interfaces using independent/README.md.",
+      "success": "This interface group passes. Retain a trace or ownership argument that explains the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Draw provenance tables for one column half and one diagonal half."
+        },
+        {
+          "id": "reason-2",
+          "text": "Compose each row selection with its inverse before beginning the next column half."
+        },
+        {
+          "id": "reason-3",
+          "text": "Keep original rows for feed-forward and compare complete output with an independent expected block, not just your scalar routine."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-xor",
+      "source": "independent/chacha20.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/chacha-xor-000.cases.json",
+        "independent/chacha-xor-001.cases.json",
+        "independent/chacha-xor-002.cases.json",
+        "independent/chacha-xor-003.cases.json"
+      ],
+      "explanation": "Implement the counted wrapper, including disjoint and exact in-place buffers, partial tails, full-width early rejection and whole-request counter preflight. The supplied construction source is intentionally incomplete; complete its four interfaces using independent/README.md.",
+      "success": "This interface group passes. Retain a trace or ownership argument that explains the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Classify zero, excessive count, counter exhaustion and positive admitted work before designing the loops."
+        },
+        {
+          "id": "reason-2",
+          "text": "Derive the number of blocks and the last counter with a wide temporary; permit the last available block."
+        },
+        {
+          "id": "reason-3",
+          "text": "Bound each fragment by remaining bytes, load each source byte before its replacement store and leave the input state unchanged."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-caller",
+      "source": "independent/chacha20.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/chacha-caller-000.cases.json"
+      ],
+      "explanation": "Run the supplied caller through all four modes. The native checks execute its real dispatch, observe the result before publication, then require termination and the stored status. The supplied construction source is intentionally incomplete; complete its four interfaces using independent/README.md.",
+      "success": "This interface group passes. Retain a trace or ownership argument that explains the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Retain main, its mode controls and the four public call sites."
+        },
+        {
+          "id": "reason-2",
+          "text": "Keep the callee return status live until main stores it."
+        },
+        {
+          "id": "reason-3",
+          "text": "A callee success is not enough if caller dispatch, status storage or normal termination is wrong."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-reuse",
+      "source": "independent/chacha20.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/chacha-reuse-000.cases.json"
+      ],
+      "explanation": "Verify changing inputs and buffers across calls in the same simulator. The native fixture replaces caller bytes without resetting private state or the cumulative instruction budget. The supplied construction source is intentionally incomplete; complete its four interfaces using independent/README.md.",
+      "success": "This interface group passes. Retain a trace or ownership argument that explains the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Treat every argument and input state as belonging to the current invocation."
+        },
+        {
+          "id": "reason-2",
+          "text": "Do not cache a pointer, transformed state or stream counter across independent calls."
+        },
+        {
+          "id": "reason-3",
+          "text": "Repeat the original input after another input, including empty calls, to expose stale state."
+        }
+      ]
+    }
+  ]
+}

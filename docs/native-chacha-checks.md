@@ -6,8 +6,9 @@ counted XOR wrapper. `tools/chacha_lesson_cases.py` authors the existing 73 publ
 cases as native function format 15. `tools/chacha_original_checks.json` binds all six original scripts by SHA-256
 and case count; the tooling tests reject a stale source grid. The author does
 not generate book composition or
-recognize implementation source. Connected native lesson composition and a new
-first/resume desktop walkthrough remain unfinished.
+recognize implementation source. The connected native guide is in `revision/lessons/026-chacha20`; its six
+assessment groups reference every profile exactly once. First-use and fresh-process
+resume pass against the final archive. See [the unit record](../revision/chacha-unit.md).
 
 The original domains remain: 12 quarter-round cases over four word patterns and
 three nonadjacent/permuted layouts; four arbitrary raw states for each block

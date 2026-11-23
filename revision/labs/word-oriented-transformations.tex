@@ -2,23 +2,33 @@
 \MARSChapterHeading{Word transformations}
 \label{revision:chacha-lab}
 
-This laboratory accompanies Chapter 22 of the main book.
-Use the complete worked program at
-\texttt{revision/labs/files/chacha20.asm} to inspect a known implementation.
-Use a separate copy of package \texttt{026-chacha20/starter/main.asm} for your
-own construction. Keeping those two roles separate lets you compare a boundary
-without replacing the program you are trying to understand.
+This laboratory accompanies Chapter 22 of the main book. Import the
+\texttt{026-chacha20} native student archive and open its lesson in Learn.
+The complete entry \texttt{chacha20.asm} selects a quarter-round; the
+\texttt{worked/} copies select the scalar block, MSA block, byte wrapper and
+boundary cases. Read the chapter's derivations first, then use these observations
+to connect the arithmetic with the program that executes it.
 
-The completed entries are \texttt{chacha\_quarter},
+Predictions appear inline and select their intended source. In Debug, inspect
+the selected paused frame and remember that the highlighted instruction has not
+executed. Set one requested breakpoint at a time and resume between observations.
+For two visits to the same label, resume from the first pause before looking for
+the next visit. Finish each process before opening another source. The scalar
+registers and vector allocation described here belong to the worked example;
+your independent implementation may allocate them differently.
+
+The four interfaces are \texttt{chacha\_quarter},
 \texttt{chacha\_block\_scalar}, \texttt{chacha\_block\_msa} and
-\texttt{chacha\_xor}. Their detailed memory and return contracts are in
-\texttt{assignment.md}. The caller's labels are fixtures for supplying data;
-functions must still use the addresses passed in their arguments. The completed
-checks can relocate objects, change gaps and repeat calls in one session.
+\texttt{chacha\_xor}. Their complete contracts accompany the deliberately
+unfinished \texttt{independent/chacha20.asm} in
+\texttt{independent/README.md}. Retain the caller objects and public entry
+labels, but use the supplied addresses inside each function. The native checks
+move inputs, permute word addresses and replace caller bytes between calls in
+one simulator. A familiar data label is not a substitute for a current argument.
 
 \section{Use a prediction to locate the first dependency}
 
-Leave \texttt{mode} at zero in the worked program and put a breakpoint at
+Begin in the complete entry and put a breakpoint at
 \texttt{after\_qr\_group1}. Before running, write the expected low 32 bits of
 \texttt{t0} through \texttt{t3}. Compute the addition, then XOR, then rotation
 in that order. Record the operands for the XOR as well as its result. That
@@ -37,23 +47,31 @@ published results, at offsets 0, 20, 40 and 60. The gaps should still contain
 \texttt{a5} bytes.
 
 \Needspace{10\baselineskip}
-In your implementation, complete only the quarter-round first. Run its public
-check before building the block loop:
+During your independent attempt, complete only the quarter-round first. Use
+the native quarter group before building the block loop. Its original CLI route
+is also included in the imported lab:
 
 \begin{Verbatim}[fontsize=\small]
 java -jar /path/to/cli.jar grade \
-  packages/026-chacha20/checks/quarter.kts \
-  path/to/your/main.asm
+  independent/quarter.kts \
+  independent/chacha20.asm
 \end{Verbatim}
 
-Paths are relative to your book checkout in this example; replace the CLI and
-source paths with your own. A passing result establishes the tested cases,
+Paths in this example are relative to the imported lab directory; replace the
+CLI path with your own. A passing result establishes the tested cases,
 including argument selection. It does not make the other three entries complete.
 The starter's status three deliberately identifies unfinished work.
 
+The \texttt{worked/word-wrap.asm} copy replaces the first two inputs with
+\texttt{ffffffff} and one. Their word sum is zero, so the following XOR must
+consume zero. Trace the same four groups with these inputs. Keeping a carry in
+bit 32 changes the next operation, while saturation would keep a different word
+again. This experiment locates a width error before a final mismatch hides its
+origin.
+
 \section{Separate selection errors from arithmetic errors}
 
-Set \texttt{mode} to one to run the scalar block. The caller's supplied state
+Open \texttt{worked/scalar.asm}. This copy selects the scalar block; its supplied state
 has counter one. Stop after its first quarter-round call and compare only word
 positions 0, 4, 8 and 12 with a separate quarter-round calculation. The other
 twelve positions should still match the copied input. If more positions changed,
@@ -71,17 +89,25 @@ Compare the full 64-byte block with the scalar check, rather than inferring that
 one matching row establishes the rest. Also compare the original 64 input bytes:
 the block entry promises to preserve them.
 
-Implement the scalar block in your source and run \texttt{checks/scalar.kts}.
+Use the native scalar group to check your completed interface. Its optional
+CLI script is \path{independent/scalar.kts}.
 When diagnosing a mismatch, choose the earliest of these boundaries that is
 wrong: copy, first quarter-round, first double-round, tenth double-round,
 feed-forward, serialized bytes. Each boundary removes several possible causes.
 
 \section{Explain a shuffle before executing it}
 
-Set \texttt{mode} to two. At \texttt{after\_msa\_load}, each vector register
-contains one row of the initial state. Write a table with columns for destination
-lanes zero through three and rows for \texttt{w0} through \texttt{w3}.
-Initially label its cells with word positions, not numerical word contents.
+Open \texttt{worked/msa.asm}. In Debug's Threads \& Variables tab, expand
+MSA vector registers, then each register's 32-bit integer lanes. At
+\texttt{msa\_double\_round}, \texttt{w0} through \texttt{w3} contain the four
+initial rows. Tabulate their word positions by lane, separately from numerical
+contents.
+
+The whole-register header begins with the high bits. Read its 32-bit child row
+from lane zero onward; splitting the header from left to right would reverse
+the word order you are trying to trace.
+
+\input{revision/figures/chacha/native-lanes}
 
 In a second table, show the arrangement after \texttt{after\_msa\_select}.
 For each destination lane, list the four positions it now connects. Lane zero
@@ -90,13 +116,40 @@ round, the numerical contents at those positions have already changed.
 Expecting the literal integers 0 through 15 in the debugger would confuse the
 diagram with the data it describes.
 
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l r r r r}
+\toprule
+Working row & Lane 0 & Lane 1 & Lane 2 & Lane 3\\
+\midrule
+\texttt{w0} & 0 & 1 & 2 & 3\\
+\texttt{w1} & 5 & 6 & 7 & 4\\
+\texttt{w2} & 10 & 11 & 8 & 9\\
+\texttt{w3} & 15 & 12 & 13 & 14\\
+\bottomrule
+\end{tabular}
+\caption{Word-position provenance after the row selections. Each number names
+a canonical position after the column half; it is not that word's numerical
+content. Read down a lane to recover one diagonal selection.}
+\label{revision:chacha-lane-provenance}
+\end{table}
+
+In this worked allocation, \texttt{w4} through \texttt{w7} keep the original
+rows while \texttt{w0} through \texttt{w3} change. Observe both sets. At the
+end of the diagonal arithmetic, the working rows still have their selected
+arrangement. After the inverse selections and all ten double-rounds, compare
+canonical rows with the scalar pre-feed state. Only then compare feed-forward
+sums and serialized output. An agreement at one of these boundaries does not
+replace the observations before it.
+
 Now decode immediate 147 into four two-bit fields, starting at the low end.
 Explain why it undoes the row-one selection with immediate 57. Row two's
 selection is its own inverse; show this by composing its lane map with itself.
 Only then step through the actual shuffles and compare the lane contents with
 your predicted rearrangement of the pre-shuffle values.
 
-Complete the MSA block and run \texttt{checks/msa.kts}. Compare its final output
+Complete the MSA block and use its native group or
+\texttt{independent/msa.kts}. Compare its final output
 with both the scalar function and the independent expected block. Agreement
 between your own two routines is useful, but a shared selection mistake can make
 them agree on the same wrong result.
@@ -109,13 +162,14 @@ it is not an alternative cipher.
 
 \section{Treat the wrapper as a separate program}
 
-Set \texttt{mode} to three for the byte wrapper. With count 65, predict two
+Open \texttt{worked/stream-65.asm} for the byte wrapper. With count 65, predict two
 block calls and exactly 65 destination bytes. Describe the second fragment's
 source read and destination write before running. There is one of each, even
 though the private generated block contains 64 bytes.
 
-First test disjoint source and destination. Then set \texttt{in\_place} to one
-and rerun from the same initial source and state. Compare the transformed source
+First inspect disjoint source and destination. Then open
+\texttt{worked/in-place-65.asm}, which supplies the same original source and
+state with identical source and destination addresses. Compare the transformed source
 with the previous destination. The function's load-before-store order makes
 these cases equivalent. A second run over already transformed bytes is a
 separate experiment: with the same state it recovers the original source.
@@ -125,7 +179,16 @@ preserves its other operand. This is a useful way to distinguish an incorrect
 block generator from an incorrect message walker. Use a nonzero source afterward
 to verify that the wrapper actually reads and combines the supplied bytes.
 
-Run \texttt{checks/xor.kts}. Include lengths zero, one, 63, 64, 65 and 4096
+At the first \texttt{after\_stream\_bytes} visit, \texttt{s2} still holds 65
+while fragment length \texttt{s3} and byte index \texttt{s4} both hold 64. The
+subtraction that reduces the remaining count follows this pause. Resume to the
+second visit: all three now hold one before its subtraction. These are two
+observations of the same instruction address with different loop state. A
+private 64-byte keystream buffer does not give the last fragment permission to
+read or write another 63 message bytes.
+
+Use the native wrapper group or \texttt{independent/xor.kts}.
+Include lengths zero, one, 63, 64, 65 and 4096
 in your own notes. For each positive length, calculate the number of generated
 blocks and the final fragment size. Explain why 64 has one full fragment and
 no empty second iteration.
@@ -148,6 +211,20 @@ excessive counts apply even when their supplied pointers are invalid.
 \end{tabular}
 \end{center}
 
+The \texttt{worked/last-counter-64.asm} and
+\texttt{worked/last-counter-65.asm} copies distinguish final-block admission
+from exhaustion. The 64-byte request needs only counter \texttt{ffffffff}; the
+65-byte request would need the unrepresentable next counter. At the failure
+boundary, \texttt{t0} is one after the full-width sum is shifted right by 32.
+The unsigned counter in \texttt{t1} remains \texttt{00000000ffffffff}.
+
+The \texttt{worked/large-count.asm} request is
+\texttt{0000000100000000}, not an empty request. Its low word being zero does
+not permit truncating the count before comparison. The \texttt{worked/empty.asm}
+copy instead takes a successful zero path before using any supplied pointer.
+The independent checks exercise both early paths with unusable pointers, so a
+state read cannot be hidden by convenient mapped data in a worked example.
+
 For the failing counter case, fill the destination with a recognizable pattern
 before the call. Confirm both the returned status and the unchanged entire
 caller-owned region. A status-two result after writing 64 bytes is still a
@@ -156,22 +233,33 @@ failure of this interface. Checking only the status would miss it.
 \input{revision/figures/chacha/native-counter}
 
 Repeat independent calls with the same state and different buffers, then with
-changed state at the same address. Run \texttt{checks/reuse.kts} and
-\texttt{checks/caller.kts}. Write why a hidden counter or a cached pointer would
+changed state at the same address. Use the native reuse and caller groups, or
+\texttt{independent/reuse.kts} and \texttt{independent/caller.kts}. Write why a hidden counter or a cached pointer would
 be wrong even if one invocation produced the expected ciphertext.
 
 \section{Finish with an implementation you can explain}
 
-Guided construction retains the package's named regions and illustrated
-allocation. Free writing can use another register allocation, frame or
-decomposition while preserving the four public interfaces. Follow your
-instructor's requirements for checks and hints.
+The guided observations establish the worked program's register and lane
+allocation. For an independent attempt, close those complete sources and build
+the four entries in \texttt{independent/chacha20.asm} from the contract and your
+boundary notes. Start with the quarter-round, then the scalar block, then MSA,
+then the wrapper. The native groups preserve all 73 original public cases and
+allow equivalent frames, helpers and register choices. Instructor policy may
+control progression and hints.
 
-For an independent attempt, close the worked source and implement the four
-entries from the contract and your boundary notes. Start with the quarter-round,
-then the scalar block, then MSA, then the wrapper. Use the six public checks as
-feedback. A full passing run should be accompanied by a short explanation of
-why each selected memory interval is legal and which values survive nested calls.
+The caller group executes real dispatch before its function observation, then
+continues through status storage and actual exit. Returning the right result
+at \texttt{main\_done} is insufficient if the subsequent store publishes a
+wrong status. The reuse group replaces caller inputs between calls without
+resetting private state or the case's cumulative instruction allowance. A
+cached pointer, old working state or hidden counter must not determine the
+next call's answer.
+
+Keep a word-width derivation, a scalar selection trace, the lane-provenance
+table and an argument for the wrapper's selected intervals and failure paths.
+Use them to explain a new test input: name the earliest boundary that would
+distinguish a wrong round, wrong shuffle and wrong byte walker. A final pass
+count is useful feedback, while these intermediate arguments guide diagnosis.
 
 \Needspace{9\baselineskip}
 After that attempt, design a continuation interface on paper. Specify where it

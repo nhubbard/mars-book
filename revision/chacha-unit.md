@@ -1,9 +1,9 @@
 # ChaCha20 main chapter and laboratory
 
 Chapter 22, “Transforming words in parallel,” revises original project
-`026-chacha20` as connected native LaTeX exposition. It occupies main-book pages
-140–145 in the 145-page proof. Its written laboratory occupies pages 142–146 in
-the 146-page lab proof. The original manuscript and earlier chapter sources remain
+`026-chacha20` as connected native LaTeX exposition. Its historical main-book proof places it on pages 140–145; the historical
+written lab occupied 142–146. The current 215-page lab proof places the revised
+core on 171–176, with the SHA-256/RSA companions continuing through 191. The original manuscript and earlier chapter sources remain
 preserved. There is no page cap.
 
 ## Teaching sequence
@@ -28,7 +28,7 @@ including its caller and the scalar/MSA implementations. The separate original
 package starter remains the construction source. Private alternatives, expanded
 checks, deliberate faults and instructor evidence remain in the instructor repo.
 
-## Finite verification
+## Historical finite verification
 
 The worked source uses compact Release 6 branches and full-width addresses.
 Reference, equivalent alternative and above-32-bit-data variants each pass 2,003
@@ -64,8 +64,10 @@ No elapsed-time, hardware-cycle or cryptographic certification result is claimed
 ## Remaining work
 
 Author, representative learner and assistive-technology review remain pending.
-This advanced package has CLI construction/checking support; its native guided
-lesson, delivered progression and enforced instructor policies are not complete.
+The original 42-region construction package retains its CLI route. The revised
+native unit below uses complete worked observations followed by independent
+construction of the four interfaces. Its fixed observation registers do not
+prescribe an independent solution’s allocation.
 The broader curriculum goal remains active. SHA-256 and RSA companion treatments
 follow before WAV, PNG and the retained video sequence. The deferred opening
 explanation of MARS versus hardware has not been added.
@@ -83,8 +85,59 @@ added to the public grader so changing inputs across a shared session remains a
 real check, rather than a fresh-session approximation. See
 [the native contract](../docs/native-chacha-checks.md).
 
-These are grading foundations. The connected native Learn guide, revised written
-lab, renewed publication proof and first/resume IDE walkthrough are still pending.
-Earlier page/test counts above describe the historical chapter qualification.
-No new screenshot or PDF is claimed by this stage. The full curriculum goal
-remains active, including the SHA-256 and RSA companion work.
+## Completed native instructional draft, 23 November 2026
+
+`revision/lessons/026-chacha20` now exports a versioned native student archive:
+14 inline predictions, ten Debug activities with 46 ordered checkpoints, one Run
+and six independent groups. It includes nine caller/data variants, the unchanged
+complete worked code, the original unfinished source, six optional CLI scripts
+and all nine format-15 profiles. The 73 cases retain 84 original observations,
+with eleven real-main dispatch observations and eleven caller exit/status checks.
+Three correct designs pass; eight retained semantic faults and the unfinished
+starter fail. A separate wrong-status-store counterexample is accepted by the
+old observation-only checker and rejected by two native caller cases.
+
+Ten actual simulator processes verify every scalar/vector checkpoint, complete
+caller arenas and real termination. Native import and PSI tests resolve every
+prediction and stop in the intended source. Adjacent assembly aliases use the
+label that owns the executable instruction, without altering the worked code.
+The 563 public tooling tests, two final archive/import/PSI Jupiter tests and 136
+authoring-plugin Jupiter tests pass. The per-call setup implementation also passes
+the full 263-CLI/1284-plugin regression and coverage/generated-parser gates; the
+two archive tests were added afterward without further production changes.
+Packaged API verification passes with 91 MARS and 20 authoring experimental usages
+and no internal API dependency.
+
+The final native archive passes actual first-use and fresh-process resume in
+IntelliJ Light after `clean cleanSandbox runIde` on each launch. The runs pass 67
+and 53 observations. Fifteen quiz attempts, eleven edited sources and all saved
+assessment counts survive reopening. Edits invalidate seventeen execution checks,
+and actual execution renews them; each assessment count increments exactly once.
+All eleven installed JARs match the pinned archives in both phases, and verified
+logs have no ERROR/SEVERE entries. These are automated walkthroughs, not learner
+review. An earlier successful pair is retained before the vector-view wording
+was corrected to name the actual expandable 32-bit integer-lane entries.
+
+The native lab now connects the observations with dependency order, word wrapping,
+selection provenance, feed-forward and whole-request publication. It adds a lane
+provenance table and a genuine debugger crop showing the expanded word-lane row.
+The separate capture plugin and private exporter produce the unchanged PNG and
+SHA-bound coordinate/state receipt; native TeX supplies the crops, outline,
+caption and semantic description. Four exporter checks guard the reviewed image,
+geometry, observed values and edited annotations. The three earlier genuine
+light-theme figures remain retained across the main chapter and lab.
+
+The final native proof is reviewed in color, with representative lane/table and
+failure-figure pages also reviewed in grayscale. Embedded Minion Pro, Noto Sans
+Math and JetBrains Mono remain in use, and the exact proof receives renewed
+PDF/UA-2 validation. Its exact digest and result are recorded privately in
+`native-chacha-unit-01/publication/review.json`. Human author, representative
+learner and assistive-technology review remain pending. No timing, hardware-cycle
+or cryptographic-certification result is claimed.
+
+Private evidence is in `native-chacha-foundation-01`, `native-chacha-unit-01` and
+`native-chacha-ide-02`; the earlier desktop iteration is `native-chacha-ide-01`.
+All 35 original projects and ten companion includes remain in the structural
+audit. The SHA-256 and RSA native companions are next before WAV; the expression
+and bytecode native companions also remain unfinished work. The full curriculum
+goal is active, and the deferred opening orientation has not been added.
