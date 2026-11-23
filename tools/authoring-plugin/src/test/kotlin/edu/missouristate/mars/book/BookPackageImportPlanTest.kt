@@ -460,6 +460,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `ChaCha20 walkthrough isolates the complete interface answer and native archive`() {
+        val chacha = plan.copy(archives = listOf(archive.copy(id = "026-chacha20", entry = "chacha20.asm")),
+            nativePredictions = true, chachaUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/chacha20.asm", "/tmp/chacha.asm", "c".repeat(64))))
+        chacha.validate()
+        chacha.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(chacha.copy(nativePredictions = false), chacha.copy(nativeExecution = true),
+            chacha.copy(nativeDebug = true), chacha.copy(resumeCompleted = true), chacha.copy(qoiUnit = true), chacha.copy(cborUnit = true),
+            chacha.copy(crcUnit = true), chacha.copy(memoryUnit = true), chacha.copy(chachaUnit = false),
+            chacha.copy(activityNavigation = true), chacha.copy(prerequisiteControls = true),
+            chacha.copy(assessmentFixtures = emptyList()),
+            chacha.copy(assessmentFixtures = chacha.assessmentFixtures + chacha.assessmentFixtures),
+            chacha.copy(assessmentFixtures = listOf(chacha.assessmentFixtures.single().copy(source = "independent/qoi-mirrored.asm"))),
+            chacha.copy(archives = listOf(chacha.archives.single().copy(id = "030-qoi"))),
+            chacha.copy(archives = listOf(chacha.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
