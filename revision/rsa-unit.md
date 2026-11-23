@@ -93,11 +93,34 @@ and report remain paired. These checks do not establish author approval, learner
 independence, assistive-technology usability, production cryptography or hardware
 performance. No elapsed-time, cycle or constant-time result is claimed.
 
+## Native assessment foundation (23 November 2026)
+
+The native host model in `tools/rsa_lesson_cases.py` retains all 123 original
+public cases. Eighteen profiles contain 142 native invocations: 130 observed
+arithmetic calls plus twelve caller-dispatch segments. Results use Python's
+arbitrary-precision integers; the profiles contain no assembly solutions.
+
+The original assertions were executed with observation logging against the
+reference, alternative and wide-address implementations. Every native fixture,
+selected read/write interval, result, preserved value and instruction budget
+matches those runs. Power cases retain their 20-million-instruction allowance;
+the three-call repeated-power case retains one 40-million-instruction budget.
+No repeated-call case is split into fresh sessions.
+
+A new generic caller-object check represents the original ownership rule with
+one bounded enclosing history. Caller objects may be reordered or relocated;
+private gaps and workspace remain available. Forbidden caller accesses are
+rejected even when a store restores the previous value. This foundation is
+assessment infrastructure, not a completed interactive RSA teaching sequence.
+The private verification directory is `native-rsa-foundation-01`.
+
 ## Remaining scope
 
 Author, representative learner and assistive-technology reviews remain pending.
-The advanced native guided lesson, delivered progression and enforced instructor
-hint/policy support are not complete for this companion. The broader goal remains
+The RSA-specific guided sequence and its delivery and instructor-policy trials
+remain incomplete. The shared student instructional system already supports
+progression and instructor policies; RSA still needs its own teaching package. The broader goal remains
 active. WAV, PNG and the retained lossless/H.263 video sequence follow. The deferred
 opening explanation of MARS versus hardware has not been added. All forty-one
-pre-existing MARS edits remain preserved; this unit adds no MARS source changes.
+pre-existing MARS edits remain preserved. The historical written companion added
+no MARS source changes; the native assessment foundation extends the shared grader.
