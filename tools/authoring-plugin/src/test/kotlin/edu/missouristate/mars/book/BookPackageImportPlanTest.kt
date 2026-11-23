@@ -359,6 +359,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `base64 walkthrough isolates its exact source and single private fixture`() {
+        val base64 = plan.copy(archives = listOf(archive.copy(id = "028-base64", entry = "base64-codec.asm")),
+            nativePredictions = true, base64Unit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/base64url.asm", "/tmp/base64.asm", "c".repeat(64))))
+        base64.validate()
+        base64.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(base64.copy(nativePredictions = false), base64.copy(nativeExecution = true),
+            base64.copy(nativeDebug = true), base64.copy(memoryUnit = true), base64.copy(loopUnit = true),
+            base64.copy(functionUnit = true), base64.copy(spriteUnit = true), base64.copy(rasterUnit = true), base64.copy(lifeUnit = true), base64.copy(sortingUnit = true), base64.copy(fixedUnit = true), base64.copy(localityUnit = true), base64.copy(boundedUnit = true), base64.copy(measurementUnit = true), base64.copy(msaUnit = true), base64.copy(pcmUnit = true), base64.copy(firUnit = true), base64.copy(deltaUnit = true), base64.copy(assessmentFixtures = emptyList()),
+            base64.copy(archives = listOf(archive)), base64.copy(resumeCompleted = true), base64.copy(base64Unit = false),
+            base64.copy(activityNavigation = true), base64.copy(prerequisiteControls = true),
+            base64.copy(assessmentFixtures = base64.assessmentFixtures + base64.assessmentFixtures),
+            base64.copy(assessmentFixtures = listOf(base64.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

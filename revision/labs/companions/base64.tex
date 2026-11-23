@@ -12,9 +12,13 @@ MSA whole-buffer entries plus exact-size vector kernels. The independent
 
 You will need unsigned byte loads, masks and shifts, function calls, the earlier
 MSA lane/shuffle chapter and the distinction between validation and publication.
-Read the scalar bit grouping before the vector schedule. These activities use
-ordinary Run and Debug; the native guided lesson remains unfinished. Keep source
-copies for changed inputs. Original project checks and input recipes remain in
+Read the scalar bit grouping before the vector schedule. Import development
+lesson \texttt{028-base64} and choose Continue in Learn. Ten inline predictions
+connect the bit argument to 25 Debug observations across twelve complete
+programs. Use one line breakpoint at a time; Learn highlights the next requested
+operation and the selected Debug frame shows the actual pause. Finish each
+process after its last observation before changing sources. Three ordinary Runs
+complement those paused investigations. Keep source copies for changed inputs. Original project checks and input recipes remain in
 \texttt{packages/028-base64}.
 
 \subsection*{Derive four indices from three bytes}
@@ -63,12 +67,16 @@ width arithmetic. A numerical result of 22 becomes ASCII 87 only at the lookup.
 Investigate those as separate states if the bit grouping looks correct but the
 stored text does not.
 
-Run the unchanged caller, whose mode two selects scalar encoding of
-\texttt{Man}. Break at \texttt{encode\_scalar\_return}, before
+Start with the unchanged caller, whose mode two selects scalar encoding of
+\texttt{Man}. At \texttt{after\_enc\_pair}, \texttt{\$t3}=22 is the second
+sextet, while \texttt{\$t4}=87 is its ASCII character. Destination starts
+\texttt{54 57}, or \texttt{TW}. Continue to \texttt{encode\_scalar\_return}, before
 \texttt{main\_done}. Status \texttt{\$v0}=0 and count \texttt{\$v1}=4 are
 live; destination begins \texttt{TWFu}, and its next byte remains the sentinel
 \texttt{a5}. This interface writes an explicit length, without a NUL terminator.
-The caller publishes status and count at \texttt{main\_done}, then exits.
+The caller publishes status and count at \texttt{main\_done}. At that block's
+exit syscall, the published words are zero and four, while \texttt{\$v0}=10
+selects exit. Use the return boundary or published words when explaining status.
 
 \subsection*{An incomplete group still has four characters}
 
@@ -79,8 +87,9 @@ four bits of $q_2$; its low two bits must be zero. Emit three characters followe
 by one \texttt{=}. Padding is a marker, not an extra sextet with value 64.
 
 For \texttt{M}, the result is \texttt{TQ==}; for \texttt{Ma}, it is
-\texttt{TWE=}; for \texttt{Man}, \texttt{TWFu}. Predict these before changing
-count to one, two or three in a copy. Keep the larger source allocation, but
+\texttt{TWE=}; for \texttt{Man}, \texttt{TWFu}. Predict these before opening
+\texttt{worked/tail-one.asm} and \texttt{worked/tail-two.asm}, which change only
+the selected count from the complete \texttt{Man} source. Keep the larger source allocation, but
 explain why the encoder must not read missing bytes from that backing storage.
 Its scalar path initializes absent $b$ or $c$ to zero and loads them only when
 the selected input contains them.
@@ -110,13 +119,14 @@ over insufficient capacity; every failure has written count zero and leaves
 all output untouched. This is a whole-buffer guarantee, unlike the delta
 codec's accepted-prefix guarantee. State which guarantee a caller can rely on.
 
-Prepare a decoder copy with mode three, count eight, source text
-\texttt{TWFuTR==} and any sufficient capacity. The first quartet is valid, but
+Open \texttt{worked/late-error.asm}, with mode three, count eight, source text
+\texttt{TWFuTR==} and capacity eight. The first quartet is valid, but
 the final quartet has nonzero unused bits. Stop at
 \texttt{decode\_scalar\_return}. Expect malformed status two, written count
-zero and an entirely unchanged destination. Then set capacity zero and repeat;
-malformed still wins. Replace the text with \texttt{TWFuTQ==} and repeat with
-capacity zero: now valid text reaches the capacity test and returns status three.
+zero and an entirely unchanged destination. Next open \texttt{worked/late-error-zero.asm}, with capacity zero;
+malformed still wins. \texttt{worked/valid-capacity-zero.asm} replaces the text
+with \texttt{TWFuTQ==} at capacity zero: valid text now reaches the capacity
+test and returns status three.
 
 \input{revision/figures/base64/validation}
 
@@ -138,29 +148,56 @@ sixteen-byte stack slot whose remaining bytes are zero, then performs its vector
 load there. The private allocation supports sixteen bytes; the source slice does
 not. A different valid schedule may assemble the vector another way.
 
-The shuffle and shift tables construct sixteen sextets. Four groups of three
+Open \texttt{worked/direct-encode12.asm}. At \texttt{after\_enc12\_copy},
+before \texttt{ld.b}, inspect the private slot at \texttt{\$sp}: its first
+twelve bytes hold the input and the remaining four are zero. The shuffle and
+shift tables then construct sixteen sextets. Four groups of three
 input bytes become four groups of four output lanes. For \texttt{ManManManMan},
 register \texttt{\$w1} at \texttt{after\_enc12\_right} contains byte lanes
 $[19,22,5,46]$ repeated four times. The later alphabet conversion produces
-\texttt{TWFuTWFuTWFuTWFu} in \texttt{\$w4}. Set mode four and count twelve
-in a source copy to observe this direct kernel. Its input/output pointers are
+\texttt{TWFuTWFuTWFuTWFu} in \texttt{\$w4}. At \texttt{encode12\_done},
+the vector output store has completed, but the following status/length
+instructions have not all run. Continue to \texttt{encode12\_msa\_return}
+for the live zero/sixteen return values. Its input/output pointers are
 in \texttt{\$a0/\$a1}, unlike the whole entry's \texttt{\$a0/\$a2} pair.
 
 \input{revision/figures/base64/sextets}
 
+Then open \texttt{worked/direct-symbols.asm}. Its input repeats
+\texttt{fb ff ff}, giving sextets $[62,63,63,63]$ in each group. View
+\texttt{\$w1} as sixteen 8-bit integer lanes before conversion, then compare
+\texttt{\$w4} and the stored \texttt{+///} groups afterward. These special
+symbols are ordinary alphabet outputs; they do not represent padding.
+
 \Needspace{8\baselineskip}
-The direct decoder starts with exactly sixteen valid, unpadded alphabet
+Open \texttt{worked/direct-decode16.asm}. The direct decoder starts with
+exactly sixteen valid, unpadded alphabet
 characters and produces twelve bytes. Its vector result initially has unused
 positions between three-byte groups. A compaction shuffle gathers the twelve
 useful bytes. The kernel stores that vector to private stack storage, then copies
 only twelve bytes to the caller. A direct sixteen-byte output store would violate
 the interface even when its first twelve bytes were correct. Direct-kernel input
 validity is a precondition, not a promise to reject malformed arbitrary text.
+At \texttt{after\_dec16\_symbols}, \texttt{\$w5} contains the numerical
+sextets. At \texttt{after\_dec16\_compact}, \texttt{\$w7} begins with
+\texttt{ManManManMan} and has four unused zero lanes. By \texttt{decode16\_done},
+the twelve caller bytes are stored; the thirteenth remains \texttt{a5}.
+
+\texttt{worked/direct-decode-in-place.asm} gives the direct kernel equal
+input and output bases. At return, the first twelve source bytes are the result;
+the last original \texttt{TWFu} quartet remains outside that output. The
+separate destination arena is unused. For a padded whole-buffer example, open
+\texttt{worked/in-place-padded.asm}: \texttt{TWFuTQ==} becomes four bytes
+\texttt{ManM} at the same base, retaining the later original bytes. Explain
+where the complete validation and group reads occur before the shorter writes.
 
 Whole MSA entries combine these kernels with the same validation, capacity and
 scalar-tail rules as their scalar counterparts. They select the encoder kernel
 only when at least twelve raw bytes remain. Decoder vector work applies only to
-complete unpadded groups. Explain the boundary at eleven/twelve/thirteen raw
+complete unpadded groups. \texttt{worked/whole-thirteen.asm} combines one
+vector group and a one-byte scalar tail: the complete result is twenty characters,
+\texttt{TWFu} repeated four times followed by \texttt{TQ==}. The next output
+byte remains unchanged. Explain the boundary at eleven/twelve/thirteen raw
 bytes and at the last padded quartet. Reusing a vector operation does not transfer
 its stronger preconditions to every whole-buffer input.
 
@@ -240,9 +277,32 @@ java -jar /path/to/cli.jar grade \
   revision/labs/checks/base64url.kts \
   /path/to/your/base64url.asm
 \end{verbatim}
-Checks accept equivalent solutions; they do not require a particular frame,
-classifier or vector schedule. Explain the bit grouping, tail length and exact
-footprint separately from any performance claim.
+Learn checks the current independent source in four groups: lengths zero through
+31 under five capacities; lengths 32 through 64 under five capacities; every
+one-byte input; and familiar texts, unsigned bounds, invalid-pointer preflight,
+caller publication and repeated-call state. These retain all 594 original public
+cases and add one five-call reuse case. There are 595 native function cases and
+600 calls, followed by a separate fifth assessment for complete silent exit.
+Every original case keeps its one-million-instruction budget. Bounded files run
+behind one action per group; a failure in a later file prevents completion.
+
+\subsection*{Choose the next observation from the first mismatch}
+
+If a character differs, inspect the numerical sextet before its alphabet
+conversion. If only a final group fails, count useful and unused bits before
+checking padding or the unpadded length. A right result with a forbidden access
+calls for tracing the complete load or store footprint, including an extra
+same-value store. A wrong status with invalid pointers calls for checking
+unsigned preflight order before investigating the byte loop. These are questions
+to test, not conclusions established by the failure category.
+
+Use graduated hints when they help choose an observation, then retry your current
+source. Editing a worked or independent file clears its execution evidence;
+Continue returns to the first activity requiring another observation. Reopening
+retains source and quiz history. Checks accept equivalent solutions without a
+particular frame, classifier or vector schedule. Explain the bit grouping, tail
+length and exact footprint beside the finite results, separately from any
+performance claim.
 
 The alphabet, grouping and padding conventions follow
 \href{https://www.rfc-editor.org/rfc/rfc4648.html}{RFC 4648}; the whole-function

@@ -54,7 +54,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27 and companions (206 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27 and companions (207 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -313,3 +313,13 @@ for the complete original corpus, bounded assessment batches, two actual IDE
 walkthroughs and final publication evidence. The current lab proof has 206 pages;
 the delta supplement is on 115–120 and the existing Base64 companion is section
 17.8. Human walkthrough and accessibility review remain open. Native Base64 is next.
+
+
+The Base64 companion now has its complete native route and independent URL-safe
+encoder assessment. See
+[base64-unit.md](base64-unit.md#native-base64-integration-22-november-2026) for
+complete original-case preservation, symbolic workspace setup, scalar/vector
+observations, two actual IDE walkthroughs and the final native publication
+review. The current lab proof has 207 pages; section 17.8 occupies 120–127.
+Human walkthrough and accessibility review remain open. The next native main
+unit is bounded file I/O and PPM images.

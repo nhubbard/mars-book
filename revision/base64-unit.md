@@ -73,3 +73,73 @@ The next main chapter develops bounded file I/O and a complete binary PPM artifa
 Later compositions, native lessons beyond the first unit, production policy/content
 delivery and human review remain incomplete. The proposed MARS-versus-hardware
 opening remains deferred.
+
+
+## Native Base64 integration, 22 November 2026
+
+The Chapter 17 companion now has ten inline predictions, 25 Debug stops across
+twelve complete sources, three ordinary Runs and five independent assessments.
+Worked reasoning connects numerical sextets to character codes, canonical tail
+bits, whole-buffer validation, exact twelve/sixteen byte vector footprints,
+special-symbol conversion, exact in-place decoding and a thirteen-byte whole
+MSA tail. Complete variants retain every executed codec function body. Stops at
+the exit syscall distinguish the caller's service selector from published status.
+
+All 593 original direct-function constructions match an independent export from
+the unchanged Kotlin script and Java Base64 oracle, including complete arena
+bytes, offsets, invalid pointers and unsigned argument bits. Native data retain
+all 594 original cases and add one five-call capacity retry/reuse case: 595
+function cases, 600 calls and separate silent exit. Four function groups contain
+160/165/256/14 cases in 16/17/26/2 bounded files. Every original million-instruction
+budget remains. Twenty-four original/native qualification processes accept ten
+correct routes and reject fourteen faulty routes. Scalar, vector, relocated and
+wide-address alternatives remain accepted; six semantic faults and the unfinished
+starter remain rejected.
+
+Retaining the original workspace-based stack required a real grader capability.
+MARS 15074f62 adds FunctionCheckCase.initialRegisterAddresses and strict function-
+profile version 10. Addresses resolve after initial memory and before stack
+alignment and snapshots. Integer/address collisions and aliases are rejected;
+caller-owned maps are captured before opening a session. Five simulator tests
+cover relocated/full-width pointers, stack alignment/preservation, immutable
+capture and failure cleanup. Three parser tests cover immutable data, versioning
+and invalid input. No simulator instruction semantics changed.
+
+The full regression passes 231 CLI / 1242 plugin tests with no failures, errors
+or skips and required coverage/parser gates. A later focused exact-archive
+Jupiter test verifies all vector bits, intra-block publication anchors, batches,
+workspace stacks and invalid-pointer cases; no second full run is claimed for
+this test-only fixture. All 513 book-tool and 129 authoring tests pass. Paired
+verification accepts the exact MARS and authoring archives with 91/20 experimental
+API notices. All twelve worked-source probes verify actual values and complete
+source/destination access notices. Earlier value-only probes remain historical.
+
+The initial real IDE diagnostic passed the first quiz and Debug stop but exposed
+an authoring assumption: the debugger may retain the caret at the paused frame.
+The corrected separate driver resolves its trusted fixture anchors from public
+MARS syntax types and platform PSI, including the syscall later within main_done.
+It uses supported read locking and breakpoint APIs; no production internal
+resolver or custom assembly parser is imported. The stalled run is retained
+separately and is not a completed walkthrough.
+
+Two subsequent light-theme IDE processes exercise every question, observation,
+Run and assessment. The first includes wrong-answer recovery, starter 0/160 and
+a correct unsaved vector solution 160/165/256/14/1. Thirteen edits clear twenty
+execution passes. Reopening retains eleven quiz attempts and thirteen unchanged
+source hashes, then renews all twenty passes. Assessment counts advance from
+2/1/1/1/1 to 3/2/2/2/2. Eleven installed JARs match pinned archives in each process;
+accepted logs contain no ERROR/SEVERE. Native close/disposal precedes stopping
+only the owned IDE process. Actual clean cleanSandbox runIde tasks precede both
+launches; all authoring automation remains in the separate plugin.
+
+The directly edited LaTeX companion supplies the native route, complete source
+variations, independent groups and first-mismatch guidance. It occupies section
+17.8, lab pages 120–127 in the 207-page proof. All eight pages and adjacent
+boundaries were visually reviewed; the three existing capture views on pages
+123/124 were also reviewed in grayscale. The exact final PDF passes 1728
+PDF/UA-2 rules / 975917 checks with zero failures and embeds Minion Pro, Noto Sans
+Math and JetBrains Mono. No new listing or replacement publication photograph
+was needed. The main learning proof is unchanged. All 41 manual MARS files are
+preserved. Human learner and assistive-technology reviews remain pending. The
+curriculum goal remains active; the proposed opening stays deferred. The next
+native main unit develops bounded file I/O and PPM images.

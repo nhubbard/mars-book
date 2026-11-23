@@ -1,0 +1,1107 @@
+{
+  "formatVersion": 8,
+  "introduction": "Derive numerical sextets before their character codes. Follow complete and partial groups, validate an entire input before output, and keep caller slices separate from private vector storage. Then write the unpadded URL-safe interface independently.",
+  "conclusion": "Explain the bit grouping, alphabet, tail length, preflight order and complete memory footprints your encoder uses. Keep a boundary observation alongside the finite passing corpus. Equivalent instruction schedules are accepted; output equality alone does not prove a vector strategy or a speedup.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "sextet-or-character",
+      "explanation": "For source bytes 4d 61 6e, Man, the four numerical sextets are 19,22,5,46. The second sextet joins the low two bits of 4d with the high four bits of 61. The standard alphabet maps numerical 22 to character W.",
+      "question": "Which value belongs in output byte one?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "ASCII 87, the byte for W",
+          "feedback": "Numerical 22 is the alphabet index. Lookup yields ASCII 87, hexadecimal 57."
+        },
+        {
+          "id": "b",
+          "text": "Numerical byte 22",
+          "feedback": "That would store the index without converting it to its character representation."
+        },
+        {
+          "id": "c",
+          "text": "ASCII 22 because the machine uses little-endian memory",
+          "feedback": "Byte order does not replace alphabet lookup. The index and character code are different quantities."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_enc_pair",
+        "mnemonic": "sltiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-default",
+      "source": "base64-codec.asm",
+      "integerInputs": [],
+      "explanation": "Open base64-codec.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at after_enc_pair before sltiu. t0=77, t1=97 and t2=110 are the three unsigned input bytes; t3=22 is the second sextet, while t4=87 is its alphabet character. Destination begins 54 57, TW, with later bytes still a5.",
+          "anchor": {
+            "label": "after_enc_pair",
+            "mnemonic": "sltiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x000000000000004d",
+            "$t1": "0x0000000000000061",
+            "$t2": "0x000000000000006e",
+            "$t3": "0x0000000000000016",
+            "$t4": "0x0000000000000057"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at encode_scalar_return. The function returned status zero and length four. Destination is TWFu followed by unchanged a5. No NUL terminator belongs to this interface, and the published status/written words are still −1.",
+          "anchor": {
+            "label": "encode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at the syscall within main_done, after both publication stores. Memory now reports status zero and written four. v0 is ten because the caller selected the exit service; v1 still contains four. Explain why this is consistent with the earlier status zero.",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "syscall",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000000000000a",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The default observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-default",
+      "source": "base64-codec.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run base64-codec.asm normally to silent completion after explaining the paused data. Normal exit complements the observations; the absence of console text does not establish correct bytes or access widths.",
+      "success": "The default caller completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "unused-pad-bits",
+      "explanation": "One remaining input byte has eight useful bits: six fill q0 and two occupy the high bits of q1. The low four bits of q1 must be zero. Padding marks missing output payload; it is not a sextet with value 64.",
+      "question": "How is the one-byte input M encoded by the standard interface?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "TQ==",
+          "feedback": "The two data characters encode eight useful bits with zero unused bits, followed by two padding markers."
+        },
+        {
+          "id": "b",
+          "text": "TR==",
+          "feedback": "R has index 17, whose low four bits are not zero. It is a noncanonical spelling."
+        },
+        {
+          "id": "c",
+          "text": "TQ",
+          "feedback": "This is the unpadded form used by the later independent interface, not this standard padded result."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "encode_pack",
+        "mnemonic": "srl",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-tail-one",
+      "source": "worked/tail-one.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/tail-one.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at encode_scalar_return. One selected byte produces TQ== and length four. The function must not read absent b/c bytes from the larger source arena. The destination byte after the four-character result remains a5.",
+          "anchor": {
+            "label": "encode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The tail-one observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-tail-two",
+      "source": "worked/tail-two.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/tail-two.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at encode_scalar_return. Two selected bytes Ma produce TWE= and length four. The last sextet carries four useful bits and two zero unused bits; only one padding marker follows.",
+          "anchor": {
+            "label": "encode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The tail-two observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "whole-buffer-validation",
+      "explanation": "The first quartet of TWFuTR== is valid, but the final quartet has nonzero unused bits. The worked decoder promises that every failure leaves the complete destination untouched, rather than keeping an accepted prefix.",
+      "question": "What may it publish before rejecting the final quartet?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No decoded bytes",
+          "feedback": "Validate the complete text before output stores. A valid first quartet does not authorize partial publication under this interface."
+        },
+        {
+          "id": "b",
+          "text": "The first three bytes Man",
+          "feedback": "That would implement a prefix-output guarantee like the earlier delta codec, changing this contract."
+        },
+        {
+          "id": "c",
+          "text": "The final partial byte only",
+          "feedback": "The final quartet is malformed and authorizes no output."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "decode_scalar_return",
+        "mnemonic": "bc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-late-error",
+      "source": "worked/late-error.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/late-error.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at decode_scalar_return. Status is malformed two and length zero. Every destination byte remains a5, including the first row that a streaming decoder might have filled from TWFu. This source gave sufficient capacity; the failure is its final unused bits.",
+          "anchor": {
+            "label": "decode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at the exit syscall in main_done. Published status is two and written count zero. v0 is now the exit selector ten. Use the published words or the earlier return boundary to retain the failure status.",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "syscall",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000000000000a",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The late-error observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "malformed-before-capacity",
+      "explanation": "The decoder first validates all text, then checks the complete decoded capacity. Compare malformed TWFuTR== and canonical TWFuTQ== with capacity zero.",
+      "question": "Which statuses follow that order?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Malformed two for both",
+          "feedback": "The second string has zero unused pad bits and is valid; its failure is insufficient output capacity."
+        },
+        {
+          "id": "a",
+          "text": "Malformed two for the first; capacity three for the second",
+          "feedback": "Only canonical text reaches the capacity check. Both failures return length zero and leave output untouched."
+        },
+        {
+          "id": "b",
+          "text": "Capacity three for both",
+          "feedback": "That would check capacity before establishing the decoded input is valid."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "b64_validate",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-late-error-zero",
+      "source": "worked/late-error-zero.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/late-error-zero.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at decode_scalar_return. The unchanged malformed text still returns status two with zero length even though capacity is zero. No destination access belongs to the failed whole-buffer operation.",
+          "anchor": {
+            "label": "decode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The late-error-zero observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-valid-capacity-zero",
+      "source": "worked/valid-capacity-zero.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/valid-capacity-zero.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at decode_scalar_return. Replacing TR== with canonical TQ== lets validation succeed; capacity zero then returns status three and zero length. The destination remains entirely a5.",
+          "anchor": {
+            "label": "decode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The valid-capacity-zero observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "twelve-byte-source",
+      "explanation": "The direct encoder kernel takes twelve source bytes and writes sixteen character bytes. An MSA ld.b reads sixteen bytes at once. The routine has no permission to read four extra caller bytes merely because their lanes would later be ignored.",
+      "question": "Where may this implementation perform the sixteen-byte load?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "At source minus four to move the excess read earlier",
+          "feedback": "That still reads bytes outside the selected source interval."
+        },
+        {
+          "id": "a",
+          "text": "In a private sixteen-byte slot after copying exactly twelve input bytes",
+          "feedback": "The private slot supplies the full load footprint. Zeroing its remaining four bytes defines the unused lanes."
+        },
+        {
+          "id": "b",
+          "text": "Directly at the twelve-byte source pointer",
+          "feedback": "That overreads the selected input even when mapped padding exists."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_enc12_copy",
+        "mnemonic": "ld.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-direct-encode12",
+      "source": "worked/direct-encode12.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/direct-encode12.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at after_enc12_copy before ld.b. The routine copied twelve caller bytes into its private sixteen-byte stack slot and zeroed the remaining four. Its direct input/output pointers are a0/a1, unlike a whole entry’s a0/a2 pair.",
+          "anchor": {
+            "label": "after_enc12_copy",
+            "mnemonic": "ld.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at after_enc12_right. View w1 as sixteen 8-bit integer lanes: [19,22,5,46] repeated four times. These are numerical sextets, not ASCII TWFu yet. The two shuffle/shift paths have joined cross-byte fields.",
+          "anchor": {
+            "label": "after_enc12_right",
+            "mnemonic": "ldi.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w1": "0x2e0516132e0516132e0516132e051613"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at encode12_done after the vector store. w4 contains ASCII TWFu repeated four times, while w1 retains the sextets. Destination has sixteen character bytes and its following byte remains a5. Status/length instructions have not all executed at this boundary.",
+          "anchor": {
+            "label": "encode12_done",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w1": "0x2e0516132e0516132e0516132e051613",
+            "$w4": "0x75465754754657547546575475465754"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-3",
+          "explanation": "Break at encode12_msa_return. The kernel has restored sp and returned status zero, length sixteen. Its access checks require all twelve source bytes and sixteen output bytes to fit their complete notice widths.",
+          "anchor": {
+            "label": "encode12_msa_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000010"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The direct-encode12 observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "special-symbols",
+      "explanation": "Numerical indices 62 and 63 are ordinary sextet values. The standard alphabet assigns them + and /; the URL-safe alphabet assigns them - and _. Both encodings retain the same six-bit payload.",
+      "question": "For sextets 62,63,63,63, what does the standard kernel publish?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "-___",
+          "feedback": "Those are the URL-safe characters used by the independent exercise."
+        },
+        {
+          "id": "c",
+          "text": "====",
+          "feedback": "Padding does not encode these sextets; they form a complete four-character group."
+        },
+        {
+          "id": "a",
+          "text": "+///",
+          "feedback": "Alphabet conversion changes numerical indices into the standard character bytes 43,47,47,47."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_enc12_symbols",
+        "mnemonic": "ldi.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-direct-symbols",
+      "source": "worked/direct-symbols.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/direct-symbols.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at after_enc12_right. w1 has byte lanes [62,63,63,63] repeated four times. Keep their numerical values separate from either alphabet’s characters.",
+          "anchor": {
+            "label": "after_enc12_right",
+            "mnemonic": "ldi.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w1": "0x3f3f3f3e3f3f3f3e3f3f3f3e3f3f3f3e"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at encode12_done. w4 and destination contain +/// repeated four times, while w1 retains the numerical sextets. The standard vector conversion handled both special-symbol lanes.",
+          "anchor": {
+            "label": "encode12_done",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w1": "0x3f3f3f3e3f3f3f3e3f3f3f3e3f3f3f3e",
+            "$w4": "0x2f2f2f2b2f2f2f2b2f2f2f2b2f2f2f2b"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at encode12_msa_return. Status zero and length sixteen describe the exact successful kernel output. The next destination byte remains unchanged.",
+          "anchor": {
+            "label": "encode12_msa_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000010"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The direct-symbols observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-direct-symbols",
+      "source": "worked/direct-symbols.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/direct-symbols.asm normally to silent completion after explaining the paused data. Normal exit complements the observations; the absence of console text does not establish correct bytes or access widths.",
+      "success": "The direct-symbols caller completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "twelve-byte-output",
+      "explanation": "The direct decoder takes sixteen valid, unpadded characters and produces twelve bytes. Its compacted vector occupies sixteen lanes but only twelve are caller output.",
+      "question": "How may it publish that result?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Store all sixteen bytes because the unused lanes are zero",
+          "feedback": "Correct extra values are still forbidden output stores."
+        },
+        {
+          "id": "c",
+          "text": "Return sixteen because the input had sixteen characters",
+          "feedback": "The return length counts decoded bytes, not input characters."
+        },
+        {
+          "id": "a",
+          "text": "Store privately, then copy exactly twelve bytes to the caller",
+          "feedback": "The vector’s physical width does not enlarge the selected destination. Another schedule is valid if its complete stores obey the same footprint."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_dec16_compact",
+        "mnemonic": "st.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-direct-decode16",
+      "source": "worked/direct-decode16.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/direct-decode16.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at after_dec16_symbols. w5 contains the sixteen classified numerical sextets [19,22,5,46] repeated four times. Direct-kernel validity was a caller precondition, not a whole-decoder rejection guarantee.",
+          "anchor": {
+            "label": "after_dec16_symbols",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w5": "0x2e0516132e0516132e0516132e051613"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at after_dec16_compact before its private st.b. w7 begins ManManManMan followed by four unused zero lanes. Those last lanes are private representation, not four more output bytes.",
+          "anchor": {
+            "label": "after_dec16_compact",
+            "mnemonic": "st.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w7": "0x000000006e614d6e614d6e614d6e614d"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at decode16_done after the twelve caller byte stores. The first twelve destination bytes contain ManManManMan and the next byte remains a5. The full vector was stored only in private stack storage.",
+          "anchor": {
+            "label": "decode16_done",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w7": "0x000000006e614d6e614d6e614d6e614d"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-3",
+          "explanation": "Break at decode16_msa_return. Status zero and length twelve are live after stack restoration. Compare the sixteen-character input count with this twelve-byte output length.",
+          "anchor": {
+            "label": "decode16_msa_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The direct-decode16 observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "exact-in-place",
+      "explanation": "Four input characters produce at most three bytes. A decoder reads a complete group before storing its shorter result. With exactly equal input and output bases, earlier stores end before future unread groups.",
+      "question": "What does that justify for this interface?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Exact in-place decoding, under the stated group schedule",
+          "feedback": "It does not justify shifted partial overlap or expanding in-place encoding. Keep those interfaces distinct."
+        },
+        {
+          "id": "b",
+          "text": "Any overlapping source and destination pointers",
+          "feedback": "The argument uses equal bases and the distance to future unread groups, not arbitrary overlap."
+        },
+        {
+          "id": "c",
+          "text": "In-place encoding too, because the same bit fields are used",
+          "feedback": "Encoding expands the data and can overwrite unread input."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "decode_scalar_loop",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-direct-decode-in-place",
+      "source": "worked/direct-decode-in-place.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/direct-decode-in-place.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at decode16_msa_return. The first twelve source bytes are now ManManManMan, while source positions twelve through fifteen retain the final TWFu quartet. The disjoint destination arena remains unchanged. Full source-group reads preceded the shorter stores.",
+          "anchor": {
+            "label": "decode16_msa_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The direct-decode-in-place observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-in-place-padded",
+      "source": "worked/in-place-padded.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/in-place-padded.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at decode_scalar_return. The canonical eight-character text TWFuTQ== has become four bytes ManM at the same base. Its remaining original TQ== bytes are outside the four-byte output and remain unchanged; the separate destination arena is unused.",
+          "anchor": {
+            "label": "decode_scalar_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at the exit syscall in main_done. Published status is zero and written count four. Exact in-place decoding still uses the same whole-buffer validation-before-publication guarantee.",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "syscall",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000000000000a",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The in-place-padded observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "kernel-and-tail",
+      "explanation": "Thirteen raw bytes comprise one complete twelve-byte vector group and one remaining byte. The whole standard encoder keeps the scalar tail and the padded length rule.",
+      "question": "What output length and suffix are required?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Twenty characters, ending TQ== for the final M",
+          "feedback": "Sixteen vector characters plus one four-character scalar tail. The vector kernel’s precondition does not cover a thirteenth byte by itself."
+        },
+        {
+          "id": "b",
+          "text": "Sixteen characters, discarding the tail",
+          "feedback": "A complete vector group does not consume the remaining input byte."
+        },
+        {
+          "id": "c",
+          "text": "Eighteen characters, ending TQ",
+          "feedback": "That mixes the later unpadded URL-safe length rule with this padded standard interface."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "encode_loop",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-whole-thirteen",
+      "source": "worked/whole-thirteen.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/whole-thirteen.asm in a fresh Debug session. Use one line breakpoint at a time before the requested instruction. Inspect the selected frame, integer/vector Variables and Memory beside the written lab. Resume to normal exit after the last observation before changing sources.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at encode_msa_return. The whole entry returned status zero and length twenty. Destination contains TWFu repeated four times followed by TQ==; its next byte is unchanged. The vector group and scalar tail used the same numerical contract.",
+          "anchor": {
+            "label": "encode_msa_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000014"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at the exit syscall in main_done. Published status is zero and count twenty. Any work comparison must include validation, private copies, conversion, calls and tail work over the same complete interval.",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "syscall",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000000000000a",
+            "$v1": "0x0000000000000014"
+          },
+          "success": "The state matches this boundary. Explain the bit grouping, selected byte intervals and whether validation or publication has completed."
+        }
+      ],
+      "success": "The whole-thirteen observations match the current source.",
+      "hints": [
+        {
+          "id": "representation",
+          "text": "A sextet is a number zero through 63. Alphabet lookup or vector conversion turns it into an ASCII character byte. State which representation you are inspecting."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. A syscall stop after publication has v0=10 for exit, not the earlier function status."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-whole-thirteen",
+      "source": "worked/whole-thirteen.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/whole-thirteen.asm normally to silent completion after explaining the paused data. Normal exit complements the observations; the absence of console text does not establish correct bytes or access widths.",
+      "success": "The whole-thirteen caller completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "url-safe-tail",
+      "explanation": "The independent encoder keeps sextet grouping, maps indices 62/63 to -/_, and omits padding. Four source bytes fb ff ff ff form one complete group and a one-byte tail.",
+      "question": "What exact URL-safe output and length are required?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "-____w, six characters",
+          "feedback": "The first group is -___; the remaining byte ff contributes _w with no ==. Write neither padding nor a terminator."
+        },
+        {
+          "id": "b",
+          "text": "+////w==, eight characters",
+          "feedback": "That is the standard alphabet with padding, not the assigned interface."
+        },
+        {
+          "id": "c",
+          "text": "-___, four characters",
+          "feedback": "That drops the one-byte tail."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "encode_pack",
+        "mnemonic": "srl",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "url-short",
+      "source": "independent/base64url.asm",
+      "caseProfiles": [
+        "independent/base64url-short-00.cases.json",
+        "independent/base64url-short-01.cases.json",
+        "independent/base64url-short-02.cases.json",
+        "independent/base64url-short-03.cases.json",
+        "independent/base64url-short-04.cases.json",
+        "independent/base64url-short-05.cases.json",
+        "independent/base64url-short-06.cases.json",
+        "independent/base64url-short-07.cases.json",
+        "independent/base64url-short-08.cases.json",
+        "independent/base64url-short-09.cases.json",
+        "independent/base64url-short-10.cases.json",
+        "independent/base64url-short-11.cases.json",
+        "independent/base64url-short-12.cases.json",
+        "independent/base64url-short-13.cases.json",
+        "independent/base64url-short-14.cases.json",
+        "independent/base64url-short-15.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current b64url_encode for all lengths zero through 31 under five capacities. Follow independent/README.md. The starter deliberately stops with break. Establish a scalar baseline, inspect the first failed byte or access and retry before choosing vector work.",
+      "success": "All 160 public cases in this group pass for the current source. Explain unsigned preflight, exact grouping, unpadded length and complete access widths beside the finite evidence.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Reject an unsigned count above 64 before accepting empty input. For nonempty valid count, compare capacity with ceil(8*n/6) before any source or destination access."
+        },
+        {
+          "id": "alphabet",
+          "text": "The sextets are unchanged. Map 62 to ASCII 45 and 63 to ASCII 95; a one-byte tail emits two characters and a two-byte tail emits three, without padding."
+        },
+        {
+          "id": "footprint",
+          "text": "Read only selected source/output slices and write only the exact successful result. A vector read that includes unselected bytes is invalid even if those lanes are discarded."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "url-long",
+      "source": "independent/base64url.asm",
+      "caseProfiles": [
+        "independent/base64url-long-00.cases.json",
+        "independent/base64url-long-01.cases.json",
+        "independent/base64url-long-02.cases.json",
+        "independent/base64url-long-03.cases.json",
+        "independent/base64url-long-04.cases.json",
+        "independent/base64url-long-05.cases.json",
+        "independent/base64url-long-06.cases.json",
+        "independent/base64url-long-07.cases.json",
+        "independent/base64url-long-08.cases.json",
+        "independent/base64url-long-09.cases.json",
+        "independent/base64url-long-10.cases.json",
+        "independent/base64url-long-11.cases.json",
+        "independent/base64url-long-12.cases.json",
+        "independent/base64url-long-13.cases.json",
+        "independent/base64url-long-14.cases.json",
+        "independent/base64url-long-15.cases.json",
+        "independent/base64url-long-16.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current b64url_encode for all lengths 32 through 64 under five capacities. Follow independent/README.md. Use the same current source; passing another group does not establish these lengths, capacities or boundary cases.",
+      "success": "All 165 public cases in this group pass for the current source. Explain unsigned preflight, exact grouping, unpadded length and complete access widths beside the finite evidence.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Reject an unsigned count above 64 before accepting empty input. For nonempty valid count, compare capacity with ceil(8*n/6) before any source or destination access."
+        },
+        {
+          "id": "alphabet",
+          "text": "The sextets are unchanged. Map 62 to ASCII 45 and 63 to ASCII 95; a one-byte tail emits two characters and a two-byte tail emits three, without padding."
+        },
+        {
+          "id": "footprint",
+          "text": "Read only selected source/output slices and write only the exact successful result. A vector read that includes unselected bytes is invalid even if those lanes are discarded."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "url-bytes",
+      "source": "independent/base64url.asm",
+      "caseProfiles": [
+        "independent/base64url-bytes-00.cases.json",
+        "independent/base64url-bytes-01.cases.json",
+        "independent/base64url-bytes-02.cases.json",
+        "independent/base64url-bytes-03.cases.json",
+        "independent/base64url-bytes-04.cases.json",
+        "independent/base64url-bytes-05.cases.json",
+        "independent/base64url-bytes-06.cases.json",
+        "independent/base64url-bytes-07.cases.json",
+        "independent/base64url-bytes-08.cases.json",
+        "independent/base64url-bytes-09.cases.json",
+        "independent/base64url-bytes-10.cases.json",
+        "independent/base64url-bytes-11.cases.json",
+        "independent/base64url-bytes-12.cases.json",
+        "independent/base64url-bytes-13.cases.json",
+        "independent/base64url-bytes-14.cases.json",
+        "independent/base64url-bytes-15.cases.json",
+        "independent/base64url-bytes-16.cases.json",
+        "independent/base64url-bytes-17.cases.json",
+        "independent/base64url-bytes-18.cases.json",
+        "independent/base64url-bytes-19.cases.json",
+        "independent/base64url-bytes-20.cases.json",
+        "independent/base64url-bytes-21.cases.json",
+        "independent/base64url-bytes-22.cases.json",
+        "independent/base64url-bytes-23.cases.json",
+        "independent/base64url-bytes-24.cases.json",
+        "independent/base64url-bytes-25.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current b64url_encode for every possible one-byte input. Follow independent/README.md. Use the same current source; passing another group does not establish these lengths, capacities or boundary cases.",
+      "success": "All 256 public cases in this group pass for the current source. Explain unsigned preflight, exact grouping, unpadded length and complete access widths beside the finite evidence.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Reject an unsigned count above 64 before accepting empty input. For nonempty valid count, compare capacity with ceil(8*n/6) before any source or destination access."
+        },
+        {
+          "id": "alphabet",
+          "text": "The sextets are unchanged. Map 62 to ASCII 45 and 63 to ASCII 95; a one-byte tail emits two characters and a two-byte tail emits three, without padding."
+        },
+        {
+          "id": "footprint",
+          "text": "Read only selected source/output slices and write only the exact successful result. A vector read that includes unselected bytes is invalid even if those lanes are discarded."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "url-edges",
+      "source": "independent/base64url.asm",
+      "caseProfiles": [
+        "independent/base64url-edges-00.cases.json",
+        "independent/base64url-edges-01.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current b64url_encode for familiar texts, unsigned bounds, invalid-pointer preflight, caller publication and repeated calls. Follow independent/README.md. Use the same current source; passing another group does not establish these lengths, capacities or boundary cases.",
+      "success": "All 14 public cases in this group pass for the current source. Explain unsigned preflight, exact grouping, unpadded length and complete access widths beside the finite evidence.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Reject an unsigned count above 64 before accepting empty input. For nonempty valid count, compare capacity with ceil(8*n/6) before any source or destination access."
+        },
+        {
+          "id": "alphabet",
+          "text": "The sextets are unchanged. Map 62 to ASCII 45 and 63 to ASCII 95; a one-byte tail emits two characters and a two-byte tail emits three, without padding."
+        },
+        {
+          "id": "footprint",
+          "text": "Read only selected source/output slices and write only the exact successful result. A vector read that includes unselected bytes is invalid even if those lanes are discarded."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/base64url.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "explanation": "Check the complete default URL-safe program through its normal silent exit after the four numerical and interface groups.",
+      "success": "The complete URL-safe caller exits normally with no console output."
+    }
+  ]
+}
