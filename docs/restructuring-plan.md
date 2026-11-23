@@ -1413,7 +1413,7 @@ separate. See `revision/h263-prediction-unit.md` for scope.
 ### H.263 native numerical student-unit draft, 23 November 2026
 
 Six bounded experiments now connect unchanged SAD, motion, prediction, block
-transform/reconstruction and six-plane coordination helpers to the continuing
+transform/reconstruction and six-block coordination helpers to the continuing
 independent reconstruction task. Twelve predictions, eighteen Debug boundaries,
 one Run and staged/final assessments form the native draft. Complete-byte/core
 probes, exact exported-starter qualification and actual package/PSI tests pass.

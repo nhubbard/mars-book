@@ -160,7 +160,7 @@ children. Whole-stream interoperability remains the next unit's separate work.
 Six source-bound core probes verify all eighteen stop register/vector snapshots
 and subsequent normal silent exits. They additionally verify admitted SAD row
 reads, every predicted byte and signed residual, complete forward coefficients,
-all four 448-byte block-output regions, all six coordinated records, and no
+all four regions of each 448-byte block output, all six coordinated records, and no
 output store on rejected prediction/coordinator metadata. Original initial probes
 remain separate from the final strengthened probes. No host file or clock is
 required for any native numerical observation.
