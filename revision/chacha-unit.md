@@ -69,3 +69,22 @@ lesson, delivered progression and enforced instructor policies are not complete.
 The broader curriculum goal remains active. SHA-256 and RSA companion treatments
 follow before WAV, PNG and the retained video sequence. The deferred opening
 explanation of MARS versus hardware has not been added.
+
+## Native grading foundation, 23 November 2026
+
+The existing 73 public cases now have a native data author preserving all original
+budgets, argument layouts, complete caller snapshots and access windows. The
+original checker exports agree in the worked, alternative and wide-address
+layouts. Nine native profiles retain 84 original function observations; eleven
+additional main-dispatch observations and actual caller termination/status stores
+strengthen the supplied-caller checks. Three correct implementations pass; all
+eight retained faults and the unfinished starter fail. Per-call memory setup was
+added to the public grader so changing inputs across a shared session remains a
+real check, rather than a fresh-session approximation. See
+[the native contract](../docs/native-chacha-checks.md).
+
+These are grading foundations. The connected native Learn guide, revised written
+lab, renewed publication proof and first/resume IDE walkthrough are still pending.
+Earlier page/test counts above describe the historical chapter qualification.
+No new screenshot or PDF is claimed by this stage. The full curriculum goal
+remains active, including the SHA-256 and RSA companion work.
