@@ -2,9 +2,9 @@
 
 Chapter 24 revises original project `033-png` as a connected main-book explanation
 and written lab. Directly edited authority is `main/png-pipeline.tex` and
-`labs/png-pipeline.tex`, included by the revised native entries. The main proof
-is 162 pages, with this chapter on 155–162; the lab is 170 pages, with this unit
-on 166–170. Original manuscript and construction evidence remain preserved.
+`labs/png-pipeline.tex`, included by the revised native entries. At the original PNG editorial milestone, the main proof
+had 162 pages, with this chapter on 155–162; the lab had 170 pages, with this unit
+on 166–170. Those are historical proof counts, not the expanded publication. Original manuscript and construction evidence remain preserved.
 
 ## Teaching sequence and independent work
 
@@ -93,9 +93,58 @@ learner and assistive-technology review remain separate open work.
 
 ## Remaining work
 
-This step does not implement a native interactive lesson for the advanced PNG
-unit. Original construction material remains separate supporting detail, rather
+The original publication milestone did not implement a native interactive lesson
+for the advanced PNG unit. The assessment foundation below prepares that delivery;
+student activities and the IDE walkthrough are still to follow. Original construction material remains separate supporting detail, rather
 than being expanded into a hundred sections in the main book. Advanced lesson
 integration, author/learner review, lossless video and restricted interoperable
 H.263 treatment remain outstanding. The full curriculum goal is active; all
 forty-one pre-existing MARS edits are preserved.
+
+## Native assessment foundation (23 November 2026)
+
+`tools/png_filter_lesson_cases.py` models all 266 original public independent
+forward-filter cases as six native profiles. They preserve both native settings
+byte orders (133 cases each), all five predictors, unaligned pointers, boundary
+widths, full-width invalid values, unsigned capacity, coincident read-only inputs,
+explicit Paeth ties, and two six-call cases sharing one simulator each. Every
+original case retains its 100,000-instruction allowance. There are 276 observed
+calls; batching never divides a reused session into fresh machines.
+
+Native format 21 adds an explicit per-case assembly byte order. The plugin uses
+its existing build service and cache to assemble each requested order from the
+current source, including unsaved edits. Initialized native constants therefore
+have the correct representation; changing memory interpretation after assembling
+would not suffice. The cache distinguishes byte orders. Ordinary Run/Debug
+settings and existing lesson identity strings remain unchanged. The original
+prepared-check signature and trailing cancellation lambda remain available.
+
+The model compares the complete selector and residual byte string and protects
+all six caller objects. All three setup objects are replaced before each call,
+while the output and private machine state remain live between calls. Among
+caller objects, output is writable but not readable; only the first 24 settings
+bytes and the selected original input slices are readable. Private workspace and
+gaps remain available. An invalid setting permits no RGB/output access. Neither
+None nor Sub can dereference the deliberately invalid previous-row pointer.
+
+An independent inverse recurrence over every expected valid result recovers the
+original RGB bytes in the host checks. Native equality with those complete bytes
+therefore also establishes that inverse result; no checksum substitutes for the
+original byte assertions. The original public checker is executed separately
+with its runtime inverse assertion intact. Its 266 cases and 276 calls agree with
+the model on every argument, result, and before/after snapshot of all six caller
+objects for reference, alternative and wide-address implementations.
+
+Four model tests check the full grid, byte order, access permissions, Paeth tie
+values, non-wrapping Average, exact inverse results, profile bounds and unchanged
+checker binding. The exact six-profile archive is also a Jupiter parser fixture.
+Generic grader tests cover separately assembled native constants, missing/wrong
+images, detached variant maps, reused calls, current unsaved source, distinct
+cached images and permission withdrawal before execution. Private executable
+qualification and final regression reports are retained with
+`native-png-foundation-01`; they are separate from the original decoder suites.
+
+This foundation does not yet compose the PNG student activities, launch their
+native lesson in the IDE or change the LaTeX publication. The independent task
+remains the forward scanline filter; the complete decoder remains the worked
+example. The original hundred-step decoder construction task is preserved.
