@@ -210,3 +210,30 @@ would not catch that fault. This targeted assertion is recorded separately from
 the full run. Paired public API checks pass with 91 MARS / 20 unchanged authoring
 experimental usages. All 41 manual MARS edits remain unchanged. No IDE sandbox
 was launched and no LaTeX proof was regenerated in this backend step.
+
+## Native Debug launch input, 22 November 2026
+
+MARS commit `49ddc6c3` adds the ordinary student launch path for the pending
+CRC read-error observation. Native lesson format 9 can bind an immutable,
+read-only file fixture to a Debug activity's source. Each matching Run or Debug
+launch owns fresh file contents, descriptors and cursors. Leaving the activity
+removes its binding for future launches; an already paused guest keeps its input
+until execution ends. The shared grading file engine supplies the semantics,
+while interactive launches omit its per-operation history. Non-file frontend
+services retain their existing ownership and behavior. The separate authoring
+plugin contains no required student functionality for this mechanism.
+
+A real native XDebugger test acquires descriptor 19, disposes its accepted Learn
+observation, then continues the same guest through read results 3, 2 and minus
+one, closes the descriptor and exits. Other tests cover independent launches,
+EOF, reopen, missing input, host-file isolation and replacement-task cleanup.
+The full regression passes 246 CLI and 1,263 plugin tests, both required coverage
+gates and the plugin build. All 535 book-tool tests pass. Paired API verification
+passes with 91 MARS / 20 unchanged authoring experimental usages. All 41 manual
+MARS edits remain unchanged. The format and lifecycle contract is documented in
+`docs/native-debug-file-inputs.md`.
+
+This completes the launch capability, not the Chapter 19 native unit. The connected
+inline lesson, public package, first/resume desktop walkthrough and revised written
+companion still need completion. No new IDE sandbox or screen capture was launched
+and the existing LaTeX proof remains unchanged. No learner review is claimed.
