@@ -83,3 +83,14 @@ This unit uses ordinary Run and Debug. Its native guided lesson is not implement
 The full curriculum goal remains active; the next main unit develops CBOR after
 these bounded parser and state-machine foundations. Original projects 017 and 018
 remain assigned to expression/bytecode companion labs in the restructuring plan.
+
+## Native grading foundation, 23 November 2026
+
+The original 205 reflection cases now have an authored native data equivalent,
+with original six-million/100,000 instruction allowances, memory permissions,
+complete enclosing access-history capacity, preserved state and actual caller
+termination. A field-by-field export comparison covers every original case.
+See [the native QOI grading contract](../docs/native-qoi-checks.md) for versioned
+formats, limits and verification scope. This foundation does not complete the
+QOI guided lesson, its desktop walkthrough or refreshed lab composition.
+The earlier page and tool-test counts above describe the historical QOI proof.
