@@ -712,4 +712,21 @@ class BookPackageImportPlanTest {
             assertThrows<IllegalArgumentException> { bad.validate() }
         }
     }
+    @Test
+    fun `Clipped native plans bind the retained caller fixture and reject mixed or incomplete routes`() {
+        val clipped = plan.copy(archives = listOf(archive.copy(id = "016-clipped-regions", version = "0.1.0", entry = "worked/interval.asm")),
+            nativePredictions = true, clippedUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/blit.asm", "/tmp/clipped.asm", "c".repeat(64))))
+        clipped.validate()
+        clipped.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(clipped.copy(nativePredictions = false), clipped.copy(nativeExecution = true),
+            clipped.copy(nativeDebug = true), clipped.copy(resumeCompleted = true), clipped.copy(h263StreamUnit = true),
+            clipped.copy(clippedUnit = false), clipped.copy(activityNavigation = true), clipped.copy(prerequisiteControls = true),
+            clipped.copy(assessmentFixtures = emptyList()), clipped.copy(assessmentFixtures = clipped.assessmentFixtures + clipped.assessmentFixtures),
+            clipped.copy(assessmentFixtures = listOf(clipped.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            clipped.copy(archives = listOf(clipped.archives.single().copy(id = "016-other"))),
+            clipped.copy(archives = listOf(clipped.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
 }
