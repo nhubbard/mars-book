@@ -1,5 +1,9 @@
 # Programming and computer architecture with MARS
 
+The restructured main book, written lab companion and native student units are technically complete. See [the completion record](docs/restructuring-completion.md) and [current reading proofs](revision/README.md). The local student course bundle is build/mars-course-2026-11-23-student.zip. Author walkthrough, learner/accessibility review and separate substantive editing remain open.
+
+The original-draft notes below retain their historical scope.
+
 The restructured publications are the [main learning book](revision/learning.tex)
 and [written lab companion](revision/lab-book.tex), composed directly in native
 LaTeX. Their interactive student packages are under `revision/lessons/`.

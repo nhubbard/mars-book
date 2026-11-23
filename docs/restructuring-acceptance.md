@@ -1,6 +1,6 @@
 # Restructuring acceptance ledger
 
-Updated: 23 November 2026. The restructuring goal remains active. This ledger
+Updated: 23 November 2026. Technical restructuring and its final integration audit are complete; human review and substantive editing remain separately owned. See [the completion record](restructuring-completion.md) for current evidence. This ledger
 tracks the agreed products, rather than treating chapter counts or successful
 builds as completion. Historical unit notes retain the exact scope and editions
 of their technical evidence. A file or receipt's existence does not establish
@@ -15,7 +15,7 @@ that its contents were rechecked by this audit.
 | Complete smaller programs in the main book | Console, pixel, loop, function and array examples have complete public sources; individual unit notes identify executable checks | Confirm during walkthrough that every partial listing's purpose and complete source are clear |
 | Explicit outcomes and prerequisites | `docs/revised-learning-outcomes.md` maps three assessable outcomes per chapter to activities and expected entry concepts | Human review of the map and the explanations at first use |
 | Connected explanations, worked reasoning and independent transfer | Native chapter/lab pairs and the reviewed first-program, PCM and H.263 pilots; author accepted the direction for expansion | Substantive editing is a separate author-directed goal; no claim of completed learner validation |
-| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for two companions below, then review names, paths and observations across all editions |
+| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | All ten companions delivered; final current-edition audit complete. Human walkthrough remains open |
 | Contents, glossary and index in each book | New native front matter, shared glossary and separately referenced chapter-oriented subject indexes | Technical navigation checks pass: literal references resolve, changed pages are visually inspected, final PDFs pass automated PDF/UA-2. A topic entry points to the relevant chapter, not a claimed first-use paragraph |
 | Native composition, fonts and highlighting | Directly edited TeX includes; Minion Pro, Noto Sans Math and IntelliJ-derived minted style | Current proofs compile with embedded Minion Pro, Noto Sans Math and JetBrains Mono; native composition checks pass. Preserve direct prose editing in future changes |
 | Actual figures and accessible annotations | Unit receipts bind real light-theme IDE images, source/state and native TeX annotations | Recapture changed demonstrations; renew automated PDF/UA-2 on final bytes; human reading-order and assistive-technology review remain open |
@@ -33,35 +33,27 @@ they are not student answer keys.
 | Inline predictions with editor context | `native-predictions-*`, `native-debug-*` and per-unit IDE evidence | Course-wide review of questions and pointers; retain the actual inline interaction instead of requiring Find Action |
 | Source-bound Run/Debug observations | `native-execution-01`, `native-reopen-01` and per-unit IDE evidence | Confirm every current package against its tested archive and source revision |
 | Resumable progress, edits, retries and invalidation | `native-lesson-runtime-01`, `native-reopen-01`, per-unit fresh-process resume receipts | Audit current-edition distribution bindings and retry semantics |
-| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete two companions; retain interface/state checks instead of reference-source matching |
+| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | All companions delivered; interface/state checks retained; current native assessment qualification passes |
 | Graduated hints and instructor control | `native-hints-01`, `native-policy-01`, `downloaded-prerequisites-01`, `functions-prerequisites-01`, `native-fir-call-policy-01`, `native-matvec-policy-01` | Verify current package policy bindings and explain permitted direct entry without weakening checks |
 | Versioned local/HTTPS delivery | `lesson-import-01`, `lesson-download-01`, `downloaded-navigation-01` and `downloaded-prerequisites-01` | Final public archive and download guidance audit; no hosted grading or LMS claim |
 | Kotlin, public IntelliJ APIs and meaningful Jupiter coverage | MARS source, test reports and pinned API-verifier receipts in individual implementation steps | Recheck after any new production change; preserve unrelated manual edits |
-| Student/instructor separation | Explicit native export lists and exact student ZIP digests; private reference/check distributions | Renew distribution scan after remaining companions, bind instructor editions to current student digests |
+| Student/instructor separation | Explicit native export lists and exact student ZIP digests; private reference/check distributions | Final nested export/member scan passed; current instructor course embeds exact student course |
 
 These are evidence locations, not a declaration that all their requirements have
 passed a renewed final audit. The final audit must record the inspected receipts,
 commits, archive digests and limitations.
 
-## Remaining native companion packages
+## Native companion delivery
 
-These two subjects already have written labs, public executable starters/checks
-and private qualification evidence. Ordinary Run/Debug availability does not
-complete the promised native guided delivery.
-
-| Original subject | Existing written location | Required integration |
-| --- | --- | --- |
-| 017 Expression evaluator | `revision/labs/companions/expression.tex` | Parsing/evaluation state and independent syntax/overflow/error checks |
-| 018 Bytecode interpreter | `revision/labs/companions/bytecode.tex` | Instruction decoding, bounded machine state and independent fault checks |
-
-Verify the actual source paths and contracts before authoring each package. If a
-required observation cannot be expressed by the existing grader, add and test the
-missing MARS checking function. Do not weaken a trail, access or failure contract
-to an easier final-value check.
+All ten companion packages are delivered. The last two are
+`017-expression-order` and `018-bytecode-machine`; their native unit notes and
+private first/resume, grading, distribution and publication receipts retain exact
+scope. There are no unfinished companion integrations. The final course-wide
+acceptance record above distinguishes current checks from historical milestones.
 
 ## Review ownership and limits
 
-The implementation agent owns the unfinished native companions, technical
+The implementation agent has completed the native companions, technical
 integration audit, distribution checks and publication verification. The author
 owns the complete unaided walkthrough, acceptance of prose and physical volume
 decisions. Representative learner review and human accessibility review require
@@ -203,3 +195,7 @@ The thirty-fifth downloadable native unit, 017-expression-order, now passes actu
 ## Bytecode delivery milestone
 
 The thirty-sixth downloadable native unit, 018-bytecode-machine, completes native delivery for all ten companions alongside the separate built-in first unit. Both actual first/resume IDE processes pass all 1,274 public cases, retain nine quiz attempts and three edited sources, and renew eleven execution activities. Nineteen activities connect complete record-classifier experiments to whole-image validation, bounded guest state, precise faults, retirement and fresh calls. All twenty PSI pointers and two archive tests pass. Public tooling 680, authoring 153 and private release guards 5 pass. Both private implementations and the extracted alternative each pass 12,757. The 245-page lab proof is reviewed on physical 170–180; figures 174–177 also grayscale. Exact PDF/UA-2 passes 1,728 rules and 1,180,214 checks with zero failures. The course-wide integration/distribution acceptance audit remains implementation work; human review and substantive editing retain separate ownership. See revision/bytecode-native-unit.md and private native-bytecode-unit-01.
+
+## Final technical acceptance
+
+The final integration/distribution audit is complete; see [the completion record](restructuring-completion.md). All 36 current native archives rebuild, all 145 assessment stages / 9,254 staged cases pass on the pinned production readers, and actual historical first/resume evidence is matched without erasing documentation-only edition differences. The frozen full regression passes 317 CLI / 1,359 plugin tests with required coverage/parser gates; four later exact-import tests pass separately. Both exact final PDFs pass renewed PDF/UA-2. Student/private course bundles verify every member and embed the exact student binding. Original draft material and all 41 manual MARS edits are preserved. Human author/learner/accessibility review, substantive editing and the deferred opening orientation retain their stated separate ownership.

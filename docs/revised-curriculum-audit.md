@@ -61,20 +61,24 @@ shifts, OR and XOR in Chapter 5; the native chapter now explains them. This map
 requires author and learner review. It must not infer achieved learning from
 file presence or package titles. Electives remain optional for the codec progression.
 
-Native interactive support now includes both H.263 units and the earlier revised
-lessons under `revision/lessons`. There are thirty-one exercised downloadable
-native packages, plus the built-in first-program unit. MarsBot and maze search
-include actual first-use/resume IDE verification, bound instructor distributions
-and written integration. Five companions still need native delivery: ring buffers,
-UTF-8, clipped sprites, expression evaluation and bytecode interpretation. Their
-written labs and public checks remain available, but ordinary Run and Debug do
-not complete that delivery.
+Native delivery now covers all ten companions and the twenty-seven-chapter
+sequence through thirty-six downloadable units plus the separate built-in first
+unit. Expressions and bytecode are the last companion deliveries. The current
+student editions, explicit archive filenames and digests are indexed in
+`revision/native-unit-index.json`; native TeX remains the composition authority.
 
-The [acceptance ledger](restructuring-acceptance.md) tracks these gaps and the
-course-wide integration review. Technical verification notes retain the scope of
-executable checks and captures. Their existence does not certify that those checks
-were rerun by this structural audit. Author walkthrough, beginner review and human
-accessibility review remain open.
+The acceptance audit compares actual historical first/resume activity records
+with current lesson identities, accounting explicitly for older driver naming,
+retained unchanged-source credit and the byte inspector's three-process partial,
+execution and completed-reopen sequence. FIR and H.263 stream distributions have
+documented text-only changes after their IDE imports; current import tests and
+unchanged execution/grading bytes are checked separately. That does not turn an
+old IDE run into a new run of different archive bytes.
+
+The [acceptance ledger](restructuring-acceptance.md) records the remaining
+technical audit and the scope of its checks. Author walkthrough, representative
+learner review and human accessibility review remain open. Successful structural,
+execution and publication checks do not establish learning outcomes.
 
 ## Publication navigation
 

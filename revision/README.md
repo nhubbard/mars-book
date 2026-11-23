@@ -41,15 +41,14 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   reasoning and independent exercises, without reproducing the old lab checkpoints.
 - `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
   observations, fault diagnosis and independent variations. Native interactive coverage includes both H.263 units; individual unit notes
-  record its scope. Six elective companions still require native guided packages,
-  as recorded in the acceptance ledger. Their existing ordinary Run/Debug files
-  and checks remain available.
+  record its scope. All ten elective companions now have native guided packages, including expressions
+  and bytecode. The completed integration audit distinguishes exact current archive
+  checks from each unit’s historical IDE evidence.
 
 For the project-to-chapter coverage index and repeatable structural checks, see
 [the revised curriculum audit](../docs/revised-curriculum-audit.md). It distinguishes
 original package prerequisites from revised introductory exercises. The
-[acceptance ledger](../docs/restructuring-acceptance.md) records unfinished native
-companions and the separate human reviews.
+[acceptance ledger](../docs/restructuring-acceptance.md) records technical acceptance work and the separate human reviews.
 
 ## Reading the current proofs
 
@@ -58,10 +57,10 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main book, chapters 1–27 and navigation (201 PDF pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27, companions and navigation (242 PDF pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27, companions and navigation (245 PDF pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
-The main book retains 189 numbered chapter pages and the lab book 229. The
+The main book retains 189 numbered chapter pages and the lab book 232. The
 remaining pages provide title/usage matter, contents, glossary and subject index.
 The lab index links directly to the ten companions.
 
@@ -89,14 +88,11 @@ restart preservation. Graduated optional hints are implemented and tested;
 native course controls now release hints, optionally require prediction quizzes,
 and govern free-writing availability. Tools → MARS Learning explicitly offers
 guided work or free writing, preserves source and hint history, and remembers the
-last guided segment across a fresh IDE process. Broader instructor policies
-remain open. The independent exercise is also verified
+last guided segment across a fresh IDE process. Downloaded units also support instructor-selected activity prerequisites and per-activity hint/attempt controls. The independent exercise is also verified
 across native project save/close and fresh IDE processes, including an offline
 source edit; fresh-process guided restoration now verifies all six guided segments. Unchanged work retains completion; an offline edit to the worked source requires new Run/arithmetic Debug/output observations while predictions and the separate diagnosis/repair histories survive. This restores completed evidence, not a running machine or an intermediate Debug trace. The progress service persists content-specific evidence. Its code and
 Jupiter verification are documented upstream in `docs/student-instruction-system.md`.
-The full goal includes the actual integrated lesson, further editorial pilots,
-all 35 projects and human review where available. These pilot PDFs do not
-complete that goal and have not been validated with students.
+The technical restructuring now covers the full sequence, all native units and final distributions; see ../docs/restructuring-completion.md. These drafts have not been validated with students. Human walkthrough and substantive editing retain their separate ownership.
 
 The advanced review PDF has twelve pages: the expanded PCM chapter on pages 1–7
 and the H.263 reconstruction excerpt on pages 8–12. These are review compositions, not the final
