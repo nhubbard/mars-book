@@ -81,8 +81,9 @@ replace author, learner or assistive-technology review.
 
 ## Remaining work
 
-Native interactive lessons for this advanced unit are not implemented by this
-publication step. The older 64-step construction package remains available;
+The original publication step did not implement native interactive delivery
+for this advanced unit. The later student-unit draft described below now supplies
+its content and package validation; its IDE walkthrough remains pending. The older 64-step construction package remains available;
 its historical capture plans do not become completed captures merely because
 this revised chapter has new verified images. Instructor progression and hint
 policies must be checked when advanced delivery is implemented. The full
@@ -128,3 +129,42 @@ IDE walkthrough, or renewed publication validation. The next delivery step
 must compose the student activities, exercise them in the IDE and integrate
 the verified experience into the native LaTeX lab. The historical 64-step
 construction package is retained independently.
+
+## Native student-unit draft (23 November 2026)
+
+`revision/lessons/031-pcm-wav` now contains a standalone native lesson with ten
+inline predictions, five Debug activities observing ten stops, one ordinary Run
+and four assessment stages. The five worked experiments separate padded chunk
+offsets, descriptor publication after complete validation, per-channel raw FIR
+history, capacity-before-store and whole-frame addressing. All ten declared
+register snapshots pass actual core execution probes, followed by normal silent
+termination. In the failed parse, every eight-byte group of the 32-byte metadata
+sentinel remains unchanged. The failure observation does not substitute for the
+independent access checks.
+
+The continuing independent source retains the original unfinished reversal
+entry and caller. The complete public WAV helper is included directly, making
+this source standalone without a preparation command. It is tested against the
+original split-file source plus that exact supplied helper. The staged native
+checks cover twelve mono cases, twelve stereo cases and eleven boundary/reuse/
+pipeline cases. The final stage rechecks all 35 on the completed source after
+edits. A normal Run of this source still performs its default bound calculation;
+it does not prove that reversal or file saving works. The assignment makes this
+distinction explicit.
+
+Build the explicitly exported seventeen-file archive with:
+
+```sh
+python3 tools/native_lesson.py revision/lessons/031-pcm-wav \
+  --output build/native-lessons/031-pcm-wav-0.1.0-student.zip
+```
+
+Four student-unit tooling tests join the passing 590-test public suite. Two
+Jupiter tests import that real archive through the plugin, check all staged case
+contracts and resolve every prediction/Debug anchor through IntelliJ PSI.
+These tests pass without changing the production instructional system. The
+assessment-foundation regression remains the preceding 285 CLI/1,307 plugin
+test run; this content-only step does not claim a new complete plugin run.
+The next step is the actual light-theme IDE first/resume walkthrough through the
+separate authoring plugin, followed by directly edited native LaTeX lab integration.
+No new IDE capture, PDF or accessibility validation is claimed at this point.

@@ -1,0 +1,644 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 23 and its written lab alongside these experiments. Predict each boundary, then inspect the named Debug stops. Worked sources contain the supplied WAV helpers; the independent source leaves only wav_reverse_frames unfinished. Predictions and hints are inline in MARS Learning. Finish each launched process before opening the next example.",
+  "conclusion": "Explain the route from file-relative chunk offsets to raw channel histories, complete encoded bytes and saved output. Defend the reversal\u2019s validation order, zero-frame behavior, alias safety and preserved caller state. The original six-function construction project remains an optional separate exercise.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "odd-chunk",
+      "source": "worked/chunk-offsets.asm",
+      "anchor": {
+        "label": "first_extent",
+        "mnemonic": "dli",
+        "occurrence": 0
+      },
+      "explanation": "A chunk at byte 12 has an eight-byte header and three payload bytes. RIFF adds one pad byte after an odd payload. The pad is outside the declared payload length.",
+      "question": "Where does the next chunk header begin?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "24",
+          "feedback": "12 + 8 + 3 + 1 = 24. Each term has a separate role."
+        },
+        {
+          "id": "b",
+          "text": "23",
+          "feedback": "This omits the pad byte; the next header would be misaligned by one byte."
+        },
+        {
+          "id": "c",
+          "text": "20",
+          "feedback": "This reaches the payload, not the following chunk."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "wide-padding",
+      "source": "worked/chunk-offsets.asm",
+      "anchor": {
+        "label": "wide_extent",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Chunk lengths occupy unsigned 32-bit fields. Decode that value, then widen it before adding its padding. The calculation does not grant permission to read the resulting extent.",
+      "question": "What is the padded payload extent for hexadecimal ffffffff?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0 bytes",
+          "feedback": "A 32-bit addition wraps. Widening after that addition cannot recover the lost carry."
+        },
+        {
+          "id": "b",
+          "text": "4294967296 bytes",
+          "feedback": "The 64-bit sum is 2^32. The parser must reject it against the available file bytes before accessing it."
+        },
+        {
+          "id": "c",
+          "text": "4294967295 bytes",
+          "feedback": "That is the declared length before its odd-byte padding."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-chunk-offsets",
+      "source": "worked/chunk-offsets.asm",
+      "explanation": "Follow the small padded chunk and the full-width length separately. Set breakpoints at the named labels, start Debug and inspect each stop before continuing. Finish the process before starting another activity.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "first_extent",
+          "anchor": {
+            "label": "first_extent",
+            "mnemonic": "dli",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000000000000c",
+            "$t1": "0x0000000000000003",
+            "$t2": "0x0000000000000004",
+            "$t4": "0x0000000000000018"
+          },
+          "explanation": "The three-byte payload occupies a four-byte padded span.",
+          "success": "The three-byte payload occupies a four-byte padded span."
+        },
+        {
+          "id": "wide_extent",
+          "anchor": {
+            "label": "wide_extent",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x00000000ffffffff",
+            "$t2": "0x0000000100000000"
+          },
+          "explanation": "Keep the carry before comparing the extent with remaining input.",
+          "success": "Keep the carry before comparing the extent with remaining input."
+        }
+      ],
+      "success": "Explain the observed boundary in your own words before proceeding."
+    },
+    {
+      "kind": "prediction",
+      "id": "file-and-pcm",
+      "source": "worked/parser-publication.asm",
+      "anchor": {
+        "label": "parsed_record",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "The trace file has 82 bytes. Its PCM starts at file offset 56 and has length 16. A frame contains one sample from every channel; each sample occupies two bytes.",
+      "question": "How many stereo frames does this PCM contain?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "8",
+          "feedback": "Eight is the sample count across both channels, not the frame count."
+        },
+        {
+          "id": "b",
+          "text": "20",
+          "feedback": "The complete file contains headers and other chunks that are not PCM."
+        },
+        {
+          "id": "c",
+          "text": "4",
+          "feedback": "Sixteen bytes divided by four bytes per stereo frame gives four frames."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "late-error",
+      "source": "worked/parser-publication.asm",
+      "anchor": {
+        "label": "rejected_record",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The second parse changes the trailing note chunk length from one to three without extending the 82-byte file. Its padded end would be 84. Main fills all 32 metadata bytes with a5 before this call.",
+      "question": "What may the parser publish on this failure?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No metadata bytes; return status one and count zero",
+          "feedback": "Finding valid audio earlier does not make the later malformed chunk acceptable."
+        },
+        {
+          "id": "b",
+          "text": "The valid PCM fields, then status one",
+          "feedback": "That would expose a partial result on a failure path."
+        },
+        {
+          "id": "c",
+          "text": "A shorter successful file",
+          "feedback": "The caller supplied 82 bytes; the parser cannot silently discard a malformed suffix."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-publication",
+      "source": "worked/parser-publication.asm",
+      "explanation": "Compare a complete descriptor with the unchanged sentinel record after a late format error. Set breakpoints at the named labels, start Debug and inspect each stop before continuing. Finish the process before starting another activity.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "parsed_record",
+          "anchor": {
+            "label": "parsed_record",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004",
+            "$s0": "0x0000000000003e80",
+            "$s1": "0x0000000000000002",
+            "$s2": "0x0000000000000004",
+            "$s3": "0x0000000000000038",
+            "$s4": "0x0000000000000010"
+          },
+          "explanation": "The fields mean sample rate, channels, frames, file-relative PCM offset and PCM byte length.",
+          "success": "The fields mean sample rate, channels, frames, file-relative PCM offset and PCM byte length."
+        },
+        {
+          "id": "rejected_record",
+          "anchor": {
+            "label": "rejected_record",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$s0": "0xa5a5a5a5a5a5a5a5",
+            "$s1": "0xa5a5a5a5a5a5a5a5",
+            "$s2": "0xa5a5a5a5a5a5a5a5",
+            "$s3": "0xa5a5a5a5a5a5a5a5"
+          },
+          "explanation": "All four eight-byte sentinel groups remain intact. The independent access checks provide additional evidence about forbidden accesses.",
+          "success": "All four eight-byte sentinel groups remain intact. The independent access checks provide additional evidence about forbidden accesses."
+        }
+      ],
+      "success": "Explain the observed boundary in your own words before proceeding."
+    },
+    {
+      "kind": "prediction",
+      "id": "first-filter-frame",
+      "source": "worked/channel-histories.asm",
+      "anchor": {
+        "label": "filtered_frames",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      },
+      "explanation": "Each channel begins with seven zero samples of history. Every coefficient is 4096 in Q15, or one eighth. The first input frame is left 12000, right -12000.",
+      "question": "Which first output frame should you expect?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0, 0",
+          "feedback": "Adding the two channels together incorrectly cancels their contributions."
+        },
+        {
+          "id": "b",
+          "text": "1500, -1500",
+          "feedback": "Each channel uses its own history and its own first sample."
+        },
+        {
+          "id": "c",
+          "text": "12000, -12000",
+          "feedback": "The history starts at zero; this averaging filter does not preserve the first input amplitude."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "second-filter-frame",
+      "source": "worked/channel-histories.asm",
+      "anchor": {
+        "label": "filtered_frames",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      },
+      "explanation": "The next input frame is left 0, right 16000. Each channel window now contains its first and second sample, together with zeros.",
+      "question": "What is the second filtered stereo frame?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0, 2000",
+          "feedback": "This ignores the preceding raw sample in each channel."
+        },
+        {
+          "id": "b",
+          "text": "1500, 3500",
+          "feedback": "The earlier right sample is negative; its sign matters in the sum."
+        },
+        {
+          "id": "c",
+          "text": "1500, 500",
+          "feedback": "Left: (12000+0)/8. Right: (-12000+16000)/8."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-channel-histories",
+      "source": "worked/channel-histories.asm",
+      "explanation": "Interpret the signed halfwords as four adjacent left/right pairs. Set breakpoints at the named labels, start Debug and inspect each stop before continuing. Finish the process before starting another activity.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "filtered_frames",
+          "anchor": {
+            "label": "filtered_frames",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x00000000000005dc",
+            "$s1": "0xfffffffffffffa24",
+            "$s2": "0x00000000000005dc",
+            "$s3": "0x00000000000001f4",
+            "$s4": "0x00000000000001f4",
+            "$s5": "0x00000000000001f4",
+            "$s6": "0x00000000000011f4",
+            "$s7": "0xfffffffffffff1f4"
+          },
+          "explanation": "The last two outputs use the accumulated raw history for their own channel. Q15 rounding adds 16384 before the signed shift.",
+          "success": "The last two outputs use the accumulated raw history for their own channel. Q15 rounding adds 16384 before the signed shift."
+        },
+        {
+          "id": "output_guard",
+          "anchor": {
+            "label": "output_guard",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x00000000000000a5"
+          },
+          "explanation": "The first byte beyond the sixteen-byte PCM output retains a5. This observation alone does not prove every access was within bounds.",
+          "success": "The first byte beyond the sixteen-byte PCM output retains a5. This observation alone does not prove every access was within bounds."
+        }
+      ],
+      "success": "Explain the observed boundary in your own words before proceeding."
+    },
+    {
+      "kind": "prediction",
+      "id": "capacity-before-write",
+      "source": "worked/encoder-capacity.asm",
+      "anchor": {
+        "label": "capacity_rejected",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "The canonical header needs 44 bytes and the four stereo frames need 16. The first call offers 59 bytes. The destination initially contains a5 throughout.",
+      "question": "What must the encoder do?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Return capacity status two without changing output",
+          "feedback": "The complete 60-byte image cannot fit; validate capacity before stores."
+        },
+        {
+          "id": "b",
+          "text": "Write the header and report an error",
+          "feedback": "A partial image violates the no-change failure contract."
+        },
+        {
+          "id": "c",
+          "text": "Save three frames",
+          "feedback": "Reducing the caller\u2019s requested frame count changes the operation."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "canonical-lengths",
+      "source": "worked/encoder-capacity.asm",
+      "anchor": {
+        "label": "encoded_image",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The second encode has capacity 60 and succeeds. The RIFF size field excludes the first eight bytes. Byte rate equals rate times bytes per frame.",
+      "question": "Which RIFF size and byte rate should appear?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "60 and 32000",
+          "feedback": "The first value includes the RIFF prefix; the second counts only one channel."
+        },
+        {
+          "id": "b",
+          "text": "52 and 64000",
+          "feedback": "60 - 8 = 52; 16000 frames per second times four bytes is 64000 bytes per second."
+        },
+        {
+          "id": "c",
+          "text": "16 and 16000",
+          "feedback": "Sixteen is PCM bytes and 16000 is the sample rate; neither is the requested field."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-encoder-boundary",
+      "source": "worked/encoder-capacity.asm",
+      "explanation": "Check failed capacity before inspecting the successful canonical image. Set breakpoints at the named labels, start Debug and inspect each stop before continuing. Finish the process before starting another activity.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "capacity_rejected",
+          "anchor": {
+            "label": "capacity_rejected",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000",
+            "$s0": "0xa5a5a5a5a5a5a5a5"
+          },
+          "explanation": "Capacity failure leaves the first destination group unchanged.",
+          "success": "Capacity failure leaves the first destination group unchanged."
+        },
+        {
+          "id": "encoded_image",
+          "anchor": {
+            "label": "encoded_image",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000003c",
+            "$s0": "0x0000000000000034",
+            "$s1": "0x000000000000fa00",
+            "$s2": "0x0000000000000004",
+            "$s3": "0x0000000000000010",
+            "$s4": "0x00000000000005dc",
+            "$s5": "0x00000000000000a5"
+          },
+          "explanation": "The first sample begins at 44, and byte 60 remains outside the image.",
+          "success": "The first sample begins at 44, and byte 60 remains outside the image."
+        }
+      ],
+      "success": "Explain the observed boundary in your own words before proceeding."
+    },
+    {
+      "kind": "prediction",
+      "id": "last-frame",
+      "source": "worked/frame-addresses.asm",
+      "anchor": {
+        "label": "last_frame_offset",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "For N frames, indices run from zero through N-1. Each stereo frame here occupies four bytes. Reversal changes frame order while preserving channel order inside each frame.",
+      "question": "At which PCM-relative offset does the last of four frames begin?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "14",
+          "feedback": "That names the right sample within the last frame."
+        },
+        {
+          "id": "b",
+          "text": "16",
+          "feedback": "That is the first byte beyond the selected PCM."
+        },
+        {
+          "id": "c",
+          "text": "12",
+          "feedback": "(4 - 1) times four is 12. This offset names the left sample of the final stereo pair."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "pair-order",
+      "source": "worked/frame-addresses.asm",
+      "anchor": {
+        "label": "channel_pair",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The original final frame is left 32767, right -32768. It becomes the first output frame when the frame order is reversed.",
+      "question": "What must the first output pair be?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "32767, -32768",
+          "feedback": "Move the entire frame while keeping its channel order."
+        },
+        {
+          "id": "b",
+          "text": "-32768, 32767",
+          "feedback": "That reverses samples, exchanging left and right channels."
+        },
+        {
+          "id": "c",
+          "text": "12000, -12000",
+          "feedback": "That keeps the original first frame at the front."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-frame-addresses",
+      "source": "worked/frame-addresses.asm",
+      "explanation": "Follow the selected offset to the final stereo pair without implementing a reversal loop. Set breakpoints at the named labels, start Debug and inspect each stop before continuing. Finish the process before starting another activity.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "last_frame_offset",
+          "anchor": {
+            "label": "last_frame_offset",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000004",
+            "$t1": "0x0000000000000002",
+            "$t2": "0x0000000000000004",
+            "$t3": "0x0000000000000003",
+            "$t4": "0x000000000000000c"
+          },
+          "explanation": "Frame count, channel count, bytes per frame and byte offset have different units.",
+          "success": "Frame count, channel count, bytes per frame and byte offset have different units."
+        },
+        {
+          "id": "channel_pair",
+          "anchor": {
+            "label": "channel_pair",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t6": "0x0000000000007fff",
+            "$t7": "0xffffffffffff8000"
+          },
+          "explanation": "Both samples belong to one frame. An in-place swap must retain needed source bytes before overwriting either endpoint.",
+          "success": "Both samples belong to one frame. An in-place swap must retain needed source bytes before overwriting either endpoint."
+        }
+      ],
+      "success": "Explain the observed boundary in your own words before proceeding."
+    },
+    {
+      "kind": "run",
+      "id": "run-parser-experiment",
+      "source": "worked/parser-publication.asm",
+      "explanation": "Run the complete parser experiment normally. It performs two in-memory parses and terminates silently. The earlier Debug observations establish what happened; absence of console output alone cannot establish a correct parser.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "Return to the metadata publication rule when explaining the silent result."
+    },
+    {
+      "kind": "assessment",
+      "id": "check-mono",
+      "source": "independent/wav-reverse-frames.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/reverse-00.json",
+        "independent/reverse-01.json",
+        "independent/reverse-02.json"
+      ],
+      "explanation": "Implement wav_reverse_frames in the continuing independent source, then check the twelve mono cases. Validate the prefix before any PCM access. Handle zero frames without touching the deliberately invalid PCM pointers. Return frame count on success.",
+      "success": "Explain the boundary established by these cases and retain a useful counterexample from your development.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Derive bytes per frame as two times channels. Keep the full-width frame count distinct from that byte stride."
+        },
+        {
+          "id": "validation",
+          "text": "Check rate, channels and all 64 frame-count bits before dereferencing PCM or output. Zero frames need no PCM access."
+        },
+        {
+          "id": "ownership",
+          "text": "For exact aliasing, preserve the bytes of both endpoint frames before either endpoint is overwritten. Restore saved registers and sp on every return path."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-stereo",
+      "source": "independent/wav-reverse-frames.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/reverse-03.json",
+        "independent/reverse-04.json",
+        "independent/reverse-05.json"
+      ],
+      "explanation": "Keep the same implementation and check twelve stereo cases. Reverse whole four-byte frames, preserving left/right order. The input and output can be disjoint or exactly equal, and byte addresses may be unaligned.",
+      "success": "Explain the boundary established by these cases and retain a useful counterexample from your development.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Derive bytes per frame as two times channels. Keep the full-width frame count distinct from that byte stride."
+        },
+        {
+          "id": "validation",
+          "text": "Check rate, channels and all 64 frame-count bits before dereferencing PCM or output. Zero frames need no PCM access."
+        },
+        {
+          "id": "ownership",
+          "text": "For exact aliasing, preserve the bytes of both endpoint frames before either endpoint is overwritten. Restore saved registers and sp on every return path."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-boundaries-and-pipeline",
+      "source": "independent/wav-reverse-frames.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/reverse-06.json"
+      ],
+      "explanation": "Check the eight invalid prefixes, maximum stereo input, six calls sharing one machine and complete saved-file pipeline. The pipeline supplies virtual input and output, short transfers and descriptor 19. Keep these fixtures distinct from a normal host-file Run.",
+      "success": "Explain the boundary established by these cases and retain a useful counterexample from your development.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Derive bytes per frame as two times channels. Keep the full-width frame count distinct from that byte stride."
+        },
+        {
+          "id": "validation",
+          "text": "Check rate, channels and all 64 frame-count bits before dereferencing PCM or output. Zero frames need no PCM access."
+        },
+        {
+          "id": "ownership",
+          "text": "For exact aliasing, preserve the bytes of both endpoint frames before either endpoint is overwritten. Restore saved registers and sp on every return path."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-completed-source",
+      "source": "independent/wav-reverse-frames.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/reverse-00.json",
+        "independent/reverse-01.json",
+        "independent/reverse-02.json",
+        "independent/reverse-03.json",
+        "independent/reverse-04.json",
+        "independent/reverse-05.json",
+        "independent/reverse-06.json"
+      ],
+      "explanation": "After your last edit, recheck all 35 cases on this same completed source. Later changes can invalidate earlier results. Explain why the algorithm preserves frame contents and caller state, then choose another small input and predict it yourself.",
+      "success": "Explain the boundary established by these cases and retain a useful counterexample from your development.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Derive bytes per frame as two times channels. Keep the full-width frame count distinct from that byte stride."
+        },
+        {
+          "id": "validation",
+          "text": "Check rate, channels and all 64 frame-count bits before dereferencing PCM or output. Zero frames need no PCM access."
+        },
+        {
+          "id": "ownership",
+          "text": "For exact aliasing, preserve the bytes of both endpoint frames before either endpoint is overwritten. Restore saved registers and sp on every return path."
+        }
+      ]
+    }
+  ]
+}
