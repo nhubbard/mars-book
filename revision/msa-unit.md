@@ -85,3 +85,22 @@ call, including leaf routines. Relevant caller and behavior checks pass again;
 RGB captures were refreshed from the aligned source. The maze-neighbor experiment
 has no figure tied to its caller setup. Earlier milestone evidence is preserved;
 see [pcm-unit.md](pcm-unit.md) for the amendment and current proof scope.
+
+## Native lesson foundation, 22 November 2026
+
+The working native directory `lessons/019-working-with-msa/` now preserves six
+complete observation sources and the original independent starter and script.
+Function-profile version 8 expresses the same 33 count trials and complete
+caller, with both direct-return continuations (67 calls) and a separate normal
+exit check. All 33 original Kotlin input constructions match the generated data.
+Private qualification records 36 processes: 20 accepted equivalent solutions and
+16 rejected faults/starters. The historically named aligned-tail-store fault is
+correctly accepted as a valid Release 6 halfword implementation.
+
+Measured bindings cover 31 stops across counts 32,17,0,7,8,9, including complete
+128-bit vector values, scalar state, selected intervals and publication. Native
+lesson format 7 supports vector-only and mixed scalar/vector observations from
+the debugger's immutable register snapshot. The student lesson composition, exact
+archive import, new IDE walkthrough and written route integration remain pending.
+The earlier page and test totals above describe historical verification; no new
+PDF build or capture is claimed for this foundation.
