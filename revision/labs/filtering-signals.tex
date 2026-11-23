@@ -2,12 +2,20 @@
 \MARSChapterHeading{Windows, wide sums and stream history}
 \label{revision-lab:fir}
 
-Use the complete \texttt{fir-filter.asm} and independent
-\texttt{fir-decimate.asm} in \texttt{revision/labs/files}. The main chapter
-explains the eight-tap equation, Q15 coefficient scale and final conversion.
-This written lab uses ordinary Run and Debug. Its native guided lesson remains
-unfinished. Keep disposable copies for input changes and deliberate faults.
-No audio device is needed to investigate the numerical behavior.
+Import the development lesson \texttt{021-fixed-point-fir} and choose Continue
+in Learn. The main chapter explains the eight-tap equation, Q15 coefficient scale
+and final conversion. The complete \texttt{fir-filter.asm} is the worked source;
+\texttt{independent/fir-decimate.asm} is your independent exercise. Both are also
+supplied in \texttt{revision/labs/files} for use without Learn. No audio device
+is needed to investigate the numerical behavior.
+
+Begin with the scalar calculation and compare its complete result with the vector
+source. Nine inline predictions connect the later Debug observations to window
+indices, signed widths, rounding and history. Use one line breakpoint at a time.
+Learn highlights the next requested operation; Debug's selected frame shows the
+actual pause. Resume each small example to normal exit before changing sources.
+Separate ordinary Run tasks cover the complete comparisons and split caller.
+Keep disposable copies for input changes and deliberate faults.
 
 \section{Explain an impulse before stepping the loop}
 
@@ -25,8 +33,9 @@ follow this stop. Continue to \texttt{results\_ready} to observe the published
 16 and zero. Do not inspect exit's \texttt{\$v0} as though it were still the
 function return value.
 
-Next use an impulse 16384 and the following oldest-first coefficients. Keep
-the declared arena lengths and predict the first eight outputs.
+Next open \texttt{worked/asymmetric-impulse.asm}. It uses an impulse 16384 and
+the following oldest-first coefficients, with the same declared arena lengths.
+Predict the first eight outputs before Debug.
 \begin{verbatim}
 coeff:  1024,2048,3072,4096,5120,6144,7168,8192
 output: 4096,3584,3072,2560,2048,1536,1024,512
@@ -35,16 +44,18 @@ At the first window the impulse meets the last coefficient. A reversed
 coefficient implementation can pass the equal-weight example and fail this one.
 Explain the time position of each coefficient rather than memorizing the order.
 
-For a scalar comparison, change only the caller's target from
-\texttt{fir\_q15} to \texttt{fir\_scalar} in a copy. Both obey the same numerical
+For the scalar comparison, use \texttt{worked/scalar-impulse.asm}; its only
+change is the caller's target from \texttt{fir\_q15} to \texttt{fir\_scalar}.
+At \texttt{scalar\_round}, the first output's exact numerator is 65536000.
+The following bias and shift produce 2000. Both functions obey the same numerical
 interface. Compare their complete outputs and counts before comparing work.
-Preserve the book's stack setup and the full pointers when changing a caller.
+Preserve the book's stack setup and full pointers when changing another caller.
 
 \section{Observe widening before multiplication}
 
-Make another copy with count one, eight input values of $-32768$ and eight
-coefficient values of $-32768$. Input still occupies a 192-byte arena: eight
-halfwords followed by 176 padding bytes. The coefficient arena remains eight
+Open \texttt{worked/wide-sum.asm}, with count one, eight input values of
+$-32768$ and eight coefficient values of $-32768$. Input still occupies a
+192-byte arena: eight halfwords followed by 176 padding bytes. The coefficient arena remains eight
 halfwords followed by 48 padding bytes. The selected input is only sixteen
 bytes despite that larger backing allocation.
 
@@ -78,7 +89,8 @@ other registers; the named intermediate stops describe this worked schedule.
 
 \section{Separate rounding from clipping}
 
-Set count one and use these two input/coefficient arrays:
+Open \texttt{worked/negative-tie.asm}, which selects count one and these
+input/coefficient arrays:
 \begin{verbatim}
 input: -32768,3,0,0,0,0,0,0
 coeff: 32767,-16384,0,0,0,0,0,0
@@ -86,11 +98,13 @@ coeff: 32767,-16384,0,0,0,0,0,0
 Their numerator is $-1073758208$, representing $-32768.5$ before rounding.
 At \texttt{fir\_quantized}, predict the rounded integer in \texttt{\$t0}.
 Then predict the stored bytes and clipping count. The rounded value is $-32768$, bytes \texttt{00 80}, with no clip.
-Now change the second input from three to four. The numerator becomes
+Next open \texttt{worked/negative-below.asm}; its second input changes from
+three to four. The numerator becomes
 $-1073774592$, representing $-32769$. Its rounded value remains $-32769$;
 the clamp stores the same \texttt{00 80} but increments the count.
 
-For a positive half-boundary comparison, use these arrays:
+For the positive half-boundary comparison, \texttt{worked/positive-tie.asm}
+contains these arrays:
 \begin{verbatim}
 input: 32767,1,1,0,0,0,0,0
 coeff: 32767,32767,16384,0,0,0,0,0
@@ -100,7 +114,8 @@ representing 32767.5. It rounds to 32768, then clips. Explain why the positive
 and negative half cases have different clipping outcomes under ties toward
 positive infinity.
 
-Finally use eight input ones and eight coefficient codes 16384. At
+Finally use \texttt{worked/round-once.asm}, with eight input ones and eight
+coefficient codes 16384. At
 \texttt{fir\_round}, the sum is 131072. The output must be four, not eight.
 A per-product rounded implementation would add eight ones. To diagnose a
 mismatch, distinguish a wrong exact numerator from a wrong conversion of a
@@ -110,7 +125,11 @@ fails at a different boundary.
 \section{Keep history when dividing work into calls}
 
 Write the input slice and output slice for a sixteen-output call split after
-five outputs. The second input base is ten bytes after the original base; its
+five outputs, then open \texttt{worked/split-five.asm}. At
+\texttt{first\_ready}, the first call has returned five and zero; later output
+bytes are still untouched. At \texttt{second\_ready}, the second has returned
+eleven and zero. The caller adds the counts and publishes sixteen and zero at
+\texttt{results\_ready}. Compare the complete output with the unchanged source. The second input base is ten bytes after the original base; its
 first seven samples are the history for its first new sample. Its first three
 impulse-response outputs are still 2000. Advancing to the next new sample
 without including its predecessors would change the problem.
@@ -129,8 +148,11 @@ java -jar /path/to/cli.jar grade \
   revision/labs/files/fir-filter.asm
 \end{verbatim}
 The split suite compares a whole result with two calls at every cut, including
-empty first and final calls. Check counts zero and one separately: zero reads no
-caller data, while one still has a full eight-sample window. For every positive
+empty first and final calls. Use \texttt{worked/count-zero.asm} for the empty
+observation. At \texttt{fir\_return}, both result registers are zero and the
+coefficient vector is still zero: the function skipped the load as well as the
+window loop. The caller's count-word read is separate from the function's
+selected-buffer accesses. One output still requires a full eight-sample window. For every positive
 count, the last load must stop at the last selected sample, not at the arena's
 padding limit.
 
@@ -181,3 +203,44 @@ comparison with your implementation. Behavioral checks accept equivalent
 solutions; they do not establish which instruction strategy you used or a speedup.
 Compare equal numerical contracts and complete function intervals before making
 any performance claim.
+
+
+Learn checks the current independent source in four groups: deterministic random
+windows and explicit arithmetic boundaries; asymmetric impulses and split
+positions; minimum inputs and coefficients with wide sums; and alternating
+endpoint signs. They retain all 142 original public cases and add four
+whole-versus-split cases, including empty first or final calls and an interior
+clipped split. In that last case, a whole call returns 32 clips, the first part
+five and the second part 27. Each call starts its own count; the second part must
+not add its events to the preceding return value.
+
+The split checks preserve an already written whole result while constructing the
+split result in another selected output slice. Their input bases keep the even
+phase: after $m$ retained outputs, the next base advances $4m$ bytes. Each
+invocation has its own selected input and output bounds, including its required
+overlapping history. A later call may not read before its own input base or
+rewrite a preceding output, even with the same value. An
+empty call permits no caller-data access. This catches an incorrect extra read
+that would leave all calculated samples unchanged. Default
+caller observations also distinguish live return values from the later published
+words. A separate fifth assessment checks the complete caller's silent normal
+exit. All five assessments must pass for the current source, including unsaved
+editor changes.
+
+\section{Use the first mismatch to choose an observation}
+
+Select Check this program and keep the first failed value or forbidden access
+beside your edit. If impulse positions disagree, trace which coefficient meets
+the impulse in each window. If the numerator is right but the sample is wrong,
+inspect the bias, signed shift and clamp separately. If only the clipping count
+is wrong, compare the rounded integer with the range before looking at its
+stored endpoint. A split-only failure suggests checking the second input base,
+its history and the newly initialized counters. These are questions to test,
+not proof of a particular cause.
+
+Use graduated hints when they help choose the next observation, then retry your
+own source. Editing a worked or independent file clears its execution evidence;
+Continue returns to the first activity needing another observation. Reopening
+retains source and quiz history. Keep your window, width and phase arguments
+alongside the finite results rather than treating a saved pass as evidence about
+a later edited program.

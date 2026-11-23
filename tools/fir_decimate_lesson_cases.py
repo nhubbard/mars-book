@@ -93,6 +93,10 @@ def caller_case():
         if memory['label']=='clipped':memory['bytes']=word_bytes([0])
     case['initialMemory']=initial;case['calls']=[dict(entry='main',returnTo='decimate_ready',arguments={},expectedRegisters={'v0':bits(8),'v1':bits(0)},memory=before),dict(entry='decimate_ready',returnTo='results_ready',arguments={},expectedRegisters={'v0':bits(8),'v1':bits(0)},memory=after)]
     case['accessPolicies'][0].update(readable=[dict(at=dict(label='source'),length=44),dict(at=dict(label='coeff'),length=16),dict(at=dict(label='output'),length=16),dict(at=dict(label='count'),length=4)],writable=[dict(at=dict(label='output'),length=16),dict(at=dict(label='processed'),length=4),dict(at=dict(label='clipped'),length=4)])
+    caller_policy=case['accessPolicies'][0]
+    case['calls'][0]['accessPolicies']=[{**caller_policy,'writable':[dict(at=dict(label='output'),length=16)]}]
+    case['calls'][1]['accessPolicies']=[{'from':caller_policy['from'],'until':caller_policy['until'],'readable':[],
+                                      'writable':[dict(at=dict(label='processed'),length=4),dict(at=dict(label='clipped'),length=4)]}]
     return case
 
 
@@ -106,7 +110,12 @@ def split_case(trial,cut):
     for index,(first,count,dest) in enumerate(ranges):
         current[dest:dest+2*count]=bytes(expected[first*2:(first+count)*2]);memory=[dict(entry) for entry in initial];next(entry for entry in memory if entry['label']=='output')['bytes']=current.hex()
         clip=sum(value < -32768 or value > 32767 for value in quantized(trial)[first:first+count])
-        calls.append(dict(entry='decimate_q15',returnTo='function_return' if index%2==0 else 'done',arguments={'a3':bits(count)},argumentAddresses={'a0':dict(label='source',offset=so+first*4),'a1':dict(label='coeff',offset=co),'a2':dict(label='output',offset=dest)},expectedRegisters={'v0':bits(count),'v1':bits(clip)},memory=memory))
+        source_window=dict(at=dict(label='source',offset=so+first*4),length=0 if count==0 else 4*count+12)
+        coeff_window=dict(at=dict(label='coeff',offset=co),length=0 if count==0 else 16)
+        output_window=dict(at=dict(label='output',offset=dest),length=count*2)
+        invocation_policy={'from':dict(label='source_guard'),'until':dict(label='caller_end',offset=4),
+                           'readable':[source_window,coeff_window,output_window],'writable':[output_window]}
+        calls.append(dict(entry='decimate_q15',returnTo='function_return' if index%2==0 else 'done',arguments={'a3':bits(count)},argumentAddresses={'a0':dict(label='source',offset=so+first*4),'a1':dict(label='coeff',offset=co),'a2':dict(label='output',offset=dest)},expectedRegisters={'v0':bits(count),'v1':bits(clip)},memory=memory,accessPolicies=[invocation_policy]))
     case.update(name=f'split {cut} family {trial["group"]}',instructionLimit=300000,initialMemory=initial,calls=calls)
     output_windows=[dict(at=dict(label='output',offset=offset),length=n*2) for offset in [whole,split]]
     case['accessPolicies'][0].update(readable=[dict(at=dict(label='source',offset=so),length=len(trial['input'])*2),dict(at=dict(label='coeff',offset=co),length=16)]+output_windows,writable=output_windows)
@@ -118,7 +127,7 @@ def profiles():
     for trial in all_trials:groups[trial['group']].append(definition(trial))
     impulse=next(trial for trial in all_trials if trial['count']==32 and trial['group']=='family-1');minimum=next(trial for trial in all_trials if trial['count']==32 and trial['group']=='family-2')
     groups['family-1'] += [split_case(impulse,cut) for cut in [0,5,32]];groups['family-2'].append(split_case(minimum,5));groups['family-0'].append(caller_case())
-    return {name:dict(formatVersion=8,cases=cases) for name,cases in groups.items()}
+    return {name:dict(formatVersion=9,cases=cases) for name,cases in groups.items()}
 
 
 def build(directory,check=False):

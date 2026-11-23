@@ -49,8 +49,14 @@ whole result while constructing the split result in a separate output slice.
 The native groups have 43,36,34,33 cases: 146 total with 155 calls, because the
 caller has separate return/publication observations and each split has three
 calls. Original cases retain their 100000-instruction budget; split cases have
-a cumulative 300000. Case permissions cover all calls in that case; ordinary
-single-call trials separately check each count's selected-window bounds.
+a cumulative 300000. Each split invocation has its own read/write windows,
+active only during that invocation, including its overlapping input history.
+A later call cannot read before its own input base or write an earlier
+output slice, even if it stores the same value. Empty
+invocations allow no caller-data access. The whole-call result remains
+protected while the split result is constructed. The caller separately checks
+filter execution and the later publication writes. Case-wide restrictions
+also remain active; a call cannot expand them.
 A fifth assessment checks complete silent exit. All five assessments must pass
 for the current source, including unsaved changes.
 
@@ -59,4 +65,5 @@ widths and split phase. Instructors may separately review vector strategy; no
 scratch-register layout, private label or exact instruction count is required.
 The finite cases do not exhaust every input/coefficient window or independently
 chosen pointer-offset combination. The guided lesson requires the updated MARS
-build that accepts underscored MSA anchors such as dotp_s.d and copy_s.d.
+build that accepts underscored MSA anchors such as dotp_s.d and copy_s.d
+and function-profile version 9 with invocation-scoped access policies.

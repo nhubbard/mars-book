@@ -30,7 +30,7 @@ class FirDecimateLessonCasesTests(unittest.TestCase):
         cases=[case for profile in profiles.values() for case in profile['cases']]
         self.assertEqual(146,len(cases));self.assertEqual(155,sum(len(case['calls']) for case in cases))
         for profile in profiles.values():
-            self.assertEqual(8,profile['formatVersion']);self.assertLessEqual(sum(case['instructionLimit'] for case in profile['cases']),10000000)
+            self.assertEqual(9,profile['formatVersion']);self.assertLessEqual(sum(case['instructionLimit'] for case in profile['cases']),10000000)
         for case in cases:
             self.assertEqual(9,len(case['preservedRegisters']));self.assertEqual([{'from':'function_return','until':'done'}],case['noExecution'])
             self.assertEqual(300000 if len(case['calls'])==3 else 100000,case['instructionLimit'])
@@ -45,12 +45,21 @@ class FirDecimateLessonCasesTests(unittest.TestCase):
             whole,first,last=case['calls'];cut=int(first['arguments']['a3'],16)
             self.assertEqual([32,cut,32-cut],[int(call['arguments']['a3'],16) for call in case['calls']])
             self.assertEqual(13+4*cut,last['argumentAddresses']['a0']['offset']);self.assertEqual(99+2*cut,last['argumentAddresses']['a2']['offset'])
+            for call in case['calls']:
+                n=int(call['arguments']['a3'],16);policy=call['accessPolicies'][0]
+                self.assertEqual([0 if n==0 else 4*n+12,0 if n==0 else 16,2*n],[window['length'] for window in policy['readable']])
+                self.assertEqual(call['argumentAddresses']['a0'],policy['readable'][0]['at'])
+                self.assertEqual(call['argumentAddresses']['a2'],policy['writable'][0]['at'])
+                self.assertEqual([2*n],[window['length'] for window in policy['writable']])
             memory=bytes.fromhex(next(row['bytes'] for row in last['memory'] if row['label']=='output'))
             self.assertEqual(memory[3:67],memory[99:163])
         clipped=next(case for case in split if case['name'].endswith('family-2'))
         self.assertEqual([32,5,27],[int(call['expectedRegisters']['v1'],16) for call in clipped['calls']])
         caller=next(case for case in cases if case['calls'][0]['entry']=='main')
         self.assertEqual(['decimate_ready','results_ready'],[call['returnTo'] for call in caller['calls']])
+        self.assertEqual(['output'],[window['at']['label'] for window in caller['calls'][0]['accessPolicies'][0]['writable']])
+        self.assertEqual([],caller['calls'][1]['accessPolicies'][0]['readable'])
+        self.assertEqual(['processed','clipped'],[window['at']['label'] for window in caller['calls'][1]['accessPolicies'][0]['writable']])
         for call,count,clip in zip(caller['calls'],[99,8],[99,0]):
             memory={row['label']:row['bytes'] for row in call['memory']}
             self.assertEqual(count,int.from_bytes(bytes.fromhex(memory['processed']),'little'));self.assertEqual(clip,int.from_bytes(bytes.fromhex(memory['clipped']),'little'))

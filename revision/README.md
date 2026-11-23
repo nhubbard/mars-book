@@ -40,8 +40,8 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
 - `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
-  observations, fault diagnosis and independent variations. The first unit has
-  native interactive support; the later units currently use ordinary Run and Debug.
+  observations, fault diagnosis and independent variations. The first sixteen main units have native interactive support. Later units and
+  unfinished companion lessons currently use ordinary Run and Debug.
 
 For the project-to-chapter coverage index and repeatable structural checks, see
 [the revised curriculum audit](../docs/revised-curriculum-audit.md). It distinguishes
@@ -54,7 +54,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27 and companions (185 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27 and companions (204 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -296,3 +296,11 @@ versioned content before archive preview; native lesson rendering and resumption
 are the next integration step. The draft does not replace the chapter, written
 lab, execution investigations or independent variations, and does not alter
 publication composition.
+
+
+The sixteenth native unit now joins the FIR chapter and written lab. See
+[fir-unit.md](fir-unit.md#native-fir-integration-22-november-2026) for the complete
+route, invocation-scoped grading correction, exact regression and two real IDE
+walkthroughs. The current 204-page lab proof places the FIR supplement on 109–114.
+Human walkthrough and accessibility review remain open. The next native unit is
+compact integer encoding, followed by its Base64 companion.

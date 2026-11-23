@@ -68,3 +68,67 @@ main chapter develops compact integer and byte encodings; the separate Base64
 companion follows the agreed prerequisite sequence. Later compositions, native
 lessons beyond the first unit and production instructional-system work remain
 unfinished. The proposed MARS-versus-hardware opening remains deferred.
+
+
+## Native FIR integration, 22 November 2026
+
+The sixteenth main unit now has nine inline predictions, 32 Debug boundaries
+across ten complete sources, three ordinary Runs and five independent
+assessments. Scalar impulse reasoning precedes asymmetric coefficients, signed
+widening, exact doubleword sums, one final rounding, strict clipping, zero work
+and a full-rate five/eleven split. The decimation exercise preserves the same
+arithmetic while advancing retained windows by four bytes.
+
+The native profiles preserve all 141 original function-trial constructions and
+the original caller observations, adding four three-call split cases: 146 cases,
+155 calls and separate silent exit. Original budgets are retained. An independent
+Kotlin export matches all original initial bytes, Java Random data, offsets and
+expected results. Twenty-six original/native qualification processes accept ten
+correct variants/routes and reject sixteen faulty ones as expected. Equivalent
+scalar, vector, relocated and wide-address solutions remain accepted.
+
+Integration exposed a real checking gap: case-wide memory permissions let a
+later invocation access bytes outside its own selected slices. MARS commit
+1974c0ef adds optional call.accessPolicies in function-profile version 9. Call
+traces exist only during the relevant invocation and case restrictions remain
+active. Host setup and inspection are excluded. Tests cover preceding-slice reads,
+same-value earlier-output stores, zero work, full access widths, deep immutable
+capture, cancellation, invalid spans and combined limits. Earlier formats reject
+the new field; omission preserves their behavior. A FIR counterexample passes
+the original script and broad native profiles, then fails the scoped profile at
+Call 3 for a one-byte read before its selected input, including a zero-work tail.
+Correct overlapping history remains permitted.
+
+The complete regression passes 226 CLI / 1229 plugin tests with no failures,
+errors or skips and both required coverage gates. Final focused tests import the
+exact version 9 archive, verify its split/caller windows and demonstrate that a
+broad call policy cannot widen a narrow case policy. All 497 book-tool and 127
+separate-authoring Jupiter tests pass. Exact packaged plugins pass paired public
+API verification with 91 MARS / 20 authoring experimental notices.
+
+Two actual light-theme IDE walkthroughs use the new MARS archive. They exercise
+wrong-answer recovery, all nine quizzes, 32 Debug boundaries, three Runs, starter
+0/43 and correct unsaved assessment counts 43/36/34/33/1. Editing eleven sources
+clears eighteen execution passes. Reopening retains all ten quiz attempts and
+eleven unchanged source hashes, then renews eighteen checks. Eleven installed
+JARs match the pinned archives in each process. Logs contain no ERROR/SEVERE;
+projects close before their owned IDE processes stop. Actual clean cleanSandbox
+runIde tasks precede both launches. The earlier version 8 walkthrough remains
+historical evidence; it does not establish the stronger invocation restriction.
+
+The final distributed archive clarifies overlapping history in its independent
+README after those IDE imports. That is the sole changed member; every execution
+and grading byte matches. The final archive separately passes a focused Jupiter
+production-reader import. No extra GUI run is claimed for this documentation-only
+clarification. Screenshot automation remains in the separate dependent plugin.
+
+The directly edited lab chapter now supplies the complete native route, concrete
+source variations, independent group descriptions and first-mismatch guidance.
+The 204-page proof places this unit on 109–114; all six pages and adjacent
+boundaries were visually reviewed, including the three lane strips in grayscale.
+The exact final PDF passes 1728 PDF/UA-2 rules / 966296 checks with zero failures.
+Embedded Minion Pro, Noto Sans Math, JetBrains Mono and existing native annotations
+remain. All 41 manual MARS files are unchanged. Human learner and assistive-tool
+reviews remain pending. The curriculum goal remains active; the proposed opening
+is deferred. The next main unit develops compact integer encodings, followed by
+its Base64 companion.
