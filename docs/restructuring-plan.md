@@ -1357,3 +1357,15 @@ A public vector-packing photograph has native annotations and a numerical lane
 explanation. See `revision/png-unit.md` for publication and verification scope.
 Retained lossless-video and H.263 delivery and human reviews remain open; this
 milestone does not complete the broader goal.
+
+
+### Lossless-video native assessment foundation, 23 November 2026
+
+The continuing minimal-exclusive-bounds task retains all 182 original cases in
+eight native profiles, both byte orders and 192 calls. Original/model state
+comparison and native qualification preserve equivalent two-pass implementations,
+wide addresses and private scratch while rejecting the existing assembled faults.
+The actual profile parser and combined-assessment checks pass. This foundation
+does not deliver the native lesson yet; bounded worked experiments, inline
+predictions, a student package, actual IDE first/resume and written integration
+remain next. See `revision/lossless-unit.md` and the private qualification receipts.

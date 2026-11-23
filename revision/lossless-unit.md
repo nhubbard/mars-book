@@ -94,3 +94,38 @@ automated PDF/UA-2 checks bind the exact final proof hashes. These checks do not
 constitute author, learner or assistive-technology review. The revised book has not
 been validated with students. Advanced native lesson delivery and the remaining
 H.263 compositions are still open; this unit does not complete the curriculum goal.
+
+
+## Native assessment foundation, 23 November 2026
+
+The continuing changed-pixel bounds task now has native function-case profiles,
+without an assembly solution in the public materials. All 182 original cases
+are retained: 91 per byte order, including 192 calls because the two reuse cases
+each invoke the same machine six times. Eight bounded format-21 profiles retain
+the original million-instruction case budgets, exact four/eight-byte alignment,
+full-width dimensions, selected input intervals, minimal exclusive coordinates,
+unchanged caller bytes and saved state. Compact repeated guard bytes reduce the
+download size without removing the surrounding objects or access checks.
+
+An instrumented execution of the original checker and the native model agree
+on canonical case order, all arguments, status/count results and every complete
+caller object before and after each call, for reference, equivalent two-pass and
+wide-address implementations. The native prepared checker then passes all 182
+cases for those three implementations and for a variant using private scratch
+between caller objects. It rejects each of six assembled faults and the unfinished
+starter; the starter fails all 182 cases. These are contract checks, not source
+matching. No new grader capability or simulator change was needed.
+
+Four new public model tests and the complete 603-test public tooling suite pass.
+Two Jupiter tests through the actual plugin parser verify the eight profiles,
+expanded guard extents, both byte orders, repeated calls and a combined final
+assessment without reducing its budgets. Production plugin code is unchanged;
+the preceding PNG milestone retains its broad 1,319-plugin-test regression and
+coverage results. All 41 manual edits remain preserved.
+
+This is an assessment foundation. The native student package, inline questions,
+worked debugger experiments, first-use/resume IDE trials and renewed written-lab
+integration remain to be completed. No new screenshot, PDF build or accessibility
+validation is claimed by this step. The existing native LaTeX books and historical
+lossless-video evidence remain unchanged. Private native-lossless-foundation-01
+retains exact qualification, comparison and profile-parser receipts.
