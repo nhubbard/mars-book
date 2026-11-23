@@ -1,4 +1,4 @@
-# Follow H.263 prediction and local reconstruction
+# Predict and reconstruct H.263 blocks
 
 Read Chapter 26 and its written lab. These experiments use the supplied numerical
 routines before assigning one independent reconstruction function. The following
