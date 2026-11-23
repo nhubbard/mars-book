@@ -1543,3 +1543,49 @@ remain next, followed by course-wide acceptance. No new graphical IDE launch,
 publication PDF, accessibility validation or human learner review is claimed by
 this draft. Exact sources, tools, process records and output reports are retained
 in private `native-h263-stream-unit-01`.
+
+
+### H.263 native IDE and written stream integration, 23 November 2026
+
+Two actual fresh IntelliJ processes now verify first use and saved resume of the
+complete native stream unit. First use records forty observations and forty-five
+photographs; resume records twenty-eight and twenty-nine. Both sequences exercise
+ordinary Debug and Run on the real generated files, then pass 1248 overlapping
+reader placements. Thirteen quiz attempts and seven edited sources are retained;
+all sixteen execution checks are renewed. Unsaved checking, source invalidation,
+native save/close/disposal and preserved assessment attempt history are verified.
+No private body is reinjected on resume. Each process's eleven installed JARs
+match the two immutable pinned archives.
+
+The actual IDE output after each completed sequence passes the imported public
+inspection tool: eleven accepted pictures per process, including the one-/two-
+picture prefixes of failed requests. That external decode is scoped to retained
+files after each sequence; Run replaces its preceding Debug output. The original
+whole-request status remains failed for truncated/trailing input. Neither a host
+encoder nor the authoring callback fills the output stream.
+
+Directly edited native LaTeX now connects all six experiments, the three Run
+status/count pairs, actual independent file inspection and one continuing reader
+through both final checks. A new unchanged light-theme photograph has native
+annotations for the actual trailing-input frame, status three and accepted count
+two. The preceding generator exercise is clarified as optional because the native
+unit bundles the same generated pixels. Human prose and the initial draft remain
+preserved.
+
+The separate authoring plugin passes 144 Jupiter tests, public tooling 628, and
+six publication guards. Both pinned plugins pass compatibility verification on
+IntelliJ 2026.3 without internal API use reported. The accepted lab proof has
+228 pages, with the stream lab on 222–228 and its figure on 225. Pages 221–228
+were visually reviewed, including grayscale figure review. After the transition
+clarification, page 221 was reviewed again; every stream page and its grayscale
+figure remained pixel-identical. Final exact PDF/UA-2 validation passes 1728 rules
+and 1,076,661 checks with zero failures. All 41 unrelated MARS edits remain intact.
+Exact binaries, native trial records, retained host outputs, independent decode
+reports, proof pins and previous transition proof are retained in private
+`native-h263-stream-ide-01`.
+
+Native stream delivery and written integration are complete. The full curriculum
+goal remains active pending the course-wide requirements, prerequisites,
+cross-references, distributions and evidence acceptance audit. Human author,
+learner and assistive-technology reviews remain open; no renewed full inverse-
+accuracy gate is claimed by this integration.

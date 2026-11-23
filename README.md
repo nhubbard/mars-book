@@ -9,16 +9,12 @@ Use an explicit entry when building a revised proof, for example
 current progress. `main.tex` and `includes/` preserve the initial draft described
 below.
 
-The [native H.263 stream draft](revision/lessons/035-h263-stream/assignment.md)
-now connects bounded syntax experiments, real generated-video output and one
-continuing bit-reader task. Its actual IDE walkthrough and printed integration
-remain next; the current published lab proof below is unchanged.
-
-The latest revised milestone completes the native H.263 numerical lab and its
-written integration, with verified first use, saved resume and an actual annotated
-light-theme debugger figure. The lab proof has 226 pages; its H.263 numerical lab
-is on pages 216–221. Native restricted-stream delivery and course-wide acceptance
-remain. See [the numerical-unit record](revision/h263-prediction-unit.md).
+The native H.263 stream unit now has verified first use and saved resume in
+IntelliJ, actual generated-video output and a native annotated debugger figure.
+The current lab proof has 228 pages; its stream lab is on pages 222–228, with the
+new figure on page 225. See [the stream-unit record](revision/h263-stream-unit.md).
+Course-wide acceptance remains; human substantive and accessibility reviews are
+separate work.
 
 Current completion status is recorded in [initial-draft-status.md](docs/initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
 

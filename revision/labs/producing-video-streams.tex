@@ -2,20 +2,40 @@
 \MARSChapterHeading{Inspect the stream and accepted file progress}
 \label{revision-lab:producing-video-streams}
 
-Read Chapter 27 with this lab. Continue with
-\path{revision/labs/files/h263-encoder.asm}; the original \texttt{035-h263}
-construction package supports writing the complete encoder in stages. The new
-\texttt{h263-read-bits.asm} is an independent unfinished extension. Its feedback
-checks field meaning and state, without requiring the worked encoder's labels,
-register allocation or legal entropy-code choices.
+Read Chapter 27 with this lab. Import
+\texttt{035-h263-stream-0.1.0-student.zip} through
+\textbf{Import MARS Lesson Package}, then open
+\textbf{Inspect H.263 stream boundaries} in Learn. Six complete experiments
+connect bit fields, coefficient events, macroblock syntax and headers to actual
+H.263 files. The continuing independent task is one bounded reader in
+\path{independent/h263-read-bits.asm}.
+
+Answer each inline prediction before starting the offered Debug activity. Use the
+named stops below to locate results. Keep a returned field width, complete payload
+length, accepted picture count and accepted file length distinct: the same register
+can carry different units at different interfaces. The three raw inputs are
+already bundled; a Python script generated their pixels. The complete eight-picture
+QCIF input has 304128 bytes, rate $5000/1001$ frames per second and duration
+1.6016 seconds. No host encoder supplies the H.263 output.
+
+The original \texttt{035-h263} construction assignment remains available for
+writing the complete encoder. Its callable entry contracts and separate grading
+storage support that larger task. The native experiments here provide worked
+observations before the independent reader; they do not require concatenating
+historical callers into one file.
 
 \section{Trace bits before reading them as bytes}
 
-Write \texttt{A5 A5} as sixteen bits, mark only the first three as valid, then
+Start with \path{worked/append-fields.asm}. Its selected output window begins
+five bytes into a guard-filled allocation. Write \texttt{A5 A5} as sixteen bits, mark only the first three as valid, then
 append the nine-bit value 419. Derive \texttt{BA 35} and committed count twelve.
 Mark the four low bits that remain outside the append. Appending four explicit
 zeros yields \texttt{BA 30}; simply displaying two bytes did not make those
-zeros part of the earlier field.
+zeros part of the earlier field. At \texttt{lesson\_append9}, the saved byte
+values are BA and 35 and the used count is twelve. At
+\texttt{lesson\_pad4}, they are BA and 30 with used count sixteen. The next
+one-bit request cannot fit: \texttt{lesson\_append\_rejected} returns two and
+zero, retaining the earlier bytes and count.
 
 The \texttt{h263\_write\_bits} context contains pointer, byte capacity and used
 bits. Reject an oversized value, a full-width invalid count or an over-capacity
@@ -33,19 +53,30 @@ stages have separate staging boundaries.
 
 \section{Recover a block's levels from its chosen syntax}
 
-Use INTRA DC code 255, level one at natural index one and minus one at index eight.
+Open \path{worked/coefficient-events.asm}. Use INTRA DC code 255, level one at natural index one and minus one at index eight.
 The ordinary scan visits those two nonzeros consecutively. Their RUN fields are
 zero; LAST is zero then one. Decode both the sixteen-bit compact representation
 and the fifty-two-bit escape representation to the same natural-order array.
-Do not compare the two outputs byte for byte as a correctness condition.
+At \texttt{lesson\_coeff\_compact}, the actual supplied emitter appends sixteen
+bits after a three-bit prefix, so the used count is nineteen. The alternative
+caller explicitly writes this one known DC and two escape events. It is a fixed
+spelling of the example, not a second general emitter. At
+\texttt{lesson\_coeff\_escape}, \texttt{s0} holds the complete payload length
+52 and \texttt{s1} holds used count 55; \texttt{v1} is only 22, the final
+writer call's width. Decode the two valid lengths to the same levels. Do not
+compare outputs byte for byte as a correctness condition. The last experiment
+sets ordinary level 128 at the final array position. At
+\texttt{lesson\_coeff\_rejected}, status one/count zero retain the compact
+buffer and count nineteen.
 
 An INTER nonzero only at the final scan position has RUN 63. Its INTRA AC
 counterpart has RUN 62 because the separate DC position is excluded. Move the
 last nonzero earlier and verify that LAST moves with it. An all-zero ordinary
 scan emits no events; INTRA still carries its DC byte.
 
-Now form presence for six blocks. Six INTRA DC-only blocks have ordinary pattern
-zero. For INTER, the four Y presence bits use the complemented CBPY table index.
+Continue with \path{worked/macroblock-syntax.asm}. Now form presence for six blocks. Six INTRA DC-only blocks have ordinary pattern
+zero. At \texttt{lesson\_intra\_presence}, five header bits and six DC bytes
+still produce 53 bits. For INTER, the four Y presence bits use the complemented CBPY table index.
 Keep picture type and macroblock type distinct when selecting MCBPC. Construct
 a P-picture INTRA macroblock and explain why it has no motion fields even though
 it is inside a predicted picture.
@@ -54,50 +85,97 @@ With selected horizontal component minus 32 and predictor 31, recover the wrappe
 difference one and the decoder's actual minus 32. Compare coded zero difference
 with skipped actual zero motion under a nonzero predictor. Use the full request
 contracts when checking these entries; a numerical search result in full pixels
-must be converted to half-sample units first.
+must be converted to half-sample units first. At
+\texttt{lesson\_motion\_wrap}, the normalized horizontal difference in
+\texttt{s3} is one; the supplied INTER header occupies eight bits. At
+\texttt{lesson\_actual\_zero\_skip}, the next request chooses actual zero
+motion under the same predictor and emits a one-bit skip. Inspect that request's
+fields rather than treating saved registers from the preceding observation as new
+motion inputs.
+
+\section{Locate the valid end of a picture header}
+
+\path{worked/picture-header.asm} builds the restricted header with the actual bit
+writer. Its field widths are 22, 8, 13, 5, 1 and 1. At
+\texttt{lesson\_header\_prefix}, the numerical start code 32 has committed
+22 bits. At \texttt{lesson\_header\_fields}, direct masks recover start
+code 32, temporal reference zero, type field 4160 and quantizer eight in
+\texttt{s0} through \texttt{s3}.
+
+These fields occupy fifty bits within seven bytes. At
+\texttt{lesson\_valid\_bits}, capacity is 56 bits but valid count and cursor
+are both fifty, leaving zero valid bits. The remaining six storage bits retain
+decimal 37. They need not be zero; consuming them would invent syntax that the
+writer did not commit. The direct masks inspect known fields. They do not consume
+the remaining variable-length stream or reconstruct any picture.
 
 \section{Run and independently inspect a real clip}
 
-Run the printed helper from a book checkout, using a new directory:
+Use \path{worked/clip-progress.asm} for the native Debug and Run activities.
+Its relative paths resolve from the assembly file's directory. Preserve that
+working directory if you make another Run configuration. The caller executes
+three actual encoder requests. The first supplies eight complete pictures. The
+second supplies one picture plus sixteen bytes of the next. The third supplies
+two pictures followed by one extra byte.
+
+At \texttt{lesson\_clip\_complete}, status/count is \texttt{0/8} and the
+accepted stream length is 2212 bytes for the supplied encoder. At
+\texttt{lesson\_clip\_truncated}, status/count is \texttt{3/1} with 696
+accepted bytes. At \texttt{lesson\_clip\_trailing}, it is \texttt{3/2}
+with 908 accepted bytes. Both errors are input status three. In the last request,
+all requested pictures were accepted before the exact-EOF check discovered an
+extra byte. Inspect both return values.
+
+The progress record contains accepted picture count, accepted encoded byte count
+and accepted reconstruction pointer at native doubleword offsets zero, eight and
+sixteen. The caller loads these into \texttt{s0}, \texttt{s1} and \texttt{s2}.
+Its \texttt{s5} check is one when the pointer names the expected accepted buffer:
+B after eight pictures, A after one and B after two. A failed later request does
+not replace that accepted reference with an unfinished next picture.
+
+\input{revision/figures/h263-stream/native-status}
+
+Ordinary Run prints the three status/count pairs:
+\begin{Verbatim}
+0/8
+3/1
+3/2
+\end{Verbatim}
+The observation caller deliberately exits normally after reporting every request.
+That process exit does not turn the two failed library calls into successes.
+Run writes \texttt{encoded.263} and \texttt{reconstructed.yuv}, plus separate
+\texttt{truncated} and \texttt{trailing} output pairs beside the source. Repeating
+this worked experiment replaces those six generated files. Copy them elsewhere
+before comparing changed experiments.
+
+Use the imported folder containing \texttt{package.json} as the command's working
+directory and inspect the actual outputs:
+\Needspace{7\baselineskip}
+\MARSCodeLabel{Verify the full stream and the accepted prefixes}
+\begin{Verbatim}
+python3 tools/inspect_outputs.py worked --report work/stream-report.json
+\end{Verbatim}
+FFmpeg must be on the host's command path. The tool checks restricted syntax,
+independently decodes each accepted picture, and compares source quality and local
+reconstruction. It does not generate encoded bytes for MARS. Its report separates
+the successful eight-picture request from the accepted prefixes of the two failed
+requests. Choose a new report path for another comparison; an existing report is
+refused. A matching Run transcript alone does not prove interoperability.
+
+For optional construction work from a book checkout, the original helper prepares
+a fresh directory, executes your complete encoder and checks its real files:
 \Needspace{10\baselineskip}
-\MARSCodeLabel{Execute and check the complete target encoder}
+\MARSCodeLabel{Execute and check another complete target encoder}
 \begin{Verbatim}
 python3 packages/035-h263/construction/h263-clip-construction/run.py \
   revision/labs/files/h263-encoder.asm --output-dir work/run-eight \
   --cli "$CLI" --java "$JAVA"
 \end{Verbatim}
-The helper needs FFmpeg on the host's command path for independent decoding.
-It generates raw QCIF input, retains the prepared source, runs MARS and checks
-actual output files. The target program writes the H.263 stream and local
-reconstruction. No host encoder fills those outputs for it.
-
-For an IDE observation, use the sibling \texttt{prepare.py} with
-\texttt{--source}, \texttt{--output-dir} and the same controls. Open its
-\texttt{main.asm} for ordinary MARS Run or Debug. At
-\texttt{clip\_caller\_return}, the returned status/count and progress record are
-complete, while the caller's named status/count copies are still pending.
-A successful default caller prints eight. Retain each experiment's source and
-files in its own directory so a later run does not replace the comparison.
-
-The progress record's fields are accepted picture count, accepted encoded byte
-count and accepted reconstruction pointer, at native doubleword offsets zero,
-eight and sixteen. The reference default produces eight pictures and 2212
-encoded bytes. The equivalent escape-oriented source produces 5101 bytes;
-that difference alone is not a failure. Inspect the report's picture types,
-temporal references, actual motion, skipped macroblocks and per-plane results.
-
-For a separately run checker, point it at the actual files:
-\Needspace{11\baselineskip}
-\MARSCodeLabel{Check existing files without encoding them again}
-\begin{Verbatim}
-python3 packages/035-h263/construction/h263-picture-construction/check_stream.py \
-  --stream work/run-eight/encoded.263 --input work/run-eight/clip.yuv \
-  --reconstruction work/run-eight/reconstructed.yuv \
-  --frames 8 --tick-step 6 --report work/stream-report.json
-\end{Verbatim}
-The report path must be new. The strict parser checks the whole selected profile;
-FFmpeg supplies a separate complete decode. Source quality and local/decoder drift
-are distinct metrics, and neither replaces the full inverse-accuracy gate.
+The equivalent escape-oriented encoder can produce a different legal length;
+5101 bytes was observed for the earlier worked alternative. Compare the report's
+picture types, temporal references, actual motion, skipped macroblocks and plane
+results. Source quality and local/decoder drift are distinct metrics; neither
+replaces the full inverse-accuracy gate.
 
 Vary one controlled choice at a time. Compare scalar and MSA modes with the same
 input and coding policy before interpreting work counts. Compare compact and
@@ -107,7 +185,10 @@ reference two. It checks wraparound without exceeding the documented input limit
 
 \section{Diagnose failure from the accepted prefix}
 
-Picture publication and file acceptance have different boundaries. A failed
+The native truncated and trailing-input experiments show actual input failures.
+The original package's \texttt{clip} grading domain supplies controlled output
+failures and short transfers for the following extension. Picture publication
+and file acceptance have different boundaries. A failed
 picture retains both caller output areas, although workspace may have changed.
 A later file failure can leave a partial output suffix, so inspect its overall
 status and the accepted progress record separately.
@@ -134,7 +215,17 @@ and inverse accuracy checks when changing dependencies of the complete encoder.
 
 \section{Implement the independent bounded reader}
 
-Replace the deliberate \texttt{break} at \texttt{h263\_read\_bits}. Pass an
+First use \path{worked/reader-boundaries.asm}. At
+\texttt{lesson\_unsigned\_field}, a signed word load returns
+\texttt{ffffffff80000001}, while the unsigned load returns
+\texttt{0000000080000001}. At \texttt{lesson\_remaining\_bits}, sixteen
+capacity bits contain only twelve valid bits and cursor twelve, leaving zero
+valid bits. At \texttt{lesson\_full\_width}, request
+\texttt{0000000100000009} is out of range as a complete value although its low
+word is nine. These arithmetic observations provide no finished reader body.
+
+Keep one implementation in \path{independent/h263-read-bits.asm}. Replace the
+deliberate \texttt{break} at \texttt{h263\_read\_bits}. Pass an
 eight-byte-aligned 32-byte context in \texttt{a0} and the unsigned full-width
 requested bit count in \texttt{a1}. Context fields are native doublewords:
 input pointer, byte capacity, valid bit count and cursor, at offsets zero,
@@ -182,7 +273,17 @@ output. Its next one-bit read must fail; a zero-width read must succeed without
 changing cursor. Also start at cursor zero: widths three then nine return five
 and 419, respectively.
 
-Run its separate feedback from the book root:
+Use the native \textbf{Check this program} activities on this same source.
+The stages cover short fields (128 placements), wide fields (136), little-endian
+metadata (264), boundaries (26), invalid metadata (30), maximum capacity (6) and
+reused state (2). The two final checks each select 328 placements; their union
+covers all 592 original cases, with shared boundary cases repeated. Both final
+results must be current for the same source revision. After editing, return and
+renew any stale earlier result. The hints separate preflight, extraction and
+publication without prescribing a register allocation or private helper layout.
+
+For separate feedback from the book checkout, use the command below. Substitute
+your edited reader path if it resides in an imported package:
 \Needspace{8\baselineskip}
 \MARSCodeLabel{Check field values, access bounds and cursor ownership}
 \begin{Verbatim}
