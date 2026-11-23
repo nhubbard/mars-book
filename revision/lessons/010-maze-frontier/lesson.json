@@ -1,0 +1,400 @@
+{
+  "formatVersion": 11,
+  "introduction": "A search needs an order for unfinished work. First separate a valid array index from a legal grid move in a complete helper. Then use a FIFO frontier, first-discovery records and a renderer to make a shortest-path search explainable. Read the maze companion lab alongside these activities.",
+  "conclusion": "Explain why coordinate checks, discovery-time marking and FIFO order establish different parts of the result. Use the written trace to explain a valid alternative shortest path. A plausible final picture is insufficient: the publications must describe the search that actually produced it.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "index-is-not-adjacency",
+      "explanation": "The grid has eight columns. Cell ID 8y+x encodes a row and column; a legal array index does not by itself describe a legal move. The complete helper checks coordinates before rebuilding an ID.",
+      "question": "What is immediately east of cell seven?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Cell eight, because 7+1 is within the array.",
+          "feedback": "Cell eight is column zero of the next row. This would cross a grid edge."
+        },
+        {
+          "id": "b",
+          "text": "No cell: the candidate column is eight.",
+          "feedback": "Cell seven is column seven. Moving east leaves the permitted column interval zero through seven."
+        },
+        {
+          "id": "c",
+          "text": "Cell fifteen, because the next row is eight cells away.",
+          "feedback": "Adding eight moves south by one row; it does not move east."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "neighbor_id",
+        "mnemonic": "andi",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-east-edge",
+      "source": "worked/neighbor.asm",
+      "explanation": "Debug the complete helper experiment. It calls neighbor_id with cell seven and direction east. Use the requested breakpoints to compare an encoded ID, a candidate coordinate and the returned result. No console input is required.",
+      "success": "Explain why checking only the flattened ID would accept a move that does not exist. Stop this Debug session before the next experiment.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "arguments",
+          "explanation": "Pause before andi at neighbor_id. The caller has supplied an ID and a direction index; the helper has not yet extracted coordinates.",
+          "anchor": {
+            "label": "neighbor_id",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000007",
+            "$a1": "0x0000000000000001"
+          },
+          "success": "The two arguments describe cell seven and east. They do not supply an address to load."
+        },
+        {
+          "id": "candidate-column",
+          "explanation": "Pause before the first bgec in neighbor_id. x is now eight and y remains zero. The lower-bound check passed, but the upper-bound check is still pending.",
+          "anchor": {
+            "label": "neighbor_id",
+            "mnemonic": "bgec",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000008",
+            "$t1": "0x0000000000000000",
+            "$t3": "0x0000000000000001",
+            "$t4": "0x0000000000000008"
+          },
+          "success": "The candidate is outside the grid even though a mistaken flattened ID could fit the array."
+        },
+        {
+          "id": "returned-absence",
+          "explanation": "Pause at neighbor_done before sw. The helper has returned; the caller has not yet stored its answer.",
+          "anchor": {
+            "label": "neighbor_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000007",
+            "$a1": "0x0000000000000001",
+            "$v0": "0xffffffffffffffff"
+          },
+          "success": "The returned -1 denotes an absent neighbor. The next store records that result; it does not compute a neighbor."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "signed-direction",
+      "explanation": "The direction tables store byte displacements. North has dx=0 and dy=-1. The dy byte is 0xff, whose interpretation depends on the load.",
+      "question": "What does lb contribute when the helper moves north from cell nine?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A signed displacement of -1, so row one becomes row zero.",
+          "feedback": "lb sign-extends the byte. The row addition therefore subtracts one."
+        },
+        {
+          "id": "b",
+          "text": "A displacement of 255, because every byte is positive.",
+          "feedback": "lbu would produce 255. The signed table deliberately uses lb."
+        },
+        {
+          "id": "c",
+          "text": "The address of the previous row.",
+          "feedback": "The load returns a displacement value. The program separately calculates coordinates and then an ID."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "neighbor_id",
+        "mnemonic": "lb",
+        "occurrence": 1
+      },
+      "source": "worked/north.asm"
+    },
+    {
+      "kind": "debug",
+      "id": "debug-north",
+      "source": "worked/north.asm",
+      "explanation": "Start a fresh Debug session for worked/north.asm, which changes only the call to cell nine, direction north. Follow the row displacement and the returned neighbor ID.",
+      "success": "Explain the separate geometry and wall checks. Stop Debug before running the complete caller.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "north-input",
+          "explanation": "Pause before andi at neighbor_id. Cell nine encodes row one and column one.",
+          "anchor": {
+            "label": "neighbor_id",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000009",
+            "$a1": "0x0000000000000000"
+          },
+          "success": "The direction index selects north, rather than being an offset to add directly to the ID."
+        },
+        {
+          "id": "new-row",
+          "explanation": "Pause before the second bltzc in neighbor_id. The signed dy load and addition have finished, but the row-bound decision has not.",
+          "anchor": {
+            "label": "neighbor_id",
+            "mnemonic": "bltzc",
+            "occurrence": 1
+          },
+          "registers": {
+            "$t0": "0x0000000000000001",
+            "$t1": "0x0000000000000000",
+            "$t3": "0xffffffffffffffff",
+            "$t4": "0x0000000000000008"
+          },
+          "success": "Column one and row zero are both valid. The helper can now flatten them to an ID."
+        },
+        {
+          "id": "north-return",
+          "explanation": "Pause at neighbor_done before sw. Compare the returned ID with 8y+x using the accepted coordinates.",
+          "anchor": {
+            "label": "neighbor_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000009",
+            "$a1": "0x0000000000000000",
+            "$t0": "0x0000000000000001",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x0000000000000001"
+          },
+          "success": "The returned ID is one. It still says nothing about whether the walls byte for cell one is open."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-neighbor",
+      "source": "worked/neighbor.asm",
+      "explanation": "Run worked/neighbor.asm normally. It stores -1 to answer and exits without console output. The earlier debugger observation established the returned value; an empty transcript alone would not establish it.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The worked caller exited without console output. The supplied worked/neighbor.kts separately checks all 256 cell/direction combinations and caller-state preservation.",
+      "anchor": {
+        "label": "neighbor_done",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "open-is-a-second-question",
+      "explanation": "The helper accepts north from cell nine and returns cell one. Geometry has established a possible edge, but walls still controls whether that edge can be used.",
+      "question": "What must the search check before discovering cell one?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Only that the returned ID is nonnegative.",
+          "feedback": "That establishes geometry, but an in-bounds cell can still be a wall or already discovered."
+        },
+        {
+          "id": "b",
+          "text": "That walls[1] is zero and states[1] is unseen.",
+          "feedback": "An open, unseen neighbor may be discovered. Mark it waiting, record its parent and distance, and enqueue it once."
+        },
+        {
+          "id": "c",
+          "text": "That the pixel is white.",
+          "feedback": "The frame is an explanation of search state. It is not the authoritative input or discovery record."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "neighbor_done",
+        "mnemonic": "sw",
+        "occurrence": 0
+      },
+      "source": "worked/north.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "mark-before-enqueue",
+      "explanation": "The default independent maze has open cells zero, one, eight and nine. Both one and eight can lead to nine. Discovery changes state from unseen to waiting before another expansion can discover the same cell.",
+      "question": "Why mark a cell when it is discovered rather than when it is removed?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Otherwise both pending routes can append it before either copy is removed.",
+          "feedback": "Discovery-time marking prevents duplicate queue entries and makes the 64-entry capacity sufficient."
+        },
+        {
+          "id": "b",
+          "text": "Because a cell can have only one geometric neighbor.",
+          "feedback": "A cell can have up to four neighbors. The state prevents duplicate work through different predecessors."
+        },
+        {
+          "id": "c",
+          "text": "So that every pixel can be painted blue immediately.",
+          "feedback": "Blue belongs to the final reconstructed path. Waiting cells have their own state and color."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "break",
+        "occurrence": 0
+      },
+      "source": "independent/maze.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "fifo-history",
+      "explanation": "head counts completed removals and tail counts appended entries. The public queue allocation keeps its history. Pending work occupies [head,tail); earlier entries remain inspectable.",
+      "question": "After removing cell zero and discovering one then eight, what should the queue and indexes show?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "queue starts [1,8], head=0 and tail=2.",
+          "feedback": "That compacts away the required history. These indexes no longer describe the same monotone FIFO."
+        },
+        {
+          "id": "b",
+          "text": "queue starts [0,1,8], head=1 and tail=3.",
+          "feedback": "Cell zero remains in the history. Cells one and eight are pending, in their discovery order."
+        },
+        {
+          "id": "c",
+          "text": "queue starts [0,1,8], head=3 and tail=3.",
+          "feedback": "That would claim all three cells have been removed, although only zero was expanded."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "break",
+        "occurrence": 0
+      },
+      "source": "independent/maze.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "shortest-is-not-unique",
+      "explanation": "The two routes 0,1,9 and 0,8,9 both contain two edges. A FIFO explores distance layers, while the chosen neighbor order determines which first-discovery parent wins.",
+      "question": "Must a correct implementation choose the first of these routes?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes, because the reference visits east before south.",
+          "feedback": "Neighbor order is not part of this assignment. Requiring that route would reject a valid equivalent search."
+        },
+        {
+          "id": "b",
+          "text": "No; either route is valid if its first-discovery parents and shortest distances match the submitted queue history.",
+          "feedback": "The checker follows the actual queue order and verifies shortest distances independently."
+        },
+        {
+          "id": "c",
+          "text": "No; any walk that reaches nine has the same cost.",
+          "feedback": "A walk can contain extra edges or repeated cells. Reachability alone does not establish shortest distance."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "break",
+        "occurrence": 0
+      },
+      "source": "independent/maze.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "publish-complete-state",
+      "explanation": "render paints all 64 pixels from walls, states and path, then reaches maze_ready. A breakpoint at that public boundary should expose a finished frame and restored saved state.",
+      "question": "When should a renderer restore its saved registers?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "After maze_ready, as long as they are correct before program exit.",
+          "feedback": "The public boundary is already observable. Restoration after it is too late."
+        },
+        {
+          "id": "b",
+          "text": "Before reaching maze_ready, along with the restored stack pointer.",
+          "feedback": "The published state must already satisfy the renderer contract. Its final return does not repair an earlier invalid publication."
+        },
+        {
+          "id": "c",
+          "text": "Only when the caller happens to use those registers.",
+          "feedback": "The preservation contract belongs to the interface; a particular caller cannot waive it silently."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "render",
+        "mnemonic": "break",
+        "occurrence": 0
+      },
+      "source": "independent/maze.asm"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-render",
+      "source": "independent/maze.asm",
+      "caseProfile": "independent/maze-render.cases.json",
+      "explanation": "Implement render in independent/maze.asm before the search if you prefer. Read independent/README.md. The five cases call render directly with varied input arrays, so main may still contain its deliberate break. Paint every pixel, preserve inputs and saved state, reach maze_ready once, then return.",
+      "success": "The independent renderer passes its five public input combinations, including wall/path/state priority and preservation at publication.",
+      "hints": [
+        {
+          "id": "priority",
+          "text": "Decide the wall case first, then the final path, then unseen, waiting and processed state. These predicates can overlap."
+        },
+        {
+          "id": "coverage",
+          "text": "Use one byte index for the input arrays and four times that index for the frame. The loop must replace every initially poisoned pixel."
+        },
+        {
+          "id": "publication",
+          "text": "If you reserve a private frame or use saved registers, restore them before maze_ready. Keep the incoming return continuation valid."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-search",
+      "source": "independent/maze.asm",
+      "caseProfile": "independent/maze-search.cases.json",
+      "explanation": "Implement initialization, the FIFO search and parent-chain reconstruction in independent/maze.asm. Preserve the public data and labels; choose your own private functions, registers and neighbor order. The eight cases vary geometry and endpoints and inspect every published transition, then the final state after exit.",
+      "success": "The public searches pass intermediate discovery, FIFO, distance, path, rendering and protected-input checks. Explain the layer argument and why an alternative neighbor order can produce another accepted shortest route.",
+      "hints": [
+        {
+          "id": "initialization",
+          "text": "Initialize all 64 output entries, not just reachable cells. Use parent/distance sentinel 255, mark the start waiting with distance zero, append it once, and publish phase zero."
+        },
+        {
+          "id": "expansion",
+          "text": "Remove the oldest pending cell. If it is the goal, do not expand its neighbors. Otherwise append each unseen open orthogonal neighbor once, recording its first parent and distance before publishing the complete expansion."
+        },
+        {
+          "id": "terminal",
+          "text": "On success follow parents from goal to start and mark every path cell. Report an edge count, so start equal to goal has length zero. On exhaustion keep the path empty, result zero and length -1. Publish phase two and exit normally."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-maze",
+      "source": "independent/maze.asm",
+      "explanation": "After both assessments pass, run your independent program normally. Its source directive connects an 8\u00d78 logical Bitmap Display. The supplied room has open cells zero, one, eight and nine. Inspect the final path and compare it with the parent chain; either valid two-edge route is acceptable. No console input or output is required.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "Your complete search exited without console output. Explain the displayed path and its edge count using your discovery order. The preceding transition assessment, rather than this empty transcript, checks the search and frame contents.",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    }
+  ]
+}

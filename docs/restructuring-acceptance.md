@@ -131,3 +131,23 @@ There are now thirty exercised downloadable native packages plus the built-in
 first unit. The six companions listed above remain implementation work. Final
 course-wide distribution and evidence acceptance is also still required. Historical
 milestones above describe their then-current scope, rather than current completion.
+
+## Maze assessment foundation and native draft
+
+The maze checker now preserves the original intermediate-transition and renderer
+contracts in data-only native assessments. Both equivalent implementations pass
+all eight public searches,416 private searches and five renderer cases:858 positive
+placements. Ten faulty profiles are rejected. Generated CLI checks add26 passing
+placements through the same checker. Complete implementation regression passes
+304 CLI /1342 plugin tests and all required line/branch/parser gates.
+
+The new010-maze-frontier draft passes two actual native archive/import tests and
+all fifteen PSI source pointers; public tooling passes641 tests. It contains seven
+predictions, two three-stop Debug observations, two Runs and separate renderer and
+search assessments. The unfinished independent source remains student-authored,
+with equivalent neighbor orders accepted. See revision/maze-native-unit.md.
+
+This draft does not change the thirty exercised downloadable-package count. Its
+first-use/resume IDE interaction, instructor edition and written integration remain
+open, as do the other five companions and final course-wide acceptance. The six
+subjects in the earlier table therefore remain implementation work at this milestone.
