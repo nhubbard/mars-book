@@ -67,3 +67,43 @@ altering them. The authoring suite passes 104 Jupiter tests; public tooling pass
 grayscale and final PDF/UA-2 results are retained in the private archive. No human
 learner, instructor or assistive-technology validation is claimed. The PPM native
 guided lesson and the broader curriculum/instructional-system goal remain open.
+
+## Native grading foundation, 22 November 2026
+
+The native PPM route is still being built. Its first implementation step preserves
+all 166 direct complementary-encoder cases from the existing public Kotlin check:
+160 dimension/capacity combinations and six invalid dimensions. An executable
+export of the original Kotlin construction agrees with the new host author on
+all dimensions, unsigned capacities, offsets, source bytes, complete framebuffer
+initializations, status values and encoded results. This comparison is stronger
+than comparing two descriptions of the same intended inputs.
+
+`tools/ppm_negative_lesson_cases.py` authors 57 bounded function profiles containing
+167 cases and 168 calls. The additional caller case observes the encoder return
+before publication and then the status/count stores. The direct cases retain the
+original seeded caller arenas, saved-register upper bits, workspace-relative stack,
+invalid pointers on rejected input, exact result bytes and complete access-width
+restrictions. Each original arena is watched separately so the private workspace
+and unnamed alignment padding retain their original treatment.
+
+The 160 direct grid cases and the caller retain their three-million-instruction
+allowance; the six invalid-dimension cases retain their 100,000 allowance. This
+requires MARS function-profile version 11. Older versions retain their existing
+one-million limit, and each profile still has a ten-million combined limit. Cases
+are partitioned into groups of at most three; the two 80-case width groups each
+need 27 files and fit the existing 32-file assessment limit. This is a data
+partition, not a requirement to give a student 57 separate activities.
+
+The original script and the prepared native grader both accept the direct,
+serializer-reusing and wide-address solutions. Both reject four retained faults
+(source clobber, missing blue, signed capacity comparison and wrong width length)
+and the unfinished starter. Seven host-author tests pass; the broader book tool
+suite passes 520 tests. Private executable comparison and qualification evidence
+is retained in `native-ppm-foundation-01` in the instructor repository.
+
+This step does not claim a completed PPM native lesson, an imported student
+archive or a new IDE walkthrough. The native caller checks cover return and
+publication; delivery of the original three-million-budget normal-exit check,
+the guided file-I/O observations, persistence, source-edit invalidation and fresh
+light-theme IDE captures remains work for the complete unit. Existing verified
+publication figures and native LaTeX prose have not been changed by this step.
