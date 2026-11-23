@@ -66,7 +66,7 @@ internal data class BookAssessmentFixture(val source: String = "", val path: Str
     fun validate() {
         require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
             "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm",
-            "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm", "independent/life-changes.asm", "independent/partition-negative.asm", "independent/fixed-interpolate.asm", "independent/matrix-rotate.asm", "independent/bounded-line.asm", "independent/matrix-vector.asm", "independent/rgb555.asm", "independent/pcm-subtract.asm", "independent/fir-decimate.asm", "independent/delta-scan.asm", "independent/base64url.asm", "independent/ppm-negative.asm", "independent/crc32-chunk.asm", "independent/qoi-mirrored.asm"))
+            "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm", "independent/life-changes.asm", "independent/partition-negative.asm", "independent/fixed-interpolate.asm", "independent/matrix-rotate.asm", "independent/bounded-line.asm", "independent/matrix-vector.asm", "independent/rgb555.asm", "independent/pcm-subtract.asm", "independent/fir-decimate.asm", "independent/delta-scan.asm", "independent/base64url.asm", "independent/ppm-negative.asm", "independent/crc32-chunk.asm", "independent/qoi-mirrored.asm", "independent/cbor-sequence.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -103,6 +103,7 @@ internal data class BookPackageImportPlan(
     val ppmUnit: Boolean = false,
     val crcUnit: Boolean = false,
     val qoiUnit: Boolean = false,
+    val cborUnit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -113,7 +114,7 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit || lifeUnit || sortingUnit || fixedUnit || localityUnit || boundedUnit || measurementUnit || msaUnit || pcmUnit || firUnit || deltaUnit || base64Unit || ppmUnit || crcUnit || qoiUnit)
+            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit || lifeUnit || sortingUnit || fixedUnit || localityUnit || boundedUnit || measurementUnit || msaUnit || pcmUnit || firUnit || deltaUnit || base64Unit || ppmUnit || crcUnit || qoiUnit || cborUnit)
             val expected = when {
                 memoryUnit -> setOf("independent/red-component.asm", "independent/independent-copy.asm")
                 loopUnit -> setOf("independent/end-pointer.asm")
@@ -134,13 +135,19 @@ internal data class BookPackageImportPlan(
                 ppmUnit -> setOf("independent/ppm-negative.asm")
                 crcUnit -> setOf("independent/crc32-chunk.asm")
                 qoiUnit -> setOf("independent/qoi-mirrored.asm")
+                cborUnit -> setOf("independent/cbor-sequence.asm")
                 else -> setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
             }
             require(assessmentFixtures.map { it.source }.toSet() == expected)
             require(assessmentFixtures.size == expected.size)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
         }
-        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit, lifeUnit, sortingUnit, fixedUnit, localityUnit, boundedUnit, measurementUnit, msaUnit, pcmUnit, firUnit, deltaUnit, base64Unit, ppmUnit, crcUnit, qoiUnit).count { it } <= 1)
+        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit, lifeUnit, sortingUnit, fixedUnit, localityUnit, boundedUnit, measurementUnit, msaUnit, pcmUnit, firUnit, deltaUnit, base64Unit, ppmUnit, crcUnit, qoiUnit, cborUnit).count { it } <= 1)
+        if (cborUnit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
+            require(archives.single().id == "032-cbor-telemetry" && archives.single().entry == "cbor-telemetry.asm")
+        }
         if (qoiUnit) {
             require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
             require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)

@@ -440,6 +440,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `CBOR walkthrough isolates sequence answers and the correct native archive`() {
+        val cbor = plan.copy(archives = listOf(archive.copy(id = "032-cbor-telemetry", entry = "cbor-telemetry.asm")),
+            nativePredictions = true, cborUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/cbor-sequence.asm", "/tmp/sequence.asm", "c".repeat(64))))
+        cbor.validate()
+        cbor.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(cbor.copy(nativePredictions = false), cbor.copy(nativeExecution = true),
+            cbor.copy(nativeDebug = true), cbor.copy(resumeCompleted = true), cbor.copy(qoiUnit = true),
+            cbor.copy(crcUnit = true), cbor.copy(memoryUnit = true), cbor.copy(cborUnit = false),
+            cbor.copy(activityNavigation = true), cbor.copy(prerequisiteControls = true),
+            cbor.copy(assessmentFixtures = emptyList()),
+            cbor.copy(assessmentFixtures = cbor.assessmentFixtures + cbor.assessmentFixtures),
+            cbor.copy(assessmentFixtures = listOf(cbor.assessmentFixtures.single().copy(source = "independent/qoi-mirrored.asm"))),
+            cbor.copy(archives = listOf(cbor.archives.single().copy(id = "030-qoi"))),
+            cbor.copy(archives = listOf(cbor.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
