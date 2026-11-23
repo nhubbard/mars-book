@@ -480,6 +480,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `SHA corpus plans bind one archive and private fixture and retain fresh-process resume`() {
+        val sha = plan.copy(archives = listOf(archive.copy(id = "025-sha256", version = "0.2.0", entry = "worked/schedule.asm")),
+            nativePredictions = true, shaUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/sha256.asm", "/tmp/sha.asm", "c".repeat(64))))
+        sha.validate()
+        sha.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(sha.copy(nativePredictions = false), sha.copy(nativeExecution = true),
+            sha.copy(nativeDebug = true), sha.copy(resumeCompleted = true), sha.copy(chachaUnit = true),
+            sha.copy(cborUnit = true), sha.copy(qoiUnit = true), sha.copy(crcUnit = true), sha.copy(memoryUnit = true),
+            sha.copy(shaUnit = false), sha.copy(activityNavigation = true), sha.copy(prerequisiteControls = true),
+            sha.copy(assessmentFixtures = emptyList()),
+            sha.copy(assessmentFixtures = sha.assessmentFixtures + sha.assessmentFixtures),
+            sha.copy(assessmentFixtures = listOf(sha.assessmentFixtures.single().copy(source = "independent/chacha20.asm"))),
+            sha.copy(archives = listOf(sha.archives.single().copy(id = "026-chacha20"))),
+            sha.copy(archives = listOf(sha.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

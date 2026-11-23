@@ -43,8 +43,8 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     // Production MARS has already validated/imported this exact archive and every activity.
