@@ -237,3 +237,36 @@ This completes the launch capability, not the Chapter 19 native unit. The connec
 inline lesson, public package, first/resume desktop walkthrough and revised written
 companion still need completion. No new IDE sandbox or screen capture was launched
 and the existing LaTeX proof remains unchanged. No learner review is claimed.
+
+## Connected native lesson package, 22 November 2026
+
+`revision/lessons/024-crc32` now contains a complete draft guide: thirteen inline
+predictions, eight Debug activities with twenty-two stops, one ordinary silent
+Run and six assessment groups. Six complete source variants demonstrate the raw
+bit update, empty update, prepared-table lookup, returned four/five-byte split,
+and both file methods. Activity-specific native fixtures select normal input,
+a five-byte-prefix read failure or a missing file. The independent chunk checker
+remains an unchanged break starter with its full interface and permission contract.
+
+Eight runtime probes verify every bound register value against the actual CRC
+programs. Probe copies add labels only; their executed instruction text is unchanged.
+The public bit/table recurrence and Python zlib independently establish the expected
+values. The exact student archive passes production package parsing and every
+pointer/Debug anchor resolves against its delivered source through native PSI.
+The two new Jupiter tests pass separately from the preceding full regression.
+
+All sixteen chunk profiles, the exit profile and seven file profiles remain
+byte-for-byte equal to their tested public authors. The six assessment groups
+contain 80/32/23/2/27 function cases and one console-exit case, with 170 function
+invocations in total. The original budgets and per-invocation memory/ownership
+permissions remain intact. All 539 book-tool tests pass. Requalification accepts
+six retained correct implementations and rejects sixteen deliberate faults or
+unfinished starters. The same table, bit and wide-address chunk solutions also
+pass the retained file checks, completing the combined-source check.
+
+The separate authoring plugin can now drive this archive using its existing
+corpus walkthrough. Its 131 tests pass, including exact archive/source/fixture
+isolation for CRC mode. No desktop walkthrough or new screen capture is claimed
+by this package-authoring step. The first/resume IDE run, revised native LaTeX
+companion, refreshed publication figures and proof/accessibility checks remain
+unfinished. The broader curriculum goal stays active.

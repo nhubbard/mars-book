@@ -1,0 +1,1022 @@
+{
+  "formatVersion": 9,
+  "introduction": "Read Chapter 19 and its written lab. Keep raw update state, finalized checksum and I/O status distinct. Use the complete worked programs to derive a bit step, compare lookup, continue a returned prefix and follow complete/error file paths. Answer predictions inline; the source pointer identifies the relevant instruction. Finish each launched program before changing examples. Then write the bounded chunk checker independently.",
+  "conclusion": "Explain where each readable slice was proved, where raw state continued, and where a complete stream allowed finalization. Retain a concrete short-read/error observation and an argument for the independent chunk checker. Equivalent correct implementations remain valid; the worked register observations describe only the supplied examples.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "feedback-bit",
+      "explanation": "This update keeps a 32-bit CRC remainder in a zero-extended 64-bit register. It starts with raw state 0xffffffff. The first byte is ASCII 1, hexadecimal 31. XOR places that byte in the low end of the state, giving 0xffffffce. The reflected recurrence shifts right; the old low bit decides whether to XOR the polynomial 0xedb88320 after the shift.",
+      "question": "What is the state after this first bit step?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x7fffffe7",
+          "feedback": "The old low bit of ffffffce is zero. A logical right shift gives 7fffffe7, with no polynomial feedback."
+        },
+        {
+          "id": "b",
+          "text": "0x92477cc7",
+          "feedback": "This applies polynomial feedback even though the old low bit is zero. Save or test the old bit before shifting."
+        },
+        {
+          "id": "c",
+          "text": "0xffffffce",
+          "feedback": "This is the state after XOR with the byte, before any of its eight bit steps."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "bit_next_bit",
+        "mnemonic": "andi",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-bit",
+      "explanation": "Debug crc32.asm from a fresh launch. Stop first at the andi in bit_next_bit, then at addiu in bit_no_feedback, and finally at jrc in bit_return. Follow the first bit calculation and then the returned state for all nine bytes. Keep the values hexadecimal; the routine returns an unfinished raw state.",
+      "source": "crc32.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "bit-1",
+          "explanation": "Before the first andi, v0 is 0x00000000ffffffce and t1 is eight. The byte has been XORed in, but its first bit has not been processed.",
+          "anchor": {
+            "label": "bit_next_bit",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000ffffffce",
+            "$t1": "0x0000000000000008"
+          },
+          "success": "The state matches the first-byte derivation."
+        },
+        {
+          "id": "bit-2",
+          "explanation": "Before decrementing the bit counter, t2 is zero and v0 is 0x000000007fffffe7. The shift happened and feedback was skipped. t1 is still eight because the highlighted addiu has not executed.",
+          "anchor": {
+            "label": "bit_no_feedback",
+            "mnemonic": "addiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000007fffffe7",
+            "$t1": "0x0000000000000008",
+            "$t2": "0x0000000000000000"
+          },
+          "success": "Explain the old bit, shifted state and unchanged counter."
+        },
+        {
+          "id": "bit-3",
+          "explanation": "At the return, a1 is zero and v0 is 0x00000000340bc6d9. All nine bytes have been processed. This is raw state; the routine has not applied the final XOR.",
+          "anchor": {
+            "label": "bit_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000340bc6d9",
+            "$a1": "0x0000000000000000"
+          },
+          "success": "The returned raw state is 0x340bc6d9."
+        }
+      ],
+      "success": "Distinguish the raw result from the conventional checksum 0xcbf43926, obtained by XOR with 0xffffffff.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-update",
+      "explanation": "The loop tests its remaining byte count before loading a byte. Its raw-state input is an argument, so continuing an empty slice must return that argument unchanged. Reading even one byte would violate the slice boundary. The conventional checksum of an empty complete stream is a separate calculation that includes initialization and finalization.",
+      "question": "What should an empty raw update with seed 0xffffffff return?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x00000000ffffffff, without reading input",
+          "feedback": "No bytes means no recurrence steps. The raw-state argument is returned unchanged."
+        },
+        {
+          "id": "b",
+          "text": "Zero, after applying the final XOR",
+          "feedback": "Zero is the conventional empty-stream checksum. Applying finalization inside an update would break continuation."
+        },
+        {
+          "id": "c",
+          "text": "A state derived from the first byte anyway",
+          "feedback": "A zero-length slice gives no permission to read that byte."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "bit_next_byte",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-empty",
+      "explanation": "Debug worked/empty-bit.asm. Its byte count is zero and its raw seed is 0xffffffff. Place the breakpoint at jrc in bit_return. The return occurs without entering the byte-loading path.",
+      "source": "worked/empty-bit.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "empty-1",
+          "explanation": "The count is zero and the returned raw state is still 0x00000000ffffffff. Explain why data may exist nearby without belonging to this slice.",
+          "anchor": {
+            "label": "bit_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000ffffffff",
+            "$a1": "0x0000000000000000"
+          },
+          "success": "An empty raw update preserves the seed."
+        }
+      ],
+      "success": "Finish this process. Empty input preserves update state; finalization belongs to the complete-stream boundary.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "unsigned-table-word",
+      "explanation": "Each table entry occupies four bytes, but MARS64 integer registers hold eight. Entry 128 is 0xedb88320, whose bit 31 is set. Loading it as a signed word would create upper one bits. The worked table update keeps its remainder zero-extended so its wide logical shifts implement the 32-bit recurrence.",
+      "question": "Which register value represents that table word in the worked update?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x00000000edb88320",
+          "feedback": "The upper half is zero. lwu expresses this load directly; another implementation may establish the same invariant differently."
+        },
+        {
+          "id": "b",
+          "text": "0xffffffffedb88320",
+          "feedback": "This is the sign-extended lw result. It is not the zero-extended remainder used by this implementation."
+        },
+        {
+          "id": "c",
+          "text": "0x00000000ffffffff",
+          "feedback": "This loses the table entry and replaces it with a mask."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "table_next_byte",
+        "mnemonic": "lwu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "table-index",
+      "explanation": "A table lookup replaces eight bit steps. After XORing the next byte with the raw state, only the low eight bits select an entry. Multiplying that index by four converts entries to byte offsets. The state shifted right by eight is XORed with the selected word; the table entry alone is not the new state.",
+      "question": "Why does the worked code mask the index with 255 before shifting it left by two?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "To restrict the index to 0–255 before converting it to a byte offset",
+          "feedback": "There are 256 four-byte entries. High state bits are not part of the lookup index."
+        },
+        {
+          "id": "b",
+          "text": "To finalize the checksum after every byte",
+          "feedback": "Finalization uses XOR with 0xffffffff and belongs at the end of the complete stream."
+        },
+        {
+          "id": "c",
+          "text": "To reverse the order of all bytes in the stream",
+          "feedback": "This selects an entry for one recurrence step. It does not reorder the input."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "table_next_byte",
+        "mnemonic": "andi",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-table",
+      "explanation": "Debug worked/table-ready.asm. This complete variant builds the table before selecting the table updater. Stop at dla in table_prepared, at dsrl in table_next_byte after its first lwu, and at jrc in table_return. Inspect the prepared table as unsigned words as well as the selected registers.",
+      "source": "worked/table-ready.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "table-1",
+          "explanation": "Table construction has returned 256. Inspect entries 0, 1, 128 and 255: 0x00000000, 0x77073096, 0xedb88320 and 0x2d02ef8d. The following caller prepares the nine-byte update arguments.",
+          "anchor": {
+            "label": "table_prepared",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000100"
+          },
+          "success": "The table is prepared before it is consumed."
+        },
+        {
+          "id": "table-2",
+          "explanation": "The first lookup has loaded its word into t1 while v0 still contains the initial raw state. Explain why t1 has a zero upper half and why the following shift must still be combined with this word.",
+          "anchor": {
+            "label": "table_next_byte",
+            "mnemonic": "dsrl",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x000000007cdcefb7",
+            "$v0": "0x00000000ffffffff"
+          },
+          "success": "The table load and state shift are separate parts of the recurrence."
+        },
+        {
+          "id": "table-3",
+          "explanation": "The table updater returns raw state 0x00000000340bc6d9 with zero bytes remaining, matching the bit updater on the same nine-byte input.",
+          "anchor": {
+            "label": "table_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000340bc6d9",
+            "$a1": "0x0000000000000000"
+          },
+          "success": "Both update methods agree on this stream."
+        }
+      ],
+      "success": "Finish the process and retain the comparison. Matching one input is an observation, not a proof for all inputs.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "charge-preparation",
+      "explanation": "The public instruction-count experiment measures 519 completed instructions for the nine-byte bit update and 120 for the prepared-table update. Building the table adds 14,348 instructions. These are MARS completed-instruction counts for the supplied implementations, not processor cycles or a hardware speed prediction.",
+      "question": "Which total belongs to a one-use table on this nine-byte input?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "14,468 instructions: preparation plus update",
+          "feedback": "14,348 + 120 must be compared with 519. Reusing preparation across later inputs changes that accounting."
+        },
+        {
+          "id": "b",
+          "text": "120 instructions, because preparation is outside the updater",
+          "feedback": "That is the prepared updater count. It omits required work when the table has not yet been built."
+        },
+        {
+          "id": "c",
+          "text": "519 instructions for either method",
+          "feedback": "The methods return the same state but execute different instruction sequences."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "crc32_table_init",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "returned-prefix",
+      "explanation": "A raw updater accepts a previous raw state. worked/stream-split.asm first processes the four bytes 1234 with the bit updater, saves its actual returned v0 in s0 across table construction, then processes 56789 with the table updater. The split is a caller choice; it must not change the complete-stream result.",
+      "question": "Which state must seed the second update?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The actual raw state returned for 1234",
+          "feedback": "Saving that value preserves all earlier recurrence steps. The next call continues it without an intervening final XOR."
+        },
+        {
+          "id": "b",
+          "text": "A fresh 0xffffffff",
+          "feedback": "This would compute the suffix as a new stream and discard the prefix."
+        },
+        {
+          "id": "c",
+          "text": "The finalized checksum of 1234",
+          "feedback": "Finalization changes the representation. The next raw update expects an unfinished remainder."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "crc32_bit_update",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-stream",
+      "explanation": "Debug worked/stream-split.asm. Stop at move in stream_first, at the second balc in stream_first, and at bc in stream_done. The second stop is the call to crc32_table_update, after table construction. Follow the returned state through the caller rather than replacing it with a predicted constant.",
+      "source": "worked/stream-split.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "stream-1",
+          "explanation": "The first call returned raw state 0x00000000641c1f5c for 1234. The highlighted move has not saved it yet.",
+          "anchor": {
+            "label": "stream_first",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000641c1f5c"
+          },
+          "success": "Observe the prefix state at its return boundary."
+        },
+        {
+          "id": "stream-2",
+          "explanation": "The saved s0 and argument a2 both contain 0x00000000641c1f5c, and a1 is five. Table construction occurred between the two updates, so the caller saved state across another call.",
+          "anchor": {
+            "label": "stream_first",
+            "mnemonic": "balc",
+            "occurrence": 1
+          },
+          "registers": {
+            "$s0": "0x00000000641c1f5c",
+            "$a2": "0x00000000641c1f5c",
+            "$a1": "0x0000000000000005"
+          },
+          "success": "The second call receives the actual returned prefix state."
+        },
+        {
+          "id": "stream-3",
+          "explanation": "The suffix update returns raw state 0x00000000340bc6d9 with zero bytes remaining. The split and method change preserve the nine-byte result.",
+          "anchor": {
+            "label": "stream_done",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000340bc6d9",
+            "$a1": "0x0000000000000000"
+          },
+          "success": "The returned states compose across the split."
+        }
+      ],
+      "success": "Finish the process and explain what would change if the caller reset or finalized the seed between calls.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-raw-caller",
+      "source": "crc32.asm",
+      "explanation": "Run crc32.asm to completion using the ordinary Run control. This caller records its raw result in memory and prints nothing. Successful silent termination is expected; use the earlier Debug return observation to explain the computed value rather than treating an empty console as a checksum.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The silent caller exited normally. Keep the Debug observation as the numerical evidence.",
+      "anchor": {
+        "label": "kernel_done",
+        "mnemonic": "dla",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "positive-short-read",
+      "explanation": "The file example requests up to seven bytes into its scratch buffer. The lesson supplies nine bytes, 123456789, and limits each transfer to three bytes. A successful read returns the number actually transferred. Buffer capacity and returned count have different roles; only the returned prefix contains new input.",
+      "question": "After a read returns three, what should be passed to the updater?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Exactly three new bytes, continuing the previous raw state",
+          "feedback": "The positive result is the valid new slice. Another read is needed even though three is less than seven."
+        },
+        {
+          "id": "b",
+          "text": "All seven scratch bytes, because seven was requested",
+          "feedback": "The remaining four bytes may be old data. Capacity does not make them part of this transfer."
+        },
+        {
+          "id": "c",
+          "text": "No bytes, because a short read means EOF",
+          "feedback": "EOF is a zero result in this interface. A positive short read still supplies data."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "file_read",
+        "mnemonic": "syscall",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-file-bit",
+      "explanation": "Debug worked/file-bit.asm. During this activity Learn supplies virtual fixture.bin containing 123456789, with at most three bytes per read and descriptor 19. Stop at bltzc in file_read after the first syscall, at dli in file_finish, and at dla in file_done. The source uses the bit updater. This virtual input belongs to this activity; an ordinary launch outside it uses the real worked/fixture.bin.",
+      "source": "worked/file-bit.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "file-bit-1",
+          "explanation": "The first read returned three. a0 and s4 are descriptor 19; a2 is the requested capacity seven. s5 is still the initial raw state because the three new bytes have not been processed yet.",
+          "anchor": {
+            "label": "file_read",
+            "mnemonic": "bltzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$s5": "0x00000000ffffffff",
+            "$s4": "0x0000000000000013",
+            "$a0": "0x0000000000000013",
+            "$a2": "0x0000000000000007"
+          },
+          "success": "Distinguish descriptor, request size, returned size and saved raw state."
+        },
+        {
+          "id": "file-bit-2",
+          "explanation": "The terminal read returned zero. s5 is raw state 0x00000000340bc6d9 for all nine bytes, accumulated across three positive reads. Finalization has not executed yet.",
+          "anchor": {
+            "label": "file_finish",
+            "mnemonic": "dli",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$s5": "0x00000000340bc6d9"
+          },
+          "success": "EOF supplies the complete-stream boundary."
+        },
+        {
+          "id": "file-bit-3",
+          "explanation": "The routine has closed its acquired descriptor and returned v0 = 0x00000000cbf43926, v1 = 0, with the caller stack restored. The caller has not stored these return values yet.",
+          "anchor": {
+            "label": "file_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000cbf43926",
+            "$v1": "0x0000000000000000",
+            "$sp": "0x000000007fff0000"
+          },
+          "success": "The complete-file checksum and success status are separate return values."
+        }
+      ],
+      "success": "Finish the process. Explain why finalizing each buffer or stopping at the first short read would produce a different result.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ],
+      "fileRead": {
+        "path": "fixture.bin",
+        "bytes": "313233343536373839",
+        "maxRequest": 7,
+        "maxReadSize": 3,
+        "firstDescriptor": 19,
+        "missing": false
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "same-stream-method",
+      "explanation": "The table and bit routines implement the same raw-state update contract. A file reader may select either method while keeping the same descriptor, buffer boundaries and finalization rule. Preparing the table changes the work performed, not the bytes in the stream.",
+      "question": "What checksum should the table-based reader return for the same complete fixture?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0xcbf43926, with success status zero",
+          "feedback": "The method changes the recurrence schedule. The complete stream and checksum convention stay the same."
+        },
+        {
+          "id": "b",
+          "text": "0x340bc6d9, because a table removes finalization",
+          "feedback": "That is the raw state. The file routine still finalizes once at EOF."
+        },
+        {
+          "id": "c",
+          "text": "A checksum for only the last three bytes",
+          "feedback": "That would indicate that the reader reset state between buffers."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "file_read",
+        "mnemonic": "jalrc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-file-table",
+      "explanation": "Debug worked/file-table.asm with the same activity-supplied nine-byte input, transfer limit three and descriptor 19. Use the same three boundaries as the bit-based reader. This variant initializes the table and selects crc32_table_update before reading the stream.",
+      "source": "worked/file-table.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "file-table-1",
+          "explanation": "The first returned size is three and the request remains seven on descriptor 19. Preparation has not changed the input stream or the initial raw state.",
+          "anchor": {
+            "label": "file_read",
+            "mnemonic": "bltzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$s5": "0x00000000ffffffff",
+            "$s4": "0x0000000000000013",
+            "$a0": "0x0000000000000013",
+            "$a2": "0x0000000000000007"
+          },
+          "success": "The reader still uses actual returned byte counts."
+        },
+        {
+          "id": "file-table-2",
+          "explanation": "At EOF the saved raw state again equals 0x00000000340bc6d9. Compare this boundary with the bit-based reader before either finalizes.",
+          "anchor": {
+            "label": "file_finish",
+            "mnemonic": "dli",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$s5": "0x00000000340bc6d9"
+          },
+          "success": "Both file methods reach the same raw EOF state."
+        },
+        {
+          "id": "file-table-3",
+          "explanation": "The table-based file call returns checksum 0x00000000cbf43926 and status zero, with the stack restored.",
+          "anchor": {
+            "label": "file_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x00000000cbf43926",
+            "$v1": "0x0000000000000000",
+            "$sp": "0x000000007fff0000"
+          },
+          "success": "The complete-file results agree."
+        }
+      ],
+      "success": "Finish the process. Charge table preparation when comparing methods on a short one-use file.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ],
+      "fileRead": {
+        "path": "fixture.bin",
+        "bytes": "313233343536373839",
+        "maxRequest": 7,
+        "maxReadSize": 3,
+        "firstDescriptor": 19,
+        "missing": false
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "acquired-descriptor",
+      "explanation": "The lesson deliberately returns descriptor 19 from open. File descriptors are handles, not constants identifying a particular syscall. The file reader saves the acquired value in s4 across updater calls, then uses it for each read and its one close.",
+      "question": "Which descriptor belongs in the subsequent read and close requests?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The successful open result, saved across calls",
+          "feedback": "The acquired handle identifies this open file. Correct code also works when it is not descriptor three."
+        },
+        {
+          "id": "b",
+          "text": "Always three",
+          "feedback": "That assumes an allocation detail and can access the wrong handle or fail immediately."
+        },
+        {
+          "id": "c",
+          "text": "The most recent read result",
+          "feedback": "A read result is a byte count or error, not a file descriptor."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "file_read",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "error-is-not-eof",
+      "explanation": "The next activity limits transfers to three bytes and injects a read error after five accepted bytes. The sequence is three, two, then minus one. The positive prefixes are real data, but the failed read does not establish a complete stream. This interface returns v0 = 0 and status v1 = 2 for a read failure.",
+      "question": "What should the reader do after that minus-one result?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Close the acquired descriptor and return the read-error status",
+          "feedback": "The five-byte prefix is incomplete. It must not be reported as a successful whole-file checksum."
+        },
+        {
+          "id": "b",
+          "text": "Finalize the five-byte prefix and report success",
+          "feedback": "That would make an I/O failure look like an ordinary EOF."
+        },
+        {
+          "id": "c",
+          "text": "Retry forever while keeping the descriptor open",
+          "feedback": "The documented reader reports failure and releases ownership. A retry policy would need a separate contract."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "file_read_error",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-file-error",
+      "explanation": "Debug worked/file-bit.asm again in a fresh launch. This activity supplies the same virtual filename but injects failure after five bytes. Keep the breakpoint at bltzc in file_read for three successive pauses, then move it to dla in file_done. The expected read results are three, two and minus one. The final pause checks the returned error; finish the process afterward.",
+      "source": "worked/file-bit.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "file-error-1",
+          "explanation": "The first read returned three. s5 is still 0x00000000ffffffff because the newly returned prefix has not yet been updated.",
+          "anchor": {
+            "label": "file_read",
+            "mnemonic": "bltzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$s5": "0x00000000ffffffff",
+            "$s4": "0x0000000000000013",
+            "$a0": "0x0000000000000013",
+            "$a2": "0x0000000000000007"
+          },
+          "success": "The first read supplied three bytes."
+        },
+        {
+          "id": "file-error-2",
+          "explanation": "The second read returned two. s5 is now the raw state for 123, 0x0000000077b79c2d. Those two newly returned bytes still need their update.",
+          "anchor": {
+            "label": "file_read",
+            "mnemonic": "bltzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$s5": "0x0000000077b79c2d",
+            "$s4": "0x0000000000000013",
+            "$a0": "0x0000000000000013",
+            "$a2": "0x0000000000000007"
+          },
+          "success": "A second positive short read is not EOF."
+        },
+        {
+          "id": "file-error-3",
+          "explanation": "The third read returned minus one. s5 is raw state 0x00000000340ac5e3 for the accepted five-byte prefix. The branch must select the error path rather than the zero-result EOF path.",
+          "anchor": {
+            "label": "file_read",
+            "mnemonic": "bltzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0xffffffffffffffff",
+            "$s5": "0x00000000340ac5e3",
+            "$s4": "0x0000000000000013",
+            "$a0": "0x0000000000000013",
+            "$a2": "0x0000000000000007"
+          },
+          "success": "The saved prefix state does not turn the error into a complete stream."
+        },
+        {
+          "id": "file-error-4",
+          "explanation": "The routine returned v0 = 0 and v1 = 2, after closing descriptor 19 and restoring the caller stack. No successful complete-file checksum is published.",
+          "anchor": {
+            "label": "file_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000002",
+            "$sp": "0x000000007fff0000"
+          },
+          "success": "The read failure remains distinct from EOF."
+        }
+      ],
+      "success": "Finish the process. A new launch resets fixture cursors; resuming this process continues the same execution.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ],
+      "fileRead": {
+        "path": "fixture.bin",
+        "bytes": "313233343536373839",
+        "maxRequest": 7,
+        "maxReadSize": 3,
+        "firstDescriptor": 19,
+        "missing": false,
+        "failAfterBytes": 5
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "failed-open-ownership",
+      "explanation": "An open failure returns minus one and creates no descriptor. The reader must return its open-error result without issuing a read or pretending to close a successfully acquired handle. Its stack frame still needs to be restored.",
+      "question": "What file ownership exists after open returns minus one?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "None; return v0 = 0 and v1 = 1 without a read or acquired-handle close",
+          "feedback": "There is no successful handle to release. Stack restoration is still required."
+        },
+        {
+          "id": "b",
+          "text": "Descriptor minus one must be closed as a normal file",
+          "feedback": "Minus one is a failure signal, not an acquired handle."
+        },
+        {
+          "id": "c",
+          "text": "Descriptor three is probably available as a fallback",
+          "feedback": "Opening failed. Guessing another handle does not supply the missing file."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "file_open_error",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-file-missing",
+      "explanation": "Debug worked/file-bit.asm once more. During this activity the virtual fixture is deliberately missing, regardless of the real file supplied for ordinary execution. Stop at move in file_open_error and then at dla in file_done. Compare the open-error status with the previous read-error status.",
+      "source": "worked/file-bit.asm",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "file-missing-1",
+          "explanation": "Open returned minus one. This path has acquired no file descriptor and must not enter the read loop.",
+          "anchor": {
+            "label": "file_open_error",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0xffffffffffffffff"
+          },
+          "success": "A failed open gives no file ownership."
+        },
+        {
+          "id": "file-missing-2",
+          "explanation": "The reader returns v0 = 0 and v1 = 1 with the caller stack restored. Open failure and read failure have distinct status codes.",
+          "anchor": {
+            "label": "file_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000001",
+            "$sp": "0x000000007fff0000"
+          },
+          "success": "The failure is reported without inventing a file handle."
+        }
+      ],
+      "success": "Finish the process. The guided virtual input is now no longer needed; subsequent ordinary launches use their normal environment.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time. A highlighted instruction has not executed yet. Inspect the selected Debug frame, resume to the next requested boundary, and finish this process before opening another example."
+        }
+      ],
+      "fileRead": {
+        "path": "fixture.bin",
+        "bytes": "",
+        "maxRequest": 7,
+        "maxReadSize": 3,
+        "firstDescriptor": 19,
+        "missing": true
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "prove-count-first",
+      "explanation": "The independent chunk checker receives a byte pointer, a selected byte count and a prepared table. Its record has a four-byte big-endian payload length, four type bytes, that payload, and a four-byte big-endian stored CRC. Before reading the length field, establish that the count is in 12–4096. Afterward require the decoded unsigned length to equal count minus 12.",
+      "question": "Which validation must happen before any input or table access?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Reject a selected count outside 12–4096",
+          "feedback": "An invalid count grants no readable record bytes. Reading a length first can fault even when the function ultimately returns an error."
+        },
+        {
+          "id": "b",
+          "text": "Load the length and then see whether enough bytes exist",
+          "feedback": "That reads before proving that the four length bytes belong to the selected input."
+        },
+        {
+          "id": "c",
+          "text": "Read a table entry because the table is normally prepared",
+          "feedback": "The malformed-count contract permits no input or table reads, even speculative ones."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "bit_next_byte",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "chunk-checksum-span",
+      "explanation": "After validating both count and declared length, choose the bytes covered by the chunk checksum. The record length and stored checksum are framing fields. The CRC covers the four type bytes followed by exactly the payload. For the supplied empty IEND chunk, those four type bytes are the whole covered slice, and the finalized checksum is 0xae426082.",
+      "question": "Which slice should seed an update from raw state 0xffffffff?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The bytes at record + 4, with length payloadLength + 4",
+          "feedback": "This includes type and payload while excluding the encoded length and stored checksum."
+        },
+        {
+          "id": "b",
+          "text": "All selected record bytes",
+          "feedback": "That would include both framing fields and compute a different checksum."
+        },
+        {
+          "id": "c",
+          "text": "Only the payload",
+          "feedback": "The type bytes also belong to the covered slice, including when the payload is empty."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "crc32_bit_update",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "check-short-chunks",
+      "source": "independent/crc32-chunk.asm",
+      "explanation": "Write crc32_check_chunk in independent/crc32-chunk.asm using the contract in independent/README.md. Begin with the empty IEND example and short well-formed records, then handle a mismatching stored CRC. The first check covers 80 short cases with different type bytes, offsets, payload lengths and matching or mismatching checksums. It accepts equivalent bit-based or table-based methods.",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/crc-chunk-short-00.cases.json",
+        "independent/crc-chunk-short-01.cases.json",
+        "independent/crc-chunk-short-02.cases.json",
+        "independent/crc-chunk-short-03.cases.json",
+        "independent/crc-chunk-short-04.cases.json",
+        "independent/crc-chunk-short-05.cases.json",
+        "independent/crc-chunk-short-06.cases.json",
+        "independent/crc-chunk-short-07.cases.json"
+      ],
+      "success": "Explain the invariant that these finite cases support, then retain a useful rejected or mismatching case.",
+      "hints": [
+        {
+          "id": "first-boundary",
+          "text": "Use the first reported mismatch to identify a boundary: count permission, declared length, covered slice, returned state or preserved caller state. Check that boundary before changing the recurrence."
+        },
+        {
+          "id": "validate-before-read",
+          "text": "Prove 12 <= count <= 4096 before reading the length. Compare the unsigned decoded length with count - 12 before reading type, payload, stored CRC or table."
+        },
+        {
+          "id": "return-pair",
+          "text": "A valid record returns the finalized computed checksum in v0 even when it mismatches the stored value. Status v1 is zero for a match, one for a mismatch and two for malformed framing; malformed framing returns zero in v0."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-long-chunks",
+      "source": "independent/crc32-chunk.asm",
+      "explanation": "Check the larger records after the short cases pass. These 32 cases include payloads through 4,084 bytes. Keep length, selected count and checksum span distinct, retain full-width addresses, and preserve the same raw-state convention throughout the loop.",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/crc-chunk-long-00.cases.json",
+        "independent/crc-chunk-long-01.cases.json",
+        "independent/crc-chunk-long-02.cases.json",
+        "independent/crc-chunk-long-03.cases.json"
+      ],
+      "success": "Explain the invariant that these finite cases support, then retain a useful rejected or mismatching case.",
+      "hints": [
+        {
+          "id": "first-boundary",
+          "text": "Use the first reported mismatch to identify a boundary: count permission, declared length, covered slice, returned state or preserved caller state. Check that boundary before changing the recurrence."
+        },
+        {
+          "id": "validate-before-read",
+          "text": "Prove 12 <= count <= 4096 before reading the length. Compare the unsigned decoded length with count - 12 before reading type, payload, stored CRC or table."
+        },
+        {
+          "id": "return-pair",
+          "text": "A valid record returns the finalized computed checksum in v0 even when it mismatches the stored value. Status v1 is zero for a match, one for a mismatch and two for malformed framing; malformed framing returns zero in v0."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-rejected-chunks",
+      "source": "independent/crc32-chunk.asm",
+      "explanation": "Check malformed counts and declared lengths. These 23 cases use invalid pointers where no access is permitted and valid length fields where only those four bytes may be read. Return v0 = 0 and v1 = 2 for malformed framing; returning a status after a forbidden read does not satisfy the contract.",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/crc-chunk-rejections-00.cases.json",
+        "independent/crc-chunk-rejections-01.cases.json",
+        "independent/crc-chunk-rejections-02.cases.json"
+      ],
+      "success": "Explain the invariant that these finite cases support, then retain a useful rejected or mismatching case.",
+      "hints": [
+        {
+          "id": "first-boundary",
+          "text": "Use the first reported mismatch to identify a boundary: count permission, declared length, covered slice, returned state or preserved caller state. Check that boundary before changing the recurrence."
+        },
+        {
+          "id": "validate-before-read",
+          "text": "Prove 12 <= count <= 4096 before reading the length. Compare the unsigned decoded length with count - 12 before reading type, payload, stored CRC or table."
+        },
+        {
+          "id": "return-pair",
+          "text": "A valid record returns the finalized computed checksum in v0 even when it mismatches the stored value. Status v1 is zero for a match, one for a mismatch and two for malformed framing; malformed framing returns zero in v0."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-call-continuation",
+      "source": "independent/crc32-chunk.asm",
+      "explanation": "Check the complete caller and repeated invocations in one session. Preserve saved registers, caller bytes and stack alignment. A successful call must not leave a stale checksum visible when a later malformed call requires v0 = 0. Correct rejection, mismatch and successful retry must remain separate outcomes.",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/crc-chunk-state-00.cases.json"
+      ],
+      "success": "Explain the invariant that these finite cases support, then retain a useful rejected or mismatching case.",
+      "hints": [
+        {
+          "id": "first-boundary",
+          "text": "Use the first reported mismatch to identify a boundary: count permission, declared length, covered slice, returned state or preserved caller state. Check that boundary before changing the recurrence."
+        },
+        {
+          "id": "validate-before-read",
+          "text": "Prove 12 <= count <= 4096 before reading the length. Compare the unsigned decoded length with count - 12 before reading type, payload, stored CRC or table."
+        },
+        {
+          "id": "return-pair",
+          "text": "A valid record returns the finalized computed checksum in v0 even when it mismatches the stored value. Status v1 is zero for a match, one for a mismatch and two for malformed framing; malformed framing returns zero in v0."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-file-regressions",
+      "source": "independent/crc32-chunk.asm",
+      "explanation": "Run the retained file-reader regression on the same source. Its file helpers are already complete in the starter; keep them intact while adding the chunk checker. These 27 cases / 28 calls exercise both update methods, empty and binary data, capacities 1/7/256, positive short reads, missing input and injected errors. Each marked call must close its acquired descriptor before returning. A later caller cannot hide a leak.",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/crc-file-00.cases.json",
+        "independent/crc-file-01.cases.json",
+        "independent/crc-file-02.cases.json",
+        "independent/crc-file-03.cases.json",
+        "independent/crc-file-04.cases.json",
+        "independent/crc-file-05.cases.json",
+        "independent/crc-file-06.cases.json"
+      ],
+      "success": "The reader helpers still satisfy their existing finite file contracts. Explain why this regression does not replace the independent chunk checks."
+    },
+    {
+      "kind": "assessment",
+      "id": "check-chunk-caller-exit",
+      "source": "independent/crc32-chunk.asm",
+      "explanation": "Run the complete supplied chunk caller after the function checks pass. It prepares the table, checks the twelve-byte empty IEND record, stores the returned results and exits without printing. This final check verifies ordinary termination; the earlier function and caller checks establish the numerical and ownership evidence.",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "success": "Keep your explanation, one Debug observation and your completed source with the check history. A finite passing corpus supports the argument; it does not prove correctness for every possible record."
+    }
+  ]
+}
