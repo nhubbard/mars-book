@@ -107,3 +107,10 @@ publication; delivery of the original three-million-budget normal-exit check,
 the guided file-I/O observations, persistence, source-edit invalidation and fresh
 light-theme IDE captures remains work for the complete unit. Existing verified
 publication figures and native LaTeX prose have not been changed by this step.
+
+The implementation regression passes 232 CLI and 1,245 plugin tests, both coverage
+gates and the plugin build. A further focused Jupiter test reads all 57 exact
+profiles through the production parser; every fixture member matches the public
+author byte for byte. Both pinned plugins pass public API verification. The
+41 manual MARS edits remain unchanged. These are grading-foundation checks, not
+an IDE walkthrough or completion of the PPM native unit.
