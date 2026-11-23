@@ -9,11 +9,23 @@ You should finish with an actual image file and an explanation of why its bytes
 are correct. A viewer accepting a file is useful evidence, but it does not check
 saved registers, untouched memory or an error path.
 
-These activities use ordinary Run and Debug. A native guided lesson for this
-unit remains unfinished. Keep a clean copy of the worked source and use separate
-copies for deliberate faults. The supplied complete implementation provides
-helpers for the final independent exercise; you need not rebuild every function
-before producing a file.
+The native student archive is \texttt{029-binary-ppm-0.1.0-student.zip}.
+Choose \texttt{Tools > Import MARS Lab...}, select the archive, and continue it
+in Learn. Answer predictions in the inline choices beside the source pointer;
+ordinary Run and Debug provide the execution observations. You can also work
+through the written activities below without the guide. Keep a clean worked
+source and use separate copies for deliberate faults. The complete implementation
+provides helpers for the independent exercise; you need not rebuild every
+function before producing a file.
+
+The package includes complete variations under \texttt{worked/}. Their routine
+bodies are unchanged; each variation selects a mode or a boundary input. The
+pointer in Learn identifies the next requested operation. The selected Debug
+frame identifies the instruction at which execution is actually paused. Use
+one line breakpoint at a time and resume to normal exit after the last
+observation before opening another variation. At the final exit syscall,
+\texttt{\$v0} is ten, so inspect the caller's stored status to recover the
+earlier function result.
 
 \section{Read the default image without opening a file}
 
@@ -164,6 +176,78 @@ In your notes, draw separate timelines for an invalid source, a failure after
 eleven accepted bytes, and a successful sequence of short writes. Mark the
 first operation permitted to alter the output file. State what is guaranteed
 about file contents and descriptor ownership on each return path.
+
+\section{Connect the guided observations}
+
+The first observations use \texttt{ppm-codec.asm} before its descriptor stores,
+at the parser return and after caller publication. Record one line for each
+boundary: the values derived so far, the memory objects that have changed,
+and the value the caller may now use. A parser can have width two and height
+two in registers while its caller-visible descriptor still consists of
+\texttt{a5} bytes. Later, the descriptor can be valid while the caller's
+\texttt{status} and \texttt{count} still contain their initial values. These
+are different stages of one successful operation.
+
+Follow the same argument through \texttt{truncated-raster.asm} and
+\texttt{extra-raster-byte.asm}. Both reject the selected extent without
+publishing metadata. Then use \texttt{raster-punctuation.asm} and
+\texttt{decode-punctuation.asm} to locate the transition from header syntax
+to samples. Derive the decoded word from the three \texttt{lbu} results before
+reading its four stored bytes. A correct answer about the word's hexadecimal
+value should also explain why its byte order differs from the file's channel
+order.
+
+The serialization observations use \texttt{encode-nine-by-ten.asm},
+\texttt{capacity-short.asm} and \texttt{encode-maximum.asm}. Work out the
+complete extent before checking the offered capacity. The first fixture
+needs 282 bytes; the one-byte-short fixture may emit none of them. The
+maximum fixture needs 12,301 bytes. In \texttt{count-bound.asm}, the parser
+rejects a selected byte count above its documented limit before examining the
+header. Keep a bound failure distinct from a format failure: they have
+different causes and different status values.
+
+The packaged \texttt{pipeline.asm} uses the supplied \texttt{worked/\allowbreak input.ppm}
+and creates or replaces \texttt{worked/\allowbreak output.ppm}. Relative file paths are
+resolved from this source directory. Its ordinary Run and Debug sessions use
+host files; they do not install the separate authoring plugin's short-transfer
+fixture. The returned descriptor is three in the supplied ordinary observation,
+but the function must save and use whatever its open returns. The written
+figure's descriptor 19 demonstrates why a fixed descriptor would be a bug.
+The figure's forced seven-byte transfers remain a distinct deterministic test.
+
+Keep the successful output before investigating the failures. In
+\texttt{missing-input.asm}, the path is \texttt{absent-input.ppm}, which the
+package does not supply. Check that it does not exist before expecting status
+three. In \texttt{save-invalid.asm}, the selected source is 22 bytes long.
+Expect format status one and count zero before the saver opens the output.
+Compare the existing output bytes before and after; they must remain unchanged.
+Creating or modifying a host file changes the experiment's input environment,
+even when the assembly source is unchanged. Repeat the relevant observations
+after such a change.
+
+Learn checks the requested register states at Debug boundaries. Its ordinary
+Run check establishes normal silent termination. Neither observation alone
+proves the output file's bytes: make the explicit comparison and retain the
+artifact. A file viewer adds another observation, while the standalone helper
+below checks the canonical file against its independent host model. This is
+why the lab asks for bytes, a visible image and an explanation rather than
+merely an empty console or a completed progress marker.
+
+Four independent assessment actions group the finite function corpus: 80
+one-digit-width trials, 80 two-digit-width trials, six invalid dimensions and
+the default caller. A fifth checks the complete caller's normal silent exit.
+The many bounded data files are implementation details behind those five
+actions. Equivalent correct solutions are accepted; the Debug observations of
+the worked source do not prescribe the independent routine's temporary registers.
+Use the graduated hints if your instructor has enabled them. Return to a failed
+case with a specific prediction about the next read, write or returned value.
+
+An edit invalidates execution passes for that source while retaining the
+prediction history. Continue Downloaded MARS Lab resumes saved progress; it
+should not be used to treat a result from an earlier source revision as current.
+The independent checks use the active editor text, including unsaved edits.
+The standalone script remains available for free writing, and the instructor
+can control hint release, prediction prerequisites and assessment attempts.
 
 \section{Write a complementary-color serializer}
 

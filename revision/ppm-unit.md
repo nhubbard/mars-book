@@ -114,3 +114,54 @@ profiles through the production parser; every fixture member matches the public
 author byte for byte. Both pinned plugins pass public API verification. The
 41 manual MARS edits remain unchanged. These are grading-foundation checks, not
 an IDE walkthrough or completion of the PPM native unit.
+
+## Native PPM integration, 22 November 2026
+
+The PPM unit now has its complete native route in `revision/lessons/029-binary-ppm`:
+ten inline predictions, 23 ordered Debug observations across twelve complete
+sources, three ordinary Runs and five independent assessments. Eleven complete
+variations retain every worked function body. Their inputs select the extent,
+header/raster, word/byte, capacity and real-file boundaries explained by the lab.
+The first prediction includes an exercised wrong-answer recovery; students answer
+in Learn beside the highlighted source without Find Action.
+
+The native function groups retain all 167 cases / 168 calls qualified in the
+foundation. Console-profile version 4 adds the caller's original complete silent
+exit with its three-million allowance; older formats retain their prior ceiling.
+The complete student archive passes the production importer in a focused Jupiter
+test. The full implementation regression passes 232 CLI and 1,248 plugin tests,
+both coverage gates and the plugin build. The exact-archive test is retained
+separately from that full run. Book tooling passes 522 tests and the separate
+publication plugin passes 130 Jupiter tests. Both exact plugins pass API checks
+with 91 MARS / 20 authoring experimental usages and no internal API dependency.
+
+Two actual light-theme IntelliJ processes exercised the route. Starter 0/80 and
+correct unsaved serializer-reusing solution 80/80/6/1/1 were observed. The IDE's
+real pipeline writes the exact 23 canonical bytes, and invalid source preserves
+that existing output. Thirteen source edits clear twenty execution passes;
+reopening retains eleven quiz attempts and all thirteen edited source hashes,
+then renews the twenty checks. Assessment attempt counts advance from 2/1/1/1/1
+to 3/2/2/2/2. Eleven installed JARs per process match the pinned archives; accepted
+IDE logs contain no ERROR/SEVERE. Native project close and disposal precede
+SIGTERM to the owned IDE process. The IDE child exits 143 and Gradle reports
+failure after that deliberate cleanup; these are not natural runIde successes.
+
+The newly composed native LaTeX companion explains observation order, the active
+Debug frame versus the next source pointer, descriptor ownership, real-file
+inputs and the limits of each checkpoint. It distinguishes ordinary host runs
+from the existing seven-byte-transfer authoring figure. Three fresh standalone
+host runs verify canonical output and truncation; FFmpeg independently decodes
+exact pixels, including commented input and the complementary serializer. The
+complete-exit check accepts three correct implementations and rejects an
+unfinished routine, noisy exit and missing exit.
+
+The revised lab proof has 209 pages. Chapter 18 occupies 128–134; those pages and
+adjacent 127/135 were visually reviewed, and the three existing native-annotated
+figures were reviewed in grayscale. PDF/UA-2 passes 1,728 rules / 982,205 checks
+with zero failures. Minion Pro, Noto Sans Math and JetBrains Mono remain embedded.
+The initial overlong path was corrected before the accepted proof. Public figure
+pixels and native annotations are unchanged. All 41 manual MARS edits remain
+unchanged. Private `native-ppm-unit-01` and `native-ppm-ide-01` retain the precise
+source/build, artifact, GUI, progress and publication evidence. Human learner and
+assistive-technology review remain open, as does the broader curriculum goal.
+The next native unit is CRC state across bounded reads.

@@ -54,7 +54,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27 and companions (207 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27 and companions (209 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
@@ -323,3 +323,14 @@ observations, two actual IDE walkthroughs and the final native publication
 review. The current lab proof has 207 pages; section 17.8 occupies 120–127.
 Human walkthrough and accessibility review remain open. The next native main
 unit is bounded file I/O and PPM images.
+
+
+The PPM unit now joins the native route with ten inline predictions, 23 Debug
+observations, three ordinary Runs and five assessments. The revised Chapter 18
+companion explains publication boundaries and the distinct evidence from memory,
+real files and the separate deterministic short-transfer figure. See
+[ppm-unit.md](ppm-unit.md#native-ppm-integration-22-november-2026) for exact-corpus,
+actual IDE first/resume, host-file and publication qualification. The current lab
+proof has 209 pages; Chapter 18 occupies 128–134. All existing PPM annotations
+remain native LaTeX. Human learner and assistive-technology review remain open.
+CRC state across reads is the next native unit; the broader goal remains active.
