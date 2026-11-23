@@ -61,9 +61,9 @@ shifts, OR and XOR in Chapter 5; the native chapter now explains them. This map
 requires author and learner review. It must not infer achieved learning from
 file presence or package titles. Electives remain optional for the codec progression.
 
-Native interactive support now extends through the PNG unit, including the
+Native interactive support now extends through the lossless-video unit, including the
 revised lessons under `revision/lessons` and earlier verified units described in
-their individual notes. Retained video and other unfinished companion lessons
+their individual notes. H.263 and other unfinished companion lessons
 still use ordinary Run and Debug. Broader course sequencing remains implementation
 work. Technical verification notes retain the
 scope of executable checks and captures. Their existence does not certify that

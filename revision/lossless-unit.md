@@ -182,3 +182,56 @@ resume, verified light-theme capture and directly edited LaTeX integration remai
 next. The accepted lab PDF is unchanged by this draft; no new screenshot or
 accessibility validation is claimed. Private native-lossless-unit-01 retains the
 source-bound probes, package tests, exported-starter qualification and diagnostics.
+
+
+## Native IDE and written companion, 23 November 2026
+
+Two actual light-theme IntelliJ processes now verify first use and fresh-process
+resume against pinned MARS/authoring archives. First use records 36 observations
+and 41 photographs; resume records 24 observations and 25 photographs. Twelve
+inline predictions retain thirteen attempts, including the wrong first answer.
+The six Debug activities reach all eighteen boundaries, one silent Run completes,
+and five native assessment stages pass 364 case placements in each process.
+The first 44-case assessment rejects the unfinished entry before private authoring
+fixture injection. Its successful retry checks the unsaved editor text.
+
+After harmless comments invalidate execution evidence, all thirteen quiz attempts
+remain identical, twelve execution checks are renewed, and seven edited source
+hashes survive the process boundary. Both accepted logs contain no ERROR or
+SEVERE entries. The separate authoring plugin owns the capture route and private
+fixture injection; its complete 142-test Jupiter suite passes. Exact installed
+JARs match the pinned archives, and both archives pass the pinned IntelliJ API
+verifier with experimental public uses and no internal API usage report.
+
+The directly edited native LaTeX lab now names the six experiments, connects
+their observations to the complete codec, and keeps optional host-file/player
+and construction work explicit. It explains why capacity 39 rejects the initial
+forty-byte result but admits a later twenty-byte unchanged record after history
+has committed. One actual public-source vector photograph supplies three native
+crops identifying the paused frame, full XOR vector and numerical lanes; its
+caption explains why signed-positive counting misses two nonzero lanes.
+
+All 66 photographs pass digest, dimensions, light-theme and photograph-sample
+checks. Four representative captures receive individual visual review; no
+separate visual review of every capture is claimed. Six publisher guards bind
+the exact source, student archive, paused state, original pixels, native geometry
+and pre-injection order. The full public tooling suite passes 609 tests, and
+native composition and structural curriculum audits pass.
+
+The accepted lab proof has 225 pages. Lossless-video occupies 209–215 and the new
+figure is on 210. Ten changed/transition pages receive visual review, including
+figure grayscale review. A final paragraph-widow/command-introduction repair
+changes only pages 213–215; those are reviewed again and the other page renders
+are identical. The exact pinned final PDF passes PDF/UA-2's 1,728 rules and
+1,060,368 checks, zero failures. Minion Pro, Noto Sans Math and JetBrains Mono
+remain embedded. Initial layout proof, renders and validation are retained
+separately. Human author, learner and assistive-technology review remain pending.
+
+No production MARS or simulator code changes in this authoring/publication step.
+The prior broad regression and package/profile Jupiter evidence retain their
+original scopes. All 41 manual edits remain preserved. Private
+native-lossless-ide-01 retains the actual desktop, source-progress, compatibility,
+capture and publication receipts. The wider goal remains active; native H.263
+prediction/reconstruction and stream delivery are next, with the remaining
+course-wide acceptance work. The opening MARS-versus-hardware explanation is
+still deferred.

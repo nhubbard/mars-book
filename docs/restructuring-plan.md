@@ -1381,3 +1381,16 @@ qualification, package import and native PSI checks pass. Required work remains
 actual IDE first/resume and directly edited written-lab/capture integration.
 See `revision/lossless-unit.md`; this draft does not replace the accepted PDF
 or close the broader curriculum goal.
+
+
+### Lossless-video native IDE and written companion, 23 November 2026
+
+Actual first-use and fresh-process resume now verify all 24 native activities,
+unsaved checking, source invalidation and retained progress. The written lab
+connects six bounded experiments to the supplied codec and continuing bounds
+implementation, distinguishes record-size/history cases and keeps optional
+file/player work explicit. A real public XOR capture has native annotations and
+an explanation of unsigned lane counting. Exact plugin compatibility, installed
+binaries, final visual/grayscale review and PDF/UA-2 evidence are retained.
+See `revision/lossless-unit.md`. Native H.263 delivery and course-wide acceptance
+work remain; this milestone does not close the full goal or claim human review.
