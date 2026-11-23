@@ -560,6 +560,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `Lossless-video corpus plans bind one archive and private fixture and retain fresh-process resume`() {
+        val lossless = plan.copy(archives = listOf(archive.copy(id = "034-lossless-video", version = "0.1.0", entry = "worked/xor-alias-tail.asm")),
+            nativePredictions = true, losslessUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/video-change-bounds.asm", "/tmp/lossless.asm", "c".repeat(64))))
+        lossless.validate()
+        lossless.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(lossless.copy(nativePredictions = false), lossless.copy(nativeExecution = true),
+            lossless.copy(nativeDebug = true), lossless.copy(resumeCompleted = true), lossless.copy(chachaUnit = true),
+            lossless.copy(pngUnit = true), lossless.copy(wavUnit = true), lossless.copy(rsaUnit = true), lossless.copy(shaUnit = true), lossless.copy(cborUnit = true), lossless.copy(qoiUnit = true), lossless.copy(crcUnit = true), lossless.copy(memoryUnit = true),
+            lossless.copy(losslessUnit = false), lossless.copy(activityNavigation = true), lossless.copy(prerequisiteControls = true),
+            lossless.copy(assessmentFixtures = emptyList()),
+            lossless.copy(assessmentFixtures = lossless.assessmentFixtures + lossless.assessmentFixtures),
+            lossless.copy(assessmentFixtures = listOf(lossless.assessmentFixtures.single().copy(source = "independent/chacha20.asm"))),
+            lossless.copy(archives = listOf(lossless.archives.single().copy(id = "026-chacha20"))),
+            lossless.copy(archives = listOf(lossless.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `vector photograph focus names an observed register including packed w3 only stops`() {
         assertEquals("\$w3", bookCorpusVectorFocus(setOf("\$w3")))
         assertEquals("\$w4", bookCorpusVectorFocus(setOf("\$w0", "\$w3", "\$w4")))
