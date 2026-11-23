@@ -2,12 +2,20 @@
 \MARSChapterHeading{Clipping evidence and in-place samples}
 \label{revision-lab:pcm}
 
-Use the complete \texttt{pcm-mix.asm} and independent
-\texttt{pcm-subtract.asm} in \texttt{revision/labs/files}. Read the main chapter's
-sample representation, saturation rule and clipping-mask derivation first.
-These activities use ordinary Run and Debug; a native guided version of this
-unit remains unfinished. Use disposable source copies for changed inputs and
-intentional faults. The arithmetic does not require an audio device.
+Import the development lesson \texttt{020-pcm-mixing} and choose Continue in
+Learn. Read the main chapter's sample representation, saturation rule and
+clipping-mask derivation first. The complete \texttt{pcm-mix.asm} is the worked
+observation source; \texttt{independent/pcm-subtract.asm} is your independent
+exercise. Both are also supplied in \texttt{revision/labs/files} for use without
+Learn. The arithmetic does not require an audio device.
+
+Eight inline predictions lead through seven complete sources using ordinary
+Debug and Run. Use one line breakpoint at a time and stop before the selected
+instruction executes. Learn highlights the next requested source operation;
+Debug's selected frame identifies the actual pause. Treat the two return values
+as different quantities: \texttt{\$v0} counts processed samples and
+\texttt{\$v1} counts strict clipping events. Keep disposable copies for changed
+inputs and intentional faults.
 
 \section{Predict samples and the two return values}
 
@@ -40,10 +48,11 @@ pipeline, and no real-time playback deadline is part of this function's contract
 
 \section{Read the mask as evidence, then change its unit}
 
-Prepare a disposable copy whose first nine samples are the following. Retain the
-remaining declared samples and arena sizes, and set \texttt{count} to nine.
-The first eight pairs are the main chapter's mask example; the ninth tests the
-tail after a nonzero group count.
+Open \texttt{worked/mask-nine.asm}. It selects the following first nine
+samples while retaining the remaining declared samples and arena sizes. The
+first eight pairs are the main chapter's mask example; the ninth tests the tail
+after a nonzero group count. Without Learn, prepare the same values in a
+disposable copy and set \texttt{count} to nine.
 \begin{verbatim}
 A: 0,30000,32767,-30000,-32768,30000,-30000,32767,-20000
 B: 0,2767,1,-2768,-1,10000,-10000,-32768,-20000
@@ -79,8 +88,10 @@ counts were mistaken for sample counts.
 
 \section{Check an exact alias and the first unprocessed sample}
 
-In the nine-sample copy, make the first caller's destination pointer refer to
-\texttt{pcm\_b}. This is an exact allowed alias, not a shifted overlap.
+Open \texttt{worked/inplace-nine.asm}. Its first destination pointer refers to
+\texttt{pcm\_b}; this is the only change from the nine-sample mask source.
+Without Learn, make that pointer change in a copy. It creates an exact allowed
+alias, not a shifted overlap.
 Stop at \texttt{mix\_after\_block}. The first eight B samples have been replaced
 by their results; both input pointers and the output pointer still identify the
 current group because the pointer updates follow this label. Step through those
@@ -94,6 +105,12 @@ following B sample remains its original value one, and source A is unchanged.
 The returned clipping count is five. Inspecting the unchanged following sample
 helps distinguish a correct tail from a vector overstore.
 
+This variant continues to the ordinary wrapping call, but B now contains the
+first call's saturated output. The later call therefore receives changed input
+samples. Its output cannot establish a difference between saturation and
+wrapping for the original A and B. Use the unchanged disjoint source for that
+comparison; use this variant to investigate the exact alias in the first call.
+
 \input{revision/figures/pcm/inplace-tail}
 
 Repeat with output exactly equal to A, then with all pointers identical. For
@@ -103,13 +120,23 @@ order needed to preserve the original pair until both values have been read.
 Do not extend the proof to a destination shifted into the middle of an input;
 that overlap is excluded by this interface.
 
-Use counts zero, seven, eight, nine, 63 and 64. Predict the number of full groups
-and scalar iterations. For every stop, identify the processed prefix, the
+Use \texttt{worked/count-0.asm}, \texttt{count-7.asm} and
+\texttt{count-8.asm} for the guided boundary observations. Predict complete
+groups and scalar iterations before Debug. Then extend the argument to the
+supplied \texttt{count-63.asm} and \texttt{count-64.asm} without a guided stop
+for every iteration. Those sources change only the requested count; samples
+beyond the original sixteen are zero. For every stop, identify the processed prefix, the
 remaining count and the first unprocessed byte. At zero, the function returns
-zero in both result registers without caller-data accesses. Across repeated
+zero in both result registers without selected-buffer accesses. Across repeated
 calls, a previous clipping count must not survive as the next initial value.
 
 \section{Diagnose one arithmetic or boundary fault at a time}
+
+First use \texttt{worked/signed-one.asm}. At \texttt{mix\_signed}, before
+\texttt{addu}, the recovered operands are $-30000$ and $-10000$ in
+\texttt{\$t0/\$t1}. The exact sum $-40000$ fits the scalar intermediate but
+requires clamping for PCM16. At return the stored sample is $-32768$ and the
+clip count is one.
 
 In a copy, omit a scalar \texttt{seh}. Trace bytes \texttt{d0 8a} into the
 assembled value, then the sum and comparison. Identify the first value that
@@ -179,3 +206,34 @@ Keep the scalar result, a vector-group trace, a nine-sample exact-alias trace an
 a zero-length call with your result. Explain your chosen reduction, its units and
 its bounds. The checks accept equivalent implementations; your explanation and
 observation establish the vector strategy separately.
+
+
+Learn checks the current independent source in five groups: disjoint output,
+output exactly A, output exactly B, identical inputs with disjoint output, and
+all-identical pointers. The groups retain every original public case and add a
+reused-call check. Its lengths are eight, one, eight and zero; returned clipping
+counts must be six, zero, six and zero. A previous call's count must not survive
+as the next call's initial value, even when the next call has no samples.
+
+The disjoint group includes the six explicit arithmetic boundaries and complete
+caller observations. At \texttt{subtract\_ready}, the function has returned but
+the caller's result words still contain 99. At \texttt{results\_ready}, they
+contain nine and five. A separate sixth assessment follows the complete caller
+through silent normal exit. Passing an alias group or a return observation does
+not complete those other checks.
+
+\section{Use a failed check to choose the next observation}
+
+Select Check this program, read its first failed value or forbidden access, and
+keep a concrete explanation beside your edit. If values are right but the clip
+count is wrong, compare exact differences with endpoint values and check the
+reduction's units. If only an alias group fails, inspect which original operand
+was overwritten before being read. These are questions to investigate, not
+proof of a particular cause. Graduated hints can narrow the next observation.
+
+All six assessments must pass for the current source, including unsaved editor
+changes. Editing a worked or independent file clears its execution evidence;
+Continue returns to the first activity that needs another observation. Reopening
+retains source and quiz history. Keep your signed-value, alias and bounds
+arguments alongside the finite test results rather than treating a saved pass
+as evidence about a later edited program.

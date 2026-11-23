@@ -1224,3 +1224,52 @@ reviewed in grayscale. The complete supplement remains 202 pages and passes
 Noto Sans Math and JetBrains Mono remain in use. Human learner and assistive-
 technology reviews, later native units and remaining system work stay open.
 The full curriculum goal stays active; the proposed opening remains deferred.
+
+## Native PCM integration, 22 November 2026
+
+The fifteenth main unit now has an exact importable student archive, eight
+inline predictions, 22 guided Debug boundaries across seven complete sources,
+seven ordinary Runs and six independent assessments. Two additional complete
+count variants (63/64) support independent extension. The explanations connect
+signed recovery, exact endpoints, saturation versus wrapping, mask units, tail
+accumulation, exact aliases and returned versus published counts. The in-place
+B variant explicitly warns that its later wrapping call receives changed input.
+
+All 331 original function-trial constructions match independently exported
+Kotlin initialization. Native profiles preserve the complete 332 public cases
+and add one four-call reuse case: 333 cases, 337 calls and separate silent exit.
+Private qualification records 30 original/native processes, accepting 14 and
+rejecting 16 as expected. Equivalent scalar, vector, signed-halfword, relocated
+and wide-address implementations remain accepted. The native reader's bounded
+limits are respected by splitting five groups rather than dropping trials or
+reducing the original per-trial instruction budget.
+
+The exact archive exposed an anchor grammar gap for underscored MSA mnemonics.
+MARS commit 53dac9e7 accepts lexical names such as copy_s.d, retains strict
+punctuation rejection and uses the existing native PSI operation-head resolver.
+Full regression passes 217 CLI / 1224 plugin tests and required coverage gates.
+All 491 book-tool and 126 separate-authoring Jupiter tests pass. Both exact
+plugin archives pass paired public API verification, retaining 91 MARS and
+20 authoring experimental notices on the pinned IntelliJ target.
+
+Two actual light-theme IDE walkthroughs exercise all questions, Debug boundaries,
+Runs and assessments. The first includes wrong-answer recovery, the failing
+starter and a correct unsaved implementation. After edits to eight sources
+clear twenty execution passes, a fresh process retains nine quiz attempts and
+re-earns all twenty passes. Eight source hashes remain unchanged across reopening.
+Each session's eleven installed JARs match exact pinned archives; accepted IDE
+logs have no ERROR/SEVERE entries. Both projects close normally before their
+owned Java processes stop. Actual clean cleanSandbox runIde tasks precede both
+launches. Screenshot automation stays in the separate dependent plugin.
+
+The directly edited LaTeX lab now explains the complete route, independent
+check groups, useful failure investigation and saved progress after edits.
+Original real photographs and native annotations remain unchanged. The lab
+supplement has 203 pages, with this unit on 103–108. Those six pages and adjacent
+boundaries were visually inspected; both annotated figures on page 105 were
+reviewed in grayscale. The exact final PDF passes 1728 PDF/UA-2 rules / 961004
+checks with zero failures and retains embedded Minion Pro, Noto Sans Math and
+JetBrains Mono. All 41 manual MARS files are preserved. Human learner and
+assistive-technology reviews remain pending. Later native units and remaining
+system work stay open; the full curriculum goal remains active and the proposed
+opening remains deferred. The next main unit develops fixed-point filtering.
