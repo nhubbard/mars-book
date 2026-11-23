@@ -217,3 +217,48 @@ addresses; its unfinished entry fails all 266: 1,064 case executions. The latest
 public tooling suite passes 599 tests. The production plugin is unchanged in this
 content/test-only step; the preceding foundation retains the broad 287/1,315
 regression and coverage evidence. All 41 manual edits remain preserved.
+
+
+## Native IDE and written companion, 23 November 2026
+
+The next delivery milestone is now verified in two actual light-theme IntelliJ
+processes against pinned plugin binaries. First use records 38 observations;
+fresh-process resume records 26. Twelve inline predictions retain thirteen
+attempts, including the deliberately wrong first answer. Six ordinary Debug
+activities reach eighteen checked boundaries, one silent Run exits normally,
+and seven assessments pass 532 case placements in each process. The first None
+assessment rejects all 44 unfinished cases before the private authoring fixture
+is inserted into the independent editor buffer. The successful check uses that
+unsaved buffer. No fixture or private implementation enters the student archive.
+
+After harmless edits make the evidence stale, saved answers remain identical,
+all fourteen execution checks are renewed, and seven edited source hashes survive
+the process boundary. Both accepted logs contain no ERROR or SEVERE entries.
+The native UI uses ordinary source pointers and debugger breakpoints; its next
+source pointer is not proof that the simulator has executed that instruction.
+Capture automation remains in the separate plugin.
+
+The native LaTeX companion now names the interactive files, connects each small
+experiment to its decoder boundary, and keeps the optional standalone viewer
+and original construction capstone explicit. One actual public worked-source
+photograph supplies three unchanged native crops: the paused frame, full vector
+and four numerical pixel lanes. Its caption explains low-lane ordering. Source,
+pixel digest, theme, geometry and pre-assessment placement are checked before
+publication; six rejection tests preserve that boundary.
+
+The accepted lab proof has 223 pages. PNG occupies pages 202–208 and its new
+figure is on page 205. Ten changed or adjacent pages receive visual review,
+including a grayscale figure review. The final capture replacement yields
+identical reviewed page renders. The exact pinned PDF passes automated PDF/UA-2
+validation: 1,728 rules and 1,049,342 checks, zero failures. Minion Pro, Noto Sans
+Math and JetBrains Mono remain embedded. Public tooling passes 599 tests; the
+separate authoring plugin passes 141 Jupiter tests. Human author, learner and
+assistive-technology review remain pending.
+
+The IDE trial exposed an upstream Build-view threading race. MARS now sends
+build UI events on the event thread and allows these UI-only handoffs during
+modal interactions, preserving cancellation cleanup. The 62 focused tests
+cover both the original build cases and modal lesson Run paths. Broad regression
+results are retained separately in private native-png-ide-01; this note does not
+infer their outcome from the focused result. The broader curriculum goal remains
+active, with retained lossless-video and H.263 instructional delivery next.

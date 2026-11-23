@@ -2,31 +2,68 @@
 \MARSChapterHeading{Check each representation of the PNG}
 \label{revision-lab:png}
 
-Chapter 24 of the main book follows a complete decoder. This lab asks you to
-establish what each stage proves, then implement a forward row filter without
-copying the decoder's reconstruction loop. The worked caller is
-\texttt{revision/labs/files/png-viewer.asm}. The independent file beside it is
-\texttt{png-filter-scanline.asm}. Both use MIPS64 Release 6.
+Chapter 24 follows a complete decoder. This lab asks you to establish what each
+stage proves, then implement a forward row filter from original RGB samples.
+Import the native lesson \emph{Check each PNG representation}, built from
+\path{revision/lessons/033-png}. Its six complete worked experiments lead to one
+continuing source, \texttt{independent/png-filter-scanline.asm}. Only that
+source's forward-filter entry is unfinished.
+
+Begin with \texttt{worked/pipeline-boundaries.asm}. It embeds the exact
+115-byte trace and retains the supplied decoder functions and format tables.
+Its smaller caller uses static buffers: \texttt{lesson\_stream},
+\texttt{lesson\_rows} and \texttt{lesson\_frame}. Required observations need
+no host input or path edit. The framebuffer stride is seventeen words and its
+selected extent is 280 bytes. The separate \texttt{worked/packing-tail.asm}
+experiment crosses the sixteen-pixel vector boundary.
+
+Answer predictions inline, then use ordinary Debug at the named boundaries.
+Inspect state before executing the anchored instruction. Finish the process
+before starting the next activity. The lesson's six Debug activities contain
+eighteen stops, including full-width MSA input and packed-output values.
+After exploration with edits or backsteps, start a fresh forward Debug session
+to record the required sequence. Hints and free-writing availability follow
+your instructor's release policy.
+
+The standalone worked caller remains at
+\path{revision/labs/files/png-viewer.asm}, with
+\texttt{png-filter-scanline.asm} beside it for independent work. That viewer
+loads a host file and allocates buffers on the heap. The native lesson's smaller
+caller and the viewer use the same decoder helpers, but their buffer-location
+variables differ. Use the workflow named by each observation below.
 
 For the larger capstone assignment, the original
 \texttt{packages/033-png/starter/main.asm} leaves the loader, collector, inflater,
 scalar/MSA reconstruction, packing and complete decode entries unfinished.
 The construction directory retains staged attachments and observations for
-those entries. Follow the published interfaces; private register choices,
+those entries. The bit-reader and table-construction work below extends that
+capstone; the independent forward filter does not require implementing an inflater. Follow the published interfaces; private register choices,
 frames and equivalent algorithms may differ. The worked program is available
 for inspection, but the independent task below requires you to reason in the
 opposite transformation direction.
 
 \section{Make a boundary ledger before debugging}
 
-Generate the two-by-five trace. Record file extent, each chunk's header and
+Use the embedded two-by-five trace in the native lesson, or generate it for
+the standalone viewer. Record file extent, each chunk's header and
 payload extent, joined stream count, expected row count and active pixel count.
 Your ledger should explain 115, 46, 35, 30 and 40 without calling them all the
 image size. Calculate the compressed bytes contributed by each IDAT. Explain
 why concatenation must precede zlib interpretation when the header is split
 between the two chunks.
 
-At \texttt{collector\_return}, the complete decoder has a private successful
+Follow the native caller at \texttt{collector\_return},
+\texttt{inflate\_return}, \texttt{publication\_rows\_return} and
+\texttt{publication\_blit\_return}. Their successful \texttt{v1} counts are
+46, 35, 35 and 40. Reconstruction retains the five selectors, so it returns
+the 35-byte row-buffer extent even though that buffer contains thirty RGB
+sample bytes. At \texttt{complete\_image}, \texttt{s0}, \texttt{s1} and
+\texttt{s2} contain the published width two, height five and forty active bytes.
+The second row starts 68 bytes after the first; \texttt{s5} reads the unchanged
+first byte of the first padding gap. One sentinel does not prove the complete
+access contract, which the independent grading observes separately.
+
+In the standalone viewer, at \texttt{collector\_return} the decoder has a private successful
 collector descriptor. Its capacity is not a width field. The public complete
 decode context has not yet published its result fields. Inspect
 \texttt{compressed\_address}, then follow that stored pointer to the joined
@@ -42,6 +79,13 @@ inflation fails. Those experiments test different promises; neither should
 publish pixels or complete-decoder context results.
 
 \section{Build a bit reader and a table decoder deliberately}
+
+In the native lesson, \texttt{worked/bit-interpretation.asm} isolates the
+arriving bits one, zero. They give numerical field value one but developed
+canonical-code value binary \texttt{10}. Its second pause decodes stored length
+35 and complement 65500, whose sixteen-bit XOR is hexadecimal \texttt{ffff}.
+Use these small observations to explain the interpretation before attempting
+the larger table decoder.
 
 For the stored trace, identify the final flag, block type, byte alignment,
 length and complement. Test a bad complement, a truncated payload and a valid
@@ -84,7 +128,8 @@ before using them as table indices.
 
 \section{Trace history and row dependencies}
 
-Begin a match with one produced byte A and request six bytes at distance one.
+Debug \texttt{worked/overlapping-history.asm} in the native lesson. It begins
+with one produced byte A and requests six new bytes at distance one.
 Write the output and source cursor after each store. Explain why loading six
 source bytes in advance would consume unproduced data. Then test distance
 larger than produced history and length larger than remaining output. A mapped
@@ -97,7 +142,11 @@ The selectors remain in place; sample values change. For the Sub row, follow
 one red channel across pixels and identify the reconstructed left neighbor
 before using it.
 
-Predict an Average sum of 400 before halving it: the predictor is 200, not 72.
+The native \texttt{worked/predictor-precision.asm} keeps both the wide Average
+and a prematurely byte-wrapped calculation visible. For unsigned neighbors
+255 and 145, the sum is 400 and the predictor is 200; wrapping first would
+produce 72. A current sample 201 therefore emits residual one. The final
+residual wraps modulo 256, while predictor intermediates keep their precision.
 For Paeth, test $a=255,b=0,c=85$. The estimate is 170, and $a$ ties $c$ at
 distance 85; $a$ wins. For $a=0,b=3,c=1$, $b$ ties $c$ at distance one and
 wins. Changing a strict comparison in a tie decision can corrupt only a few
@@ -112,7 +161,22 @@ unqualified promise that all memory rolls back.
 
 \section{Explain the vector result at both widths}
 
-Use widths fifteen, sixteen and seventeen. For packing, mark exactly which
+Use \texttt{worked/packing-tail.asm} in the native lesson. At
+\texttt{pack\_inputs\_loaded}, inspect all 128 bits of \texttt{w0} through
+\texttt{w2}: their byte lanes contain samples zero through 47. Lane zero is
+at the low end of the displayed value. At \texttt{pack\_first\_written},
+\texttt{w3} contains four numerical words for pixels zero through three.
+At \texttt{pack\_last\_written}, it contains pixels twelve through fifteen.
+The group cursor has not yet advanced at either pause. The final
+\texttt{packed\_tail} observation checks pixels five, fifteen and sixteen,
+68 active bytes and the first retained guard byte.
+
+Figure~\ref{fig:revision-png-native-vector} shows the first packed group in the
+actual debugger. Use the lane interpretation to check each pixel separately.
+
+\input{revision/figures/png/native-vector.tex}
+
+Then compare widths fifteen, sixteen and seventeen. For packing, mark exactly which
 48 RGB bytes feed a complete sixteen-pixel group, which four output vectors
 receive them, and which samples the tail handles. Derive the mask for pixel
 five across input vectors zero and one. Explain why the shuffle destination
@@ -160,6 +224,14 @@ any RGB or output byte and changes no caller object. Preserve every bit of
 \texttt{s0} through \texttt{s7}, \texttt{fp}, \texttt{sp} and the return
 continuation. The incoming stack is eight-byte aligned. Do no I/O in the entry.
 
+Before implementation, Debug \texttt{worked/native-settings.asm}.
+Inspect the full width, hexadecimal \texttt{0000000100000001}.
+The low word alone looks like one, but the complete value is outside the accepted range. The second
+pause compares unsigned capacity hexadecimal \texttt{8000000000000000}
+with seven. The unsigned shortage test is false. Native assessments assemble
+your source and settings in both byte orders, so native data declarations must
+retain their intended numerical meaning in either representation.
+
 The supplied demo uses width two, Average, current RGB
 \texttt{25,35,45,55,65,75} and previous RGB \texttt{20,30,40,50,60,70}.
 It must produce seven hexadecimal bytes
@@ -176,7 +248,14 @@ original neighbors before output stores can overwrite them.
 
 \section{Check exact bytes and the inverse}
 
-Run the public independent feedback from the book repository:
+Use \emph{Check this program} in the native lesson. Each predictor stage
+retains 44 original cases in both byte orders; the boundary stage retains
+46 more, including six calls sharing one machine. The final assessment rechecks
+all 266 on the same source. When edits make earlier evidence stale, follow the
+renewal prompts. Prediction attempts and revealed hints remain saved. No exact
+loop, scratch-register choice or private frame layout is required.
+
+For standalone CLI work, run the public independent feedback from the book repository:
 \Needspace{8\baselineskip}
 \MARSCodeLabel{Grade the new forward transformation}
 \begin{Verbatim}
@@ -217,7 +296,9 @@ provides compression and container writing without implementing your filter:
 python3 revision/labs/files/png-from-rows.py rows.bin result.png \
   --width 2 --height 5 --compression fixed
 \end{Verbatim}
-It validates dimensions, exact row count and selectors, then creates one zlib
+The imported lesson retains the same tools under \texttt{tools/}; run those
+copies from its folder, using fresh output paths. The command above uses the
+book repository's path. The wrapper validates dimensions, exact row count and selectors, then creates one zlib
 stream split across two consecutive IDAT chunks. It refuses an existing output.
 Keep \texttt{result.png} separate from your original input, then select it for
 the decoder or place a copy named \texttt{image.png} in a fresh working directory.

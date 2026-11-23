@@ -61,9 +61,11 @@ shifts, OR and XOR in Chapter 5; the native chapter now explains them. This map
 requires author and learner review. It must not infer achieved learning from
 file presence or package titles. Electives remain optional for the codec progression.
 
-The first unit has native interactive support. The remaining revised units use
-ordinary Run and Debug; downloadable native lesson delivery and broader course
-sequencing remain implementation work. Technical verification notes retain the
+Native interactive support now extends through the PNG unit, including the
+revised lessons under `revision/lessons` and earlier verified units described in
+their individual notes. Retained video and other unfinished companion lessons
+still use ordinary Run and Debug. Broader course sequencing remains implementation
+work. Technical verification notes retain the
 scope of executable checks and captures. Their existence does not certify that
 those checks were rerun by this structural audit. Author walkthrough, beginner
 review and human accessibility review remain open.

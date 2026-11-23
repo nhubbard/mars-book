@@ -40,8 +40,9 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
 - `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
-  observations, fault diagnosis and independent variations. The first seventeen main units have native interactive support. Later units and
-  unfinished companion lessons currently use ordinary Run and Debug.
+  observations, fault diagnosis and independent variations. Native interactive coverage now extends through PNG; individual unit notes
+  record its scope. Retained video and unfinished companion lessons currently
+  use ordinary Run and Debug.
 
 For the project-to-chapter coverage index and repeatable structural checks, see
 [the revised curriculum audit](../docs/revised-curriculum-audit.md). It distinguishes
@@ -54,7 +55,7 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27 and companions (209 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27 and companions (223 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
 These PDFs are generated locally; the native LaTeX files in this directory are the

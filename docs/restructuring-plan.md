@@ -1343,3 +1343,17 @@ capture has native annotations in the lab. The separate authoring plugin owns al
 capture and fixture injection. Native PNG and the retained video sequence remain
 next; this milestone does not close the broader curriculum goal or replace human
 learner and accessibility review.
+
+
+### PNG native lesson and written companion, 23 November 2026
+
+Project `033-png` now connects the complete decoder to six limited native
+experiments and one continuing independent forward-filter task. The actual
+first-use and fresh-process resume trials verify twelve inline predictions,
+eighteen Debug boundaries, one Run, seven assessment stages, source invalidation
+and saved progress. The written companion distinguishes the native embedded
+trace from the optional standalone viewer and original construction capstone.
+A public vector-packing photograph has native annotations and a numerical lane
+explanation. See `revision/png-unit.md` for publication and verification scope.
+Retained lossless-video and H.263 delivery and human reviews remain open; this
+milestone does not complete the broader goal.
