@@ -7,13 +7,18 @@ now and receive later bytes in another call. Its state must remember what the
 accepted bytes permit next. Resetting at each call would make correctness depend
 on where a file reader happened to divide the input.
 
-This is original project \texttt{015-utf8-scanner}. The revised work area is
-\texttt{utf8-stream.asm}, in the lab files directory. Implement
-\texttt{scan\_utf8}. The starter supplies the allocations, chunk caller and
-\texttt{chunk\_ready} observation marker. Its function body deliberately stops
-with \texttt{break} until replaced. Both checks under the original package's
-\texttt{checks} directory apply to a completed copy. Choose your own registers,
-private labels and implementation; the archived construction regions are not
+This companion develops original project \texttt{015-utf8-scanner} through the
+native \texttt{015-utf8-streams} unit. Open its assignment and begin with the
+complete \texttt{worked/range.asm} experiment. The second complete source,
+\texttt{worked/lower-bound.asm}, changes one sample byte so that you can compare
+rejection just below a bound with acceptance at that bound.
+
+Implement \texttt{scan\_utf8} in \texttt{independent/stream.asm}. Its allocations,
+chunk caller and \texttt{chunk\_ready} observation marker are complete. Replace the
+single deliberate \texttt{break} body while retaining that public interface.
+Choose your own temporary registers, private labels and equivalent algorithm.
+The three inline assessments check direct chunk transitions, interleaved state
+objects and the supplied caller. The archived construction regions are not
 required by this assignment.
 
 The prerequisite is Chapter 12's bounded byte access and function reasoning.
@@ -98,6 +103,49 @@ bounds would then classify the wrong number. Advance the byte pointer with
 full-width arithmetic even though this lab's byte counts fit within a word.
 Neither a short chunk nor a small scalar implies a small address.
 
+\subsection*{Isolate an inclusive byte comparison}
+
+The complete range experiment loads byte \texttt{9F} and calls this helper with
+lower bound \texttt{A0} and upper bound \texttt{BF}. The arguments are ordinary
+unsigned byte values in registers, so decimal 159, 160 and 191 describe the same
+comparison. The helper returns one for membership and zero otherwise. Its result
+is separate from the scanner's status codes.
+
+\noindent\begin{minipage}{\linewidth}
+\MARSCodeLabel{Test a byte against inclusive unsigned bounds}
+\begin{minted}{mars-idea}
+within_range:
+    sltu $t0, $a0, $a1
+    bnezc $t0, outside_range
+    nop
+    sltu $t0, $a2, $a0
+    xori $v0, $t0, 1
+    jrc $ra
+outside_range:
+    move $v0, $zero
+    jrc $ra
+\end{minted}
+\end{minipage}
+
+The first \texttt{sltu} produces one if the byte is below the lower bound. The
+compact branch then selects the zero-return path. If that test is zero, the second
+comparison asks whether the upper bound is below the byte. That comparison is one
+only for a byte that is too large; \texttt{xori} reverses its zero-or-one result.
+Equality with either bound therefore remains accepted.
+
+Use the first guided Debug sequence to observe \texttt{9F}: the lower-bound test
+is one and the returned result is zero. In \texttt{worked/lower-bound.asm}, the
+sample becomes \texttt{A0}. Its lower-bound test is zero and the returned result
+is one. Both callers store the answer in \texttt{range\_result} and exit silently.
+The public \texttt{worked/range.kts} script checks every byte value against seven
+relevant intervals as well as the first complete caller.
+
+A correct interval helper is only one part of a scanner. The accepted prefix
+chooses the interval, the pending count determines whether a scalar is complete,
+and the call's final flag decides what an unfinished prefix means at the end.
+Those decisions need persistent state, which the helper deliberately does not
+provide.
+
 \subsection*{Give persistent state a precise meaning}
 
 The function takes the selected state pointer in \texttt{\$a0}, current chunk
@@ -163,8 +211,11 @@ states and per-call accepted counts will differ.
 Break at \texttt{chunk\_ready} in Debug. The caller has already stored
 \texttt{chunk\_index}, \texttt{last\_status} and \texttt{last\_used}; their values
 identify the completed call. The state words must agree with that same call.
-Continue to the next stop to inspect another chunk, rather than restarting the
-program and accidentally observing index zero repeatedly. The revised caller uses
+For the native Debug activity, place the breakpoint on the \texttt{nop} beneath
+\texttt{chunk\_ready} and set its condition to \texttt{\$s3 == 0}. After that
+stop, change only the condition to \texttt{\$s3 == 1}, then resume. Repeat for
+2 and 3. Keep the same execution session and source throughout: restarting would
+return to the first chunk, while editing source would invalidate the observation. The revised caller uses
 compact transfers and preserves its live values in saved registers. Your scanner
 must preserve those registers and the stack pointer across all returns.
 
@@ -235,17 +286,28 @@ Choose a fresh input offset for the second pair of calls. The supplied checks al
 change scratch registers between calls, so register residue cannot serve as
 persistent state.
 
-\begin{samepage}
-Run both original public checks on your completed source:
+Use \emph{Check this program} in the native lesson for the 426 original stream
+cases, twelve additional interleaved-state cases and fifteen caller variants.
+The interleaving assessment alternates both state objects within one case, checks
+their complete state after each call, changes temporary registers and revisits
+terminal outcomes. All three assessments use the same continuing source.
+
+The two original public check domains are also available through the CLI. From
+the downloaded unit's directory, run these commands on your completed source:
+
+\noindent\begin{minipage}{\linewidth}
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  packages/015-utf8-scanner/checks/stream.kts \
-  /path/to/your/utf8-stream.asm
+  independent/stream.kts independent/stream.asm
 java -jar /path/to/cli.jar grade \
-  packages/015-utf8-scanner/checks/program.kts \
-  /path/to/your/utf8-stream.asm
+  independent/caller.kts independent/stream.asm
 \end{verbatim}
-\par\end{samepage}
+\end{minipage}
+
+The additional interleaving cases run through the native assessment. Finish with
+an ordinary Run of the four-chunk caller; its successful silent exit is separate
+from the state and access checks above.
+
 
 When a check fails, retain the stream prefix, selected state, current chunk and
 final flag. Find the first byte whose permitted range or accepted count diverges.
