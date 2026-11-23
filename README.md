@@ -1,5 +1,14 @@
 # Programming and computer architecture with MARS
 
+The restructured publications are the [main learning book](revision/learning.tex)
+and [written lab companion](revision/lab-book.tex), composed directly in native
+LaTeX. Their interactive student packages are under `revision/lessons/`.
+Use an explicit entry when building a revised proof, for example
+`python3 tools/book.py build --entry revision/lab-book.tex`; the outputs are in
+`build/native/`. The [restructuring plan](docs/restructuring-plan.md) records
+current progress. `main.tex` and `includes/` preserve the initial draft described
+below.
+
 Current completion status is recorded in [initial-draft-status.md](docs/initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
 
 Book source and student project packages for the IntelliJ MARS plugin. The text

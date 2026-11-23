@@ -8,12 +8,30 @@ A useful implementation therefore needs more than a compression loop: it needs
 a representation of unfinished input and an explicit finalization operation.
 This companion revises original project \texttt{025-sha256}.
 
-Implement the six entries in \texttt{revision/labs/files/sha256.asm}.
-The file supplies the caller, data arenas and fixed constants; each unfinished
-entry stops with \texttt{break}. The complete contracts and public feedback are
-in \texttt{packages/025-sha256}. Your functions may choose their own private
-labels, temporaries, helpers and frames. The main-book chapters on functions,
-file ownership and word transformations supply the prerequisites.
+Use the lesson package \emph{Carry a message through SHA-256} alongside this
+companion. Its short worked programs expose particular boundaries; you complete
+the six entries in one continuing \texttt{independent/sha256.asm} source. The book checkout contains the same starter at
+\path{revision/labs/files/sha256.asm}.
+It supplies the caller, data arenas and constants; each unfinished entry stops
+with \texttt{break}. Choose your own private labels, temporaries, helpers and
+frames under the public contracts. Functions, file ownership and word
+transformations are prerequisites.
+
+Answer the inline predictions, then set a breakpoint on the requested instruction
+and Debug that source. The selected paused frame and blue execution row identify
+where the program stopped. After accepting an observation, the lesson may already
+point to the next instruction in yellow. Move the breakpoint to that next target
+and use Resume in the same process. Finish the process after the final stop,
+before launching another worked program.
+
+\input{revision/figures/sha/native-pause}
+
+The implementation checks follow the dependencies: schedule, compression,
+initialization, update, finalization and file ownership. The update-only checks
+inspect a returned context before finalization is available. Construction edits
+can invalidate earlier results, so the last assessment rechecks all original
+cases on the completed source. Keep a reasoning argument beside those results;
+a finite test grid does not explain why another input should work.
 
 The algorithm is specified in
 \href{https://doi.org/10.6028/NIST.FIPS.180-4}{FIPS 180-4}.
@@ -214,11 +232,16 @@ invalid. It can still inspect its valid context. Calling update on two contexts
 in alternating order must preserve each one's independent state and tail.
 Shared read-only constants are safe; one shared mutable buffer is not.
 
-The supplied caller can exercise the full memory pipeline with mode zero.
-Its three-byte message is selected by \texttt{length}; the unused bytes after
-that interval are not part of the input. During development, stop after update
-and verify total three, used three and live bytes \texttt{61 62 63} before
-investigating the digest.
+In \texttt{worked/fill-block.asm}, the two-byte request increases the original
+byte total to 65 once, then only one byte is copied before the \texttt{block\_ready}
+pause. Used is temporarily 64 and one input byte remains. The state words have
+not absorbed the full block. This limited program stops at an internal boundary;
+your update must perform that compression and finish the remaining fragment
+before returning a valid context.
+
+With mode zero, the supplied caller uses three original bytes. After update,
+inspect total three, used three and the live prefix \texttt{61 62 63} before
+finalization.
 
 \subsection*{Prove whether padding needs one block or two}
 
@@ -250,16 +273,24 @@ compressed by update, but finalization still needs a padding block.
 \Needspace{8\baselineskip}
 Compute the bit length from the original byte total using a doubleword left
 shift by three. Serialize all eight bytes with full-width shifts. A word shift
-cannot extract the upper half correctly. Recipe \texttt{s34-2} constructs a
-context with total $2^{29}+3$ and tail \texttt{abc}. Its length field must be
-\texttt{00 00 00 01 00 00 00 18}. This is a synthetic length-serialization
-observation, not evidence that the simulator read a file of that size.
+cannot extract the upper half correctly. The public
+\texttt{worked/padding-high-length.asm} experiment supplies a synthetic original
+byte total of $2^{32}+63$ and a 63-byte unfinished tail. It constructs two final
+blocks whose length field is \texttt{00 00 00 08 00 00 01 f8}. These values let
+you inspect the high length bits without reading a file of that size. The
+experiment constructs padding bytes only; the actual compression belongs to
+your finalization function.
 
 After the final compression, serialize each of the eight numeric state words
 most significant byte first. For \texttt{abc}, the first four digest bytes are
 \texttt{ba 78 16 bf}. Storing numeric word \texttt{ba7816bf} with a native
 word store would reverse those four output bytes. Check the complete digest,
 not only this prefix, against an independent digest implementation.
+
+The \texttt{worked/serialize.asm} experiment is given the final numeric state
+for \texttt{abc}. It demonstrates this output conversion without calculating
+that state. Your compression and finalization must obtain the correct words
+before applying the same byte-order rule.
 
 \input{revision/figures/sha/native-digest}
 
@@ -287,6 +318,13 @@ complete file digest to publish. Return status two, close the acquired descripto
 and preserve all 32 destination bytes. Hashing the requested seven bytes would
 incorporate stale scratch contents; treating minus one as EOF would publish a
 digest of a prefix.
+
+The public \texttt{worked/read-prefixes.asm} program separates file ownership
+from hash arithmetic. It counts successful input bytes and publishes one count
+only at EOF. Its successful lesson fixture returns two bytes, then one, then
+EOF; the error fixture returns two bytes, then minus one, preserving the original
+output word. The SHA wrapper adds a fresh context, updates and finalization
+under the same success/failure ownership rule, applied to all 32 digest bytes.
 
 \input{revision/figures/sha/native-read-error}
 
@@ -316,8 +354,9 @@ The public file checks supply those separate controls.
 
 \subsection*{Build evidence at the boundary that can fail}
 
-Use fresh prepared sources for separate observations. The preparation tool can
-apply \texttt{s03-1} for the padded schedule input, \texttt{s11-1} for a
+Complete the independent source in place and retain the worked programs for
+separate observations. For optional standalone data experiments, the preparation
+tool can apply \texttt{s03-1} for the padded schedule input, \texttt{s11-1} for a
 compression input with the standard initial state, \texttt{s28-2} for crossing
 a buffered block boundary, and \texttt{s37-3} for two-block finalization.
 These recipes install data and controls while retaining your instruction text.

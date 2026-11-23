@@ -168,3 +168,39 @@ current public Debug observation passes actual core register/memory probes, and
 the revised archive passes its two importer/PSI tests and all 572 public tooling
 tests. Actual first/resume IDE exercise, light captures and direct LaTeX
 integration remain pending; no renewed publication evidence is claimed yet.
+
+
+## Verified first use, resume and publication
+
+The 0.2.0 lesson now passes the actual first-use and fresh-process resume
+walkthroughs. First use records 58 observations; resume records 42. All seventeen
+quiz attempts and nine edited source digests survive reopening. The nineteen
+source-bound execution checks become stale after comment edits and are renewed
+in the resumed process; every assessment count increments once. Eleven installed
+JARs match both pinned archives in both runs. Accepted logs contain no ERROR or
+SEVERE entries. Both launches execute the actual clean, cleanSandbox and runIde
+tasks. After native project closure saves progress, the scoped helper intentionally
+stops its owned IDE; Gradle reports that child's termination as 143 rather than
+natural runIde completion.
+
+The separate authoring plugin's 137 tests pass. Both packaged plugins are
+compatible with IntelliJ 2026.3 build 263.7307.200, retaining the existing 91 MARS
+and twenty authoring experimental public API usages. There are 63 first-use and
+43 resume photographs with verified hashes and light-theme metadata; four
+representative raw photographs were visually inspected.
+
+The native LaTeX companion now connects the lesson, construction prefixes,
+limited public experiments, final full recheck and debugger pointer behavior.
+Its new annotated photograph uses only the public worked schedule source before
+private assessment injection. A six-test publisher rejects stale geometry,
+incorrect state, private-source paths and captures after fixture injection. The
+raw pixels remain unchanged; all crops and callouts are native TeX.
+
+The accepted lab proof has 216 pages. Colour review covers 176–187, with grayscale
+review of 177,182,183; embedded Minion Pro, Noto Sans Math and JetBrains Mono are
+retained. PDF/UA-2 passes 1,728 rules and 1,024,284 checks with zero failures.
+The public tooling suite passes 572 tests. Structural coverage remains 27 main
+chapters, 35 original projects, 36 placements and ten companions. Detailed evidence
+and the immutable PDF pin are in native-sha-ide-01. Human learner and
+assistive-technology review remain separate; this completes automated delivery
+verification for the SHA unit, not the whole curriculum goal.

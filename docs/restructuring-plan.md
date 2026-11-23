@@ -1301,3 +1301,32 @@ and 986,035 checks with zero failures. The main learning proof remains unchanged
 Human author, learner and assistive-technology review are not claimed. The goal
 remains active; next is Chapter 20's QOI guided/free-writing delivery, beginning
 with its current sources, original contracts and publication/error boundaries.
+
+
+### SHA-256 companion: native lesson and written workflow verified
+
+The SHA companion now has its 0.2.0 student lesson: sixteen inline predictions,
+nine Debug activities/32 stops, eight prerequisite construction groups, a final
+full assessment and one Run. Eight limited public experiments support one
+continuing independent six-function implementation. Seventeen update-only cases
+allow context feedback before finalization works. All 128 original cases remain
+unchanged; the final assessment reuses them to recheck the completed revision.
+
+Actual first-use and fresh-process resume pass with all seventeen quiz attempts,
+nine edited sources and nineteen renewed execution checks accounted for. Both
+processes use the same eleven packaged JARs and have no ERROR/SEVERE log entries.
+Screenshot automation remains in the separate dependent authoring plugin. The
+full authoring suite passes 137 tests; both packaged archives remain compatible
+with the pinned IntelliJ target. All 572 public tooling tests pass.
+
+The directly edited SHA companion includes one new actual light-theme image with
+native crops, A/B annotations and a semantic description that distinguishes the
+paused instruction from the next lesson pointer. The accepted lab proof is 216
+pages and passes PDF/UA-2's 1,728 rules and 1,024,284 checks. Reviewed changed pages
+and adjacent transitions are recorded in the private verification receipts.
+Minion Pro, Noto Sans Math and IntelliJ-derived minted highlighting remain.
+
+See revision/sha-unit.md and private native-sha-ide-01 for exact scope. Human
+learner/assistive-technology review is not claimed. The curriculum goal remains
+active; the next native companion is RSA arithmetic, followed by the remaining
+book/lab progression and delivery work.
