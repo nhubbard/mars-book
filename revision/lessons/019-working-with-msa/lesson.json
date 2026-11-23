@@ -1,0 +1,1031 @@
+{
+  "formatVersion": 7,
+  "introduction": "Derive one packed pixel, then follow eight pixels through overlapping loads, channel gathers and placed fields. Use complete vector bits and memory bytes to explain the worked program before transferring the reasoning to RGB555.",
+  "conclusion": "Explain how your selected loads, field layout and tail cover exactly the requested pixels. Keep numerical words, memory byte order and debugger lane views distinct. Use the public checks as evidence alongside your argument for every allowed count.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "first-packed-word",
+      "explanation": "The first triple is red=123, green=45, blue=67. RGB565 keeps five red bits, six green bits and five blue bits. Unsigned right shifts discard three, two and three low bits, leaving 15,11,8. Place red at bit 11 and green at bit 5 before combining disjoint fields.",
+      "question": "Which numerical halfword represents this pixel?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x7968",
+          "feedback": "15×2048 + 11×32 + 8 = 31080 = 0x7968."
+        },
+        {
+          "id": "b",
+          "text": "0x3ca8",
+          "feedback": "That is the later RGB555 result: its green channel has five bits and red starts at bit 10."
+        },
+        {
+          "id": "c",
+          "text": "0x7b2d",
+          "feedback": "This joins two original channel bytes; it does not quantize and place three fields."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_gathered",
+        "mnemonic": "srli.h",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "stored-byte-order",
+      "explanation": "A numerical value and its memory representation answer different questions. The packed halfword is 0x7968. This MARS target stores the least significant byte at the lower address.",
+      "question": "Which bytes occupy the first two output addresses?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "68 79",
+          "feedback": "The low byte 0x68 comes first, followed by 0x79."
+        },
+        {
+          "id": "b",
+          "text": "79 68",
+          "feedback": "This reverses the byte order for the stated target."
+        },
+        {
+          "id": "c",
+          "text": "7b 2d",
+          "feedback": "These are the original red and green bytes, before packing."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_fields",
+        "mnemonic": "st.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "overlapping-windows",
+      "explanation": "One group contains eight RGB triples, or 24 bytes. ld.b loads 16 bytes into a vector. The worked kernel loads at input offsets zero and eight, so bytes 8 through 15 occur in both registers.",
+      "question": "What selected source interval do these two complete loads cover?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Bytes 0 through 23",
+          "feedback": "The union of [0,16) and [8,24) is [0,24). Overlap does not add another eight distinct bytes."
+        },
+        {
+          "id": "b",
+          "text": "Bytes 0 through 31",
+          "feedback": "That would describe adjacent loads at offsets zero and sixteen."
+        },
+        {
+          "id": "c",
+          "text": "Bytes 0 through 15",
+          "feedback": "The second load also supplies bytes 16 through 23."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_loaded",
+        "mnemonic": "move.v",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "selector-right-source",
+      "explanation": "In vshf.b $w4,$w1,$w0, each old destination byte supplies a selector. Selectors 0 through 15 choose bytes from the rightmost source w0; 16 through 31 choose bytes from w1. Selector bit 6 requests zero. Input byte 18 is byte 10 in the window loaded at offset eight.",
+      "question": "Which selector gathers that red byte, and which selector supplies its zero high byte?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "26 and 64",
+          "feedback": "16+10 selects w1 byte 10; 64 has the zero-producing bit set."
+        },
+        {
+          "id": "b",
+          "text": "18 and 0",
+          "feedback": "18 selects w1 byte 2, while zero selects w0 byte 0 rather than inserting zero."
+        },
+        {
+          "id": "c",
+          "text": "10 and 16",
+          "feedback": "10 selects w0 byte 10; 16 selects w1 byte 0. Neither inserts the required zero."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_loaded",
+        "mnemonic": "vshf.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "same-bits-two-views",
+      "explanation": "After the red gather, the first halfword lane contains 123. Its two bytes are 0x7b and 0x00 in increasing lane order. Each following halfword similarly holds one unsigned channel value with a zero high byte.",
+      "question": "What changes when Variables expands byte lanes instead of halfword lanes?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The grouping and interpretation of the same 128 bits",
+          "feedback": "The byte row and halfword row are views of one captured register, not separate registers."
+        },
+        {
+          "id": "b",
+          "text": "The register is converted into a different value",
+          "feedback": "Changing a displayed view does not execute an instruction or modify the machine."
+        },
+        {
+          "id": "c",
+          "text": "The high byte becomes the next pixel’s red channel",
+          "feedback": "The next red channel occupies the next halfword, after the zero high byte."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_gathered",
+        "mnemonic": "srli.h",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "control-reuse",
+      "explanation": "vshf.b reads selectors from its destination and overwrites that destination with gathered data. Later shifts and OR operations turn w4 into packed results. The next group must gather a new set of channels.",
+      "question": "Why does pack_loaded copy w16 into w4 on every group?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It restores selectors after the preceding group overwrote w4",
+          "feedback": "w16 retains the original control bytes; w4 is a working destination."
+        },
+        {
+          "id": "b",
+          "text": "It restores the original input pixels",
+          "feedback": "The input pixels are loaded into w0 and w1. w16 holds selectors."
+        },
+        {
+          "id": "c",
+          "text": "It clears the output array",
+          "feedback": "move.v copies register bits; it does not store to the output buffer."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_loaded",
+        "mnemonic": "move.v",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-32",
+      "source": "rgb-formats.asm",
+      "integerInputs": [],
+      "explanation": "Open rgb-formats.asm and start a fresh Debug session. Use one line breakpoint at a time. For repeated labels, resume to the specified visit before moving the breakpoint. The worked program requests 32 pixels. Check Variables and Memory alongside the lab explanation; stop before each selected instruction.",
+      "stops": [
+        {
+          "id": "loaded",
+          "explanation": "Before move.v, w0 contains input bytes 0–15 and w1 contains bytes 8–23. Expand their byte lanes. w4 is still zero on this first group, while w16 holds selectors. The loads have happened; the gathers have not.",
+          "anchor": {
+            "label": "pack_loaded",
+            "mnemonic": "move.v",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000020",
+            "$v0": "0x0000000000000020"
+          },
+          "vectorRegisters": {
+            "$w0": "0x08070307f74080ffffff000000432d7b",
+            "$w1": "0xdf7f1ff8fcf8080408070307f74080ff",
+            "$w4": "0x00000000000000000000000000000000",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "gathered",
+          "explanation": "Before srli.h, expand halfword lanes in w4,w5,w6. They contain eight unsigned red, green and blue values. The first lanes are 123,45,67, each with a zero high byte. Compare w4’s byte view with its halfword view; both describe the same bits.",
+          "anchor": {
+            "label": "pack_gathered",
+            "mnemonic": "srli.h",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000020",
+            "$v0": "0x0000000000000020"
+          },
+          "vectorRegisters": {
+            "$w4": "0x001f00f800080007008000ff0000007b",
+            "$w5": "0x007f00fc00040003004000ff0000002d",
+            "$w6": "0x00df00f80008000700f700ff00000043",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "fields",
+          "explanation": "Before st.b, w4 contains eight complete RGB565 halfwords. Its low halfword is 0x7968. w5 contains green fields already shifted into place, and w6 contains five-bit blue values. The selected output store has not executed yet.",
+          "anchor": {
+            "label": "pack_fields",
+            "mnemonic": "st.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000020",
+            "$v0": "0x0000000000000020"
+          },
+          "vectorRegisters": {
+            "$w4": "0x1bfbffff08210000821effff00007968",
+            "$w5": "0x03e007e000200000020007e000000160",
+            "$w6": "0x001b001f00010000001e001f00000008",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "second-loaded",
+          "explanation": "Resume to pack_loaded for the second group. a0 advanced 24 bytes, a1 advanced 16 and a2 fell from 32 to 24. w4 still contains the first group’s packed results. w16 retains the controls that the next moves will restore.",
+          "anchor": {
+            "label": "pack_loaded",
+            "mnemonic": "move.v",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010120",
+            "$a1": "0x0000000010010228",
+            "$a2": "0x0000000000000018",
+            "$v0": "0x0000000000000020"
+          },
+          "vectorRegisters": {
+            "$w0": "0x6f616367595b5f515357494b4f414347",
+            "$w1": "0x797b7f717377696b6f616367595b5f51",
+            "$w4": "0x1bfbffff08210000821effff00007968",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "second-gathered",
+          "explanation": "Resume to pack_gathered for the second group, then remove the earlier load breakpoint. The first red halfword is now 71, from input byte 24. Check the remaining channels as well: a correct first group alone cannot establish control reuse.",
+          "anchor": {
+            "label": "pack_gathered",
+            "mnemonic": "srli.h",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010120",
+            "$a1": "0x0000000010010228",
+            "$a2": "0x0000000000000018",
+            "$v0": "0x0000000000000020"
+          },
+          "vectorRegisters": {
+            "$w4": "0x007f0077006f0067005f0057004f0047",
+            "$w5": "0x007b0073006b0063005b0053004b0043",
+            "$w6": "0x00790071006900610059005100490041",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at pack_ready before its nop. The function has returned 32 in v0. Inspect packed_a: its selected 64 bytes hold the result. packed_count still contains 99 because the caller has not published the return yet. The returned count describes the complete call, not the remainder in a2.",
+          "anchor": {
+            "label": "pack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010168",
+            "$a1": "0x0000000010010258",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000020"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "expanded",
+          "explanation": "Break at unpack_ready. The caller has published packed_count=32; expansion has returned 32, but expanded_count is still 99. For a nonempty input, rgb_b begins 123,44,66. Replicating retained high bits approximates the channel values; it cannot recover the discarded low bits.",
+          "anchor": {
+            "label": "unpack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010258",
+            "$a1": "0x00000000100101f0",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000020"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "preview",
+          "explanation": "Break at preview_ready. Both published counts are now 32. The preview contains 32 original pixels and 32 expanded pixels. Compare the two rows, then relate any difference to the packed fields rather than judging correctness by appearance alone.",
+          "anchor": {
+            "label": "preview_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010258",
+            "$a1": "0x00000000100101f0",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000020"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        }
+      ],
+      "success": "You observed the count-32 call from packing through caller publication.",
+      "hints": [
+        {
+          "id": "breakpoint",
+          "text": "A breakpoint stops before the source operation executes. Move it only after the requested visit has been observed."
+        },
+        {
+          "id": "lanes",
+          "text": "Expand the vector bank and the relevant register. Lane zero is at the low end; hexadecimal register text prints the most significant digit first."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-32",
+      "source": "rgb-formats.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run rgb-formats.asm normally to completion. No console text is expected. For nonzero count, inspect the two preview rows with the bitmap tool configured by the source directive. A normal Run complements the paused observations; a picture alone does not check the packed byte values.",
+      "success": "The count-32 source completed with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "group-and-tail",
+      "explanation": "The vector path handles eight pixels per iteration. It subtracts eight from a2 after its two loads and one output store, then tests whether another complete group remains. A scalar tail handles the remaining pixels.",
+      "question": "For count seventeen, how much work belongs to each path?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Two vector groups and one scalar pixel",
+          "feedback": "Sixteen pixels consume 48 input bytes and produce 32 packed bytes; one pixel remains."
+        },
+        {
+          "id": "b",
+          "text": "One vector group and nine scalar pixels",
+          "feedback": "That computes a result but does not describe this worked group loop, which runs again while eight pixels remain."
+        },
+        {
+          "id": "c",
+          "text": "Three vector groups",
+          "feedback": "The third would require pixels beyond the selected seventeen."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_tail",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-17",
+      "source": "worked/count-17.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-17.asm and start a fresh Debug session. Use one line breakpoint at a time. For repeated labels, resume to the specified visit before moving the breakpoint. The worked program requests 17 pixels. Check Variables and Memory alongside the lab explanation; stop before each selected instruction.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break before pack_tail’s beqzc. Count 17 has completed 2 vector group(s), consuming 48 input bytes and writing 32 packed bytes. a2 is 1. w4 retains the last complete group’s packed result; w16 retains the red controls.",
+          "anchor": {
+            "label": "pack_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010138",
+            "$a1": "0x0000000010010238",
+            "$a2": "0x0000000000000001",
+            "$v0": "0x0000000000000011"
+          },
+          "vectorRegisters": {
+            "$w4": "0x7bcf738e6b4d630c5acb528a4a494208",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "scalar-pixel",
+          "explanation": "Break before pack_pixel’s first lbu. The remaining count is 1; the next scalar pixel begins after 48 input bytes. This path reads exactly three bytes and writes two for each remaining pixel. Its first load has not executed.",
+          "anchor": {
+            "label": "pack_pixel",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010138",
+            "$a1": "0x0000000010010238",
+            "$a2": "0x0000000000000001",
+            "$v0": "0x0000000000000011"
+          },
+          "vectorRegisters": {
+            "$w4": "0x7bcf738e6b4d630c5acb528a4a494208",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at pack_ready before its nop. The function has returned 17 in v0. Inspect packed_a: its selected 34 bytes hold the result. packed_count still contains 99 because the caller has not published the return yet. The returned count describes the complete call, not the remainder in a2.",
+          "anchor": {
+            "label": "pack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001013b",
+            "$a1": "0x000000001001023a",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000011"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "expanded",
+          "explanation": "Break at unpack_ready. The caller has published packed_count=17; expansion has returned 17, but expanded_count is still 99. For a nonempty input, rgb_b begins 123,44,66. Replicating retained high bits approximates the channel values; it cannot recover the discarded low bits.",
+          "anchor": {
+            "label": "unpack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001023a",
+            "$a1": "0x00000000100101c3",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000011"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "preview",
+          "explanation": "Break at preview_ready. Both published counts are now 17. The preview contains 17 original pixels and 17 expanded pixels. Compare the two rows, then relate any difference to the packed fields rather than judging correctness by appearance alone.",
+          "anchor": {
+            "label": "preview_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001023a",
+            "$a1": "0x00000000100101c3",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000011"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        }
+      ],
+      "success": "You observed the count-17 call from packing through caller publication.",
+      "hints": [
+        {
+          "id": "breakpoint",
+          "text": "A breakpoint stops before the source operation executes. Move it only after the requested visit has been observed."
+        },
+        {
+          "id": "lanes",
+          "text": "Expand the vector bank and the relevant register. Lane zero is at the low end; hexadecimal register text prints the most significant digit first."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-17",
+      "source": "worked/count-17.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-17.asm normally to completion. No console text is expected. For nonzero count, inspect the two preview rows with the bitmap tool configured by the source directive. A normal Run complements the paused observations; a picture alone does not check the packed byte values.",
+      "success": "The count-17 source completed with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-0",
+      "source": "worked/count-0.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-0.asm and start a fresh Debug session. Use one line breakpoint at a time. For repeated labels, resume to the specified visit before moving the breakpoint. The worked program requests 0 pixels. Check Variables and Memory alongside the lab explanation; stop before each selected instruction.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break before pack_tail’s beqzc. Count 0 has completed 0 vector group(s), consuming 0 input bytes and writing 0 packed bytes. a2 is 0. No controls were needed and the vector bank is still zero.",
+          "anchor": {
+            "label": "pack_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w4": "0x00000000000000000000000000000000",
+            "$w16": "0x00000000000000000000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at pack_ready before its nop. The function has returned 0 in v0. Inspect packed_a: its selected 0 bytes hold the result. packed_count still contains 99 because the caller has not published the return yet. With zero count, neither input nor output buffer was accessed.",
+          "anchor": {
+            "label": "pack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "expanded",
+          "explanation": "Break at unpack_ready. The caller has published packed_count=0; expansion has returned 0, but expanded_count is still 99. For a nonempty input, rgb_b begins 123,44,66. Replicating retained high bits approximates the channel values; it cannot recover the discarded low bits.",
+          "anchor": {
+            "label": "unpack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010218",
+            "$a1": "0x0000000010010190",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "preview",
+          "explanation": "Break at preview_ready. Both published counts are now 0. The zero-count branch skipped every preview pixel.",
+          "anchor": {
+            "label": "preview_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010218",
+            "$a1": "0x0000000010010190",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        }
+      ],
+      "success": "You observed the count-0 call from packing through caller publication.",
+      "hints": [
+        {
+          "id": "breakpoint",
+          "text": "A breakpoint stops before the source operation executes. Move it only after the requested visit has been observed."
+        },
+        {
+          "id": "lanes",
+          "text": "Expand the vector bank and the relevant register. Lane zero is at the low end; hexadecimal register text prints the most significant digit first."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-0",
+      "source": "worked/count-0.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-0.asm normally to completion. No console text is expected. For nonzero count, inspect the two preview rows with the bitmap tool configured by the source directive. A normal Run complements the paused observations; a picture alone does not check the packed byte values.",
+      "success": "The count-0 source completed with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-7",
+      "source": "worked/count-7.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-7.asm and start a fresh Debug session. Use one line breakpoint at a time. For repeated labels, resume to the specified visit before moving the breakpoint. The worked program requests 7 pixels. Check Variables and Memory alongside the lab explanation; stop before each selected instruction.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break before pack_tail’s beqzc. Count 7 has completed 0 vector group(s), consuming 0 input bytes and writing 0 packed bytes. a2 is 7. No controls were needed and the vector bank is still zero.",
+          "anchor": {
+            "label": "pack_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000007",
+            "$v0": "0x0000000000000007"
+          },
+          "vectorRegisters": {
+            "$w4": "0x00000000000000000000000000000000",
+            "$w16": "0x00000000000000000000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "scalar-pixel",
+          "explanation": "Break before pack_pixel’s first lbu. The remaining count is 7; the next scalar pixel begins after 0 input bytes. This path reads exactly three bytes and writes two for each remaining pixel. Its first load has not executed.",
+          "anchor": {
+            "label": "pack_pixel",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010108",
+            "$a1": "0x0000000010010218",
+            "$a2": "0x0000000000000007",
+            "$v0": "0x0000000000000007"
+          },
+          "vectorRegisters": {
+            "$w4": "0x00000000000000000000000000000000",
+            "$w16": "0x00000000000000000000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at pack_ready before its nop. The function has returned 7 in v0. Inspect packed_a: its selected 14 bytes hold the result. packed_count still contains 99 because the caller has not published the return yet. The returned count describes the complete call, not the remainder in a2.",
+          "anchor": {
+            "label": "pack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001011d",
+            "$a1": "0x0000000010010226",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "expanded",
+          "explanation": "Break at unpack_ready. The caller has published packed_count=7; expansion has returned 7, but expanded_count is still 99. For a nonempty input, rgb_b begins 123,44,66. Replicating retained high bits approximates the channel values; it cannot recover the discarded low bits.",
+          "anchor": {
+            "label": "unpack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010226",
+            "$a1": "0x00000000100101a5",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "preview",
+          "explanation": "Break at preview_ready. Both published counts are now 7. The preview contains 7 original pixels and 7 expanded pixels. Compare the two rows, then relate any difference to the packed fields rather than judging correctness by appearance alone.",
+          "anchor": {
+            "label": "preview_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010226",
+            "$a1": "0x00000000100101a5",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        }
+      ],
+      "success": "You observed the count-7 call from packing through caller publication.",
+      "hints": [
+        {
+          "id": "breakpoint",
+          "text": "A breakpoint stops before the source operation executes. Move it only after the requested visit has been observed."
+        },
+        {
+          "id": "lanes",
+          "text": "Expand the vector bank and the relevant register. Lane zero is at the low end; hexadecimal register text prints the most significant digit first."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-7",
+      "source": "worked/count-7.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-7.asm normally to completion. No console text is expected. For nonzero count, inspect the two preview rows with the bitmap tool configured by the source directive. A normal Run complements the paused observations; a picture alone does not check the packed byte values.",
+      "success": "The count-7 source completed with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-8",
+      "source": "worked/count-8.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-8.asm and start a fresh Debug session. Use one line breakpoint at a time. For repeated labels, resume to the specified visit before moving the breakpoint. The worked program requests 8 pixels. Check Variables and Memory alongside the lab explanation; stop before each selected instruction.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break before pack_tail’s beqzc. Count 8 has completed 1 vector group(s), consuming 24 input bytes and writing 16 packed bytes. a2 is 0. w4 retains the last complete group’s packed result; w16 retains the red controls.",
+          "anchor": {
+            "label": "pack_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010120",
+            "$a1": "0x0000000010010228",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000008"
+          },
+          "vectorRegisters": {
+            "$w4": "0x1bfbffff08210000821effff00007968",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at pack_ready before its nop. The function has returned 8 in v0. Inspect packed_a: its selected 16 bytes hold the result. packed_count still contains 99 because the caller has not published the return yet. The returned count describes the complete call, not the remainder in a2.",
+          "anchor": {
+            "label": "pack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010120",
+            "$a1": "0x0000000010010228",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000008"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "expanded",
+          "explanation": "Break at unpack_ready. The caller has published packed_count=8; expansion has returned 8, but expanded_count is still 99. For a nonempty input, rgb_b begins 123,44,66. Replicating retained high bits approximates the channel values; it cannot recover the discarded low bits.",
+          "anchor": {
+            "label": "unpack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010228",
+            "$a1": "0x00000000100101a8",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000008"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "preview",
+          "explanation": "Break at preview_ready. Both published counts are now 8. The preview contains 8 original pixels and 8 expanded pixels. Compare the two rows, then relate any difference to the packed fields rather than judging correctness by appearance alone.",
+          "anchor": {
+            "label": "preview_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010228",
+            "$a1": "0x00000000100101a8",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000008"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        }
+      ],
+      "success": "You observed the count-8 call from packing through caller publication.",
+      "hints": [
+        {
+          "id": "breakpoint",
+          "text": "A breakpoint stops before the source operation executes. Move it only after the requested visit has been observed."
+        },
+        {
+          "id": "lanes",
+          "text": "Expand the vector bank and the relevant register. Lane zero is at the low end; hexadecimal register text prints the most significant digit first."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-8",
+      "source": "worked/count-8.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-8.asm normally to completion. No console text is expected. For nonzero count, inspect the two preview rows with the bitmap tool configured by the source directive. A normal Run complements the paused observations; a picture alone does not check the packed byte values.",
+      "success": "The count-8 source completed with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-9",
+      "source": "worked/count-9.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-9.asm and start a fresh Debug session. Use one line breakpoint at a time. For repeated labels, resume to the specified visit before moving the breakpoint. The worked program requests 9 pixels. Check Variables and Memory alongside the lab explanation; stop before each selected instruction.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break before pack_tail’s beqzc. Count 9 has completed 1 vector group(s), consuming 24 input bytes and writing 16 packed bytes. a2 is 1. w4 retains the last complete group’s packed result; w16 retains the red controls.",
+          "anchor": {
+            "label": "pack_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010120",
+            "$a1": "0x0000000010010228",
+            "$a2": "0x0000000000000001",
+            "$v0": "0x0000000000000009"
+          },
+          "vectorRegisters": {
+            "$w4": "0x1bfbffff08210000821effff00007968",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "scalar-pixel",
+          "explanation": "Break before pack_pixel’s first lbu. The remaining count is 1; the next scalar pixel begins after 24 input bytes. This path reads exactly three bytes and writes two for each remaining pixel. Its first load has not executed.",
+          "anchor": {
+            "label": "pack_pixel",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010120",
+            "$a1": "0x0000000010010228",
+            "$a2": "0x0000000000000001",
+            "$v0": "0x0000000000000009"
+          },
+          "vectorRegisters": {
+            "$w4": "0x1bfbffff08210000821effff00007968",
+            "$w16": "0x401d401a400f400c4009400640034000"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at pack_ready before its nop. The function has returned 9 in v0. Inspect packed_a: its selected 18 bytes hold the result. packed_count still contains 99 because the caller has not published the return yet. The returned count describes the complete call, not the remainder in a2.",
+          "anchor": {
+            "label": "pack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010123",
+            "$a1": "0x000000001001022a",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000009"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "expanded",
+          "explanation": "Break at unpack_ready. The caller has published packed_count=9; expansion has returned 9, but expanded_count is still 99. For a nonempty input, rgb_b begins 123,44,66. Replicating retained high bits approximates the channel values; it cannot recover the discarded low bits.",
+          "anchor": {
+            "label": "unpack_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001022a",
+            "$a1": "0x00000000100101ab",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000009"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        },
+        {
+          "id": "preview",
+          "explanation": "Break at preview_ready. Both published counts are now 9. The preview contains 9 original pixels and 9 expanded pixels. Compare the two rows, then relate any difference to the packed fields rather than judging correctness by appearance alone.",
+          "anchor": {
+            "label": "preview_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001022a",
+            "$a1": "0x00000000100101ab",
+            "$a2": "0x0000000000000000",
+            "$v0": "0x0000000000000009"
+          },
+          "success": "The captured state matches this boundary. Explain which operation has completed and which has not."
+        }
+      ],
+      "success": "You observed the count-9 call from packing through caller publication.",
+      "hints": [
+        {
+          "id": "breakpoint",
+          "text": "A breakpoint stops before the source operation executes. Move it only after the requested visit has been observed."
+        },
+        {
+          "id": "lanes",
+          "text": "Expand the vector bank and the relevant register. Lane zero is at the low end; hexadecimal register text prints the most significant digit first."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-9",
+      "source": "worked/count-9.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-9.asm normally to completion. No console text is expected. For nonzero count, inspect the two preview rows with the bitmap tool configured by the source directive. A normal Run complements the paused observations; a picture alone does not check the packed byte values.",
+      "success": "The count-9 source completed with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "expansion-loss",
+      "explanation": "Packing the first pixel discarded three red bits, two green bits and three blue bits. Expansion fills low bits by repeating retained high bits. The original was 123,45,67; the expanded triple is 123,44,66.",
+      "question": "Why is exact recovery of every original channel impossible?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Different original channels can have the same retained high bits",
+          "feedback": "Discarded bits are absent from the packed word. Replication supplies an approximation, not the original discarded data."
+        },
+        {
+          "id": "b",
+          "text": "The vector register is too short to hold one pixel",
+          "feedback": "A 128-bit register easily holds one pixel; quantization intentionally discards information."
+        },
+        {
+          "id": "c",
+          "text": "Little-endian storage changes the numerical channel value",
+          "feedback": "Loading the stored representation correctly recovers the packed word. Byte order does not undo quantization."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "unpack_continue",
+        "mnemonic": "dla",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "rgb555-interface",
+      "explanation": "The independent routine uses RGB555: five retained bits for each channel, red starting at bit 10 and green at bit 5. Bit 15 must remain zero. Preserve passed pointers and selected intervals; do not round a destination address to a wider alignment.",
+      "question": "What packed value represents white, with all three original channels equal to 255?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x7fff",
+          "feedback": "Each retained value is 31: (31<<10)|(31<<5)|31 = 0x7fff. The top bit is zero."
+        },
+        {
+          "id": "b",
+          "text": "0xffff",
+          "feedback": "That uses the extra green bit of RGB565 and sets bit 15."
+        },
+        {
+          "id": "c",
+          "text": "0x00ff",
+          "feedback": "That omits the red and green fields."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "pack_fields",
+        "mnemonic": "st.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "rgb555",
+      "source": "independent/rgb555.asm",
+      "caseProfile": "independent/rgb555.cases.json",
+      "checkKind": "function",
+      "explanation": "Write pack_rgb555 under independent/README.md’s contract. Begin with a scalar derivation, then choose your vector and tail strategy. The starter deliberately stops with break. Use the native checker on your current source; edits and retries are expected. Read the first failed value or access before changing the implementation.",
+      "success": "All 34 function/caller cases pass for the current source. Explain your field positions, selected-interval bounds and saved-state restoration; the finite checks do not replace that reasoning.",
+      "hints": [
+        {
+          "id": "fields",
+          "text": "Keep five bits per channel. Green shifts right by three; red occupies bits 14–10. Derive a scalar pixel before scheduling vector lanes."
+        },
+        {
+          "id": "bounds",
+          "text": "For n pixels, select 3*n input bytes and 2*n output bytes. Handle complete vector groups only while all their load/store widths fit; handle the remainder separately."
+        },
+        {
+          "id": "return",
+          "text": "Return the original count in v0 through the incoming continuation. Preserve full saved registers and sp; a result in memory alone does not satisfy the interface."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/rgb555.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "explanation": "Run the separate normal-exit check for the same independent source. This follows the complete caller through its ordinary silent exit, after the function/caller value checks.",
+      "success": "The complete RGB555 program exits normally with no console output."
+    }
+  ]
+}

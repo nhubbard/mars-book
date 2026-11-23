@@ -53,3 +53,33 @@ class Rgb555LessonCasesTests(unittest.TestCase):
             self.assertEqual(rgb.profile(),json.loads((path/'rgb555.cases.json').read_text()))
             (path/'rgb555.cases.json').write_text('{}')
             with self.assertRaises(ValueError):rgb.build(path,check=True)
+
+class MsaNativePackageTests(unittest.TestCase):
+    def test_complete_sources_preserve_the_written_program_with_only_count_changes(self):
+        root=Path(__file__).resolve().parents[1]
+        unit=root/'revision/lessons/019-working-with-msa'
+        source=(unit/'rgb-formats.asm').read_text()
+        self.assertEqual((root/'revision/labs/files/rgb-formats.asm').read_text(),source)
+        for count in [0,7,8,9,17]:
+            self.assertEqual(source.replace('count: .word 32',f'count: .word {count}'),(unit/f'worked/count-{count}.asm').read_text())
+
+    def test_archive_exports_all_six_routes_and_bounded_independent_profiles(self):
+        from native_lesson import bundle
+        import zipfile
+        root=Path(__file__).resolve().parents[1]
+        unit=root/'revision/lessons/019-working-with-msa'
+        manifest=json.loads((unit/'package.json').read_text());lesson=json.loads((unit/'lesson.json').read_text())
+        self.assertEqual(7,lesson['formatVersion'])
+        self.assertEqual(9,sum(step['kind']=='prediction' for step in lesson['steps']))
+        self.assertEqual(31,sum(len(step['stops']) for step in lesson['steps'] if step['kind']=='debug'))
+        self.assertEqual(6,sum(step['kind']=='run' for step in lesson['steps']))
+        self.assertEqual(2,sum(step['kind']=='assessment' for step in lesson['steps']))
+        with tempfile.TemporaryDirectory() as temporary:
+            archive=bundle(unit,Path(temporary)/'student.zip')
+            with zipfile.ZipFile(archive) as opened:
+                expected={manifest['id']+'/'+name for name in ['package.json',manifest['entry'],manifest['assignment'],manifest['nativeLesson'],*manifest['supportingFiles']]}
+                self.assertEqual(expected,set(opened.namelist()))
+                for step in lesson['steps']:
+                    self.assertIn(manifest['id']+'/'+step.get('source',manifest['entry']),expected)
+                    if step['kind']=='assessment':self.assertIn(manifest['id']+'/'+step['caseProfile'],expected)
+                self.assertFalse(any('solution' in name or 'reference' in name or 'private' in name for name in expected))

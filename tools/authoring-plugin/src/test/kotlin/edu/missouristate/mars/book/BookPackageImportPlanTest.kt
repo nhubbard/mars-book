@@ -287,6 +287,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `msa walkthrough isolates its exact source and single private fixture`() {
+        val msa = plan.copy(archives = listOf(archive.copy(id = "019-working-with-msa", entry = "rgb-formats.asm")),
+            nativePredictions = true, msaUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/rgb555.asm", "/tmp/msa.asm", "c".repeat(64))))
+        msa.validate()
+        msa.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(msa.copy(nativePredictions = false), msa.copy(nativeExecution = true),
+            msa.copy(nativeDebug = true), msa.copy(memoryUnit = true), msa.copy(loopUnit = true),
+            msa.copy(functionUnit = true), msa.copy(spriteUnit = true), msa.copy(rasterUnit = true), msa.copy(lifeUnit = true), msa.copy(sortingUnit = true), msa.copy(fixedUnit = true), msa.copy(localityUnit = true), msa.copy(boundedUnit = true), msa.copy(measurementUnit = true), msa.copy(assessmentFixtures = emptyList()),
+            msa.copy(archives = listOf(archive)), msa.copy(resumeCompleted = true), msa.copy(msaUnit = false),
+            msa.copy(activityNavigation = true), msa.copy(prerequisiteControls = true),
+            msa.copy(assessmentFixtures = msa.assessmentFixtures + msa.assessmentFixtures),
+            msa.copy(assessmentFixtures = listOf(msa.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

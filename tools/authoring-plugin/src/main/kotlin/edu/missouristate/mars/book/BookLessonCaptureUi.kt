@@ -60,8 +60,11 @@ internal fun configureBookPresentation(project: Project) {
     LangManager.getInstance().updateLangSupport("MARS_MIPS")
 }
 
-internal suspend fun awaitBookDebugRegisters(project: Project, handler: ProcessHandler, expected: Map<String, Long>): List<String> {
-    val view = lessonDebugRegisterView
+internal suspend fun awaitBookDebugRegisters(project: Project, handler: ProcessHandler, expected: Map<String, Long>, vectors: Map<String, String> = emptyMap()): List<String> {
+    val view = if (vectors.isEmpty()) lessonDebugRegisterView else BookDebuggerTreeView(
+        expand = listOf(listOf("Integer registers"), listOf("MSA vector registers"), listOf("MSA vector registers", "\$w4")),
+        reveal = listOf("MSA vector registers", "\$w4"),
+    )
     while (true) {
         val rows = withContext(Dispatchers.EDT) {
             val descriptor = RunContentManager.getInstance(project).findContentDescriptor(
@@ -79,7 +82,7 @@ internal suspend fun awaitBookDebugRegisters(project: Project, handler: ProcessH
             if (tree == null || !applyDebuggerTreeView(tree, view)) emptyList()
             else (0 until tree.rowCount).map { renderedDebuggerRow(tree, tree.getPathForRow(it)) }
         }
-        if (expected.all { (register, value) -> lessonRegisterValue(rows, register) == value }) return rows
+        if (expected.all { (register, value) -> lessonRegisterValue(rows, register) == value } && vectors.all { (register, value) -> lessonVectorValue(rows, register) == value.lowercase() }) return rows
         delay(100)
     }
 }
