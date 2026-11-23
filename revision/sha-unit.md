@@ -82,3 +82,37 @@ enforced progression/hint policies for this advanced companion remain open.
 The overall goal remains active. The RSA companion is next, followed by WAV,
 PNG and the retained lossless/H.263 video sequence. The deferred opening
 explanation of MARS versus hardware has not been added.
+
+
+## Native assessment conversion, 23 November 2026
+
+The public `tools/sha_lesson_cases.py` model now represents all 128 original
+correctness cases in 33 bounded function-case profiles (format 16). The original
+286 observed calls remain in their original sessions; twelve additional native
+calls execute actual main dispatch before the real caller windows. All cases
+retain their original 100,000/3,000,000 instruction budgets and actual exit.
+Profiles split at the existing ten-million aggregate instruction allowance.
+
+Expected memory covers the specified schedule/state words, context fields and
+active tail, or final digest. Reserved bytes, inactive context buffer and private
+workspace values remain unspecified. The observation history and store-only
+policy cover the whole assembled `data` through `status + 4` span, including
+unnamed gaps; object policies retain the original read permissions. File cases
+retain exact fixture contents, short-read and error settings, actual descriptor
+ownership and successive calls in one machine.
+
+Private qualification compares every input, argument, specified result interval,
+permission and file setting against the original runtime observations in four
+implementations, including a variant that clears reserved context bytes. The
+native checks accept those implementations, reject the fourteen historical
+injected faults and unfinished starter, and retain the gap-store and later-error
+output-preservation boundaries. The production plugin parser reads the exact 33
+profiles in a Jupiter fixture test. Public host-model tests bind the four
+original check-script digests and compare normal-message arithmetic/padding with
+Python's independent SHA-256 engine.
+
+This completes assessment preparation only. The new native lesson package,
+student-facing activities, source pointers, saved/resume IDE walkthrough and
+integration into the written companion still need to be completed. Existing
+LaTeX and earlier capture evidence remain authoritative; no new PDF or screenshot
+is claimed by this step.
