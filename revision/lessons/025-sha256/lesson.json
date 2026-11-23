@@ -1,0 +1,1381 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read the SHA-256 companion in the written lab. Predict byte order and state dependencies, inspect the six short worked sources, then implement the six interfaces in one continuing independent source. The worked experiments are deliberately limited: a first schedule prefix, one round, padding construction, and a pending block before compression. They are not a complete hash implementation. Predictions and checks are inline in MARS Learning. Finish each Debug process before another launch or source edit.",
+  "conclusion": "Explain how the original-byte count, unfinished buffer and compressed state describe one logical message across calls. Derive the 55/56 boundary and full-width length encoding, then explain why EOF may publish a digest while a read error may not. Keep an earliest-boundary debugging argument and a reuse case of your own.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "decode-order",
+      "source": "worked/schedule.asm",
+      "anchor": {
+        "label": "decode_word",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      },
+      "explanation": "The input is a sequence of bytes. SHA-256 reads the first four as a big-endian numeric word, even though MARS stores ordinary numeric words in little-endian order.",
+      "question": "Which word do bytes 61 62 63 80 represent?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "61626380",
+          "feedback": "The first input byte contributes bits 31 through 24."
+        },
+        {
+          "id": "b",
+          "text": "80636261",
+          "feedback": "That is the value a native little-endian word load would obtain from these four input bytes."
+        },
+        {
+          "id": "c",
+          "text": "61626300",
+          "feedback": "The 80 marker belongs to this padded block and contributes the final byte of its first word."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "numeric-storage",
+      "source": "worked/schedule.asm",
+      "anchor": {
+        "label": "decoded_word",
+        "mnemonic": "sw",
+        "occurrence": 0
+      },
+      "explanation": "After decoding, t0 holds numeric word 61626380. The schedule is an array of numeric words, so sw uses ordinary simulator storage order.",
+      "question": "Which bytes does that store place in the schedule?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "61 62 63 80",
+          "feedback": "That would copy the block byte order rather than store this numeric word with sw."
+        },
+        {
+          "id": "b",
+          "text": "80 63 62 61",
+          "feedback": "Those bytes represent numeric word 61626380 in little-endian memory."
+        },
+        {
+          "id": "c",
+          "text": "36 31 36 32",
+          "feedback": "Those are text digits. Neither the block nor the numeric schedule stores hexadecimal text."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "decode-and-extend",
+      "source": "worked/schedule.asm",
+      "explanation": "Follow the first decoded word, the sixteen input words and the first four recurrence results. This experiment intentionally stops after W19; the independent schedule must produce all 64 words.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "decoded_word",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000061626380",
+            "$s2": "0x0000000000000010"
+          },
+          "explanation": "t0 is 61626380 before the first store. The byte loads and shifts constructed the numeric word explicitly.",
+          "success": "t0 is 61626380 before the first store. The byte loads and shifts constructed the numeric word explicitly."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "words_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s2": "0x0000000000000000"
+          },
+          "explanation": "All sixteen input words are stored. W15 is 00000018 because this three-byte message has 24 original bits.",
+          "success": "All sixteen input words are stored. W15 is 00000018 because this three-byte message has 24 original bits."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "expanded_word",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t6": "0x0000000061626380",
+            "$s2": "0x0000000000000004"
+          },
+          "explanation": "W16 is 61626380. Identify its four predecessors at offsets -64,-60,-28,-8 from the destination pointer.",
+          "success": "W16 is 61626380. Identify its four predecessors at offsets -64,-60,-28,-8 from the destination pointer."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "expanded_word",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t6": "0x00000000000f0000",
+            "$s2": "0x0000000000000003"
+          },
+          "explanation": "W17 is 000f0000. Resume from the preceding store to reach this second visit to the same label.",
+          "success": "W17 is 000f0000. Resume from the preceding store to reach this second visit to the same label."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "expanded_word",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t6": "0x000000007da86405",
+            "$s2": "0x0000000000000002"
+          },
+          "explanation": "W18 is 7da86405. The recurrence uses previously expanded words when their indices require them.",
+          "success": "W18 is 7da86405. The recurrence uses previously expanded words when their indices require them."
+        },
+        {
+          "id": "boundary-6",
+          "anchor": {
+            "label": "expanded_word",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t6": "0x00000000600003c6",
+            "$s2": "0x0000000000000001"
+          },
+          "explanation": "W19 is 600003c6. The instruction about to execute will publish this word.",
+          "success": "W19 is 600003c6. The instruction about to execute will publish this word."
+        },
+        {
+          "id": "boundary-7",
+          "anchor": {
+            "label": "schedule_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s2": "0x0000000000000000"
+          },
+          "explanation": "Inspect schedule words 0 through 19. Words 20 through 63 have not been computed by this limited experiment.",
+          "success": "Inspect schedule words 0 through 19. Words 20 through 63 have not been computed by this limited experiment."
+        }
+      ],
+      "success": "Explain the observed values and the next operation before continuing.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Debug the named source. At a requested breakpoint the highlighted instruction has not executed. Set one requested breakpoint at a time, inspect the selected paused frame, and finish the process after the final stop."
+        },
+        {
+          "id": "compare",
+          "text": "Find the first incorrect boundary. Read scalar low words separately from sign extension; inspect memory bytes when the interface specifies bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "schedule-predecessor",
+      "source": "worked/schedule.asm",
+      "anchor": {
+        "label": "expand_word",
+        "mnemonic": "lw",
+        "occurrence": 0
+      },
+      "explanation": "s1 points to the destination for Wt. A word occupies four bytes. The small sigma-zero input is W(t-15).",
+      "question": "Which displacement selects that input?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "-15 bytes",
+          "feedback": "This is a byte-addressed machine. The index difference must be multiplied by the element size."
+        },
+        {
+          "id": "b",
+          "text": "-64 bytes",
+          "feedback": "That selects W(t-16), a different term in the recurrence."
+        },
+        {
+          "id": "c",
+          "text": "-60 bytes",
+          "feedback": "Fifteen preceding words occupy 15 times four bytes."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-schedule",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-schedule-000.cases.json"
+      ],
+      "explanation": "In independent/sha256.asm, replace only sha256_schedule first. Produce all 64 numeric words from any supplied 64-byte block. The entry currently stops with break. Unfinished functions outside this group need not work yet.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Separate the sixteen byte-decoding iterations from the 48 recurrence iterations."
+        },
+        {
+          "id": "reason-2",
+          "text": "Use logical shifts in the small sigmas and reduce additions to 32-bit words. An unaligned input still consists of 64 legal bytes."
+        },
+        {
+          "id": "reason-3",
+          "text": "Derive predecessor offsets from your destination pointer. Return v0=0 and preserve the saved registers; write only the selected 256 schedule bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "round-dependencies",
+      "source": "worked/round.asm",
+      "anchor": {
+        "label": "round_sums",
+        "mnemonic": "addu",
+        "occurrence": 0
+      },
+      "explanation": "One round computes T1 and T2 from the old a through h. Both new a and new e consume T1; new e also needs old d.",
+      "question": "Which expression gives new e?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "old d + T1 modulo 2^32",
+          "feedback": "Retain old d until this sum is ready, then shift the working words."
+        },
+        {
+          "id": "b",
+          "text": "new d + T1",
+          "feedback": "New d is old c. Substituting it changes this round."
+        },
+        {
+          "id": "c",
+          "text": "old e + T2",
+          "feedback": "T2 contributes to new a, not to new e."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "follow-one-round",
+      "source": "worked/round.asm",
+      "explanation": "This source performs exactly one round for the padded abc block. Its result is a working state, not the completed compression or digest.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "round_inputs",
+            "mnemonic": "rotr",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x000000006a09e667",
+            "$s1": "0xffffffffbb67ae85",
+            "$s2": "0x000000003c6ef372",
+            "$s3": "0xffffffffa54ff53a",
+            "$s4": "0x00000000510e527f",
+            "$s5": "0xffffffff9b05688c",
+            "$s6": "0x000000001f83d9ab",
+            "$s7": "0x000000005be0cd19"
+          },
+          "explanation": "The eight working words start from the supplied initial state. Identify each low word a through h.",
+          "success": "The eight working words start from the supplied initial state. Identify each low word a through h."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "first_sum",
+            "mnemonic": "rotr",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000054da50e8"
+          },
+          "explanation": "T1 is 54da50e8. It includes old h, the large sigma of e, choice, K0 and W0.",
+          "success": "T1 is 54da50e8. It includes old h, the large sigma of e, choice, K0 and W0."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "round_sums",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000054da50e8",
+            "$t4": "0x0000000008909ae5"
+          },
+          "explanation": "T2 is 08909ae5. It combines the large sigma of a and majority, using the old working state.",
+          "success": "T2 is 08909ae5. It combines the large sigma of a and majority, using the old working state."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "new_words",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t5": "0x000000005d6aebcd",
+            "$t6": "0xfffffffffa2a4622"
+          },
+          "explanation": "New a is 5d6aebcd and new e is fa2a4622. Both are ready before any old state word is overwritten.",
+          "success": "New a is 5d6aebcd and new e is fa2a4622. Both are ready before any old state word is overwritten."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "round_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x000000005d6aebcd",
+            "$s1": "0x000000006a09e667",
+            "$s2": "0xffffffffbb67ae85",
+            "$s3": "0x000000003c6ef372",
+            "$s4": "0xfffffffffa2a4622",
+            "$s5": "0x00000000510e527f",
+            "$s6": "0xffffffff9b05688c",
+            "$s7": "0x000000001f83d9ab"
+          },
+          "explanation": "Inspect all eight words in round_state. The input state is unchanged; no feed-forward has been performed.",
+          "success": "Inspect all eight words in round_state. The input state is unchanged; no feed-forward has been performed."
+        }
+      ],
+      "success": "Explain the observed values and the next operation before continuing.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Debug the named source. At a requested breakpoint the highlighted instruction has not executed. Set one requested breakpoint at a time, inspect the selected paused frame, and finish the process after the final stop."
+        },
+        {
+          "id": "compare",
+          "text": "Find the first incorrect boundary. Read scalar low words separately from sign extension; inspect memory bytes when the interface specifies bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "feed-forward",
+      "source": "worked/round.asm",
+      "anchor": {
+        "label": "round_ready",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "A complete compression performs 64 rounds. Its final working state is then combined with the state supplied at entry.",
+      "question": "What must be added during feed-forward?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The initial constants on every call",
+          "feedback": "Later blocks receive the previous compressed state, which generally differs from the initial constants."
+        },
+        {
+          "id": "b",
+          "text": "Each corresponding original state word",
+          "feedback": "The input state survives until the final eight additions."
+        },
+        {
+          "id": "c",
+          "text": "The original message bytes",
+          "feedback": "Message bytes affect the schedule. Feed-forward adds state words to corresponding working words."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-compression",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-compression-000.cases.json"
+      ],
+      "explanation": "Implement sha256_compress in the same independent source. Use your schedule, perform all 64 rounds, and add the original eight state words. These cases vary the input state as well as the block.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Write a table for old a through h and each new destination before selecting registers."
+        },
+        {
+          "id": "reason-2",
+          "text": "Keep the original state available independently of the rotating working allocation. A helper call also requires preserving your own return address."
+        },
+        {
+          "id": "reason-3",
+          "text": "Use the 256-byte workspace freely within its contract. The checks require the compressed state, not one particular final workspace pattern."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "original-byte-total",
+      "source": "worked/fill-block.asm",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "ld",
+        "occurrence": 0
+      },
+      "explanation": "The context has a 64-bit count of original message bytes, a used count and a 64-byte unfinished block. This experiment supplies two more original bytes.",
+      "question": "How much should this update add to the original-byte total?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Sixty-four bytes because a block becomes full",
+          "feedback": "The block already held 63 original bytes; only the new input contributes to this update."
+        },
+        {
+          "id": "b",
+          "text": "The original bytes plus eventual padding",
+          "feedback": "The length field describes the original message, before the marker and padding are added."
+        },
+        {
+          "id": "c",
+          "text": "Two bytes, once for the complete request",
+          "feedback": "Padding is separate, and copying a byte through a buffer does not count it a second time."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-initialization",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-initialization-000.cases.json"
+      ],
+      "explanation": "Implement sha256_init. Initialize the eight state words, 64-bit total and used count independently of the old context bytes. Reserved bytes, unused buffer and workspace values are not prescribed.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "List the offsets of state, total and used before storing anything."
+        },
+        {
+          "id": "reason-2",
+          "text": "The total occupies eight bytes. Clearing only one word leaves stale high bits."
+        },
+        {
+          "id": "reason-3",
+          "text": "Do not require a fixed context address or a pre-zeroed arena. Preserve saved registers and write only the selected 368-byte context."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "fragment-room",
+      "source": "worked/fill-block.asm",
+      "anchor": {
+        "label": "fragment_size",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      },
+      "explanation": "A context has 63 pending bytes and receives two more. One block can hold 64 bytes.",
+      "question": "How many bytes fit before a compression is required?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "One byte",
+          "feedback": "The first fragment is min(2,64-63). One input byte remains afterward."
+        },
+        {
+          "id": "b",
+          "text": "Two bytes",
+          "feedback": "That would write past the 64-byte buffer before making room."
+        },
+        {
+          "id": "c",
+          "text": "Zero bytes",
+          "feedback": "The block has one free position. Copy that byte before compressing the completed block."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "fill-before-compressing",
+      "source": "worked/fill-block.asm",
+      "explanation": "This deliberately limited experiment fills one block and stops before compression. Its provisional used=64 must never be returned as a completed update.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "fragment_size",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x0000000000000002",
+            "$s2": "0x000000000000003f",
+            "$s3": "0x0000000000000001"
+          },
+          "explanation": "s1 is two, s2 is 63 and s3 is one. The original-byte total has already increased to 65 once for this request.",
+          "success": "s1 is two, s2 is 63 and s3 is one. The original-byte total has already increased to 65 once for this request."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "block_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x0000000000000001",
+            "$s2": "0x0000000000000040",
+            "$s3": "0x0000000000000001",
+            "$t1": "0x0000000000000080"
+          },
+          "explanation": "One byte remains. The buffer now contains 64 bytes, but its state words have not absorbed that block. A real update must compress, clear used, and then copy the remaining byte.",
+          "success": "One byte remains. The buffer now contains 64 bytes, but its state words have not absorbed that block. A real update must compress, clear used, and then copy the remaining byte."
+        }
+      ],
+      "success": "Explain the observed values and the next operation before continuing.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Debug the named source. At a requested breakpoint the highlighted instruction has not executed. Set one requested breakpoint at a time, inspect the selected paused frame, and finish the process after the final stop."
+        },
+        {
+          "id": "compare",
+          "text": "Find the first incorrect boundary. Read scalar low words separately from sign extension; inspect memory bytes when the interface specifies bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "pending-block",
+      "source": "worked/fill-block.asm",
+      "anchor": {
+        "label": "block_ready",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "At block_ready the context buffer is full and one source byte remains. This is an internal boundary, not a valid returned context.",
+      "question": "What must happen before copying that remaining byte into the buffer?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Return with used=64",
+          "feedback": "The completed-call invariant requires used=total modulo 64 and fewer than 64 pending bytes."
+        },
+        {
+          "id": "b",
+          "text": "Compress the full block and reset used to zero",
+          "feedback": "The state must absorb the block before its buffer storage is reused."
+        },
+        {
+          "id": "c",
+          "text": "Overwrite buffer byte zero immediately",
+          "feedback": "That would destroy part of the block before compression consumed it."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-update",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-update-000.cases.json",
+        "independent/sha-update-001.cases.json",
+        "independent/sha-update-002.cases.json",
+        "independent/sha-update-003.cases.json",
+        "independent/sha-update-004.cases.json",
+        "independent/sha-update-005.cases.json"
+      ],
+      "explanation": "Implement sha256_update before finalization. These seventeen prefix cases call init/update or install synthetic context inputs, inspect the required state/count/tail fields, and terminate without calling final. They cover empty calls, boundary-sized input and high count bits.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Keep the original count for the one total increment; use a separate remaining count while consuming fragments."
+        },
+        {
+          "id": "reason-2",
+          "text": "After a full block, compress and clear used before accepting another fragment. Return with the exact active tail and state for all completed blocks."
+        },
+        {
+          "id": "reason-3",
+          "text": "Use a full-width byte total and supplied pointers. A zero-length update must not read a source byte. Reserved and inactive workspace bytes may vary."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "padding-room",
+      "source": "worked/padding-55.asm",
+      "anchor": {
+        "label": "append_marker",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Finalization appends one 80 byte, zero bytes, and an eight-byte big-endian original bit length. The length occupies the last eight positions of the final block.",
+      "question": "What is the largest unfinished tail that fits this suffix in one block?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "56 bytes",
+          "feedback": "After the marker there would be only seven positions left for the eight-byte length."
+        },
+        {
+          "id": "b",
+          "text": "63 bytes",
+          "feedback": "The marker fits, but its eight-byte length then needs another block."
+        },
+        {
+          "id": "c",
+          "text": "55 bytes",
+          "feedback": "55 original bytes plus one marker and eight length bytes fill 64 bytes."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "pad-fifty-five",
+      "source": "worked/padding-55.asm",
+      "explanation": "Construct the padding bytes for a 55-byte original message. This program builds the bytes only; it performs no compression.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "marker_ready",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x0000000000000037",
+            "$s2": "0x0000000000000037"
+          },
+          "explanation": "The marker follows 55 original bytes. Its value is 80 hexadecimal, not the text characters 8 and 0.",
+          "success": "The marker follows 55 original bytes. Its value is 80 hexadecimal, not the text characters 8 and 0."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "chosen_size",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000040"
+          },
+          "explanation": "s3 selects one 64-byte block. No zero byte is needed between this marker and the length field.",
+          "success": "s3 selects one 64-byte block. No zero byte is needed between this marker and the length field."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "length_bytes",
+            "mnemonic": "dsll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000038"
+          },
+          "explanation": "The length starts at offset 56. Those eight positions are separate from the original tail.",
+          "success": "The length starts at offset 56. Those eight positions are separate from the original tail."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "padding_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000000000001b8",
+            "$s3": "0x0000000000000040",
+            "$t5": "0x0000000000000000"
+          },
+          "explanation": "Inspect padded: it ends with 00000000000001b8, the big-endian encoding of 55 times eight bits.",
+          "success": "Inspect padded: it ends with 00000000000001b8, the big-endian encoding of 55 times eight bits."
+        }
+      ],
+      "success": "Explain the observed values and the next operation before continuing.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Debug the named source. At a requested breakpoint the highlighted instruction has not executed. Set one requested breakpoint at a time, inspect the selected paused frame, and finish the process after the final stop."
+        },
+        {
+          "id": "compare",
+          "text": "Find the first incorrect boundary. Read scalar low words separately from sign extension; inspect memory bytes when the interface specifies bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "two-padding-blocks",
+      "source": "worked/padding-56.asm",
+      "anchor": {
+        "label": "marker_ready",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      },
+      "explanation": "A 56-byte unfinished tail places its marker at offset 56. The final length still needs eight bytes.",
+      "question": "Where does the length field go?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Offsets 120 through 127 in a second block",
+          "feedback": "The first block cannot hold both this marker and the complete length."
+        },
+        {
+          "id": "b",
+          "text": "Offsets 56 through 63, replacing the marker",
+          "feedback": "The marker must remain part of the padded input."
+        },
+        {
+          "id": "c",
+          "text": "Offsets 57 through 64 across the boundary",
+          "feedback": "The length occupies the final eight positions of the final complete block, not an arbitrary crossing interval."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "pad-fifty-six",
+      "source": "worked/padding-56.asm",
+      "explanation": "Compare this source with the 55-byte example. One additional original byte changes the number of final compression blocks.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "marker_ready",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x0000000000000038",
+            "$s2": "0x0000000000000038"
+          },
+          "explanation": "The marker is present at offset 56, leaving only seven positions in this first block.",
+          "success": "The marker is present at offset 56, leaving only seven positions in this first block."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "chosen_size",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000080"
+          },
+          "explanation": "s3 is 128. The padded tail now occupies two blocks.",
+          "success": "s3 is 128. The padded tail now occupies two blocks."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "length_bytes",
+            "mnemonic": "dsll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000078"
+          },
+          "explanation": "Zero filling stops at offset 120, where the eight-byte length begins.",
+          "success": "Zero filling stops at offset 120, where the eight-byte length begins."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "padding_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000000000001c0",
+            "$s3": "0x0000000000000080",
+            "$t5": "0x0000000000000000"
+          },
+          "explanation": "Inspect all 128 bytes. The length is 00000000000001c0 at the end of the second block.",
+          "success": "Inspect all 128 bytes. The length is 00000000000001c0 at the end of the second block."
+        }
+      ],
+      "success": "Explain the observed values and the next operation before continuing.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Debug the named source. At a requested breakpoint the highlighted instruction has not executed. Set one requested breakpoint at a time, inspect the selected paused frame, and finish the process after the final stop."
+        },
+        {
+          "id": "compare",
+          "text": "Find the first incorrect boundary. Read scalar low words separately from sign extension; inspect memory bytes when the interface specifies bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "full-length",
+      "source": "worked/padding-high-length.asm",
+      "anchor": {
+        "label": "length_bytes",
+        "mnemonic": "dsll",
+        "occurrence": 0
+      },
+      "explanation": "The supplied synthetic total is 000000010000003f bytes. Its unfinished tail has 63 bytes; earlier full blocks are represented by the checkpoint, not read by this experiment.",
+      "question": "Which bit length must be encoded?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "00000000000001f8",
+          "feedback": "That discards the high word and encodes only 63 bytes."
+        },
+        {
+          "id": "b",
+          "text": "00000008000001f8",
+          "feedback": "Shift the full 64-bit original-byte total left by three."
+        },
+        {
+          "id": "c",
+          "text": "000000010000003f",
+          "feedback": "That is the byte length. The SHA suffix specifies a bit length."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "encode-high-length",
+      "source": "worked/padding-high-length.asm",
+      "explanation": "Use this synthetic checkpoint to examine high length bits without pretending to execute a multi-gigabyte message.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "marker_ready",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x000000000000003f",
+            "$s2": "0x000000010000003f"
+          },
+          "explanation": "s2 contains the full synthetic total and s1 is 63. The marker follows exactly those pending bytes.",
+          "success": "s2 contains the full synthetic total and s1 is 63. The marker follows exactly those pending bytes."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "chosen_size",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000080"
+          },
+          "explanation": "Two final blocks are needed for this tail and its suffix.",
+          "success": "Two final blocks are needed for this tail and its suffix."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "length_bytes",
+            "mnemonic": "dsll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000078"
+          },
+          "explanation": "The eight-byte output length begins at offset 120. The next instruction shifts the complete total.",
+          "success": "The eight-byte output length begins at offset 120. The next instruction shifts the complete total."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "padding_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000008000001f8",
+            "$s3": "0x0000000000000080",
+            "$t5": "0x0000000000000000"
+          },
+          "explanation": "t3 is 00000008000001f8. Inspect those eight big-endian bytes at the end; do not infer their order from a little-endian numeric memory view.",
+          "success": "t3 is 00000008000001f8. Inspect those eight big-endian bytes at the end; do not infer their order from a little-endian numeric memory view."
+        }
+      ],
+      "success": "Explain the observed values and the next operation before continuing.",
+      "hints": [
+        {
+          "id": "locate",
+          "text": "Debug the named source. At a requested breakpoint the highlighted instruction has not executed. Set one requested breakpoint at a time, inspect the selected paused frame, and finish the process after the final stop."
+        },
+        {
+          "id": "compare",
+          "text": "Find the first incorrect boundary. Read scalar low words separately from sign extension; inspect memory bytes when the interface specifies bytes."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-finalization",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-streaming-000.cases.json",
+        "independent/sha-streaming-001.cases.json",
+        "independent/sha-streaming-002.cases.json",
+        "independent/sha-streaming-003.cases.json",
+        "independent/sha-streaming-004.cases.json",
+        "independent/sha-streaming-005.cases.json",
+        "independent/sha-streaming-006.cases.json",
+        "independent/sha-streaming-007.cases.json"
+      ],
+      "explanation": "Implement sha256_final and complete the streaming contract. The original message and synthetic-context cases now run through finalization, inspect the 32 digest bytes and require actual exit. Finalization consumes its context; its post-call workspace is unspecified.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Append the marker, determine whether one or two final blocks are required, and retain the original total separately from padded byte counts."
+        },
+        {
+          "id": "reason-2",
+          "text": "Write all eight length bytes in big-endian order, compress every final block, and serialize eight final state words as 32 big-endian digest bytes."
+        },
+        {
+          "id": "reason-3",
+          "text": "Check the first wrong boundary: context before final, padded bytes, compressed state or digest serialization. Do not use the printed hexadecimal digits as message bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "short-read",
+      "source": "independent/sha256.asm",
+      "anchor": {
+        "label": "main_file",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "The file wrapper can request up to its supplied scratch capacity. A successful read may return fewer bytes than requested without reaching EOF.",
+      "question": "A request for seven returns two. What should the wrapper do?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Hash seven bytes from scratch",
+          "feedback": "The other five bytes were not supplied by this read."
+        },
+        {
+          "id": "b",
+          "text": "Finalize immediately",
+          "feedback": "A short positive result is still data, not EOF."
+        },
+        {
+          "id": "c",
+          "text": "Update with those two bytes and read again",
+          "feedback": "The return value gives the successful prefix length. Only zero indicates EOF."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "read-error",
+      "source": "independent/sha256.asm",
+      "anchor": {
+        "label": "main_done",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "The wrapper returns status two on a negative read result and owns the descriptor it successfully opened. The digest output belongs to its caller until success.",
+      "question": "What must the error path preserve?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "All 32 output bytes, while closing the acquired descriptor",
+          "feedback": "Do not finalize or publish a partial-message digest after a read failure."
+        },
+        {
+          "id": "b",
+          "text": "Only bytes after the prefix already hashed",
+          "feedback": "The contract publishes the entire digest only on successful EOF."
+        },
+        {
+          "id": "c",
+          "text": "The open descriptor for the next independent call",
+          "feedback": "This call owns it and must close it before returning."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-file-wrapper",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-file-000.cases.json",
+        "independent/sha-file-001.cases.json",
+        "independent/sha-file-002.cases.json",
+        "independent/sha-file-003.cases.json",
+        "independent/sha-file-004.cases.json",
+        "independent/sha-file-005.cases.json",
+        "independent/sha-file-006.cases.json",
+        "independent/sha-file-007.cases.json",
+        "independent/sha-file-008.cases.json",
+        "independent/sha-file-009.cases.json",
+        "independent/sha-file-010.cases.json",
+        "independent/sha-file-011.cases.json",
+        "independent/sha-file-012.cases.json"
+      ],
+      "explanation": "Implement sha256_file using a fresh private context per invocation. Return 0 on successful EOF, 1 on failed open and 2 on read error. Preserve output on either failure. These original cases exercise capacities, short transfers, exact failure boundaries and missing files.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Separate successful open, each positive read, EOF, read error and close. A failed open acquires no descriptor."
+        },
+        {
+          "id": "reason-2",
+          "text": "Use the actual descriptor and actual successful byte count. Hash only that prefix; keep reading after short positive results."
+        },
+        {
+          "id": "reason-3",
+          "text": "Finalize only after EOF. Save any return status across close, and restore your frame and saved registers on every path."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "memory-caller",
+      "source": "independent/sha256.asm",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "lw",
+        "occurrence": 0
+      },
+      "explanation": "Finish the previous Debug process. In the existing independent source, change mode: .word 2 to mode: .word 0, then save. This selects init, update and final on the three original bytes abc.",
+      "question": "Why must initialization precede this first update?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It inserts the final padding",
+          "feedback": "Padding is deferred until finalization knows where the message ends."
+        },
+        {
+          "id": "b",
+          "text": "It establishes the starting state and an empty context",
+          "feedback": "The completed stream begins from its IV, zero total and zero used count."
+        },
+        {
+          "id": "c",
+          "text": "It converts the message to hexadecimal text",
+          "feedback": "The update accepts the original counted bytes directly."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "verify-memory-caller",
+      "source": "independent/sha256.asm",
+      "explanation": "With mode zero, Debug your same independent source through the caller. No internal working-register allocation is prescribed. Inspect the digest bytes for abc and the status store.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "explanation": "The callee returned success before status publication. The 32 digest bytes should begin ba 78 16 bf; status is still -1.",
+          "success": "The callee returned success before status publication. The 32 digest bytes should begin ba 78 16 bf; status is still -1."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "explanation": "The caller has stored status zero. The highlighted exit instruction has not executed yet; finish the process before another launch.",
+          "success": "The caller has stored status zero. The highlighted exit instruction has not executed yet; finish the process before another launch."
+        }
+      ],
+      "success": "The public caller reached both requested boundaries with the expected status.",
+      "hints": [
+        {
+          "id": "mode",
+          "text": "Edit the existing mode word in this same source, save, and start a fresh Debug launch. Finish any preceding process. Keep your six completed functions."
+        },
+        {
+          "id": "inspect",
+          "text": "Use the public caller labels for breakpoints. Inspect digest and status in memory; working registers inside your own functions may differ from the examples."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-caller",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-caller-000.cases.json",
+        "independent/sha-caller-001.cases.json",
+        "independent/sha-caller-002.cases.json",
+        "independent/sha-caller-003.cases.json"
+      ],
+      "explanation": "Run the original memory and file caller cases through actual main selection, status publication and termination. Retain the supplied caller controls and labels.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "The memory path initializes before updating and finalizing; the file path delegates its own context ownership to sha256_file."
+        },
+        {
+          "id": "reason-2",
+          "text": "main_done is before the status store. results_ready is after it. Keep the returned status live between those boundaries."
+        },
+        {
+          "id": "reason-3",
+          "text": "A correct callee is insufficient if caller selection, output address, stored status or actual termination is wrong."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "actual-descriptor",
+      "source": "independent/sha256.asm",
+      "anchor": {
+        "label": "main_file",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "Change only mode to one in the same completed source and save. The next Debug activity supplies fixture.bin as bytes 61 62 63, limits each successful read to two bytes, and starts fixture descriptors at 19.",
+      "question": "Which descriptor should the wrapper pass to read and close?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Three for every simulator file",
+          "feedback": "That common value is not the descriptor contract."
+        },
+        {
+          "id": "b",
+          "text": "Nineteen hard-coded in the function",
+          "feedback": "That only fits this observation. Other checks start descriptors at different values."
+        },
+        {
+          "id": "c",
+          "text": "The value returned by its successful open",
+          "feedback": "The fixture deliberately prevents assuming descriptor three."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-short-file",
+      "source": "independent/sha256.asm",
+      "explanation": "With mode one, Debug the same source using the deterministic read-only fixture. Its two-byte successful prefix must be followed by the remaining byte and EOF.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "file_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a2": "0x0000000000000007"
+          },
+          "explanation": "The caller supplies capacity seven before invoking your file wrapper.",
+          "success": "The caller supplies capacity seven before invoking your file wrapper."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "explanation": "The file wrapper succeeded. Its digest must equal the memory abc digest despite the short reads.",
+          "success": "The file wrapper succeeded. Its digest must equal the memory abc digest despite the short reads."
+        }
+      ],
+      "success": "The public caller reached both requested boundaries with the expected status.",
+      "hints": [
+        {
+          "id": "mode",
+          "text": "Edit the existing mode word in this same source, save, and start a fresh Debug launch. Finish any preceding process. Keep your six completed functions."
+        },
+        {
+          "id": "inspect",
+          "text": "Use the public caller labels for breakpoints. Inspect digest and status in memory; working registers inside your own functions may differ from the examples."
+        }
+      ],
+      "fileRead": {
+        "path": "fixture.bin",
+        "bytes": "616263",
+        "maxRequest": 7,
+        "maxReadSize": 2,
+        "firstDescriptor": 19
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "error-is-not-eof",
+      "source": "independent/sha256.asm",
+      "anchor": {
+        "label": "file_call",
+        "mnemonic": "balc",
+        "occurrence": 0
+      },
+      "explanation": "Keep mode one. The next fresh Debug launch injects a read failure after the first two original bytes. Its output arena starts with a5 bytes.",
+      "question": "Which result belongs at main_done?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Status two and unchanged output",
+          "feedback": "Two original bytes are not the whole message. Close the descriptor without publishing a digest."
+        },
+        {
+          "id": "b",
+          "text": "Status zero and a digest of ab",
+          "feedback": "That would silently replace a failed input with a shorter successful message."
+        },
+        {
+          "id": "c",
+          "text": "Status one",
+          "feedback": "The file opened successfully. This is a read failure, not an open failure."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-read-failure",
+      "source": "independent/sha256.asm",
+      "explanation": "Debug the same independent source with the injected error. The public assessment also checks preservation of an earlier successful digest during later calls in one session.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "file_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a2": "0x0000000000000007"
+          },
+          "explanation": "The input capacity is still seven; an injected environment result does not change the function interface.",
+          "success": "The input capacity is still seven; an injected environment result does not change the function interface."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "main_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002"
+          },
+          "explanation": "The wrapper reports a read error. Inspect the unchanged a5 digest bytes and finish the process.",
+          "success": "The wrapper reports a read error. Inspect the unchanged a5 digest bytes and finish the process."
+        }
+      ],
+      "success": "The public caller reached both requested boundaries with the expected status.",
+      "hints": [
+        {
+          "id": "mode",
+          "text": "Edit the existing mode word in this same source, save, and start a fresh Debug launch. Finish any preceding process. Keep your six completed functions."
+        },
+        {
+          "id": "inspect",
+          "text": "Use the public caller labels for breakpoints. Inspect digest and status in memory; working registers inside your own functions may differ from the examples."
+        }
+      ],
+      "fileRead": {
+        "path": "fixture.bin",
+        "bytes": "616263",
+        "maxRequest": 7,
+        "maxReadSize": 2,
+        "firstDescriptor": 19,
+        "failAfterBytes": 2
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-reuse",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-reuse-000.cases.json",
+        "independent/sha-reuse-001.cases.json",
+        "independent/sha-reuse-002.cases.json",
+        "independent/sha-reuse-003.cases.json",
+        "independent/sha-reuse-004.cases.json",
+        "independent/sha-reuse-005.cases.json",
+        "independent/sha-reuse-006.cases.json",
+        "independent/sha-reuse-007.cases.json"
+      ],
+      "explanation": "Run split updates, interleaved contexts, reinitialization and repeated files in one session. Later errors must preserve an existing successful digest. Fixture setup changes declared input bytes without resetting your machine.",
+      "success": "These interface checks pass. Keep a state or ownership argument explaining why the code also handles another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Keep state in the supplied context or this call\u2019s private frame. Alternating two contexts must not exchange their counters, tails or state words."
+        },
+        {
+          "id": "reason-2",
+          "text": "Initialization discards the previous logical stream. A new file call opens its own path, uses a fresh context and closes its actual descriptor."
+        },
+        {
+          "id": "reason-3",
+          "text": "Repeat an earlier input after another call. Preserve every output byte on a later failure, including bytes that no longer contain the original poison pattern."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-completed-stream",
+      "source": "independent/sha256.asm",
+      "explanation": "Set mode back to zero, save, and Run the same completed source to termination. Its console is deliberately empty. Use the earlier Debug boundaries and interface checks to justify the digest; empty output alone is not a hash-correctness check.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The completed source terminated normally without console output.",
+      "anchor": {
+        "label": "main_done",
+        "mnemonic": "dla",
+        "occurrence": 0
+      }
+    }
+  ]
+}

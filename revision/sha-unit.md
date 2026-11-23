@@ -116,3 +116,30 @@ student-facing activities, source pointers, saved/resume IDE walkthrough and
 integration into the written companion still need to be completed. Existing
 LaTeX and earlier capture evidence remain authoritative; no new PDF or screenshot
 is claimed by this step.
+
+
+## Native student lesson draft, 23 November 2026
+
+`revision/lessons/025-sha256` now contains the native lesson draft. Its 34 activities
+include sixteen inline predictions, nine Debug activities with 32 stops, eight
+function-check groups and one Run. Six new public observation sources show a
+schedule prefix, one compression round, three padding boundaries and a block
+filled just before compression. They explicitly describe their limits and do not
+supply the six-function independent implementation. Students keep that
+implementation in one continuing `independent/sha256.asm` source.
+
+The staged data retains every original completed case unchanged and adds seventeen
+update-only prefix cases, allowing returned context state to be checked before
+finalization works. There are 145 cases and 357 calls in 42 bounded profiles.
+All correct qualification implementations pass these cases; the fourteen existing
+faults and unfinished starter remain rejected. The worked experiments' 26 stops
+and the completed-student caller's six stops pass actual core register/memory
+probes. The caller sources used for qualification remain private.
+
+The exact student archive imports in the production plugin reader, and all source
+pointers resolve through native MIPS PSI in two passing Jupiter tests. All 572
+public tooling tests pass. These checks do not substitute for the first/resumed
+IDE walkthrough, which remains to be exercised. New light-theme captures and
+integration of this native workflow into the directly edited LaTeX companion
+also remain. The existing publication and capture receipts have not been renewed
+by this draft step.
