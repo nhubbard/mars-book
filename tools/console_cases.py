@@ -10,6 +10,8 @@ import json
 import re
 from pathlib import Path
 
+import publication_cases
+
 MAX_BYTES = 1024 * 1024
 MAX_CASES = 256
 MAX_CASE_INSTRUCTIONS = 1_000_000
@@ -75,6 +77,7 @@ class ConsoleCase:
     reads: tuple[ReadCheck, ...] = ()
     mars_bot: MarsBotCheck | None = None
     maze: MazeSearchCheck | MazeRendererCheck | None = None
+    publication: publication_cases.Publication | None = None
 
 
 def _object(pairs):
@@ -99,7 +102,7 @@ def parse(data):
         raise ValueError('Console-case JSON is nested too deeply') from error
     if not isinstance(root, dict) or set(root) != {'formatVersion', 'cases'}:
         raise ValueError('Expected exactly formatVersion and cases')
-    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5, 6):
+    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5, 6, 7):
         raise ValueError('Unsupported console-case format')
     rows = root['cases']
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_CASES:
@@ -113,6 +116,8 @@ def parse(data):
             allowed |= {'marsBot'}
         if version >= 6:
             allowed |= {'maze'}
+        if version >= 7:
+            allowed |= {'publication'}
         if not isinstance(row, dict) or not fields <= set(row) <= allowed:
             raise ValueError('Unsupported or missing console-case fields')
         name = row['name']
@@ -137,7 +142,10 @@ def parse(data):
             raise ValueError('Declare at most 64 trace checks and 65536 expected store bytes per case')
         bot = parse_mars_bot(row['marsBot']) if 'marsBot' in row else None
         maze = parse_maze(row['maze']) if 'maze' in row else None
-        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads, bot, maze))
+        publication = publication_cases.parse(row['publication']) if 'publication' in row else None
+        if maze is not None and publication is not None:
+            raise ValueError('Choose one console execution protocol')
+        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads, bot, maze, publication))
     if sum(case.instruction_limit for case in cases) > MAX_TOTAL_INSTRUCTIONS:
         raise ValueError('Combined case instruction limits exceed 10000000')
     return tuple(cases)
@@ -311,6 +319,10 @@ def render(cases):
     if any(case.maze is not None for case in cases):
         lines[1] = '// Each case runs in a fresh simulator. Maze checks use the documented public ABI.\n\n'
         lines.append('import edu.missouristate.mars.cli.grading.ConsoleMazeCheck\n\n')
+    if any(case.publication is not None for case in cases):
+        lines[1] = '// Each case runs continuously between its documented public markers in a fresh simulator.\n\n'
+        lines.extend(f'import edu.missouristate.mars.cli.grading.{name}\n' for name in publication_cases.IMPORTS)
+        lines.append('\n')
     for case in cases:
         lines.append(f'case({kotlin_string(case.name)}, input = {kotlin_string(case.input)}, instructionLimit = {case.instruction_limit}) {{\n')
         if case.mars_bot is not None:
@@ -321,7 +333,9 @@ def render(cases):
             lines.append(f'    val stores{index} = traceMemoryStores(0x{store.address:016x}L, {store.length})\n')
         for index, read in enumerate(case.reads):
             lines.append(f'    val reads{index} = traceMemoryAccesses(0x{read.address:016x}L, {read.length})\n')
-        if isinstance(case.maze, MazeSearchCheck):
+        if case.publication is not None:
+            lines.append('    ' + publication_cases.render(case.publication, kotlin_string) + '.verify(this)\n')
+        elif isinstance(case.maze, MazeSearchCheck):
             maze = case.maze
             lines.append(f'    ConsoleMazeCheck.Search({kotlin_string(maze.walls)}, {maze.start}, {maze.goal}, {maze.fixture_index}).verify(this)\n')
         elif isinstance(case.maze, MazeRendererCheck):

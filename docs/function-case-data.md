@@ -25,3 +25,27 @@ script. The adjacent student README explains the exact contract and its limits.
 
 The book’s native LaTeX sources remain independently edited publication authority.
 Private complete implementations and qualification faults are instructor materials.
+
+## Continuation access policies (format 23)
+
+Format 23 preserves format 22's fields and quotas, and adds optional
+`exit.accessPolicies`. Earlier versions reject that additional exit field.
+The policy shape and bounds are the same as a function/call `accessPolicies`
+array: public `from`/`until` data addresses, typed permitted windows, bounded
+notice histories and optional store-only observation.
+
+Function observations still end at the supplied return continuation. Those
+subscriptions close before caller code executes. An explicit exit policy then
+observes the continuation through actual normal exit, independently of the
+callee's policies. It is checked before final output and memory expectations.
+Omitting it retains the earlier caller-publication behavior; an existing function
+policy does not silently become a restriction on legitimate caller stores.
+
+This lets the ring kernel profiles preserve their original complete footprint
+checks after returning through `function_return` or `done`. A caller-side store
+restored before exit still fails when outside the declared permitted windows.
+The private observations release their histories after verification, while the
+public trace API continues to support inspection after an ordinary close.
+Nested exit policies are detached before acquiring a case session. Cancellation,
+normal termination, bounded output and the cumulative instruction budget retain
+their existing behavior.

@@ -231,3 +231,60 @@ files import `ConsoleMazeCheck` and invoke its public `verify(this)` method, so
 native and generated assessments use the same checker. Original handwritten
 project checks remain retained as historical evidence. This foundation alone
 does not complete a downloadable maze lesson or its live IDE walkthrough.
+
+## Continuous public state publications (case-profile version 7)
+
+Version 7 retains earlier optional fields and work limits. It adds `publication`
+for a program that runs continuously between repeated visits to one public text
+label. It supplies data to the existing assessment execution path; it does not
+reset registers or synthesize a function call between visits. A case can choose
+`maze` or `publication`, but cannot combine those two execution protocols.
+
+The publication object has exactly four fields:
+
+- `label`: the public instruction label to observe.
+- `initialMemory`: label-relative fixture bytes installed before execution.
+- `snapshots`: zero through 256 states in execution order.
+- `finalState`: the state checked after normal termination.
+
+Each state has exactly `memory`, `addressMemory` and `accessPolicies` arrays.
+They reuse the function checker's data shapes. `memory` entries declare a public
+`label`, hexadecimal `bytes`, optional signed byte `offset` and optional positive
+`repeat`. `addressMemory` entries have `at` and `value` label/offset objects and
+expect all eight native-endian bytes of the relocated data address. The loaded
+image's actual byte order is used, rather than assuming a default session's order.
+`AssemblyCase.byteOrder` exposes that read-only image property to handwritten DSL
+checks as well.
+
+An `accessPolicies` entry observes a public half-open `from`/`until` data interval.
+It permits reads and writes only inside the declared `readable` and `writable`
+windows of that type. `checkReads: false` selects a store-only policy and requires
+an empty read-window list. Optional `maxAccesses` retains the existing bounded
+history behavior; overflow fails rather than accepting a truncated history.
+Default capacity is 65536 notices. Each state inherits the existing limit of 64
+policies, 4194304 combined notice slots and one MiB of permitted windows. The watched
+assembled intervals together may cover at most one MiB. These are scoped caller
+observations, not a whole-address-space safety claim.
+
+Each snapshot is inspected before the marker's first instruction executes. The
+following interval includes that marker instruction, so its memory effects cannot
+escape observation. Policies apply to the corresponding execution interval only;
+a failed operation cannot borrow a different operation's write permissions. After
+the last snapshot, `finalState` policies cover continuation through normal exit.
+A zero-snapshot case runs directly to exit and must never execute the marker.
+A point counter requires exactly as many completed marker visits as snapshots;
+an extra otherwise harmless terminal publication is rejected.
+
+Each state permits at most 64 combined memory/pointer results. Setup plus all
+snapshot/final expected bytes total at most one MiB, including expanded repeats.
+The existing one-MiB JSON, per-case instruction and ten-million total profile work
+limits remain. Histories belong to one case, cancellation is checked between
+bounded intervals, and nested input collections are detached before session
+acquisition. Private policy histories are released after verification; public
+memory traces still retain their post-close inspection behavior.
+
+`tools/publication_cases.py` validates and renders this data. The generated DSL
+imports `ConsolePublicationCheck` and calls `verify(this)`, so native and CLI
+assessments share the same runtime checker. The ring caller's twelve original
+prefixes are exported under `revision/labs/checks/ring-native/`; their generated
+`caller.kts` retains the same per-operation state and store-footprint contract.
