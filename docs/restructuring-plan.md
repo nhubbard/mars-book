@@ -1330,3 +1330,16 @@ See revision/sha-unit.md and private native-sha-ide-01 for exact scope. Human
 learner/assistive-technology review is not claimed. The curriculum goal remains
 active; the next native companion is RSA arithmetic, followed by the remaining
 book/lab progression and delivery work.
+
+
+### WAV native lesson and written companion, 23 November 2026
+
+Project `031-pcm-wav` now has the native student lesson and verified written lab
+connection recorded in `revision/wav-unit.md`. Its continuing independent task is
+whole-frame reversal; the six-function pipeline remains a complete worked example.
+Ten predictions, five Debug activities, one Run and staged/final behavioral checks
+complete in actual first-use and fresh-process resume trials. A public inline-quiz
+capture has native annotations in the lab. The separate authoring plugin owns all
+capture and fixture injection. Native PNG and the retained video sequence remain
+next; this milestone does not close the broader curriculum goal or replace human
+learner and accessibility review.

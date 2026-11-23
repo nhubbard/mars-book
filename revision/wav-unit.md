@@ -83,7 +83,8 @@ replace author, learner or assistive-technology review.
 
 The original publication step did not implement native interactive delivery
 for this advanced unit. The later student-unit draft described below now supplies
-its content and package validation; its IDE walkthrough remains pending. The older 64-step construction package remains available;
+its content and package validation; the completed IDE walkthrough is recorded
+in the subsequent milestone below. The older 64-step construction package remains available;
 its historical capture plans do not become completed captures merely because
 this revised chapter has new verified images. Instructor progression and hint
 policies must be checked when advanced delivery is implemented. The full
@@ -125,9 +126,9 @@ remain in the instructor repository.
 
 Five model tests and the broader 586-test public tooling run pass. These are
 assessment-foundation checks, not a completed interactive WAV lesson, a new
-IDE walkthrough, or renewed publication validation. The next delivery step
-must compose the student activities, exercise them in the IDE and integrate
-the verified experience into the native LaTeX lab. The historical 64-step
+IDE walkthrough, or renewed publication validation. At that foundation milestone, student activity composition, IDE execution and
+native LaTeX integration were still pending; the subsequent milestones below
+record that work. The historical 64-step
 construction package is retained independently.
 
 ## Native student-unit draft (23 November 2026)
@@ -165,6 +166,52 @@ contracts and resolve every prediction/Debug anchor through IntelliJ PSI.
 These tests pass without changing the production instructional system. The
 assessment-foundation regression remains the preceding 285 CLI/1,307 plugin
 test run; this content-only step does not claim a new complete plugin run.
-The next step is the actual light-theme IDE first/resume walkthrough through the
-separate authoring plugin, followed by directly edited native LaTeX lab integration.
-No new IDE capture, PDF or accessibility validation is claimed at this point.
+At that draft milestone, the light-theme IDE first/resume walkthrough and native
+LaTeX integration were pending. The following milestone records their completion;
+the draft milestone itself made no IDE, PDF or accessibility claim.
+
+## Verified native delivery and written lab (23 November 2026)
+
+The separate authoring plugin now has a scoped WAV route. Its 139 Jupiter tests
+pass. The actual student experience completes in two fresh IntelliJ processes,
+each launched after the real `clean cleanSandbox runIde` tasks. First use records
+25 observations and 30 photographs: ten predictions including one rejected
+answer before correction, ten Debug stops, one Run and four passing assessments.
+The unfinished starter first fails all twelve mono cases; the driver then places
+one private instructor implementation only in the approved independent source
+buffer. All four stages pass 70 case placements. No private implementation is
+included in public source or archives.
+
+After completion, harmless comments change the five worked sources and continuing
+independent source. Execution evidence becomes stale. A fresh process retains all
+eleven quiz attempts, preserves the six edited source digests and renews all ten
+execution checks. It records fifteen observations and sixteen photographs, again
+passing 70 case placements. All eleven installed plugin JARs match the pinned
+archives in both processes. Neither accepted IDE log contains ERROR or SEVERE
+entries. Native save/close/dispose completes before scoped termination of each
+owned IDE; the resulting child exit 143 and Gradle exit one are retained as
+intentional teardown, not natural runIde completion.
+
+All 46 PNGs pass digest, header, actual viewport, light-theme and photograph
+checks. Four representative captures receive individual visual review. The new
+printed figure uses only the first public quiz photograph before private fixture
+injection. Its two native crops preserve original pixels and distinguish inline
+answers from a source pointer; no execution is claimed by that pointer. Six
+publication guards reject altered inputs and unreviewed geometry.
+
+The directly edited native lab now makes the interactive lesson the default path
+and retains the split-file commands for additional experiments. The accepted
+221-page lab proof has WAV on pages 196–201, with the new figure on 197. Changed
+pages and both transitions receive visual review; the figure also receives
+grayscale review. Minion Pro, Noto Sans Math and JetBrains Mono remain embedded.
+The exact accepted proof's accessibility receipt and immutable PDF pin are retained
+privately with the capture evidence. Automated PDF/UA-2 validation supplements,
+and does not establish, human author, learner or assistive-technology review.
+
+Both exact plugin archives are API-compatible with the pinned IntelliJ 2026.3:
+91 MARS and 20 authoring experimental public API usages, with no internal-API
+usage report. Public tooling passes 590 tests. The preceding broad MARS regression
+and two student-package Jupiter tests remain in their separate foundation/draft
+receipts. All 41 pre-existing MARS edits retain their hashes. The wider curriculum
+goal remains active; native PNG and video delivery are next. The proposed opening
+MARS-versus-hardware explanation remains deferred.

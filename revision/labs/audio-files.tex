@@ -2,14 +2,33 @@
 \MARSChapterHeading{Follow the audio across its boundaries}
 \label{revision-lab:wav}
 
-Read Chapter~23 of the main book alongside this lab. The worked
-program is \texttt{wav-pipeline.asm}; its six public functions and FIR helper
-are in \texttt{wav-functions.asm}. Both are under \texttt{revision/labs/files}.
-Run and debug the caller file, keeping the helper beside it. The independent
-\texttt{wav-reverse-frames.asm} uses the same helper and leaves only the new
-frame-order function unfinished. You can also implement the original six
-functions from the starter in \texttt{packages/031-pcm-wav/}; its assignment
-retains the complete original interface.
+Read Chapter~23 alongside this lab. Import the native lesson
+\emph{Follow audio across its boundaries}, built from
+\path{revision/lessons/031-pcm-wav}. Its \texttt{worked} directory contains
+five complete experiments. Predict the result inline, then use ordinary Debug
+to inspect the named boundaries. Each label identifies the next instruction:
+read the state before executing that instruction. Finish the process before
+starting another activity. Figure~\ref{fig:revision-wav-native-prediction}
+shows an inline question and its source pointer.
+
+The continuing source is \texttt{independent/wav-reverse-frames.asm} in the
+imported lesson. Its caller and six WAV helpers are complete; only
+\texttt{wav\_reverse\_frames} is unfinished. This source includes the supplied
+helper directly, so it needs no preparation command or neighboring include.
+The three assessment groups cover twelve mono cases, twelve stereo cases and
+eleven boundary, reuse and pipeline cases. Recheck all 35 after your final edit.
+Graduated hints and free-writing mode follow your instructor's release policy.
+
+The split-file worked program remains at
+\path{revision/labs/files/wav-pipeline.asm}, with
+\texttt{wav-functions.asm} beside it. The split-file independent source is
+\texttt{wav-reverse-frames.asm} in that same directory. Commands below prepare
+additional standalone observations of those files; the native lesson's worked
+experiments already contain their observation data. The original six-function
+construction task remains in \texttt{packages/031-pcm-wav/} if you want to
+implement the supplied helpers as a separate exercise.
+
+\input{revision/figures/wav/native-prediction}
 
 \section{Predict the parser's next address}
 
@@ -20,7 +39,17 @@ from the sixteen-byte PCM extent. Explain why the first sample begins at 56,
 why a data length of sixteen means four stereo frames, and why the parser must
 continue at offset 72 after finding those samples.
 
-Prepare the parse observation for step \texttt{s06-1}:
+\Needspace{8\baselineskip}
+In the native lesson, Debug \texttt{worked/parser-publication.asm}. At
+\texttt{parsed\_record}, \texttt{s0} through \texttt{s4} contain the five
+fields below. Continue to \texttt{rejected\_record}: the second parse has changed
+the trailing chunk's declared length from one to three without extending the
+file. All four eight-byte sentinel groups in \texttt{s0} through \texttt{s3}
+remain \texttt{a5}; status is one and returned count is zero. Finding a valid
+data chunk earlier does not permit publishing a partial record.
+
+\Needspace{10\baselineskip}
+For the split-file observation, prepare step \texttt{s06-1}:
 \Needspace{8\baselineskip}
 \MARSCodeLabel{Select a parser observation without changing instructions}
 \begin{Verbatim}
@@ -49,7 +78,16 @@ parser arithmetic test, not a request to allocate a multi-gigabyte input.
 
 \section{Separate the two channel histories}
 
-Prepare step \texttt{s29-1} and pause at \texttt{filter\_return}. Decode each
+The native experiment \texttt{worked/channel-histories.asm} exposes all eight
+signed output samples in \texttt{s0} through \texttt{s7} at
+\texttt{filtered\_frames}. Pair adjacent registers as left and right; the
+second frame is $(1500,500)$, not $(0,2000)$, because the first raw samples
+remain in their respective histories. At \texttt{output\_guard}, the next
+byte is still hexadecimal \texttt{a5}. This one sentinel is useful evidence;
+it does not by itself prove that every earlier access was permitted.
+
+For the split-file observation, prepare step \texttt{s29-1} and pause at
+\texttt{filter\_return}. Decode each
 pair of bytes as one signed sample, then group adjacent pairs into stereo
 frames. Derive the first two frames by hand using seven zeros of history per
 channel. A left output influenced by the right input indicates that the gather
@@ -71,7 +109,15 @@ recurrence that the FIR contract never requested.
 
 \section{Inspect the file before saving it}
 
-The original encode observation is step \texttt{s43-1}. It selects PCM already
+Debug \texttt{worked/encoder-capacity.asm} in the native lesson. Its first
+call offers 59 bytes for a 60-byte image. At \texttt{capacity\_rejected},
+status two accompanies an unchanged first destination group. The next call
+offers 60 bytes and succeeds. At \texttt{encoded\_image}, distinguish
+RIFF size 52, byte rate 64000, four bytes per frame and sixteen PCM bytes.
+The first output sample is 1500 and the byte beyond the complete image remains
+\texttt{a5}. The supplied input here is the filtered trace.
+
+The original split-file encode observation is step \texttt{s43-1}. It selects PCM already
 stored in the caller's \texttt{samples} arena; an encode-only run does not first
 filter it. To inspect the filtered trace's complete output, use pipeline step
 \texttt{s63-1} with the generated input and pause at \texttt{encode\_return}.
@@ -146,7 +192,20 @@ of the unfiltered input.
 
 \section{Check the function and its integration separately}
 
-The new public behavioral check is
+Use the inline \emph{Check this program} controls for the native lesson's
+continuing source. Its full-pipeline case supplies virtual input and output,
+limits reads to seven bytes and writes to five, and begins descriptor allocation
+at 19. Your reversal performs no I/O; the supplied load and save helpers own
+those operations. The expected saved file is exactly sixty bytes. A successful
+reversal must also work in the complete program.
+
+An ordinary Run of the independent source selects its default bound calculation
+and terminates silently. It does not exercise reversal or save a WAV file.
+Use the full native assessment for the integrated check, then the generated
+host-file experiment below as an additional test. After implementation edits,
+use the final full recheck to renew results for that same source.
+
+For command-line work, the public behavioral check is
 \path{revision/labs/checks/wav-reverse-frames.kts}. It selects different valid
 prefixes, byte offsets, exact-alias and disjoint buffers, invalid full-width
 counts, repeated calls and a complete file pipeline. It compares state and
