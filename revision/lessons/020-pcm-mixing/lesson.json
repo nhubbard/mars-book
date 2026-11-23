@@ -1,0 +1,1003 @@
+{
+  "formatVersion": 7,
+  "introduction": "Interpret signed sample bytes before comparing exact sums, saturation and wrapping. Follow a clipping mask from marked lanes through bit counts to sample counts, then prove a scalar tail and an exact alias before writing saturated subtraction.",
+  "conclusion": "Explain your sample interpretation, operand order, clipping-count units and selected-interval bounds. Use the alias and reused-call evidence alongside that reasoning. Correct values and counters are required together; finite tests do not cover every input pair.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "signed-sample",
+      "explanation": "A PCM16 sample uses two bytes and a signed two’s-complement interpretation. In increasing address order, bytes d0 8a form the halfword 0x8ad0. Loading each byte unsigned is only the first part of recovering the signed sample.",
+      "question": "What signed value must seh recover from 0x8ad0?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "-30000",
+          "feedback": "0x8ad0 has unsigned value 35536. Its sign bit is set, so the signed halfword value is 35536−65536 = −30000."
+        },
+        {
+          "id": "b",
+          "text": "35536",
+          "feedback": "That is the unsigned halfword value. The mixer needs the signed sample before addition."
+        },
+        {
+          "id": "c",
+          "text": "30000",
+          "feedback": "Changing a sign bit is not the same operation as sign extension."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_sample",
+        "mnemonic": "seh",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "strict-clipping",
+      "explanation": "The allowed stored range is −32768 through 32767. Saturation clamps an exact sum only when it lies outside that range. An endpoint value in the output does not by itself say whether the exact sum was outside.",
+      "question": "Which sums contribute clipping events?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Both clip because both store 32767",
+          "feedback": "The same stored endpoint can result from a representable exact sum or a clamped excessive sum."
+        },
+        {
+          "id": "c",
+          "text": "Neither clips because each input is a valid sample",
+          "feedback": "Valid input samples can have an out-of-range exact sum."
+        },
+        {
+          "id": "a",
+          "text": "30000+10000 clips; 32767+0 does not",
+          "feedback": "40000 exceeds 32767, while the exact endpoint 32767 is representable."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_saturated",
+        "mnemonic": "ceq.h",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-default",
+      "source": "pcm-mix.asm",
+      "integerInputs": [],
+      "explanation": "Open pcm-mix.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 16 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. v0=16 and v1=6 describe the completed saturated call. Inspect pcm_c as signed halfwords. processed and clipped still contain 99 because the caller has not published the results. Compare sample 3’s clamped 32767 with the exact endpoint at sample 5.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100ec",
+            "$a2": "0x00000000100101b4",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000006"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "wrapped",
+          "explanation": "Break at wrap_ready. The caller has published processed=16 and clipped=6. The wrapping call returns v0=16 and v1=0; wrapped_count is still 99. Compare the two outputs for exact sums 40000 and −40000. They store different halfwords even though both arrays use two bytes per sample.",
+          "anchor": {
+            "label": "wrap_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100ec",
+            "$a2": "0x000000001001027c",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "published",
+          "explanation": "Break at comparison_ready. The published words are now processed=16, clipped=6 and wrapped_count=16. Caller publication is complete. The wrapping routine’s zero count of clips describes its interface; it does not mean that every exact sum was in range.",
+          "anchor": {
+            "label": "comparison_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100ec",
+            "$a2": "0x000000001001027c",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The default observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-default",
+      "source": "pcm-mix.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run pcm-mix.asm normally to silent completion. Inspect the published result words if useful. Normal exit complements the paused state observations; it does not replace checking the sample values and complete access widths.",
+      "success": "The default program completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "mask-evidence",
+      "explanation": "The worked group computes both wrapping and saturated halfword sums. ceq.h produces all ones where their stored bits agree; nor.v inverts those lanes. Representable sums agree, while strict overflows differ.",
+      "question": "What does an all-one lane in the inverted comparison mean?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "The output sample equals −1",
+          "feedback": "The mask bits are evidence. They are not the sample value to add to the output or counter."
+        },
+        {
+          "id": "c",
+          "text": "This output is an exact endpoint",
+          "feedback": "Exact endpoints agree in both arithmetic results and therefore produce a zero lane after inversion."
+        },
+        {
+          "id": "a",
+          "text": "This sample’s exact sum lay outside the signed halfword range",
+          "feedback": "It marks a difference between wrapping and saturation. Each lane contributes one clipping event."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_clipping_mask",
+        "mnemonic": "pcnt.d",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "population-unit",
+      "explanation": "In the nine-sample mask source, lanes 2,4,5,6 clip in the first group. Each marked halfword contributes sixteen one bits. pcnt.d counts bits separately in the two 64-bit halves of the mask.",
+      "question": "How do doubleword counts 16 and 48 become a sample count?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Divide each by eight: eight clipped samples",
+          "feedback": "Each marked sample occupies a sixteen-bit mask lane, not an eight-bit lane."
+        },
+        {
+          "id": "a",
+          "text": "Add them and divide by sixteen: four clipped samples",
+          "feedback": "There are 64 marked bits and sixteen bits per marked halfword. The unit changes from bits to samples."
+        },
+        {
+          "id": "b",
+          "text": "Add them: 64 clipped samples",
+          "feedback": "The counts are bits, not sample events."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_population",
+        "mnemonic": "copy_s.d",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-mask-nine",
+      "source": "worked/mask-nine.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/mask-nine.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 9 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "saturated",
+          "explanation": "Break at mix_saturated before ceq.h. In w2 and w3, lane 2 wraps to 0x8000 but saturates to 0x7fff. Lane 3 is 0x8000 in both because its exact sum is −32768. Compare all eight lanes, not only the stored endpoints.",
+          "anchor": {
+            "label": "mix_saturated",
+            "mnemonic": "ceq.h",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000009",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w0": "0x7fff8ad0753080008ad07fff75300000",
+            "$w1": "0x8000d8f02710fffff53000010acf0000",
+            "$w2": "0xffff63c09c407fff800080007fff0000",
+            "$w3": "0xffff80007fff800080007fff7fff0000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "mask",
+          "explanation": "Break at mix_clipping_mask. w4 has 0xffff in lanes 2,4,5,6 and zero in the other halfwords. The exact endpoints at lanes 1 and 3 are unmarked. The mask retains which samples clipped before reduction discards their positions.",
+          "anchor": {
+            "label": "mix_clipping_mask",
+            "mnemonic": "pcnt.d",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000009",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w0": "0x7fff8ad0753080008ad07fff75300000",
+            "$w1": "0x8000d8f02710fffff53000010acf0000",
+            "$w2": "0xffff63c09c407fff800080007fff0000",
+            "$w3": "0xffff80007fff800080007fff7fff0000",
+            "$w4": "0x0000ffffffffffff0000ffff00000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "population",
+          "explanation": "Break at mix_population. w5’s two 64-bit lanes are 0x10 and 0x30: decimal 16 and 48. The low doubleword covers the first four halfwords; the high doubleword covers the next four. The counts are still measured in bits.",
+          "anchor": {
+            "label": "mix_population",
+            "mnemonic": "copy_s.d",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000009",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w0": "0x7fff8ad0753080008ad07fff75300000",
+            "$w1": "0x8000d8f02710fffff53000010acf0000",
+            "$w2": "0xffff63c09c407fff800080007fff0000",
+            "$w3": "0xffff80007fff800080007fff7fff0000",
+            "$w4": "0x0000ffffffffffff0000ffff00000000",
+            "$w5": "0x00000000000000300000000000000010"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "counted",
+          "explanation": "Break at mix_store_block. v1 is now four after addition and division by sixteen. The saturated vector is in w3, but this group’s output store has not executed. Inspect the output array before stepping across the store.",
+          "anchor": {
+            "label": "mix_store_block",
+            "mnemonic": "st.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000009",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000004"
+          },
+          "vectorRegisters": {
+            "$w0": "0x7fff8ad0753080008ad07fff75300000",
+            "$w1": "0x8000d8f02710fffff53000010acf0000",
+            "$w2": "0xffff63c09c407fff800080007fff0000",
+            "$w3": "0xffff80007fff800080007fff7fff0000",
+            "$w4": "0x0000ffffffffffff0000ffff00000000",
+            "$w5": "0x00000000000000300000000000000010"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "tail",
+          "explanation": "Break at mix_tail. The first group is stored; pointers have advanced sixteen bytes and a3 is one. v1 still contains four. The remaining ninth sample is outside the vector group and must contribute to the same accumulated count.",
+          "anchor": {
+            "label": "mix_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010014",
+            "$a1": "0x00000000100100dc",
+            "$a2": "0x00000000100101a4",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000004"
+          },
+          "vectorRegisters": {
+            "$w0": "0x7fff8ad0753080008ad07fff75300000",
+            "$w1": "0x8000d8f02710fffff53000010acf0000",
+            "$w2": "0xffff63c09c407fff800080007fff0000",
+            "$w3": "0xffff80007fff800080007fff7fff0000",
+            "$w4": "0x0000ffffffffffff0000ffff00000000",
+            "$w5": "0x00000000000000300000000000000010"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "scalar",
+          "explanation": "Break at mix_sample before the first scalar byte load. Both ninth inputs are −20000. Predict their exact sum, stored sample and contribution to v1. Loading both inputs must precede the output store.",
+          "anchor": {
+            "label": "mix_sample",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010014",
+            "$a1": "0x00000000100100dc",
+            "$a2": "0x00000000100101a4",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. The ninth output is −32768, stored as bytes 00 80, and the returned clipping count is five. Four events came from the complete group and one from the tail. processed and clipped remain 99 until the caller stores them.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010016",
+            "$a1": "0x00000000100100de",
+            "$a2": "0x00000000100101a6",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The mask-nine observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-mask-nine",
+      "source": "worked/mask-nine.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/mask-nine.asm normally to silent completion. Inspect the published result words if useful. Normal exit complements the paused state observations; it does not replace checking the sample values and complete access widths.",
+      "success": "The mask-nine program completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "tail-carry",
+      "explanation": "The first eight mask-example samples contribute four clipping events. The ninth exact sum is −40000 and contributes one more. The counter belongs to the processed prefix of the complete call.",
+      "question": "What should happen when execution enters the scalar tail?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Keep 64 and add one",
+          "feedback": "64 is the group’s mask bit count before conversion to sample events."
+        },
+        {
+          "id": "a",
+          "text": "Keep four and add one for the ninth sample",
+          "feedback": "The tail extends the processed prefix; it does not begin a new function call."
+        },
+        {
+          "id": "b",
+          "text": "Reset the count to zero before processing the tail",
+          "feedback": "That loses the group’s four events and returns one."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_tail",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "alias-load-order",
+      "explanation": "The interface allows output to be exactly B. For a complete group, both source vectors are loaded before the output vector is stored. Afterward the cursors advance to unread samples. Shifted partial overlaps are excluded.",
+      "question": "Why is the exact alias safe for this schedule?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both original inputs are read before their selected output locations are overwritten",
+          "feedback": "The store replaces only the current complete group, leaving the next group or scalar sample unread and intact."
+        },
+        {
+          "id": "b",
+          "text": "Saturation prevents memory overlap",
+          "feedback": "Saturation limits numerical values. It does not change addresses."
+        },
+        {
+          "id": "c",
+          "text": "The next input samples may be overwritten because they are already counted",
+          "feedback": "The remaining samples must still be read in their original form."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_block",
+        "mnemonic": "ld.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-inplace-nine",
+      "source": "worked/inplace-nine.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/inplace-nine.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 9 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "stored-group",
+          "explanation": "Break at mix_after_block. The first eight B samples now contain saturated results. a0,a1,a2 still name the current group because their updates follow this label. The first unprocessed B sample remains −20000.",
+          "anchor": {
+            "label": "mix_after_block",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x00000000100100cc",
+            "$a3": "0x0000000000000009",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000004"
+          },
+          "vectorRegisters": {
+            "$w3": "0xffff80007fff800080007fff7fff0000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "tail",
+          "explanation": "Break at mix_tail. All three cursors advanced sixteen bytes, a3 is one and v1 is four. The input and output B pointers are equal at their ninth sample; that sample has not yet been overwritten.",
+          "anchor": {
+            "label": "mix_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010014",
+            "$a1": "0x00000000100100dc",
+            "$a2": "0x00000000100100dc",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "scalar",
+          "explanation": "Break at mix_sample. Read both ninth inputs before storing their result. The selected B sample lies within the requested output slice; the following B sample lies outside it and must stay unchanged.",
+          "anchor": {
+            "label": "mix_sample",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010014",
+            "$a1": "0x00000000100100dc",
+            "$a2": "0x00000000100100dc",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. The ninth B sample is now −32768 and its following sample remains one. A is unchanged. v0=9 and v1=5 describe this call. If you continue to the later wrapping call, it reads modified B; do not treat its output as a comparison using the original two inputs.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010016",
+            "$a1": "0x00000000100100de",
+            "$a2": "0x00000000100100de",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000009",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The inplace-nine observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-inplace-nine",
+      "source": "worked/inplace-nine.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/inplace-nine.asm normally to silent completion. This variant writes into B. The later wrapping call reads the changed B array, so its output is not a same-input comparison with the first saturated call. The guided proof concerns the first call’s exact alias and untouched suffix.",
+      "success": "The inplace-nine program completed normally with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-count-0",
+      "source": "worked/count-0.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-0.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 0 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break at mix_tail. Count 0 completed 0 vector group(s), advancing each cursor 0 bytes. a3 is 0; v1 is 0. With zero count, the function must return without reading either selected input or writing selected output.",
+          "anchor": {
+            "label": "mix_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. The call returned v0=0, v1=0, with a3 zero and cursors advanced 0 bytes. The buffers were untouched; setup still read the count word.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The count-0 observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-count-0",
+      "source": "worked/count-0.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-0.asm normally to silent completion. Inspect the published result words if useful. Normal exit complements the paused state observations; it does not replace checking the sample values and complete access widths.",
+      "success": "The count-0 program completed normally with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-count-7",
+      "source": "worked/count-7.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-7.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 7 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break at mix_tail. Count 7 completed 0 vector group(s), advancing each cursor 0 bytes. a3 is 7; v1 is 0. Every further load and store must fit the scalar remainder. A zero remainder skips the scalar loop.",
+          "anchor": {
+            "label": "mix_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000007",
+            "$v0": "0x0000000000000007",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. The call returned v0=7, v1=2, with a3 zero and cursors advanced 14 bytes. Compare the completed prefix with the requested slice; bytes after it remain outside the call.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010012",
+            "$a1": "0x00000000100100da",
+            "$a2": "0x00000000100101a2",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000007",
+            "$v1": "0x0000000000000002"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The count-7 observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-count-7",
+      "source": "worked/count-7.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-7.asm normally to silent completion. Inspect the published result words if useful. Normal exit complements the paused state observations; it does not replace checking the sample values and complete access widths.",
+      "success": "The count-7 program completed normally with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-count-8",
+      "source": "worked/count-8.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-8.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 8 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "tail",
+          "explanation": "Break at mix_tail. Count 8 completed 1 vector group(s), advancing each cursor 16 bytes. a3 is 0; v1 is 2. Every further load and store must fit the scalar remainder. A zero remainder skips the scalar loop.",
+          "anchor": {
+            "label": "mix_tail",
+            "mnemonic": "beqzc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010014",
+            "$a1": "0x00000000100100dc",
+            "$a2": "0x00000000100101a4",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000008",
+            "$v1": "0x0000000000000003"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. The call returned v0=8, v1=3, with a3 zero and cursors advanced 16 bytes. Compare the completed prefix with the requested slice; bytes after it remain outside the call.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010014",
+            "$a1": "0x00000000100100dc",
+            "$a2": "0x00000000100101a4",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000008",
+            "$v1": "0x0000000000000003"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The count-8 observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-count-8",
+      "source": "worked/count-8.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/count-8.asm normally to silent completion. Inspect the published result words if useful. Normal exit complements the paused state observations; it does not replace checking the sample values and complete access widths.",
+      "success": "The count-8 program completed normally with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-signed-one",
+      "source": "worked/signed-one.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/signed-one.asm and start a fresh Debug session. Use one line breakpoint at a time, following the requested source boundary before executing its instruction. This source requests 1 samples. Read the lab alongside Learn and inspect the actual Variables and Memory views.",
+      "stops": [
+        {
+          "id": "signed",
+          "explanation": "Break at mix_signed before addu. t0 is the full signed value −30000 and t1 is −10000, recovered from their byte pairs by seh. The exact sum −40000 fits the scalar intermediate but lies below the PCM16 range. No output sample has been stored yet.",
+          "anchor": {
+            "label": "mix_signed",
+            "mnemonic": "addu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010194",
+            "$a3": "0x0000000000000001",
+            "$t0": "0xffffffffffff8ad0",
+            "$t1": "0xffffffffffffd8f0",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at mix_ready. v0=1 and v1=1. pcm_c begins 00 80, the representation of −32768. The scalar path counted a strict excessive sum rather than checking only whether the stored result equals an endpoint.",
+          "anchor": {
+            "label": "mix_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010006",
+            "$a1": "0x00000000100100ce",
+            "$a2": "0x0000000010010196",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain its sample values, remaining work and clipping count."
+        }
+      ],
+      "success": "The signed-one observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "A breakpoint stops before the selected instruction. Learn highlights the next requested boundary; the selected Debug frame shows the actual pause."
+        },
+        {
+          "id": "views",
+          "text": "MSA rows show raw hexadecimal bits. Interpret sixteen-bit lanes as signed samples only where the operation calls for samples; an all-one comparison mask represents evidence, not audio."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-signed-one",
+      "source": "worked/signed-one.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/signed-one.asm normally to silent completion. Inspect the published result words if useful. Normal exit complements the paused state observations; it does not replace checking the sample values and complete access widths.",
+      "success": "The signed-one program completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "difference-order",
+      "explanation": "The independent function computes A−B. For A=30000 and B=−10000, the exact difference is 40000. Reversing the operands gives −40000 instead.",
+      "question": "What should the required subtraction store and count?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "−25536 and no clip",
+          "feedback": "That is wrapping of the required difference, not signed saturation."
+        },
+        {
+          "id": "a",
+          "text": "32767 and one clip",
+          "feedback": "Clamp the required positive difference. The reversed operation would clamp to −32768 and is a different function."
+        },
+        {
+          "id": "b",
+          "text": "−32768 and one clip",
+          "feedback": "That is the result for B−A, not A−B."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_saturated",
+        "mnemonic": "ceq.h",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "identical-subtraction",
+      "explanation": "Two identical input pointers supply the same original signed sample for A and B. The destination may also be exactly that buffer. Both operands still need to refer to the original sample before it is overwritten.",
+      "question": "What does saturated subtraction produce for identical inputs?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Zero for every selected sample and zero clips",
+          "feedback": "Every exact difference is x−x=0, including original samples at either endpoint."
+        },
+        {
+          "id": "b",
+          "text": "Doubled samples with possible clipping",
+          "feedback": "That describes adding identical inputs, not subtracting them."
+        },
+        {
+          "id": "c",
+          "text": "Unchanged input samples and an unchanged previous clipping count",
+          "feedback": "Subtraction still writes zero results and initializes its own returned count for this call."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "mix_block",
+        "mnemonic": "ld.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "subtract-disjoint",
+      "source": "independent/pcm-subtract.asm",
+      "caseProfile": "independent/pcm-subtract-alias-0.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current subtract_pcm16 implementation for disjoint inputs and output, strict boundaries, reused calls and the complete caller. Follow independent/README.md’s interface. The starter deliberately stops with break. Write and retry in the editor; a first failure is a place to investigate, not a request to imitate the worked temporary registers.",
+      "success": "All 73 public cases in this group pass for the current source. Explain the read-before-write order, clipping evidence and complete access widths that justify this arrangement.",
+      "hints": [
+        {
+          "id": "difference",
+          "text": "Recover signed samples, compute A−B in a sufficiently wide intermediate and clamp only outside −32768…32767. An exact endpoint contributes no clipping event."
+        },
+        {
+          "id": "alias",
+          "text": "For an exact alias, load both original operands before storing their result. Advance by the selected group or scalar width; do not round odd byte pointers."
+        },
+        {
+          "id": "count",
+          "text": "Initialize v1 on every function call. Convert mask bit counts to sample counts before accumulation, and keep the accumulated count when entering the tail."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "subtract-left",
+      "source": "independent/pcm-subtract.asm",
+      "caseProfile": "independent/pcm-subtract-alias-1.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current subtract_pcm16 implementation for output exactly equal to the left input. Follow independent/README.md’s interface. Use the same source. A pass under one arrangement does not establish the other alias cases.",
+      "success": "All 65 public cases in this group pass for the current source. Explain the read-before-write order, clipping evidence and complete access widths that justify this arrangement.",
+      "hints": [
+        {
+          "id": "difference",
+          "text": "Recover signed samples, compute A−B in a sufficiently wide intermediate and clamp only outside −32768…32767. An exact endpoint contributes no clipping event."
+        },
+        {
+          "id": "alias",
+          "text": "For an exact alias, load both original operands before storing their result. Advance by the selected group or scalar width; do not round odd byte pointers."
+        },
+        {
+          "id": "count",
+          "text": "Initialize v1 on every function call. Convert mask bit counts to sample counts before accumulation, and keep the accumulated count when entering the tail."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "subtract-right",
+      "source": "independent/pcm-subtract.asm",
+      "caseProfile": "independent/pcm-subtract-alias-2.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current subtract_pcm16 implementation for output exactly equal to the right input. Follow independent/README.md’s interface. Use the same source. A pass under one arrangement does not establish the other alias cases.",
+      "success": "All 65 public cases in this group pass for the current source. Explain the read-before-write order, clipping evidence and complete access widths that justify this arrangement.",
+      "hints": [
+        {
+          "id": "difference",
+          "text": "Recover signed samples, compute A−B in a sufficiently wide intermediate and clamp only outside −32768…32767. An exact endpoint contributes no clipping event."
+        },
+        {
+          "id": "alias",
+          "text": "For an exact alias, load both original operands before storing their result. Advance by the selected group or scalar width; do not round odd byte pointers."
+        },
+        {
+          "id": "count",
+          "text": "Initialize v1 on every function call. Convert mask bit counts to sample counts before accumulation, and keep the accumulated count when entering the tail."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "subtract-identical",
+      "source": "independent/pcm-subtract.asm",
+      "caseProfile": "independent/pcm-subtract-alias-3.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current subtract_pcm16 implementation for identical inputs with disjoint output. Follow independent/README.md’s interface. Use the same source. A pass under one arrangement does not establish the other alias cases.",
+      "success": "All 65 public cases in this group pass for the current source. Explain the read-before-write order, clipping evidence and complete access widths that justify this arrangement.",
+      "hints": [
+        {
+          "id": "difference",
+          "text": "Recover signed samples, compute A−B in a sufficiently wide intermediate and clamp only outside −32768…32767. An exact endpoint contributes no clipping event."
+        },
+        {
+          "id": "alias",
+          "text": "For an exact alias, load both original operands before storing their result. Advance by the selected group or scalar width; do not round odd byte pointers."
+        },
+        {
+          "id": "count",
+          "text": "Initialize v1 on every function call. Convert mask bit counts to sample counts before accumulation, and keep the accumulated count when entering the tail."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "subtract-all-identical",
+      "source": "independent/pcm-subtract.asm",
+      "caseProfile": "independent/pcm-subtract-alias-4.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current subtract_pcm16 implementation for both inputs and output at the same address. Follow independent/README.md’s interface. Use the same source. A pass under one arrangement does not establish the other alias cases.",
+      "success": "All 65 public cases in this group pass for the current source. Explain the read-before-write order, clipping evidence and complete access widths that justify this arrangement.",
+      "hints": [
+        {
+          "id": "difference",
+          "text": "Recover signed samples, compute A−B in a sufficiently wide intermediate and clamp only outside −32768…32767. An exact endpoint contributes no clipping event."
+        },
+        {
+          "id": "alias",
+          "text": "For an exact alias, load both original operands before storing their result. Advance by the selected group or scalar width; do not round odd byte pointers."
+        },
+        {
+          "id": "count",
+          "text": "Initialize v1 on every function call. Convert mask bit counts to sample counts before accumulation, and keep the accumulated count when entering the tail."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/pcm-subtract.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "explanation": "Check the complete caller’s silent normal exit for the same independent source, after the function, alias and caller-publication groups.",
+      "success": "The complete subtraction program exits normally with no console output."
+    }
+  ]
+}

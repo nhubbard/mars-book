@@ -305,6 +305,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `pcm walkthrough isolates its exact source and single private fixture`() {
+        val pcm = plan.copy(archives = listOf(archive.copy(id = "020-pcm-mixing", entry = "pcm-mix.asm")),
+            nativePredictions = true, pcmUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/pcm-subtract.asm", "/tmp/pcm.asm", "c".repeat(64))))
+        pcm.validate()
+        pcm.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(pcm.copy(nativePredictions = false), pcm.copy(nativeExecution = true),
+            pcm.copy(nativeDebug = true), pcm.copy(memoryUnit = true), pcm.copy(loopUnit = true),
+            pcm.copy(functionUnit = true), pcm.copy(spriteUnit = true), pcm.copy(rasterUnit = true), pcm.copy(lifeUnit = true), pcm.copy(sortingUnit = true), pcm.copy(fixedUnit = true), pcm.copy(localityUnit = true), pcm.copy(boundedUnit = true), pcm.copy(measurementUnit = true), pcm.copy(msaUnit = true), pcm.copy(assessmentFixtures = emptyList()),
+            pcm.copy(archives = listOf(archive)), pcm.copy(resumeCompleted = true), pcm.copy(pcmUnit = false),
+            pcm.copy(activityNavigation = true), pcm.copy(prerequisiteControls = true),
+            pcm.copy(assessmentFixtures = pcm.assessmentFixtures + pcm.assessmentFixtures),
+            pcm.copy(assessmentFixtures = listOf(pcm.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
