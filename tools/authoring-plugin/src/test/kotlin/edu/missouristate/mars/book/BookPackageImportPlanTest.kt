@@ -659,4 +659,22 @@ class BookPackageImportPlanTest {
         assertThrows<IllegalArgumentException> { resume.copy(resume = false).validate() }
         plan.copy(archives = listOf(archive, archive.copy(sha256 = "c".repeat(64), version = "1.1.0"))).validate()
     }
+
+    @Test
+    fun `Maze native plans bind the single search fixture and reject mixed or incomplete routes`() {
+        val maze = plan.copy(archives = listOf(archive.copy(id = "010-maze-frontier", version = "0.1.0", entry = "worked/neighbor.asm")),
+            nativePredictions = true, mazeUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/maze.asm", "/tmp/maze.asm", "c".repeat(64))))
+        maze.validate()
+        maze.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(maze.copy(nativePredictions = false), maze.copy(nativeExecution = true),
+            maze.copy(nativeDebug = true), maze.copy(resumeCompleted = true), maze.copy(h263StreamUnit = true),
+            maze.copy(mazeUnit = false), maze.copy(activityNavigation = true), maze.copy(prerequisiteControls = true),
+            maze.copy(assessmentFixtures = emptyList()), maze.copy(assessmentFixtures = maze.assessmentFixtures + maze.assessmentFixtures),
+            maze.copy(assessmentFixtures = listOf(maze.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            maze.copy(archives = listOf(maze.archives.single().copy(id = "010-other"))),
+            maze.copy(archives = listOf(maze.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
 }
