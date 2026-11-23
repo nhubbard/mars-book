@@ -8,13 +8,19 @@ new records occupy the free space after the newest one. A circular buffer, or
 \emph{ring buffer}, lets that occupied region cross the physical end of an array.
 The array stays in place; its indices wrap back to zero.
 
-This companion is original project \texttt{014-ring-buffer-logger}. Use the revised
-\texttt{ring-records.asm} starter in \texttt{revision/labs/files} and both checks
-under \texttt{packages/014-ring-buffer-logger/checks}. Implement the
-callable \texttt{push\_record} and \texttt{pop\_record} functions. The supplied
-caller, allocations and \texttt{operation\_ready} marker provide a common way to
-observe and check your implementation. Replace the failing function bodies; choose your own register allocation and algorithm.
-The archived project starter remains available under its original package path.
+This companion develops original project \texttt{014-ring-buffer-logger} through
+the downloadable \texttt{014-ring-records} unit. Open its assignment and begin with
+\texttt{worked/cursor.asm}, a complete experiment. The second experiment,
+\texttt{worked/cursor-eight.asm}, changes capacity from seven to eight while
+retaining index six. Predict each result before running or debugging it.
+
+Your implementation belongs in \texttt{independent/ring.asm}. Its caller,
+allocations and \texttt{operation\_ready} marker are complete. Replace the two
+failing bodies with your own \texttt{push\_record} and \texttt{pop\_record}
+implementations. The unit checks each function separately before checking the
+caller. You can finish and test push while pop is still unfinished. The archived
+project remains under its original package path; the downloaded unit uses the
+revised compact caller explained here.
 
 You will need the preceding chapters' byte addressing, function interfaces and
 preserved state. The new work is to separate physical positions from logical
@@ -113,8 +119,8 @@ successful pop writes its destination and descriptor, but never the ring itself.
 
 For a one-byte advance, increment the index and replace it with zero when it
 reaches capacity. Since the old index is at most $C-1$, the increment is at most
-$C$, so an equality check is sufficient. The complete \texttt{ring-cursor.asm}
-experiment in \texttt{revision/labs/files} calls this helper with index six and
+$C$, so an equality check is sufficient. The complete \texttt{worked/cursor.asm}
+experiment in the downloaded unit calls this helper with index six and
 capacity seven, retains the result in \texttt{cursor\_result}, and exits silently.
 The helper receives the index in \texttt{\$a0}, capacity in \texttt{\$a1}, and
 returns the next index in \texttt{\$v0}.
@@ -132,7 +138,7 @@ cursor_return:
 \end{minted}
 \end{minipage}
 
-Run its public \texttt{revision/labs/checks/ring-cursor.kts} check to cover every
+Run its public \texttt{worked/cursor.kts} check to cover every
 valid index for capacities one through 32. Predict capacity one before running:
 its only valid index advances back to zero. Then compare a mask-based expression
 $(index+1)\mathbin{\&}(C-1)$. For $C=7$ and index six, it produces six instead of
@@ -244,23 +250,55 @@ space and the unchanged ring. Next reproduce the seven-byte example above, inclu
 the failed short-destination pop and its retry. Write down all physical positions
 before running it.
 
-The supplied 14-command caller uses capacity eight and a different starting state.
-Break at \texttt{operation\_ready} and use \texttt{operation\_index} to identify the
-completed command; the command index starts at zero. Index three shows a wrapped
-queue. Index eight is full. Index ten is a short-destination failure, and index
-eleven retries with enough capacity. Compare the full ring and descriptor across
-the failure, then locate the bytes released by the successful retry. Output bytes
-after the requested payload must retain their previous values.
+The supplied 14-command caller uses capacity eight and a different starting state
+from the seven-byte example. Its command index starts at zero. At
+\texttt{operation\_ready}, \texttt{\$s3} and the published
+\texttt{operation\_index} identify the command that just completed. The guided
+Debug activity asks you to stop at indices 3, 8, 10 and 11.
 
-Run both public checks on your completed copy, using JDK 25:
+Place a gutter breakpoint on the \texttt{nop} beneath \texttt{operation\_ready}.
+Open that breakpoint's settings and set its condition to \texttt{\$s3 == 3}.
+Start Debug and inspect the first requested stop. To reach the next one, change
+the same breakpoint's condition to \texttt{\$s3 == 8}, then resume execution.
+Repeat with 10 and 11. Change the breakpoint condition, without editing the source
+or restarting the program: each later observation depends on the earlier commands
+having run in the same session.
+
+\begin{center}
+\begin{tabular}{lrrrl}
+\toprule
+Command index & Head & Tail & Used & $(v_0,v_1)$\\
+\midrule
+3: wrapped queue & 4 & 3 & 7 & $(0,4)$\\
+8: full queue & 4 & 4 & 8 & $(0,8)$\\
+10: short destination & 4 & 4 & 8 & $(-2,7)$\\
+11: successful retry & 4 & 4 & 0 & $(7,8)$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Compare ring and descriptor across the short-destination failure. After the retry,
+locate the released bytes without treating their stale values as a new record.
+Output bytes after the requested payload must retain their previous values. A
+silent final Run is expected: this caller publishes state in memory rather than
+printing a decoded string.
+
+Use the inline \emph{Check this program} controls for the separate push and pop
+assessments, each containing 260 cases, then the twelve-case caller assessment.
+The split retains all 520 original kernel trials. For a command-line check of both
+functions and the caller, run these commands from the downloaded unit's directory
+using JDK 25:
+
+\noindent\begin{minipage}{\linewidth}
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  packages/014-ring-buffer-logger/checks/kernels.kts \
-  /path/to/your/main.asm
+  independent/kernels.kts independent/ring.asm
 java -jar /path/to/cli.jar grade \
-  packages/014-ring-buffer-logger/checks/program.kts \
-  /path/to/your/main.asm
+  independent/caller.kts independent/ring.asm
 \end{verbatim}
+\end{minipage}
+
+
 The kernel check supplies different valid descriptors, capacities, offsets, saved
 register values and return continuations. The caller check observes completed
 commands and result publication. They check byte footprints and protected stores,
