@@ -520,6 +520,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `WAV corpus plans bind one archive and private fixture and retain fresh-process resume`() {
+        val wav = plan.copy(archives = listOf(archive.copy(id = "031-pcm-wav", version = "0.1.0", entry = "worked/chunk-offsets.asm")),
+            nativePredictions = true, wavUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/wav-reverse-frames.asm", "/tmp/wav.asm", "c".repeat(64))))
+        wav.validate()
+        wav.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(wav.copy(nativePredictions = false), wav.copy(nativeExecution = true),
+            wav.copy(nativeDebug = true), wav.copy(resumeCompleted = true), wav.copy(chachaUnit = true),
+            wav.copy(rsaUnit = true), wav.copy(shaUnit = true), wav.copy(cborUnit = true), wav.copy(qoiUnit = true), wav.copy(crcUnit = true), wav.copy(memoryUnit = true),
+            wav.copy(wavUnit = false), wav.copy(activityNavigation = true), wav.copy(prerequisiteControls = true),
+            wav.copy(assessmentFixtures = emptyList()),
+            wav.copy(assessmentFixtures = wav.assessmentFixtures + wav.assessmentFixtures),
+            wav.copy(assessmentFixtures = listOf(wav.assessmentFixtures.single().copy(source = "independent/chacha20.asm"))),
+            wav.copy(archives = listOf(wav.archives.single().copy(id = "026-chacha20"))),
+            wav.copy(archives = listOf(wav.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
