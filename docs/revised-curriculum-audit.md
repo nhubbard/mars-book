@@ -61,11 +61,24 @@ shifts, OR and XOR in Chapter 5; the native chapter now explains them. This map
 requires author and learner review. It must not infer achieved learning from
 file presence or package titles. Electives remain optional for the codec progression.
 
-Native interactive support now extends through the lossless-video unit, including the
-revised lessons under `revision/lessons` and earlier verified units described in
-their individual notes. H.263 and other unfinished companion lessons
-still use ordinary Run and Debug. Broader course sequencing remains implementation
-work. Technical verification notes retain the
-scope of executable checks and captures. Their existence does not certify that
-those checks were rerun by this structural audit. Author walkthrough, beginner
-review and human accessibility review remain open.
+Native interactive support now includes both H.263 units and the earlier revised
+lessons under `revision/lessons`. There are 29 downloadable native packages, plus
+the built-in first-program unit. Seven elective companions still lack native
+guided packages: MarsBot, maze search, ring buffers, UTF-8, clipped sprites,
+expression evaluation and bytecode interpretation. Their written labs and public
+checks remain available, but ordinary Run and Debug do not complete that delivery.
+
+The [acceptance ledger](restructuring-acceptance.md) tracks these gaps and the
+course-wide integration review. Technical verification notes retain the scope of
+executable checks and captures. Their existence does not certify that those checks
+were rerun by this structural audit. Author walkthrough, beginner review and human
+accessibility review remain open.
+
+## Publication navigation
+
+Both revised entries now include native title and usage pages, chapter contents,
+a reference glossary and a subject index. The lab index also links directly to
+all ten companion sections. Index entries deliberately identify their chapter or
+companion section; they do not claim the exact paragraph where a term first appears.
+These ordinary TeX includes remain directly editable. The historical first
+structural counts above do not describe the current include and reference totals.

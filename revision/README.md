@@ -40,13 +40,16 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   reconstruction excerpt. They assume their stated prior knowledge and use worked
   reasoning and independent exercises, without reproducing the old lab checkpoints.
 - `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
-  observations, fault diagnosis and independent variations. Native interactive coverage now extends through lossless video; individual unit notes
-  record its scope. H.263 and unfinished companion lessons currently
-  use ordinary Run and Debug.
+  observations, fault diagnosis and independent variations. Native interactive coverage includes both H.263 units; individual unit notes
+  record its scope. Seven elective companions still require native guided packages,
+  as recorded in the acceptance ledger. Their existing ordinary Run/Debug files
+  and checks remain available.
 
 For the project-to-chapter coverage index and repeatable structural checks, see
 [the revised curriculum audit](../docs/revised-curriculum-audit.md). It distinguishes
-original package prerequisites from revised introductory exercises.
+original package prerequisites from revised introductory exercises. The
+[acceptance ledger](../docs/restructuring-acceptance.md) records unfinished native
+companions and the separate human reviews.
 
 ## Reading the current proofs
 
@@ -54,9 +57,13 @@ For restructuring review, open these local build outputs:
 
 | Reading | PDF |
 | --- | --- |
-| Main-book chapters 1–27 (189 pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27 and companions (225 pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Main book, chapters 1–27 and navigation (201 PDF pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
+| Lab supplements 1–27, companions and navigation (241 PDF pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
+
+The main book retains 189 numbered chapter pages and the lab book 228. The
+remaining pages provide title/usage matter, contents, glossary and subject index.
+The lab index links directly to the ten companions.
 
 These PDFs are generated locally; the native LaTeX files in this directory are the
 publication sources. The author has accepted the current explanatory direction
