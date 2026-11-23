@@ -145,3 +145,12 @@ The native file-check delivery, guided observations, first/resume IDE walkthroug
 and revised written companion remain unfinished. Existing publication figures and
 LaTeX compositions have not changed in this foundation step. The broader curriculum
 goal remains active.
+
+The completed implementation regression passes 234 CLI and 1,253 plugin tests
+with zero failures, errors or skips. Both required coverage gates and the plugin
+build pass. The exact fixture containing all sixteen function profiles plus the
+exit profile is part of that full Jupiter run, and every member matches the
+public author byte for byte. Paired public API verification passes with 91 MARS /
+20 unchanged authoring experimental usages. All 41 manual MARS edits remain
+unchanged. No IDE sandbox was launched and no publication proof was regenerated
+for this grading-foundation step. Native file-check integration is next.
