@@ -746,4 +746,21 @@ class BookPackageImportPlanTest {
             assertThrows<IllegalArgumentException> { bad.validate() }
         }
     }
+    @Test
+    fun `Bytecode native plans bind the retained caller fixture and reject mixed or incomplete routes`() {
+        val bytecode = plan.copy(archives = listOf(archive.copy(id = "018-bytecode-machine", version = "0.1.0", entry = "worked/record.asm")),
+            nativePredictions = true, bytecodeUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/vm.asm", "/tmp/bytecode.asm", "c".repeat(64))))
+        bytecode.validate()
+        bytecode.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(bytecode.copy(nativePredictions = false), bytecode.copy(nativeExecution = true),
+            bytecode.copy(nativeDebug = true), bytecode.copy(resumeCompleted = true), bytecode.copy(h263StreamUnit = true),
+            bytecode.copy(bytecodeUnit = false), bytecode.copy(activityNavigation = true), bytecode.copy(prerequisiteControls = true),
+            bytecode.copy(assessmentFixtures = emptyList()), bytecode.copy(assessmentFixtures = bytecode.assessmentFixtures + bytecode.assessmentFixtures),
+            bytecode.copy(assessmentFixtures = listOf(bytecode.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            bytecode.copy(archives = listOf(bytecode.archives.single().copy(id = "018-other"))),
+            bytecode.copy(archives = listOf(bytecode.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
 }

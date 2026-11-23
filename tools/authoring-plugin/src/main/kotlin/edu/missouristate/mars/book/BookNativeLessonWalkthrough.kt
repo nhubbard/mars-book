@@ -88,7 +88,7 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
             Files.writeString(output.resolve("$id-focus.json"), GsonBuilder().setPrettyPrinting().create().toJson(observation), CREATE_NEW)
         }
     }
-    if (plan.base64Unit || plan.ppmUnit || plan.crcUnit || plan.qoiUnit || plan.cborUnit || plan.chachaUnit || plan.shaUnit || plan.rsaUnit || plan.wavUnit || plan.pngUnit || plan.losslessUnit || plan.h263PredictionUnit || plan.h263StreamUnit || plan.marsBotUnit || plan.mazeUnit || plan.ringUnit || plan.utf8Unit || plan.clippedUnit || plan.expressionUnit) {
+    if (plan.base64Unit || plan.ppmUnit || plan.crcUnit || plan.qoiUnit || plan.cborUnit || plan.chachaUnit || plan.shaUnit || plan.rsaUnit || plan.wavUnit || plan.pngUnit || plan.losslessUnit || plan.h263PredictionUnit || plan.h263StreamUnit || plan.marsBotUnit || plan.mazeUnit || plan.ringUnit || plan.utf8Unit || plan.clippedUnit || plan.expressionUnit || plan.bytecodeUnit) {
         captureBookNativeCorpus(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
         return
     }

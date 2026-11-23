@@ -8,15 +8,20 @@ The bytes still need validation, and their effects belong to a second machine
 that your MIPS program maintains. This companion revises original project
 \texttt{018-tiny-bytecode-interpreter}.
 
-Implement \texttt{run\_vm} in \texttt{revision/labs/files/bytecode-vm.asm}.
-The independent entry stops with \texttt{break} until replaced. Its caller
-and data arenas are supplied; private labels, frames and dispatch design are
-yours to choose. Original final checks remain under
-\texttt{packages/018-tiny-bytecode-interpreter}. The preceding nested-data
-chapter supplies bounds and validation reasoning; the expression companion
-supplies checked-word arithmetic. Review functions and stack preservation as
-needed. These activities use ordinary Run and Debug; their native guided lesson
-remains unfinished.
+Import \texttt{018-bytecode-machine}, version 0.1.0, through the MARS Lessons
+window. Begin with the complete \texttt{worked/record.asm}, then compare
+\texttt{worked/truncated.asm}. Implement \texttt{run\_vm} in
+\texttt{independent/vm.asm}; replace its single \texttt{break}, keeping the supplied
+caller and data arenas. Private labels, frames and dispatch design are yours to
+choose. The original project remains under
+\texttt{packages/018-tiny-bytecode-interpreter}.
+
+The preceding nested-data chapter supplies bounds and validation reasoning; the
+expression companion supplies checked-word arithmetic. Review functions and stack
+preservation as needed. Inline predictions connect the written reasoning to
+source pointers. Guided Debug first inspects the complete record classifier,
+then the independent VM after you have implemented it. You may also work freely
+and return to the staged assessments.
 
 \subsection*{Keep the guest machine distinct from the executing MIPS program}
 
@@ -58,6 +63,29 @@ before advancing. PUSH8's immediate is a signed byte; PUSH32 carries four
 little-endian bytes representing any signed-word bit pattern. Unlike the
 expression language's positive decimal literal, PUSH32 can encode minus
 2147483648 directly as \texttt{02 00 00 00 80}.
+
+The complete \texttt{worked/record.asm} isolates that first decision. Its
+\texttt{record\_width} receives a full pointer, selected length and candidate byte
+offset in \texttt{a0/a1/a2}. It proves that the opcode byte exists, classifies its
+width, then compares the required width with the remaining selected bytes. On
+success it returns status zero and width; on failure it returns a local status
+and zero width. This helper does not decode an operand, mark a whole image,
+validate a branch target or execute a guest instruction.
+
+Debug the five-byte PUSH32 example. Before \texttt{width\_call}, expect selected
+length five and candidate offset zero. At \texttt{record\_fits}, before
+\texttt{bltu}, \texttt{t1} holds opcode two, \texttt{t2} holds width five and
+\texttt{t3} holds remaining length five. At \texttt{width\_ready}, expect
+\texttt{v0}=0 and \texttt{v1}=5. Stop Debug, then open
+\texttt{worked/truncated.asm}. Its initializer still contains five physical
+bytes, but the selected length is four. Follow the opcode read, then the same
+width comparison: required five exceeds remaining four. The returned pair is
+\texttt{(-2,0)}. Physical storage past the selected end does not complete the record.
+
+Run the ordinary complete example afterward. It stores status and width and
+exits silently. Use \texttt{worked/record.kts} to check all opcode values, each at
+selected lengths zero through five, plus the complete caller. These local checks support your
+first structural pass; they are not acceptance of the VM.
 
 Record every instruction start. With at most 64 code bytes, a doubleword bitmap
 can use bit $p$ for start offset $p$. A private array of 64 byte markers is
@@ -116,12 +144,13 @@ final result has depth one.
 \input{revision/figures/bytecode/prefixes}
 
 \Needspace{8\baselineskip}
-Use the fixed fixture helper after implementing your entry. It edits bytecode
+The native unit bundles the default countdown. For additional manual experiments,
+use the fixed fixture helper from the book checkout after implementing your entry. It edits bytecode
 and caller controls while preserving the native instruction text:
 \Needspace{6\baselineskip}
 \begin{verbatim}
 python3 tools/revision_vm_programs.py countdown /tmp/vm-four.asm \
-  --source /path/to/your/bytecode-vm.asm --budget 4
+  --source /path/to/your/independent/vm.asm --budget 4
 \end{verbatim}
 Open the generated copy and break at \texttt{vm\_ready}. The descriptor already
 contains the return state; the caller has not stored \texttt{last\_status} and
@@ -193,8 +222,8 @@ The public measurement helper runs a known countdown image at budgets zero and
 \Needspace{6\baselineskip}
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  revision/labs/checks/bytecode-work.kts \
-  /path/to/your/bytecode-vm.asm
+  independent/work.kts \
+  /path/to/your/independent/vm.asm
 \end{verbatim}
 
 \input{revision/figures/bytecode/work}
@@ -242,16 +271,40 @@ failed instruction. These are design stages rather than required private labels
 or a fixed frame layout.
 
 \Needspace{7\baselineskip}
-Run the public interface checks against your completed working source:
+Use the six native assessments as construction checkpoints on the same source.
+The structural check retains 500 original opcode/truncation failures; the target
+check retains eighteen invalid-target cases. The completed-outcome check contains
+421 halts or budget returns, and the runtime check contains 308 failures. Together
+these are all 1,247 original direct-call trials, with their selected arenas,
+offsets, capacities, budgets and saved-state sentinels retained.
+
+Four new public replacement sequences each make three calls in one machine.
+The caller check runs twenty-three complete programs, observing initialization
+at \texttt{vm\_call}, the actual VM return at \texttt{vm\_ready}, and the later
+\texttt{last\_status/last\_steps} stores at \texttt{vm\_stored}. Your entry must
+publish the descriptor before return; it must leave those two caller-owned words
+for the caller to store. The final interval also protects data after publication.
+
+Debug the default completed caller at those three boundaries. Before the call,
+expect length eighteen and guest budget sixty-four. At return, expect
+\texttt{v0}=1 and \texttt{v1}=33. Inspect PC eighteen, depth one, retired count
+thirty-three, status one and fault minus one in the descriptor, and value six in
+the live stack prefix. Continue to \texttt{vm\_stored} and inspect the two stored
+words before the exit selector changes \texttt{v0}. The native figures above
+remain observations of the supplied public interface in a completed interpreter;
+your private handler layout need not match it.
+
+From the imported package directory, the optional command-line route is:
 \begin{verbatim}
-java -jar /path/to/cli.jar grade \
-  packages/018-tiny-bytecode-interpreter/checks/kernel.kts \
-  /path/to/your/bytecode-vm.asm
+java -jar /path/to/cli.jar grade \\
+  independent/kernel.kts independent/vm.asm
 \end{verbatim}
-\Needspace{12\baselineskip}
-Repeat with \texttt{program.kts}. The independent skeleton deliberately fails.
-Equivalent decoders, boundary sets and dispatch organization are accepted;
-exact native instruction counts and inactive workspace contents are not graded.
+Repeat with \texttt{independent/caller.kts}. The extra public replacement sequences
+run in the native lesson. The unfinished skeleton deliberately fails. Equivalent
+decoders, boundary sets and dispatch organization are accepted; exact native
+instruction counts and inactive workspace contents are not graded. Finish with
+ordinary Run, which should exit silently; that transcript alone cannot establish
+correct guest execution.
 
 Finally, replace an image between calls without changing its address or length.
 An all-HALT image marks every byte as a start. A replacement containing operands

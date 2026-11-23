@@ -1,0 +1,15 @@
+# A machine inside the machine
+
+Read the bytecode companion after the expression lab. You need bounded byte access, full addresses, saved-register/frame discipline and checked signed-word arithmetic. This unit separates the native MIPS program from the guest machine it implements.
+
+Start with worked/record.asm. The complete classifier proves that an opcode byte exists, recognizes its encoded width and checks that the whole record fits. It does not read an operand, construct an image-wide start set, validate targets or execute guest instructions. The shortened worked/truncated.asm retains all physical bytes but selects only four. Predict why the five-byte PUSH32 must fail. worked/record.kts checks every opcode at lengths zero through five and the complete caller.
+
+Implement run_vm in independent/vm.asm by replacing its one break body. Keep the caller, data arenas and public observation labels. Private frame layout, instruction-start representation and dispatch design are your choices. The companion gives the opcode table, descriptor layout, status codes and exact order of checks. a0/a1 select code, a2 names the descriptor and a3 is the guest budget. The descriptor supplies capacity and the full guest-stack pointer.
+
+Validate the whole current image structurally, then validate every encoded branch target. At zero guest budget these passes still run. Start each call at guest PC/depth/retired zero, ignoring old output fields. Check stack requirements and signed-word arithmetic before committing operations. Retire only successful guest transitions; HALT advances and retires once. Check remaining budget before the next fetch.
+
+Every return publishes PC, depth, retired, status and fault in the descriptor, and returns status/retired in v0/v1. Preserve descriptor inputs, code, guards, other arenas and cells outside capacity, including against temporary writes. Keep all reads inside selected code, descriptor and guest-stack views among caller objects. Preserve full saved registers/fp/sp and incoming ra. Own constants and correctly restored native frames are permitted. Produce no console output.
+
+The four original domains contain 500 structural failures, eighteen target failures, 421 completed outcomes and 308 runtime failures: all 1,247 original interface trials. Four new public sequences each replace the image over three calls in one machine. Twenty-three complete callers distinguish initialization, returned report and stored status/steps. Use the same evolving source for all six checks. Different correct instruction maps, handlers and dispatch designs are accepted.
+
+Debug the default countdown before call, at return and after caller publication. It halts at guest PC18 with depth1, thirty-three retired instructions and live value6. Explain the deeper intermediate stack, the consumed JZ condition and why failed DUP does not retire. Retain separate zero-budget invalid-target, capacity, overflow, division and end-fetch examples. Use independent/work.kts to measure native work after correctness; guest retirements and native instruction counts answer different questions.

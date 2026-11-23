@@ -1,0 +1,600 @@
+{
+  "formatVersion": 11,
+  "introduction": "A guest machine has its own PC, stack and retirement count. Inspect a complete bounded record classifier, then build and check one continuing bytecode VM with whole-image validation and precise failure publication.",
+  "conclusion": "Explain structural priority, current-image starts, stack effects, failure atomicity, budget-before-fetch and fresh-call state. Keep guest retirements distinct from native MIPS work; finite checks do not prove every encoded program.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "guest-offset-not-native-pc",
+      "explanation": "The guest bytes 02 00 00 00 80 encode PUSH32 with a signed-word operand. The native MIPS program reads those bytes as data.",
+      "question": "What establishes the next sequential guest PC?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Add the encoded width five to the guest byte offset.",
+          "feedback": "A guest instruction can occupy several data bytes while its native handler executes many MIPS instructions."
+        },
+        {
+          "id": "b",
+          "text": "Add one because one guest instruction retires.",
+          "feedback": "Retirement counts semantic transitions; the guest PC counts encoded bytes."
+        },
+        {
+          "id": "c",
+          "text": "Jump the native MIPS PC into the bytecode array.",
+          "feedback": "The interpreter dispatches native handlers. The bytecode remains data."
+        }
+      ],
+      "correctChoice": "a",
+      "source": "worked/record.asm",
+      "anchor": {
+        "label": "width_call",
+        "mnemonic": "balc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-record",
+      "source": "worked/record.asm",
+      "integerInputs": [],
+      "explanation": "Debug the complete record classifier. It recognizes one record and proves its width fits; it neither validates a whole image nor executes a guest.",
+      "stops": [
+        {
+          "id": "arguments",
+          "explanation": "Pause before the call. Five selected bytes contain a PUSH32 record.",
+          "anchor": {
+            "label": "width_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000000000005",
+            "$a2": "0x0000000000000000"
+          },
+          "success": "The pointer and selected length bound the data reads."
+        },
+        {
+          "id": "extent",
+          "explanation": "Pause before bltu. Classification selected width five; the available suffix also has five bytes.",
+          "anchor": {
+            "label": "record_fits",
+            "mnemonic": "bltu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000002",
+            "$t2": "0x0000000000000005",
+            "$t3": "0x0000000000000005"
+          },
+          "success": "Equal extents fit. The helper has only read the opcode, not a host-aligned operand word."
+        },
+        {
+          "id": "return",
+          "explanation": "Pause at width_ready before nop.",
+          "anchor": {
+            "label": "width_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "Status zero makes v1 the encoded record width."
+        }
+      ],
+      "success": "Explain why recognizing an opcode does not establish branch targets or VM behavior. Stop Debug before the shorter-slice experiment."
+    },
+    {
+      "kind": "prediction",
+      "id": "physical-bytes-not-selected-length",
+      "explanation": "worked/truncated.asm keeps all five physical bytes but changes the selected length to four.",
+      "question": "Can the classifier accept the existing fifth byte?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes, because the arena physically contains it.",
+          "feedback": "The selected length is authoritative. Physical storage beyond it is not available input."
+        },
+        {
+          "id": "b",
+          "text": "No. Return truncation before treating the operand as a complete record.",
+          "feedback": "Width five exceeds the four-byte suffix, even though memory happens to contain a fifth byte."
+        },
+        {
+          "id": "c",
+          "text": "Accept width four and decode a shorter PUSH32.",
+          "feedback": "PUSH32 has a fixed five-byte encoding; its width does not shrink with the input."
+        }
+      ],
+      "correctChoice": "b",
+      "source": "worked/truncated.asm",
+      "anchor": {
+        "label": "record_fits",
+        "mnemonic": "bltu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-truncated",
+      "source": "worked/truncated.asm",
+      "integerInputs": [],
+      "explanation": "Debug the shortened selected slice in a new session. Follow the bounds check through classification and failure.",
+      "stops": [
+        {
+          "id": "arguments",
+          "explanation": "Pause before the call with selected length four.",
+          "anchor": {
+            "label": "width_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000000000004",
+            "$a2": "0x0000000000000000"
+          },
+          "success": "The physical initializer remains unchanged."
+        },
+        {
+          "id": "opcode",
+          "explanation": "Pause before lbu at record_classify. The offset check already proved the opcode exists.",
+          "anchor": {
+            "label": "record_classify",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000000000004",
+            "$a2": "0x0000000000000000"
+          },
+          "success": "Prove the first byte before loading it; then prove the complete record."
+        },
+        {
+          "id": "extent",
+          "explanation": "Pause before bltu. Compare available four with required five.",
+          "anchor": {
+            "label": "record_fits",
+            "mnemonic": "bltu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000002",
+            "$t2": "0x0000000000000005",
+            "$t3": "0x0000000000000004"
+          },
+          "success": "The incomplete record must not become an instruction start for a later guest run."
+        },
+        {
+          "id": "return",
+          "explanation": "Pause at width_ready before nop.",
+          "anchor": {
+            "label": "width_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0xfffffffffffffffe",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "This helper returns zero width on failure; the full VM will additionally report the failing instruction offset."
+        }
+      ],
+      "success": "Stop Debug before the ordinary complete worked Run."
+    },
+    {
+      "kind": "run",
+      "id": "run-record",
+      "source": "worked/record.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "anchor": {
+        "label": "width_stored",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Run the complete five-byte example normally. It publishes status zero and width five, then exits silently. worked/record.kts checks all 256 opcode values at lengths zero through five and the complete caller.",
+      "success": "A valid local record is one building block. Your VM must still validate the entire current image and every encoded branch."
+    },
+    {
+      "kind": "prediction",
+      "id": "structural-before-target",
+      "explanation": "The image 30 01 ff begins with a JMP into its own operand. Its next record starts with invalid opcode ff.",
+      "question": "Which failure has priority even at zero guest budget?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Bad target at the JMP before looking at the rest.",
+          "feedback": "Target validation starts only after structural decoding of the entire image succeeds."
+        },
+        {
+          "id": "b",
+          "text": "Budget exhaustion with no validation.",
+          "feedback": "Zero budget prevents guest retirement, not validation."
+        },
+        {
+          "id": "c",
+          "text": "Invalid opcode at byte two, with no retired guest instructions.",
+          "feedback": "The structural pass fails before the target pass begins."
+        }
+      ],
+      "correctChoice": "c",
+      "source": "independent/vm.asm",
+      "anchor": {
+        "label": "vm_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "start-set-not-range",
+      "explanation": "The countdown image has JZ at byte five, an operand at six and a valid exit instruction at sixteen.",
+      "question": "Why is target six invalid?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Six lies inside an operand even though it is below the image length.",
+          "feedback": "Record the starts of the current image. A range check alone cannot distinguish operands."
+        },
+        {
+          "id": "b",
+          "text": "Every even target is forbidden.",
+          "feedback": "Guest starts follow encoded widths, not address parity."
+        },
+        {
+          "id": "c",
+          "text": "JZ validates only when its condition is zero.",
+          "feedback": "All encoded branch targets are validated, including untaken and unreachable branches."
+        }
+      ],
+      "correctChoice": "a",
+      "source": "independent/vm.asm",
+      "anchor": {
+        "label": "vm_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "condition-is-consumed",
+      "explanation": "After DUP, the countdown has live stack [0,3,3]. JZ tests and consumes the copied top condition.",
+      "question": "What remains on the nonzero fall-through path?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[0,3,3], because a failed condition leaves the stack alone.",
+          "feedback": "This guest JZ consumes its condition on both paths."
+        },
+        {
+          "id": "b",
+          "text": "[0,3], with guest PC seven.",
+          "feedback": "The original counter remains because DUP made a separate condition copy."
+        },
+        {
+          "id": "c",
+          "text": "[0], because both copies are consumed.",
+          "feedback": "Only the copied top condition belongs to JZ."
+        }
+      ],
+      "correctChoice": "b",
+      "source": "independent/vm.asm",
+      "anchor": {
+        "label": "vm_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "failed-instruction-not-retired",
+      "explanation": "Capacity two permits the first two countdown pushes. The next DUP needs a third cell.",
+      "question": "With budget three, what does the failed DUP report?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Halt with the final sum six.",
+          "feedback": "The attempted DUP fails before the loop can proceed."
+        },
+        {
+          "id": "b",
+          "text": "Depth three and retired three after writing beyond capacity.",
+          "feedback": "Prove stack room before committing a push or its retirement."
+        },
+        {
+          "id": "c",
+          "text": "Stack overflow at PC four, depth two, retired two and live [0,3].",
+          "feedback": "A failure leaves the preceding live state and count intact."
+        }
+      ],
+      "correctChoice": "c",
+      "source": "independent/vm.asm",
+      "anchor": {
+        "label": "vm_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "budget-before-fetch",
+      "explanation": "PUSH8 7 occupies the complete two-byte image. Compare guest budgets one and two.",
+      "question": "How do the outcomes differ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Budget one returns exhaustion at PC two; budget two attempts fetch there and fails.",
+          "feedback": "The successful push retires once. Check remaining budget before the next fetch."
+        },
+        {
+          "id": "b",
+          "text": "Both fail immediately because no HALT is encoded.",
+          "feedback": "A valid finite prefix can return at its budget boundary without fetching another record."
+        },
+        {
+          "id": "c",
+          "text": "Budget two resets PC zero and pushes again.",
+          "feedback": "There is no implicit guest loop or restart within a call."
+        }
+      ],
+      "correctChoice": "a",
+      "source": "independent/vm.asm",
+      "anchor": {
+        "label": "vm_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "check-structure",
+      "source": "independent/vm.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/structure-00.cases.json",
+        "independent/structure-01.cases.json",
+        "independent/structure-02.cases.json",
+        "independent/structure-03.cases.json",
+        "independent/structure-04.cases.json",
+        "independent/structure-05.cases.json",
+        "independent/structure-06.cases.json",
+        "independent/structure-07.cases.json",
+        "independent/structure-08.cases.json",
+        "independent/structure-09.cases.json"
+      ],
+      "explanation": "Implement complete structural validation and failure publication. Check all 500 original opcode/truncation cases, including unreachable suffixes and zero guest budgets. No guest transition should retire on validation failure.",
+      "success": "The selected original domain passes. Keep a distinguishing failure and explain the decision your repair corrected.",
+      "hints": [
+        {
+          "id": "validate",
+          "text": "First decode all record extents; only then inspect every encoded branch target. Keep instruction-start marking separate from guest retirement."
+        },
+        {
+          "id": "commit",
+          "text": "Check required operands, capacity and arithmetic before changing the live prefix. Install next PC and increment retired count only after success."
+        },
+        {
+          "id": "publish",
+          "text": "Every return writes PC, depth, retired, status and fault, preserving capacity and the full stack pointer. Keep caller data outside the selected code/descriptor/stack views untouched."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-targets",
+      "source": "independent/vm.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/targets-00.cases.json"
+      ],
+      "explanation": "With structural validation in place, check all eighteen original invalid-target cases. Targets must name current instruction starts; reject operand bytes, the image end and out-of-range values before execution.",
+      "success": "The selected original domain passes. Keep a distinguishing failure and explain the decision your repair corrected.",
+      "hints": [
+        {
+          "id": "validate",
+          "text": "First decode all record extents; only then inspect every encoded branch target. Keep instruction-start marking separate from guest retirement."
+        },
+        {
+          "id": "commit",
+          "text": "Check required operands, capacity and arithmetic before changing the live prefix. Install next PC and increment retired count only after success."
+        },
+        {
+          "id": "publish",
+          "text": "Every return writes PC, depth, retired, status and fault, preserving capacity and the full stack pointer. Keep caller data outside the selected code/descriptor/stack views untouched."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-completed",
+      "source": "independent/vm.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/completed-00.cases.json",
+        "independent/completed-01.cases.json",
+        "independent/completed-02.cases.json",
+        "independent/completed-03.cases.json",
+        "independent/completed-04.cases.json",
+        "independent/completed-05.cases.json",
+        "independent/completed-06.cases.json",
+        "independent/completed-07.cases.json",
+        "independent/completed-08.cases.json"
+      ],
+      "explanation": "Implement handlers, budget ordering and successful retirement. These 421 original cases halt or return ordinary budget exhaustion. The same source continues from your validation work.",
+      "success": "The selected original domain passes. Keep a distinguishing failure and explain the decision your repair corrected.",
+      "hints": [
+        {
+          "id": "validate",
+          "text": "First decode all record extents; only then inspect every encoded branch target. Keep instruction-start marking separate from guest retirement."
+        },
+        {
+          "id": "commit",
+          "text": "Check required operands, capacity and arithmetic before changing the live prefix. Install next PC and increment retired count only after success."
+        },
+        {
+          "id": "publish",
+          "text": "Every return writes PC, depth, retired, status and fault, preserving capacity and the full stack pointer. Keep caller data outside the selected code/descriptor/stack views untouched."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-runtime",
+      "source": "independent/vm.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/runtime-00.cases.json",
+        "independent/runtime-01.cases.json",
+        "independent/runtime-02.cases.json",
+        "independent/runtime-03.cases.json",
+        "independent/runtime-04.cases.json",
+        "independent/runtime-05.cases.json",
+        "independent/runtime-06.cases.json"
+      ],
+      "explanation": "Check 308 original runtime failures: underflow, capacity, checked arithmetic, zero division and fetch at end. Preserve pre-failure live values, PC and retirement count; publish every report field.",
+      "success": "The selected original domain passes. Keep a distinguishing failure and explain the decision your repair corrected.",
+      "hints": [
+        {
+          "id": "validate",
+          "text": "First decode all record extents; only then inspect every encoded branch target. Keep instruction-start marking separate from guest retirement."
+        },
+        {
+          "id": "commit",
+          "text": "Check required operands, capacity and arithmetic before changing the live prefix. Install next PC and increment retired count only after success."
+        },
+        {
+          "id": "publish",
+          "text": "Every return writes PC, depth, retired, status and fault, preserving capacity and the full stack pointer. Keep caller data outside the selected code/descriptor/stack views untouched."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-replacement",
+      "source": "independent/vm.asm",
+      "checkKind": "function",
+      "caseProfile": "independent/repeated.cases.json",
+      "explanation": "Four new public sequences each replace the image and call three times in the same machine. Some images reuse the same address and length while changing the start set. Reinitialize private validation and logical execution state on each call.",
+      "success": "Explain why a previous all-HALT boundary map cannot validate a new image containing operands.",
+      "hints": [
+        {
+          "id": "fresh-starts",
+          "text": "A physical pointer and byte count do not identify immutable program contents. Rebuild the start set for this invocation and reset PC/depth/retired even after a budget return."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-caller",
+      "source": "independent/vm.asm",
+      "checkKind": "console",
+      "caseProfile": "independent/caller.cases.json",
+      "explanation": "Run twenty-three complete callers. Distinguish initialized descriptor inputs, returned VM report/registers, and the caller\u2019s later last_status/last_steps publication. All intervals enforce the appropriate read/write ownership.",
+      "success": "The VM report is visible before the caller publishes its returned pair. Debug the default countdown next.",
+      "hints": [
+        {
+          "id": "report-before-return",
+          "text": "Write every descriptor output before returning, even on validation failure or zero budget. The caller alone writes last_status and last_steps after vm_ready."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "debug-countdown",
+      "source": "independent/vm.asm",
+      "integerInputs": [],
+      "explanation": "Debug the completed default caller. The eighteen-byte image has room for eight stack values and sixty-four guest instructions.",
+      "stops": [
+        {
+          "id": "arguments",
+          "explanation": "Pause before the public call.",
+          "anchor": {
+            "label": "vm_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000000000012",
+            "$a3": "0x0000000000000040"
+          },
+          "success": "These are guest image length and budget, not native instruction limits."
+        },
+        {
+          "id": "return",
+          "explanation": "Pause at vm_ready before nop. Inspect the descriptor and live stack prefix as well as returned registers.",
+          "anchor": {
+            "label": "vm_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000021"
+          },
+          "success": "The report is PC18/depth1/retired33/status1/fault-1; its one live value is six. Inactive words are not extra results."
+        },
+        {
+          "id": "publication",
+          "explanation": "Pause at vm_stored before nop.",
+          "anchor": {
+            "label": "vm_stored",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000021"
+          },
+          "success": "The caller has now stored last_status1 and last_steps33. The exit selector has not yet replaced v0."
+        }
+      ],
+      "success": "Stop Debug before ordinary Run and retain your byte-offset/stack trace."
+    },
+    {
+      "kind": "prediction",
+      "id": "new-call-not-resume",
+      "explanation": "A previous call returned budget exhaustion with a nonzero descriptor PC. The caller supplies a replacement image.",
+      "question": "Where does the new invocation start?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Resume the old PC if the pointer and length match.",
+          "feedback": "This interface starts a fresh bounded execution, not a resumable VM object."
+        },
+        {
+          "id": "b",
+          "text": "Start guest PC, depth and retired count at zero using the new image and current input fields.",
+          "feedback": "Old output fields are reports. They do not initialize the next execution."
+        },
+        {
+          "id": "c",
+          "text": "Keep the previous validation bitmap but clear retired.",
+          "feedback": "The replacement can have different instruction starts at the same address and length."
+        }
+      ],
+      "correctChoice": "b",
+      "source": "independent/vm.asm",
+      "anchor": {
+        "label": "vm_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-vm",
+      "source": "independent/vm.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Run the completed default VM normally. It publishes halt status and thirty-three retirements, then exits silently. The assessments establish validation, state and access behavior; a silent normal exit alone is not VM acceptance.",
+      "success": "Retain a start map, countdown trace, failure-state explanation and same-address replacement example. Use independent/work.kts to compare native work only after correctness. Exact native instruction counts are not graded."
+    }
+  ]
+}
