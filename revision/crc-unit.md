@@ -154,3 +154,50 @@ public author byte for byte. Paired public API verification passes with 91 MARS 
 20 unchanged authoring experimental usages. All 41 manual MARS edits remain
 unchanged. No IDE sandbox was launched and no publication proof was regenerated
 for this grading-foundation step. Native file-check integration is next.
+
+## Native read-only file grading, 22 November 2026
+
+The prepared grader now reuses the existing in-memory file engine for native
+checks. A case supplies an immutable read fixture and marks the invocations that
+must open its exact path read-only, consume the available prefix through EOF or
+an injected error, then close the acquired descriptor before returning. Different
+positive read request sizes remain equivalent. Calls without the read marker
+must produce no file operations; a later caller cannot hide a callee's leak.
+Each case owns new file/cursor state. Fixture bytes and memory checks share the
+existing setup/result memory allowance. Real host files are never opened by this
+fixture mechanism.
+
+Function-profile version 13 carries that data and the explicit per-call marker;
+older formats reject them. It also adds a store-only memory policy so the file
+checks retain their original padding rules: all writes in the caller span are
+bounded to workspace, while unnamed-padding reads remain permitted. Named caller
+objects retain their exact path/scratch/table read permissions. The global history
+still includes reads and retains its original 100,000-event allowance.
+
+`tools/crc_file_lesson_cases.py` preserves all 26 original file inputs, capacities,
+methods, short-read settings, failure points, path/scratch offsets, seeded arenas,
+checksums, statuses and effective transfer bounds. Its executable comparison uses
+the unchanged Kotlin/JDK checker. Seven bounded profiles contain those 26 cases
+and an added bit-then-table reopening case, for 27 cases / 28 invocations. The
+original two-million and 100,000 instruction budgets remain; the added two-call
+case uses a three-million cumulative allowance. Missing-file maximum transfer
+settings have the same effective bound as the original unrestricted setting,
+since all permitted requests are smaller and no read may follow a failed open.
+
+The original and native graders agree on three correct implementations, including
+an alternative and wide data addresses, and reject seven retained file faults:
+per-buffer finalization, assumed descriptor three, leaked error descriptor,
+request-count processing, lost prefix state, short-read EOF and swallowed error.
+Twenty qualification processes have the expected result. Runtime Jupiter checks
+also cover empty input, failure at zero/one/EOF, equivalent smaller requests,
+double closes, wrong paths/descriptors, operations outside the marked call,
+concurrent cases, host-file isolation, invalid data, cancellation and disposal.
+The exact seven-profile fixture is read by the production parser. Six additional
+host-author tests pass and the complete book-tool suite passes 535 tests.
+
+This completes the native grading backend and case delivery, not the CRC unit.
+The ordinary student Debug launch still needs its own task-bound read fixture
+before the guided mid-read error can be reproduced without the authoring plugin.
+That launch integration, connected inline lesson, first/resume IDE walkthrough
+and LaTeX companion remain the next work. Existing publication figures and proof
+are unchanged; no new IDE capture or human learner review is claimed here.
