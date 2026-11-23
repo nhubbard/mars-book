@@ -1,5 +1,15 @@
 # Decoding with a state machine
 
+The current native draft is complete through automated first-use/resume verification:
+ten inline predictions, ten Debug activities / 29 boundaries, one Run and seven
+assessment groups retaining 205 original cases. The directly composed lab companion
+has 212 pages, with this chapter on 141–149. Current evidence and scope are recorded
+in the later native-guide sections below. Earlier page/test counts describe the
+historical QOI proof, not the current full companion. Human learner review remains
+separate.
+
+## Earlier composition and verification
+
 Chapter 20 revises original project `030-qoi`, following bounded file I/O and
 checksums. The main proof has 132 pages; this chapter occupies 126–132. Its written
 lab occupies 116–122 of the 122-page companion. Both are native LaTeX compositions.
@@ -79,7 +89,8 @@ Final pages were reviewed in color and representative code/figure pages in gray.
 Both exact final PDFs pass PDF/UA-2 automated validation. That does not establish
 human readability, assistive-technology usability or an independent learner walkthrough.
 
-This unit uses ordinary Run and Debug. Its native guided lesson is not implemented.
+At that earlier proof stage, this unit used ordinary Run and Debug and its native
+guided lesson was not implemented.
 The full curriculum goal remains active; the next main unit develops CBOR after
 these bounded parser and state-machine foundations. Original projects 017 and 018
 remain assigned to expression/bytecode companion labs in the restructuring plan.
@@ -113,8 +124,8 @@ observations, not desktop walkthroughs. The actual archive is also checked throu
 the production importer and source pointers through native PSI fixtures.
 Predictions select their own worked source using native lesson format 11.
 The separate authoring plugin is being prepared to follow those same source
-choices. Actual first/resume IDE exercise and refreshed guided-experience captures remain
-pending. The connected written-lab revision and its verified proof follow below.
+choices. The actual first/resume IDE exercise is now verified, as recorded below. The
+connected written-lab revision retains the earlier genuine worked-example figures.
 
 ## Connected written companion proof
 
@@ -133,3 +144,37 @@ JetBrains Mono remain embedded. The exact proof passes PDF/UA-2 validation:
 1,728 rules and 1,000,842 checks, with zero failures. This is assistant layout and
 automated accessibility verification; human learner and assistive-technology
 review remain separate. The main learning proof is unchanged.
+
+## Verified native desktop delivery
+
+Both dedicated IDE launches run actual `clean cleanSandbox runIde` tasks. The first
+walkthrough records 47 observations: ten predictions, 29 Debug boundaries, one Run
+and seven assessments. It records one deliberately wrong quiz answer before the
+correct answer, rejects the unfinished geometry starter at 0/150, then accepts the
+private test implementation across all seven groups. Every worked Run/Debug launch
+terminates normally. Nine source edits then invalidate all 18 execution checks.
+
+The fresh-process resume preserves all eleven quiz attempts and all nine edited
+source digests, renews every execution check, and increments each assessment group
+exactly once. It records 37 observations. All eleven installed plugin JARs match
+the pinned archives and accepted IDE logs contain no ERROR/SEVERE entries. The 52
+first-use and 38 resumed photographs pass light-theme and byte-digest checks.
+These include private-answer captures, so the desktop corpus stays private. The
+publication retains the five previously verified public worked-example figures
+and their native LaTeX annotations.
+
+Each native project is saved, closed and disposed before stopping only its owned
+IDE child with SIGTERM. Child exit 143 and outer Gradle exit 1 are intentional
+cleanup outcomes, not natural `runIde` success. No production simulator semantics
+were changed for this unit. All 41 unrelated manual edits remain unchanged.
+The full regression passes 255 CLI and 1,277 plugin tests with the coverage and
+generated-parser gates, followed by a four-test check of the final archive and
+prediction-source contract. All 547 book-tool tests and 134 separate-authoring
+tests pass. Paired API verification reports compatibility with 91 MARS / 20
+authoring experimental usages and no internal API dependency. An initial passing
+test run missed coverage on an unused default constructor; that diagnostic is
+retained, and removing the unused default restored the full gate.
+
+The next native instructional unit is Chapter 21 CBOR. The QOI draft still needs
+the author's and an independent learner's reading where available; the recorded
+walkthroughs establish automated behavior, not human usability.

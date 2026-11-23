@@ -2,8 +2,9 @@
 
 The QOI reflection exercise (`030-qoi`, revised Chapter 20) has an existing
 205-case behavioral contract. The native lesson delivery must preserve that
-contract before adding guided observations. The current work prepares grading;
-it does not yet constitute a complete QOI guided lesson or a new publication proof.
+contract before adding guided observations. This page documents the preserved grading contract and versioned source-selection
+extension. The connected guide, desktop walkthroughs and publication proof are
+recorded in [the unit notes](../revision/qoi-unit.md).
 
 `tools/qoi_mirror_lesson_cases.py` authors the finite public case data. It uses
 the strict host decoder in `revision_qoi_format.py` to reconstruct expected RGBA,
@@ -98,5 +99,7 @@ reader. Separate grading tests cover history overflow, gaps, reordered/wide
 objects, per-call reset, mutable-input capture, actual exit codes, post-exit
 publication, cumulative budgets, unexpected output and undeclared file operations.
 Native and original runtime qualification retains private implementations and
-logs in the instructor repository. Guided quiz/Debug delivery, a new QOI desktop
-walkthrough and refreshed written-lab figures remain to be completed.
+logs in the instructor repository. The connected guide and written lab now have verified first/resume delivery,
+recorded in the unit notes. The five genuine earlier worked-example figures and
+their native annotations remain in the publication; private answer captures stay
+in the instructor repository. Human learner review remains separate.
