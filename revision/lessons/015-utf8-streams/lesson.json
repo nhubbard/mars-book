@@ -1,0 +1,514 @@
+{
+  "formatVersion": 11,
+  "introduction": "A byte stream can cross calls at any boundary. First inspect an inclusive interval test, then implement persistent UTF-8 validation with accepted-prefix state, precise diagnostics and independent stream objects. Read the written UTF-8 companion alongside these activities.",
+  "conclusion": "Explain which byte the saved prefix permits next, when a scalar becomes complete, and why finalization differs from a byte error. Retain the original terminal diagnostic and test interleaved streams. Passing the selected cases does not establish every arbitrary stream or corrupted descriptor.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "restricted-first-byte",
+      "explanation": "After the lead E0, the next continuation must be A0 through BF. The complete range experiment compares byte 9F with that inclusive interval.",
+      "question": "What should within_range return?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "One, because 9F has the ordinary continuation tag.",
+          "feedback": "The tag is necessary but insufficient after E0. This first continuation has the tighter lower bound A0."
+        },
+        {
+          "id": "b",
+          "text": "Zero, because 9F is below the first permitted value A0.",
+          "feedback": "E0 9F would permit an overlong encoding. The boundary belongs to this accepted lead."
+        },
+        {
+          "id": "c",
+          "text": "Minus one, because every error uses that status.",
+          "feedback": "This helper returns a Boolean result, not the scan_utf8 status interface."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "within_range",
+        "mnemonic": "sltu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-below-bound",
+      "source": "worked/range.asm",
+      "integerInputs": [],
+      "explanation": "Debug the complete worked/range.asm experiment. The byte and bounds are unsigned integers; no console input is needed.",
+      "stops": [
+        {
+          "id": "arguments",
+          "explanation": "Pause before the first sltu at within_range. a0 is the loaded byte, while a1 and a2 delimit the inclusive interval.",
+          "anchor": {
+            "label": "within_range",
+            "mnemonic": "sltu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000000000009f",
+            "$a1": "0x00000000000000a0",
+            "$a2": "0x00000000000000bf"
+          },
+          "success": "The byte is one below the lower bound."
+        },
+        {
+          "id": "low-test",
+          "explanation": "Pause before bnezc at within_range. The first sltu has compared byte with lower bound.",
+          "anchor": {
+            "label": "within_range",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000000000009f",
+            "$t0": "0x0000000000000001"
+          },
+          "success": "A nonzero lower-bound test selects outside_range."
+        },
+        {
+          "id": "returned",
+          "explanation": "Pause at range_done before sw. The helper has returned its Boolean result.",
+          "anchor": {
+            "label": "range_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000"
+          },
+          "success": "Zero will be recorded in range_result; it does not count a scalar or finalize a stream."
+        }
+      ],
+      "success": "Explain why an ordinary continuation-tag test would accept too much here. Stop Debug before opening the next experiment."
+    },
+    {
+      "kind": "prediction",
+      "id": "unsigned-load",
+      "explanation": "Input bytes include values from 80 through FF. The caller uses lbu before the interval helper.",
+      "question": "Why load the input byte with lbu?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It yields the byte value from zero through 255 for the unsigned comparisons.",
+          "feedback": "A signed lb would extend a negative value into the upper bits; that is a different comparison operand."
+        },
+        {
+          "id": "b",
+          "text": "It decodes the complete multibyte scalar.",
+          "feedback": "lbu reads one byte. Prefix state and later bytes still determine the encoding."
+        },
+        {
+          "id": "c",
+          "text": "It prevents the caller from changing chunk boundaries.",
+          "feedback": "Chunk ownership comes from pointer and length arguments, not the load mnemonic."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-inclusive-bound",
+      "source": "worked/lower-bound.asm",
+      "integerInputs": [],
+      "explanation": "Start a new Debug session for worked/lower-bound.asm. It changes the sample byte from 9F to A0 while preserving the E0 continuation interval.",
+      "stops": [
+        {
+          "id": "arguments",
+          "explanation": "Pause before the first sltu at within_range. Compare the sample with the unchanged lower bound.",
+          "anchor": {
+            "label": "within_range",
+            "mnemonic": "sltu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x00000000000000a0",
+            "$a1": "0x00000000000000a0",
+            "$a2": "0x00000000000000bf"
+          },
+          "success": "The sample equals the lower bound and must be accepted."
+        },
+        {
+          "id": "low-test",
+          "explanation": "Pause before bnezc. Equality is not less-than, so this test must be zero.",
+          "anchor": {
+            "label": "within_range",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x00000000000000a0",
+            "$t0": "0x0000000000000000"
+          },
+          "success": "The branch does not reject this boundary byte."
+        },
+        {
+          "id": "returned",
+          "explanation": "Pause at range_done before sw. Both inclusive interval tests have completed.",
+          "anchor": {
+            "label": "range_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001"
+          },
+          "success": "One records membership in this interval. It is not yet a complete UTF-8 validator."
+        }
+      ],
+      "success": "Compare the two results and explain why A0 is included. Stop Debug before the ordinary Run."
+    },
+    {
+      "kind": "run",
+      "id": "run-range",
+      "source": "worked/range.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/range.asm normally. It stores zero in range_result and exits silently. worked/range.kts checks all 256 byte values against seven documented ranges, plus this complete caller.",
+      "success": "The experiment exited normally. Use the companion to connect these intervals to accepted prefixes, rather than treating the helper as a complete scanner.",
+      "anchor": {
+        "label": "range_done",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "bytes-and-scalars",
+      "explanation": "The first supplied chunk is 41 E2. ASCII 41 is complete, while E2 begins a three-byte scalar whose continuations have not arrived.",
+      "question": "After accepting this nonfinal chunk, what are total and count?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both are two, because both bytes were accepted.",
+          "feedback": "Only one scalar is complete. An accepted multibyte prefix contributes to total but not yet count."
+        },
+        {
+          "id": "b",
+          "text": "Total is one and count is one, because E2 must be discarded.",
+          "feedback": "A valid nonfinal prefix is retained for the next call. Its lead counts as an accepted byte."
+        },
+        {
+          "id": "c",
+          "text": "Total is two and count is one.",
+          "feedback": "The state retains need=2, ordinary continuation bounds and the absolute lead offset one."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "chunk_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/stream.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-is-not-final",
+      "explanation": "A chunk can contain no bytes. Whether it ends the stream is a separate argument, a3.",
+      "question": "What does an empty nonfinal call do to an active pending prefix?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It preserves the pending rule and returns zero accepted bytes.",
+          "feedback": "No input load is permitted. The prefix can still be completed by a later call."
+        },
+        {
+          "id": "b",
+          "text": "It reports malformed input because no continuation is present.",
+          "feedback": "There is no impossible byte to report. A nonfinal boundary does not promise end-of-stream."
+        },
+        {
+          "id": "c",
+          "text": "It completes the scalar without consuming a byte.",
+          "feedback": "A scalar is counted only when all required bytes have been accepted."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "chunk_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/stream.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "next-range-not-permanent",
+      "explanation": "The caller splits F0 9F 99 82 across several calls. After F0, the next byte must be 90 through BF.",
+      "question": "After accepting 9F, which bound applies to the following continuation?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Keep the minimum at 90 until the entire scalar is complete.",
+          "feedback": "The tightened bound applies only to the first continuation. Keeping it would reject valid later bytes such as 80."
+        },
+        {
+          "id": "b",
+          "text": "Restore the ordinary interval 80 through BF.",
+          "feedback": "need still describes how many continuations remain, while the next-byte interval has returned to the ordinary range."
+        },
+        {
+          "id": "c",
+          "text": "Accept any byte because the first continuation was valid.",
+          "feedback": "Every later continuation still needs the 10xxxxxx tag."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "chunk_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/stream.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "malformed-before-final",
+      "explanation": "Compare final input 41 E0 with final input 41 E0 80. Both accept the first two bytes.",
+      "question": "Why do the two calls return different error statuses?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "They should not; every incomplete final sequence is truncated.",
+          "feedback": "In the second input, byte 80 is already impossible after E0. A final flag cannot erase a byte error."
+        },
+        {
+          "id": "b",
+          "text": "The zero high bits of 41 terminate both streams.",
+          "feedback": "41 is ASCII data, not a terminator. The supplied byte count and final flag define the interface."
+        },
+        {
+          "id": "c",
+          "text": "The first ends at a possible prefix; the second encounters an impossible next byte.",
+          "feedback": "They return -2 and -1 respectively, with start=1 and error=2. The offending byte is not accepted."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "chunk_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/stream.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "state-object-ownership",
+      "explanation": "Two independent streams can be interleaved. One state receives E2, another C3, and later calls complete each sequence.",
+      "question": "Where must the pending rule survive between calls?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "In the selected state object passed in a0.",
+          "feedback": "The checks alternate state objects and change temporary registers between calls. Their prefixes must remain independent."
+        },
+        {
+          "id": "b",
+          "text": "In the temporary registers left over from the preceding call.",
+          "feedback": "The caller can overwrite caller-saved registers. Residue cannot serve as persistent state."
+        },
+        {
+          "id": "c",
+          "text": "In one global pending counter used by all streams.",
+          "feedback": "One stream would then replace another stream’s pending rule."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "chunk_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/stream.asm"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-stream",
+      "source": "independent/stream.asm",
+      "explanation": "Implement scan_utf8 in independent/stream.asm. The 426 original stream cases check accepted bytes, all eight state words, saved registers, exact chunk read bounds and terminal outcomes. The original command-line checker is independent/stream.kts.",
+      "success": "These cases pass for the stated interface. Explain the invariant and the first failure boundary as well as retaining the report.",
+      "hints": [
+        {
+          "text": "Classify the current byte using the saved next-byte rule. Advance accepted counts only after a valid byte; process the final flag only if no byte error occurred.",
+          "id": "acceptance"
+        },
+        {
+          "text": "Test stored status before any input load or active-state publication. On reuse, return (-3,0) while preserving the saved state and input.",
+          "id": "terminal"
+        }
+      ],
+      "caseProfiles": [
+        "independent/stream-00.cases.json",
+        "independent/stream-01.cases.json",
+        "independent/stream-02.cases.json",
+        "independent/stream-03.cases.json",
+        "independent/stream-04.cases.json",
+        "independent/stream-05.cases.json",
+        "independent/stream-06.cases.json",
+        "independent/stream-07.cases.json",
+        "independent/stream-08.cases.json"
+      ],
+      "checkKind": "function"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-interleaved",
+      "source": "independent/stream.asm",
+      "explanation": "Use the same implementation. Twelve additional cases interleave two state objects, change scratch registers and revisit completed or failed streams. Each call may update only its selected active state; terminal reuse permits no input reads or caller-data stores.",
+      "success": "These cases pass for the stated interface. Explain the invariant and the first failure boundary as well as retaining the report.",
+      "hints": [
+        {
+          "text": "Classify the current byte using the saved next-byte rule. Advance accepted counts only after a valid byte; process the final flag only if no byte error occurred.",
+          "id": "acceptance"
+        },
+        {
+          "text": "Test stored status before any input load or active-state publication. On reuse, return (-3,0) while preserving the saved state and input.",
+          "id": "terminal"
+        }
+      ],
+      "caseProfile": "independent/interleaved.cases.json",
+      "checkKind": "function"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-caller",
+      "source": "independent/stream.asm",
+      "explanation": "Check the supplied main routine as well as direct calls. Fifteen variants cover zero through four chunks, malformed input, empty-final truncation and terminal reuse. Complete state and metadata are observed between chunk_ready markers with interval-specific access policies.",
+      "success": "These cases pass for the stated interface. Explain the invariant and the first failure boundary as well as retaining the report.",
+      "hints": [
+        {
+          "text": "Classify the current byte using the saved next-byte rule. Advance accepted counts only after a valid byte; process the final flag only if no byte error occurred.",
+          "id": "acceptance"
+        },
+        {
+          "text": "Test stored status before any input load or active-state publication. On reuse, return (-3,0) while preserving the saved state and input.",
+          "id": "terminal"
+        }
+      ],
+      "caseProfile": "independent/caller.cases.json",
+      "checkKind": "console"
+    },
+    {
+      "kind": "debug",
+      "id": "debug-stream-chunks",
+      "source": "independent/stream.asm",
+      "integerInputs": [],
+      "explanation": "Debug the completed independent source. Put a conditional gutter breakpoint on the nop beneath chunk_ready. Inspect chunks zero through three in one session, changing only the breakpoint condition between stops; do not edit source or restart.",
+      "stops": [
+        {
+          "id": "chunk-0",
+          "explanation": "Set the chunk_ready breakpoint condition to $s3 == 0, then start Debug. Inspect the state words and the published per-call status and accepted-byte count.",
+          "anchor": {
+            "label": "chunk_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000002"
+          },
+          "success": "Chunk 0 has the expected public return values. Relate need and total to the input prefix accepted so far."
+        },
+        {
+          "id": "chunk-1",
+          "explanation": "Set the chunk_ready breakpoint condition to $s3 == 1, then resume the same session. Inspect the state words and the published per-call status and accepted-byte count.",
+          "anchor": {
+            "label": "chunk_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000001",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000003"
+          },
+          "success": "Chunk 1 has the expected public return values. Relate need and total to the input prefix accepted so far."
+        },
+        {
+          "id": "chunk-2",
+          "explanation": "Set the chunk_ready breakpoint condition to $s3 == 2, then resume the same session. Inspect the state words and the published per-call status and accepted-byte count.",
+          "anchor": {
+            "label": "chunk_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000002",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000002"
+          },
+          "success": "Chunk 2 has the expected public return values. Relate need and total to the input prefix accepted so far."
+        },
+        {
+          "id": "chunk-3",
+          "explanation": "Set the chunk_ready breakpoint condition to $s3 == 3, then resume the same session. Inspect the state words and the published per-call status and accepted-byte count.",
+          "anchor": {
+            "label": "chunk_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000003",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "Chunk 3 has the expected public return values. Relate need and total to the input prefix accepted so far."
+        }
+      ],
+      "success": "The final call accepted four bytes and completed a five-scalar, eleven-byte stream. Explain why the earlier pending states were successful nonfinal results. Stop Debug before the final Run."
+    },
+    {
+      "kind": "prediction",
+      "id": "terminal-reuse",
+      "explanation": "A successful final call, a malformed call and a truncated final call all make the selected state terminal. The original diagnostic remains in that state.",
+      "question": "What may a later call do with this state?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Reset status to zero and start a new stream automatically.",
+          "feedback": "Reinitializing would erase the earlier result. The caller must deliberately initialize a new empty state."
+        },
+        {
+          "id": "b",
+          "text": "Return (-3,0) without input reads or caller-data stores.",
+          "feedback": "The rejection leaves the original status and error available for diagnosis, including on an empty later call."
+        },
+        {
+          "id": "c",
+          "text": "Read the next byte to decide whether the old stream can resume.",
+          "feedback": "A terminal state cannot resume. This call permits no input load."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "chunk_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/stream.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-stream",
+      "source": "independent/stream.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the completed source normally. Its four-chunk caller validates the fixed eleven-byte stream and exits silently. State publication and assessments establish the result; an empty transcript alone does not establish UTF-8 correctness.",
+      "success": "The caller terminated without console output. Retain a boundary trace, a malformed-versus-truncated comparison and an independent-state example with your solution.",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    }
+  ]
+}

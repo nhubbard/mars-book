@@ -46,8 +46,8 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.ringUnit -> "ring"; plan.mazeUnit -> "maze"; plan.marsBotUnit -> "marsbot"; plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.ringUnit -> "check-push"; plan.mazeUnit -> "check-render"; plan.marsBotUnit -> "check-square"; plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.utf8Unit -> "utf8"; plan.ringUnit -> "ring"; plan.mazeUnit -> "maze"; plan.marsBotUnit -> "marsbot"; plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.utf8Unit -> "check-stream"; plan.ringUnit -> "check-push"; plan.mazeUnit -> "check-render"; plan.marsBotUnit -> "check-square"; plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     // Production MARS has already validated/imported this exact archive and every activity.
@@ -114,7 +114,7 @@ internal suspend fun captureBookNativeCorpus(
                         registers,
                         rawStops.getOrNull(stopIndex + 1)?.get("explanation")?.asString ?: nextText(index),
                         stop.getAsJsonObject("vectorRegisters")?.entrySet()?.associate { (name, value) -> name to value.asString } ?: emptyMap(),
-                        bookRingCondition(plan.ringUnit, label, registers))
+                        bookRingCondition(plan.ringUnit, label, registers) ?: bookUtf8Condition(plan.utf8Unit, label, registers))
                 }
                 val oldOutput = if (plan.ppmUnit && id == "trace-save-invalid") withContext(Dispatchers.IO) {
                     Files.readAllBytes(directory.resolve("worked/output.ppm"))
@@ -335,5 +335,13 @@ internal fun bookRingCondition(enabled: Boolean, label: String, registers: Map<S
     if (!enabled || label != "operation_ready") return null
     val index = checkNotNull(registers["\$s3"]) { "A ring observation needs its public operation index" }
     require(index in 0L..13L) { "Ring operation index is outside the retained caller" }
+    return "\$s3 == $index"
+}
+
+/** The shared chunk caller publishes its zero-based index in s3 before its marker. */
+internal fun bookUtf8Condition(enabled: Boolean, label: String, registers: Map<String, Long>): String? {
+    if (!enabled || label != "chunk_ready") return null
+    val index = checkNotNull(registers["\$s3"]) { "The UTF-8 marker requires its public chunk index" }
+    require(index in 0L..3L) { "The retained UTF-8 caller contains four chunks" }
     return "\$s3 == $index"
 }

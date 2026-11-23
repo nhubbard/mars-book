@@ -695,4 +695,21 @@ class BookPackageImportPlanTest {
             assertThrows<IllegalArgumentException> { bad.validate() }
         }
     }
+    @Test
+    fun `UTF-8 native plans bind the retained caller fixture and reject mixed or incomplete routes`() {
+        val utf8 = plan.copy(archives = listOf(archive.copy(id = "015-utf8-streams", version = "0.1.0", entry = "worked/range.asm")),
+            nativePredictions = true, utf8Unit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/stream.asm", "/tmp/utf8.asm", "c".repeat(64))))
+        utf8.validate()
+        utf8.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(utf8.copy(nativePredictions = false), utf8.copy(nativeExecution = true),
+            utf8.copy(nativeDebug = true), utf8.copy(resumeCompleted = true), utf8.copy(h263StreamUnit = true),
+            utf8.copy(utf8Unit = false), utf8.copy(activityNavigation = true), utf8.copy(prerequisiteControls = true),
+            utf8.copy(assessmentFixtures = emptyList()), utf8.copy(assessmentFixtures = utf8.assessmentFixtures + utf8.assessmentFixtures),
+            utf8.copy(assessmentFixtures = listOf(utf8.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            utf8.copy(archives = listOf(utf8.archives.single().copy(id = "015-other"))),
+            utf8.copy(archives = listOf(utf8.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
 }

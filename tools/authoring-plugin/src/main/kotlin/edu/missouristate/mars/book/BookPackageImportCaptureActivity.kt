@@ -66,7 +66,7 @@ internal data class BookAssessmentFixture(val source: String = "", val path: Str
     fun validate() {
         require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
             "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm",
-            "independent/ring.asm", "independent/maze.asm", "independent/square.asm", "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm", "independent/life-changes.asm", "independent/partition-negative.asm", "independent/fixed-interpolate.asm", "independent/matrix-rotate.asm", "independent/bounded-line.asm", "independent/matrix-vector.asm", "independent/rgb555.asm", "independent/pcm-subtract.asm", "independent/fir-decimate.asm", "independent/delta-scan.asm", "independent/base64url.asm", "independent/ppm-negative.asm", "independent/crc32-chunk.asm", "independent/qoi-mirrored.asm", "independent/cbor-sequence.asm", "independent/chacha20.asm", "independent/sha256.asm", "independent/rsa-arithmetic.asm", "independent/wav-reverse-frames.asm", "independent/png-filter-scanline.asm", "independent/video-change-bounds.asm", "independent/h263-reconstruct8.asm", "independent/h263-read-bits.asm"))
+            "independent/stream.asm", "independent/ring.asm", "independent/maze.asm", "independent/square.asm", "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm", "independent/life-changes.asm", "independent/partition-negative.asm", "independent/fixed-interpolate.asm", "independent/matrix-rotate.asm", "independent/bounded-line.asm", "independent/matrix-vector.asm", "independent/rgb555.asm", "independent/pcm-subtract.asm", "independent/fir-decimate.asm", "independent/delta-scan.asm", "independent/base64url.asm", "independent/ppm-negative.asm", "independent/crc32-chunk.asm", "independent/qoi-mirrored.asm", "independent/cbor-sequence.asm", "independent/chacha20.asm", "independent/sha256.asm", "independent/rsa-arithmetic.asm", "independent/wav-reverse-frames.asm", "independent/png-filter-scanline.asm", "independent/video-change-bounds.asm", "independent/h263-reconstruct8.asm", "independent/h263-read-bits.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -115,6 +115,7 @@ internal data class BookPackageImportPlan(
     val marsBotUnit: Boolean = false,
     val mazeUnit: Boolean = false,
     val ringUnit: Boolean = false,
+    val utf8Unit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -125,7 +126,7 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit || lifeUnit || sortingUnit || fixedUnit || localityUnit || boundedUnit || measurementUnit || msaUnit || pcmUnit || firUnit || deltaUnit || base64Unit || ppmUnit || crcUnit || qoiUnit || cborUnit || chachaUnit || shaUnit || rsaUnit || wavUnit || pngUnit || losslessUnit || h263PredictionUnit || h263StreamUnit || marsBotUnit || mazeUnit || ringUnit)
+            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit || lifeUnit || sortingUnit || fixedUnit || localityUnit || boundedUnit || measurementUnit || msaUnit || pcmUnit || firUnit || deltaUnit || base64Unit || ppmUnit || crcUnit || qoiUnit || cborUnit || chachaUnit || shaUnit || rsaUnit || wavUnit || pngUnit || losslessUnit || h263PredictionUnit || h263StreamUnit || marsBotUnit || mazeUnit || ringUnit || utf8Unit)
             val expected = when {
                 memoryUnit -> setOf("independent/red-component.asm", "independent/independent-copy.asm")
                 loopUnit -> setOf("independent/end-pointer.asm")
@@ -155,6 +156,7 @@ internal data class BookPackageImportPlan(
                 losslessUnit -> setOf("independent/video-change-bounds.asm")
                 h263PredictionUnit -> setOf("independent/h263-reconstruct8.asm")
                 h263StreamUnit -> setOf("independent/h263-read-bits.asm")
+                utf8Unit -> setOf("independent/stream.asm")
                 ringUnit -> setOf("independent/ring.asm")
                 mazeUnit -> setOf("independent/maze.asm")
                 marsBotUnit -> setOf("independent/square.asm")
@@ -164,7 +166,12 @@ internal data class BookPackageImportPlan(
             require(assessmentFixtures.size == expected.size)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
         }
-        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit, lifeUnit, sortingUnit, fixedUnit, localityUnit, boundedUnit, measurementUnit, msaUnit, pcmUnit, firUnit, deltaUnit, base64Unit, ppmUnit, crcUnit, qoiUnit, cborUnit, chachaUnit, shaUnit, rsaUnit, wavUnit, pngUnit, losslessUnit, h263PredictionUnit, h263StreamUnit, marsBotUnit, mazeUnit, ringUnit).count { it } <= 1)
+        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit, lifeUnit, sortingUnit, fixedUnit, localityUnit, boundedUnit, measurementUnit, msaUnit, pcmUnit, firUnit, deltaUnit, base64Unit, ppmUnit, crcUnit, qoiUnit, cborUnit, chachaUnit, shaUnit, rsaUnit, wavUnit, pngUnit, losslessUnit, h263PredictionUnit, h263StreamUnit, marsBotUnit, mazeUnit, ringUnit, utf8Unit).count { it } <= 1)
+        if (utf8Unit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
+            require(archives.single().id == "015-utf8-streams" && archives.single().entry == "worked/range.asm")
+        }
         if (ringUnit) {
             require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
             require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
