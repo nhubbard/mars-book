@@ -3,8 +3,10 @@
 Chapter 23 revises original project `031-pcm-wav` as a connected main-book
 explanation and written laboratory. Directly edited native sources are
 `main/audio-files.tex` and `labs/audio-files.tex`, included by the revised
-publication entries. The main proof has 154 pages, with this chapter on
-146–154; the lab proof has 165 pages, with this lab on 162–165. The original
+publication entries. At the original WAV editorial milestone, the main proof
+had 154 pages, with this chapter on 146–154; the lab proof had 165 pages,
+with this lab on 162–165. Those page counts describe that historical proof,
+not the subsequently expanded publication. The original
 manuscript and earlier validated proofs remain preserved.
 
 ## Teaching sequence
@@ -50,7 +52,9 @@ baseline cases. They cover narrowed frame counts, absent or wrapped padding,
 descriptor writes on error, channel stride, history extent, missing rounding
 bias, signed capacity comparisons, short-read handling, assumed descriptor
 three, skipped pre-save validation, sample-wise reversal, unsafe aliasing and
-PCM reads for zero frames. No MARS checking API change was required.
+PCM reads for zero frames. That original publication verification required no
+MARS checking API change; the later native assessment foundation below adds
+the capabilities needed for delivery through the student plugin.
 
 Four separate capture-boundary CLI probes verify exact expected memory bytes.
 Fourteen ordinary host-file runs exercise the worked and equivalent pipelines
@@ -85,3 +89,42 @@ policies must be checked when advanced delivery is implemented. The full
 curriculum goal remains active, with PNG, lossless-video and restricted actual
 H.263 treatment and further student-system integration still outstanding.
 All forty-one pre-existing MARS edits remain outside this work.
+
+## Native assessment foundation (23 November 2026)
+
+The public `tools/wav_reverse_lesson_cases.py` now expresses all 35 existing
+public reversal cases as seven native function-assessment profiles. It retains
+the original case budgets, 39 observed reversal invocations, the separate full
+pipeline invocation, six calls sharing one machine, unaligned byte ranges,
+exact aliasing, full-width invalid counts and the maximum 65,536-frame stereo
+buffer. The unfinished student entry remains the same task: reverse whole PCM
+frames using the supplied six-function worked pipeline.
+
+Lossless repeated-byte fixtures keep the largest profile within the existing
+serialized size limit. Checks still compare every expected byte; expansion
+counts against the existing decoded memory bound. Native format 20 adds
+bounded virtual input and output files, short reads and writes, injected
+transfer failures, explicit absent-file expectations and descriptor closure.
+These operations use the existing simulator file environment and never access
+host files. A constant-memory operation counter detects file activity in
+invocations that must perform none; no particular buffering strategy is
+required. Format 19 introduced the repeated-byte representation.
+
+For each of three existing correct assembly implementations, the original
+public checker and the new model agree on case names and budgets, every
+reversal argument and result, and snapshots of all 16 caller objects before
+and after each reversal. The original checker retains its complete-byte
+assertions. The native profiles pass all 35 cases on those implementations
+and on a fourth implementation that uses private storage between caller
+objects. They reject the three existing reversal faults and the unfinished
+starter: 280 native case executions across eight sources. The pipeline case
+checks the exact 60-byte saved WAV with reads limited to seven bytes and
+writes to five, starting descriptors at 19. Private sources and raw receipts
+remain in the instructor repository.
+
+Five model tests and the broader 586-test public tooling run pass. These are
+assessment-foundation checks, not a completed interactive WAV lesson, a new
+IDE walkthrough, or renewed publication validation. The next delivery step
+must compose the student activities, exercise them in the IDE and integrate
+the verified experience into the native LaTeX lab. The historical 64-step
+construction package is retained independently.
