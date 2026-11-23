@@ -148,3 +148,14 @@ This foundation does not yet compose the PNG student activities, launch their
 native lesson in the IDE or change the LaTeX publication. The independent task
 remains the forward scanline filter; the complete decoder remains the worked
 example. The original hundred-step decoder construction task is preserved.
+
+The final foundation regression passes 287 CLI tests and 1,315 plugin tests,
+with no failures, errors or skips. Both changed plugin packages (learning and
+build) retain 100 percent line and branch coverage; generated-parser coverage
+also passes. Public tooling passes 594 tests, and the original 100-step PNG
+student package validates and rebuilds. Four correct native implementations each
+pass all 266 cases, including private-gap and wide-address variants. All six
+existing filter faults and the unfinished starter are rejected: 2,926 native
+case executions across eleven sources. All 41 pre-existing manual edits remain
+unchanged. These results complete the assessment foundation, not the later
+student activity composition or IDE walkthrough.
