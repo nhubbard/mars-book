@@ -43,11 +43,10 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
-    val entry = directory.resolve(archive.entry)
     // Production MARS has already validated/imported this exact archive and every activity.
     // This trusted authoring reader follows those activities; it does not validate student content.
     val lesson = withContext(Dispatchers.IO) { JsonParser.parseString(Files.readString(directory.resolve("lesson.json"))).asJsonObject }
@@ -89,7 +88,7 @@ internal suspend fun captureBookNativeCorpus(
         when (kind) {
             "prediction" -> if (!plan.resume) {
                 val question = step.get("question").asString
-                awaitText(question); selected(entry)
+                awaitText(question); selected(path)
                 focus(id, step.getAsJsonObject("anchor").get("mnemonic").asString)
                 capture(id, question)
                 val choices = step.getAsJsonArray("choices").map { it.asJsonObject }

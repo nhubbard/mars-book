@@ -420,6 +420,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `QOI walkthrough keeps private reflection fixtures separate and isolates its content edition`() {
+        val qoi = plan.copy(archives = listOf(archive.copy(id = "030-qoi", entry = "qoi-codec.asm")),
+            nativePredictions = true, qoiUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/qoi-mirrored.asm", "/tmp/mirror.asm", "c".repeat(64))))
+        qoi.validate()
+        qoi.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(qoi.copy(nativePredictions = false), qoi.copy(nativeExecution = true),
+            qoi.copy(nativeDebug = true), qoi.copy(resumeCompleted = true), qoi.copy(crcUnit = true),
+            qoi.copy(ppmUnit = true), qoi.copy(memoryUnit = true), qoi.copy(qoiUnit = false),
+            qoi.copy(activityNavigation = true), qoi.copy(prerequisiteControls = true),
+            qoi.copy(assessmentFixtures = emptyList()),
+            qoi.copy(assessmentFixtures = qoi.assessmentFixtures + qoi.assessmentFixtures),
+            qoi.copy(assessmentFixtures = listOf(qoi.assessmentFixtures.single().copy(source = "independent/crc32-chunk.asm"))),
+            qoi.copy(archives = listOf(qoi.archives.single().copy(id = "024-crc32"))),
+            qoi.copy(archives = listOf(qoi.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
