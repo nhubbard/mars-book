@@ -2,34 +2,31 @@
 \MARSChapterHeading{Inspect prediction and local reconstruction}
 \label{revision-lab:predicting-pictures}
 
-Read Chapter 26 with this lab. The complete worked source is
-\path{revision/labs/files/h263-encoder.asm}. Its ordinary entry expects raw
-files and controls for the complete clip; the next unit supplies that workflow.
-For individual numerical stages, use the named callable entries and the package's
-separate grading harnesses. The independent source
-\texttt{h263-reconstruct8.asm} has its own small ordinary caller and feedback.
-It does not need a video file or an external decoder.
+Read Chapter 26 with this lab. Import the public student archive
+\texttt{035-h263-prediction-0.1.0-student.zip} through
+\textbf{Import MARS Lesson Package}, then open
+\textbf{Predict and reconstruct H.263 blocks} in Learn. The package contains six
+complete experiments and one continuing independent function. Each experiment
+isolates a numerical decision before the next lab joins those decisions into a
+bitstream. No video file or external decoder is needed for these experiments.
 
-The original \texttt{035-h263} construction package remains a route for writing
-the complete encoder yourself. Its small observations help locate boundaries;
-they are not separate printed chapters. Keep your current implementation when
-moving between stages. Do not concatenate historical callers or grading harnesses
-into the worked source.
+Answer the predictions in Learn before starting the offered Debug activity.
+The source pointer identifies the relevant instruction; the named stops below
+identify where to inspect its result. Read vector lanes at the stated width and
+check what each function returns in \texttt{v1}: a score, candidate count,
+coefficient count and clipping count have different units.
+
+The complete encoder remains in
+\path{revision/labs/files/h263-encoder.asm}; its ordinary entry needs the raw
+files and controls supplied in the next unit. The original \texttt{035-h263}
+construction package supports writing that encoder yourself. Its grading harnesses
+are separate callers, not fragments to concatenate into a worked experiment.
 
 \section{Establish the window before measuring it}
 
-Generate the ordinary raw input in a new directory from the public repository:
-\Needspace{8\baselineskip}
-\MARSCodeLabel{Generate raw QCIF pictures and their description}
-\begin{Verbatim}
-python3 packages/035-h263/construction/h263-fixtures/fixture.py \
-  --output-dir work/qcif
-\end{Verbatim}
-The description records dimensions, strides, plane offsets, clock steps and hashes.
-Check that eight pictures occupy 304128 bytes. Locate picture one's Y sample at
-$(16,32)$ and identify the first byte of its Cb region. An RGB viewer cannot infer
-this planar layout from the raw file alone. Keep display aspect ratio separate
-from stored sample geometry.
+Start with \path{worked/sad-windows.asm}. Its caller supplies displaced origins
+and a stride of 176. The first prediction asks you to distinguish the containing
+extent from the number of active samples.
 
 For \texttt{h263\_sad16} and its MSA counterpart, the pointers already select
 current and reference origins; the stride is the advance between rows. Calculate
@@ -40,26 +37,38 @@ active rows.
 
 Compare scalar and vector results for all-zero, all-255 and asymmetric inputs.
 The maximum score is 65280. Explain the width of each vector stage: unsigned byte
-magnitudes, halfword row-pair accumulation, then wider horizontal reduction.
-A wide final register cannot repair a carry already lost in a byte lane.
+magnitudes, halfword pair sums accumulated across rows, then wider horizontal
+reduction.
+At \texttt{sad\_vector\_accumulated}, each of eight halfwords in
+\texttt{w4} is 8160: two differences per row, sixteen rows, each difference 255.
+Pairwise reduction then gives four words of 16320 and two doublewords of 32640,
+whose sum is 65280. At \texttt{lesson\_sad\_compared}, both saved scores have
+that value and status is zero. At \texttt{lesson\_sad\_same\_window}, equal
+pointers with equal strides produce zero. A wide final register cannot repair a
+carry already lost in a byte lane.
+\input{revision/figures/h263-prediction/native-sad-unit}
+
 Also compare the same input pointer under different strides. It is a read-only
 alias, but not necessarily the same window.
 
-For radius-two search at an interior origin, count 25 candidates; at $(0,0)$,
+Continue with \path{worked/motion-ties.asm}. At
+\texttt{lesson\_motion\_interior}, the radius-two search counts 25 candidates; at $(0,0)$,
 count nine. Derive the displacement intervals before computing reference
-addresses. Predict how the count changes at the left edge away from a corner.
+addresses. Predict how the count changes at the left edge away from a corner, then check
+15 at \texttt{lesson\_motion\_edge}. The corner stop reports nine.
 Flat and repeated patterns expose tie handling: centre wins a minimum tie,
 otherwise increasing vertical and horizontal displacement decide. Reverse
 traversal is valid when it explicitly preserves this ordering.
 
 \section{Test fractional prediction before the transform}
 
-Use full-luma displacement $(-1,-1)$ at macroblock origin $(16,32)$. The chroma
+In \path{worked/negative-motion.asm}, use full-luma displacement $(-1,-1)$ at macroblock origin $(16,32)$. The chroma
 origin is initially $(8,16)$; its reference integer origin becomes $(7,15)$ with
 both half phases set. Write the corresponding decomposition for components minus
 two, zero and one. A negative odd component distinguishes floor from division
 that truncates toward zero.
 
+First inspect the smaller \path{worked/diagonal-prediction.asm} experiment.
 The \texttt{h263\_predict8} output has sixty-four predicted bytes followed by
 sixty-four signed residual halfwords. Input strides remain independent of those
 tight output strides. Before inspecting a residual, select the correct native
@@ -69,21 +78,32 @@ positive brightness value.
 For current sample 128 and reference neighbours 128,128,128,96, derive prediction
 120 and residual eight. Then use neighbours zero, zero, zero, one to distinguish
 one final diagonal rounding from two successive rounded averages. The result is
-zero. Check the entire predicted block and signed residual array, not only their
+zero at \texttt{lesson\_single\_rounding}. In the first experiment, four
+predictions are 120 and the others 128, so the residual magnitude sum is 32;
+\texttt{lesson\_prediction\_values} also retains one residual eight for inspection.
+Check the entire predicted block and signed residual array, not only their
 aggregate SAD. Different wrong arrays can have the same magnitude sum.
 
 With diagonal phase, the reference footprint is nine by nine while current reads
 remain eight by eight. The six-block coordinator derives four Y origins and one
 for each chroma plane, then publishes six records only after every child succeeds.
-Its total magnitude is bounded by $6\cdot64\cdot255=97920$. Alter a later child's
-metadata and verify the coordinator's retained-output contract; successful early
-children must not publish a partial caller result.
+Its total magnitude is bounded by $6\cdot64\cdot255=97920$. Return to \path{worked/negative-motion.asm}: its six-block stop has predicted
+bytes 128, residuals zero and total zero. The next call supplies a bad Cr stride.
+At \texttt{lesson\_coordinator\_rejected}, status one and total zero mean
+metadata rejection; the earlier 1152-byte result is retained. This call exercises
+validation before child execution. It does not demonstrate recovery from a child
+that fails after earlier children succeed.
 
 \section{Keep four representations visible}
 
-Use an INTER block with current value 130, prediction 128 and quantizer eight.
+Open \path{worked/reconstruction-chain.asm}. Its first call transforms a
+constant residual block of two. At \texttt{lesson\_forward\_dc}, DC is sixteen
+and the returned count is 64 coefficients. The next call encodes an INTER block
+with current value 130, prediction 128 and quantizer eight.
 Record residual two, DC sixteen, selected level one, reconstructed DC 23, inverse
-residual three and final sample 131. Mark the transition at which information is
+residual three and final sample 131 at
+\texttt{lesson\_first\_reconstruction}. The returned one now counts nonzero
+selected levels. Mark the transition at which information is
 lost. The coefficient coder consumes level one; the inverse transform consumes
 coefficient 23. Swapping those arrays changes the reconstructed picture even if
 their storage width is the same.
@@ -101,15 +121,25 @@ samples and 384--447 final bytes. A code at the first INTRA position has its
 special DC interpretation. The corresponding INTER position is an ordinary level.
 Do not apply one interpretation indiscriminately across both block types.
 
-Now use raw 132 and the returned reconstruction 131 as the next prediction.
-The residual one falls into the selected quantizer's zero region. Verify that
-the new reconstruction stays 131. Compare that result with an encoder incorrectly
-using the earlier raw 130. Explain which difference is quantization loss and which
-is disagreement between prediction states. Identical raw pictures do not settle
-whether the reconstructed-reference skip is exact.
+Use raw 132 and returned reconstruction 131 as the next prediction. Residual
+one falls into the quantizer's zero region. At
+\texttt{lesson\_second\_reconstruction}, the reconstruction stays 131 and the
+nonzero-level count is zero. Compare with an encoder incorrectly predicting from
+earlier raw 130. Separate quantization loss from prediction-state disagreement:
+identical raw pictures do not prove an exact reconstructed-reference skip.
 
 \section{Write the independent reconstruction function}
 
+Before implementing, use \path{worked/signed-reconstruction.asm} to separate
+sign extension, addition and clipping. At \texttt{lesson\_signed\_sum}, the
+correction $-129$ added to prediction 128 gives $-1$, which clips to zero.
+Reading the same stored halfword as unsigned gives 65407 and changes the sum.
+The endpoint stop distinguishes 255, which is already representable, from 256,
+which must clip and increment the count. At \texttt{lesson\_native\_stride},
+\texttt{0x0000000100000008} has low word eight but is not an admitted stride.
+Validate the complete native doubleword before narrowing it.
+
+Keep one implementation in \path{independent/h263-reconstruct8.asm}.
 Replace the deliberate unfinished \texttt{break} at
 \texttt{h263\_reconstruct8}. Pass prediction bytes in \texttt{a0}, signed
 inverse halfwords in \texttt{a1}, destination bytes in \texttt{a2} and the
@@ -164,7 +194,16 @@ the failure status and unchanged output. Repeat with output exactly aliasing the
 prediction. A function that validates while directly storing can damage earlier
 samples before discovering that last error.
 
-Run the independent feedback from the public repository:
+Use the six offered \textbf{Check this program} activities on that same
+source. They progress through sample arithmetic (60 case placements), exact aliases
+(24), metadata (36), invalid samples (16), a two-call reuse case (2), and the full
+suite (138). The final suite includes both byte orders. These are overlapping
+profiles, not 276 distinct input scenarios. Open a hint when needed, edit and retry;
+feedback applies to the current editor text. Returning to a worked experiment does
+not erase the independent implementation. After an edit, renew execution checks
+that referred to an earlier source revision.
+
+For standalone feedback from the public repository, use:
 \Needspace{8\baselineskip}
 \MARSCodeLabel{Check reconstruction and retained state}
 \begin{Verbatim}
@@ -194,3 +233,19 @@ for those entries. The independent function's smaller contract does not replace
 them. Keep measured instruction work, host elapsed time and encoded quality as
 different observations. The next lab connects these numerical decisions to syntax
 and independent stream decoding.
+
+\section{Extend the experiment to a whole picture}
+
+After the numerical checks, generate the ordinary raw input in a new directory:
+\Needspace{8\baselineskip}
+\MARSCodeLabel{Generate raw QCIF pictures and their description}
+\begin{Verbatim}
+python3 packages/035-h263/construction/h263-fixtures/fixture.py \
+  --output-dir work/qcif
+\end{Verbatim}
+The description records dimensions, strides, plane offsets, clock steps and hashes.
+Eight pictures occupy 304128 bytes. Locate picture one's Y sample at $(16,32)$
+and the first byte of its Cb region. An RGB viewer cannot infer this planar layout
+from a raw file alone. Keep display aspect ratio separate from stored sample
+geometry. The following lab uses these files to check the actual restricted H.263
+stream; the numerical experiments here do not establish interoperability.

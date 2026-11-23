@@ -9,6 +9,12 @@ Use an explicit entry when building a revised proof, for example
 current progress. `main.tex` and `includes/` preserve the initial draft described
 below.
 
+The latest revised milestone completes the native H.263 numerical lab and its
+written integration, with verified first use, saved resume and an actual annotated
+light-theme debugger figure. The lab proof has 226 pages; its H.263 numerical lab
+is on pages 216–221. Native restricted-stream delivery and course-wide acceptance
+remain. See [the numerical-unit record](revision/h263-prediction-unit.md).
+
 Current completion status is recorded in [initial-draft-status.md](docs/initial-draft-status.md). All 35 initial chapter compositions and 144 IDE figures are complete. Earlier progress notes below retain their historical counts and pending-work statements. Human substantive editing and accessibility review remain separate work.
 
 Book source and student project packages for the IntelliJ MARS plugin. The text

@@ -195,3 +195,39 @@ public capture and native LaTeX integration remain next. No new screenshot,
 publication PDF, accessibility validation, inverse-accuracy gate or stream
 conformance run is claimed by this draft. Private native-h263-prediction-unit-01
 retains exact probe, package and exported-starter receipts.
+
+
+### Native numerical IDE and written integration, 23 November 2026
+
+The numerical unit now passes actual first-use and fresh-process resume trials in
+IntelliJ. Its twelve inline predictions, eighteen Debug stops, one Run and six
+assessments are connected directly to the written lab. The accepted trials retain
+thirteen quiz attempts and seven edited sources, renew thirteen execution checks,
+and each pass 276 overlapping case placements. The continuing function remains
+one editable file; no solution is added to the public archive. The display title
+is now “Predict and reconstruct H.263 blocks” after the native layout guard found
+that the longer title exceeded the Learn viewport. All fifteen other archived
+files, including lesson activities and executable cases, are byte-identical to
+the previously qualified draft.
+
+A real public-source SAD stop supplies the new native annotated figure: actual
+frame line 185, full w4 and eight halfword lanes of 8160. The caption distinguishes
+the actual frame from the editor's earlier source pointer. The text explains
+adjacent byte-pair widening across rows, function-specific return units and the
+limited scope of the six-block metadata rejection. Raw QCIF generation is an
+optional whole-picture extension after the bounded experiments.
+
+The separate authoring plugin passes 143 Jupiter tests, public tooling 618, and
+six publisher guards. Both pinned plugins pass compatibility verification against
+IntelliJ 2026.3, with no internal API use reported. The accepted 226-page lab proof
+was visually reviewed on pages 215–224, with figure 217 also in grayscale; after
+a paragraph-flow correction, changed pages 218–219 were reviewed again and all
+other reviewed pages are pixel-identical. Exact final PDF/UA-2 validation passes
+1728 rules and 1,067,167 checks with zero failures. Private
+`native-h263-prediction-ide-01` retains the rejected initial layout trial, both
+accepted trials, exact pins, installed-JAR comparisons and saved progress.
+
+This completes native numerical delivery and written integration. Native
+restricted H.263 stream delivery and course-wide acceptance remain. No renewed
+inverse-accuracy gate, stream conformance run, human learner review or
+assistive-technology review is claimed by this milestone.
