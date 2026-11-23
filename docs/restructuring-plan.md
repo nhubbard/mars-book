@@ -1394,3 +1394,17 @@ an explanation of unsigned lane counting. Exact plugin compatibility, installed
 binaries, final visual/grayscale review and PDF/UA-2 evidence are retained.
 See `revision/lossless-unit.md`. Native H.263 delivery and course-wide acceptance
 work remain; this milestone does not close the full goal or claim human review.
+
+
+### H.263 reconstruction native assessment foundation, 23 November 2026
+
+The independent eight-by-eight reconstruction task retains all 138 public cases,
+both byte orders and 146 calls in five native profiles. Exact original/model
+comparison and native qualification preserve signed correction ranges, strict
+clipped counts, active-row ownership and failure publication under an exact
+prediction alias. Existing valid alternatives pass and all seven assembled
+faults are rejected. Actual profile parsing and combined assessment tests pass.
+This is the grading foundation; the native numerical lesson and actual IDE/
+written integration remain next, followed by native stream delivery. Existing
+full inverse-accuracy and restricted H.263 interoperability evidence remains
+separate. See `revision/h263-prediction-unit.md` for scope.

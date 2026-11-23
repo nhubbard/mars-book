@@ -94,3 +94,45 @@ not complete the full curriculum goal.
 The subsequent [stream unit](h263-stream-unit.md) now supplies renewed stream/file
 qualification and whole-clip independent decoding. This page retains the Chapter 26
 numerical publication boundary and its milestone page counts.
+
+
+## Native reconstruction assessment foundation, 23 November 2026
+
+The continuing `h263_reconstruct8` task now has five native format-21 profiles
+retaining all 138 original public cases, 69 per byte order and 146 calls. They
+cover sample arithmetic, exact prediction aliases, metadata, invalid-sample
+rejection and same-machine reuse. The original 100000-instruction case budgets
+remain. Ten saved registers, including gp, and full-width stack/return state
+remain checked. No assembly solution is added to the public tools or profiles.
+
+The contract distinguishes metadata status one from invalid-sample status two.
+Invalid metadata permits no sample access. All inverse corrections must lie in
+[-256,255] before any output store, including a last invalid correction under
+an exact prediction/output alias. Valid reconstruction adds unsigned prediction
+to signed halfwords, clips only the final sum, and counts sums strictly outside
+zero through 255. Sums exactly zero and 255 are not clipped events. Only eight
+active bytes or sixteen inverse bytes per row are readable; padding is retained.
+
+Instrumented original runs and the native model agree on canonical case order,
+arguments, status/counts and every complete caller object before and after each
+call for three implementations. Native execution then passes all 138 cases for
+reference, equivalent staging, wide-address and private-scratch variants. Seven
+existing assembled faults are rejected, and the unfinished public source fails
+all 138 cases. Exact native qualification retains 1656 outcomes across twelve
+processes; original/model comparison is separate. No inverse-DCT accuracy or
+whole-stream interoperability claim is inferred from these reconstruction checks.
+
+Four new public model tests independently derive signed sums and clipped bytes
+from the selected raw input rows, check complete disjoint setup coverage,
+endpoint counts, native width, wrapping pointers, publication policies and profile
+limits. The full tooling suite passes 613 tests. Two Jupiter tests load the actual
+profiles through the production parser, preserving row extents, both orders,
+late-invalid aliases and a final assessment with all cases and original budgets.
+Production plugin/simulator code is unchanged and all 41 manual edits are retained.
+
+The native student lesson, bounded worked experiments, inline predictions,
+first-use/resume IDE verification and native LaTeX integration remain next. The
+accepted books and historical H.263 accuracy/conformance receipts are unchanged;
+this foundation claims no new screenshot, PDF or accessibility validation.
+Private native-h263-reconstruction-foundation-01 retains exact original/model,
+qualification, parser and source-preservation receipts.
