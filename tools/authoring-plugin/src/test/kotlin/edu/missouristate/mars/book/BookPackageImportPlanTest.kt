@@ -540,6 +540,39 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `PNG corpus plans bind one archive and private fixture and retain fresh-process resume`() {
+        val png = plan.copy(archives = listOf(archive.copy(id = "033-png", version = "0.1.0", entry = "worked/pipeline-boundaries.asm")),
+            nativePredictions = true, pngUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/png-filter-scanline.asm", "/tmp/png.asm", "c".repeat(64))))
+        png.validate()
+        png.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(png.copy(nativePredictions = false), png.copy(nativeExecution = true),
+            png.copy(nativeDebug = true), png.copy(resumeCompleted = true), png.copy(chachaUnit = true),
+            png.copy(wavUnit = true), png.copy(rsaUnit = true), png.copy(shaUnit = true), png.copy(cborUnit = true), png.copy(qoiUnit = true), png.copy(crcUnit = true), png.copy(memoryUnit = true),
+            png.copy(pngUnit = false), png.copy(activityNavigation = true), png.copy(prerequisiteControls = true),
+            png.copy(assessmentFixtures = emptyList()),
+            png.copy(assessmentFixtures = png.assessmentFixtures + png.assessmentFixtures),
+            png.copy(assessmentFixtures = listOf(png.assessmentFixtures.single().copy(source = "independent/chacha20.asm"))),
+            png.copy(archives = listOf(png.archives.single().copy(id = "026-chacha20"))),
+            png.copy(archives = listOf(png.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
+    fun `vector photograph focus names an observed register including packed w3 only stops`() {
+        assertEquals("\$w3", bookCorpusVectorFocus(setOf("\$w3")))
+        assertEquals("\$w4", bookCorpusVectorFocus(setOf("\$w0", "\$w3", "\$w4")))
+        assertEquals("\$w7", bookCorpusVectorFocus(setOf("\$w7", "\$w5")))
+        assertEquals("\$w5", bookCorpusVectorFocus(setOf("\$w5")))
+        assertEquals("\$w1", bookCorpusVectorFocus(emptySet()))
+        for (index in 0..31) {
+            val register = "\$w$index"
+            assertEquals(register, bookCorpusVectorFocus(setOf(register)))
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

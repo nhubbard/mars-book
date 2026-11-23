@@ -43,8 +43,8 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     // Production MARS has already validated/imported this exact archive and every activity.
@@ -227,7 +227,7 @@ private suspend fun captureCorpusDebug(
             }
             check(launch.pauses.receive() == targetLine) { "Wrong lesson stop: ${stop.label}" }
             val registers = awaitBookDebugRegisters(project, handler, stop.registers, stop.vectors,
-                when { "\$w4" in stop.vectors -> "\$w4"; "\$w7" in stop.vectors -> "\$w7"; "\$w5" in stop.vectors -> "\$w5"; else -> "\$w1" }, 8)
+                bookCorpusVectorFocus(stop.vectors.keys), 8)
             awaitText(stop.nextText)
             val facts = mutableMapOf<String, Any>("source" to entry.toString(), "line" to targetLine + 1,
                 "renderedRegisters" to registers, "expectedVectorBits" to stop.vectors, "nativeNextStepObserved" to stop.nextText)
@@ -280,3 +280,8 @@ private suspend fun corpusBreakpointLine(project: Project, entry: Path, stop: Co
         delay(50)
     }
 }
+
+/** Focus an actually observed bank row while preserving the earlier capture preferences. */
+internal fun bookCorpusVectorFocus(registers: Set<String>): String =
+    listOf("\$w4", "\$w7", "\$w5", "\$w3", "\$w1").firstOrNull { it in registers }
+        ?: registers.firstOrNull() ?: "\$w1"
