@@ -74,6 +74,16 @@ archive size limits still apply. This lets one coherent assessment retain a
 large original grid without weakening its budgets or forcing students through
 artificially split interface steps.
 
+## Native lesson format 11
+
+Format 11 inherits format 10 and permits an optional portable `source` path on
+prediction activities. Omit it to use the package entry, as before. Formats 1–10
+reject this new member. The referenced file must be present in the retained
+archive; malformed, escaping and reserved private paths are rejected before import.
+The native lesson uses the existing editor-opening and instruction-highlighting
+path for the selected file. This lets a question point at its actual worked
+variant rather than at an unrelated instruction in the entry program.
+
 ## Verification scope
 
 The original Kotlin checker was instrumented to export its actual names, budgets,

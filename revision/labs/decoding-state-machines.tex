@@ -2,124 +2,229 @@
 \MARSChapterHeading{Trace the decoder's remembered state}
 \label{revision-lab:qoi}
 
-Use the complete \texttt{qoi-codec.asm} and independent
-\texttt{qoi-mirrored.asm} in \texttt{revision/labs/files}. Read the main
-chapter's opcode, cache and publication rules first. This lab follows the
-worked eight-pixel image, produces real image files and ends with reflected
-output. It uses ordinary Run and Debug; its native guided lesson remains
-unfinished.
+A compressed pixel does not always carry its own components. It may repeat the
+previous color, recover a cached color, or describe a difference from the previous
+one. To explain a decoded pixel, you therefore need both the selected source
+bytes and the state established by earlier operations. This lab follows that
+state through a complete decoder before asking you to change its output placement.
 
-Keep separate source copies for intentional faults. The caller controls select
-one routine or the complete pipeline; they do not automatically prepare every
-other routine's inputs. In particular, a fresh encode-only run needs valid
-metadata and pixels. The file pipeline and grading cases supply them explicitly.
+Import the \texttt{030-qoi} student archive and open it in Learn. The entry
+\texttt{qoi-codec.asm} selects the complete eight-pixel decoder. The
+\texttt{worked/} copies select other callers or change one input condition.
+The independent \texttt{qoi\_decode\_mirrored} entry is deliberately unfinished.
+Read the main chapter's format, cache and publication rules first; use this
+companion to connect the observations with the reasons for each boundary.
 
-\section{Account for bytes, pixels and reserved capacity}
+Answer predictions inline. Each question's source pointer refers to its selected
+example. During Debug, inspect the selected paused frame: after Learn recognizes
+a pause, its outline can move to the next requested instruction. A highlighted
+instruction has not executed yet. Labels beginning \texttt{after\_} mark
+checkpoints after the preceding operations. Use one breakpoint at a time,
+resume between observations and finish a process before starting another source.
+Keep these supplied examples unchanged; use disposable copies for further faults.
 
-Keep the default mode zero and break at \texttt{bound\_return}. Dimensions
-are eight by one. Derive $22+5\cdot8=62$ before inspecting \texttt{\$v1}.
-This is a safe byte reservation for encoding those dimensions, not the selected
-input length and not a pixel count. The supplied source selects 38 file bytes
-and describes eight pixels. Its larger source allocation contains sentinel
-padding outside the file.
+\section{Keep four different lengths separate}
 
-Mode one validates and publishes a descriptor. In a fresh copy, select that
-mode and break at \texttt{validate\_return}. Expect status zero, pixel count
-eight and metadata words eight, one, four and zero. Explain why serialized
-dimensions use big-endian bytes while these native words use little-endian
-storage. The descriptor contains descriptive flags; it is not a pixel array.
+An eight-by-one image requires eight output pixels, or 32 raw RGBA bytes.
+Its selected QOI input contains 38 bytes. A conservative encoding reservation
+for those dimensions is $22+5\cdot8=62$ bytes: fourteen header bytes, eight
+marker bytes, and at most five bytes per pixel. These quantities answer different
+questions. A reservation says what could fit; it does not say which bytes have
+actually arrived or how many pixels a particular parse has reconstructed.
 
-With mode two, break at \texttt{decode\_return}. Expect zero status and packed
-dimensions \texttt{0x0000000100000008}. The destination now contains eight
-\texttt{0xAARRGGBB} words. The caller's result words have not yet been stored;
-\texttt{results\_ready} begins that publication. Exit later reuses
-\texttt{\$v0}, so retain the result at the intended boundary.
+\Needspace{4\baselineskip}
+The bound observation uses \texttt{worked/bound.asm}. At
+\texttt{after\_b\_size}, the arithmetic is complete: status is zero and
+\texttt{\$v1} is 62. The same result reaches \texttt{bound\_return}.
+The caller has not yet stored its result slots. Continue to termination only
+after retaining the returned value; the exit service later reuses \texttt{\$v0}.
 
-\section{Follow all six operations, including alpha}
+Return to the decode entry for the header observation. Its serialized width is
+\texttt{00 00 00 08}, and its height is \texttt{00 00 00 01}. Unsigned byte
+loads, shifts and OR reconstruct eight and one in \texttt{\$t4} and
+\texttt{\$t5}. A native little-endian word load would give a different value.
+At this boundary \texttt{\$a1} is still the selected encoded length, 38.
+The routine has not converted that argument into a pixel count.
 
-Use the main chapter's trace table to predict each of the eight RGBA values.
-For every chunk, write its selected source bytes, number of produced pixels,
-new previous color and cache slot. The first \texttt{c0} produces one opaque
-black pixel without an explicit RGB literal. The following \texttt{fe} chunk
-sets red, and the next \texttt{c0} repeats it.
+The outer decoder first calls the validator. At \texttt{after\_d\_call},
+validation returns eight required pixels in \texttt{\$v1}. Later, at
+\texttt{decode\_return}, decode returns packed dimensions
+\texttt{0x0000000100000008}. That value is height one in the upper word and
+width eight in the lower word. It is neither 38 encoded bytes nor 32 output bytes.
+For a descriptor-only observation, the complete \texttt{worked/validate.asm}
+copy publishes native words eight, one, four and zero at \texttt{validate\_return}.
+
+\section{Follow one transition before following the whole image}
+
+Before the first opcode, the previous-color predictor is opaque black
+$(0,0,0,255)$, while every cache slot is transparent black $(0,0,0,0)$.
+At the first \texttt{after\_w\_clear}, \texttt{\$s3} is
+\texttt{00000000ff000000}, \texttt{\$s2} is eight, and
+\texttt{\$s6} is the sentinel minus one for no previous INDEX. The walker is
+validating, so \texttt{\$fp} is zero and caller pixels are not emitted.
+
+The first chunk is \texttt{c0}. Its low six bits are zero, but RUN stores
+count minus one. It therefore repeats the predictor once. At
+\texttt{after\_w\_run}, one repetition has been decoded into \texttt{\$t3};
+eight pixels remain because the advance has not happened. Reading a count and
+consuming its output are separate transitions.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{l r r r}
+\toprule
+Chunk bytes & Bytes consumed & Pixels produced & Pixels left\\
+\midrule
+\texttt{c0} & 1 & 1 & 7\\
+\texttt{fe ff 00 00} & 4 & 1 & 6\\
+\texttt{c0} & 1 & 1 & 5\\
+\texttt{35} & 1 & 1 & 4\\
+\texttt{7f} & 1 & 1 & 3\\
+\texttt{a5 97} & 2 & 1 & 2\\
+\texttt{ff 07 06 05 80} & 5 & 1 & 1\\
+\texttt{04} & 1 & 1 & 0\\
+\bottomrule
+\end{tabular}
+\caption{Account for the worked stream after each operation's output has
+advanced. The chunks consume sixteen bytes and produce eight pixels. Header and
+marker add 22 bytes, giving the selected file length 38. A longer RUN would
+produce several pixels while consuming only one source byte.}
+\label{tab:revision-qoi-lab-counts}
+\end{table}
+
+For each operation, retain two independent accounting statements: the cursor
+has consumed its own encoded bytes, and the remaining pixel count has decreased
+by its produced pixels. A cursor at the marker does not alone establish the
+right number of pixels. A zero remaining count does not authorize extra payload
+or a damaged marker. Both conditions must hold.
+
+\section{Explain cache changes and complete colors}
+
+The first RUN installs its opaque-black color in decimal cache slot 53.
+At \texttt{after\_w\_hash}, \texttt{\$s4} identifies the private cache base;
+slot 53 is $53\cdot4=212$ bytes from it. Use that live base if you inspect Memory.
+A validation-only caller and a decoder that calls validation have different
+nested frames, so an address printed in an example is not a fixed cache address.
+
+\input{revision/figures/qoi/native-cache}
+
+The inserted bytes are \texttt{00 00 00 ff}. Nearby cleared slots still contain
+\texttt{00 00 00 00}. RGB black is the same, but alpha is different. The
+fourth pixel's INDEX byte \texttt{35} selects slot 53 and must recover opaque
+black. A validator that tracks only opcode widths would miss this dependency.
+It must reconstruct the same predictor and cache state as emission.
+
+In the chunk observation, \texttt{after\_w\_index} occurs twice. On the first
+requested visit, \texttt{\$s3} is \texttt{ff000000} and five pixels remain
+before advancing the fourth pixel. On the later visit, \texttt{\$s3} is
+\texttt{ff010101} and one remains before advancing the eighth. The source label
+is the same; the incoming history explains why the states differ. Resume through
+the intervening operations rather than restarting when Learn requests that label
+again.
+
+For DIFF \texttt{7f}, each two-bit field is three, with bias two, so each RGB
+component increases by one. The preceding black becomes $(1,1,1)$.
+For LUMA \texttt{a5 97}, $d_g=37-32=5$, $d_r-d_g=9-8=1$ and
+$d_b-d_g=7-8=-1$. Starting from $(1,1,1)$ gives $(7,6,5)$.
+At \texttt{after\_w\_diff} and \texttt{after\_w\_luma}, the components
+are still separate temporaries; the following pack constructs the predictor word.
+Apply modulo-256 reduction to each component. Clamping would decode another format.
+
+The next RGBA literal supplies $(7,6,5,128)$. The last INDEX restores
+$(1,1,1,255)$, including its earlier alpha. An INDEX does not retain alpha from
+the immediately preceding predictor. The complete decoded words are visible below.
 
 \input{revision/figures/qoi/native-rgba}
 
-The first four words are opaque black, red, red and black. The next four are
-\texttt{ff010101}, \texttt{ff070605}, \texttt{80070605} and
-\texttt{ff010101}. In byte view the seventh pixel is \texttt{05 06 07 80}.
-Explain why that is the RGBA value $(7,6,5,128)$ rather than $(5,6,7,128)$.
-The final INDEX restores alpha 255 along with its cached RGB; it does not keep
-alpha 128 from the preceding pixel.
+The seventh word \texttt{80070605} appears in byte view as
+\texttt{05 06 07 80}, because native words are little-endian. It still means
+$(R,G,B,A)=(7,6,5,128)$. The descriptive-flags copy changes channels to three
+and colorspace to one. Its RGBA literal and result retain those same components;
+neither flag asks this codec to discard alpha or transform the bytes. An RGB
+preview cannot establish this property because it omits the fourth component.
 
-For \texttt{7f}, recover three differences of one. For \texttt{a5 97}, recover
-green change five and red/blue residuals one and minus one. Apply them to the
-previous $(1,1,1)$ before checking $(7,6,5)$. State where modulo-256 reduction
-belongs. Saturation or ordinary clamping would implement a different format.
+\section{Start each parse with the same initial state}
 
-Change only the header's channels byte from four to three in another copy.
-The reconstructed alpha at pixel seven must still be 128. Setting colorspace
-to one also does not transform the component bytes. An RGB display cannot
-establish either property, because it does not show the fourth component.
+Validation updates private state while proving the complete input. Once it
+returns, the outer decoder compares the required count with the saved unsigned
+capacity. At \texttt{after\_d\_capacity}, eight required pixels fit 4096.
+Only then does the second walk start emitting. At \texttt{after\_d\_walk},
+the caller pixels exist and the walker has returned eight pixels. The outer
+routine still has to construct its packed-dimension return value.
 
-\section{Observe why a run changes the cache}
+Notice that \texttt{\$s3} means saved capacity at the outer decoder's boundary,
+but predictor color inside the walker. Saved registers are preserved across
+calls; they are not permanently assigned one meaning across all routines.
+Identify the current routine before interpreting a displayed value.
 
-In mode one, break at \texttt{after\_w\_hash}, on its first visit. This is a
-checkpoint in the supplied walker's implementation, after the first RUN has
-installed its color. It is useful for studying this source; equivalent solutions
-are not required to have this label or register allocation.
+Restarting emission needs more than the original source pointer. Its predictor,
+all 64 cache entries and prior-INDEX history must start fresh. Two small examples
+make errors here visible without relying on the familiar trace.
 
-At this boundary \texttt{\$s3} holds \texttt{00000000ff000000} and
-\texttt{\$s4} identifies the private cache base. Slot 53 is 212 bytes from
-that base. In the supplied ordinary layout its address is
-\texttt{0x100201c4}; use the live base if you change allocations.
-The displayed sixteen-byte row starts one word earlier, at slot 52.
+The initial-INDEX copy begins with INDEX zero. An untouched cache slot is defined
+transparent black, so this valid one-pixel image produces word
+\texttt{00000000}. It does not use the opaque initial predictor and does not
+require a previous literal. Inspect the first validation INDEX, then the complete
+one-by-one decode return and framebuffer.
 
-\Needspace{18\baselineskip}
-\input{revision/figures/qoi/native-cache}
+\Needspace{12\baselineskip}
+The cache-reset copy begins with the same INDEX, then supplies RGBA $(1,0,0,23)$.
+That late color hashes to
+\[
+ (3\cdot1+5\cdot0+7\cdot0+11\cdot23)\bmod64
+ =256\bmod64=0.
+\]
+Validation therefore ends with slot zero populated. At \texttt{after\_d\_call},
+the input has been accepted but no caller pixel has been emitted. The emitting
+pass's first INDEX must nevertheless recover zero. If it inherits validation's
+cache, its first pixel changes to the \emph{later} color. The expected output
+words are \texttt{00000000} followed by \texttt{17010000}. Explain why a trace
+that overwrites each slot before reading it could conceal that error.
 
-Slot 53 contains bytes \texttt{00 00 00 ff}; its neighbors remain zero.
-Those neighbors are transparent black, while the inserted value is opaque
-black. The later INDEX byte \texttt{35} selects decimal slot 53. A decoder
-that did not insert RUN colors would therefore reconstruct the wrong alpha,
-even though black RGB could still look right on screen.
+\section{Reject the whole input before publishing a prefix}
 
-This observation occurs during validation, before caller pixels are emitted.
-Validation must maintain the same predictor and cache semantics as decoding.
-It cannot decide whether the stream is valid by checking opcode widths alone.
-The emitting pass starts with a fresh cache again, rather than inheriting the
-validator's final contents.
-
-As a diagnosis exercise, suppress the cache clear in a disposable copy. Try an
-initial INDEX of slot zero as well as the familiar trace. Explain why a stream
-that overwrites every cache slot it later reads can hide this fault. Restore
-the source before continuing; the public independent checks include an initial
-INDEX-zero counterexample.
-
-\section{Reject a late error without publishing a convincing prefix}
-
-In a mode-two copy, change the final marker byte from one to zero, keeping the
-selected count 38. All eight pixel operations still appear plausible. Predict
-whether any caller pixel may change before running. At \texttt{decode\_return},
-expect format status one and zero length, with the framebuffer still containing
-its initial \texttt{a5} bytes.
+The late-marker copy keeps all eight plausible pixel operations but replaces
+the final marker one with zero. It also gives the decoder zero pixel capacity.
+Predict the precedence before launching it. At \texttt{decode\_return}, expect
+format status one and zero dimensions. Validation fails before capacity is tested,
+and the complete destination retains its initial \texttt{a5} bytes.
 
 \input{revision/figures/qoi/native-rejection}
 
-\Needspace{5\baselineskip}
-The figure shows the first untouched row. Executable checks separately inspect
-the complete caller arena and access history. A screenshot of a few bytes does
-not prove whole-buffer preservation. Repeat with zero pixel capacity: the
-malformed stream still reports format error, because validation precedes capacity.
-A valid stream with capacity seven instead reports capacity error and publishes
-no pixels.
+The visible row helps locate the output, but it is not evidence for the whole
+arena. Executable checks inspect the complete destination and its access history.
+The valid short-capacity copy separates the other failure: seven available pixels
+cannot hold eight required ones. At \texttt{decode\_capacity}, success and the
+required count are still live before the highlighted \texttt{li} constructs
+status two. At the return, the count is zero and no pixels have been published.
 
-Consider a truncated RGBA operation immediately before the marker. Its missing
-alpha byte may be physically readable as a marker zero, but that byte is outside
-the chunk interval. Draw the selected file end and the boundary eight bytes before
-it. Prove availability against the latter boundary before interpreting operands.
-Reaching the required pixel count also does not authorize ignoring extra payload
-or a damaged marker.
+For a truncated RGBA operation, a missing alpha byte may be physically readable
+as a marker zero. That does not make it an operand. Draw the selected file end
+and the boundary eight bytes before it; prove availability against the chunk
+boundary before loading components. Keep this source permission separate from
+the later proof that enough destination pixels exist.
+
+\section{Follow the initialized file prefix}
+
+The short-read activity supplies virtual \texttt{input.qoi} containing the same
+38 bytes as \texttt{worked/input.qoi}. Positive reads transfer at most seven
+bytes, and the first acquired descriptor is 19. These are this activity's supplied
+conditions; ordinary execution outside it uses the real file and normal file
+services. A fresh launch starts independent input state.
+
+At \texttt{after\_l\_open}, the loader owns descriptor 19 and has accepted zero
+bytes. At the first \texttt{after\_l\_read}, both the returned transfer count
+and initialized prefix are seven. The large remaining-capacity request did not
+initialize the rest of the buffer. Continue accumulating actual positive results;
+a short positive result is not EOF. The final positive transfer is three bytes,
+followed by a zero result that establishes the end of this 38-byte file.
+
+At \texttt{load\_return}, the loader has closed its descriptor and validated
+the complete file. Its result length is 38 encoded bytes. Compare that with the
+validator's eight-pixel result and decoder's packed dimensions. Finish the silent
+ordinary Run of the decode entry as well. Its empty console establishes normal
+termination, while the earlier Debug and Memory observations explain the numerical
+result. The next experiment uses actual host files and a complete pipeline.
 
 \section{Produce actual files and compare their decoded meaning}
 
@@ -175,8 +280,8 @@ transfers or injected errors; grading fixtures test those paths separately.
 
 \section{Place reflected pixels while keeping forward decoder state}
 
-Complete \texttt{qoi\_decode\_mirrored} in a copy of
-\texttt{revision/labs/files/qoi-mirrored.asm}. Keep the supplied caller and
+Complete \texttt{qoi\_decode\_mirrored} in the delivered
+\texttt{independent/qoi-mirrored.asm}. Keep the supplied caller and
 helpers. The interface matches decode: byte pointer, unsigned byte count,
 word destination and unsigned pixel capacity. Preserve status precedence,
 zero failure length, full saved state and all source bytes. Format or capacity
@@ -208,9 +313,13 @@ java -jar /path/to/cli.jar grade \
   revision/labs/checks/qoi-mirrored.kts \
   /path/to/your/qoi-mirrored.asm
 \end{verbatim}
-The untouched starter deliberately stops in the unfinished entry. The public
-checks accept equivalent implementations and cover rows, offsets, alpha,
-state-sensitive inputs and rejected counts. They do not establish every possible
+The untouched starter deliberately stops in the unfinished entry. Learn supplies
+seven check groups: dimensions/capacities, chunk/flag behavior, alignment, malformed
+files, rejected full-width counts, complete caller execution and initial-state
+counterexamples. Together they retain the original 205 finite cases and budgets.
+Use the first failure to choose a concrete observation; graduated hints identify
+which permission or state argument to revisit. The optional CLI route above checks
+the same independent task. Both accept equivalent implementations. They do not establish every possible
 QOI stream. Test a successful call after a failure and retain an explanation of
 which state must start fresh.
 

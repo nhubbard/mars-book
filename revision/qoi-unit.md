@@ -94,3 +94,42 @@ See [the native QOI grading contract](../docs/native-qoi-checks.md) for versione
 formats, limits and verification scope. This foundation does not complete the
 QOI guided lesson, its desktop walkthrough or refreshed lab composition.
 The earlier page and tool-test counts above describe the historical QOI proof.
+
+## Connected native guide draft, 23 November 2026
+
+`revision/lessons/030-qoi` now delivers ten inline predictions, ten Debug
+activities with 29 ordered boundaries, one ordinary Run and seven independent
+assessment groups retaining all 205 original cases. Complete worked copies
+select decode, bound, validation, descriptive flags, late marker failure,
+capacity failure, initial INDEX, cache reset and a short-read file loader.
+Every exported source is public worked code or the unchanged independent starter;
+no private reflection implementation is included. The original CLI checker is
+retained as an optional route.
+
+Eleven executable probes verify every Debug register boundary and final caller
+result, exact output and whole padding, complete untouched destinations on errors,
+validation before publication and descriptor closure. These are executable core
+observations, not desktop walkthroughs. The actual archive is also checked through
+the production importer and source pointers through native PSI fixtures.
+Predictions select their own worked source using native lesson format 11.
+The separate authoring plugin is being prepared to follow those same source
+choices. Actual first/resume IDE exercise and refreshed guided-experience captures remain
+pending. The connected written-lab revision and its verified proof follow below.
+
+## Connected written companion proof
+
+The lab now connects the guided observations to length accounting, caller
+publication, predictor/cache transitions, changing register meanings, two-pass
+initialization, late rejection, positive short reads and independent row placement.
+A native table accounts for the sixteen chunk bytes and eight output pixels.
+The local source remains directly edited LaTeX. The existing five genuine
+light-theme worked-example captures and their native annotations are retained.
+They do not claim a new guided IDE walkthrough.
+
+The compiled companion has 212 pages, with QOI on 141–149. Pages 140–150 were
+reviewed in color and table/figure pages 142–145 in grayscale. The build reports
+no missing glyph, font substitution or overflow. Minion Pro, Noto Sans Math and
+JetBrains Mono remain embedded. The exact proof passes PDF/UA-2 validation:
+1,728 rules and 1,000,842 checks, with zero failures. This is assistant layout and
+automated accessibility verification; human learner and assistive-technology
+review remain separate. The main learning proof is unchanged.

@@ -1,0 +1,1266 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 20 and the written lab. Trace a complete QOI decoder before changing output placement. Answer predictions inline, use the source pointer to locate the discussed operation, and inspect selected paused Debug frames. The supplied register observations describe only the worked programs. Finish each launched process before opening another example. The independent task accepts equivalent correct implementations.",
+  "conclusion": "Retain an eight-pixel state trace, an argument for publication only after validation/capacity success, and a row-placement argument for your independent decoder. Explain the initial-INDEX and cache-reset counterexamples and one count or alignment failure. Passing finite tests supports these arguments but does not prove every possible stream or measure hardware performance.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "three-counts",
+      "source": "worked/bound.asm",
+      "explanation": "A QOI file has a 14-byte header and an eight-byte marker. At worst each pixel requires an ff tag and four components. The worked dimensions are eight by one. A reservation must accommodate that worst case, even though the selected example uses shorter chunks.",
+      "question": "Which quantity is the bound routine about to return?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "62 bytes",
+          "feedback": "22 + 5 \u00d7 8 = 62. This is a safe reservation for a possible encoding, not the selected input length."
+        },
+        {
+          "id": "b",
+          "text": "38 bytes",
+          "feedback": "38 is the length of this particular input. Another legal encoding of the same dimensions may need more bytes."
+        },
+        {
+          "id": "c",
+          "text": "8 bytes",
+          "feedback": "Eight is the pixel count. The buffer is measured in bytes and must also hold framing."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_b_size",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-bound",
+      "source": "worked/bound.asm",
+      "explanation": "Debug the bound example. Stop at after_b_size, then bound_return. The caller will publish the returned values only after this second stop.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "bound-size",
+          "explanation": "The complete arithmetic has produced a byte reservation. v0 is success and v1 is 62.",
+          "anchor": {
+            "label": "after_b_size",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000003e",
+            "$t3": "0x0000000000000008"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "bound-return",
+          "explanation": "The routine returned without converting the reservation into an actual encoded length.",
+          "anchor": {
+            "label": "bound_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000003e"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Keep 62 reserved bytes, 38 selected bytes and eight pixels distinct.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "serialized-dimensions",
+      "source": "qoi-codec.asm",
+      "explanation": "The header stores width as bytes 00 00 00 08 and height as 00 00 00 01. lbu loads one unsigned byte; shifts and OR assemble the big-endian fields explicitly. The native descriptor written later uses native word storage.",
+      "question": "What width and height have the explicit byte operations reconstructed?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Width 38, height 8",
+          "feedback": "38 counts selected file bytes; eight counts pixels here. Neither replaces the two header fields."
+        },
+        {
+          "id": "b",
+          "text": "Width 8, height 1",
+          "feedback": "The byte at the low end of each serialized field supplies its small value."
+        },
+        {
+          "id": "c",
+          "text": "Width 0x08000000, height 0x01000000",
+          "feedback": "That would interpret the serialized fields as native little-endian words."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_w_dimensions",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "header-and-initial-state",
+      "source": "qoi-codec.asm",
+      "explanation": "Start a fresh Debug run of qoi-codec.asm. This caller selects decode. Its first walker invocation validates without emitting caller pixels. Inspect after_w_dimensions, after_w_clear, then after_d_call.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "dimensions",
+          "explanation": "The first validation pass has reconstructed the dimensions; a1 still contains the selected byte count.",
+          "anchor": {
+            "label": "after_w_dimensions",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x0000000000000008",
+            "$t5": "0x0000000000000001",
+            "$a1": "0x0000000000000026"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "fresh-state",
+          "explanation": "s3 is the opaque-black predictor, s2 is the required pixel count, s6 is the no-prior-INDEX sentinel and fp is zero for validation. All cache words have just been cleared.",
+          "anchor": {
+            "label": "after_w_clear",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x00000000ff000000",
+            "$s2": "0x0000000000000008",
+            "$s6": "0xffffffffffffffff",
+            "$fp": "0x0000000000000000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "validated",
+          "explanation": "The validating call has returned success and eight pixels. s3 now belongs to the outer decoder and holds its saved pixel capacity, not the walker predictor.",
+          "anchor": {
+            "label": "after_d_call",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008",
+            "$s3": "0x0000000000001000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Register meanings belong to a routine and a boundary; a saved register name does not have one global meaning.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "run-count",
+      "source": "qoi-codec.asm",
+      "explanation": "The first opcode is c0. Its upper bits select RUN; its low six bits are zero. The stored value has a bias of one, so the first pixel repeats the initial opaque-black predictor. The run must fit the remaining pixel count.",
+      "question": "How many pixels does c0 produce?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Zero pixels",
+          "feedback": "The low field encodes count minus one. A zero-length run is not represented."
+        },
+        {
+          "id": "b",
+          "text": "One transparent-black pixel",
+          "feedback": "Transparent black initializes cache entries, not the previous-color predictor."
+        },
+        {
+          "id": "c",
+          "text": "One opaque-black pixel",
+          "feedback": "The low field zero means one repetition. Its color includes alpha 255."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "after_w_run",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "tag-priority",
+      "source": "qoi-codec.asm",
+      "explanation": "The next explicit color begins with fe. Both fe and ff have upper bits 11, but they are complete-byte tags for RGB and RGBA. Dispatch must recognize them before treating 11 as RUN.",
+      "question": "What does fe ff 00 00 request?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "An RGB literal (255, 0, 0), retaining the previous alpha",
+          "feedback": "fe consumes three component bytes. The previous alpha remains 255 here."
+        },
+        {
+          "id": "b",
+          "text": "A run of 63 pixels",
+          "feedback": "That interpretation tests the upper-bit class too early and treats component bytes as later opcodes."
+        },
+        {
+          "id": "c",
+          "text": "An RGBA literal with alpha zero",
+          "feedback": "Only ff supplies four new components. fe supplies three."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "walk_next",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "chunk-transitions",
+      "source": "qoi-codec.asm",
+      "explanation": "Launch a fresh decode. Follow the first validation pass in the listed order. Resume past each completed boundary; after_w_index is intentionally visited twice, with different incoming state. Use the chapter trace table to account for each pixel.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "run",
+          "explanation": "The first run will produce one pixel. Eight remain before emission/advance.",
+          "anchor": {
+            "label": "after_w_run",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x00000000000000c0",
+            "$t3": "0x0000000000000001",
+            "$s2": "0x0000000000000008",
+            "$s3": "0x00000000ff000000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "run-cache",
+          "explanation": "The first RUN color has been inserted into its hash slot, even in the non-emitting validation pass. RGB is zero and alpha is 255.",
+          "anchor": {
+            "label": "after_w_hash",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x00000000ff000000",
+            "$s2": "0x0000000000000008",
+            "$fp": "0x0000000000000000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "first-index",
+          "explanation": "After black, red, red, INDEX 35 selects decimal slot 53 and recovers opaque black. Five pixels remain before this fourth pixel is advanced.",
+          "anchor": {
+            "label": "after_w_index",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x00000000ff000000",
+            "$s6": "0x0000000000000035",
+            "$s2": "0x0000000000000005"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "diff",
+          "explanation": "DIFF 7f reconstructed each RGB component as one; alpha remains 255. Components have not yet been packed into s3 at this checkpoint.",
+          "anchor": {
+            "label": "after_w_diff",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x0000000000000001",
+            "$t5": "0x0000000000000001",
+            "$t6": "0x0000000000000001",
+            "$t7": "0x00000000000000ff",
+            "$s2": "0x0000000000000004"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "luma",
+          "explanation": "LUMA a5 97 gives green change five, plus red/blue residuals one and minus one. Starting from (1,1,1), that reconstructs (7,6,5).",
+          "anchor": {
+            "label": "after_w_luma",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x0000000000000007",
+            "$t5": "0x0000000000000006",
+            "$t6": "0x0000000000000005",
+            "$t7": "0x00000000000000ff",
+            "$s2": "0x0000000000000003"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "rgba",
+          "explanation": "The ff literal replaces alpha with 128 as well as supplying (7,6,5). RGB alone would hide this change.",
+          "anchor": {
+            "label": "after_w_rgba",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x0000000000000007",
+            "$t5": "0x0000000000000006",
+            "$t6": "0x0000000000000005",
+            "$t7": "0x0000000000000080",
+            "$s2": "0x0000000000000002"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "last-index",
+          "explanation": "The final INDEX 04 restores the complete earlier color (1,1,1,255), including alpha. One pixel remains before advance.",
+          "anchor": {
+            "label": "after_w_index",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x00000000ff010101",
+            "$s6": "0x0000000000000004",
+            "$s2": "0x0000000000000001"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Account for all eight pixels, including both INDEX operations and the alpha they restore.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "biased-differences",
+      "source": "qoi-codec.asm",
+      "explanation": "For a5 97, the first byte gives dg = 37 \u2212 32 = 5. The second gives dr\u2212dg = 9 \u2212 8 = 1 and db\u2212dg = 7 \u2212 8 = \u22121. Add these to previous RGB (1,1,1), then reduce each component modulo 256.",
+      "question": "Which RGB triple is reconstructed?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "(9, 7, 7)",
+          "feedback": "The packed fields are biased encodings, not unsigned component increments."
+        },
+        {
+          "id": "b",
+          "text": "(7, 6, 5)",
+          "feedback": "Red adds 5+1, green adds 5, blue adds 5\u22121."
+        },
+        {
+          "id": "c",
+          "text": "(2, 6, 0)",
+          "feedback": "This adds the residuals without their shared green difference."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_w_luma",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "flags-preserve-alpha",
+      "source": "worked/descriptive-flags.asm",
+      "explanation": "This complete copy changes only the channels byte to three and colorspace to one. Inspect the flags, the RGBA literal and the final return. The flags do not transform component values or prohibit alpha changes.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "flags",
+          "anchor": {
+            "label": "after_w_flags",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The selected header describes channels three and colorspace one.",
+          "registers": {
+            "$t6": "0x0000000000000003",
+            "$t7": "0x0000000000000001"
+          },
+          "success": "Explain the observed state before resuming."
+        },
+        {
+          "id": "flags-alpha",
+          "anchor": {
+            "label": "after_w_rgba",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The RGBA chunk still reconstructs (7,6,5,128). The supplied decoder has not discarded its alpha.",
+          "registers": {
+            "$t4": "0x0000000000000007",
+            "$t5": "0x0000000000000006",
+            "$t6": "0x0000000000000005",
+            "$t7": "0x0000000000000080"
+          },
+          "success": "Explain the observed state before resuming."
+        },
+        {
+          "id": "flags-return",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "The image still has width eight and height one. Inspect word seven: 80070605, with bytes 05 06 07 80.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000100000008"
+          },
+          "success": "Explain the observed state before resuming."
+        }
+      ],
+      "success": "Use an RGBA word or byte view as alpha evidence; an RGB preview omits that component."
+    },
+    {
+      "kind": "prediction",
+      "id": "two-pass-reset",
+      "source": "qoi-codec.asm",
+      "explanation": "Validation has read the whole stream and updated its own predictor, cache and INDEX history. The emitting pass restarts at the original header and must reconstruct the same initial state. Its output pointer alone is not sufficient state.",
+      "question": "What may the emitting pass inherit from the validator?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The validator\u2019s final cache, because it has already been checked",
+          "feedback": "An early INDEX could then select a color installed near the end of the validation pass."
+        },
+        {
+          "id": "b",
+          "text": "The validator\u2019s final predictor, while clearing only the cache",
+          "feedback": "A leading RUN or DIFF would then start from the wrong color."
+        },
+        {
+          "id": "c",
+          "text": "The established valid input and dimensions, but fresh predictor/cache/history",
+          "feedback": "The second parse must have the same initial semantics as the first. It may use the established dimensions and capacity decision."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "after_d_capacity",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "emission-and-result",
+      "source": "qoi-codec.asm",
+      "explanation": "Start a fresh decode and observe after_d_capacity, after_d_walk, then decode_return. The second pass reconstructs the pixels only after validation and capacity success. At the return, inspect the framebuffer as words and as bytes.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "permission",
+          "explanation": "The stream is valid, the required count is eight, and the saved output capacity is 4096. The emitting walk has not yet started.",
+          "anchor": {
+            "label": "after_d_capacity",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008",
+            "$s3": "0x0000000000001000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "emitted",
+          "explanation": "The second walker has returned success and eight pixels. The outer decoder will next pack height and width for its own return contract.",
+          "anchor": {
+            "label": "after_d_walk",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "decoded-return",
+          "explanation": "The decoder returns packed dimensions, not a byte count. v1 is height one in the upper word and width eight in the lower word.",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000100000008"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Read the seventh framebuffer word as 0x80070605 and its bytes as 05 06 07 80. Explain both representations.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "initial-index",
+      "source": "worked/initial-index.asm",
+      "explanation": "This one-pixel stream begins with INDEX 00. Cache entries start as (0,0,0,0), while the predictor starts as (0,0,0,255). INDEX replaces all components using its selected cache word.",
+      "question": "Which word should this stream produce?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0x00000000",
+          "feedback": "The initially empty cache slot is defined transparent black."
+        },
+        {
+          "id": "b",
+          "text": "0xff000000",
+          "feedback": "That is the initial predictor, which INDEX replaces."
+        },
+        {
+          "id": "c",
+          "text": "A format error because no literal has populated the slot",
+          "feedback": "The format defines the initial cache contents; a slot need not first appear as a literal."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_w_index",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "initial-transparent-pixel",
+      "source": "worked/initial-index.asm",
+      "explanation": "Debug the one-pixel initial-INDEX example. The first INDEX in validation loads the zero cache word; at decode_return the framebuffer contains that same transparent-black word.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "initial-slot",
+          "anchor": {
+            "label": "after_w_index",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "INDEX 00 replaces the opaque predictor with transparent black. The first pass is validation, so fp is zero.",
+          "registers": {
+            "$s3": "0x0000000000000000",
+            "$s6": "0x0000000000000000",
+            "$s2": "0x0000000000000001",
+            "$fp": "0x0000000000000000"
+          },
+          "success": "Explain the observed state before resuming."
+        },
+        {
+          "id": "initial-return",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "explanation": "The returned dimensions are one by one. Inspect the framebuffer word as 00000000.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000100000001"
+          },
+          "success": "Explain the observed state before resuming."
+        }
+      ],
+      "success": "The initial cache and initial predictor have different alpha values."
+    },
+    {
+      "kind": "debug",
+      "id": "counterexample-states",
+      "source": "worked/cache-reset.asm",
+      "explanation": "This two-pixel stream starts with INDEX 00 and ends with RGBA (1,0,0,23). Its hash is (3*1 + 5*0 + 7*0 + 11*23) modulo 64 = 256 modulo 64 = 0, so validation installs that late color in slot zero. Observe after_d_call after validation, then the first after_w_index in the emitting pass. The first emitted pixel must still use a freshly cleared slot zero.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "cache-valid",
+          "explanation": "Both source operations validated and produced two pixels. No caller pixels have been emitted yet.",
+          "anchor": {
+            "label": "after_d_call",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000002"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "cache-reset",
+          "explanation": "The emitting pass has reset its cache. Its first INDEX is transparent black, with fp one for emission and both pixels still required.",
+          "anchor": {
+            "label": "after_w_index",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000000",
+            "$s6": "0x0000000000000000",
+            "$s2": "0x0000000000000002",
+            "$fp": "0x0000000000000001"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "cache-return",
+          "explanation": "The complete two-pixel output returns width two and height one. Inspect the words: 00000000 then 17010000.",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000100000002"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "A stream can expose incorrect initial state even when the familiar trace passes.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "late-error",
+      "source": "worked/late-marker.asm",
+      "explanation": "The selected file still contains all eight plausible pixel operations, but its final marker byte is zero. This copy also has zero pixel capacity. Validation must establish the full format before the decoder considers capacity or publishes pixels.",
+      "question": "Which result has precedence?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Success for the eight pixels, with the marker ignored",
+          "feedback": "Reconstructing enough pixels does not establish exact framing or a valid marker."
+        },
+        {
+          "id": "b",
+          "text": "Format status 1, zero length and untouched destination",
+          "feedback": "The malformed marker fails validation before capacity is tested."
+        },
+        {
+          "id": "c",
+          "text": "Capacity status 2 because zero cannot hold eight pixels",
+          "feedback": "That would test output capacity before establishing a valid image."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "decode_return",
+        "mnemonic": "bnezc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "late-rejection",
+      "source": "worked/late-marker.asm",
+      "explanation": "Debug the damaged-marker copy and stop at decode_return. Check its result and inspect the framebuffer: the first row remains a5 bytes. The executable probes and independent checks inspect the whole arena; the visible row alone is not whole-buffer evidence.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "rejected",
+          "explanation": "Format failure wins over the zero-capacity condition. The routine reports no output dimensions.",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Explain why validation may update private state without publishing a convincing caller prefix.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "valid-capacity-failure",
+      "source": "worked/short-capacity.asm",
+      "explanation": "Debug the valid input with space for seven pixels. Stop at decode_capacity before it constructs the error, then decode_return. The strict unsigned comparison detects that eight required pixels do not fit.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "capacity-branch",
+          "explanation": "The validator returned eight required pixels and s3 retains capacity seven. The highlighted li has not yet replaced success with the capacity status.",
+          "anchor": {
+            "label": "decode_capacity",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008",
+            "$s3": "0x0000000000000007"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "capacity-return",
+          "explanation": "The function reports capacity status two and zero dimensions, with no caller pixel publication.",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Keep format failure and valid-but-insufficient capacity separate.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "short-file-read",
+      "source": "worked/file-load.asm",
+      "explanation": "This file activity supplies the 38-byte input.qoi in memory, limits each positive transfer to seven bytes and assigns descriptor 19. The caller can request the remaining capacity, but the return value states how many bytes actually arrived.",
+      "question": "After the first positive read, how many source bytes may the loader treat as initialized input?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "All 38 bytes",
+          "feedback": "That is the eventual file length; later bytes have not been transferred yet."
+        },
+        {
+          "id": "b",
+          "text": "20502 bytes",
+          "feedback": "That is the buffer capacity and request bound. It does not establish initialized data."
+        },
+        {
+          "id": "c",
+          "text": "Seven bytes",
+          "feedback": "The accepted-prefix count advances by the actual positive result, not the requested amount."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "after_l_read",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "short-read-loader",
+      "source": "worked/file-load.asm",
+      "explanation": "Debug this loader with Learn\u2019s supplied virtual input.qoi. It has the same 38 bytes as worked/input.qoi, transfers at most seven at a time and first returns descriptor 19. Observe acquisition, the first positive read and the returned validated byte count. Outside this activity, the real fixture file supports ordinary execution.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "file-open",
+          "explanation": "The owned descriptor is 19 and no bytes have been accepted yet.",
+          "anchor": {
+            "label": "after_l_open",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000013",
+            "$s4": "0x0000000000000000"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "file-read",
+          "explanation": "The first transfer returned seven bytes. The initialized prefix is now seven bytes, though the capacity is much larger.",
+          "anchor": {
+            "label": "after_l_read",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000007",
+            "$s4": "0x0000000000000007",
+            "$s3": "0x0000000000000013"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        },
+        {
+          "id": "file-return",
+          "explanation": "The loader has reached EOF, closed its descriptor and validated the complete stream. Its result length is 38 encoded bytes, not eight pixels.",
+          "anchor": {
+            "label": "load_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000026"
+          },
+          "success": "Explain these values from the preceding operations before resuming."
+        }
+      ],
+      "success": "Distinguish this loader\u2019s encoded-byte result from validate\u2019s pixel count and decode\u2019s packed dimensions.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and select the paused Debug frame. The highlighted instruction has not executed. At a named after_ checkpoint, the preceding operations have executed. Finish this process before starting another source."
+        }
+      ],
+      "fileRead": {
+        "path": "input.qoi",
+        "bytes": "716f696600000008000000010400c0feff0000c0357fa597ff07060580040000000000000001",
+        "maxRequest": 20502,
+        "maxReadSize": 7,
+        "firstDescriptor": 19
+      }
+    },
+    {
+      "kind": "run",
+      "id": "run-decoded-caller",
+      "source": "qoi-codec.asm",
+      "explanation": "Run the complete decode caller normally. It records status and dimensions in memory and exits silently. Use the earlier Debug boundary to explain those values; an empty console alone does not establish correct pixels.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The caller terminated normally. Retain the Debug and memory observations as numerical evidence.",
+      "anchor": {
+        "label": "results_ready",
+        "mnemonic": "dla",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "row-reflection",
+      "source": "independent/qoi-mirrored.asm",
+      "explanation": "For a width-three, height-two image, source pixels arrive in row order A B C, then D E F. Reflection changes destination placement within each row. Predictor and cache transitions still follow forward source order, including a RUN that crosses a row boundary.",
+      "question": "Which framebuffer arrangement implements horizontal reflection?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "C B A, then F E D",
+          "feedback": "Each row reverses independently; the row order is preserved."
+        },
+        {
+          "id": "b",
+          "text": "F E D, then C B A",
+          "feedback": "That reverses the whole image and exchanges the rows."
+        },
+        {
+          "id": "c",
+          "text": "A D, then B E, then C F",
+          "feedback": "That transposes the geometry instead of reflecting each row."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "qoi_decode_mirrored",
+        "mnemonic": "break",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-geometry",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-geometry-000.cases.json",
+        "independent/qoi-mirror-geometry-001.cases.json",
+        "independent/qoi-mirror-geometry-002.cases.json",
+        "independent/qoi-mirror-geometry-003.cases.json",
+        "independent/qoi-mirror-geometry-004.cases.json",
+        "independent/qoi-mirror-geometry-005.cases.json",
+        "independent/qoi-mirror-geometry-006.cases.json",
+        "independent/qoi-mirror-geometry-007.cases.json",
+        "independent/qoi-mirror-geometry-008.cases.json",
+        "independent/qoi-mirror-geometry-009.cases.json",
+        "independent/qoi-mirror-geometry-010.cases.json",
+        "independent/qoi-mirror-geometry-011.cases.json",
+        "independent/qoi-mirror-geometry-012.cases.json",
+        "independent/qoi-mirror-geometry-013.cases.json",
+        "independent/qoi-mirror-geometry-014.cases.json",
+        "independent/qoi-mirror-geometry-015.cases.json",
+        "independent/qoi-mirror-geometry-016.cases.json",
+        "independent/qoi-mirror-geometry-017.cases.json",
+        "independent/qoi-mirror-geometry-018.cases.json",
+        "independent/qoi-mirror-geometry-019.cases.json",
+        "independent/qoi-mirror-geometry-020.cases.json",
+        "independent/qoi-mirror-geometry-021.cases.json",
+        "independent/qoi-mirror-geometry-022.cases.json",
+        "independent/qoi-mirror-geometry-023.cases.json",
+        "independent/qoi-mirror-geometry-024.cases.json",
+        "independent/qoi-mirror-geometry-025.cases.json",
+        "independent/qoi-mirror-geometry-026.cases.json",
+        "independent/qoi-mirror-geometry-027.cases.json",
+        "independent/qoi-mirror-geometry-028.cases.json",
+        "independent/qoi-mirror-geometry-029.cases.json",
+        "independent/qoi-mirror-geometry-030.cases.json",
+        "independent/qoi-mirror-geometry-031.cases.json",
+        "independent/qoi-mirror-geometry-032.cases.json",
+        "independent/qoi-mirror-geometry-033.cases.json",
+        "independent/qoi-mirror-geometry-034.cases.json",
+        "independent/qoi-mirror-geometry-035.cases.json",
+        "independent/qoi-mirror-geometry-036.cases.json",
+        "independent/qoi-mirror-geometry-037.cases.json",
+        "independent/qoi-mirror-geometry-038.cases.json",
+        "independent/qoi-mirror-geometry-039.cases.json",
+        "independent/qoi-mirror-geometry-040.cases.json",
+        "independent/qoi-mirror-geometry-041.cases.json",
+        "independent/qoi-mirror-geometry-042.cases.json",
+        "independent/qoi-mirror-geometry-043.cases.json",
+        "independent/qoi-mirror-geometry-044.cases.json",
+        "independent/qoi-mirror-geometry-045.cases.json",
+        "independent/qoi-mirror-geometry-046.cases.json",
+        "independent/qoi-mirror-geometry-047.cases.json",
+        "independent/qoi-mirror-geometry-048.cases.json",
+        "independent/qoi-mirror-geometry-049.cases.json",
+        "independent/qoi-mirror-geometry-050.cases.json",
+        "independent/qoi-mirror-geometry-051.cases.json",
+        "independent/qoi-mirror-geometry-052.cases.json",
+        "independent/qoi-mirror-geometry-053.cases.json",
+        "independent/qoi-mirror-geometry-054.cases.json",
+        "independent/qoi-mirror-geometry-055.cases.json",
+        "independent/qoi-mirror-geometry-056.cases.json",
+        "independent/qoi-mirror-geometry-057.cases.json",
+        "independent/qoi-mirror-geometry-058.cases.json",
+        "independent/qoi-mirror-geometry-059.cases.json",
+        "independent/qoi-mirror-geometry-060.cases.json",
+        "independent/qoi-mirror-geometry-061.cases.json",
+        "independent/qoi-mirror-geometry-062.cases.json",
+        "independent/qoi-mirror-geometry-063.cases.json",
+        "independent/qoi-mirror-geometry-064.cases.json",
+        "independent/qoi-mirror-geometry-065.cases.json",
+        "independent/qoi-mirror-geometry-066.cases.json",
+        "independent/qoi-mirror-geometry-067.cases.json",
+        "independent/qoi-mirror-geometry-068.cases.json",
+        "independent/qoi-mirror-geometry-069.cases.json",
+        "independent/qoi-mirror-geometry-070.cases.json",
+        "independent/qoi-mirror-geometry-071.cases.json",
+        "independent/qoi-mirror-geometry-072.cases.json",
+        "independent/qoi-mirror-geometry-073.cases.json",
+        "independent/qoi-mirror-geometry-074.cases.json",
+        "independent/qoi-mirror-geometry-075.cases.json",
+        "independent/qoi-mirror-geometry-076.cases.json",
+        "independent/qoi-mirror-geometry-077.cases.json",
+        "independent/qoi-mirror-geometry-078.cases.json",
+        "independent/qoi-mirror-geometry-079.cases.json",
+        "independent/qoi-mirror-geometry-080.cases.json",
+        "independent/qoi-mirror-geometry-081.cases.json",
+        "independent/qoi-mirror-geometry-082.cases.json",
+        "independent/qoi-mirror-geometry-083.cases.json",
+        "independent/qoi-mirror-geometry-084.cases.json",
+        "independent/qoi-mirror-geometry-085.cases.json",
+        "independent/qoi-mirror-geometry-086.cases.json",
+        "independent/qoi-mirror-geometry-087.cases.json",
+        "independent/qoi-mirror-geometry-088.cases.json",
+        "independent/qoi-mirror-geometry-089.cases.json",
+        "independent/qoi-mirror-geometry-090.cases.json",
+        "independent/qoi-mirror-geometry-091.cases.json",
+        "independent/qoi-mirror-geometry-092.cases.json",
+        "independent/qoi-mirror-geometry-093.cases.json",
+        "independent/qoi-mirror-geometry-094.cases.json",
+        "independent/qoi-mirror-geometry-095.cases.json",
+        "independent/qoi-mirror-geometry-096.cases.json",
+        "independent/qoi-mirror-geometry-097.cases.json",
+        "independent/qoi-mirror-geometry-098.cases.json",
+        "independent/qoi-mirror-geometry-099.cases.json",
+        "independent/qoi-mirror-geometry-100.cases.json",
+        "independent/qoi-mirror-geometry-101.cases.json",
+        "independent/qoi-mirror-geometry-102.cases.json",
+        "independent/qoi-mirror-geometry-103.cases.json",
+        "independent/qoi-mirror-geometry-104.cases.json",
+        "independent/qoi-mirror-geometry-105.cases.json",
+        "independent/qoi-mirror-geometry-106.cases.json",
+        "independent/qoi-mirror-geometry-107.cases.json",
+        "independent/qoi-mirror-geometry-108.cases.json",
+        "independent/qoi-mirror-geometry-109.cases.json",
+        "independent/qoi-mirror-geometry-110.cases.json",
+        "independent/qoi-mirror-geometry-111.cases.json",
+        "independent/qoi-mirror-geometry-112.cases.json",
+        "independent/qoi-mirror-geometry-113.cases.json",
+        "independent/qoi-mirror-geometry-114.cases.json",
+        "independent/qoi-mirror-geometry-115.cases.json",
+        "independent/qoi-mirror-geometry-116.cases.json",
+        "independent/qoi-mirror-geometry-117.cases.json",
+        "independent/qoi-mirror-geometry-118.cases.json",
+        "independent/qoi-mirror-geometry-119.cases.json",
+        "independent/qoi-mirror-geometry-120.cases.json",
+        "independent/qoi-mirror-geometry-121.cases.json",
+        "independent/qoi-mirror-geometry-122.cases.json",
+        "independent/qoi-mirror-geometry-123.cases.json",
+        "independent/qoi-mirror-geometry-124.cases.json",
+        "independent/qoi-mirror-geometry-125.cases.json",
+        "independent/qoi-mirror-geometry-126.cases.json",
+        "independent/qoi-mirror-geometry-127.cases.json",
+        "independent/qoi-mirror-geometry-128.cases.json",
+        "independent/qoi-mirror-geometry-129.cases.json",
+        "independent/qoi-mirror-geometry-130.cases.json",
+        "independent/qoi-mirror-geometry-131.cases.json",
+        "independent/qoi-mirror-geometry-132.cases.json",
+        "independent/qoi-mirror-geometry-133.cases.json",
+        "independent/qoi-mirror-geometry-134.cases.json",
+        "independent/qoi-mirror-geometry-135.cases.json",
+        "independent/qoi-mirror-geometry-136.cases.json",
+        "independent/qoi-mirror-geometry-137.cases.json",
+        "independent/qoi-mirror-geometry-138.cases.json",
+        "independent/qoi-mirror-geometry-139.cases.json",
+        "independent/qoi-mirror-geometry-140.cases.json",
+        "independent/qoi-mirror-geometry-141.cases.json",
+        "independent/qoi-mirror-geometry-142.cases.json",
+        "independent/qoi-mirror-geometry-143.cases.json",
+        "independent/qoi-mirror-geometry-144.cases.json",
+        "independent/qoi-mirror-geometry-145.cases.json",
+        "independent/qoi-mirror-geometry-146.cases.json",
+        "independent/qoi-mirror-geometry-147.cases.json",
+        "independent/qoi-mirror-geometry-148.cases.json",
+        "independent/qoi-mirror-geometry-149.cases.json"
+      ],
+      "explanation": "Check the 150 dimension/capacity cases. Include width one, odd widths and multiple rows in your placement argument. A capacity with bit 63 set is large when interpreted as unsigned; it must not become a negative-size rejection. On any failure, inspect validation, unsigned capacity comparison and output placement separately.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Choose a failing one-column or odd-width image and draw its row indices before inspecting instructions."
+        },
+        {
+          "id": "reason-2",
+          "text": "Compare required width*height with a3 as unsigned full-width values, after complete validation."
+        },
+        {
+          "id": "reason-3",
+          "text": "Reflected output index is y*width + (width-1-x); multiply by four for its byte displacement."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-chunks",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-chunks-000.cases.json",
+        "independent/qoi-mirror-chunks-001.cases.json"
+      ],
+      "explanation": "Check the nine complete-tag, RUN, INDEX, DIFF, LUMA and descriptive-flag cases. First reproduce the eight-pixel trace, then account for a RUN crossing rows. Alpha remains part of every reconstructed color even when the header describes three channels.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Write each selected chunk\u2019s input width, reconstructed color and number of output pixels."
+        },
+        {
+          "id": "reason-2",
+          "text": "Recognize fe and ff before testing upper-bit classes. Include alpha in the predictor and cache."
+        },
+        {
+          "id": "reason-3",
+          "text": "A RUN advances source once but produces count+1 pixels; its emitted colors participate in cache semantics too."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-alignment",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-alignment-000.cases.json",
+        "independent/qoi-mirror-alignment-001.cases.json",
+        "independent/qoi-mirror-alignment-002.cases.json",
+        "independent/qoi-mirror-alignment-003.cases.json",
+        "independent/qoi-mirror-alignment-004.cases.json",
+        "independent/qoi-mirror-alignment-005.cases.json",
+        "independent/qoi-mirror-alignment-006.cases.json",
+        "independent/qoi-mirror-alignment-007.cases.json",
+        "independent/qoi-mirror-alignment-008.cases.json",
+        "independent/qoi-mirror-alignment-009.cases.json",
+        "independent/qoi-mirror-alignment-010.cases.json",
+        "independent/qoi-mirror-alignment-011.cases.json",
+        "independent/qoi-mirror-alignment-012.cases.json",
+        "independent/qoi-mirror-alignment-013.cases.json",
+        "independent/qoi-mirror-alignment-014.cases.json",
+        "independent/qoi-mirror-alignment-015.cases.json",
+        "independent/qoi-mirror-alignment-016.cases.json",
+        "independent/qoi-mirror-alignment-017.cases.json",
+        "independent/qoi-mirror-alignment-018.cases.json",
+        "independent/qoi-mirror-alignment-019.cases.json",
+        "independent/qoi-mirror-alignment-020.cases.json",
+        "independent/qoi-mirror-alignment-021.cases.json",
+        "independent/qoi-mirror-alignment-022.cases.json",
+        "independent/qoi-mirror-alignment-023.cases.json",
+        "independent/qoi-mirror-alignment-024.cases.json",
+        "independent/qoi-mirror-alignment-025.cases.json",
+        "independent/qoi-mirror-alignment-026.cases.json",
+        "independent/qoi-mirror-alignment-027.cases.json",
+        "independent/qoi-mirror-alignment-028.cases.json",
+        "independent/qoi-mirror-alignment-029.cases.json",
+        "independent/qoi-mirror-alignment-030.cases.json",
+        "independent/qoi-mirror-alignment-031.cases.json"
+      ],
+      "explanation": "Check the 32 source offsets and word-aligned output offsets. A serialized header may begin at any byte alignment. Form full-width byte addresses and inspect the first failing source offset; a native aligned word load is not a replacement for the header\u2019s byte-order rules.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Separate serialized bytes from native aligned output words. Record both addresses for the first failing offset."
+        },
+        {
+          "id": "reason-2",
+          "text": "Build big-endian fields with unsigned byte loads, or an equivalent unaligned-safe operation with the same semantics."
+        },
+        {
+          "id": "reason-3",
+          "text": "Keep pointer arithmetic full-width and scale only the pixel index by four; do not scale a source byte offset."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-malformed",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-malformed-000.cases.json"
+      ],
+      "explanation": "Check four malformed files with zero output capacity. They include damaged framing and a run that exceeds the remaining pixels. The expected format failure precedes capacity failure. Explain the last source byte each operand may consume and why no accepted-looking prefix may be published.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Establish the selected end and the chunk boundary eight bytes before it."
+        },
+        {
+          "id": "reason-2",
+          "text": "Prove the required operand bytes fit before loading them, and prove a run fits the remaining pixel count."
+        },
+        {
+          "id": "reason-3",
+          "text": "Keep caller writes behind complete format validation and the later capacity decision; private scratch state is a separate concern."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-counts",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-counts-000.cases.json"
+      ],
+      "explanation": "Check seven rejected full-width selected counts with unusable input and output pointers. These calls must return before dereferencing those pointers. A large or negative 64-bit bit pattern must not become a small count through truncation. Name the unsigned comparisons that establish permission to inspect the header.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Inspect the result before the first input or output access in a fresh failing call."
+        },
+        {
+          "id": "reason-2",
+          "text": "Use the full 64-bit selected count. Values above 20502 have status 2; admitted values below 23 have status 1."
+        },
+        {
+          "id": "reason-3",
+          "text": "Neither rejected-count path needs a readable header, destination or table. Set the failure result explicitly rather than retaining an older value."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-caller",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-caller-000.cases.json"
+      ],
+      "explanation": "Check the ordinary caller from its actual initial data through termination. Return the complete status and packed dimensions, preserve the return path, and let the supplied caller publish its results and exit. Passing a callee return alone would not establish those later effects.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Break at mirrored_return and inspect v0/v1 before the supplied caller stores them."
+        },
+        {
+          "id": "reason-2",
+          "text": "A helper call overwrites the return address. Preserve your incoming return path along with live state."
+        },
+        {
+          "id": "reason-3",
+          "text": "After return, the caller stores status and dimensions, then invokes exit. The native check verifies those stored bytes after actual termination."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "mirror-initial-state",
+      "source": "independent/qoi-mirrored.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/qoi-mirror-initial-state-000.cases.json"
+      ],
+      "explanation": "Check the initial INDEX-zero and validation-cache-poisoning counterexamples. Predictor, cache and prior-INDEX history begin fresh for every parse. If the familiar trace passes but one of these fails, inspect initialization before changing the component arithmetic.",
+      "success": "This finite group passes. Explain the relevant placement, state or permission invariant in your own words.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Compare the initial predictor\u2019s alpha 255 with an untouched cache slot\u2019s alpha zero."
+        },
+        {
+          "id": "reason-2",
+          "text": "The validator may populate cache slot zero near its end. The emitting pass still begins with that slot cleared."
+        },
+        {
+          "id": "reason-3",
+          "text": "Initialize the predictor, every cache word and the previous-INDEX sentinel for each new parse; restarting only the source pointer is insufficient."
+        }
+      ]
+    }
+  ]
+}
