@@ -102,7 +102,7 @@ def parse(data):
         raise ValueError('Console-case JSON is nested too deeply') from error
     if not isinstance(root, dict) or set(root) != {'formatVersion', 'cases'}:
         raise ValueError('Expected exactly formatVersion and cases')
-    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5, 6, 7):
+    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5, 6, 7, 8):
         raise ValueError('Unsupported console-case format')
     rows = root['cases']
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_CASES:
@@ -142,7 +142,7 @@ def parse(data):
             raise ValueError('Declare at most 64 trace checks and 65536 expected store bytes per case')
         bot = parse_mars_bot(row['marsBot']) if 'marsBot' in row else None
         maze = parse_maze(row['maze']) if 'maze' in row else None
-        publication = publication_cases.parse(row['publication']) if 'publication' in row else None
+        publication = publication_cases.parse(row['publication'],version) if 'publication' in row else None
         if maze is not None and publication is not None:
             raise ValueError('Choose one console execution protocol')
         cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads, bot, maze, publication))

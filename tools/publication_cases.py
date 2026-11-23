@@ -50,6 +50,8 @@ class State:
     memory: tuple[LabelMemory, ...]
     address_memory: tuple[AddressMemory, ...]
     access_policies: tuple[Policy, ...]
+    label: str | None = None
+    expected_registers: tuple[tuple[str, str], ...] = ()
 
     @property
     def length(self):
@@ -132,8 +134,23 @@ def policies(value):
     return tuple(result)
 
 
-def state(value):
-    fields(value, {'memory', 'addressMemory', 'accessPolicies'})
+def registers(value):
+    if not isinstance(value,dict) or len(value)>32:raise ValueError('Declare at most 32 register expectations')
+    names=['zero','at','v0','v1','a0','a1','a2','a3',*[f't{i}' for i in range(8)],*[f's{i}' for i in range(8)],'t8','t9','k0','k1','gp','sp','fp','ra']
+    seen=set();result=[]
+    for key,raw in value.items():
+        if not isinstance(key,str) or len(key)>32:raise ValueError('Invalid register name')
+        name=key.removeprefix('$')
+        index=names.index(name) if name in names else int(name) if re.fullmatch(r'0|[1-9][0-9]?',name) else -1
+        if not 0<=index<32 or index in seen:raise ValueError('Unknown or duplicate integer register')
+        if not isinstance(raw,str) or re.fullmatch(r'0x[0-9a-fA-F]{16}',raw) is None:raise ValueError('Expected exactly 64 register bits')
+        seen.add(index);result.append((key,raw))
+    return tuple(result)
+
+
+def state(value,version=7):
+    required={'memory','addressMemory','accessPolicies'}
+    fields(value, required | ({'label','expectedRegisters'} if version>=8 else set()), required)
     pointers = []
     for item in rows(value['addressMemory']):
         fields(item, {'at', 'value'})
@@ -141,14 +158,16 @@ def state(value):
     contents = memory(value['memory'])
     if len(contents) + len(pointers) > 64:
         raise ValueError('Declare at most 64 publication results')
-    return State(contents, tuple(pointers), policies(value['accessPolicies']))
+    return State(contents, tuple(pointers), policies(value['accessPolicies']),
+                 label(value['label']) if 'label' in value else None, registers(value.get('expectedRegisters',{})))
 
 
-def parse(value):
+def parse(value,version=7):
     fields(value, {'label', 'initialMemory', 'snapshots', 'finalState'})
     initial = memory(value['initialMemory'])
-    snapshots = tuple(state(item) for item in rows(value['snapshots'], 256))
-    final = state(value['finalState'])
+    snapshots = tuple(state(item,version) for item in rows(value['snapshots'], 256))
+    final = state(value['finalState'],version)
+    if final.label is not None:raise ValueError('Final publication state observes termination, not another marker')
     if sum(item.length for item in initial) + sum(item.length for item in snapshots) + final.length > MAX_BYTES:
         raise ValueError('Combined publication setup/results exceed one MiB')
     return Publication(label(value['label']), initial, snapshots, final)
@@ -175,6 +194,8 @@ def render(value, quote):
     def snapshot(item):
         pointers = sequence(f'FunctionAddressMemoryCheck({at(p.at)}, {at(p.value)})' for p in item.address_memory)
         return (f'ConsolePublicationCheck.State(memory = {sequence(mem(m) for m in item.memory)}, '
-                f'addressMemory = {pointers}, accessPolicies = {sequence(policy(p) for p in item.access_policies)})')
+                f'addressMemory = {pointers}, accessPolicies = {sequence(policy(p) for p in item.access_policies)}'
+                + (f', label = {quote(item.label)}' if item.label is not None else '')
+                + (', expectedRegisters = mapOf(' + ', '.join(f'{quote(name)} to {bits}uL.toLong()' for name,bits in item.expected_registers) + ')' if item.expected_registers else '') + ')')
     return (f'ConsolePublicationCheck({quote(value.label)}, {sequence(mem(m) for m in value.initial_memory)}, '
             f'{sequence(snapshot(s) for s in value.snapshots)}, {snapshot(value.final_state)})')

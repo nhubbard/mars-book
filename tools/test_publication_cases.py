@@ -78,6 +78,22 @@ class PublicationCasesTest(unittest.TestCase):
         with self.assertRaises(ValueError): checks.windows([dict(at=dict(label='used'), length=-1)])
         with self.assertRaises(ValueError): checks.windows([dict(at=dict(label='used'), length=0)] * 65)
 
+    def test_version_eight_supports_ordered_boundaries_and_exact_register_bits(self):
+        value=self.publication();value['snapshots'][0].update(label='blit_ready',expectedRegisters={'v0':'0xffffffffffffffff','v1':'0x0000000100000008'})
+        value['finalState']['expectedRegisters']={}
+        parsed=console_cases.parse(self.encode(value,8));state=parsed[0].publication.snapshots[0]
+        self.assertEqual('blit_ready',state.label)
+        self.assertEqual((('v0','0xffffffffffffffff'),('v1','0x0000000100000008')),state.expected_registers)
+        rendered=console_cases.render(parsed);self.assertIn('label = "blit_ready"',rendered);self.assertIn('"v0" to 0xffffffffffffffffuL.toLong()',rendered)
+        with self.assertRaises(ValueError):console_cases.parse(self.encode(value,7))
+        value['finalState']['label']='done'
+        with self.assertRaises(ValueError):console_cases.parse(self.encode(value,8))
+        self.assertEqual(32,len(checks.registers({str(n):'0x0000000000000000' for n in range(32)})))
+        for invalid in [None,[],True,4,{'v0':'0x1'},{'unknown':'0x0000000000000000'}, {'v0':'0x0000000000000000','$2':'0x0000000000000000'}, {str(n):'0x0000000000000000' for n in range(33)}, {'x'*33:'0x0000000000000000'}, {'010':'0x0000000000000000'}]:
+            with self.assertRaises(ValueError):checks.registers(invalid)
+        for invalid in [None,'bad label',4]:
+            with self.assertRaises(ValueError):checks.state(dict(self.state(),label=invalid),8)
+
 
 if __name__ == '__main__':
     unittest.main()

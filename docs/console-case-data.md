@@ -288,3 +288,38 @@ imports `ConsolePublicationCheck` and calls `verify(this)`, so native and CLI
 assessments share the same runtime checker. The ring caller's twelve original
 prefixes are exported under `revision/labs/checks/ring-native/`; their generated
 `caller.kts` retains the same per-operation state and store-footprint contract.
+
+## Ordered named boundaries and register observations (case-profile version 8)
+
+Version 8 retains the version 7 publication protocol and bounds. A snapshot may
+add `label` to select a different public instruction boundary from the root
+publication marker. Execution continues from the preceding boundary in the same
+machine. No synthetic function call, register reset or breakpoint callback is
+inserted between snapshots. The instruction at a boundary belongs to the next
+observation interval; the final interval executes the last boundary and continues
+to actual termination.
+
+Snapshots and the final state may add `expectedRegisters`, mapping up to 32 unique
+integer registers to strings with exactly 64 hexadecimal bits. Register aliases
+cannot duplicate a physical register. Expectations observe the actual registers;
+they do not initialize them. A final state cannot specify a marker label because
+it observes termination. Version 7 rejects both added fields, and older published
+profiles retain their original behavior.
+
+The clipped-blitter caller illustrates the distinction. It first observes the
+initialized frame at `blit_call`, before the real `balc`. Its next snapshot selects
+`blit_ready` and checks the returned `v0` and `v1` before the caller stores those
+values. The final state checks stored counts after normal exit. Each selected
+marker's completed execution count must exactly match the schedule, including
+repeated visits to a marker. An empty schedule retains the version 7 requirement
+that the root marker never executes.
+
+Register maps, memory fixtures and access windows are detached before a new
+execution session is acquired. The existing 256-snapshot, combined memory and
+access-work limits remain in force. `tools/publication_cases.py` emits calls to
+the same public `ConsolePublicationCheck` used by native assessments, preserving
+legacy generated scripts when no new fields are present. The Python authoring
+notation accepts named and ordinary decimal integer-register aliases (optionally
+prefixed with `$`); the native runtime validates register resolution itself.
+No executable predicate
+is added to downloaded content.
