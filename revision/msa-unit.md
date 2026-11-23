@@ -104,3 +104,9 @@ the debugger's immutable register snapshot. The student lesson composition, exac
 archive import, new IDE walkthrough and written route integration remain pending.
 The earlier page and test totals above describe historical verification; no new
 PDF build or capture is claimed for this foundation.
+
+The foundation passes 484 book-tool tests, 217 CLI tests and 1220 plugin tests.
+Required plugin package line/branch coverage and the generated-parser ledger
+checks pass. The vector observation implementation is committed as MARS
+`923e114f`. Full regression XML and exact archive hashes are retained privately.
+All 41 manually edited upstream files match the preservation baseline.

@@ -37,3 +37,9 @@ the least significant bits. A memory byte listing is a different representation.
 No new IDE walkthrough, screenshot capture, PDF rebuild, human learner review or
 accessibility review is claimed for this foundation step. The previous verified
 LaTeX figures remain unchanged.
+
+The foundation passes 484 book-tool tests, 217 CLI tests and 1220 plugin tests.
+Required plugin package line/branch coverage and the generated-parser ledger
+checks pass. The vector observation implementation is committed as MARS
+`923e114f`. Full regression XML and exact archive hashes are retained privately.
+All 41 manually edited upstream files match the preservation baseline.
