@@ -1,0 +1,521 @@
+{
+  "formatVersion": 11,
+  "introduction": "A clipped image copy must preserve geometry and storage ownership. First inspect a complete interval calculation, including an extreme coordinate. Then implement the descriptor-based copy, distinguish visible and opaque cells, and inspect initialization, return and publication in the real caller.",
+  "conclusion": "Explain the surviving destination rectangle, its translated source origin, both physical row strides and the complete-word transparency key. Retain count and access-history evidence alongside the image. The selected finite cases do not prove every possible pixel array or address.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "half-open-overlap",
+      "explanation": "The frame occupies horizontal coordinates [0,8). A width-five sprite begins at x=-2, so its placed interval is [-2,3).",
+      "question": "Which destination interval survives clipping?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "[0,3), containing columns zero, one and two.",
+          "feedback": "The right endpoint is excluded. Three destination columns survive; they correspond to source columns two through four."
+        },
+        {
+          "id": "b",
+          "text": "[0,5), because the sprite still has five source columns.",
+          "feedback": "Clipping discards the two source columns whose translated destination positions are negative."
+        },
+        {
+          "id": "c",
+          "text": "[-2,3), because the display can hide out-of-frame stores.",
+          "feedback": "The memory contract requires proving the destination in bounds before storing."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "interval_left_ready",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-overlap",
+      "source": "worked/interval.asm",
+      "integerInputs": [],
+      "explanation": "Debug the complete interval experiment for x=-2, source width five and frame width eight. Observe endpoint selection before inspecting the returned interval.",
+      "stops": [
+        {
+          "id": "left",
+          "explanation": "Pause before daddu at interval_left_ready. The left-endpoint selection has already replaced the negative source origin with zero.",
+          "anchor": {
+            "label": "interval_left_ready",
+            "mnemonic": "daddu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0xfffffffffffffffe",
+            "$a1": "0x0000000000000005",
+            "$a2": "0x0000000000000008",
+            "$t0": "0x0000000000000000"
+          },
+          "success": "The destination left endpoint is zero, while the source origin remains minus two."
+        },
+        {
+          "id": "right",
+          "explanation": "Pause at interval_right_ready before slt. The selected right endpoint is the smaller of source end and frame width.",
+          "anchor": {
+            "label": "interval_right_ready",
+            "mnemonic": "slt",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000000",
+            "$t1": "0x0000000000000003"
+          },
+          "success": "The nonempty test compares zero with three; equality would instead mean empty."
+        },
+        {
+          "id": "returned",
+          "explanation": "Pause at interval_ready before nop. The helper returned endpoints rather than pixel counts.",
+          "anchor": {
+            "label": "interval_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000003"
+          },
+          "success": "The returned half-open interval has length three. The caller will publish it after this stop."
+        }
+      ],
+      "success": "Explain why the endpoint three is not a fourth destination cell. Stop Debug before the extreme-coordinate experiment."
+    },
+    {
+      "kind": "prediction",
+      "id": "full-width-endpoint",
+      "explanation": "The second experiment changes only x to 2147483647. Source width remains five. The intersection must be empty even though the dimensions are small.",
+      "question": "What value must the full-width addition x+5 produce?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A negative word value that can be used as the clipped extent.",
+          "feedback": "That value would be a narrowed intermediate, not the mathematical endpoint. It could corrupt a later subtraction."
+        },
+        {
+          "id": "b",
+          "text": "2147483652, which remains a positive full-width endpoint.",
+          "feedback": "The subsequent intersection test rejects the far-right sprite before any pixel address is formed."
+        },
+        {
+          "id": "c",
+          "text": "Five, because large placement coordinates should wrap to the frame.",
+          "feedback": "Placement does not wrap. Clipping rejects cells beyond the frame."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "interval_left_ready",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-extreme",
+      "source": "worked/extreme.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/extreme.asm. Inspect the full right endpoint and its later rejection; do not infer address width from the small image dimensions.",
+      "stops": [
+        {
+          "id": "before-add",
+          "explanation": "Pause before daddu at interval_left_ready. The selected left endpoint is the large positive origin.",
+          "anchor": {
+            "label": "interval_left_ready",
+            "mnemonic": "daddu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000007fffffff",
+            "$a1": "0x0000000000000005",
+            "$t0": "0x000000007fffffff"
+          },
+          "success": "The left endpoint is already beyond the frame, but the remaining calculation must still be accurate."
+        },
+        {
+          "id": "wide-sum",
+          "explanation": "Pause before slt immediately after daddu in interval_left_ready.",
+          "anchor": {
+            "label": "interval_left_ready",
+            "mnemonic": "slt",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000080000004",
+            "$a2": "0x0000000000000008"
+          },
+          "success": "The endpoint has crossed the signed-word maximum without becoming a negative full-register value."
+        },
+        {
+          "id": "empty-test",
+          "explanation": "Pause at interval_right_ready before slt. The smaller right endpoint is frame width eight.",
+          "anchor": {
+            "label": "interval_right_ready",
+            "mnemonic": "slt",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000007fffffff",
+            "$t1": "0x0000000000000008"
+          },
+          "success": "The left endpoint is not below the right endpoint, so the intersection is empty."
+        },
+        {
+          "id": "returned",
+          "explanation": "Pause at interval_ready before nop. No pixel storage was accessed by this experiment.",
+          "anchor": {
+            "label": "interval_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Two zeros represent the empty intersection; they are not narrowed or wrapped coordinates."
+        }
+      ],
+      "success": "Explain the full-width endpoint and the comparison that rejects it. Stop Debug before returning to the default worked source."
+    },
+    {
+      "kind": "run",
+      "id": "run-interval",
+      "source": "worked/interval.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/interval.asm normally. Its caller records [0,3) and exits silently. worked/interval.kts checks 2268 position/width combinations and the complete default caller. An empty console transcript alone does not establish those endpoints.",
+      "success": "The complete interval caller exited normally. Translate its surviving destination origin back into source coordinates in the companion lab.",
+      "anchor": {
+        "label": "interval_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "stride-is-storage",
+      "explanation": "The default source width is five words but source stride is seven words. Four bytes store each pixel.",
+      "question": "How far apart are the starts of adjacent physical source rows?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Twenty bytes, because five logical pixels are visible in each source row.",
+          "feedback": "That omits the two padding words. Logical width does not determine the physical next-row address."
+        },
+        {
+          "id": "b",
+          "text": "Twelve bytes, because the clipped row has three visible cells.",
+          "feedback": "That is the copied row length, not the distance between physical source row starts."
+        },
+        {
+          "id": "c",
+          "text": "Twenty-eight bytes, because seven words separate the starts.",
+          "feedback": "The source and destination each use their own byte stride. The frame stride here is sixteen words, or sixty-four bytes."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "blit_call",
+        "mnemonic": "balc",
+        "occurrence": 0
+      },
+      "source": "independent/blit.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "source-origin",
+      "explanation": "The sprite begins at (-2,1), and the surviving destination begins at (0,1).",
+      "question": "Which source cell maps to that first visible destination?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Source column two, row zero.",
+          "feedback": "Subtract the placement origin: sx=0-(-2)=2 and sy=1-1=0. The first source address is base+8 bytes."
+        },
+        {
+          "id": "b",
+          "text": "Source column zero, row zero.",
+          "feedback": "That would move clipped-away source columns into the frame rather than discarding them."
+        },
+        {
+          "id": "c",
+          "text": "Source column zero, row one.",
+          "feedback": "Destination coordinates belong to the frame. Translate them back using both placement coordinates."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "blit_call",
+        "mnemonic": "balc",
+        "occurrence": 0
+      },
+      "source": "independent/blit.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "visible-versus-opaque",
+      "explanation": "The default overlap is three columns by four rows. Four of those twelve source words equal the transparency key.",
+      "question": "What should blit_sprite return in (v0,v1)?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "(12,8), because all source cells are copied before keys are removed.",
+          "feedback": "A key must skip its destination store. v0 counts visible opaque words and v1 counts all visible source cells."
+        },
+        {
+          "id": "b",
+          "text": "(8,12), separating opaque pixels from all visible cells.",
+          "feedback": "Transparent cells still occupy positions and advance the copy traversal, but do not permit stores."
+        },
+        {
+          "id": "c",
+          "text": "(8,8), because transparent cells are not visible geometry.",
+          "feedback": "Visibility is determined by the rectangle intersection before applying the key."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "blit_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/blit.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "whole-word-key",
+      "explanation": "The transparency key is 00FF00FF. A source word is 01FF00FF; the Bitmap Display shows the same low RGB bytes.",
+      "question": "Should that source word be copied?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No; the display makes the two values equivalent.",
+          "feedback": "The display does not define the copying interface. The high byte participates in the complete word comparison."
+        },
+        {
+          "id": "b",
+          "text": "Only if the high byte is interpreted as alpha.",
+          "feedback": "This lab does not interpret an alpha channel. The descriptor supplies an exact word key."
+        },
+        {
+          "id": "c",
+          "text": "Yes; its complete 32-bit pattern differs from the key.",
+          "feedback": "Copy the entire word unchanged. Memory inspection can distinguish bits that the display hides."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "blit_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/blit.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "same-value-stores",
+      "explanation": "An opaque source word already equals its destination. Elsewhere, a transparent source word would leave its destination unchanged.",
+      "question": "Which rule matches the interface?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Count the opaque source word even when its color is unchanged; do not store to the transparent destination.",
+          "feedback": "Counts describe selected source cells. Store history distinguishes a skipped transparent pixel from rewriting its old value."
+        },
+        {
+          "id": "b",
+          "text": "Count only changed colors and rewrite every destination.",
+          "feedback": "Both parts change the contract. An unchanged picture cannot establish correct counts or permitted stores."
+        },
+        {
+          "id": "c",
+          "text": "Skip both cells and decrement the visible count.",
+          "feedback": "A transparent cell remains part of the visible rectangle, and an opaque cell still counts as copied."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "blit_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/blit.asm"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-empty",
+      "source": "independent/blit.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/empty-00.cases.json",
+        "independent/empty-01.cases.json",
+        "independent/empty-02.cases.json",
+        "independent/empty-03.cases.json",
+        "independent/empty-04.cases.json",
+        "independent/empty-05.cases.json",
+        "independent/empty-06.cases.json",
+        "independent/empty-07.cases.json",
+        "independent/empty-08.cases.json",
+        "independent/empty-09.cases.json"
+      ],
+      "explanation": "Implement the geometric rejection path in independent/blit.asm. These 474 original empty-intersection cases include empty dimensions, edge contact, completely clipped placements and extreme signed coordinates. They require (0,0), no destination stores, valid read bounds and preserved state. The overlapping copy path may still be unfinished.",
+      "success": "Empty geometry now rejects safely. Explain the full-width bounds argument before implementing the nonempty copy.",
+      "hints": [
+        {
+          "id": "geometry",
+          "text": "Intersect the placed source with the frame using full-width endpoints. Reject if either surviving interval is empty before deriving a pixel address."
+        },
+        {
+          "id": "mapping",
+          "text": "Translate the surviving destination back with sx=L-x and sy=T-y. Use each descriptor’s stride independently; clipping changes the copied span, not physical row spacing."
+        },
+        {
+          "id": "key",
+          "text": "Count every visible position. Copy and count an opaque word even if the destination already matches; a transparent word permits no store, including a restored write."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-overlap",
+      "source": "independent/blit.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/overlap-00.cases.json",
+        "independent/overlap-01.cases.json",
+        "independent/overlap-02.cases.json"
+      ],
+      "explanation": "Complete the nonempty copy in the same source. These 107 original overlap cases vary both descriptors, interior pixel pointers, stride, key, saved values and equal-color destinations. They accept equivalent traversals while checking complete output, logical read cells, visible opaque stores and returned counts.",
+      "success": "The overlap cases pass. Explain source translation, both row strides and why the key uses the whole source word.",
+      "hints": [
+        {
+          "id": "geometry",
+          "text": "Intersect the placed source with the frame using full-width endpoints. Reject if either surviving interval is empty before deriving a pixel address."
+        },
+        {
+          "id": "mapping",
+          "text": "Translate the surviving destination back with sx=L-x and sy=T-y. Use each descriptor’s stride independently; clipping changes the copied span, not physical row spacing."
+        },
+        {
+          "id": "key",
+          "text": "Count every visible position. Copy and count an opaque word even if the destination already matches; a transparent word permits no store, including a restored write."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-caller",
+      "source": "independent/blit.asm",
+      "caseProfile": "independent/caller.cases.json",
+      "explanation": "Check the retained caller in ten placements. Each case observes initialized storage at blit_call, then the real returned registers and frame at blit_ready, then stored counts after normal exit. The program continues between these distinct boundaries without resetting registers or calling your function synthetically.",
+      "success": "All caller variants pass. The default placement returns (8,12), while the full (1,1) placement described in the companion returns (13,20). Explain the difference using selected source cells.",
+      "hints": [
+        {
+          "id": "publication",
+          "text": "blit_ready is before the caller stores copied and visible. Returning the right values and publishing them correctly are distinct observations."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "debug-default-copy",
+      "source": "independent/blit.asm",
+      "integerInputs": [],
+      "explanation": "Debug the completed independent source at three public boundaries. Inspect initialization before the call, returned counts before publication, and retained counts before exit. Resume the same session between stops.",
+      "stops": [
+        {
+          "id": "before-call",
+          "explanation": "Pause on balc at blit_call. The frame is initialized and descriptor pointers are installed; the function has not run yet.",
+          "anchor": {
+            "label": "blit_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a2": "0xfffffffffffffffe",
+            "$a3": "0x0000000000000001"
+          },
+          "success": "The placement arguments are signed full-register values. Inspect the eight logical columns and physical frame padding."
+        },
+        {
+          "id": "returned",
+          "explanation": "Pause at blit_ready before nop. The function has returned, but copied and visible have not been published yet.",
+          "anchor": {
+            "label": "blit_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000008",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "Eight opaque words were copied among twelve visible cells. Compare the Bitmap Display with Memory for the full-word key."
+        },
+        {
+          "id": "before-exit",
+          "explanation": "Pause before li at done. The caller has stored the two counts; the exit selector has not replaced v0 yet.",
+          "anchor": {
+            "label": "done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000008",
+            "$v1": "0x000000000000000c"
+          },
+          "success": "Inspect copied and visible in Memory, then distinguish those retained words from the exit selector."
+        }
+      ],
+      "success": "Explain why the logical frame occupies only part of the displayed allocation. Stop Debug before the final ordinary Run."
+    },
+    {
+      "kind": "prediction",
+      "id": "padding-is-not-a-frame",
+      "explanation": "The display spans sixteen columns, matching stride sixteen. The logical frame is only eight columns wide and six rows high.",
+      "question": "May clipping use the gray allocation padding as additional destination pixels?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes; a displayed cell is part of the frame by definition.",
+          "feedback": "The descriptor defines the logical frame. Display settings cannot grant memory permission."
+        },
+        {
+          "id": "b",
+          "text": "No; the descriptor bounds the frame, while the extra cells remain protected padding.",
+          "feedback": "Keep the logical rectangle, physical stride and display geometry separate. Padding makes addressing faults easier to see."
+        },
+        {
+          "id": "c",
+          "text": "Only when the sprite is fully outside the logical frame.",
+          "feedback": "A fully clipped placement permits no destination store."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "blit_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/blit.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-blit",
+      "source": "independent/blit.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the completed source normally. Its default caller copies the partial sprite, publishes counts and exits silently. The source requests a Bitmap Display showing a sixteen-by-eight allocation; its logical frame is eight by six. The assessments establish bounds and store history in addition to the visible picture.",
+      "success": "Retain an empty intersection, a partial overlap and an all-transparent visible rectangle with your reports. Explain why a matching picture alone cannot prove correct memory behavior.",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    }
+  ]
+}

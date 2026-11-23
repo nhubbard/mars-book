@@ -1,0 +1,9 @@
+# Clipped-sprite native unit draft
+
+The public 016-clipped-regions 0.1.0 draft contains twenty-four explicit exports. Its worked interval source is complete; the second source changes only the origin to the largest signed word. The independent blitter retains one deliberate break body and the complete caller. Students first establish safe empty intersections, then implement overlap copying and check actual caller publication.
+
+Sixteen activities provide eight inline predictions, ten Debug boundaries in groups of three, four and three, two ordinary Runs and three assessments. The assessment split preserves all 581 original kernels (474 empty, 107 overlapping) and ten caller variants. It explains physical stride, translated source origin, visible versus opaque counts, full-word transparency and why a matching final image cannot establish permitted stores. All twenty public PSI source pointers resolve in the two actual main-plugin archive/import tests.
+
+Five host geometry/profile tests and two draft-unit/export tests pass. The complete public tooling suite passes 665 tests. Core probes independently verify all ten proposed Debug boundaries; the original interval checker passes 2,269 cases. Those are core observations, not a claim of actual IDE interaction or human learner review. See clipped-native-foundation.md for the new continuous boundary/register support, native execution qualification and full regression scope.
+
+Before delivery is complete, update and test the separate authoring route, exercise first use and edited-source resume in IntelliJ, bind a private instructor edition, integrate the written companion directly in LaTeX and renew final-byte publication checks. Do not count this draft as a thirty-fourth delivered unit or replace the current PDF's accessibility receipt with these core checks. The restructuring goal remains active; substantive editing remains separate.
