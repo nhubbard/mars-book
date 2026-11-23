@@ -1,0 +1,898 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 24 and its written lab alongside these experiments. Start with the embedded trace, then compare bit domains, overlapping history, predictor precision, vector packing and native settings. Answer predictions inline and inspect named Debug boundaries. Only the independent forward-filter entry is unfinished. Complete each launched process before moving on.",
+  "conclusion": "Explain each count and publication boundary in the decoder, then justify the opposite forward transformation from original rows to residuals. Use the final full assessment after edits. For the additional written-lab experiment, wrap simulator-produced rows with the supplied Python tool and compare exact decoded RGB samples with an independent reader.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "five-counts",
+      "source": "worked/pipeline-boundaries.asm",
+      "anchor": {
+        "label": "collector_return",
+        "mnemonic": "bnezc",
+        "occurrence": 0
+      },
+      "explanation": "The embedded trace contains two columns and five rows. Its 115 file bytes contain chunk envelopes as well as a 46-byte joined zlib stream. Each inflated row begins with one selector and has six RGB bytes.",
+      "question": "How many inflated bytes and active framebuffer bytes are required?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "35 and 40",
+          "feedback": "Five rows times seven bytes gives 35. Ten pixels times four display bytes gives 40 active bytes."
+        },
+        {
+          "id": "b",
+          "text": "30 and 30",
+          "feedback": "Thirty counts RGB samples only; it excludes selectors and the fourth display byte."
+        },
+        {
+          "id": "c",
+          "text": "115 and 115",
+          "feedback": "The file representation is not the row or framebuffer representation."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "split-zlib",
+      "source": "worked/pipeline-boundaries.asm",
+      "anchor": {
+        "label": "inflate_return",
+        "mnemonic": "bnezc",
+        "occurrence": 0
+      },
+      "explanation": "The two IDAT payload lengths are one and 45. Their chunk envelopes separate the zlib header bytes 78 and 01 in the file. The collector joins only their payloads.",
+      "question": "How many zlib streams must the decoder inflate?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Two independently initialized streams",
+          "feedback": "The first payload contains only one header byte, so it is not a complete stream."
+        },
+        {
+          "id": "b",
+          "text": "One joined stream",
+          "feedback": "IDAT boundaries partition the encoded bytes, not independent compressed streams."
+        },
+        {
+          "id": "c",
+          "text": "Five streams, one per row",
+          "feedback": "DEFLATE output can cross row boundaries; row layout is interpreted after inflation."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-pipeline",
+      "source": "worked/pipeline-boundaries.asm",
+      "integerInputs": [],
+      "explanation": "Follow the supplied decoder through collection, inflation, reconstruction, packing and publication. This caller embeds the exact trace and uses stride 17, so no external input or path edit is needed. Set breakpoints at the named instructions. Inspect each stop before executing it, then continue. Complete the process before another activity.",
+      "stops": [
+        {
+          "id": "stop-1",
+          "anchor": {
+            "label": "collector_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000002e"
+          },
+          "explanation": "Collection has joined 46 compressed bytes. It has not proved that they inflate into the required rows.",
+          "success": "Collection has joined 46 compressed bytes. It has not proved that they inflate into the required rows."
+        },
+        {
+          "id": "stop-2",
+          "anchor": {
+            "label": "inflate_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000023"
+          },
+          "explanation": "Inflation produced exactly 35 bytes, including all five selectors. The samples are still residuals.",
+          "success": "Inflation produced exactly 35 bytes, including all five selectors. The samples are still residuals."
+        },
+        {
+          "id": "stop-3",
+          "anchor": {
+            "label": "publication_rows_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000023"
+          },
+          "explanation": "Reconstruction returns the 35-byte row-buffer extent. It now contains thirty recovered RGB sample bytes and five retained selectors; these are different counts.",
+          "success": "Reconstruction returns the 35-byte row-buffer extent. It now contains thirty recovered RGB sample bytes and five retained selectors; these are different counts."
+        },
+        {
+          "id": "stop-4",
+          "anchor": {
+            "label": "publication_blit_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000028"
+          },
+          "explanation": "Packing wrote forty active display bytes. Stride controls where rows begin, not this count.",
+          "success": "Packing wrote forty active display bytes. Stride controls where rows begin, not this count."
+        },
+        {
+          "id": "stop-5",
+          "anchor": {
+            "label": "complete_image",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000028",
+            "$s0": "0x0000000000000002",
+            "$s1": "0x0000000000000005",
+            "$s2": "0x0000000000000028",
+            "$s3": "0x00000000000a141e",
+            "$s4": "0x00000000000f1923",
+            "$s5": "0x00000000000000a5"
+          },
+          "explanation": "The public context now reports width two, height five and forty active bytes. The second row begins 68 bytes after the first; a byte in the first row gap remains a5.",
+          "success": "The public context now reports width two, height five and forty active bytes. The second row begins 68 bytes after the first; a byte in the first row gap remains a5."
+        }
+      ],
+      "success": "Explain which representation this experiment established and what remains to be checked."
+    },
+    {
+      "kind": "prediction",
+      "id": "arrivals",
+      "source": "worked/bit-interpretation.asm",
+      "anchor": {
+        "label": "same_arrivals",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The next two arriving bits are one and zero. An ordinary DEFLATE numerical field places its first arriving bit in the low position. A canonical-code decoder instead appends each arriving bit to the code being developed.",
+      "question": "Which numerical field value and developed binary-code value result?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2 and 2",
+          "feedback": "That treats the numerical field as high-bit-first."
+        },
+        {
+          "id": "b",
+          "text": "1 and 1",
+          "feedback": "That applies numerical field extraction to the canonical code as well."
+        },
+        {
+          "id": "c",
+          "text": "1 and 2",
+          "feedback": "The low-bit-first number is binary 01. Appending the arrivals gives code binary 10."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "stored-length",
+      "source": "worked/bit-interpretation.asm",
+      "anchor": {
+        "label": "stored_complement",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The stored block has length bytes 23 00 and complement bytes dc ff. These two fields use little-endian byte order even though PNG chunk lengths use big-endian order.",
+      "question": "Which decoded length and XOR should you check?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "35 and hexadecimal ffff",
+          "feedback": "The complement is ff dc in numerical notation; XOR with 0023 gives ffff."
+        },
+        {
+          "id": "b",
+          "text": "8960 and hexadecimal ffff",
+          "feedback": "8960 reverses the length bytes; a complement test alone cannot correct that interpretation."
+        },
+        {
+          "id": "c",
+          "text": "35 and zero",
+          "feedback": "Equal fields would XOR to zero. This pair must be bitwise complements."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-bit-domains",
+      "source": "worked/bit-interpretation.asm",
+      "integerInputs": [],
+      "explanation": "Inspect numerical fields and developed code prefixes separately. Set breakpoints at the named instructions. Inspect each stop before executing it, then continue. Complete the process before another activity.",
+      "stops": [
+        {
+          "id": "stop-1",
+          "anchor": {
+            "label": "same_arrivals",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000000001",
+            "$t3": "0x0000000000000002"
+          },
+          "explanation": "Identical arriving bits have different values under the two specified interpretations.",
+          "success": "Identical arriving bits have different values under the two specified interpretations."
+        },
+        {
+          "id": "stop-2",
+          "anchor": {
+            "label": "stored_complement",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x0000000000000023",
+            "$t5": "0x000000000000ffdc",
+            "$t7": "0x000000000000ffff"
+          },
+          "explanation": "The length is 35 and its sixteen-bit complement is 65500. This arithmetic check does not itself prove the payload exists.",
+          "success": "The length is 35 and its sixteen-bit complement is 65500. This arithmetic check does not itself prove the payload exists."
+        }
+      ],
+      "success": "Explain which representation this experiment established and what remains to be checked."
+    },
+    {
+      "kind": "prediction",
+      "id": "match-source",
+      "source": "worked/overlapping-history.asm",
+      "anchor": {
+        "label": "match_byte",
+        "mnemonic": "lbu",
+        "occurrence": 0
+      },
+      "explanation": "One A has already been produced. A match appends six bytes at distance one. After its first store, the source cursor advances onto the byte that was just written.",
+      "question": "What supplies the second appended byte?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "An original second byte from the input buffer",
+          "feedback": "That byte was not previously produced; the destination initially contains a5 sentinels."
+        },
+        {
+          "id": "b",
+          "text": "The first appended A",
+          "feedback": "A forward copy lets newly produced bytes extend the available match history."
+        },
+        {
+          "id": "c",
+          "text": "The final byte, copied backward",
+          "feedback": "Backward overlap copying implements a different operation."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "match-count",
+      "source": "worked/overlapping-history.asm",
+      "anchor": {
+        "label": "match_complete",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The initial A remains in the history. The match length counts six new bytes, and a byte beyond the resulting history remains a guard.",
+      "question": "How many A bytes should exist after the match?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Six",
+          "feedback": "The match length does not include the byte that already existed."
+        },
+        {
+          "id": "b",
+          "text": "Eight",
+          "feedback": "The guard byte lies outside the produced history."
+        },
+        {
+          "id": "c",
+          "text": "Seven",
+          "feedback": "One existing byte plus six appended bytes gives seven."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-overlapping-history",
+      "source": "worked/overlapping-history.asm",
+      "integerInputs": [],
+      "explanation": "Trace a distance-one match without preloading bytes that do not exist yet. Set breakpoints at the named instructions. Inspect each stop before executing it, then continue. Complete the process before another activity.",
+      "stops": [
+        {
+          "id": "stop-1",
+          "anchor": {
+            "label": "match_byte",
+            "mnemonic": "lbu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000000006",
+            "$t4": "0x0000000000000000"
+          },
+          "explanation": "Six bytes remain to be appended. Only the initial A is valid source history.",
+          "success": "Six bytes remain to be appended. Only the initial A is valid source history."
+        },
+        {
+          "id": "stop-2",
+          "anchor": {
+            "label": "match_complete",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000000000",
+            "$t4": "0x0000000000000006",
+            "$t6": "0x0000000041414141",
+            "$t7": "0x00000000000000a5"
+          },
+          "explanation": "Six bytes were appended and the first four are A. The eighth byte remains outside the seven-byte history.",
+          "success": "Six bytes were appended and the first four are A. The eighth byte remains outside the seven-byte history."
+        }
+      ],
+      "success": "Explain which representation this experiment established and what remains to be checked."
+    },
+    {
+      "kind": "prediction",
+      "id": "average-width",
+      "source": "worked/predictor-precision.asm",
+      "anchor": {
+        "label": "average_precision",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Average uses unsigned byte neighbors a=255 and b=145. Compute their sum in a wider register before halving. The current sample is 201.",
+      "question": "What predictor and residual should be emitted?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "200 and 1",
+          "feedback": "The sum is 400, half is 200, and (201-200) modulo 256 is one."
+        },
+        {
+          "id": "b",
+          "text": "72 and 129",
+          "feedback": "Those values come from wrapping 400 to a byte before division."
+        },
+        {
+          "id": "c",
+          "text": "201 and 0",
+          "feedback": "Rounding this sum to the current sample does not implement floor((a+b)/2)."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "paeth-order",
+      "source": "worked/predictor-precision.asm",
+      "anchor": {
+        "label": "first_tie",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "For a=255, b=0, c=85, Paeth computes p=170. Its distances to a,b,c are 85,170,85. Ties are resolved in the order a, then b, then c.",
+      "question": "Which predictor wins, and why?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "c=85",
+          "feedback": "The last minimum does not win; that changes the specified tie rule."
+        },
+        {
+          "id": "b",
+          "text": "a=255",
+          "feedback": "a ties c for the shortest distance, and a has precedence."
+        },
+        {
+          "id": "c",
+          "text": "p=170",
+          "feedback": "p ranks the existing neighbors. It is not itself one of the candidates."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-predictor-precision",
+      "source": "worked/predictor-precision.asm",
+      "integerInputs": [],
+      "explanation": "Keep the wide arithmetic and both Paeth tie decisions visible before writing residual bytes. Set breakpoints at the named instructions. Inspect each stop before executing it, then continue. Complete the process before another activity.",
+      "stops": [
+        {
+          "id": "stop-1",
+          "anchor": {
+            "label": "average_precision",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000000190",
+            "$t3": "0x00000000000000c8",
+            "$t4": "0x0000000000000048",
+            "$t5": "0x0000000000000001"
+          },
+          "explanation": "Only the final residual wraps to a byte; the neighbor sum must retain its carry.",
+          "success": "Only the final residual wraps to a byte; the neighbor sum must retain its carry."
+        },
+        {
+          "id": "stop-2",
+          "anchor": {
+            "label": "first_tie",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x00000000000000ff",
+            "$s1": "0x0000000000000000",
+            "$s2": "0x0000000000000055",
+            "$s3": "0x00000000000000aa",
+            "$s4": "0x0000000000000055",
+            "$s5": "0x00000000000000aa",
+            "$s6": "0x0000000000000055"
+          },
+          "explanation": "a wins its tie with c. A strict comparison in the wrong place would choose c.",
+          "success": "a wins its tie with c. A strict comparison in the wrong place would choose c."
+        },
+        {
+          "id": "stop-3",
+          "anchor": {
+            "label": "second_tie",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000000",
+            "$s1": "0x0000000000000003",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000002",
+            "$s4": "0x0000000000000002",
+            "$s5": "0x0000000000000001",
+            "$s6": "0x0000000000000001"
+          },
+          "explanation": "a is farther away, so b wins its tie with c.",
+          "success": "a is farther away, so b wins its tie with c."
+        }
+      ],
+      "success": "Explain which representation this experiment established and what remains to be checked."
+    },
+    {
+      "kind": "prediction",
+      "id": "pixel-word",
+      "source": "worked/packing-tail.asm",
+      "anchor": {
+        "label": "packed_tail",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The row contains seventeen pixels with sample bytes 0 through 50. Pixel index five uses RGB bytes 15,16,17 and straddles the first two input vectors. Framebuffer colors are numerical 00RRGGBB words.",
+      "question": "What numerical word represents pixel five?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Hexadecimal 0011100f",
+          "feedback": "That reverses the red and blue sample meanings."
+        },
+        {
+          "id": "b",
+          "text": "Hexadecimal 0f101100",
+          "feedback": "The unused byte belongs above the color channels in this numerical representation."
+        },
+        {
+          "id": "c",
+          "text": "Hexadecimal 000f1011",
+          "feedback": "The channels are decimal 15,16,17, or hexadecimal 0f,10,11."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "vector-tail",
+      "source": "worked/packing-tail.asm",
+      "anchor": {
+        "label": "packed_tail",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "A full vector group packs sixteen pixels. The row contains seventeen, so one pixel remains after that group. All RGB samples must still be packed exactly once.",
+      "question": "What handles the remaining pixel and how many output bytes are active?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The tail path; 68 bytes",
+          "feedback": "Seventeen pixels times four bytes gives 68. The vector group accounts for the first 64."
+        },
+        {
+          "id": "b",
+          "text": "A second full vector group; 128 bytes",
+          "feedback": "Only one pixel remains; a full group would exceed the selected output."
+        },
+        {
+          "id": "c",
+          "text": "No tail; 64 bytes",
+          "feedback": "That would drop the seventeenth pixel."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-vector-tail",
+      "source": "worked/packing-tail.asm",
+      "integerInputs": [],
+      "explanation": "Inspect the three input vectors, the first and last packed vector, then the scalar tail. Expand the MSA register bank in Variables; lane zero is at the low end of the full 128-bit value. The supplied packing helper is unchanged. Set breakpoints at the named instructions and complete the process afterward.",
+      "stops": [
+        {
+          "id": "inputs",
+          "anchor": {
+            "label": "pack_inputs_loaded",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000011"
+          },
+          "vectorRegisters": {
+            "$w0": "0x0f0e0d0c0b0a09080706050403020100",
+            "$w1": "0x1f1e1d1c1b1a19181716151413121110",
+            "$w2": "0x2f2e2d2c2b2a29282726252423222120"
+          },
+          "explanation": "Three input vectors hold RGB bytes zero through 47. Pixel five uses the last byte of w0 and first two bytes of w1.",
+          "success": "Three input vectors hold RGB bytes zero through 47. Pixel five uses the last byte of w0 and first two bytes of w1."
+        },
+        {
+          "id": "first-packed",
+          "anchor": {
+            "label": "pack_first_written",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000011"
+          },
+          "vectorRegisters": {
+            "$w3": "0x00090a0b000607080003040500000102"
+          },
+          "explanation": "w3 contains four numerical 00RRGGBB words for pixels zero through three. The word store writes sixteen output bytes.",
+          "success": "w3 contains four numerical 00RRGGBB words for pixels zero through three. The word store writes sixteen output bytes."
+        },
+        {
+          "id": "last-packed",
+          "anchor": {
+            "label": "pack_last_written",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x0000000000000011"
+          },
+          "vectorRegisters": {
+            "$w3": "0x002d2e2f002a2b2c0027282900242526"
+          },
+          "explanation": "The fourth packed vector contains pixels twelve through fifteen. The cursor has not yet advanced past the sixteen-pixel group.",
+          "success": "The fourth packed vector contains pixels twelve through fifteen. The cursor has not yet advanced past the sixteen-pixel group."
+        },
+        {
+          "id": "stop-1",
+          "anchor": {
+            "label": "packed_tail",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000044",
+            "$s0": "0x00000000000f1011",
+            "$s1": "0x00000000002d2e2f",
+            "$s2": "0x0000000000303132",
+            "$s3": "0x00000000000000a5"
+          },
+          "explanation": "Pixel five crosses input-vector boundaries, pixel fifteen ends the full group, and pixel sixteen is the tail. Byte 68 remains a5.",
+          "success": "Pixel five crosses input-vector boundaries, pixel fifteen ends the full group, and pixel sixteen is the tail. Byte 68 remains a5."
+        }
+      ],
+      "success": "Explain which representation this experiment established and what remains to be checked."
+    },
+    {
+      "kind": "prediction",
+      "id": "full-width-setting",
+      "source": "worked/native-settings.asm",
+      "anchor": {
+        "label": "full_width",
+        "mnemonic": "dli",
+        "occurrence": 0
+      },
+      "explanation": "The native width field contains hexadecimal 0000000100000001. The low 32 bits alone look like one, but the allowed width is one through 512.",
+      "question": "Should this width be accepted?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes; its low word is one",
+          "feedback": "A 32-bit load discards the information that makes this setting invalid."
+        },
+        {
+          "id": "b",
+          "text": "No; the full value is 4294967297",
+          "feedback": "Validate the complete unsigned doubleword before accessing RGB or output."
+        },
+        {
+          "id": "c",
+          "text": "Only under little-endian assembly",
+          "feedback": "Correct native field decoding preserves the same numerical value in either order."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "capacity-sign",
+      "source": "worked/native-settings.asm",
+      "anchor": {
+        "label": "unsigned_capacity",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Capacity contains hexadecimal 8000000000000000. The required output has seven bytes. Capacity is an unsigned 64-bit value.",
+      "question": "Does this value represent an output shortage?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes, because the sign bit is set",
+          "feedback": "A signed comparison would misclassify this valid capacity."
+        },
+        {
+          "id": "b",
+          "text": "Only if the selector is Average",
+          "feedback": "Every selector emits one byte plus three bytes per pixel."
+        },
+        {
+          "id": "c",
+          "text": "No",
+          "feedback": "It is much larger than seven under the contract\u2019s unsigned interpretation."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-native-settings",
+      "source": "worked/native-settings.asm",
+      "integerInputs": [],
+      "explanation": "Compare a full-width invalid width with a large unsigned capacity. These Debug observations use the default little-endian assembly; independent assessments assemble both orders. Set breakpoints at the named instructions. Inspect each stop before executing it, then continue. Complete the process before another activity.",
+      "stops": [
+        {
+          "id": "stop-1",
+          "anchor": {
+            "label": "full_width",
+            "mnemonic": "dli",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000100000001",
+            "$s1": "0x0000000000000001",
+            "$s2": "0x0000000000000000",
+            "$s3": "0x0000000000000003",
+            "$s4": "0x0000000000000007"
+          },
+          "explanation": "The low word is one, but the full width fails the upper bound.",
+          "success": "The low word is one, but the full width fails the upper bound."
+        },
+        {
+          "id": "stop-2",
+          "anchor": {
+            "label": "unsigned_capacity",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t1": "0x8000000000000000",
+            "$t2": "0x0000000000000007",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x0000000000000001"
+          },
+          "explanation": "The unsigned shortage test is false. The signed less-than result is true and would be incorrect here.",
+          "success": "The unsigned shortage test is false. The signed less-than result is true and would be incorrect here."
+        }
+      ],
+      "success": "Explain which representation this experiment established and what remains to be checked."
+    },
+    {
+      "kind": "run",
+      "id": "run-embedded-pipeline",
+      "source": "worked/pipeline-boundaries.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the complete embedded-image caller normally. It uses the supplied decoder and terminates silently; the preceding Debug observations establish its internal boundaries. There is no host input or path to prepare for this activity.",
+      "success": "Relate the silent completed run to the published dimensions and forty active pixel bytes you inspected."
+    },
+    {
+      "kind": "assessment",
+      "id": "check-none",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/none.json"
+      ],
+      "explanation": "Implement the None filter in the continuing source, then check its 44 cases. Read only original input samples, emit one selector followed by residual bytes, validate all native settings before RGB/output access, and restore saved caller state. The cases assemble both byte orders.",
+      "success": "Explain this predictor using the original neighbors, and keep a small input that would distinguish it from the preceding filters.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Width counts pixels. Each pixel contributes three RGB bytes, and each output row also contains one selector byte."
+        },
+        {
+          "id": "neighbors",
+          "text": "The same-channel left neighbor is three bytes earlier in the original current row. A null prior pointer supplies zero above; None and Sub never dereference the prior pointer."
+        },
+        {
+          "id": "precision",
+          "text": "Keep unsigned neighbor values and wide arithmetic until the final subtraction modulo 256. Paeth ties prefer a, then b, then c."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-sub",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sub.json"
+      ],
+      "explanation": "Implement the Sub filter in the continuing source, then check its 44 cases. Read only original input samples, emit one selector followed by residual bytes, validate all native settings before RGB/output access, and restore saved caller state. The cases assemble both byte orders.",
+      "success": "Explain this predictor using the original neighbors, and keep a small input that would distinguish it from the preceding filters.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Width counts pixels. Each pixel contributes three RGB bytes, and each output row also contains one selector byte."
+        },
+        {
+          "id": "neighbors",
+          "text": "The same-channel left neighbor is three bytes earlier in the original current row. A null prior pointer supplies zero above; None and Sub never dereference the prior pointer."
+        },
+        {
+          "id": "precision",
+          "text": "Keep unsigned neighbor values and wide arithmetic until the final subtraction modulo 256. Paeth ties prefer a, then b, then c."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-up",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/up.json"
+      ],
+      "explanation": "Implement the Up filter in the continuing source, then check its 44 cases. Read only original input samples, emit one selector followed by residual bytes, validate all native settings before RGB/output access, and restore saved caller state. The cases assemble both byte orders.",
+      "success": "Explain this predictor using the original neighbors, and keep a small input that would distinguish it from the preceding filters.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Width counts pixels. Each pixel contributes three RGB bytes, and each output row also contains one selector byte."
+        },
+        {
+          "id": "neighbors",
+          "text": "The same-channel left neighbor is three bytes earlier in the original current row. A null prior pointer supplies zero above; None and Sub never dereference the prior pointer."
+        },
+        {
+          "id": "precision",
+          "text": "Keep unsigned neighbor values and wide arithmetic until the final subtraction modulo 256. Paeth ties prefer a, then b, then c."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-average",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/average.json"
+      ],
+      "explanation": "Implement the Average filter in the continuing source, then check its 44 cases. Read only original input samples, emit one selector followed by residual bytes, validate all native settings before RGB/output access, and restore saved caller state. The cases assemble both byte orders.",
+      "success": "Explain this predictor using the original neighbors, and keep a small input that would distinguish it from the preceding filters.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Width counts pixels. Each pixel contributes three RGB bytes, and each output row also contains one selector byte."
+        },
+        {
+          "id": "neighbors",
+          "text": "The same-channel left neighbor is three bytes earlier in the original current row. A null prior pointer supplies zero above; None and Sub never dereference the prior pointer."
+        },
+        {
+          "id": "precision",
+          "text": "Keep unsigned neighbor values and wide arithmetic until the final subtraction modulo 256. Paeth ties prefer a, then b, then c."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-paeth",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/paeth.json"
+      ],
+      "explanation": "Implement the Paeth filter in the continuing source, then check its 44 cases. Read only original input samples, emit one selector followed by residual bytes, validate all native settings before RGB/output access, and restore saved caller state. The cases assemble both byte orders.",
+      "success": "Explain this predictor using the original neighbors, and keep a small input that would distinguish it from the preceding filters.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Width counts pixels. Each pixel contributes three RGB bytes, and each output row also contains one selector byte."
+        },
+        {
+          "id": "neighbors",
+          "text": "The same-channel left neighbor is three bytes earlier in the original current row. A null prior pointer supplies zero above; None and Sub never dereference the prior pointer."
+        },
+        {
+          "id": "precision",
+          "text": "Keep unsigned neighbor values and wide arithmetic until the final subtraction modulo 256. Paeth ties prefer a, then b, then c."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-boundaries",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/boundaries.json"
+      ],
+      "explanation": "Check full-width invalid settings, unsigned capacities, coincident read-only inputs, explicit ties and six calls sharing one machine. The capacity comparison is unsigned. Rejected settings must return before RGB/output access and without caller writes.",
+      "success": "Explain the validation order, exact residuals, preserved caller state and why the inverse recovers the original samples.",
+      "hints": [
+        {
+          "id": "failure-order",
+          "text": "Load and validate all three native 64-bit settings first. Invalid width, selector or unsigned capacity permits no RGB/output access."
+        },
+        {
+          "id": "readonly-alias",
+          "text": "The two read-only RGB slices may coincide. Output is disjoint from them; a forward or backward traversal can therefore use original neighbors without overwriting its inputs."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-completed-source",
+      "source": "independent/png-filter-scanline.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/none.json",
+        "independent/sub.json",
+        "independent/up.json",
+        "independent/average.json",
+        "independent/paeth.json",
+        "independent/boundaries.json"
+      ],
+      "explanation": "After your final edit, recheck all 266 original cases on this same source. Follow any earlier check that MARS marks stale after edits. A final pass establishes exact bytes and caller-state behavior on these finite cases; add an input of your own and predict its residuals and inverse before execution.",
+      "success": "Explain the validation order, exact residuals, preserved caller state and why the inverse recovers the original samples.",
+      "hints": [
+        {
+          "id": "failure-order",
+          "text": "Load and validate all three native 64-bit settings first. Invalid width, selector or unsigned capacity permits no RGB/output access."
+        },
+        {
+          "id": "readonly-alias",
+          "text": "The two read-only RGB slices may coincide. Output is disjoint from them; a forward or backward traversal can therefore use original neighbors without overwriting its inputs."
+        }
+      ]
+    }
+  ]
+}

@@ -159,3 +159,61 @@ existing filter faults and the unfinished starter are rejected: 2,926 native
 case executions across eleven sources. All 41 pre-existing manual edits remain
 unchanged. These results complete the assessment foundation, not the later
 student activity composition or IDE walkthrough.
+
+## Native student-unit draft (23 November 2026)
+
+`revision/lessons/033-png` now contains twelve inline predictions, six Debug
+activities with eighteen ordered stops, one ordinary Run and seven native
+assessment stages. The worked sequence begins with the exact embedded trace and
+unchanged supplied decoder helpers. Its smaller caller uses fixed scratch buffers,
+stride seventeen and a 280-byte framebuffer extent, so required observations do
+not depend on host input or a path edit. Other experiments separate low-bit-first
+fields from developed Huffman codes, distance-one self-overlap, wide Average and
+Paeth tie arithmetic, sixteen-pixel packing and its tail, and native full-width
+settings. None implements the independent forward-filter entry.
+
+The first execution probe caught an incorrect reconstruction return expectation.
+The function returns the 35-byte row-buffer extent, including five retained
+selectors; that buffer contains thirty reconstructed RGB sample bytes. The
+corrected observation explicitly distinguishes these counts. The initial failed
+receipt remains private. All eighteen corrected stop snapshots and the subsequent
+normal silent exits now pass core execution. They do not establish actual IDE
+debugger behavior, which is the next delivery step.
+
+Five unit tests preserve the actual decoder function bodies and format constants,
+exact 115-byte fixture, byte-identical independent starter, all staged profiles,
+and complete deterministic twenty-file export. They also execute the distributed
+fixture and wrapper tools in fresh directories: all three compression choices
+produce exact expected filtered rows and valid chunk checksums; repeated output
+paths are refused. The standalone Python tools support the additional artifact
+experiment without implementing the student's filter.
+
+The first five assessment stages each preserve 44 original cases for one filter.
+A sixth preserves all 46 boundary/reuse/tie cases, and a final stage rechecks the
+same source against all 266. Required checks use the source-bound grading system
+and both assembly byte orders. The assignment tells students to renew earlier
+evidence when edits make it stale. Guided/free-writing availability and graduated
+hints follow instructor policies.
+
+Build the student archive with:
+
+```sh
+python3 tools/native_lesson.py revision/lessons/033-png \
+  --output build/native-lessons/033-png-0.1.0-student.zip
+```
+
+The next milestone must exercise actual first use and fresh-process resume in
+the light-theme IDE through the separate authoring plugin, then connect that
+verified experience to the directly edited LaTeX lab. This student-unit draft
+does not change the accepted publication PDF or claim new screenshots or
+accessibility validation. Original decoder construction materials remain separate.
+
+The final twenty-file archive passes two Jupiter tests through the real MARS
+package importer and native PSI anchor resolution. These retain all seven stages,
+266 final cases in both byte orders, all thirty prediction/Debug source references,
+and full 128-bit vector expectations. The exact exported starter passes all 266
+native cases with each of three existing instructor bodies, including wide
+addresses; its unfinished entry fails all 266: 1,064 case executions. The latest
+public tooling suite passes 599 tests. The production plugin is unchanged in this
+content/test-only step; the preceding foundation retains the broad 287/1,315
+regression and coverage evidence. All 41 manual edits remain preserved.
