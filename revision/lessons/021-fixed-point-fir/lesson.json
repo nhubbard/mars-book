@@ -1,0 +1,1224 @@
+{
+  "formatVersion": 7,
+  "introduction": "Derive one eight-tap window before following scalar and vector schedules. Keep chronological order, arithmetic width and coefficient scale explicit. Separate exact accumulation, one rounding, clipping and caller publication, then continue the stream with supplied history.",
+  "conclusion": "Explain the retained windows, signed product widths, rounding rule and split-call phase your implementation uses. Keep those arguments beside the passing values, bounds and continuation checks. Finite cases support the argument without proving every possible input/coefficient window.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "first-window",
+      "explanation": "The first eight input samples are seven zeros followed by 16000. Every coefficient code is 4096, representing 4096/32768. Add the eight exact products before one final conversion back to a sample.",
+      "question": "What is the first output?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2000",
+          "feedback": "The numerator is 16000×4096 = 65536000; dividing by 32768 gives exactly 2000."
+        },
+        {
+          "id": "b",
+          "text": "16000",
+          "feedback": "That would require the active coefficient to represent one. Code 4096 represents one eighth."
+        },
+        {
+          "id": "c",
+          "text": "Zero",
+          "feedback": "The impulse is the eighth sample of the first complete window. It is not outside that window."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_round",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-scalar-impulse",
+      "source": "worked/scalar-impulse.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/scalar-impulse.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "numerator",
+          "explanation": "Break at scalar_round for the first output. t0 is the exact numerator 65536000, formed from all eight products. No per-product rounding occurred. The following bias and arithmetic shift perform the one specified nearest conversion.",
+          "anchor": {
+            "label": "scalar_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000010",
+            "$t0": "0x0000000003e80000",
+            "$t1": "0x0000000010010014",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. v0=16 and v1=0. The first eight output samples are 2000 and the next eight are zero. processed and clipped remain 99 because their stores follow this return boundary.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "published",
+          "explanation": "Break at results_ready. The caller has published processed=16 and clipped=0. Keep the function return values separate from the exit syscall selector that will later overwrite v0.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The scalar-impulse observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-scalar-impulse",
+      "source": "worked/scalar-impulse.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/scalar-impulse.asm normally to silent completion. Compare the complete output and published counts with the preceding derivation. Normal Run complements the paused observations; the absence of console text does not itself establish the numerical result.",
+      "success": "The scalar-impulse program completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "window-advance",
+      "explanation": "Each output uses all eight taps. In the full-rate filter, the next window starts one input sample later, so neighboring windows share seven samples. Loading eight samples into a vector does not make them eight separate outputs.",
+      "question": "How far should the input pointer advance after one output?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Two bytes",
+          "feedback": "One signed halfword is two bytes. The next eight-sample window overlaps the preceding one."
+        },
+        {
+          "id": "b",
+          "text": "Sixteen bytes",
+          "feedback": "That skips eight input samples and changes the filter."
+        },
+        {
+          "id": "c",
+          "text": "Four bytes",
+          "feedback": "That is the later decimating exercise’s advance between retained windows, not the full-rate filter’s advance."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_next",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-default",
+      "source": "fir-filter.asm",
+      "integerInputs": [],
+      "explanation": "Open fir-filter.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready in the unchanged vector caller. The complete output matches the scalar result: eight 2000s followed by eight zeros, v0=16 and v1=0. A vector schedule must satisfy the same numerical interface as the scalar schedule.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "published",
+          "explanation": "Break at results_ready. The caller has published 16 and zero. Both complete programs now have the same values and counts; any later cost comparison must keep the inputs, output count and execution interval fixed.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The default observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-default",
+      "source": "fir-filter.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run fir-filter.asm normally to silent completion. Compare the complete output and published counts with the preceding derivation. Normal Run complements the paused observations; the absence of console text does not itself establish the numerical result.",
+      "success": "The default program completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "coefficient-order",
+      "explanation": "The asymmetric source places impulse 16384 at input index seven. Its oldest-first coefficient codes are 1024,2048,…,8192. In the first window the impulse meets the last coefficient; after one input advance it meets the preceding coefficient.",
+      "question": "Which first two outputs follow that chronological layout?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "4096, then 3584",
+          "feedback": "16384×8192/32768=4096; the next window pairs the impulse with 7168, giving 3584."
+        },
+        {
+          "id": "b",
+          "text": "512, then 1024",
+          "feedback": "Those values apply the coefficients in reverse chronological order."
+        },
+        {
+          "id": "c",
+          "text": "4096, then zero",
+          "feedback": "The next window still contains the impulse. Advancing one sample does not discard the entire first window."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_window",
+        "mnemonic": "ld.b",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-asymmetric-impulse",
+      "source": "worked/asymmetric-impulse.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/asymmetric-impulse.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "window",
+          "explanation": "Break at fir_window before the first input load. The selected slice begins with seven history samples; the impulse is its eighth sample. Coefficient order is chronological, from the oldest input in the window to the newest.",
+          "anchor": {
+            "label": "fir_window",
+            "mnemonic": "ld.b",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000010",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "numerator",
+          "explanation": "Break at fir_round for the first output. The exact numerator is 134217728: the impulse met coefficient 8192. A result based on coefficient 1024 would reveal a reversed window or coefficient order.",
+          "anchor": {
+            "label": "fir_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000010",
+            "$t0": "0x0000000008000000",
+            "$t1": "0x0000000008000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. The first eight outputs are 4096,3584,3072,2560,2048,1536,1024,512, followed by zeros. Equal-weight coefficients could not expose this ordering error.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The asymmetric-impulse observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "pair-width",
+      "explanation": "With input and coefficient both −32768, one exact product is 1073741824. Each product fits a signed word, but a two-product pair sum is 2147483648. The vector code first sign-extends halfwords into word lanes, then uses signed word products with doubleword sums.",
+      "question": "Why is copying a wrapped word pair sum into a wider scalar register too late?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "The input samples are unsigned",
+          "feedback": "They are signed halfwords. Widening must preserve −32768, not turn it into 32768."
+        },
+        {
+          "id": "a",
+          "text": "The pair sum already lost its signed-word range before the copy",
+          "feedback": "Use a wide arithmetic operation before the addition exceeds signed-word range. A later copy cannot reconstruct an overflowed result."
+        },
+        {
+          "id": "b",
+          "text": "A scalar register cannot hold 2147483648",
+          "feedback": "A 64-bit scalar register can hold it. The issue is the width at which the earlier arithmetic occurred."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_widened",
+        "mnemonic": "dotp_s.d",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-wide-sum",
+      "source": "worked/wide-sum.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/wide-sum.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "widened",
+          "explanation": "Break at fir_widened before either dot product. w3,w4,w5,w6 each contain four 32-bit lanes 0xffff8000, representing −32768. The high halfword is sign extension, not another sample. Inputs and coefficients have been widened before multiplication.",
+          "anchor": {
+            "label": "fir_widened",
+            "mnemonic": "dotp_s.d",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w3": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w4": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w5": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w6": "0xffff8000ffff8000ffff8000ffff8000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "pairs",
+          "explanation": "Break at fir_pairs. Both w7 and w8 have two 64-bit lanes equal to 0x0000000080000000, positive 2147483648. Four pair sums cover all eight products. Reading the low word alone would assign the wrong signed interpretation.",
+          "anchor": {
+            "label": "fir_pairs",
+            "mnemonic": "addv.d",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w3": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w4": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w5": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w6": "0xffff8000ffff8000ffff8000ffff8000",
+            "$w7": "0x00000000800000000000000080000000",
+            "$w8": "0x00000000800000000000000080000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "combined",
+          "explanation": "Break at fir_combined. Both lanes of w7 are now 0x0000000100000000, positive 4294967296. The vector addition combined matching pair lanes from the low and high input halves. The scalar reduction still needs to add these two lanes.",
+          "anchor": {
+            "label": "fir_combined",
+            "mnemonic": "copy_s.d",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w7": "0x00000001000000000000000100000000",
+            "$w8": "0x00000000800000000000000080000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "numerator",
+          "explanation": "Break at fir_round. t0 is 8589934592, the complete eight-product numerator. Retain its width: it is 2^33 and is not representable in a signed word.",
+          "anchor": {
+            "label": "fir_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x0000000200000000",
+            "$t1": "0x0000000100000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "biased",
+          "explanation": "Break at fir_biased. t0 is 8589950976 after adding 16384 once. The arithmetic right shift by fifteen has not yet executed. The bias is part of conversion, not an input-sample value.",
+          "anchor": {
+            "label": "fir_biased",
+            "mnemonic": "dsra",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x0000000200004000",
+            "$t1": "0x0000000100000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "quantized",
+          "explanation": "Break at fir_quantized. The rounded integer is 262144. It is still wider than PCM16. The following comparisons will clamp it and count a strict clipping event.",
+          "anchor": {
+            "label": "fir_quantized",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x0000000000040000",
+            "$t1": "0x0000000100000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. The output sample is 32767 and v1 is one. Its stored endpoint cannot reveal the original numerator; use the preceding observations to justify the wide accumulator.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010006",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010116",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The wide-sum observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "negative-half",
+      "explanation": "The specified conversion is floor((numerator+16384)/32768). It rounds half ties toward positive infinity, then clamps the rounded integer. An exact scaled value −32768.5 is therefore a different clipping question from the integer −32769.",
+      "question": "What happens to −32768.5?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "It rounds to −32769 and contributes one clip",
+          "feedback": "That uses a different half-tie rule."
+        },
+        {
+          "id": "c",
+          "text": "It stores −32768 and must count a clip because the unrounded value was below the range",
+          "feedback": "The count concerns the rounded integer, not the unrounded fraction."
+        },
+        {
+          "id": "a",
+          "text": "It rounds to −32768 and contributes no clip",
+          "feedback": "The rounded integer is representable. Clipping is decided after conversion."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_biased",
+        "mnemonic": "dsra",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-negative-tie",
+      "source": "worked/negative-tie.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/negative-tie.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "numerator",
+          "explanation": "Break at fir_round. The numerator is −1073758208, representing −32768.5 in the coefficient scale. Check the full signed t0 before applying the bias.",
+          "anchor": {
+            "label": "fir_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0xffffffffbfffc000",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "quantized",
+          "explanation": "Break at fir_quantized. The rounded integer is −32768. The clamp comparisons have not run, but this integer is already representable.",
+          "anchor": {
+            "label": "fir_quantized",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0xffffffffffff8000",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. Output bytes are 00 80 and v1 is zero. A stored endpoint does not establish that clipping happened.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010006",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010116",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The negative-tie observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-negative-below",
+      "source": "worked/negative-below.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/negative-below.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "numerator",
+          "explanation": "Break at fir_round. Changing the second input from three to four made the numerator −1073774592, representing −32769 exactly.",
+          "anchor": {
+            "label": "fir_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0xffffffffbfff8000",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "quantized",
+          "explanation": "Break at fir_quantized. The rounded integer is still −32769. It lies below the permitted output range and will require clamping.",
+          "anchor": {
+            "label": "fir_quantized",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0xffffffffffff7fff",
+            "$t1": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. The bytes are again 00 80, but v1 is now one. The same stored sample has a different clipping history.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010006",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010116",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The negative-below observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-positive-tie",
+      "source": "worked/positive-tie.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/positive-tie.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "numerator",
+          "explanation": "Break at fir_round. The numerator is 1073725440, representing positive 32767.5. Apply the same half-tie rule used for the negative example.",
+          "anchor": {
+            "label": "fir_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x000000003fffc000",
+            "$t1": "0x0000000000004000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "quantized",
+          "explanation": "Break at fir_quantized. The result is 32768, above the output range. A half tie toward positive infinity has different clipping consequences on the two sides of the signed range.",
+          "anchor": {
+            "label": "fir_quantized",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x0000000000008000",
+            "$t1": "0x0000000000004000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. The stored value is 32767 and v1 is one. Rounding preceded the clamp and the event count.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010006",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010116",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The positive-tie observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "round-once",
+      "explanation": "Eight inputs equal one and all eight coefficient codes are 16384. Each exact product represents one half of an output unit. The function adds exact products before conversion.",
+      "question": "What complete output does one final rounding produce?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Zero",
+          "feedback": "That discards every individual fractional contribution before summation."
+        },
+        {
+          "id": "a",
+          "text": "Four",
+          "feedback": "The numerator is 8×16384=131072; dividing by 32768 gives exactly four."
+        },
+        {
+          "id": "b",
+          "text": "Eight",
+          "feedback": "That rounds each individual half to one before adding, changing the specified operation."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_round",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-round-once",
+      "source": "worked/round-once.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/round-once.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "numerator",
+          "explanation": "Break at fir_round. t0 is 131072 after all eight exact products. This is where to distinguish a wrong numerator from a wrong conversion of a correct numerator.",
+          "anchor": {
+            "label": "fir_round",
+            "mnemonic": "daddiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x0000000000020000",
+            "$t1": "0x0000000000010000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "quantized",
+          "explanation": "Break at fir_quantized. The converted integer is four, with no output-range violation.",
+          "anchor": {
+            "label": "fir_quantized",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000001",
+            "$t0": "0x0000000000000004",
+            "$t1": "0x0000000000010000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. The output bytes are 04 00 and v1 is zero. Per-product rounding would have produced eight instead.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010006",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010116",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The round-once observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-window",
+      "explanation": "A zero-output call may still receive pointers to declared history and coefficient storage. The count says that no complete window is requested. The early branch precedes the coefficient load.",
+      "question": "Which selected-buffer accesses belong to this call?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Read eight coefficients to prepare the vector state",
+          "feedback": "There is no requested output. Even an otherwise valid coefficient address need not be read."
+        },
+        {
+          "id": "c",
+          "text": "Read the seven history samples but write no output",
+          "feedback": "Declared backing storage does not create a requested window."
+        },
+        {
+          "id": "a",
+          "text": "None",
+          "feedback": "Return zero count and zero clips without reading history, coefficients or output."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_q15",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-count-zero",
+      "source": "worked/count-zero.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/count-zero.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "empty-return",
+          "explanation": "Break at fir_return before jrc. v0 and v1 are zero, and w1 remains zero because no coefficient load occurred. The caller read its count word, but the function accessed no selected buffer.",
+          "anchor": {
+            "label": "fir_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "vectorRegisters": {
+            "$w1": "0x00000000000000000000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "returned",
+          "explanation": "Break at filter_ready. Both return values are zero and the output is unchanged. The caller’s result words still contain 99 until publication.",
+          "anchor": {
+            "label": "filter_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010004",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010114",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The count-zero observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "history-split",
+      "explanation": "The full-rate sixteen-output call can be split after five outputs. The second call still needs the seven predecessors of its first new sample. Its first window begins at original input sample five.",
+      "question": "What input-base advance preserves that window?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Ten bytes",
+          "feedback": "Five samples at two bytes each. Beginning there includes the history needed by the next output."
+        },
+        {
+          "id": "b",
+          "text": "Twenty-four bytes",
+          "feedback": "That skips the history and begins near the next new sample instead of the next window’s oldest sample."
+        },
+        {
+          "id": "c",
+          "text": "Eighty bytes",
+          "feedback": "Five outputs do not consume five disjoint sixteen-byte windows; the windows overlap."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_next",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-split-five",
+      "source": "worked/split-five.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/split-five.asm and start a fresh Debug session. Use one line breakpoint at a time, before the selected instruction executes. Follow the lab explanation and inspect Variables and Memory. After the final observation, resume to normal exit before changing sources.",
+      "stops": [
+        {
+          "id": "first",
+          "explanation": "Break at first_ready. The first call returned five outputs and zero clips. Its selected prefix contains five 2000s; later output bytes remain untouched. The caller has not published its total yet.",
+          "anchor": {
+            "label": "first_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000001001000e",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x000000001001011e",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000005",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000000",
+            "$s1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "second",
+          "explanation": "Break at second_ready. The second call returned eleven and zero. It began ten bytes after the original input base, retaining history. Its first three outputs are still 2000, completing the eight-sample impulse response.",
+          "anchor": {
+            "label": "second_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x000000000000000b",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000005",
+            "$s1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        },
+        {
+          "id": "published",
+          "explanation": "Break at results_ready. The caller added the two counts and published sixteen and zero. The complete output equals the ordinary sixteen-output call. The function used explicit input history rather than hidden state.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000010010024",
+            "$a1": "0x00000000100100cc",
+            "$a2": "0x0000000010010134",
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000010",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000005",
+            "$s1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain the window, arithmetic width and units before continuing."
+        }
+      ],
+      "success": "The split-five observations are complete for the current source.",
+      "hints": [
+        {
+          "id": "width",
+          "text": "Raw hexadecimal bits need a stated width and signed interpretation. A 64-bit value 0x0000000080000000 is positive even though its low word has its sign bit set."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Rounding and clipping occur at separate boundaries."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-split-five",
+      "source": "worked/split-five.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/split-five.asm normally to silent completion. Compare the complete output and published counts with the preceding derivation. Normal Run complements the paused observations; the absence of console text does not itself establish the numerical result.",
+      "success": "The split-five program completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "decimation-phase",
+      "explanation": "The independent routine retains full-filter output indices 0,2,4,… . Each retained output still uses eight consecutive input samples. For retained output i, the window starts at input sample 2*i.",
+      "question": "How far does its input base advance after m retained outputs?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four times m bytes",
+          "feedback": "There are two input samples between retained window starts and two bytes per sample. Preserve the complete eight-sample window at each start."
+        },
+        {
+          "id": "b",
+          "text": "Two times m bytes",
+          "feedback": "That is the full-rate filter’s input advance."
+        },
+        {
+          "id": "c",
+          "text": "Sixteen times m bytes",
+          "feedback": "That would discard overlapping history and make the windows disjoint."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "fir_next",
+        "mnemonic": "daddiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "decimate-random",
+      "source": "independent/fir-decimate.asm",
+      "caseProfile": "independent/fir-decimate-family-0.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current decimate_q15 implementation for deterministic random windows, rounding boundaries and complete caller publication. Follow independent/README.md’s interface. The starter deliberately stops with break. Write a scalar baseline, inspect its first failure and retry before choosing a vector schedule.",
+      "success": "All 43 public cases in this group pass for the current source. Explain coefficient order, wide accumulation, one final rounding and complete access widths alongside the finite evidence.",
+      "hints": [
+        {
+          "id": "window",
+          "text": "Retained output i uses input samples 2*i through 2*i+7. For positive n, the selected input has 2*n+6 samples; zero outputs read neither history nor coefficients."
+        },
+        {
+          "id": "conversion",
+          "text": "Accumulate all eight signed products exactly, add 16384 once, then use an arithmetic shift by fifteen. Count clipping only when the rounded integer lies outside −32768…32767."
+        },
+        {
+          "id": "history",
+          "text": "For a split after m retained outputs, start the second input at original byte offset 4*m and its output at 2*m. Keep its overlapping history and initialize this call’s counts."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "decimate-impulse",
+      "source": "independent/fir-decimate.asm",
+      "caseProfile": "independent/fir-decimate-family-1.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current decimate_q15 implementation for asymmetric impulse windows and empty/end split positions. Follow independent/README.md’s interface. Use the same current source; another passing family does not establish these values or boundary cases.",
+      "success": "All 36 public cases in this group pass for the current source. Explain coefficient order, wide accumulation, one final rounding and complete access widths alongside the finite evidence.",
+      "hints": [
+        {
+          "id": "window",
+          "text": "Retained output i uses input samples 2*i through 2*i+7. For positive n, the selected input has 2*n+6 samples; zero outputs read neither history nor coefficients."
+        },
+        {
+          "id": "conversion",
+          "text": "Accumulate all eight signed products exactly, add 16384 once, then use an arithmetic shift by fifteen. Count clipping only when the rounded integer lies outside −32768…32767."
+        },
+        {
+          "id": "history",
+          "text": "For a split after m retained outputs, start the second input at original byte offset 4*m and its output at 2*m. Keep its overlapping history and initialize this call’s counts."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "decimate-wide",
+      "source": "independent/fir-decimate.asm",
+      "caseProfile": "independent/fir-decimate-family-2.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current decimate_q15 implementation for minimum inputs and coefficients, wide sums and clipped split calls. Follow independent/README.md’s interface. Use the same current source; another passing family does not establish these values or boundary cases.",
+      "success": "All 34 public cases in this group pass for the current source. Explain coefficient order, wide accumulation, one final rounding and complete access widths alongside the finite evidence.",
+      "hints": [
+        {
+          "id": "window",
+          "text": "Retained output i uses input samples 2*i through 2*i+7. For positive n, the selected input has 2*n+6 samples; zero outputs read neither history nor coefficients."
+        },
+        {
+          "id": "conversion",
+          "text": "Accumulate all eight signed products exactly, add 16384 once, then use an arithmetic shift by fifteen. Count clipping only when the rounded integer lies outside −32768…32767."
+        },
+        {
+          "id": "history",
+          "text": "For a split after m retained outputs, start the second input at original byte offset 4*m and its output at 2*m. Keep its overlapping history and initialize this call’s counts."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "decimate-signs",
+      "source": "independent/fir-decimate.asm",
+      "caseProfile": "independent/fir-decimate-family-3.cases.json",
+      "checkKind": "function",
+      "explanation": "Check your current decimate_q15 implementation for alternating endpoint signs at every supported count. Follow independent/README.md’s interface. Use the same current source; another passing family does not establish these values or boundary cases.",
+      "success": "All 33 public cases in this group pass for the current source. Explain coefficient order, wide accumulation, one final rounding and complete access widths alongside the finite evidence.",
+      "hints": [
+        {
+          "id": "window",
+          "text": "Retained output i uses input samples 2*i through 2*i+7. For positive n, the selected input has 2*n+6 samples; zero outputs read neither history nor coefficients."
+        },
+        {
+          "id": "conversion",
+          "text": "Accumulate all eight signed products exactly, add 16384 once, then use an arithmetic shift by fifteen. Count clipping only when the rounded integer lies outside −32768…32767."
+        },
+        {
+          "id": "history",
+          "text": "For a split after m retained outputs, start the second input at original byte offset 4*m and its output at 2*m. Keep its overlapping history and initialize this call’s counts."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/fir-decimate.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "explanation": "Check the complete default decimation program through its ordinary silent exit after the four numerical and interface groups.",
+      "success": "The complete decimation caller exits normally with no console output."
+    }
+  ]
+}

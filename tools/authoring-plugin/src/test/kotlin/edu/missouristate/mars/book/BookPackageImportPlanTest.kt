@@ -323,6 +323,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `fir walkthrough isolates its exact source and single private fixture`() {
+        val fir = plan.copy(archives = listOf(archive.copy(id = "021-fixed-point-fir", entry = "fir-filter.asm")),
+            nativePredictions = true, firUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/fir-decimate.asm", "/tmp/fir.asm", "c".repeat(64))))
+        fir.validate()
+        fir.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(fir.copy(nativePredictions = false), fir.copy(nativeExecution = true),
+            fir.copy(nativeDebug = true), fir.copy(memoryUnit = true), fir.copy(loopUnit = true),
+            fir.copy(functionUnit = true), fir.copy(spriteUnit = true), fir.copy(rasterUnit = true), fir.copy(lifeUnit = true), fir.copy(sortingUnit = true), fir.copy(fixedUnit = true), fir.copy(localityUnit = true), fir.copy(boundedUnit = true), fir.copy(measurementUnit = true), fir.copy(msaUnit = true), fir.copy(pcmUnit = true), fir.copy(assessmentFixtures = emptyList()),
+            fir.copy(archives = listOf(archive)), fir.copy(resumeCompleted = true), fir.copy(firUnit = false),
+            fir.copy(activityNavigation = true), fir.copy(prerequisiteControls = true),
+            fir.copy(assessmentFixtures = fir.assessmentFixtures + fir.assessmentFixtures),
+            fir.copy(assessmentFixtures = listOf(fir.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

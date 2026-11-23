@@ -88,6 +88,10 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
             Files.writeString(output.resolve("$id-focus.json"), GsonBuilder().setPrettyPrinting().create().toJson(observation), CREATE_NEW)
         }
     }
+    if (plan.firUnit) {
+        captureBookNativeFir(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
+        return
+    }
     if (plan.pcmUnit) {
         captureBookNativePcm(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
         return

@@ -60,10 +60,10 @@ internal fun configureBookPresentation(project: Project) {
     LangManager.getInstance().updateLangSupport("MARS_MIPS")
 }
 
-internal suspend fun awaitBookDebugRegisters(project: Project, handler: ProcessHandler, expected: Map<String, Long>, vectors: Map<String, String> = emptyMap(), vectorView: String = "\$w4"): List<String> {
+internal suspend fun awaitBookDebugRegisters(project: Project, handler: ProcessHandler, expected: Map<String, Long>, vectors: Map<String, String> = emptyMap(), vectorView: String = "\$w4", vectorLaneWidth: Int? = null): List<String> {
     val view = if (vectors.isEmpty()) lessonDebugRegisterView else BookDebuggerTreeView(
         expand = listOf(listOf("Integer registers"), listOf("MSA vector registers"), listOf("MSA vector registers", vectorView)),
-        reveal = listOf("MSA vector registers", vectorView),
+        reveal = listOf("MSA vector registers", vectorView) + listOfNotNull(vectorLaneWidth?.let { "$it-bit integer lanes" }),
     )
     while (true) {
         val rows = withContext(Dispatchers.EDT) {
