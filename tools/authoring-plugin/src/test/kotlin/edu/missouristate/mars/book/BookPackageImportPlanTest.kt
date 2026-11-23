@@ -395,6 +395,31 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `CRC walkthrough isolates its archive source fixture and native activity lifetimes`() {
+        val crc = plan.copy(archives = listOf(archive.copy(id = "024-crc32", entry = "crc32.asm")),
+            nativePredictions = true, crcUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/crc32-chunk.asm", "/tmp/chunk.asm", "c".repeat(64))))
+        crc.validate()
+        crc.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(crc.copy(nativePredictions = false), crc.copy(nativeExecution = true),
+            crc.copy(nativeDebug = true), crc.copy(memoryUnit = true), crc.copy(loopUnit = true),
+            crc.copy(functionUnit = true), crc.copy(spriteUnit = true), crc.copy(rasterUnit = true),
+            crc.copy(lifeUnit = true), crc.copy(sortingUnit = true), crc.copy(fixedUnit = true),
+            crc.copy(localityUnit = true), crc.copy(boundedUnit = true), crc.copy(measurementUnit = true),
+            crc.copy(msaUnit = true), crc.copy(pcmUnit = true), crc.copy(firUnit = true),
+            crc.copy(deltaUnit = true), crc.copy(base64Unit = true), crc.copy(ppmUnit = true),
+            crc.copy(assessmentFixtures = emptyList()), crc.copy(archives = listOf(archive)),
+            crc.copy(resumeCompleted = true), crc.copy(crcUnit = false),
+            crc.copy(activityNavigation = true), crc.copy(prerequisiteControls = true),
+            crc.copy(assessmentFixtures = crc.assessmentFixtures + crc.assessmentFixtures),
+            crc.copy(assessmentFixtures = listOf(crc.assessmentFixtures.single().copy(source = "independent/ppm-negative.asm"))),
+            crc.copy(archives = listOf(crc.archives.single().copy(entry = "other.asm"))),
+            crc.copy(archives = listOf(crc.archives.single().copy(id = "029-binary-ppm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
