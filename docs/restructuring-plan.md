@@ -1273,3 +1273,31 @@ JetBrains Mono. All 41 manual MARS files are preserved. Human learner and
 assistive-technology reviews remain pending. Later native units and remaining
 system work stay open; the full curriculum goal remains active and the proposed
 opening remains deferred. The next main unit develops fixed-point filtering.
+
+
+## CRC native delivery completed, 22 November 2026
+
+Chapter 19 now has its connected native student package and matching written lab:
+13 inline predictions, 8 Debug activities / 22 stops, one ordinary Run and six
+assessment groups. The original chunk/file case profiles, budgets and permissions
+are retained, with 164 function cases / 170 calls and one ordinary exit case.
+Production import and native PSI resolve the exact shipped archive and anchors.
+Eight value probes and 25 retained-correct/fault qualification processes verify
+the examples and equivalent implementations. All 539 book-tool tests pass.
+
+The accepted first/resume desktop walkthrough verifies actual inline controls,
+source pointers, deterministic read fixtures supplied by MARS, ordinary Run/Debug,
+failed-starter feedback, unsaved-source assessment, source-edit invalidation,
+persisted quiz history, rechecking and cleanup. Eleven installed JARs match their
+pins in both processes and accepted logs contain no ERROR/SEVERE entries. A separate
+authoring-only zero-operand assertion failure was corrected and retained as a
+diagnostic; the 133-test authoring suite passes. Screenshot automation remains
+outside MARS. All 41 manual MARS edits are preserved.
+
+The directly edited LaTeX lab proof is 210 pages, with CRC on 135–140. Three actual
+light-theme capture assets have native annotations and semantic descriptions.
+Color/adjacent-page and grayscale review are complete; PDF/UA-2 passes 1,728 rules
+and 986,035 checks with zero failures. The main learning proof remains unchanged.
+Human author, learner and assistive-technology review are not claimed. The goal
+remains active; next is Chapter 20's QOI guided/free-writing delivery, beginning
+with its current sources, original contracts and publication/error boundaries.

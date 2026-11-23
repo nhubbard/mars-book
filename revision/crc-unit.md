@@ -1,9 +1,13 @@
 # Checksums and streaming state
 
 Chapter 19 and its written lab revise original project `024-crc32` after the PPM
-unit. The main proof has 125 pages, with this chapter on 119–125. The lab proof
-has 115 pages, with this unit on 111–115. Both are directly edited native LaTeX.
-The original manuscript remains unchanged.
+unit. The complete native student package has passed first and fresh-resume IDE
+walkthroughs. The current lab proof has 210 pages; this unit occupies pages
+135–140. Its prose and figures are directly edited native LaTeX. The original
+manuscript remains unchanged.
+
+The milestones below preserve the unit's history, including its earlier pending
+states. The final section records the accepted current delivery and review limits.
 
 ## Prerequisites and observable outcomes
 
@@ -270,3 +274,50 @@ isolation for CRC mode. No desktop walkthrough or new screen capture is claimed
 by this package-authoring step. The first/resume IDE run, revised native LaTeX
 companion, refreshed publication figures and proof/accessibility checks remain
 unfinished. The broader curriculum goal stays active.
+
+## Accepted native delivery and written companion, 22 November 2026
+
+The connected CRC unit has completed its automated end-to-end delivery checks.
+The successful first IDE walkthrough produced 42 observations: thirteen inline
+predictions (fourteen actual attempts, including the deliberate wrong first
+answer), twenty-two Debug stops, one Run and six assessment groups. The unfinished
+starter failed all eighty first-group cases; the correct private fixture then
+passed. The source-edit step changed seven sources and invalidated all fifteen
+execution/assessment passes. A fresh IDE process retained the quiz history,
+renewed those fifteen passes and added exactly one attempt per assessment group.
+Both accepted launches ran the actual clean/cleanSandbox/runIde tasks, installed
+all eleven JARs byte-for-byte from their pins, and had no ERROR/SEVERE log entries.
+
+An earlier desktop attempt correctly highlighted syscall but the separate
+capture driver rejected it because its assertion expected an operand-separating
+space. The driver now accepts zero-operand instructions, normal spacing, tabs and
+case variations while rejecting prefix collisions and labels. All 133 authoring
+Jupiter tests pass. The failed run is retained as diagnostic evidence, separately
+from the two successful walkthroughs; no MARS instruction behavior was changed.
+After project disposal, only the owned IDE child was sent SIGTERM. Its 143 exit
+and outer Gradle exit 1 are intentional cleanup outcomes, not a natural successful
+runIde exit. Every student execution completed successfully where expected.
+
+The written lab now connects the guided observations to the independent task:
+first-bit reasoning, empty-slice permission, width invariants, explicit table
+preparation and its cost, actual returned-prefix continuation, positive short
+reads, EOF versus error, descriptor ownership and validation before record reads.
+Optional real-file investigations stay separate from the guided virtual input.
+Three verified light-theme captures replace the prior lab register images, using
+native crops, labels, outlines and semantic descriptions. The complete original
+PNGs and earlier captures remain retained. No instructor solution is published.
+
+The final 210-page proof is clean, visually reviewed across the CRC chapter and
+adjacent pages, and checked in grayscale on both figure pages. It retains Minion
+Pro, Noto Sans Math and JetBrains Mono. PDF/UA-2 passes 1,728 rules and 986,035
+checks with zero failures. The final book-tool suite passes all 539 tests. The
+printed thirteen-case instruction-count experiment is reproduced against the
+exact public entry source. The main learning proof is unchanged because its CRC
+figures do not depend on the replaced lab figures.
+
+Private native-crc-unit-01 and native-crc-ide-02 retain the accepted verification;
+native-crc-ide-01 retains the authoring assertion failure. All 41 manual MARS
+edits remain unchanged. This completes the CRC unit's automated construction and
+verification, not the broader curriculum goal or human review. Author editing,
+representative learner review and assistive-technology review remain separate.
+Chapter 20's QOI native instructional delivery is next.

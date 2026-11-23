@@ -2,211 +2,273 @@
 \MARSChapterHeading{Keep the checksum state between reads}
 \label{revision-lab:crc}
 
-Use \texttt{crc32.asm}, \texttt{crc32-stream.asm} and the independent
-\texttt{crc32-chunk.asm} in \texttt{revision/labs/files}. The main chapter
-derives the reflected bit rule, table update and raw-state composition law.
-This lab tests whether those distinctions survive actual instruction execution
-and file reads. It uses ordinary Run and Debug; this unit's native guided lesson
-remains unfinished.
+A checksum routine has more than one useful stopping point. After a byte update,
+its result describes the bytes processed so far. After a successful end-of-file
+read, the caller knows that those bytes form the complete stream and may finalize
+the checksum. After a read error, a prefix state still exists, but it does not
+describe a successfully read complete file. This lab follows those boundaries in
+actual execution before asking you to write a bounded record checker.
 
-Work with disposable source copies for faults. Each observation has a stated
-boundary: a raw update return, an intermediate streaming state or a complete
-file return. An exit syscall subsequently reuses \texttt{\$v0}; inspect the
-intended boundary or the caller's stored result rather than treating the final
-exit selector as a checksum.
+Import the \texttt{024-crc32} student archive and open \emph{Raw states and complete
+streams} in Learn. The entry \texttt{crc32.asm} is complete. The files under
+\texttt{worked} are complete variations that isolate a count, method or caller
+choice. The unfinished checker is in \texttt{independent}. Chapter 19 derives
+the recurrence; keep that derivation beside these observations rather than
+trying to infer a formula from a final register value.
 
-\section{Predict the first byte before checking the whole message}
+Answer the inline predictions and use one breakpoint at a time. After Learn
+recognizes a pause, its source outline can move to the next requested instruction.
+The selected Debug frame identifies where the machine is actually paused. A
+highlighted instruction has not executed yet. Finish each process after its last
+requested pause before launching the next example. Keep the supplied examples
+unchanged while following their fixed observations; use disposable copies for the
+additional experiments. Your independent implementation may use different
+registers and an equivalent instruction sequence.
 
-The default \texttt{crc32.asm} uses bit updates over nine ASCII bytes
-\texttt{123456789}. The raw initial word is all ones. Before running, distinguish
-selected count nine from its larger backing arena and from a NUL-terminated
-string. A newline would be an additional input byte, not harmless formatting.
+\section{Connect the first bit step to the returned raw state}
 
-In a copy, change \texttt{input\_count} from nine to one. The selected byte is
-ASCII \texttt{1}, hexadecimal \texttt{31}. XOR it into \texttt{ffffffff} to
-obtain \texttt{ffffffce}. Predict the first two bit steps, writing both the old
-low bit and shifted state before applying feedback. Your second result should
-come from \texttt{3ffffff3 xor edb88320}, not from shifting the feedback mask.
+The entry selects the nine ASCII bytes \texttt{123456789}. Count nine selects
+nine bytes from a larger arena; it does not select the arena's padding or a
+terminating zero. A newline would be another input byte. The raw seed is
+\texttt{ffffffff}, held with a zero upper half in its 64-bit register.
 
-Break at \texttt{bit\_next\_bit}. Step through the low-bit capture, logical
-shift and conditional feedback. Compare your prediction with the main chapter's
-eight-row trace. At \texttt{bit\_no\_feedback}, the decision for this step is
-already complete, even if the branch did not skip an XOR. The old bit remains
-in \texttt{\$t2}. After eight steps, expect raw state \texttt{7c231048}.
-A count of one means one byte, not one bit step.
+\Needspace{6\baselineskip}
+XOR the first byte, hexadecimal \texttt{31}, into that seed. The result is
+\texttt{ffffffce}. At the first \texttt{andi} in \texttt{bit\_next\_bit}, this
+XOR has happened but the first bit step has not. The low bit is zero, so a
+logical right shift gives \texttt{7fffffe7} without polynomial feedback. At
+\texttt{addiu} in \texttt{bit\_no\_feedback}, the decision is complete:
+\texttt{\$t2} retains zero and \texttt{\$v0} holds that shifted state. The bit
+counter still holds eight because the highlighted decrement is next.
 
-Restore count nine and break at \texttt{kernel\_done}. Expect raw
-\texttt{340bc6d9}; \texttt{raw\_result} is still its initial $-1$ before the
-caller's store. At \texttt{results\_ready}, its word holds that raw bit pattern.
-Complementing the low 32 bits gives reported checksum \texttt{cbf43926}.
-Explain why printing or storing the raw value under a label that promises the
-reported checksum would be a contract mistake even if every bit step were right.
+Predict the second bit step before resuming. The old low bit is now one.
+Shift to \texttt{3ffffff3}, then XOR with \texttt{edb88320}. The branch decision
+uses the old bit, not a bit examined after shifting. A name such as
+\texttt{bit\_no\_feedback} identifies a shared boundary; reaching it does not
+by itself tell you whether this iteration executed the XOR.
 
-For diagnosis, change only the bit loop's \texttt{dsrl} to the 32-bit arithmetic
-\texttt{sra} in a fresh copy. Find the first differing state. Bit 31 and the
-upper half of the register matter. A full-width \texttt{dsra} is a different
-experiment: it agrees with the logical shift while bit 63 remains zero. State
-which width you tested rather than declaring every arithmetic shift equivalent
-or every arithmetic shift incorrect.
+At \texttt{jrc} in \texttt{bit\_return}, the nine-byte update returns raw state
+\texttt{340bc6d9} with zero bytes remaining. The conventional complete-stream
+checksum is \texttt{cbf43926}, obtained by XOR with \texttt{ffffffff}. That final
+XOR is outside this updater. Putting it inside every update would make the
+result unsuitable as the next update's seed.
 
-\section{Continue the returned state through another method}
+The ordinary Run activity exits silently. Its caller stores the raw result
+instead of printing it. An empty console establishes neither the computed value
+nor its interpretation. Use the Debug return boundary or the stored result;
+the later exit syscall reuses \texttt{\$v0} as its service selector.
 
-Open the unchanged \texttt{crc32-stream.asm}. Its demonstration caller is
-specifically arranged for the nine-byte fixture: four bytes through the bit
-routine, then five through the table routine. The reusable update functions
-retain their ordinary pointer/count interfaces. Changing this demonstration's
-input length also requires changing its two slice lengths; it is not a general
-file reader.
+\section{Use the count and width invariants}
 
-Break at \texttt{stream\_first}. Predict the role of the returned value before
-reading it: it describes the first four bytes and has not been finalized.
-Expect \texttt{641c1f5c} in \texttt{\$v0}. The next instruction retains it in
-\texttt{\$s0} across table construction. The caller then supplies the next
-source address, count five and that retained raw state to the table update.
+The complete \texttt{worked/\allowbreak empty-bit.asm} selects zero bytes.
+Its raw seed \texttt{ffffffff} returns unchanged. Data can exist
+nearby without belonging to the selected slice: the loop tests the count before
+loading a byte. This is different from finalizing a complete empty stream, whose
+reported checksum is zero under this convention.
+
+The worked loop also maintains a width invariant: each raw state occupies the
+low 32 bits and its upper 32 bits are zero. Keep that invariant beside the shift
+being examined. Changing its wide logical \texttt{dsrl} to the 32-bit arithmetic
+\texttt{sra} in a disposable copy changes the treatment of bit 31. Find the
+first differing state rather than comparing only the nine-byte result.
+A wide \texttt{dsra} is a different experiment: while bit 63 is zero, its result
+agrees with the wide logical shift. State which instruction width you tested;
+an argument about one arithmetic shift does not establish the behavior of all
+arithmetic shifts.
+
+To investigate all eight bit steps for one byte, use another disposable copy
+with \texttt{input\_count} set to one. After those steps the raw result is
+\texttt{7c231048}. Restore the supplied source before using its nine-byte guided
+observation. The guide checks the stated example, while the copied experiment
+answers your separate question about one byte.
+
+\section{Prepare a table and charge for the preparation}
+
+Open \texttt{worked/\allowbreak table-ready.asm}. Its caller initializes the
+table before selecting the updater. At \texttt{table\_prepared}, construction
+has returned 256, the number of initialized entries. Inspect words at byte
+offsets zero, four, 512 and 1020: they contain \texttt{00000000},
+\texttt{77073096}, \texttt{edb88320} and \texttt{2d02ef8d}. Index 128 means
+byte offset 512 because each entry occupies four bytes.
+
+The first byte selects index \texttt{ce}, the low byte of
+\texttt{ffffffff xor 31}. The mask with 255 discards the other state bits before
+the index is multiplied by four. At the first \texttt{dsrl} in
+\texttt{table\_next\_byte}, the table word has already been loaded but the old
+raw state has not yet been shifted. The new state combines that word with the
+old state shifted right by eight; a table word alone is not the update result.
+
+Some entries have bit 31 set. The worked code uses \texttt{lwu} to establish
+a zero-extended register value, preserving the width invariant used by its wide
+shifts. An alternative implementation may establish the same invariant another
+way. At \texttt{table\_return}, this updater returns the same nine-byte raw state
+\texttt{340bc6d9} as the bit updater. Matching this input is useful evidence,
+but the recurrence argument explains why the methods agree more generally.
+
+A fresh execution restores initial data. An allocated table arena full of
+sentinel words is not a prepared table, and a previous execution's initialization
+does not survive a new launch. The supplied complete variant makes preparation
+visible in the caller, within the same execution that uses the entries.
+
+The public instruction-count experiment measures 519 completed instructions for
+the nine-byte bit update and 120 for the prepared-table update. Building the table
+adds 14,348. For a one-use table, compare 519 with $14348+120=14468$, not with
+120 alone. At 4096 bytes, the measured updates take 233,206 and 53,251 instructions
+respectively, so the setup cost has a different significance. These are MARS
+completed-instruction counts for the supplied implementations, not processor
+cycles or a hardware speed prediction. The optional
+\texttt{worked/\allowbreak crc32-work.kts} check reproduces the preparation and
+update measurements while checking their results.
+
+\section{Continue the actual returned prefix}
+
+The complete \texttt{worked/\allowbreak stream-split.asm} processes four bytes
+through the bit updater, then five through the table updater. This caller is
+specifically arranged for the nine-byte fixture. Its reusable functions still
+accept ordinary pointer/count arguments; changing the demonstration's input
+length also requires changing its two selected slice lengths.
+
+At \texttt{stream\_first}, \texttt{\$v0} contains raw state
+\texttt{00000000641c1f5c} for \texttt{1234}. The highlighted move has not saved
+it yet. The caller retains that actual return value in \texttt{\$s0} across
+another function call that prepares the table. At the second \texttt{balc} in
+this label block, \texttt{\$s0} and argument \texttt{\$a2} contain the retained
+state, and \texttt{\$a1} is five. The next update begins at the first byte of
+\texttt{56789}.
 
 \input{revision/figures/crc/raw-states}
 
-At \texttt{stream\_done}, expect \texttt{340bc6d9}. This is the same state
-as the single nine-byte update, despite the buffer split and method change.
-The native observations use hexadecimal display in full 64-bit registers;
-leading zeroes express the required zero extension.
+\Needspace{5\baselineskip}
+At \texttt{stream\_done}, the returned raw state is \texttt{340bc6d9}, matching
+the unsplit update. The source split and method change preserve the selected
+byte sequence and continue its state. In separate copies, reset the second seed
+to \texttt{ffffffff}, or finalize the first return before passing it onward.
+Find the first changed interface value. Neither operation preserves the caller's
+continuation contract, even if the underlying update loops remain correct.
 
-In separate copies, try each of two faults: reset the second seed to
-\texttt{ffffffff}, or complement the first result before passing it as that
-seed. Predict why neither operation preserves the original message. Find the
-first changed interface value, rather than comparing only the final checksum.
-An empty update should preserve an arbitrary incoming state; it does not mean
-that every empty operation returns the finalized empty-message checksum zero.
+\section{Read positive prefixes, then distinguish EOF from error}
 
-\section{Prepare a table, then account for its cost}
+The guided file activities supply virtual input named \texttt{fixture.bin}.
+For successful reads it contains exactly \texttt{123456789}; transfers are
+limited to three bytes and open returns descriptor 19. These settings make
+short reads visible without changing a real disk file. Outside the activity,
+an ordinary launch uses the real \texttt{worked/\allowbreak fixture.bin} in
+the selected source's working directory. A fresh launch starts with independent
+file state; resuming a paused launch continues that execution.
 
-In an unchanged \texttt{crc32.asm}, choose exercise one and break at
-\texttt{kernel\_done}. Expect return value 256, meaning entries initialized.
-Inspect table words at byte offsets zero, four, 512 and 1020. They hold
-\texttt{00000000}, \texttt{77073096}, \texttt{edb88320} and
-\texttt{2d02ef8d}. The words after the selected 1024-byte table retain their
-sentinel values. Distinguish the entry index 128 from its byte offset 512.
+First use \texttt{worked/\allowbreak file-bit.asm}. The reader requests seven
+bytes, its scratch capacity, but the first read returns three. At the
+\texttt{bltzc} after that syscall, \texttt{\$a0} and saved \texttt{\$s4} identify
+descriptor 19, \texttt{\$a2} is the request size seven, and \texttt{\$v0} is the
+returned size three. Saved raw state \texttt{\$s5} is still the initial state:
+the new three-byte slice has not been updated yet.
 
-A fresh execution restores initial data, including the unprepared table. Merely
-changing exercise to two and starting over does not preserve the table from a
-previous execution. Use the complete stream caller, which prepares it and uses
-it in one session, or the behavior checks, which explicitly supply prepared
-entries. A lookup into allocated sentinel words is not an alternative CRC table.
+The updater must consume three bytes, not seven. A positive short read is data,
+not EOF; another read follows. At \texttt{file\_finish}, the terminal read has
+returned zero and \texttt{\$s5} holds raw state \texttt{340bc6d9} for all nine
+accepted bytes. Now the reader can finalize once, close its acquired descriptor
+and return \texttt{cbf43926} with status zero. At \texttt{file\_done}, these are
+still the return values, before the caller stores them.
 
-Repeat the chapter's measurement with the complete source:
-\begin{verbatim}
-java -jar /path/to/cli.jar grade \
-  revision/labs/checks/crc32-work.kts \
-  revision/labs/files/crc32.asm
-\end{verbatim}
-The \texttt{INIT} row reports table construction; \texttt{METRIC} rows report
-input name, byte count, method, completed instructions and finalized host-oracle
-checksum. Method zero is bit updating and one is table updating. The checker
-verifies behavior as well as recording work. Count construction once when your
-comparison requires it.
+Repeat the observation with \texttt{worked/\allowbreak file-table.asm}. Its
+caller chooses the table method and the reader prepares that table. The buffer
+boundaries and complete-file result stay the same. The method changes the work
+performed; it does not create a new input stream at each buffer.
 
-For the 256-byte case, compare 14668 bit instructions with $14348+3331$ for a
-new table and one update. Then repeat the reasoning for 4096 bytes. Explain
-which setup boundary reverses the apparent choice. Do not translate these
-ratios into elapsed times. If you change a loop, retain the original input,
-measure the new source and run correctness checks again.
-
-\section{Checksum a real file, including the previous image}
-
-From the public book repository, run the actual host-file helper with new output
-directories. Replace the Java and CLI paths:
-\begin{verbatim}
-python3 tools/run_revision_crc.py \
-  --java /path/to/java --cli /path/to/cli.jar \
-  --output /tmp/crc-bit
-python3 tools/run_revision_crc.py \
-  --java /path/to/java --cli /path/to/cli.jar \
-  --method table --output /tmp/crc-table
-\end{verbatim}
-Both default runs write the nine-byte fixture, execute the ordinary file syscall
-path and require finalized checksum \texttt{cbf43926} with status zero. They
-obtain the assembled result addresses in a separate nonexecuting grading query,
-then inspect a memory dump after the real file run. No grading file fixture is
-installed for that run. Each directory retains source, input, dump and receipt;
-the helper refuses an existing output directory.
-
-Use \texttt{--bytes 8193 --capacity 13 --method table} for a generated binary
-file spanning many reads. The generator includes high-byte values and zeroes.
-Use \texttt{--bytes 0} for an empty file. Predict a successful empty file's
-checksum and explain why its status still needs to be checked.
-
-Finally use \texttt{--input /path/to/output.ppm} with your Chapter 18 output.
-This checks every byte of that file, including its header. For the unchanged
-23-byte red/green/blue/white fixture, expect \texttt{e481fe30}. A semantically
-identical image with a different accepted header can have a different whole-file
-CRC because the selected byte sequence changed. Retain the artifact and receipt
-so that your comparison names the exact file.
-
-\section{Distinguish EOF from failure after useful work}
-
-The native failure observation below uses a separate authoring fixture with
-nine input bytes, capacity seven, maximum read three and an injected error
-after five accepted bytes. Its actual descriptor is 19. Two positive reads
-return three and two; the next read returns $-1$, followed by a close.
-The state after that prefix exists, but the function must report failure to
-read the complete file.
+The error activity uses the same file-bit source in a fresh launch, but injects
+failure after five accepted bytes. Keep the breakpoint on the post-read
+\texttt{bltzc} for three successive pauses. The results are three, two and $-1$.
+Before processing the second slice, saved state is \texttt{77b79c2d} for
+\texttt{123}. At the failed third read it is \texttt{340ac5e3} for
+\texttt{12345}. That prefix state is real, but the failed read has not established
+a complete stream. The error path closes descriptor 19 and returns zero with
+read-error status two.
 
 \input{revision/figures/crc/file-error}
 
-At \texttt{file\_done}, expect checksum zero and status two, before the caller
-stores either word. The native operation receipt verifies the read sequence and
-closed descriptor; the register image shows only the return values. This is
-controlled virtual I/O, separate from the actual host-file runs above.
+\Needspace{12\baselineskip}
+The missing-file activity fails at open instead. No descriptor was acquired,
+so the reader must not issue a read or invent a handle to close. It restores
+its stack and returns zero with open-error status one. Compare the result pair,
+not just its checksum word:
 
-Run the public file cases with descriptor 19:
-\begin{verbatim}
-java -jar /path/to/cli.jar grade \
-  revision/labs/checks/crc32-files.kts \
-  revision/labs/files/crc32.asm
-\end{verbatim}
-They test missing files, EOF, short reads and injected failures while checking
-workspace and saved state. Correct buffering may request fewer than capacity
-bytes; it must use the actual returned descriptor and process only the actual
-positive return count. A short positive read is not EOF.
+\begin{center}
+\begin{tabular}{@{}lrl@{}}
+\toprule
+Outcome & Reported checksum & Status \\
+\midrule
+Successful empty file & Zero & Zero: success \\
+Missing input & Zero & One: open failure \\
+Failure after a useful prefix & Zero & Two: read failure \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-Draw a timeline for success and another for a later read failure. Mark the one
-initialization, each raw-state update, the close, and finalization where it is
-allowed. Explain how resetting state per read, processing scratch capacity after
-a short read, or reporting a prefix as success would change the result or hide
-a failure. These are separate faults even when they all produce an unexpected
-checksum on one convenient input.
+Draw a success timeline and an error timeline. Mark initialization, each raw
+update, descriptor ownership, close and the boundary that permits finalization.
+Resetting state per read, processing capacity rather than returned size, assuming
+descriptor three, and finalizing an incomplete prefix are separate mistakes.
+The retained file checks examine those distinctions and require each invocation
+to close its acquired descriptor before returning. The register image alone
+establishes only the returned pair; it does not prove cleanup.
 
-\section{Write the bounded chunk checker}
+\section{Write the checker after proving its readable slice}
 
-Complete \texttt{crc32\_check\_chunk} in a copy of
-\texttt{revision/labs/files/crc32-chunk.asm}. The main chapter defines the
-pointer/count/table interface and return statuses. Preserve its provided helpers
-and demonstration caller; use either update strategy. Its selected buffer is a
-single chunk, not a whole file, and its maximum selected count is 4096 bytes.
+Implement \texttt{crc32\_check\_chunk} in
+\texttt{independent/\allowbreak crc32-chunk.asm}. Its README states the complete
+interface and permissions. The selected buffer is one record, not a whole PNG.
+It holds a four-byte big-endian payload length, four type bytes, the payload,
+and a four-byte big-endian stored CRC. Its total selected count must be from
+12 through 4096 inclusive.
 
-First prove the selected count is from twelve through 4096 before pointer access.
-Then recover the unsigned big-endian length from four bytes and compare it with
-selected count minus twelve. Reject disagreement before reading other fields or
-the table. On a proved extent, checksum type plus payload, finalize once and
-compare with the stored big-endian value. Return the computed checksum with
-status zero for a match or one for a mismatch. Extent failure returns zero and
-status two. Keep all caller bytes and full saved state unchanged.
+Establish that count range before reading any input or table. For an allowed
+count, read and decode the unsigned four-byte length, then require it to equal
+count minus twelve. If it differs, only those length bytes were available to
+this validation phase: do not read type, payload, stored CRC or table while
+preparing to report the framing error. This order matters when a rejected call
+supplies unusable pointers.
 
-The default twelve-byte fixture is an empty \texttt{IEND} chunk. Its covered
-input is still four type bytes, and its correct checksum is \texttt{ae426082}.
-Changing the last stored byte should produce status one while retaining that
-computed value. Changing its encoded payload length to one without extending
-the selected buffer should instead produce zero/status two before CRC work.
-The original \texttt{break} stub intentionally fails these requirements.
+After proving the extent, the covered CRC slice starts four bytes after the
+record pointer and contains four type bytes plus exactly the payload. Exclude
+the encoded length and stored checksum. Finalize once and compare with the
+stored big-endian value. Return the computed checksum with status zero for a
+match or one for a mismatch. Invalid framing returns checksum zero and status
+two. Preserve caller bytes, full saved registers and the required stack state.
+A bit-based design may ignore the prepared table; an equivalent table-based
+design may use it within its proved span.
 
-\begin{verbatim}
-java -jar /path/to/cli.jar grade \
-  revision/labs/checks/crc32-chunk.kts \
-  /path/to/your/crc32-chunk.asm
-\end{verbatim}
-The checks accept equivalent implementations. They distinguish empty payloads,
-high bytes, offsets, mismatches, unsigned length errors and forbidden reads;
-they do not certify every possible chunk or a complete PNG. Finish with a short
-account of exactly which bytes your routine covers and where it first proves
-the address of the stored CRC. That proof will be useful when a decoder begins
-following a sequence of records rather than one supplied interval.
+The supplied empty \texttt{IEND} record still covers four type bytes. Its computed
+checksum is \texttt{ae426082}. Changing the last stored byte should produce
+status one while retaining that computed checksum. Changing the encoded payload
+length to one without extending the selected record should instead produce
+zero/status two before CRC work. The starter's \texttt{break} deliberately fails
+these requirements.
+
+Use the assessment groups to investigate short and larger records, malformed
+framing, caller preservation and repeated calls. A later malformed call must
+set its own zero result rather than retaining an earlier checksum. Keep the
+already complete file helpers working, then check ordinary caller exit. These
+checks accept equivalent implementations; a fixed source spelling or exact
+instruction count is not your target.
+
+\Needspace{5\baselineskip}
+Finish with an account of the bytes your routine covers and the first boundary
+that proves each subsequent read. Keep one mismatch or rejection that changed
+your reasoning. The finite corpus supports this argument without certifying
+every possible record or an entire PNG parser.
+
+\section{An additional experiment with a real file}
+
+The repository helper \texttt{tools/\allowbreak run\_revision\_crc.py} exercises
+ordinary host-file syscalls, separately from the guided virtual input. Use new
+output directories; it refuses an existing one. Its default nine-byte run
+requires checksum \texttt{cbf43926} with status zero. Options select an empty
+file, generated binary data, either method, a scratch capacity, or an existing
+input file. Each run retains the exact input, assembled source, dump and receipt.
+
+Try your Chapter 18 PPM output as the input. For the unchanged 23-byte
+red/green/blue/white fixture, the whole-file CRC is \texttt{e481fe30}. Its header
+bytes belong to this checksum too. A semantically identical image with another
+accepted header can have a different whole-file CRC because the byte sequence
+changed. Name the artifact you measured rather than comparing checksums of
+unspecified representations.
