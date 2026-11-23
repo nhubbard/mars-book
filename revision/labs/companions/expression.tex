@@ -7,18 +7,22 @@ asks you to implement a small language whose result depends on those rules, not
 merely to replace characters with arithmetic instructions. It revises original
 project \texttt{017-expression-evaluator}.
 
-Use \texttt{expression-evaluator.asm} in \texttt{revision/labs/files} as your
-working skeleton. Implement \texttt{eval\_expr}; the entry deliberately stops with
-\texttt{break} until replaced. Keep the supplied caller and data arenas. The
-separate complete \texttt{expression-arithmetic.asm} demonstrates checked
-operations without supplying the parser. Original grammar and feedback remain
-in \texttt{packages/017-expression-evaluator}.
+Download and import \texttt{017-expression-order}, version 0.1.0, through the
+MARS Lessons window. Start with \texttt{worked/arithmetic.asm}, a complete
+checked-arithmetic example. The second complete source,
+\texttt{worked/overflow.asm}, changes only its first two operands. Your own
+parser belongs in \texttt{independent/expression.asm}; replace its single
+\texttt{break} in \texttt{eval\_expr}, keeping the supplied caller and data arenas.
+The original project remains available in
+\texttt{packages/017-expression-evaluator}.
 
 The prerequisites are bounded byte access, signed-word representation, full-width
 function frames and the parent-state reasoning in the nested-data chapter.
 The new work connects grammar to control flow, retains pending operations across
-calls, and reports the first failed requirement precisely. These activities use
-ordinary Run and Debug; their native guided lesson remains unfinished.
+calls, and reports the first failed requirement precisely. The inline predictions
+ask you to explain that order before the guided Debug stops expose its machine
+state. You may also work freely in the independent source and return to the
+checks when you have a complete evaluator.
 
 \subsection*{Give the input a grammar before writing the loop}
 
@@ -114,7 +118,7 @@ After excluding zero division, a wide quotient also fits. The special quotient
 language range.
 
 \Needspace{17\baselineskip}
-Run the complete arithmetic example and break at \texttt{product\_ready}, then
+In the guided lesson, Debug \texttt{worked/arithmetic.asm} and stop at \texttt{product\_ready}, then
 \texttt{arithmetic\_ready}. Its first call computes \(3(-2)=-6\); the second
 computes \(18-(-6)=24\). Both return zero status. At
 \texttt{arithmetic\_stored}, the three native words hold product minus six,
@@ -144,7 +148,16 @@ no information needed for a signed-word value was lost. It is a test using a
 copy, not permission to replace the original candidate with a wrapped word.
 For 2147483648, the copy is minus 2147483648, so equality fails.
 
-Use \texttt{revision/labs/checks/expression-arithmetic.kts} to check the worked
+Next Debug \texttt{worked/overflow.asm}. Before \texttt{dmul} at
+\texttt{checked\_multiply}, both operands are 46341 and the operator offset is
+seven. At \texttt{checked\_range}, before \texttt{sll}, the full candidate in
+\texttt{t0} is 2147488281. At the next stop, before \texttt{beqc}, the copy in
+\texttt{t1} is minus 2147479015. Their inequality selects the failure path.
+Back at \texttt{product\_ready}, expect status minus two and offset seven.
+The returned offset identifies the failed operation; it is not the wrapped
+product. Stop this Debug session before running the ordinary arithmetic example.
+
+Use \texttt{worked/arithmetic.kts} to check the worked
 helper and caller. Its operands and operators are already supplied as numbers;
 it neither parses a token nor diagnoses malformed text. Your evaluator may
 reuse or adapt it, with an explicit private interface, or implement equivalent
@@ -214,8 +227,9 @@ those pieces under the public saved-state wrapper, then require complete input
 consumption. Intermediate helper tests support construction; they are not final
 acceptance of the language.
 
-After your evaluator is complete, break at \texttt{expression\_ready} for the
-worked input and expect \texttt{v0}=0, \texttt{v1}=24. At
+After your evaluator is complete, the guided Debug sequence first stops at
+\texttt{expression\_call}, before \texttt{balc}; verify that \texttt{a1}=17.
+Continue to \texttt{expression\_ready} for the worked input and expect \texttt{v0}=0, \texttt{v1}=24. At
 \texttt{expression\_stored}, inspect its stored words before exit overwrites the
 service selector. The native figures use those shared caller boundaries in a
 completed implementation; your private helpers need not match its layout.
@@ -223,17 +237,33 @@ Change only the selected input and length for each diagnostic case, using a
 fresh copy or resetting the machine between ordinary Debug runs.
 
 \Needspace{7\baselineskip}
-Run the original public kernel and caller checks against your working source:
+The Lessons window offers four separate checks against your independent source.
+The first checks 251 successful expressions; the second checks 289 diagnostic
+cases. Both vary input placement, arena contents and caller state. The recovery
+check has six sequences of three calls in the same machine, mixing successes
+and failures. It tests whether one invocation leaves a cursor, pending operation
+or error behind for the next. These examples supplement the original public
+kernel; they do not replace its individual cases.
+
+The final check runs twenty complete callers. It observes the initialized
+caller before the call, the returned registers before publication, and the
+stored words afterward. Before return, the status and result words must still
+hold their original sentinel values. Only the caller then publishes the result.
+These boundaries distinguish a correct function from a function that obtains
+the expected final memory by writing its caller's data early.
+
+For a command-line check from the imported package directory, use:
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  packages/017-expression-evaluator/checks/kernel.kts \
-  /path/to/your/expression-evaluator.asm
+  independent/kernel.kts independent/expression.asm
 \end{verbatim}
-Repeat with \texttt{program.kts}. The unfinished skeleton is expected to fail.
-The kernel accepts different parsing strategies; it does not prescribe helper
-names, frame sizes, traversal order or instruction counts. The caller checks
-add observation and stored-result behavior. Passing finite cases does not prove
-all 64-byte inputs.
+Repeat with \texttt{independent/caller.kts}. These scripts check 540 individual
+kernel cases and twenty complete callers. The six recovery sequences are
+available through the native lesson's third check. The unfinished skeleton is
+expected to fail. No check prescribes private helper names, frame sizes or an
+exact instruction count. The execution budget catches nontermination; it is
+not a required implementation length. Passing finite cases does not prove all
+64-byte inputs.
 
 Retain a prediction and explanation for \texttt{9-6/2-1}, consecutive unary
 signs, separated digit sequences, the two question-mark examples and the two

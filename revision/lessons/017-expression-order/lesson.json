@@ -1,0 +1,532 @@
+{
+  "formatVersion": 11,
+  "introduction": "Evaluation order belongs to the language. First inspect complete checked arithmetic, then implement grammar-driven evaluation with bounded bytes, suspended parent work and precise first diagnostics. Read the expression companion alongside these activities.",
+  "conclusion": "Explain when an operand becomes complete, how precedence and left association control arithmetic, and why a child error must survive its parents. Keep byte offsets, slice bounds and public saved state in the same account. Passing finite cases does not prove all sixty-four-byte inputs.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "completed-right-term",
+      "explanation": "In 18 - 3 * (2 + -4), the group produces minus two. The waiting product must complete before the outer subtraction can run. The complete arithmetic caller supplies those already-parsed operands.",
+      "question": "What are the product and final value?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Product minus six, then final value twenty-four.",
+          "feedback": "The subtraction is 18-(-6). The arithmetic helper receives numbers; your later parser must establish the same order from bytes."
+        },
+        {
+          "id": "b",
+          "text": "Product minus thirty, then final value minus thirty.",
+          "feedback": "That would subtract first and change the precedence structure. The right operand of subtraction is a complete term."
+        },
+        {
+          "id": "c",
+          "text": "Product six, then final value twelve.",
+          "feedback": "The unary minus belongs to four. The completed group is negative, so its product with three is negative too."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "product_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-arithmetic",
+      "source": "worked/arithmetic.asm",
+      "integerInputs": [],
+      "explanation": "Debug the complete arithmetic source. It computes the product and subtraction directly without parsing text. Inspect each returned value and the eventual publication.",
+      "stops": [
+        {
+          "id": "product",
+          "explanation": "Pause at product_ready before nop. checked_binary has completed 3 times minus two; the caller has not yet stored that product.",
+          "anchor": {
+            "label": "product_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0xfffffffffffffffa"
+          },
+          "success": "Status zero makes v1 a signed result. The next caller steps preserve that product and supply it to subtraction."
+        },
+        {
+          "id": "subtraction",
+          "explanation": "Pause at arithmetic_ready before nop. The second call has completed 18 minus the product.",
+          "anchor": {
+            "label": "arithmetic_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000018"
+          },
+          "success": "The arithmetic is correct, but this example has not recognized any grammar or text token."
+        },
+        {
+          "id": "publication",
+          "explanation": "Pause at arithmetic_stored before nop. Inspect product, status and result in Memory.",
+          "anchor": {
+            "label": "arithmetic_stored",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000018"
+          },
+          "success": "The three words contain minus six, zero and twenty-four. The later exit selector will replace v0, not those words."
+        }
+      ],
+      "success": "Explain why the right term had to finish first. Stop Debug before the overflow experiment."
+    },
+    {
+      "kind": "prediction",
+      "id": "candidate-before-narrowing",
+      "explanation": "The overflow experiment changes the first operands to 46341 and 46341. Their wide product is 2147488281, which exceeds the largest signed word.",
+      "question": "What should the checked helper return?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Success with the wrapped low word.",
+          "feedback": "Wrapping would hide a language overflow. Compute a wide candidate and prove that narrowing preserves it."
+        },
+        {
+          "id": "b",
+          "text": "Overflow status minus two and the operator offset seven.",
+          "feedback": "On failure v1 is a byte offset. It is no longer an arithmetic value."
+        },
+        {
+          "id": "c",
+          "text": "A hardware trap that is the required language diagnostic.",
+          "feedback": "The helper defines its own checked-word interface and returns a status/offset pair."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "checked_range",
+        "mnemonic": "sll",
+        "occurrence": 0
+      },
+      "source": "worked/overflow.asm"
+    },
+    {
+      "kind": "debug",
+      "id": "debug-overflow",
+      "source": "worked/overflow.asm",
+      "integerInputs": [],
+      "explanation": "Start a new Debug session for worked/overflow.asm. It changes the first multiply operands, retaining operator offset seven. Compare the full candidate with its sign-extended low word.",
+      "stops": [
+        {
+          "id": "operands",
+          "explanation": "Pause at checked_multiply before dmul. Both supplied operands fit signed words.",
+          "anchor": {
+            "label": "checked_multiply",
+            "mnemonic": "dmul",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x000000000000b505",
+            "$a1": "0x000000000000b505",
+            "$a3": "0x0000000000000007"
+          },
+          "success": "Fitting operands do not imply that their product fits the language range."
+        },
+        {
+          "id": "wide-candidate",
+          "explanation": "Pause at checked_range before sll. The multiplication has produced a full-width candidate.",
+          "anchor": {
+            "label": "checked_range",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000080001219"
+          },
+          "success": "The positive doubleword candidate is larger than the signed-word maximum."
+        },
+        {
+          "id": "narrowed-copy",
+          "explanation": "Pause before beqc in checked_range. sll by zero intentionally created a sign-extended low-word copy.",
+          "anchor": {
+            "label": "checked_range",
+            "mnemonic": "beqc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000080001219",
+            "$t1": "0xffffffff80001219"
+          },
+          "success": "The two values differ. The copy is a range test, not permission to replace the candidate with a wrapped result."
+        },
+        {
+          "id": "failure-return",
+          "explanation": "Pause at product_ready before nop. The helper reports its first arithmetic failure.",
+          "anchor": {
+            "label": "product_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0xfffffffffffffffe",
+            "$v1": "0x0000000000000007"
+          },
+          "success": "The caller skips the successful-product path. Status determines whether v1 is a value or an error offset."
+        }
+      ],
+      "success": "Explain the wide/narrow comparison and the meaning of v1 on failure. Stop Debug before the ordinary worked Run."
+    },
+    {
+      "kind": "run",
+      "id": "run-arithmetic",
+      "source": "worked/arithmetic.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/arithmetic.asm normally. It stores the worked product/status/result and exits silently. worked/arithmetic.kts checks 256 operand/operator combinations plus the complete caller; this is arithmetic evidence, not parser acceptance.",
+      "success": "The complete helper caller exited normally. Use the companion grammar to decide when those arithmetic calls may occur.",
+      "anchor": {
+        "label": "arithmetic_stored",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "literal-before-unary",
+      "explanation": "Decimal literals end at 2147483647. A leading minus is a unary operator whose operand must first be a valid literal or group.",
+      "question": "Why does -2147483648 overflow at its final digit?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The literal operand already exceeds its permitted positive range before negation can run.",
+          "feedback": "Its final digit is byte offset ten. (-2147483647-1) instead constructs the minimum through valid operands."
+        },
+        {
+          "id": "b",
+          "text": "The minus sign always overflows at offset zero.",
+          "feedback": "Unary minus works for ordinary values. It can also overflow when negating a completed minimum, but that is a different input."
+        },
+        {
+          "id": "c",
+          "text": "The input must be accepted because its eventual numerical value fits.",
+          "feedback": "This language specifies intermediate and literal bounds as well as the final range."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "expression_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/expression.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "group-before-division",
+      "explanation": "Compare 1/(2-2 with 1/(2-2). In both, subtraction can produce a provisional zero.",
+      "question": "Which diagnostics follow the grammar?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both report division by zero at the slash.",
+          "feedback": "Without the closing parenthesis, no complete grouped operand has returned to division."
+        },
+        {
+          "id": "b",
+          "text": "The first is missing syntax at offset six; the second is zero division at offset one.",
+          "feedback": "A group owns its closing byte. Only the completed group supplies the denominator."
+        },
+        {
+          "id": "c",
+          "text": "Both report success because subtraction produced zero.",
+          "feedback": "A provisional child value is not a completed outer expression, and division by zero is not a valid result."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "expression_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/expression.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "first-failed-requirement",
+      "explanation": "2147483647+1? has a complete right term before the trailing question mark. In 2147483647+1*?, that right term is still waiting for an operand.",
+      "question": "Why do the first diagnostics differ?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A whole-input syntax pass should reject both question marks before doing arithmetic.",
+          "feedback": "That would replace the specified earlier addition overflow in the first input."
+        },
+        {
+          "id": "b",
+          "text": "The outer addition should overflow immediately in both inputs.",
+          "feedback": "The second addition has not received a complete right term. Multiplication still needs its right operand."
+        },
+        {
+          "id": "c",
+          "text": "The first overflows at plus offset ten; the second fails syntax at question-mark offset thirteen.",
+          "feedback": "Evaluate according to the grammar, preserving a child failure while unwinding rather than replacing it with a parent error."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "expression_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/expression.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "byte-slice-not-string",
+      "explanation": "The supplied a0/a1 pair selects a byte slice. Whitespace may separate tokens, but not join digits into one literal.",
+      "question": "How should 12 34 and an embedded zero be treated?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both are invalid: the first has an extra literal, and zero is an invalid byte rather than a terminator.",
+          "feedback": "Only ASCII digits, the specified punctuation and space/tab/CR/LF are admitted. Length bounds every read."
+        },
+        {
+          "id": "b",
+          "text": "The space joins the digits, while zero ends a shorter valid expression.",
+          "feedback": "Neither transformation belongs to the grammar or the slice interface."
+        },
+        {
+          "id": "c",
+          "text": "Any byte classified as whitespace by the host language can be skipped.",
+          "feedback": "The exercise specifies four whitespace byte values. Vertical tab is not one of them."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "expression_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/expression.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "child-progress-and-public-frame",
+      "explanation": "A child parser advances a shared cursor while its parent retains a left value and pending operator. The public wrapper must also preserve its caller’s saved registers.",
+      "question": "Which state must survive the child return?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Restore the old cursor along with every private parse register.",
+          "feedback": "That would undo accepted child progress and can repeat the same token indefinitely."
+        },
+        {
+          "id": "b",
+          "text": "Keep the advanced cursor and first error while restoring the public caller’s saved state at the outer boundary.",
+          "feedback": "Private parser conventions may share state deliberately. The public eval_expr still restores s0-s7, fp, sp and its incoming return link."
+        },
+        {
+          "id": "c",
+          "text": "Discard the first child failure and diagnose the parent’s operator instead.",
+          "feedback": "A failed child prevents its parent from performing arithmetic or replacing that diagnostic."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "expression_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/expression.asm"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-values",
+      "source": "independent/expression.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/values-00.cases.json",
+        "independent/values-01.cases.json",
+        "independent/values-02.cases.json",
+        "independent/values-03.cases.json",
+        "independent/values-04.cases.json",
+        "independent/values-05.cases.json"
+      ],
+      "explanation": "Implement eval_expr in independent/expression.asm and first check the 251 successful original inputs. These include precedence, left association, unary chains, groups and literal/range boundaries. Choose recursive descent, precedence climbing or an equivalent design; private helper names and frame sizes are not prescribed.",
+      "success": "The selected domain passes. Retain a failing example and explain the first decision that your repair corrected.",
+      "hints": [
+        {
+          "id": "ownership",
+          "text": "At each precedence level, retain the left value and operator offset while a complete right operand is parsed. Keep the shared cursor moving forward."
+        },
+        {
+          "id": "range",
+          "text": "Check each literal digit and each completed arithmetic candidate in a wide representation before accepting its signed-word value."
+        },
+        {
+          "id": "diagnostic",
+          "text": "A missing child operand or closing parenthesis can occur before parent arithmetic. Preserve the first child status and offset while unwinding."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-diagnostics",
+      "source": "independent/expression.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/diagnostics-00.cases.json",
+        "independent/diagnostics-01.cases.json",
+        "independent/diagnostics-02.cases.json",
+        "independent/diagnostics-03.cases.json",
+        "independent/diagnostics-04.cases.json",
+        "independent/diagnostics-05.cases.json"
+      ],
+      "explanation": "Use the same source for the 289 original failing inputs. Check exact status and byte offset, including missing syntax, intermediate overflow and division by zero. The first error follows completed grammar requirements; do not prevalidate away an earlier arithmetic error.",
+      "success": "The selected domain passes. Retain a failing example and explain the first decision that your repair corrected.",
+      "hints": [
+        {
+          "id": "ownership",
+          "text": "At each precedence level, retain the left value and operator offset while a complete right operand is parsed. Keep the shared cursor moving forward."
+        },
+        {
+          "id": "range",
+          "text": "Check each literal digit and each completed arithmetic candidate in a wide representation before accepting its signed-word value."
+        },
+        {
+          "id": "diagnostic",
+          "text": "A missing child operand or closing parenthesis can occur before parent arithmetic. Preserve the first child status and offset while unwinding."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-recovery",
+      "source": "independent/expression.asm",
+      "checkKind": "function",
+      "caseProfile": "independent/repeated.cases.json",
+      "explanation": "Six public recovery cases each make three calls in one machine, alternating arenas and changing temporary registers. Errors, successes and new failures must remain independent. Reset private parse/error state for each public call while preserving caller data and the selected slice bounds.",
+      "success": "The recovery examples pass without starting a new machine between calls. Explain which state is per parse and which belongs to the caller.",
+      "hints": [
+        {
+          "id": "fresh-call",
+          "text": "Initialize the cursor and error state from the new arguments on every eval_expr entry. Restore the public frame on both success and failure paths."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-caller",
+      "source": "independent/expression.asm",
+      "caseProfile": "independent/caller.cases.json",
+      "explanation": "Check the retained main routine in twenty variants. Observations distinguish supplied length before expression_call, actual return/status with untouched output sentinels at expression_ready, stored results at expression_stored and normal exit. The caller executes continuously between those boundaries.",
+      "success": "All caller variants pass. Explain why a correct stored result cannot excuse an incorrect return value or a caller-data write inside eval_expr.",
+      "hints": [
+        {
+          "id": "publication",
+          "text": "eval_expr returns values in registers and leaves caller data read-only. The caller, after expression_ready, owns publication to status and result."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "debug-complete-expression",
+      "source": "independent/expression.asm",
+      "integerInputs": [],
+      "explanation": "Debug the completed independent source with its default seventeen-byte expression. Resume the same session through the public call, return and stored-result boundaries.",
+      "stops": [
+        {
+          "id": "call",
+          "explanation": "Pause on balc at expression_call. The caller supplies the full input pointer and authoritative byte length.",
+          "anchor": {
+            "label": "expression_call",
+            "mnemonic": "balc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x0000000000000011"
+          },
+          "success": "The evaluator has not run yet. status and result still hold their sentinels."
+        },
+        {
+          "id": "returned",
+          "explanation": "Pause at expression_ready before nop. The full expression has completed, but the caller has not stored the pair.",
+          "anchor": {
+            "label": "expression_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000018"
+          },
+          "success": "Status zero makes v1 the signed result twenty-four. The caller output words must still be ninety-nine."
+        },
+        {
+          "id": "stored",
+          "explanation": "Pause at expression_stored before nop. Inspect length, status and result in Memory.",
+          "anchor": {
+            "label": "expression_stored",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000018"
+          },
+          "success": "The words contain seventeen, zero and twenty-four. Those stored words remain after the exit selector replaces v0."
+        }
+      ],
+      "success": "Explain the complete expression’s evaluation order and the difference between return and publication. Stop Debug before the final ordinary Run."
+    },
+    {
+      "kind": "prediction",
+      "id": "next-call-is-independent",
+      "explanation": "An eval_expr call can return syntax, overflow or zero-division failure. The next call may select another arena and a valid expression.",
+      "question": "What should happen to the old cursor and error state?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The previous error should remain latched and reject later calls.",
+          "feedback": "This evaluator is a fresh parse per call. Unlike the streaming UTF-8 state interface, it does not retain a terminal stream object."
+        },
+        {
+          "id": "b",
+          "text": "Continue from the old cursor if the byte length matches.",
+          "feedback": "Length equality does not make two input slices the same parse. The new arguments are authoritative."
+        },
+        {
+          "id": "c",
+          "text": "Initialize a fresh parse from the new pointer and length, preserving only the caller’s promised state.",
+          "feedback": "The recovery checks exercise the same function repeatedly without resetting the machine."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "expression_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/expression.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-expression",
+      "source": "independent/expression.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the completed source normally. The supplied caller evaluates the worked expression, publishes status/result and exits silently. The assessments establish grammar, diagnostics and memory behavior; the empty transcript only establishes normal completion.",
+      "success": "Keep predictions for left association, unary signs, separated digits, both question-mark inputs and both denominator groups. Retain returned status/value-or-offset, read bounds and balanced caller state with the reports.",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    }
+  ]
+}

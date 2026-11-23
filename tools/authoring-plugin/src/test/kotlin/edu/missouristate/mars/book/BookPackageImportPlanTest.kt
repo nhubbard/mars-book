@@ -729,4 +729,21 @@ class BookPackageImportPlanTest {
             assertThrows<IllegalArgumentException> { bad.validate() }
         }
     }
+    @Test
+    fun `Expression native plans bind the retained caller fixture and reject mixed or incomplete routes`() {
+        val expression = plan.copy(archives = listOf(archive.copy(id = "017-expression-order", version = "0.1.0", entry = "worked/arithmetic.asm")),
+            nativePredictions = true, expressionUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/expression.asm", "/tmp/expression.asm", "c".repeat(64))))
+        expression.validate()
+        expression.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(expression.copy(nativePredictions = false), expression.copy(nativeExecution = true),
+            expression.copy(nativeDebug = true), expression.copy(resumeCompleted = true), expression.copy(h263StreamUnit = true),
+            expression.copy(expressionUnit = false), expression.copy(activityNavigation = true), expression.copy(prerequisiteControls = true),
+            expression.copy(assessmentFixtures = emptyList()), expression.copy(assessmentFixtures = expression.assessmentFixtures + expression.assessmentFixtures),
+            expression.copy(assessmentFixtures = listOf(expression.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            expression.copy(archives = listOf(expression.archives.single().copy(id = "017-other"))),
+            expression.copy(archives = listOf(expression.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
 }
