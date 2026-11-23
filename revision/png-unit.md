@@ -258,7 +258,9 @@ assistive-technology review remain pending.
 The IDE trial exposed an upstream Build-view threading race. MARS now sends
 build UI events on the event thread and allows these UI-only handoffs during
 modal interactions, preserving cancellation cleanup. The 62 focused tests
-cover both the original build cases and modal lesson Run paths. Broad regression
-results are retained separately in private native-png-ide-01; this note does not
-infer their outcome from the focused result. The broader curriculum goal remains
+cover both the original build cases and modal lesson Run paths. The final broad regression passes all 1,319 plugin tests and the required
+coverage/parser gates. Learning and build packages retain 100% line and branch
+coverage. The CLI task reuses its successful 287-test result; no new CLI
+execution is claimed. Exact XML and reports are retained in private
+native-png-ide-01. The broader curriculum goal remains
 active, with retained lossless-video and H.263 instructional delivery next.
