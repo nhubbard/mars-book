@@ -38,11 +38,13 @@ import kotlinx.coroutines.withContext
 import training.learn.lesson.LessonManager
 
 /** Separate publication automation: read the pinned lesson and operate real student controls. */
-internal suspend fun captureBookNativeBase64(
+internal suspend fun captureBookNativeCorpus(
     project: Project, plan: BookPackageImportPlan, output: Path,
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
+    val capturePrefix = if (plan.ppmUnit) "ppm" else "base64"
+    val firstAssessmentId = if (plan.ppmUnit) "negative-small-width" else "url-short"
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     val entry = directory.resolve(archive.entry)
@@ -95,19 +97,28 @@ internal suspend fun captureBookNativeBase64(
                 val wrong = if (firstPrediction) choices.first { it.get("text").asString != correct }.get("text").asString else null
                 if (wrong != null) click(wrong, true)
                 click(correct, true)
-                record(id, mapOf("actualInlineChoiceClicked" to correct, "wrongChoiceBase64st" to (wrong ?: "none")))
+                record(id, mapOf("actualInlineChoiceClicked" to correct, "wrongChoiceFirst" to (wrong ?: "none")))
                 firstPrediction = false
             }
             "debug" -> {
                 awaitText(visible(step)); selected(path)
                 val rawStops = step.getAsJsonArray("stops").map { it.asJsonObject }
                 val stops = rawStops.mapIndexed { stopIndex, stop ->
-                    Base64Pause(stop.getAsJsonObject("anchor").get("label").asString, stop.getAsJsonObject("anchor").get("mnemonic").asString, stop.getAsJsonObject("anchor").get("occurrence").asInt,
+                    CorpusPause(stop.getAsJsonObject("anchor").get("label").asString, stop.getAsJsonObject("anchor").get("mnemonic").asString, stop.getAsJsonObject("anchor").get("occurrence").asInt,
                         stop.getAsJsonObject("registers").entrySet().associate { (register, value) -> register to value.asString.removePrefix("0x").toULong(16).toLong() },
                         rawStops.getOrNull(stopIndex + 1)?.get("explanation")?.asString ?: nextText(index),
                         stop.getAsJsonObject("vectorRegisters")?.entrySet()?.associate { (name, value) -> name to value.asString } ?: emptyMap())
                 }
-                captureBase64Debug(project, path, ::record, awaitText, capture, id, stops)
+                val oldOutput = if (plan.ppmUnit && id == "trace-save-invalid") withContext(Dispatchers.IO) {
+                    Files.readAllBytes(directory.resolve("worked/output.ppm"))
+                } else null
+                captureCorpusDebug(project, path, ::record, awaitText, capture, id, stops)
+                if (oldOutput != null) {
+                    val after = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("worked/output.ppm")) }
+                    check(after.contentEquals(oldOutput)) { "Invalid source changed the existing host output" }
+                    record("invalid-save-host-file", mapOf("unchanged" to true, "bytes" to after.size,
+                        "sha256" to captureSha256(after)))
+                }
             }
             "run" -> {
                 awaitText(visible(step)); selected(path)
@@ -116,6 +127,13 @@ internal suspend fun captureBookNativeBase64(
                     run.started.await(); check(run.exit.await() == 0 && run.stdout.toString().isEmpty())
                     record(id, mapOf("source" to relative, "exitCode" to 0, "stdout" to ""))
                 } finally { run.close() }
+                if (plan.ppmUnit && id == "run-pipeline") {
+                    val input = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("worked/input.ppm")) }
+                    val result = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("worked/output.ppm")) }
+                    check(input.size == 23 && result.contentEquals(input)) { "Host PPM pipeline bytes differ" }
+                    record("pipeline-host-file", mapOf("bytes" to result.size, "inputSha256" to captureSha256(input),
+                        "outputSha256" to captureSha256(result), "exactCanonicalBytes" to true))
+                }
                 capture("after-$id", "")
             }
             "assessment" -> {
@@ -127,10 +145,10 @@ internal suspend fun captureBookNativeBase64(
                         JsonParser.parseString(Files.readString(directory.resolve(relativeProfile))).asJsonObject.getAsJsonArray("cases").size()
                     }
                 }
-                if (id == "url-short") {
+                if (id == firstAssessmentId) {
                     if (!plan.resume) {
                         click("Check this program", false)
-                        capture("base64-starter", "Public cases passed: 0 of $caseCount.")
+                        capture("$capturePrefix-starter", "Public cases passed: 0 of $caseCount.")
                         withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
                             val editor = checkNotNull(FileEditorManager.getInstance(project).selectedTextEditor)
                             check(FileDocumentManager.getInstance().getFile(editor.document)?.toNioPath() == path)
@@ -138,23 +156,23 @@ internal suspend fun captureBookNativeBase64(
                         }
                     } else check(withContext(Dispatchers.IO) { Files.readString(path) } == "# Recheck this edited independent source.\n" + bytes.toString(Charsets.UTF_8))
                     click("Check this program", false)
-                    capture("base64-passed", step.get("success").asString)
+                    capture("$capturePrefix-passed", step.get("success").asString)
                     record(id, mapOf("source" to relative, "solutionSha256" to fixture.sha256, "completedPublicCases" to caseCount,
                         "starterPassedPublicCases" to if (plan.resume) "not rerun" else "0 of $caseCount", "checkedUnsavedText" to !plan.resume))
                 } else {
                     click("Check this program", false)
-                    capture("base64-$id-passed", step.get("success").asString)
+                    capture("$capturePrefix-$id-passed", step.get("success").asString)
                     record(id, mapOf("source" to relative, "completedPublicCases" to caseCount))
                 }
             }
-            else -> error("Unexpected Base64 activity: $kind")
+            else -> error("Unexpected corpus activity: $kind")
         }
     }
     withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) { FileDocumentManager.getInstance().saveAllDocuments() }
     val conclusion = lesson.get("conclusion").asString
     awaitText(conclusion)
     while (bookModalUi { LessonManager.instance.lessonIsRunning() }) delay(100)
-    capture("base64-unit-complete", conclusion)
+    capture("$capturePrefix-unit-complete", conclusion)
     val sources = (listOf(archive.entry) + steps.filter { it.get("kind").asString in setOf("debug", "run") }
         .map { it.get("source")?.asString ?: archive.entry } + fixture.source).distinct()
     if (!plan.resume) {
@@ -169,7 +187,7 @@ internal suspend fun captureBookNativeBase64(
             }
         }
         continueLesson()
-        capture("base64-source-invalidated", steps.first { it.get("kind").asString == "debug" }.get("explanation").asString)
+        capture("$capturePrefix-source-invalidated", steps.first { it.get("kind").asString == "debug" }.get("explanation").asString)
     }
     val digests = withContext(Dispatchers.IO) { sources.associateWith { captureSha256(Files.readAllBytes(directory.resolve(it))) } }
     val running = bookModalUi { LessonManager.instance.lessonIsRunning() }
@@ -178,37 +196,37 @@ internal suspend fun captureBookNativeBase64(
             "resumed" to plan.resume, "entryDigests" to mapOf(archive.sha256 to digests.getValue(archive.entry)),
             "sourceDigests" to digests, "observations" to receipts, "lessonRunningAtCaptureEnd" to running,
             "marsPluginArchiveSha256" to captureSha256(Files.readAllBytes(Path.of(checkNotNull(System.getProperty("mars.book.mars.archive"))))),
-            "scope" to "Actual inline predictions, twenty-five Base64 Debug boundaries, three ordinary Runs, independent function/caller and exit checks. Human learner review remains separate.",
+            "scope" to "Actual inline predictions, ordered source-bound Debug observations, ordinary Runs and independent function/caller/exit checks. Human learner review remains separate.",
         )), CREATE_NEW)
     }
 }
 
-private data class Base64Pause(val label: String, val mnemonic: String, val occurrence: Int, val registers: Map<String, Long>, val nextText: String, val vectors: Map<String, String>)
+private data class CorpusPause(val label: String, val mnemonic: String, val occurrence: Int, val registers: Map<String, Long>, val nextText: String, val vectors: Map<String, String>)
 
-private suspend fun captureBase64Debug(
+private suspend fun captureCorpusDebug(
     project: Project, entry: Path, record: suspend (String, Map<String, Any>) -> Unit,
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
-    prefix: String, stops: List<Base64Pause>,
+    prefix: String, stops: List<CorpusPause>,
 ) {
-    var targetLine = base64BreakpointLine(project, entry, stops.first())
+    var targetLine = corpusBreakpointLine(project, entry, stops.first())
     val file = withContext(Dispatchers.IO) { checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(entry)) }
     val type = XBreakpointType.EXTENSION_POINT_NAME.extensionList.filterIsInstance<XLineBreakpointType<*>>().single { it.id == "MarsMipsLine" }
     val manager = XDebuggerManager.getInstance(project).breakpointManager
     val breakpoints = writeAction { mutableListOf(manager.addLineBreakpoint(type, file.url, targetLine, null)) }
-    val name = "Book Base64 $prefix Debug"
+    val name = "Book $prefix Debug"
     val launch = launchBookProgram(project, entry, debug = true, name = name)
     try {
         val handler = launch.started.await(); val session = checkNotNull(launch.session)
         for ((index, stop) in stops.withIndex()) {
             if (index > 0) {
-                targetLine = base64BreakpointLine(project, entry, stop)
+                targetLine = corpusBreakpointLine(project, entry, stop)
                 writeAction {
                     breakpoints.forEach(manager::removeBreakpoint); breakpoints.clear()
                     breakpoints += manager.addLineBreakpoint(type, file.url, targetLine, null)
                 }
                 bookModalUi { session.resume() }
             }
-            check(launch.pauses.receive() == targetLine) { "Wrong Base64 stop: ${stop.label}" }
+            check(launch.pauses.receive() == targetLine) { "Wrong lesson stop: ${stop.label}" }
             val registers = awaitBookDebugRegisters(project, handler, stop.registers, stop.vectors,
                 when { "\$w4" in stop.vectors -> "\$w4"; "\$w7" in stop.vectors -> "\$w7"; "\$w5" in stop.vectors -> "\$w5"; else -> "\$w1" }, 8)
             awaitText(stop.nextText)
@@ -230,7 +248,7 @@ private suspend fun captureBase64Debug(
 }
 
 /** Resolve trusted fixture breakpoints through the same public PSI shapes used by MARS. */
-private suspend fun base64BreakpointLine(project: Project, entry: Path, stop: Base64Pause): Int {
+private suspend fun corpusBreakpointLine(project: Project, entry: Path, stop: CorpusPause): Int {
     while (true) {
         val line = withContext(Dispatchers.EDT + ModalityState.nonModal().asContextElement()) {
             runReadActionBlocking {

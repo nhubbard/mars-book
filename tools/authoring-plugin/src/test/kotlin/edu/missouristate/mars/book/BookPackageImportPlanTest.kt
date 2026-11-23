@@ -367,11 +367,29 @@ class BookPackageImportPlanTest {
         base64.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
         for (bad in listOf(base64.copy(nativePredictions = false), base64.copy(nativeExecution = true),
             base64.copy(nativeDebug = true), base64.copy(memoryUnit = true), base64.copy(loopUnit = true),
-            base64.copy(functionUnit = true), base64.copy(spriteUnit = true), base64.copy(rasterUnit = true), base64.copy(lifeUnit = true), base64.copy(sortingUnit = true), base64.copy(fixedUnit = true), base64.copy(localityUnit = true), base64.copy(boundedUnit = true), base64.copy(measurementUnit = true), base64.copy(msaUnit = true), base64.copy(pcmUnit = true), base64.copy(firUnit = true), base64.copy(deltaUnit = true), base64.copy(assessmentFixtures = emptyList()),
+            base64.copy(functionUnit = true), base64.copy(spriteUnit = true), base64.copy(rasterUnit = true), base64.copy(lifeUnit = true), base64.copy(sortingUnit = true), base64.copy(fixedUnit = true), base64.copy(localityUnit = true), base64.copy(boundedUnit = true), base64.copy(measurementUnit = true), base64.copy(msaUnit = true), base64.copy(pcmUnit = true), base64.copy(firUnit = true), base64.copy(deltaUnit = true), base64.copy(ppmUnit = true), base64.copy(assessmentFixtures = emptyList()),
             base64.copy(archives = listOf(archive)), base64.copy(resumeCompleted = true), base64.copy(base64Unit = false),
             base64.copy(activityNavigation = true), base64.copy(prerequisiteControls = true),
             base64.copy(assessmentFixtures = base64.assessmentFixtures + base64.assessmentFixtures),
             base64.copy(assessmentFixtures = listOf(base64.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
+    fun `PPM walkthrough isolates its exact source and single private fixture`() {
+        val ppm = plan.copy(archives = listOf(archive.copy(id = "029-binary-ppm", entry = "ppm-codec.asm")),
+            nativePredictions = true, ppmUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/ppm-negative.asm", "/tmp/ppm.asm", "c".repeat(64))))
+        ppm.validate()
+        ppm.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(ppm.copy(nativePredictions = false), ppm.copy(nativeExecution = true),
+            ppm.copy(nativeDebug = true), ppm.copy(memoryUnit = true), ppm.copy(loopUnit = true),
+            ppm.copy(functionUnit = true), ppm.copy(spriteUnit = true), ppm.copy(rasterUnit = true), ppm.copy(lifeUnit = true), ppm.copy(sortingUnit = true), ppm.copy(fixedUnit = true), ppm.copy(localityUnit = true), ppm.copy(boundedUnit = true), ppm.copy(measurementUnit = true), ppm.copy(msaUnit = true), ppm.copy(pcmUnit = true), ppm.copy(firUnit = true), ppm.copy(deltaUnit = true), ppm.copy(base64Unit = true), ppm.copy(assessmentFixtures = emptyList()),
+            ppm.copy(archives = listOf(archive)), ppm.copy(resumeCompleted = true), ppm.copy(ppmUnit = false),
+            ppm.copy(activityNavigation = true), ppm.copy(prerequisiteControls = true),
+            ppm.copy(assessmentFixtures = ppm.assessmentFixtures + ppm.assessmentFixtures),
+            ppm.copy(assessmentFixtures = listOf(ppm.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
             assertThrows<IllegalArgumentException> { bad.validate() }
         }
     }

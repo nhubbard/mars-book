@@ -1,0 +1,1053 @@
+{
+  "formatVersion": 8,
+  "introduction": "Follow a P6 image from bounded header bytes to RGB words and back to a real file. Derive the selected extents and publication boundaries before interpreting a returned value. Then implement the complementary-color serializer independently.",
+  "conclusion": "Keep the canonical image artifact, one header/raster byte derivation and one failure-path explanation. State what was checked in registers, memory, actual files and the finite public corpus. The native Run check alone establishes normal silent exit; the written short-transfer figure has separate deterministic authoring evidence.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "extent-before-publication",
+      "explanation": "The default selected file contains eleven header bytes and twelve raster bytes. Width and height are both two. The parser verifies the entire selected extent before writing the descriptor.",
+      "question": "At parse_publish before sw, what should metadata contain?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Its original a5 bytes; the descriptor stores have not executed",
+          "feedback": "The dimensions, offset and pixel count are already derived in registers. Publication begins at the paused store."
+        },
+        {
+          "id": "b",
+          "text": "Width two, height two and offset eleven",
+          "feedback": "Those are the eventual fields, but this pause precedes the first descriptor store."
+        },
+        {
+          "id": "c",
+          "text": "The four framebuffer pixels",
+          "feedback": "The descriptor describes the raster. It is not the pixel array."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "parse_publish",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-default",
+      "source": "ppm-codec.asm",
+      "integerInputs": [],
+      "explanation": "Start with ppm-codec.asm in its default parse-only mode. Read the selected 23 source bytes and predict the descriptor before starting Debug. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at parse_publish before sw. t6=2 and t7=2 are width and height, t0=11 is the raster offset, and v1=4 is the pixel count. All sixteen metadata bytes are still a5. Explain why discovering fields is different from committing them.",
+          "anchor": {
+            "label": "parse_publish",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v1": "0x0000000000000004",
+            "$t0": "0x000000000000000b",
+            "$t6": "0x0000000000000002",
+            "$t7": "0x0000000000000002"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at parse_return. v0=0 and v1=4 are the returned status and pixel count. In metadata, read little-endian words 2 and 2 followed by doubleword 11. The caller status and count are still −1.",
+          "anchor": {
+            "label": "parse_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at function_return before syscall, after the caller stores. Memory now contains status zero and count four. v0=10 selects exit, while v1 still holds four. Locate the instruction that replaced the returned status.",
+          "anchor": {
+            "label": "function_return",
+            "mnemonic": "syscall",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000000000000a",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-parser",
+      "source": "ppm-codec.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the default parser normally. It reports through status/count and metadata, so an empty console is expected. Normal termination alone does not establish that those objects are correct.",
+      "success": "The program exited normally with no console output. Interpret its result using the preceding Debug observations."
+    },
+    {
+      "kind": "prediction",
+      "id": "selected-is-not-allocated",
+      "explanation": "The header describes four RGB pixels, requiring twelve raster bytes. A source allocation can be larger than the selected image interval; bytes outside that selection are not padding for this interface.",
+      "question": "What should happen when byte_count selects only 22 bytes?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Format error, zero count and unchanged metadata",
+          "feedback": "Only eleven raster bytes are selected. The exact-extent check must fail before the descriptor stores."
+        },
+        {
+          "id": "b",
+          "text": "Success because the allocation contains the final byte",
+          "feedback": "Mapped backing storage does not enlarge the caller-selected interval."
+        },
+        {
+          "id": "c",
+          "text": "Success with three pixels",
+          "feedback": "The header dimensions still require four pixels; silently changing the image is not permitted."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "parse_maxval",
+        "mnemonic": "bnec",
+        "occurrence": 2
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-truncated-raster",
+      "source": "worked/truncated-raster.asm",
+      "integerInputs": [],
+      "explanation": "The complete truncated-raster.asm changes only byte_count to 22. Keep its backing allocation intact. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at parse_return in truncated-raster.asm. v0=1 and v1=0 reject the missing sample. Metadata remains a5 throughout; caller status/count have not yet been stored.",
+          "anchor": {
+            "label": "parse_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at function_return before syscall. Caller memory now records status one and count zero. v0=10 is the exit selector. Explain which location retains the actual error.",
+          "anchor": {
+            "label": "function_return",
+            "mnemonic": "syscall",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x000000000000000a",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-extra-raster-byte",
+      "source": "worked/extra-raster-byte.asm",
+      "integerInputs": [],
+      "explanation": "Use extra-raster-byte.asm to test the opposite extent boundary. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at parse_return. v0=1 and v1=0 also reject a selected count of 24. The extra a5 byte lies in mapped storage, but it does not belong to the one image described by the header. Metadata remains unchanged.",
+          "anchor": {
+            "label": "parse_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "raster-starts-after-one-lf",
+      "explanation": "The one-pixel source has the header P6\\n1 1\\n255\\n followed by samples 10,35,0. The second consecutive LF is a red sample; the following # byte is a green sample.",
+      "question": "After the required LF following 255, which bytes may the parser skip?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "None: the next three bytes are the raster",
+          "feedback": "Header scanning has finished. Byte values that resemble punctuation are still samples in the binary raster."
+        },
+        {
+          "id": "b",
+          "text": "Both LF bytes and the # comment",
+          "feedback": "That would reinterpret pixel bytes as header syntax and lose the raster boundary."
+        },
+        {
+          "id": "c",
+          "text": "Only the first pixel byte if it is whitespace",
+          "feedback": "A sample does not become optional because its numeric value equals an ASCII whitespace code."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "parse_maxval",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-raster-punctuation",
+      "source": "worked/raster-punctuation.asm",
+      "integerInputs": [],
+      "explanation": "Use raster-punctuation.asm and distinguish the delimiter from the first red sample. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at parse_maxval. t3=255 is the parsed maximum value, t2=10 is the one required LF, and t0=10 is its index. The parser has not consumed the next LF sample.",
+          "anchor": {
+            "label": "parse_maxval",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000000000000a",
+            "$t2": "0x000000000000000a",
+            "$t3": "0x00000000000000ff"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at parse_return. v0=0 and v1=1 accept one pixel. Metadata is width one, height one and raster offset eleven. Read source offsets eleven through thirteen: 0a 23 00.",
+          "anchor": {
+            "label": "parse_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "word-versus-file-byte-order",
+      "explanation": "A P6 pixel consists of bytes R,G,B. The decoder builds the integer 0x00RRGGBB and stores it as a word in little-endian memory. Here R=10, G=35 and B=0.",
+      "question": "Which four framebuffer bytes represent that decoded pixel?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "00 23 0a 00",
+          "feedback": "The integer is 0x000a2300. Its least significant byte, blue, occupies the lowest address."
+        },
+        {
+          "id": "b",
+          "text": "0a 23 00 00",
+          "feedback": "That copies the file channel order into memory instead of storing the specified integer word."
+        },
+        {
+          "id": "c",
+          "text": "00 0a 23 00",
+          "feedback": "That reverses a different grouping; derive each shift and byte address separately."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_d_load",
+        "mnemonic": "sll",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-decode-punctuation",
+      "source": "worked/decode-punctuation.asm",
+      "integerInputs": [],
+      "explanation": "Use decode-punctuation.asm, which selects the decoder for the same one-pixel source. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at after_d_load before sll. t3=10, t4=35 and t5=0 are unsigned R,G,B samples. Each came from one lbu; no header character interpretation remains.",
+          "anchor": {
+            "label": "after_d_load",
+            "mnemonic": "sll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x000000000000000a",
+            "$t4": "0x0000000000000023",
+            "$t5": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at after_d_pack before sw. t3=0x000a2300 is the assembled word. The framebuffer still has its previous contents until this store executes. Predict the four stored bytes.",
+          "anchor": {
+            "label": "after_d_pack",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000000000a2300"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at decode_return. v0=0 and v1=0x0000000100000001 pack height one above width one. Inspect the framebuffer bytes 00 23 0a 00. This return uses packed dimensions, whereas parse returned a pixel count.",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000100000001"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "header-contributes-to-capacity",
+      "explanation": "A nine-by-ten image needs 270 raster bytes. Its canonical header P6\\n9 10\\n255\\n has twelve bytes: height needs two decimal digits.",
+      "question": "What is the minimum successful byte capacity?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "282 bytes",
+          "feedback": "The allocation must hold the twelve-byte header and the 270-byte raster, with no terminator."
+        },
+        {
+          "id": "b",
+          "text": "270 bytes",
+          "feedback": "That covers the samples but omits the serialized header."
+        },
+        {
+          "id": "c",
+          "text": "283 bytes",
+          "feedback": "This binary interface does not append a NUL terminator."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_e_length",
+        "mnemonic": "sltu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-encode-nine-by-ten",
+      "source": "worked/encode-nine-by-ten.asm",
+      "integerInputs": [],
+      "explanation": "Use encode-nine-by-ten.asm with exact capacity 282. Later framebuffer words are sentinel patterns; this fixture demonstrates header size, not a designed 90-pixel picture. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at after_e_length before sltu. t0=9 and t1=10 are unpacked dimensions, t2=90 is the pixel count, and t3=282 is the complete serialized extent. The destination still consists of a5 bytes.",
+          "anchor": {
+            "label": "after_e_length",
+            "mnemonic": "sltu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000009",
+            "$t1": "0x000000000000000a",
+            "$t2": "0x000000000000005a",
+            "$t3": "0x000000000000011a"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at encode_return. v0=0 and v1=282 report success. Read the twelve header bytes, then ff 00 00 for red. Destination offset 282 remains a5; no terminator was emitted.",
+          "anchor": {
+            "label": "encode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000011a"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-capacity-short",
+      "source": "worked/capacity-short.asm",
+      "integerInputs": [],
+      "explanation": "Use capacity-short.asm, whose capacity is one byte below the complete requirement. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at encode_return. v0=2 and v1=0 reject capacity 281. Inspect the complete destination: even its would-be header positions remain a5. Preflight precedes all output writes.",
+          "anchor": {
+            "label": "encode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "capacity-is-unsigned",
+      "explanation": "The public serializer interprets a3 as an unsigned byte capacity. Its complete output for 64 by 64 is thirteen header bytes plus 12,288 sample bytes. A high-bit-set capacity is a large positive unsigned value.",
+      "question": "What does capacity 0x8000000000000000 mean to this interface?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A large unsigned capacity, sufficient for 12,301 bytes",
+          "feedback": "sltu compares the declared unsigned quantities. The register bit pattern has no intrinsic signed interpretation."
+        },
+        {
+          "id": "b",
+          "text": "A negative capacity that must always fail",
+          "feedback": "That interprets the same bits using a signed contract the interface does not specify."
+        },
+        {
+          "id": "c",
+          "text": "Permission to write every mapped byte",
+          "feedback": "Capacity bounds the offered output, but only the exact successful result may be written."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_e_length",
+        "mnemonic": "sltu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-encode-maximum",
+      "source": "worked/encode-maximum.asm",
+      "integerInputs": [],
+      "explanation": "Use encode-maximum.asm to include two two-digit dimensions and the maximum documented image size. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at encode_return. v0=0 and v1=12301 accept exact capacity for 64 by 64. The header is P6\\n64 64\\n255\\n, thirteen bytes. The pixel words fit the supplied framebuffer arena.",
+          "anchor": {
+            "label": "encode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x000000000000300d"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-count-bound",
+      "source": "worked/count-bound.asm",
+      "integerInputs": [],
+      "explanation": "Use count-bound.asm to inspect the outer selected-byte bound before a header scan. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at parse_return. v0=2 and v1=0 reject selected count 12545 before source inspection or metadata publication. The selected-count ceiling and the header-format checks are different preconditions.",
+          "anchor": {
+            "label": "parse_return",
+            "mnemonic": "bc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-encoder",
+      "source": "worked/encode-nine-by-ten.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run encode-nine-by-ten.asm normally after its Debug investigation. The silent program serializes into memory; it does not open a file in this mode.",
+      "success": "The program exited normally with no console output. Interpret its result using the preceding Debug observations."
+    },
+    {
+      "kind": "prediction",
+      "id": "descriptor-is-owned-state",
+      "explanation": "The native pipeline opens worked/input.ppm through ordinary MARS file services. A descriptor identifies the open stream. The screenshot in the written lab uses an authoring fixture with descriptor 19; ordinary launches can obtain a different number.",
+      "question": "Which value should ppm_load pass to its read and close services?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The descriptor returned by its successful open",
+          "feedback": "The function saves that value in s3 and owns it until close, including failure paths."
+        },
+        {
+          "id": "b",
+          "text": "Always three",
+          "feedback": "Three is common in these ordinary launches, but it is not a portable substitute for the returned descriptor."
+        },
+        {
+          "id": "c",
+          "text": "The address of input_path",
+          "feedback": "That is a pointer used by open; it is not an open descriptor."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "load_read",
+        "mnemonic": "beqc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "short-read-is-not-eof",
+      "explanation": "A read requests at most the remaining capacity. A positive return tells how many bytes were accepted this time, not whether another read will find data.",
+      "question": "After a positive short read, what must a bounded loader do?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Advance by the accepted count and request the remaining capacity",
+          "feedback": "Only a later zero establishes EOF. A negative result reports I/O failure."
+        },
+        {
+          "id": "b",
+          "text": "Treat the short read as EOF",
+          "feedback": "The service is permitted to return fewer bytes before EOF."
+        },
+        {
+          "id": "c",
+          "text": "Repeat the same request at the original address",
+          "feedback": "That overwrites earlier accepted bytes and loses the accumulated extent."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "load_read",
+        "mnemonic": "beqc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "full-buffer-needs-a-probe",
+      "explanation": "A full offered buffer can contain a complete image or only a prefix of a longer file. The loader reads one further byte into private stack storage.",
+      "question": "Why must that probe avoid buffer+capacity?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "That address is outside the offered result interval",
+          "feedback": "Private stack storage lets the loader distinguish EOF from excess input without an out-of-bounds caller write."
+        },
+        {
+          "id": "b",
+          "text": "The extra byte would necessarily be zero",
+          "feedback": "The service returns a count; it makes no promise about an extra sample value."
+        },
+        {
+          "id": "c",
+          "text": "Mapped memory after the buffer always belongs to the loader",
+          "feedback": "Mapping establishes physical accessibility, not caller ownership."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "load_probe",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-pipeline",
+      "source": "worked/pipeline.asm",
+      "integerInputs": [],
+      "explanation": "Use pipeline.asm with its supplied worked/input.ppm. It performs load, decode, encode and save through real host files in the source directory. Ordinary read sizes depend on the file service; the forced seven-byte transfers in the written figure are a separate authoring observation. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at load_read before its first beqc. s1=12544 is the offered input capacity, s4=0 is the accepted count, and s3=3 is this launch's returned descriptor. Read and close must use the returned value; do not generalize three into a rule.",
+          "anchor": {
+            "label": "load_read",
+            "mnemonic": "beqc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s1": "0x0000000000003100",
+            "$s3": "0x0000000000000003",
+            "$s4": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at load_return. v0=0 and v1=23 report the accepted, validated file bytes. Inspect metadata 2,2,11. The loader has closed its descriptor before returning.",
+          "anchor": {
+            "label": "load_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000017"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at decode_return. v0=0 and v1=0x0000000200000002 describe the decoded two-by-two framebuffer. The four words are red, green, blue and white.",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000200000002"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-3",
+          "explanation": "Break at encode_return. v0=0 and v1=23 describe the canonical bytes in destination. This result is a byte count again. The caller will pass those bytes, not the framebuffer words, to the saver.",
+          "anchor": {
+            "label": "encode_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000017"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        },
+        {
+          "id": "boundary-4",
+          "explanation": "Break at results_ready, which shares the save_return address, before dla. v0=0 and v1=23 are the saver's returned status and length. worked/output.ppm should contain the same canonical 23 bytes as input.ppm; caller status/count have not yet been published.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000017"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-pipeline",
+      "source": "worked/pipeline.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run pipeline.asm normally. Open worked/output.ppm with an image viewer, compare its bytes with worked/input.ppm, and keep the two-by-two artifact. This Run checkpoint observes normal silent exit; file-byte equality is a separate observation you must make.",
+      "success": "The program exited normally with no console output. Interpret its result using the preceding Debug observations."
+    },
+    {
+      "kind": "prediction",
+      "id": "validate-before-truncation",
+      "explanation": "A write-mode open truncates an existing output file. The saver first parses the entire selected source interval, then opens only after validation succeeds. A zero return for a nonempty write is an I/O failure rather than progress.",
+      "question": "What may happen to an existing output when the selected source has a malformed extent?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Nothing: validation fails before open",
+          "feedback": "The saver returns format error and zero length without truncating or writing the existing file."
+        },
+        {
+          "id": "b",
+          "text": "It may be truncated before the error is reported",
+          "feedback": "That destroys a valid old artifact before establishing that a replacement is available."
+        },
+        {
+          "id": "c",
+          "text": "The saver must keep retrying zero-byte writes",
+          "feedback": "A nonempty zero-progress write cannot complete the file and must take a failure path."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "ppm_save",
+        "mnemonic": "beqzc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-missing-input",
+      "source": "worked/missing-input.asm",
+      "integerInputs": [],
+      "explanation": "Use missing-input.asm after checking that worked/absent-input.ppm does not exist. Distinguish a missing-file failure from a malformed PPM already read into memory. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at load_return. v0=3 and v1=0 report I/O failure for absent-input.ppm, which the package does not supply. Metadata remains a5. No successful open means no descriptor belongs to this call. If you deliberately create that file, explain and undo the environmental change before repeating.",
+          "anchor": {
+            "label": "load_return",
+            "mnemonic": "bnezc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-save-invalid",
+      "source": "worked/save-invalid.asm",
+      "integerInputs": [],
+      "explanation": "Use save-invalid.asm and the output created by the pipeline. The selected source is missing one sample. Keep the old output for the before/after comparison. Use one line breakpoint at a time, before the requested instruction, and resume to normal exit after the last observation.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at results_ready before dla. v0=1 and v1=0 reject the 22-byte selected source before a truncating open. Compare the existing worked/output.ppm from the preceding pipeline run: its 23 bytes should remain unchanged.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The requested register state matches. Inspect the named memory objects and explain which result has become valid."
+        }
+      ],
+      "success": "The requested observations match this source. Keep the register results and your memory explanation together.",
+      "hints": [
+        {
+          "id": "boundary",
+          "text": "The highlighted source instruction is the next request. The selected Debug frame shows the actual pause. A result held in registers can precede its publication in caller memory."
+        },
+        {
+          "id": "bytes",
+          "text": "Read byte view first. A framebuffer word 0x00RRGGBB occupies little-endian bytes BB GG RR 00; P6 instead stores consecutive R G B bytes."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "negative-small-width",
+      "source": "independent/ppm-negative.asm",
+      "explanation": "Write ppm_encode_negative independently in independent/ppm-negative.asm. Keep the supplied caller and helpers. Check the 80 one-digit-width dimension/capacity trials, including exact capacity, one byte short and unsigned high-bit capacities.",
+      "caseProfiles": [
+        "independent/ppm-negative-single-digit-width-00.cases.json",
+        "independent/ppm-negative-single-digit-width-01.cases.json",
+        "independent/ppm-negative-single-digit-width-02.cases.json",
+        "independent/ppm-negative-single-digit-width-03.cases.json",
+        "independent/ppm-negative-single-digit-width-04.cases.json",
+        "independent/ppm-negative-single-digit-width-05.cases.json",
+        "independent/ppm-negative-single-digit-width-06.cases.json",
+        "independent/ppm-negative-single-digit-width-07.cases.json",
+        "independent/ppm-negative-single-digit-width-08.cases.json",
+        "independent/ppm-negative-single-digit-width-09.cases.json",
+        "independent/ppm-negative-single-digit-width-10.cases.json",
+        "independent/ppm-negative-single-digit-width-11.cases.json",
+        "independent/ppm-negative-single-digit-width-12.cases.json",
+        "independent/ppm-negative-single-digit-width-13.cases.json",
+        "independent/ppm-negative-single-digit-width-14.cases.json",
+        "independent/ppm-negative-single-digit-width-15.cases.json",
+        "independent/ppm-negative-single-digit-width-16.cases.json",
+        "independent/ppm-negative-single-digit-width-17.cases.json",
+        "independent/ppm-negative-single-digit-width-18.cases.json",
+        "independent/ppm-negative-single-digit-width-19.cases.json",
+        "independent/ppm-negative-single-digit-width-20.cases.json",
+        "independent/ppm-negative-single-digit-width-21.cases.json",
+        "independent/ppm-negative-single-digit-width-22.cases.json",
+        "independent/ppm-negative-single-digit-width-23.cases.json",
+        "independent/ppm-negative-single-digit-width-24.cases.json",
+        "independent/ppm-negative-single-digit-width-25.cases.json",
+        "independent/ppm-negative-single-digit-width-26.cases.json"
+      ],
+      "checkKind": "function",
+      "success": "These 80 public cases passed. Explain a boundary observation and the exact permitted read/write intervals.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Unpack width and height as unsigned 32-bit fields, reject outside 1..64, then derive the complete canonical header plus 3*w*h bytes before accessing caller buffers."
+        },
+        {
+          "id": "channel",
+          "text": "Each input word is 0xAARRGGBB. Ignore AA and serialize 255-R, 255-G, 255-B. The header is ordinary ASCII and is never complemented."
+        },
+        {
+          "id": "alternative",
+          "text": "You may serialize directly or reuse ppm_encode and complement only the accepted raster after success. Neither approach may alter source words or write any rejected output."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "negative-wide-width",
+      "source": "independent/ppm-negative.asm",
+      "explanation": "Check the 80 two-digit-width trials in the same independent source. Account for the extra decimal header digit before permitting any framebuffer read or destination write.",
+      "caseProfiles": [
+        "independent/ppm-negative-two-digit-width-00.cases.json",
+        "independent/ppm-negative-two-digit-width-01.cases.json",
+        "independent/ppm-negative-two-digit-width-02.cases.json",
+        "independent/ppm-negative-two-digit-width-03.cases.json",
+        "independent/ppm-negative-two-digit-width-04.cases.json",
+        "independent/ppm-negative-two-digit-width-05.cases.json",
+        "independent/ppm-negative-two-digit-width-06.cases.json",
+        "independent/ppm-negative-two-digit-width-07.cases.json",
+        "independent/ppm-negative-two-digit-width-08.cases.json",
+        "independent/ppm-negative-two-digit-width-09.cases.json",
+        "independent/ppm-negative-two-digit-width-10.cases.json",
+        "independent/ppm-negative-two-digit-width-11.cases.json",
+        "independent/ppm-negative-two-digit-width-12.cases.json",
+        "independent/ppm-negative-two-digit-width-13.cases.json",
+        "independent/ppm-negative-two-digit-width-14.cases.json",
+        "independent/ppm-negative-two-digit-width-15.cases.json",
+        "independent/ppm-negative-two-digit-width-16.cases.json",
+        "independent/ppm-negative-two-digit-width-17.cases.json",
+        "independent/ppm-negative-two-digit-width-18.cases.json",
+        "independent/ppm-negative-two-digit-width-19.cases.json",
+        "independent/ppm-negative-two-digit-width-20.cases.json",
+        "independent/ppm-negative-two-digit-width-21.cases.json",
+        "independent/ppm-negative-two-digit-width-22.cases.json",
+        "independent/ppm-negative-two-digit-width-23.cases.json",
+        "independent/ppm-negative-two-digit-width-24.cases.json",
+        "independent/ppm-negative-two-digit-width-25.cases.json",
+        "independent/ppm-negative-two-digit-width-26.cases.json"
+      ],
+      "checkKind": "function",
+      "success": "These 80 public cases passed. Explain a boundary observation and the exact permitted read/write intervals.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Unpack width and height as unsigned 32-bit fields, reject outside 1..64, then derive the complete canonical header plus 3*w*h bytes before accessing caller buffers."
+        },
+        {
+          "id": "channel",
+          "text": "Each input word is 0xAARRGGBB. Ignore AA and serialize 255-R, 255-G, 255-B. The header is ordinary ASCII and is never complemented."
+        },
+        {
+          "id": "alternative",
+          "text": "You may serialize directly or reuse ppm_encode and complement only the accepted raster after success. Neither approach may alter source words or write any rejected output."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "negative-invalid",
+      "source": "independent/ppm-negative.asm",
+      "explanation": "Check all six invalid dimensions. Both pointers are deliberately invalid; reject dimensions before any caller-buffer access and return status one with count zero.",
+      "caseProfiles": [
+        "independent/ppm-negative-invalid-00.cases.json",
+        "independent/ppm-negative-invalid-01.cases.json"
+      ],
+      "checkKind": "function",
+      "success": "These 6 public cases passed. Explain a boundary observation and the exact permitted read/write intervals.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Unpack width and height as unsigned 32-bit fields, reject outside 1..64, then derive the complete canonical header plus 3*w*h bytes before accessing caller buffers."
+        },
+        {
+          "id": "channel",
+          "text": "Each input word is 0xAARRGGBB. Ignore AA and serialize 255-R, 255-G, 255-B. The header is ordinary ASCII and is never complemented."
+        },
+        {
+          "id": "alternative",
+          "text": "You may serialize directly or reuse ppm_encode and complement only the accepted raster after success. Neither approach may alter source words or write any rejected output."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "negative-caller",
+      "source": "independent/ppm-negative.asm",
+      "explanation": "Check the default caller at the routine return and after status/count publication. The raster must be cyan, magenta, yellow and black; source words, including alpha, remain unchanged.",
+      "caseProfiles": [
+        "independent/ppm-negative-caller-00.cases.json"
+      ],
+      "checkKind": "function",
+      "success": "These 1 public cases passed. Explain a boundary observation and the exact permitted read/write intervals.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Unpack width and height as unsigned 32-bit fields, reject outside 1..64, then derive the complete canonical header plus 3*w*h bytes before accessing caller buffers."
+        },
+        {
+          "id": "channel",
+          "text": "Each input word is 0xAARRGGBB. Ignore AA and serialize 255-R, 255-G, 255-B. The header is ordinary ASCII and is never complemented."
+        },
+        {
+          "id": "alternative",
+          "text": "You may serialize directly or reuse ppm_encode and complement only the accepted raster after success. Neither approach may alter source words or write any rejected output."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/ppm-negative.asm",
+      "explanation": "Run the complete independent caller under its original three-million-instruction allowance. It must terminate normally and silently after publishing its result.",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "success": "The complete caller exits normally and silently. Combine this with the function results, access checks and your image artifact."
+    }
+  ]
+}

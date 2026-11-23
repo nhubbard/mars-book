@@ -88,8 +88,8 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
             Files.writeString(output.resolve("$id-focus.json"), GsonBuilder().setPrettyPrinting().create().toJson(observation), CREATE_NEW)
         }
     }
-    if (plan.base64Unit) {
-        captureBookNativeBase64(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
+    if (plan.base64Unit || plan.ppmUnit) {
+        captureBookNativeCorpus(project, plan, output, ::awaitText, ::capture, ::click, ::focus)
         return
     }
     if (plan.deltaUnit) {

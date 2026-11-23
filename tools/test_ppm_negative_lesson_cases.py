@@ -90,3 +90,46 @@ class PpmNegativeLessonCasesTests(unittest.TestCase):
             files = ppm.build(tmp); self.assertEqual(57, len(files)); ppm.build(tmp, check=True)
             first = Path(tmp)/next(iter(files)); first.write_text('{}')
             with self.assertRaises(ValueError): ppm.build(tmp, check=True)
+
+
+class PpmNativePackageTests(unittest.TestCase):
+    def test_complete_worked_variants_keep_all_function_bodies_and_exact_public_starter(self):
+        root = Path(__file__).resolve().parents[1]; unit = root/'revision/lessons/029-binary-ppm'
+        base = (unit/'ppm-codec.asm').read_text()
+        self.assertEqual((root/'revision/labs/files/ppm-codec.asm').read_text(), base)
+        variants = list((unit/'worked').glob('*.asm')); self.assertEqual(11, len(variants))
+        for source in variants: self.assertEqual(base.split('ppm_parse:', 1)[1], source.read_text().split('ppm_parse:', 1)[1])
+        for suffix, directory in [('asm', 'files'), ('kts', 'checks')]:
+            self.assertEqual((root/f'revision/labs/{directory}/ppm-negative.{suffix}').read_bytes(), (unit/f'independent/ppm-negative.{suffix}').read_bytes())
+        self.assertEqual(b'P6\n2 2\n255\n'+bytes([255,0,0,0,255,0,0,0,255,255,255,255]), (unit/'worked/input.ppm').read_bytes())
+        self.assertIn('ppm_encode_negative:\n    break', (unit/'independent/ppm-negative.asm').read_text())
+        self.assertFalse((unit/'worked/output.ppm').exists())
+
+    def test_exact_archive_preserves_all_budgets_and_separates_real_file_runs_from_exit_evidence(self):
+        import zipfile
+        from native_lesson import bundle
+        root = Path(__file__).resolve().parents[1]; unit = root/'revision/lessons/029-binary-ppm'
+        manifest = json.loads((unit/'package.json').read_text()); lesson = json.loads((unit/'lesson.json').read_text())
+        self.assertEqual(8, lesson['formatVersion']); self.assertEqual(10, sum(s['kind']=='prediction' for s in lesson['steps']))
+        debug = [s for s in lesson['steps'] if s['kind']=='debug']; self.assertEqual(12, len(debug)); self.assertEqual(23, sum(len(s['stops']) for s in debug))
+        self.assertEqual(3, sum(s['kind']=='run' for s in lesson['steps']))
+        assessments = [s for s in lesson['steps'] if s['kind']=='assessment']; self.assertEqual(5, len(assessments))
+        self.assertEqual([27,27,2,1], [len(s['caseProfiles']) for s in assessments[:-1]])
+        self.assertEqual([80,80,6,1], [sum(len(json.loads((unit/path).read_text())['cases']) for path in s['caseProfiles']) for s in assessments[:-1]])
+        for name, profile in ppm.profiles().items():
+            self.assertEqual(profile, json.loads((unit/'independent'/f'ppm-negative-{name}.cases.json').read_text()))
+        exit_profile = json.loads((unit/'independent/caller-exit.cases.json').read_text())
+        self.assertEqual(4, exit_profile['formatVersion']); self.assertEqual(3000000, exit_profile['cases'][0]['instructionLimit'])
+        pipeline_run = next(s for s in lesson['steps'] if s['id']=='run-pipeline')
+        self.assertIn('file-byte equality is a separate observation', pipeline_run['explanation'])
+        self.assertTrue(all(stop['registers']['$v0']=='0x000000000000000a' for s in debug for stop in s['stops'] if stop['anchor']['mnemonic']=='syscall'))
+        with tempfile.TemporaryDirectory() as temporary:
+            archive = bundle(unit, Path(temporary)/'student.zip')
+            with zipfile.ZipFile(archive) as opened:
+                expected = {manifest['id']+'/'+name for name in ['package.json',manifest['entry'],manifest['assignment'],manifest['nativeLesson'],*manifest['supportingFiles']]}
+                self.assertEqual(expected, set(opened.namelist()))
+                for step in lesson['steps']:
+                    self.assertIn(manifest['id']+'/'+step.get('source',manifest['entry']), expected)
+                    if step['kind']=='assessment':
+                        for path in step.get('caseProfiles',[step.get('caseProfile')]): self.assertIn(manifest['id']+'/'+path,expected)
+                self.assertFalse(any('private' in n or 'solution' in n or 'reference' in n or 'output.ppm' in n for n in expected))
