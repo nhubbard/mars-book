@@ -9,6 +9,11 @@ Use an explicit entry when building a revised proof, for example
 current progress. `main.tex` and `includes/` preserve the initial draft described
 below.
 
+The [native H.263 stream draft](revision/lessons/035-h263-stream/assignment.md)
+now connects bounded syntax experiments, real generated-video output and one
+continuing bit-reader task. Its actual IDE walkthrough and printed integration
+remain next; the current published lab proof below is unchanged.
+
 The latest revised milestone completes the native H.263 numerical lab and its
 written integration, with verified first use, saved resume and an actual annotated
 light-theme debugger figure. The lab proof has 226 pages; its H.263 numerical lab

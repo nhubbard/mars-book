@@ -145,3 +145,46 @@ experiments, student archive, actual IDE first/resume delivery and written-lab
 integration remain next. No new whole-clip interoperability, inverse-accuracy,
 PDF/accessibility or learner-review result is claimed by this step. Existing
 stream and publication evidence above remains historical and separate.
+
+
+### Native stream student-unit draft, 23 November 2026
+
+`revision/lessons/035-h263-stream` now contains a complete native draft with
+28 activities: twelve inline predictions, eighteen Debug stops across six worked
+programs, one ordinary Run and nine staged/final reader assessments. Small actual
+writer, coefficient, macroblock and header experiments precede the complete clip
+caller. A bounded arithmetic experiment prepares the independent reader without
+publishing its implementation. The supplied helpers and coding tables are exact
+copies of the existing worked encoder; no codec instruction body changed.
+
+The actual clip caller runs eight generated QCIF pictures, then separately exposes
+truncated and trailing-byte requests. Return status/count pairs are `0/8`, `3/1`
+and `3/2`. The final pair distinguishes accepted count from whole-request success.
+Relative paths work from the assembly directory in ordinary MARS Run/Debug. The
+bundled Python-generated raw data has rate 5000/1001 fps and duration 1.6016 seconds.
+The public inspection tool verifies the actual full output and accepted prefixes
+using strict profile parsing and FFmpeg, refuses an existing report, and explicitly
+retains the failed status of the latter requests.
+
+Twelve core probes verify all eighteen boundaries in both byte orders, exact
+payloads and guards, forbidden buffer access on rejection, accepted reference
+pointers, closed descriptors and complete output bytes. An actual fresh CLI run
+uses real files and matches the virtual-file observations byte for byte. Independent
+decoding checks eleven pictures / 33 plane observations: maximum local/decoder
+difference two and minimum finite PSNR about 45.865 dB. This limited default-clip
+evidence does not renew the separate full inverse-accuracy gate.
+
+The exact exported reader starter passes all 592 cases with three private bodies,
+including relocated wide data/text; its unfinished form fails all 592. The public
+archive contains no completed reader. Six public artifact tests bring the full
+tooling suite to 628 passing tests. Two actual importer/native-PSI Jupiter tests
+preserve all activities and thirty source anchors. The explicit 31-file archive
+is approximately 78 KiB. Test-only MARS commit `7b28cb6d` adds its archive and tests;
+production simulator/plugin code and all 41 unrelated edits remain unchanged.
+
+This completes the student-unit draft and executable qualification. First/resume
+IDE walkthroughs, new native publication capture and direct written-lab integration
+remain next, followed by course-wide acceptance. No new graphical IDE launch,
+publication PDF, accessibility validation or human learner review is claimed by
+this draft. Exact sources, tools, process records and output reports are retained
+in private `native-h263-stream-unit-01`.

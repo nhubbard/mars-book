@@ -1,0 +1,968 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 27 and its written lab. Follow six complete experiments from field appends to real H.263 output. Keep status, bit counts, accepted pictures and file bytes distinct. Then complete one bounded reader through staged and final checks.",
+  "conclusion": "Explain the three real-file outcomes and inspect the complete encoded stream independently. Keep both final reader checks current for the same source revision. Header inspection and finite examples do not replace whole-stream decoding or the separate inverse-accuracy gate.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "append-cross-byte",
+      "source": "worked/append-fields.asm",
+      "anchor": {
+        "label": "lesson_append9",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The bytes are hexadecimal A5 A5, with only the first three bits committed. Append decimal 419 in nine bits.",
+      "question": "Which bytes and committed count follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "BA 35; twelve bits",
+          "feedback": "The prefix 101 and the nine new bits form twelve meaningful bits. The four trailing bits retain their old values."
+        },
+        {
+          "id": "b",
+          "text": "BA 30; sixteen bits",
+          "feedback": "The four trailing bits were not requested. They remain storage outside the committed syntax."
+        },
+        {
+          "id": "c",
+          "text": "A5 A5; three bits",
+          "feedback": "The nine-bit field fits the two-byte capacity and must replace its selected old bits."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "whole-field-admission",
+      "source": "worked/append-fields.asm",
+      "anchor": {
+        "label": "lesson_append_rejected",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "After adding four explicit zeros, the two-byte capacity is full. A request for one more bit follows.",
+      "question": "What may the rejected append change?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The first bit, then status two",
+          "feedback": "A later space failure must not expose an earlier partial write."
+        },
+        {
+          "id": "b",
+          "text": "Neither bytes nor committed count",
+          "feedback": "Admission checks the complete request before output access; status two and appended count zero retain the earlier field."
+        },
+        {
+          "id": "c",
+          "text": "Only the count",
+          "feedback": "Advancing the count would claim a bit that was not accepted."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-append",
+      "source": "worked/append-fields.asm",
+      "explanation": "Inspect the actual writer across a byte boundary, explicit padding and rejected growth.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "field",
+          "anchor": {
+            "label": "lesson_append9",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000009",
+            "$s0": "0x00000000000000ba",
+            "$s1": "0x0000000000000035",
+            "$s2": "0x000000000000000c"
+          },
+          "explanation": "The writer appended nine bits: bytes BA 35 and used count twelve.",
+          "success": "The writer appended nine bits: bytes BA 35 and used count twelve."
+        },
+        {
+          "id": "padding",
+          "anchor": {
+            "label": "lesson_pad4",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004",
+            "$s0": "0x00000000000000ba",
+            "$s1": "0x0000000000000030",
+            "$s2": "0x0000000000000010"
+          },
+          "explanation": "Four explicit zeros change the second byte to 30 and commit sixteen bits.",
+          "success": "Four explicit zeros change the second byte to 30 and commit sixteen bits."
+        },
+        {
+          "id": "space",
+          "anchor": {
+            "label": "lesson_append_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x00000000000000ba",
+            "$s1": "0x0000000000000030",
+            "$s2": "0x0000000000000010"
+          },
+          "explanation": "The extra bit is rejected; bytes BA 30 and used count sixteen remain.",
+          "success": "The extra bit is rejected; bytes BA 30 and used count sixteen remain."
+        }
+      ],
+      "success": "Explain the admitted input, returned values and publication boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "last-follows-event",
+      "source": "worked/coefficient-events.asm",
+      "anchor": {
+        "label": "lesson_coeff_compact",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The INTRA block has DC code 255, level one at natural index one and minus one at index eight. They are consecutive nonzeros in the ordinary scan.",
+      "question": "Which RUN/LAST pairs describe the AC events?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "(1,0), then (8,1)",
+          "feedback": "Natural indices are storage positions, not zero-run lengths."
+        },
+        {
+          "id": "b",
+          "text": "(0,1), then (0,1)",
+          "feedback": "The first event cannot claim to finish a block that still has a second event."
+        },
+        {
+          "id": "c",
+          "text": "(0,0), then (0,1)",
+          "feedback": "RUN counts preceding ordinary zeros; LAST marks the final emitted nonzero event, wherever it lies in the array."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "equivalent-payloads",
+      "source": "worked/coefficient-events.asm",
+      "anchor": {
+        "label": "lesson_coeff_escape",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The supplied emitter chooses a sixteen-bit compact payload. A second caller writes the same DC and two known events using fifty-two bits of legal baseline syntax.",
+      "question": "What should establish their equivalence?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Recover the same levels and consume each declared payload",
+          "feedback": "Different code choices may describe the same block. Decode fields and check exact valid lengths."
+        },
+        {
+          "id": "b",
+          "text": "Require identical bytes",
+          "feedback": "The widths already differ; byte identity would reject a permitted coding choice."
+        },
+        {
+          "id": "c",
+          "text": "Compare only the final byte",
+          "feedback": "A shared suffix does not establish RUN, LAST, sign or DC meaning."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-coefficients",
+      "source": "worked/coefficient-events.asm",
+      "explanation": "Compare actual compact emission with a fixed escape spelling of the same known events, then reject an invalid level.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "compact",
+          "anchor": {
+            "label": "lesson_coeff_compact",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000010",
+            "$s0": "0x0000000000000010",
+            "$s1": "0x0000000000000013"
+          },
+          "explanation": "Compact DC/AC output appends sixteen bits after the three-bit prefix; used count is nineteen.",
+          "success": "Compact DC/AC output appends sixteen bits after the three-bit prefix; used count is nineteen."
+        },
+        {
+          "id": "escape",
+          "anchor": {
+            "label": "lesson_coeff_escape",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000016",
+            "$s0": "0x0000000000000034",
+            "$s1": "0x0000000000000037"
+          },
+          "explanation": "The explicit escape caller appends fifty-two bits in total. v1 is twenty-two for its last writer call; s0 is the complete payload length.",
+          "success": "The explicit escape caller appends fifty-two bits in total. v1 is twenty-two for its last writer call; s0 is the complete payload length."
+        },
+        {
+          "id": "level",
+          "anchor": {
+            "label": "lesson_coeff_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$s1": "0x0000000000000013"
+          },
+          "explanation": "Ordinary level 128 is invalid. The earlier compact output and its used count nineteen are retained.",
+          "success": "Ordinary level 128 is invalid. The earlier compact output and its used count nineteen are retained."
+        }
+      ],
+      "success": "Explain the admitted input, returned values and publication boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "intra-dc-presence",
+      "source": "worked/macroblock-syntax.asm",
+      "anchor": {
+        "label": "lesson_intra_presence",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Each of six INTRA blocks has DC code 255 and no AC nonzeros.",
+      "question": "What does ordinary presence zero mean here?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The entire macroblock has no coefficient output",
+          "feedback": "DC has a separate syntax position and is still emitted."
+        },
+        {
+          "id": "b",
+          "text": "AC is absent; six DC bytes are still required",
+          "feedback": "INTRA presence describes AC. It does not remove each mandatory DC byte."
+        },
+        {
+          "id": "c",
+          "text": "The macroblock is skipped",
+          "feedback": "An I-picture INTRA macroblock cannot use P-picture skip semantics."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "motion-difference-wrap",
+      "source": "worked/macroblock-syntax.asm",
+      "anchor": {
+        "label": "lesson_motion_wrap",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The chosen horizontal half-sample component is minus 32 and its predictor is 31. Components wrap into minus 32 through 31.",
+      "question": "Which coded difference recovers the chosen component?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Minus 63",
+          "feedback": "The unnormalized difference is outside the admitted coded component interval."
+        },
+        {
+          "id": "b",
+          "text": "Zero",
+          "feedback": "Zero difference would retain predictor 31, which is a different actual motion."
+        },
+        {
+          "id": "c",
+          "text": "One",
+          "feedback": "The subtraction is minus 63; wrapping it by 64 gives one. Predictor 31 plus one wraps back to minus 32."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-syntax",
+      "source": "worked/macroblock-syntax.asm",
+      "explanation": "Observe DC-only INTRA syntax, wrapped INTER motion and an actual-zero skip under a nonzero predictor.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "presence",
+          "anchor": {
+            "label": "lesson_intra_presence",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000035",
+            "$s0": "0x0000000000000035"
+          },
+          "explanation": "The I-picture macroblock uses five header bits and six DC bytes: fifty-three bits.",
+          "success": "The I-picture macroblock uses five header bits and six DC bytes: fifty-three bits."
+        },
+        {
+          "id": "motion",
+          "anchor": {
+            "label": "lesson_motion_wrap",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008",
+            "$s0": "0x0000000000000008",
+            "$s1": "0xffffffffffffffe0",
+            "$s2": "0x000000000000001f",
+            "$s3": "0x0000000000000001"
+          },
+          "explanation": "The INTER header occupies eight bits here; normalized horizontal difference is one.",
+          "success": "The INTER header occupies eight bits here; normalized horizontal difference is one."
+        },
+        {
+          "id": "skip",
+          "anchor": {
+            "label": "lesson_actual_zero_skip",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000001",
+            "$s0": "0x0000000000000001"
+          },
+          "explanation": "The third call chooses actual zero motion and no residual. Its one-bit skip is permitted even though the predictor remains 31.",
+          "success": "The third call chooses actual zero motion and no residual. Its one-bit skip is permitted even though the predictor remains 31."
+        }
+      ],
+      "success": "Explain the admitted input, returned values and publication boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "header-length",
+      "source": "worked/picture-header.asm",
+      "anchor": {
+        "label": "lesson_header_fields",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The restricted header fields have widths 22, 8, 13, 5, 1 and 1. Seven bytes contain the result.",
+      "question": "How many bits are header syntax, and how many trailing storage bits remain?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Fifty syntax bits and six trailing bits",
+          "feedback": "Seven bytes hold fifty-six bits, while the declared fields consume fifty."
+        },
+        {
+          "id": "b",
+          "text": "Fifty-six syntax bits and none",
+          "feedback": "Byte capacity does not make trailing storage part of a field."
+        },
+        {
+          "id": "c",
+          "text": "Forty-eight syntax bits and eight trailing bits",
+          "feedback": "The six field widths sum to fifty, crossing the sixth byte."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "header-inspector-scope",
+      "source": "worked/picture-header.asm",
+      "anchor": {
+        "label": "lesson_valid_bits",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Direct masks recover start code 32, temporal reference zero, type field 4160 and quantizer eight from the writer output.",
+      "question": "What does this observation establish?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A complete decoder is correct",
+          "feedback": "No block payload or reconstruction has been decoded by these direct masks."
+        },
+        {
+          "id": "b",
+          "text": "These header fields, but not the remaining variable-length stream",
+          "feedback": "Block syntax, complete consumption and decoded pictures require their separate checks."
+        },
+        {
+          "id": "c",
+          "text": "The inverse transform meets its full accuracy requirement",
+          "feedback": "Header bits provide no transform error measurements."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-header",
+      "source": "worked/picture-header.asm",
+      "explanation": "Build an actual fifty-bit restricted header with the bit writer, then inspect known fields and the valid-bit boundary.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "prefix",
+          "anchor": {
+            "label": "lesson_header_prefix",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000016",
+            "$s0": "0x0000000000000016"
+          },
+          "explanation": "The numerical picture start code occupies twenty-two bits.",
+          "success": "The numerical picture start code occupies twenty-two bits."
+        },
+        {
+          "id": "fields",
+          "anchor": {
+            "label": "lesson_header_fields",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000020",
+            "$s1": "0x0000000000000000",
+            "$s2": "0x0000000000001040",
+            "$s3": "0x0000000000000008"
+          },
+          "explanation": "Direct masks recover start code 32, reference zero, I-picture type field 4160 and quantizer eight.",
+          "success": "Direct masks recover start code 32, reference zero, I-picture type field 4160 and quantizer eight."
+        },
+        {
+          "id": "valid",
+          "anchor": {
+            "label": "lesson_valid_bits",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000038",
+            "$s1": "0x0000000000000032",
+            "$s2": "0x0000000000000032",
+            "$s3": "0x0000000000000000",
+            "$s4": "0x0000000000000025"
+          },
+          "explanation": "Storage has fifty-six bits, but cursor fifty has zero remaining valid bits. The retained six-bit suffix is decimal 37, not additional syntax.",
+          "success": "Storage has fifty-six bits, but cursor fifty has zero remaining valid bits. The retained six-bit suffix is decimal 37, not additional syntax."
+        }
+      ],
+      "success": "Explain the admitted input, returned values and publication boundary."
+    },
+    {
+      "kind": "prediction",
+      "id": "accepted-prefix",
+      "source": "worked/clip-progress.asm",
+      "anchor": {
+        "label": "lesson_clip_truncated",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The second request asks for two pictures, but its raw file has one complete picture and sixteen bytes of the next.",
+      "question": "Which result can describe this incomplete input?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Success with two accepted pictures",
+          "feedback": "Sixteen bytes cannot fill a QCIF picture of 38016 bytes."
+        },
+        {
+          "id": "b",
+          "text": "No accepted picture under every failure",
+          "feedback": "The clip contract retains its accepted prefix rather than rolling back earlier accepted files."
+        },
+        {
+          "id": "c",
+          "text": "A nonzero status with one accepted picture",
+          "feedback": "The first picture can be committed before the next read discovers truncation."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "count-is-not-status",
+      "source": "worked/clip-progress.asm",
+      "anchor": {
+        "label": "lesson_clip_trailing",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The third request accepts its two pictures, then finds one extra input byte during the exact-EOF check.",
+      "question": "Does an accepted count of two make this request successful?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "No; inspect the returned status as well",
+          "feedback": "Acceptance of the requested pictures does not satisfy the separate exact-EOF requirement."
+        },
+        {
+          "id": "b",
+          "text": "Yes; the count always overrides status",
+          "feedback": "The nonzero status still reports a failed complete request."
+        },
+        {
+          "id": "c",
+          "text": "Only if the output is short",
+          "feedback": "A trailing input byte is rejected independently of the chosen legal output length."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-clip",
+      "source": "worked/clip-progress.asm",
+      "explanation": "Run the complete encoder on real bundled raw files: eight valid pictures, truncated second input, then a trailing-byte failure.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "complete",
+          "anchor": {
+            "label": "lesson_clip_complete",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008",
+            "$s0": "0x0000000000000008",
+            "$s1": "0x00000000000008a4",
+            "$s3": "0x0000000000000000",
+            "$s4": "0x0000000000000008",
+            "$s5": "0x0000000000000001"
+          },
+          "explanation": "The supplied encoder accepts eight pictures and 2212 stream bytes; the accepted reference is its B buffer.",
+          "success": "The supplied encoder accepts eight pictures and 2212 stream bytes; the accepted reference is its B buffer."
+        },
+        {
+          "id": "truncated",
+          "anchor": {
+            "label": "lesson_clip_truncated",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$v1": "0x0000000000000001",
+            "$s0": "0x0000000000000001",
+            "$s1": "0x00000000000002b8",
+            "$s3": "0x0000000000000003",
+            "$s4": "0x0000000000000001",
+            "$s5": "0x0000000000000001"
+          },
+          "explanation": "Input status three follows one accepted picture and 696 encoded bytes; the accepted reference is A.",
+          "success": "Input status three follows one accepted picture and 696 encoded bytes; the accepted reference is A."
+        },
+        {
+          "id": "trailing",
+          "anchor": {
+            "label": "lesson_clip_trailing",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000003",
+            "$v1": "0x0000000000000002",
+            "$s0": "0x0000000000000002",
+            "$s1": "0x000000000000038c",
+            "$s3": "0x0000000000000003",
+            "$s4": "0x0000000000000002",
+            "$s5": "0x0000000000000001"
+          },
+          "explanation": "Input status three follows two accepted pictures and 908 bytes. Exact EOF failed after acceptance; the accepted reference is B.",
+          "success": "Input status three follows two accepted pictures and 908 bytes. Exact EOF failed after acceptance; the accepted reference is B."
+        }
+      ],
+      "success": "Explain the admitted input, returned values and publication boundary."
+    },
+    {
+      "kind": "run",
+      "id": "run-clip",
+      "source": "worked/clip-progress.asm",
+      "explanation": "Use ordinary Run on the same three real-file requests and read each returned status/accepted-count pair.",
+      "integerInputs": [],
+      "stdout": "0/8\n3/1\n3/2\n",
+      "success": "The supplied caller reported all three pairs. Independently inspect its actual output files before treating the complete stream as verified."
+    },
+    {
+      "kind": "prediction",
+      "id": "unsigned-reader-value",
+      "source": "worked/reader-boundaries.asm",
+      "anchor": {
+        "label": "lesson_unsigned_field",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The stored word is hexadecimal 80000001. A successful thirty-two-bit field must be unsigned in a sixty-four-bit result.",
+      "question": "Which complete result is required?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "ffffffff80000001",
+          "feedback": "A signed word load sign-extends bit 31; that is a different result contract."
+        },
+        {
+          "id": "b",
+          "text": "0000000080000001",
+          "feedback": "The field is right-aligned and zero-extended, regardless of its high bit."
+        },
+        {
+          "id": "c",
+          "text": "0000000000000001",
+          "feedback": "Masking away bit 31 loses part of the field."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "full-width-request",
+      "source": "worked/reader-boundaries.asm",
+      "anchor": {
+        "label": "lesson_full_width",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "A requested width is hexadecimal 0000000100000009. Its low word is nine.",
+      "question": "May the reader accept it as a nine-bit request?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes; the low word is in range",
+          "feedback": "Discarding upper bits changes the request before validation."
+        },
+        {
+          "id": "b",
+          "text": "Only in little-endian mode",
+          "feedback": "Native byte order changes stored field representation, not the admitted numeric range."
+        },
+        {
+          "id": "c",
+          "text": "No; validate the complete width before narrowing",
+          "feedback": "The full value exceeds the admitted maximum of thirty-two."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-reader-boundaries",
+      "source": "worked/reader-boundaries.asm",
+      "explanation": "Inspect arithmetic boundaries without providing an implementation of the independent reader.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "unsigned",
+          "anchor": {
+            "label": "lesson_unsigned_field",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0xffffffff80000001",
+            "$s1": "0x0000000080000001"
+          },
+          "explanation": "The signed load yields ffffffff80000001; the unsigned load yields the required 0000000080000001.",
+          "success": "The signed load yields ffffffff80000001; the unsigned load yields the required 0000000080000001."
+        },
+        {
+          "id": "remaining",
+          "anchor": {
+            "label": "lesson_remaining_bits",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000010",
+            "$s1": "0x000000000000000c",
+            "$s2": "0x000000000000000c",
+            "$s3": "0x0000000000000000"
+          },
+          "explanation": "Sixteen capacity bits do not admit another field when the valid count and cursor are both twelve.",
+          "success": "Sixteen capacity bits do not admit another field when the valid count and cursor are both twelve."
+        },
+        {
+          "id": "width",
+          "anchor": {
+            "label": "lesson_full_width",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000100000009",
+            "$s1": "0x0000000000000009",
+            "$s2": "0x0000000000000000"
+          },
+          "explanation": "The complete request is out of range even though its low bits spell nine.",
+          "success": "The complete request is out of range even though its low bits spell nine."
+        }
+      ],
+      "success": "Explain the admitted input, returned values and publication boundary."
+    },
+    {
+      "kind": "assessment",
+      "id": "check-short-fields",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Implement selected MSB-first fields up to fifteen bits.",
+      "caseProfiles": [
+        "independent/fields-big-short.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-wide-fields",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Retain field bits through width thirty-two and every byte phase.",
+      "caseProfiles": [
+        "independent/fields-big-wide.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-little-endian",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Read native metadata in little-endian mode without changing the MSB-first bit order inside each byte.",
+      "caseProfiles": [
+        "independent/fields-little-short.json",
+        "independent/fields-little-wide.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-boundaries",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Validate empty reads, valid-bit ends and full unsigned results.",
+      "caseProfiles": [
+        "independent/boundaries.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-metadata",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Reject malformed full-width metadata before input access.",
+      "caseProfiles": [
+        "independent/metadata.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-capacity",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Keep maximum-capacity offsets and last-bit boundaries exact.",
+      "caseProfiles": [
+        "independent/capacity.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-reuse",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Share one cursor across success, rejection and an empty read; reset each result accumulator.",
+      "caseProfiles": [
+        "independent/reuse.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-big",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Recheck the completed source with all big-endian field cases and the shared boundary cases.",
+      "caseProfiles": [
+        "independent/fields-big-short.json",
+        "independent/fields-big-wide.json",
+        "independent/boundaries.json",
+        "independent/metadata.json",
+        "independent/capacity.json",
+        "independent/reuse.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-little",
+      "source": "independent/h263-read-bits.asm",
+      "explanation": "Recheck the same completed source with all little-endian field cases and the shared boundary cases.",
+      "caseProfiles": [
+        "independent/fields-little-short.json",
+        "independent/fields-little-wide.json",
+        "independent/boundaries.json",
+        "independent/metadata.json",
+        "independent/capacity.json",
+        "independent/reuse.json"
+      ],
+      "checkKind": "function",
+      "success": "Explain valid bits, selected byte access, unsigned field value and the one permitted cursor publication.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Establish full-width context, capacity, valid-count, cursor and width bounds before subtracting remaining bits. Reject without touching input."
+        },
+        {
+          "id": "extract",
+          "text": "Locate the selected byte with cursor divided by eight; its first meaningful bit is counted from the most significant side. Keep intermediate values wide enough for thirty-two bits."
+        },
+        {
+          "id": "publish",
+          "text": "Keep the candidate cursor local while collecting the entire field. Publish the final cursor only on nonempty success; an empty or failed call still needs a fresh zero result."
+        }
+      ]
+    }
+  ]
+}
