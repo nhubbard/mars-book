@@ -80,7 +80,7 @@ internal suspend fun captureBookNativePredictions(project: Project, plan: BookPa
             val line = editor.document.getLineNumber(editor.caretModel.offset)
             val instruction = editor.document.getText(TextRange(
                 editor.document.getLineStartOffset(line), editor.document.getLineEndOffset(line))).trim()
-            check(instruction.startsWith("$mnemonic ")) { "Wrong source pointer: $instruction" }
+            check(bookInstructionMnemonicMatches(instruction, mnemonic)) { "Wrong source pointer: $instruction" }
             val rectangle = checkNotNull(LearningUiHighlightingManager.getRectangle(editor.contentComponent))
             mapOf("instruction" to instruction, "line" to line + 1, "highlight" to rectangle)
         }

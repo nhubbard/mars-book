@@ -29,6 +29,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import training.lang.LangManager
 
+/** The native pointer already selected the instruction; zero operands require no following space. */
+internal fun bookInstructionMnemonicMatches(instruction: String, mnemonic: String): Boolean =
+    instruction.trimStart().takeWhile { !it.isWhitespace() }.equals(mnemonic, ignoreCase = true)
+
 internal suspend fun <T> bookModalUi(action: () -> T): T =
     withContext(Dispatchers.EDT + ModalityState.any().asContextElement()) { action() }
 
