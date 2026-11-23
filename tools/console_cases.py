@@ -40,6 +40,17 @@ class ReadCheck:
 
 
 @dataclass(frozen=True)
+class MarsBotCheck:
+    instructions_per_tick: int
+    x: int
+    y: int
+    heading: int
+    moving: bool
+    pen_down: bool
+    trail: tuple[tuple[int, int], ...]
+
+
+@dataclass(frozen=True)
 class ConsoleCase:
     name: str
     input: str
@@ -49,6 +60,7 @@ class ConsoleCase:
     initial_memory: tuple[MemoryCheck, ...] = ()
     stores: tuple[StoreCheck, ...] = ()
     reads: tuple[ReadCheck, ...] = ()
+    mars_bot: MarsBotCheck | None = None
 
 
 def _object(pairs):
@@ -73,7 +85,7 @@ def parse(data):
         raise ValueError('Console-case JSON is nested too deeply') from error
     if not isinstance(root, dict) or set(root) != {'formatVersion', 'cases'}:
         raise ValueError('Expected exactly formatVersion and cases')
-    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3):
+    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5):
         raise ValueError('Unsupported console-case format')
     rows = root['cases']
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_CASES:
@@ -81,7 +93,10 @@ def parse(data):
     cases, names = [], set()
     for row in rows:
         fields = {'name', 'input', 'stdout', 'instructionLimit'}
-        allowed = fields | ({'memory'} if root['formatVersion'] == 2 else {'memory', 'initialMemory', 'stores', 'reads'} if root['formatVersion'] == 3 else set())
+        version = root['formatVersion']
+        allowed = fields | ({'memory'} if version == 2 else {'memory', 'initialMemory', 'stores', 'reads'} if version >= 3 else set())
+        if version == 5:
+            allowed |= {'marsBot'}
         if not isinstance(row, dict) or not fields <= set(row) <= allowed:
             raise ValueError('Unsupported or missing console-case fields')
         name = row['name']
@@ -95,18 +110,42 @@ def parse(data):
             if not isinstance(value, str) or len(value.encode('utf-8')) > 64 * 1024:
                 raise ValueError('Console-case text must be UTF-8 and at most 64 KiB per field')
         limit = row['instructionLimit']
-        if type(limit) is not int or not 1 <= limit <= MAX_CASE_INSTRUCTIONS:
-            raise ValueError('Case instruction limit must be an integer from 1 through 1000000')
+        maximum = 3_000_000 if version >= 4 else MAX_CASE_INSTRUCTIONS
+        if type(limit) is not int or not 1 <= limit <= maximum:
+            raise ValueError(f'Case instruction limit must be an integer from 1 through {maximum}')
         memory = parse_memory(row['memory']) if 'memory' in row else ()
         initial = parse_memory(row['initialMemory']) if 'initialMemory' in row else ()
         stores = parse_stores(row['stores']) if 'stores' in row else ()
         reads = parse_reads(row['reads']) if 'reads' in row else ()
         if len(stores) + len(reads) > 64 or sum(len(item.bytes) // 2 for item in stores) > 65536:
             raise ValueError('Declare at most 64 trace checks and 65536 expected store bytes per case')
-        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads))
+        bot = parse_mars_bot(row['marsBot']) if 'marsBot' in row else None
+        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads, bot))
     if sum(case.instruction_limit for case in cases) > MAX_TOTAL_INSTRUCTIONS:
         raise ValueError('Combined case instruction limits exceed 10000000')
     return tuple(cases)
+
+
+def parse_mars_bot(row):
+    fields = {'instructionsPerTick', 'x', 'y', 'heading', 'moving', 'penDown', 'trail'}
+    if not isinstance(row, dict) or set(row) != fields:
+        raise ValueError('MarsBot needs its movement rate, final state and complete trail')
+    for field, maximum, minimum in [('instructionsPerTick', 1_000_000, 1), ('x', 511, 0), ('y', 511, 0), ('heading', 359, 0)]:
+        if type(row[field]) is not int or not minimum <= row[field] <= maximum:
+            raise ValueError('Invalid integral MarsBot field: ' + field)
+    if type(row['moving']) is not bool or type(row['penDown']) is not bool:
+        raise ValueError('MarsBot movement and pen flags must be booleans')
+    trail = row['trail']
+    if not isinstance(trail, list) or len(trail) == 1 or len(trail) > 256:
+        raise ValueError('Choose an empty trail or two through 256 integral board vertices')
+    vertices = []
+    for point in trail:
+        if not isinstance(point, dict) or set(point) != {'x', 'y'}:
+            raise ValueError('A MarsBot vertex needs x and y only')
+        if any(type(point[field]) is not int or not 0 <= point[field] <= 511 for field in ['x', 'y']):
+            raise ValueError('MarsBot vertices must be integral board coordinates')
+        vertices.append((point['x'], point['y']))
+    return MarsBotCheck(row['instructionsPerTick'], row['x'], row['y'], row['heading'], row['moving'], row['penDown'], tuple(vertices))
 
 
 def parse_memory(rows):
@@ -231,6 +270,8 @@ def render(cases):
     lines = [GENERATED, '// Each case runs in a fresh simulator; labels and scratch registers are not checked.\n\n']
     for case in cases:
         lines.append(f'case({kotlin_string(case.name)}, input = {kotlin_string(case.input)}, instructionLimit = {case.instruction_limit}) {{\n')
+        if case.mars_bot is not None:
+            lines.append(f'    val bot = connectMarsBot({case.mars_bot.instructions_per_tick})\n')
         for initial in case.initial_memory:
             lines.append(f'    setBytes(0x{initial.address:016x}L{byte_arguments(initial.bytes)})\n')
         for index, store in enumerate(case.stores):
@@ -238,6 +279,11 @@ def render(cases):
         for index, read in enumerate(case.reads):
             lines.append(f'    val reads{index} = traceMemoryAccesses(0x{read.address:016x}L, {read.length})\n')
         lines.append('    runToExit()\n')
+        if case.mars_bot is not None:
+            bot = case.mars_bot
+            lines.append(f'    bot.expectState({bot.x}.0, {bot.y}.0, {bot.heading}, moving = {str(bot.moving).lower()}, penDown = {str(bot.pen_down).lower()})\n')
+            vertices = ', '.join(f'{x}.0 to {y}.0' for x, y in bot.trail)
+            lines.append(f'    bot.expectTrail({vertices})\n')
         lines.append(f'    expectOutput({kotlin_string(case.stdout)})\n')
         for memory in case.memory:
             lines.append(f'    expectBytes(0x{memory.address:016x}L{byte_arguments(memory.bytes)})\n')
