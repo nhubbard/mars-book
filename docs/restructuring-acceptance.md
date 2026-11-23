@@ -15,7 +15,7 @@ that its contents were rechecked by this audit.
 | Complete smaller programs in the main book | Console, pixel, loop, function and array examples have complete public sources; individual unit notes identify executable checks | Confirm during walkthrough that every partial listing's purpose and complete source are clear |
 | Explicit outcomes and prerequisites | `docs/revised-learning-outcomes.md` maps three assessable outcomes per chapter to activities and expected entry concepts | Human review of the map and the explanations at first use |
 | Connected explanations, worked reasoning and independent transfer | Native chapter/lab pairs and the reviewed first-program, PCM and H.263 pilots; author accepted the direction for expansion | Substantive editing is a separate author-directed goal; no claim of completed learner validation |
-| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for three companions below, then review names, paths and observations across all editions |
+| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for two companions below, then review names, paths and observations across all editions |
 | Contents, glossary and index in each book | New native front matter, shared glossary and separately referenced chapter-oriented subject indexes | Technical navigation checks pass: literal references resolve, changed pages are visually inspected, final PDFs pass automated PDF/UA-2. A topic entry points to the relevant chapter, not a claimed first-use paragraph |
 | Native composition, fonts and highlighting | Directly edited TeX includes; Minion Pro, Noto Sans Math and IntelliJ-derived minted style | Current proofs compile with embedded Minion Pro, Noto Sans Math and JetBrains Mono; native composition checks pass. Preserve direct prose editing in future changes |
 | Actual figures and accessible annotations | Unit receipts bind real light-theme IDE images, source/state and native TeX annotations | Recapture changed demonstrations; renew automated PDF/UA-2 on final bytes; human reading-order and assistive-technology review remain open |
@@ -33,7 +33,7 @@ they are not student answer keys.
 | Inline predictions with editor context | `native-predictions-*`, `native-debug-*` and per-unit IDE evidence | Course-wide review of questions and pointers; retain the actual inline interaction instead of requiring Find Action |
 | Source-bound Run/Debug observations | `native-execution-01`, `native-reopen-01` and per-unit IDE evidence | Confirm every current package against its tested archive and source revision |
 | Resumable progress, edits, retries and invalidation | `native-lesson-runtime-01`, `native-reopen-01`, per-unit fresh-process resume receipts | Audit current-edition distribution bindings and retry semantics |
-| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete three companions; retain interface/state checks instead of reference-source matching |
+| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete two companions; retain interface/state checks instead of reference-source matching |
 | Graduated hints and instructor control | `native-hints-01`, `native-policy-01`, `downloaded-prerequisites-01`, `functions-prerequisites-01`, `native-fir-call-policy-01`, `native-matvec-policy-01` | Verify current package policy bindings and explain permitted direct entry without weakening checks |
 | Versioned local/HTTPS delivery | `lesson-import-01`, `lesson-download-01`, `downloaded-navigation-01` and `downloaded-prerequisites-01` | Final public archive and download guidance audit; no hosted grading or LMS claim |
 | Kotlin, public IntelliJ APIs and meaningful Jupiter coverage | MARS source, test reports and pinned API-verifier receipts in individual implementation steps | Recheck after any new production change; preserve unrelated manual edits |
@@ -45,13 +45,12 @@ commits, archive digests and limitations.
 
 ## Remaining native companion packages
 
-These three subjects already have written labs, public executable starters/checks
+These two subjects already have written labs, public executable starters/checks
 and private qualification evidence. Ordinary Run/Debug availability does not
 complete the promised native guided delivery.
 
 | Original subject | Existing written location | Required integration |
 | --- | --- | --- |
-| 016 Clipped blitter | `revision/labs/companions/clipped-sprite.tex` | Clipped address geometry and independent bounded writes |
 | 017 Expression evaluator | `revision/labs/companions/expression.tex` | Parsing/evaluation state and independent syntax/overflow/error checks |
 | 018 Bytecode interpreter | `revision/labs/companions/bytecode.tex` | Instruction decoding, bounded machine state and independent fault checks |
 
@@ -164,7 +163,7 @@ private search/renderer cases each. The checker and alternative extracted from t
 shipped archive pass all421 again. Five packaging guards pass. The lab proof remains
 242 physical /229 chapter pages, with the maze on printed64–70. Changed/adjacent
 pages and the retained annotated figure are reviewed in color and grayscale. Exact
-final PDF/UA-2 passes1728 rules /1157783 checks with zero failures; the existing
+final PDF/UA-2 passes 1,728 rules /1157783 checks with zero failures; the existing
 main-book proof is unchanged. Human reviews remain open.
 
 At the maze milestone there were thirty-one exercised downloadable native packages
@@ -191,4 +190,8 @@ The thirty-third downloadable native unit, `015-utf8-streams`, now passes first 
 
 ## Clipped-sprite assessment foundation and unit draft
 
-Console format 8 now observes ordered public labels and full register results without resetting execution. Full regression passes 317 CLI / 1,353 plugin tests, required coverage and parser gates; both case readers have full line/branch coverage. All 581 original clipped kernels and ten caller placements are native data, with 474 empty and 107 overlap cases. Five valid source/layout variants pass; distinguishing faults and restored wrong-register results fail. The new checker also requalifies 1,970 ring/UTF-8 native cases. Public tooling passes 665 tests. The sixteen-activity clipped draft passes two native archive/import tests and all twenty PSI pointers, with core-verified boundaries and explicit public exports, but actual first/resume IDE, private distribution and native publication integration remain outstanding. This remains one of the three unfinished companions; the completed unit count stays thirty-three plus the built-in first unit. See revision/clipped-native-foundation.md and revision/clipped-native-unit.md.
+Console format 8 now observes ordered public labels and full register results without resetting execution. Full regression passes 317 CLI / 1,353 plugin tests, required coverage and parser gates; both case readers have full line/branch coverage. All 581 original clipped kernels and ten caller placements are native data, with 474 empty and 107 overlap cases. Five valid source/layout variants pass; distinguishing faults and restored wrong-register results fail. The new checker also requalifies 1,970 ring/UTF-8 native cases. Public tooling passes 665 tests. The sixteen-activity clipped draft passes two native archive/import tests and all twenty PSI pointers, with core-verified boundaries and explicit public exports, but actual first/resume IDE, private distribution and native publication integration remain outstanding. At that draft milestone this remained one of three unfinished companions, and the completed unit count stayed thirty-three plus the built-in first unit. See revision/clipped-native-foundation.md and revision/clipped-native-unit.md.
+
+## Clipped-sprite delivery milestone
+
+The thirty-fourth downloadable native unit, 016-clipped-regions, now passes first use and fresh-process edited-source resume alongside the separate built-in first unit. Both processes pass all 591 public cases, retaining nine quiz attempts and three edited sources while eight execution activities renew. The authoring route passes 151 Jupiter tests; public tooling 665 and five private distribution guards pass. Both private implementations and the extracted shipped alternative each pass 7,230 cases. Native TeX directly connects interval reasoning, safe rejection, overlap copying and actual caller boundaries, retaining the real annotated figures and original IntelliJ listing colors. The accepted 244-page lab proof is reviewed on physical pages 42–51, figure 48 also grayscale; exact PDF/UA-2 passes 1,728 rules / 1,172,867 checks with zero failures. Expressions and bytecode, then the final course-wide audit, remain implementation work. Detailed bindings and limits are in revision/clipped-native-unit.md and private native-clipped-unit-01. Human reviews and separate substantive editing retain the ownership above.

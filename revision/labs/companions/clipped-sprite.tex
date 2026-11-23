@@ -8,13 +8,21 @@ two source columns and preserve the rest. Moving it completely beyond an edge
 should change no destination pixel. Neither case permits writing outside the
 frame and hoping that the display will hide the mistake.
 
-This is original project \texttt{016-clipped-sprite-blitter}. The revised work
-area is \texttt{clipped-sprite.asm}, in \texttt{revision/labs/files}. Implement
-\texttt{blit\_sprite}, replacing its failing \texttt{break} body. A \emph{blit}
-is a rectangular image copy; this version also clips the copy and treats a selected
-source word as transparent. The supplied caller initializes the frame, fills the
-descriptors and pauses at \texttt{blit\_ready} after the call. Both original public
-checks apply to your completed source.
+This companion develops original project \texttt{016-clipped-sprite-blitter}
+through the native \texttt{016-clipped-regions} unit. Open its assignment and
+begin with \texttt{worked/interval.asm}, a complete horizontal clipping experiment.
+The second experiment, \texttt{worked/extreme.asm}, changes only the placement to
+the largest signed word. Compare their intermediate endpoints before implementing
+the image copy.
+
+Your implementation belongs in \texttt{independent/blit.asm}. Replace the failing
+\texttt{blit\_sprite} body while retaining the complete caller, allocations,
+descriptors and public observation labels. A \emph{blit} is a rectangular image
+copy; this version also clips the copy and treats a selected source word as
+transparent. First check the empty-intersection path, then complete the overlapping
+copy and check the caller. Choose your private labels, register allocation and
+equivalent algorithm. The original archived project remains available under its
+package path.
 
 Use the chapter's row-major addressing, the earlier signed comparisons and the
 function calling convention. The new reasoning is to intersect rectangles,
@@ -80,7 +88,7 @@ five, the mathematical right endpoint is 2147483652. A word addition followed by
 a word subtraction can turn a rejected interval into a plausible small positive
 extent. Prove the intersection empty before deriving pixel addresses.
 
-The complete \texttt{clip-interval.asm} experiment applies the horizontal rule.
+The complete \texttt{worked/interval.asm} experiment applies the horizontal rule.
 It receives $x$ in \texttt{\$a0}, source width in \texttt{\$a1}, and frame width
 in \texttt{\$a2}; it returns $L,R$ in \texttt{\$v0}/\texttt{\$v1}, or two
 zeros for an empty intersection. This is a helper interface for the experiment,
@@ -101,10 +109,20 @@ interval_left_ready:
 Here \texttt{\$t1} begins as the placed source's right endpoint. If frame width
 is smaller, the move selects it; otherwise the branch preserves the endpoint.
 The complete helper also selects the larger left endpoint and rejects $L\geq R$.
-Run its public \texttt{revision/labs/checks/clip-interval.kts} check. Predict the
+Run its public \texttt{worked/interval.kts} check to cover 2,268 argument combinations and the complete default caller. Predict the
 supplied $x=-2$, source width five and frame width eight: the result is $[0,3)$.
-Then try a source ending at zero, one beginning at eight, and an extreme coordinate.
-Explain the comparison that makes each interval empty.
+The guided Debug sequence observes the selected left endpoint, selected right
+endpoint and returned interval. In \texttt{worked/extreme.asm}, the placement is
+2147483647. Pause immediately after \texttt{daddu}: the source end is 2147483652,
+hexadecimal \texttt{0000000080000004}. It has crossed the signed-word maximum
+without becoming a negative full-register value. The selected right endpoint then
+becomes frame width eight, while the left remains 2147483647. That ordering rejects
+the interval and returns two zeros. No pixel address is needed.
+
+Also test a source ending at zero and one beginning at eight. Explain the
+comparison that makes each interval empty. Both complete experiments exit
+silently after recording their endpoints; their console transcript alone does
+not establish those values.
 
 \subsection*{Translate the surviving origin back into the source}
 
@@ -226,21 +244,49 @@ permitted. If you call the interval helper, preserve the blitter's return link a
 any live state that its caller-clobbered temporaries may overwrite. Inlining the
 same comparisons is also valid.
 
-\begin{samepage}
-Run the two original public checks on your completed copy:
+Use the native \emph{Check this program} control first for the 474
+empty-intersection cases. You can finish safe geometric rejection while leaving
+the nonempty copy path unfinished. Empty dimensions, exact edge contact,
+fully clipped placements and extreme coordinates all belong to this first domain.
+They return $(0,0)$ without a destination store; a frame being allocated does not
+make it writable for an invisible sprite.
+
+Then complete the copy and check the 107 overlap cases in the same source. Together
+the two assessments retain all 581 original kernel trials. Keep the geometry,
+source translation and copy invariant in view when interpreting a failure. A
+correct visible count with incorrect pixels suggests a different problem from a
+wrong extent or a forbidden transparent store.
+
+The ten caller cases observe initialized storage at \texttt{blit\_call}, then
+returned registers and frame at \texttt{blit\_ready}, then stored counts after
+normal exit. The program continues between those boundaries without resetting
+registers. A wrong return value corrected only before publication still violates
+the function interface. The final observation interval also protects caller data
+after return.
+
+For the guided Debug activity, place breakpoints at \texttt{blit\_call} on
+\texttt{balc}, \texttt{blit\_ready} on \texttt{nop}, and \texttt{done} on
+\texttt{li}. Inspect those stops in order in the same session. Before the call,
+placement registers hold $(-2,1)$ and the frame has its initial colors. At return,
+$(v_0,v_1)=(8,12)$ while the caller has not yet published the counts. Before the
+exit selector, the result registers still hold those values and the memory words
+\texttt{copied} and \texttt{visible} contain eight and twelve. Stop Debug before
+the final ordinary Run.
+
+The public scripts also run from the downloaded unit's directory using JDK 25.
+The caller script uses the same observation engine as the native assessment and
+requires the MARS edition supporting console format 8.
+
+\noindent\begin{minipage}{\linewidth}
 \begin{verbatim}
 java -jar /path/to/cli.jar grade \
-  packages/016-clipped-sprite-blitter/checks/kernel.kts \
-  /path/to/your/clipped-sprite.asm
+  independent/kernel.kts independent/blit.asm
 java -jar /path/to/cli.jar grade \
-  packages/016-clipped-sprite-blitter/checks/program.kts \
-  /path/to/your/clipped-sprite.asm
+  independent/caller.kts independent/blit.asm
 \end{verbatim}
-\par\end{samepage}
+\end{minipage}
 
-The kernel cases select different descriptors, interior allocation offsets,
-strides, keys and saved values. The caller cases check initialized pixels and
-returned-count publication. Keep an empty intersection, a partial overlap and an
-all-transparent visible rectangle in your own test record. Explain why the last
-case returns a positive visible count but zero opaque count, and why none of
-those cases grants permission to overwrite frame padding.
+Run normally and expect an empty console. Compare image, memory and stored counts.
+Keep an empty intersection, a partial overlap and an all-transparent example.
+Explain the last example's positive visible count, zero opaque count and protected
+padding.
