@@ -27,6 +27,11 @@ class ShaNativeUnitTest(unittest.TestCase):
         files = build(UNIT/'independent', check=True)
         lesson = json.loads((UNIT/'lesson.json').read_text())
         assessments = [s for s in lesson['steps'] if s['kind'] == 'assessment']
+        final = assessments[-1]
+        self.assertEqual(final['id'], 'recheck-completed-source')
+        self.assertEqual(sum(len(json.loads((UNIT/p).read_text())['cases']) for p in final['caseProfiles']), 128)
+        self.assertEqual(set(final['caseProfiles']), {p for s in assessments[:-1] if s['id'] != 'complete-update' for p in s['caseProfiles']})
+        assessments = assessments[:-1]
         self.assertEqual([sum(len(json.loads((UNIT/p).read_text())['cases']) for p in s['caseProfiles']) for s in assessments], [16,12,3,17,23,40,12,22])
         references = [p for s in assessments for p in s['caseProfiles']]
         self.assertEqual(len(references), len(set(references)))
@@ -43,7 +48,7 @@ class ShaNativeUnitTest(unittest.TestCase):
         self.assertEqual(len(names), len(set(names)))
         self.assertEqual(set(names), {str(p.relative_to(UNIT)) for p in UNIT.rglob('*') if p.is_file()})
         lesson = json.loads((UNIT/'lesson.json').read_text())
-        self.assertEqual(len(lesson['steps']), 34)
+        self.assertEqual(len(lesson['steps']), 35)
         predictions = [s for s in lesson['steps'] if s['kind'] == 'prediction']
         self.assertEqual([s['correctChoice'] for s in predictions], ['abc'[i%3] for i in range(16)])
         debug = [s for s in lesson['steps'] if s['kind'] == 'debug']
@@ -69,6 +74,10 @@ class ShaNativeUnitTest(unittest.TestCase):
         self.assertEqual(normal['fileRead']['firstDescriptor'], 19)
         self.assertEqual(error['fileRead'], dict(normal['fileRead'],failAfterBytes=2))
         self.assertEqual(int(error['stops'][-1]['registers']['$v0'],16), 2)
+        self.assertEqual(normal['source'], 'worked/read-prefixes.asm')
+        self.assertEqual(error['source'], normal['source'])
+        self.assertTrue(all(s['source'].startswith('worked/') for s in debug.values()))
+        self.assertEqual(debug['serialize-given-state']['source'], 'worked/serialize.asm')
         for source in ['padding-55','padding-56','padding-high-length']:
             text = (UNIT/f'worked/{source}.asm').read_text()
             self.assertIn('dsll $t3, $s2, 3', text)

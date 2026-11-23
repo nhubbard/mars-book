@@ -1,7 +1,7 @@
 {
   "formatVersion": 11,
-  "introduction": "Read the SHA-256 companion in the written lab. Predict byte order and state dependencies, inspect the six short worked sources, then implement the six interfaces in one continuing independent source. The worked experiments are deliberately limited: a first schedule prefix, one round, padding construction, and a pending block before compression. They are not a complete hash implementation. Predictions and checks are inline in MARS Learning. Finish each Debug process before another launch or source edit.",
-  "conclusion": "Explain how the original-byte count, unfinished buffer and compressed state describe one logical message across calls. Derive the 55/56 boundary and full-width length encoding, then explain why EOF may publish a digest while a read error may not. Keep an earliest-boundary debugging argument and a reuse case of your own.",
+  "introduction": "Read the SHA-256 companion in the written lab. Predict byte order and state dependencies, inspect the eight short worked sources, then implement the six interfaces in one continuing independent source. The worked experiments are deliberately limited: a first schedule prefix, one round, padding construction, a pending block before compression, serialization of a supplied state, and file-prefix ownership. They are not a complete hash implementation. Predictions and checks are inline in MARS Learning. Finish each Debug process before another launch or source edit.",
+  "conclusion": "Explain how the original-byte count, unfinished buffer and compressed state describe one logical message across calls. Derive the 55/56 boundary and full-width length encoding, then explain why EOF may publish a digest while a read error may not. Keep an earliest-boundary debugging argument and a reuse case of your own. The final full assessment binds the original correctness checks to your completed source after construction edits.",
   "steps": [
     {
       "kind": "prediction",
@@ -1069,7 +1069,7 @@
         "mnemonic": "lw",
         "occurrence": 0
       },
-      "explanation": "Finish the previous Debug process. In the existing independent source, change mode: .word 2 to mode: .word 0, then save. This selects init, update and final on the three original bytes abc.",
+      "explanation": "The supplied caller has mode zero for init/update/final and mode one for files. Its initial mode two selects schedule work. The caller assessment sets those controls for its cases; you do not need to edit mode to run these checks.",
       "question": "Why must initialization precede this first update?",
       "choices": [
         {
@@ -1092,47 +1092,48 @@
     },
     {
       "kind": "debug",
-      "id": "verify-memory-caller",
-      "source": "independent/sha256.asm",
-      "explanation": "With mode zero, Debug your same independent source through the caller. No internal working-register allocation is prescribed. Inspect the digest bytes for abc and the status store.",
+      "id": "serialize-given-state",
+      "source": "worked/serialize.asm",
+      "explanation": "This example is GIVEN the final numeric state for abc. It serializes those eight words as digest bytes; it does not compute compression, padding or the state. Compare a numeric word view of final_state with a byte view of digest.",
       "integerInputs": [],
       "stops": [
         {
           "id": "boundary-1",
           "anchor": {
-            "label": "main_done",
-            "mnemonic": "dla",
+            "label": "word_ready",
+            "mnemonic": "srl",
             "occurrence": 0
           },
           "registers": {
-            "$v0": "0x0000000000000000"
+            "$t0": "0x00000000ba7816bf",
+            "$s2": "0x0000000000000008"
           },
-          "explanation": "The callee returned success before status publication. The 32 digest bytes should begin ba 78 16 bf; status is still -1.",
-          "success": "The callee returned success before status publication. The 32 digest bytes should begin ba 78 16 bf; status is still -1."
+          "explanation": "The first numeric word is ba7816bf. Its little-endian stored input bytes do not determine the required digest byte order.",
+          "success": "Identify the numeric input word before its serialization."
         },
         {
           "id": "boundary-2",
           "anchor": {
-            "label": "results_ready",
+            "label": "bytes_ready",
             "mnemonic": "li",
             "occurrence": 0
           },
           "registers": {
-            "$v0": "0x0000000000000000"
+            "$s2": "0x0000000000000000"
           },
-          "explanation": "The caller has stored status zero. The highlighted exit instruction has not executed yet; finish the process before another launch.",
-          "success": "The caller has stored status zero. The highlighted exit instruction has not executed yet; finish the process before another launch."
+          "explanation": "All 32 output bytes are stored, beginning ba 78 16 bf. The example has serialized a supplied state, not calculated that state.",
+          "success": "Compare all 32 bytes with the supplied words in big-endian order."
         }
       ],
-      "success": "The public caller reached both requested boundaries with the expected status.",
+      "success": "The output byte order follows the digest interface rather than native numeric-word storage.",
       "hints": [
         {
-          "id": "mode",
-          "text": "Edit the existing mode word in this same source, save, and start a fresh Debug launch. Finish any preceding process. Keep your six completed functions."
+          "id": "views",
+          "text": "Inspect final_state in a word view and digest in a byte view. The first word was loaded with lwu, so its scalar high half is zero."
         },
         {
-          "id": "inspect",
-          "text": "Use the public caller labels for breakpoints. Inspect digest and status in memory; working registers inside your own functions may differ from the examples."
+          "id": "scope",
+          "text": "The calculation of these supplied state words belongs to your compression and finalization functions. This example demonstrates serialization only."
         }
       ]
     },
@@ -1167,13 +1168,13 @@
     {
       "kind": "prediction",
       "id": "actual-descriptor",
-      "source": "independent/sha256.asm",
+      "source": "worked/read-prefixes.asm",
       "anchor": {
-        "label": "main_file",
-        "mnemonic": "dla",
+        "label": "file_call",
+        "mnemonic": "balc",
         "occurrence": 0
       },
-      "explanation": "Change only mode to one in the same completed source and save. The next Debug activity supplies fixture.bin as bytes 61 62 63, limits each successful read to two bytes, and starts fixture descriptors at 19.",
+      "explanation": "The next public experiment counts file bytes and publishes its count only at EOF. Its deterministic fixture contains 61 62 63, limits successful reads to two bytes, and starts descriptors at 19. These lifecycle rules also apply to your SHA file wrapper.",
       "question": "Which descriptor should the wrapper pass to read and close?",
       "choices": [
         {
@@ -1197,8 +1198,8 @@
     {
       "kind": "debug",
       "id": "observe-short-file",
-      "source": "independent/sha256.asm",
-      "explanation": "With mode one, Debug the same source using the deterministic read-only fixture. Its two-byte successful prefix must be followed by the remaining byte and EOF.",
+      "source": "worked/read-prefixes.asm",
+      "explanation": "Debug the public byte-count experiment with a successful two-byte read limit. It must count the two-byte prefix, the remaining byte and EOF before publishing output_count.",
       "integerInputs": [],
       "stops": [
         {
@@ -1211,8 +1212,8 @@
           "registers": {
             "$a2": "0x0000000000000007"
           },
-          "explanation": "The caller supplies capacity seven before invoking your file wrapper.",
-          "success": "The caller supplies capacity seven before invoking your file wrapper."
+          "explanation": "The caller supplies capacity seven before invoking the counting helper.",
+          "success": "The caller supplies capacity seven before invoking the counting helper."
         },
         {
           "id": "boundary-2",
@@ -1224,19 +1225,19 @@
           "registers": {
             "$v0": "0x0000000000000000"
           },
-          "explanation": "The file wrapper succeeded. Its digest must equal the memory abc digest despite the short reads.",
-          "success": "The file wrapper succeeded. Its digest must equal the memory abc digest despite the short reads."
+          "explanation": "The helper succeeded and output_count is three. This experiment has counted the complete input; it has not computed a digest.",
+          "success": "The helper succeeded and output_count is three. This experiment has counted the complete input; it has not computed a digest."
         }
       ],
-      "success": "The public caller reached both requested boundaries with the expected status.",
+      "success": "Short positive reads still lead to the complete count at EOF.",
       "hints": [
         {
-          "id": "mode",
-          "text": "Edit the existing mode word in this same source, save, and start a fresh Debug launch. Finish any preceding process. Keep your six completed functions."
+          "id": "launch",
+          "text": "Finish the preceding Debug process and launch this same unchanged observation source. Each activity installs its own deterministic fixture."
         },
         {
-          "id": "inspect",
-          "text": "Use the public caller labels for breakpoints. Inspect digest and status in memory; working registers inside your own functions may differ from the examples."
+          "id": "ownership",
+          "text": "Inspect output_count and status. The counting helper publishes a numeric count only at EOF. Your SHA wrapper must apply the same success/failure ownership rule to its 32 digest bytes."
         }
       ],
       "fileRead": {
@@ -1250,24 +1251,24 @@
     {
       "kind": "prediction",
       "id": "error-is-not-eof",
-      "source": "independent/sha256.asm",
+      "source": "worked/read-prefixes.asm",
       "anchor": {
         "label": "file_call",
         "mnemonic": "balc",
         "occurrence": 0
       },
-      "explanation": "Keep mode one. The next fresh Debug launch injects a read failure after the first two original bytes. Its output arena starts with a5 bytes.",
+      "explanation": "The next fresh launch uses this same public counting source and injects a read failure after two bytes. output_count starts as a5a5a5a5.",
       "question": "Which result belongs at main_done?",
       "choices": [
         {
           "id": "a",
-          "text": "Status two and unchanged output",
-          "feedback": "Two original bytes are not the whole message. Close the descriptor without publishing a digest."
+          "text": "Status two and unchanged output_count",
+          "feedback": "A prefix before an error is not a successfully completed input. Close the descriptor without publishing the count."
         },
         {
           "id": "b",
-          "text": "Status zero and a digest of ab",
-          "feedback": "That would silently replace a failed input with a shorter successful message."
+          "text": "Status zero and a count of two",
+          "feedback": "That would silently replace a failed input with a shorter successful one."
         },
         {
           "id": "c",
@@ -1280,8 +1281,8 @@
     {
       "kind": "debug",
       "id": "observe-read-failure",
-      "source": "independent/sha256.asm",
-      "explanation": "Debug the same independent source with the injected error. The public assessment also checks preservation of an earlier successful digest during later calls in one session.",
+      "source": "worked/read-prefixes.asm",
+      "explanation": "Debug the unchanged counting source with a failure after two bytes. A successful prefix is not the whole file. The helper must close its descriptor and preserve output_count.",
       "integerInputs": [],
       "stops": [
         {
@@ -1307,19 +1308,19 @@
           "registers": {
             "$v0": "0x0000000000000002"
           },
-          "explanation": "The wrapper reports a read error. Inspect the unchanged a5 digest bytes and finish the process.",
-          "success": "The wrapper reports a read error. Inspect the unchanged a5 digest bytes and finish the process."
+          "explanation": "The helper reports status two and output_count remains a5a5a5a5. Inspect the word and finish the process.",
+          "success": "The helper reports status two and output_count remains a5a5a5a5. Inspect the word and finish the process."
         }
       ],
-      "success": "The public caller reached both requested boundaries with the expected status.",
+      "success": "The failed input has not been published as a successful partial count.",
       "hints": [
         {
-          "id": "mode",
-          "text": "Edit the existing mode word in this same source, save, and start a fresh Debug launch. Finish any preceding process. Keep your six completed functions."
+          "id": "launch",
+          "text": "Finish the preceding Debug process and launch this same unchanged observation source. Each activity installs its own deterministic fixture."
         },
         {
-          "id": "inspect",
-          "text": "Use the public caller labels for breakpoints. Inspect digest and status in memory; working registers inside your own functions may differ from the examples."
+          "id": "ownership",
+          "text": "Inspect output_count and status. The counting helper publishes a numeric count only at EOF. Your SHA wrapper must apply the same success/failure ownership rule to its 32 digest bytes."
         }
       ],
       "fileRead": {
@@ -1365,17 +1366,73 @@
     },
     {
       "kind": "run",
-      "id": "run-completed-stream",
+      "id": "run-completed-caller",
       "source": "independent/sha256.asm",
-      "explanation": "Set mode back to zero, save, and Run the same completed source to termination. Its console is deliberately empty. Use the earlier Debug boundaries and interface checks to justify the digest; empty output alone is not a hash-correctness check.",
+      "explanation": "Run your completed independent source to termination using its supplied mode two, which selects schedule work. The caller stores results silently. Empty console output is not a correctness check; the following final assessment rechecks every original interface on this exact source.",
       "integerInputs": [],
       "stdout": "",
-      "success": "The completed source terminated normally without console output.",
+      "success": "The completed caller terminated normally. Recheck the entire implementation next.",
       "anchor": {
         "label": "main_done",
         "mnemonic": "dla",
         "occurrence": 0
       }
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-completed-source",
+      "source": "independent/sha256.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/sha-schedule-000.cases.json",
+        "independent/sha-compression-000.cases.json",
+        "independent/sha-initialization-000.cases.json",
+        "independent/sha-streaming-000.cases.json",
+        "independent/sha-streaming-001.cases.json",
+        "independent/sha-streaming-002.cases.json",
+        "independent/sha-streaming-003.cases.json",
+        "independent/sha-streaming-004.cases.json",
+        "independent/sha-streaming-005.cases.json",
+        "independent/sha-streaming-006.cases.json",
+        "independent/sha-streaming-007.cases.json",
+        "independent/sha-file-000.cases.json",
+        "independent/sha-file-001.cases.json",
+        "independent/sha-file-002.cases.json",
+        "independent/sha-file-003.cases.json",
+        "independent/sha-file-004.cases.json",
+        "independent/sha-file-005.cases.json",
+        "independent/sha-file-006.cases.json",
+        "independent/sha-file-007.cases.json",
+        "independent/sha-file-008.cases.json",
+        "independent/sha-file-009.cases.json",
+        "independent/sha-file-010.cases.json",
+        "independent/sha-file-011.cases.json",
+        "independent/sha-file-012.cases.json",
+        "independent/sha-caller-000.cases.json",
+        "independent/sha-caller-001.cases.json",
+        "independent/sha-caller-002.cases.json",
+        "independent/sha-caller-003.cases.json",
+        "independent/sha-reuse-000.cases.json",
+        "independent/sha-reuse-001.cases.json",
+        "independent/sha-reuse-002.cases.json",
+        "independent/sha-reuse-003.cases.json",
+        "independent/sha-reuse-004.cases.json",
+        "independent/sha-reuse-005.cases.json",
+        "independent/sha-reuse-006.cases.json",
+        "independent/sha-reuse-007.cases.json"
+      ],
+      "explanation": "Edits made while constructing later functions can invalidate earlier results. Recheck all 128 original cases now, on the completed source. This final group reuses the existing profiles and includes real caller selection, output publication, repeated calls and actual exit.",
+      "success": "All original interface checks pass on this completed source revision. Keep a separate reasoning argument and a new test of your own.",
+      "hints": [
+        {
+          "id": "first-failure",
+          "text": "Start with the first failing case and identify which earlier interface it exercises. A shared-helper edit may have changed an earlier result."
+        },
+        {
+          "id": "fresh-proof",
+          "text": "After any further code edit, re-run this final group. Passing a check on an older source revision does not establish the current implementation\u2019s behavior."
+        }
+      ]
     }
   ]
 }

@@ -72,29 +72,45 @@ sources are short observation experiments, not replacement start/end templates.
 Use graduated hints when a boundary is unclear; use free writing when you prefer
 to derive the implementation from the complete contracts.
 
-The eight groups contain all 128 original cases plus seventeen construction
-prefix cases. The final groups include split calls, two interleaved contexts,
+The first eight groups contain all 128 original cases plus seventeen construction
+prefix cases; a final group rechecks the original cases on the completed source. The final groups include split calls, two interleaved contexts,
 reinitialization and changing file paths in one simulator. A new call must use
 its supplied context and input. On a later read failure, an output may already
 contain a successful digest rather than untouched poison bytes; preserve it.
 
-## Use the caller to inspect your completed functions
+## Separate file ownership from hash arithmetic
 
-After the function checks pass, follow the inline instructions to change only
-`mode` in your existing source. Mode zero hashes the original bytes `abc` through
-init, update and final. Mode one uses the file path. Debug at `main_done` before
-the status store and `results_ready` afterward. Inspect the digest as bytes;
-printing its hexadecimal representation is a separate operation.
+`worked/serialize.asm` is given the final numeric state for `abc` and writes its
+32 big-endian digest bytes. It does not calculate that state. Compare the numeric
+input word `ba7816bf`, its native stored bytes, and the output bytes `ba 78 16 bf`.
+Your finalization must obtain the correct state first, then serialize it.
 
-The file observations install a deterministic read-only `fixture.bin`. Open
-returns its actual descriptor; the wrapper must use that value rather than
-assuming three. A positive short read contributes only its returned prefix and
-requires another read. Zero permits finalization. A negative read requires a
-close and status two, while preserving all output bytes. The successful and
-failing observations use fresh launches; the reuse assessment separately verifies
-those obligations across successive calls in one session.
+`worked/read-prefixes.asm` counts file bytes and publishes one numeric count only
+at EOF. It supplies a smaller example of file ownership without a hash loop.
+The successful observation returns count three despite two-byte read limits.
+The error observation returns status two and preserves the original output word.
+Your SHA wrapper applies the same ownership rule to all 32 digest bytes.
 
-Finish each Debug process before another launch or source edit. A normal Run has
-an empty console because this caller stores results rather than printing them.
-Use the checked state transitions and digest bytes to explain correctness; an
-empty console alone establishes neither.
+These two Debug activities use the same unchanged public source and different
+deterministic read-only fixtures. Open returns the actual descriptor; the helper
+uses that value rather than assuming three. Positive reads contribute their
+returned prefix, zero permits publication, and negative results require cleanup
+without publication. No host file needs to be created for these observations.
+
+## Recheck the completed source after construction
+
+Edits to later functions or shared helpers can make an earlier check result stale.
+The final assessment therefore runs all 128 original cases again on the completed
+independent source. It reuses the existing profiles; the additional update-only
+prefix cases remain construction feedback. A normal Run is silent because the
+supplied caller stores results. Silence alone does not establish correctness.
+
+You can also Debug your own implementation after completing the lesson. Mode
+zero hashes the original bytes `abc` through init, update and final; mode one
+selects files; the supplied mode two selects schedule work. Edit only the existing
+mode word, save, and launch afresh. `main_done` is before the status store and
+`results_ready` is after it. Re-run the final assessment after further edits.
+
+Finish each Debug process before another launch or source edit. Keep an explanation
+of the earliest boundary that distinguishes byte-order, state, length and ownership
+errors. Use that explanation to investigate a new input beyond the finite checks.

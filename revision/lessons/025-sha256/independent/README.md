@@ -68,7 +68,8 @@ It does not accept writes into caller gaps, even if a store writes the same valu
 
 ## Observe your caller without creating another implementation
 
-After the functions work, edit the existing `mode` word in this same file.
+For optional experiments after completing the lesson, you may edit the existing
+`mode` word in this same file. Re-run the final assessment after an edit.
 Mode zero initializes, updates and finalizes the three input bytes `abc`.
 Mode one calls your file wrapper with the supplied path and scratch capacity.
 The initial mode two selects schedule work; it is not the memory-stream path.
@@ -77,5 +78,7 @@ Finish any prior Debug process, save, and start a fresh launch after changing it
 `main_done` is before the caller stores status. `results_ready` is after that
 store and before exit. These labels remain available even if every private
 function label and register allocation differs from the worked experiments.
-The lesson supplies deterministic file contents for its file Debug activities;
-those fixtures are read-only and do not require creating a host file.
+The worked file Debug activities supply read-only deterministic fixtures for
+`worked/read-prefixes.asm`. They do not change this independent source. For an
+optional file-mode launch of your own code, supply its input path as in the
+earlier file-I/O lab; the CLI checks here also install their own fixtures.

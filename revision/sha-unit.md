@@ -143,3 +143,28 @@ IDE walkthrough, which remains to be exercised. New light-theme captures and
 integration of this native workflow into the directly edited LaTeX companion
 also remain. The existing publication and capture receipts have not been renewed
 by this draft step.
+
+
+## Source-stable native revision 0.2.0
+
+The initial 0.1.0 draft required editing the independent caller’s mode word for
+three observations. Source edits invalidate earlier execution evidence, so that
+mandatory mode-switch sequence has been removed. Its archive and initial test
+receipts remain private history. Optional experiments with the student’s own
+caller remain documented after the required sequence.
+
+Version 0.2.0 has 35 activities, eight public worked sources, nine Debug activities
+with 32 stops, sixteen predictions, nine assessment groups and one Run. The added
+serialization example is given its final state and does not calculate it. The
+file-prefix example publishes a byte count only at EOF; it illustrates ownership
+without supplying the six-function SHA implementation. Required Debug activities
+all use unchanged worked sources and deterministic fixtures.
+
+The final assessment reuses the 36 original-case profiles and rechecks all 128
+original cases on the completed independent source. There are still 42 distinct
+profiles and 145 distinct cases including construction prefixes. Including the
+final recheck, the lesson performs 273 case executions and 655 calls. Every
+current public Debug observation passes actual core register/memory probes, and
+the revised archive passes its two importer/PSI tests and all 572 public tooling
+tests. Actual first/resume IDE exercise, light captures and direct LaTeX
+integration remain pending; no renewed publication evidence is claimed yet.
