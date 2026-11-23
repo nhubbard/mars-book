@@ -27,6 +27,8 @@ import edu.missouristate.mars.plugin.language.MipsTypes
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.xdebugger.XDebuggerManager
+import com.intellij.xdebugger.XDebuggerUtil
+import com.intellij.xdebugger.evaluation.EvaluationMode
 import com.intellij.xdebugger.breakpoints.XBreakpointType
 import com.intellij.xdebugger.breakpoints.XLineBreakpointType
 import java.nio.file.Files
@@ -44,8 +46,8 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.mazeUnit -> "maze"; plan.marsBotUnit -> "marsbot"; plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.mazeUnit -> "check-render"; plan.marsBotUnit -> "check-square"; plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.ringUnit -> "ring"; plan.mazeUnit -> "maze"; plan.marsBotUnit -> "marsbot"; plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.ringUnit -> "check-push"; plan.mazeUnit -> "check-render"; plan.marsBotUnit -> "check-square"; plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     // Production MARS has already validated/imported this exact archive and every activity.
@@ -104,10 +106,15 @@ internal suspend fun captureBookNativeCorpus(
                 awaitText(visible(step)); selected(path)
                 val rawStops = step.getAsJsonArray("stops").map { it.asJsonObject }
                 val stops = rawStops.mapIndexed { stopIndex, stop ->
-                    CorpusPause(stop.getAsJsonObject("anchor").get("label").asString, stop.getAsJsonObject("anchor").get("mnemonic").asString, stop.getAsJsonObject("anchor").get("occurrence").asInt,
-                        stop.getAsJsonObject("registers").entrySet().associate { (register, value) -> register to value.asString.removePrefix("0x").toULong(16).toLong() },
+                    val label = stop.getAsJsonObject("anchor").get("label").asString
+                    val registers = stop.getAsJsonObject("registers").entrySet().associate { (register, value) ->
+                        register to value.asString.removePrefix("0x").toULong(16).toLong()
+                    }
+                    CorpusPause(label, stop.getAsJsonObject("anchor").get("mnemonic").asString, stop.getAsJsonObject("anchor").get("occurrence").asInt,
+                        registers,
                         rawStops.getOrNull(stopIndex + 1)?.get("explanation")?.asString ?: nextText(index),
-                        stop.getAsJsonObject("vectorRegisters")?.entrySet()?.associate { (name, value) -> name to value.asString } ?: emptyMap())
+                        stop.getAsJsonObject("vectorRegisters")?.entrySet()?.associate { (name, value) -> name to value.asString } ?: emptyMap(),
+                        bookRingCondition(plan.ringUnit, label, registers))
                 }
                 val oldOutput = if (plan.ppmUnit && id == "trace-save-invalid") withContext(Dispatchers.IO) {
                     Files.readAllBytes(directory.resolve("worked/output.ppm"))
@@ -209,7 +216,7 @@ internal suspend fun captureBookNativeCorpus(
     }
 }
 
-private data class CorpusPause(val label: String, val mnemonic: String, val occurrence: Int, val registers: Map<String, Long>, val nextText: String, val vectors: Map<String, String>)
+private data class CorpusPause(val label: String, val mnemonic: String, val occurrence: Int, val registers: Map<String, Long>, val nextText: String, val vectors: Map<String, String>, val condition: String?)
 
 private suspend fun captureCorpusDebug(
     project: Project, entry: Path, record: suspend (String, Map<String, Any>) -> Unit,
@@ -221,7 +228,12 @@ private suspend fun captureCorpusDebug(
     val file = withContext(Dispatchers.IO) { checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(entry)) }
     val type = XBreakpointType.EXTENSION_POINT_NAME.extensionList.filterIsInstance<XLineBreakpointType<*>>().single { it.id == "MarsMipsLine" }
     val manager = XDebuggerManager.getInstance(project).breakpointManager
-    val breakpoints = writeAction { mutableListOf(manager.addLineBreakpoint(type, file.url, targetLine, null)) }
+    fun addBreakpoint(line: Int, condition: String?) = manager.addLineBreakpoint(type, file.url, line, null).also { breakpoint ->
+        condition?.let {
+            breakpoint.conditionExpression = XDebuggerUtil.getInstance().createExpression(it, null, null, EvaluationMode.EXPRESSION)
+        }
+    }
+    val breakpoints = writeAction { mutableListOf(addBreakpoint(targetLine, stops.first().condition)) }
     val name = "Book $prefix Debug"
     val launch = launchBookProgram(project, entry, debug = true, name = name)
     try {
@@ -231,7 +243,7 @@ private suspend fun captureCorpusDebug(
                 targetLine = corpusBreakpointLine(project, entry, stop)
                 writeAction {
                     breakpoints.forEach(manager::removeBreakpoint); breakpoints.clear()
-                    breakpoints += manager.addLineBreakpoint(type, file.url, targetLine, null)
+                    breakpoints += addBreakpoint(targetLine, stop.condition)
                 }
                 bookModalUi { session.resume() }
             }
@@ -241,6 +253,9 @@ private suspend fun captureCorpusDebug(
             awaitText(stop.nextText)
             val facts = mutableMapOf<String, Any>("source" to entry.toString(), "line" to targetLine + 1,
                 "renderedRegisters" to registers, "expectedVectorBits" to stop.vectors, "nativeNextStepObserved" to stop.nextText)
+            val actualCondition = bookModalUi { breakpoints.single().conditionExpression?.expression }
+            check(actualCondition == stop.condition) { "Native breakpoint condition changed" }
+            facts["nativeBreakpointCondition"] = actualCondition ?: "none"
             deviceObservation?.let { facts["actualMarsBotStatus"] = it(index) }
             record("debug-$prefix-$index", facts)
             capture("debug-$prefix-$index", stop.nextText)
@@ -312,4 +327,13 @@ private suspend fun captureCorpusBotStatus(project: Project, execution: String, 
         if (result != null) return result
         delay(100)
     }
+}
+
+
+/** The retained ring caller publishes its operation index in s3; no private function state is selected. */
+internal fun bookRingCondition(enabled: Boolean, label: String, registers: Map<String, Long>): String? {
+    if (!enabled || label != "operation_ready") return null
+    val index = checkNotNull(registers["\$s3"]) { "A ring observation needs its public operation index" }
+    require(index in 0L..13L) { "Ring operation index is outside the retained caller" }
+    return "\$s3 == $index"
 }

@@ -1,0 +1,514 @@
+{
+  "formatVersion": 11,
+  "introduction": "A circular queue reuses an allocation while records have different lifetimes. First verify one arbitrary-capacity cursor operation. Then implement the record functions independently, check their complete byte footprints and inspect the retained caller at completed commands. Read the ring companion lab alongside these activities.",
+  "conclusion": "Explain ownership using head, tail and used; account for the prefix separately from payload bytes; and locate each failure decision before caller-data stores. Keep the mask, missing-prefix and failed-pop counterexamples. Passing these cases does not replace the loop invariants or establish every possible queue history.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "next-position",
+      "explanation": "A ring has physical positions zero through C-1. advance_cursor moves one byte from a valid index. The complete caller supplies index six and capacity seven.",
+      "question": "What is the next position?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Seven, because incrementing six gives seven.",
+          "feedback": "Seven is the first excluded index. Reaching capacity wraps the position to zero."
+        },
+        {
+          "id": "b",
+          "text": "Zero, because this one-byte advance reaches capacity.",
+          "feedback": "The increment is at most C, so equality is sufficient for this particular one-step operation."
+        },
+        {
+          "id": "c",
+          "text": "One, because every record begins with a prefix.",
+          "feedback": "A prefix is a stored byte, not a skipped array position. This helper advances exactly once."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "advance_cursor",
+        "mnemonic": "addiu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-wrap",
+      "source": "worked/cursor.asm",
+      "integerInputs": [],
+      "explanation": "Debug the complete cursor experiment. Compare the candidate index before the compact branch with the value returned to the caller. No console input is required.",
+      "stops": [
+        {
+          "id": "input",
+          "explanation": "Pause before addiu at advance_cursor. The two arguments describe a valid index and the physical capacity.",
+          "anchor": {
+            "label": "advance_cursor",
+            "mnemonic": "addiu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000006",
+            "$a1": "0x0000000000000007"
+          },
+          "success": "Index six is the last position of a seven-byte ring."
+        },
+        {
+          "id": "candidate",
+          "explanation": "Pause before bnec in advance_cursor. The increment has produced seven; the wrap decision is still pending.",
+          "anchor": {
+            "label": "advance_cursor",
+            "mnemonic": "bnec",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000006",
+            "$a1": "0x0000000000000007",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The comparison is between the candidate and capacity. Equality must take the zero-producing path."
+        },
+        {
+          "id": "wrapped-return",
+          "explanation": "Pause at cursor_done before sw. The helper has returned, and the caller has not yet recorded its answer.",
+          "anchor": {
+            "label": "cursor_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000006",
+            "$a1": "0x0000000000000007",
+            "$v0": "0x0000000000000000"
+          },
+          "success": "The returned position is zero. The pending store will preserve it in cursor_result."
+        }
+      ],
+      "success": "Explain why the equality check is sufficient for a single advance from a valid position. Stop this Debug session before changing sources."
+    },
+    {
+      "kind": "prediction",
+      "id": "mask-is-a-contract",
+      "explanation": "A power-of-two mask can implement a modulus for some capacities, but this interface permits every C from one through 32.",
+      "question": "For C=7 and index=6, what does (index+1) & (C-1) produce?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Zero, so it implements arbitrary-capacity wraparound.",
+          "feedback": "Seven AND six is six, not zero. A low-bit mask does not implement a modulus of seven."
+        },
+        {
+          "id": "b",
+          "text": "Seven, because the mask leaves every input unchanged.",
+          "feedback": "The mask clears bit zero here: binary 111 AND 110 is 110."
+        },
+        {
+          "id": "c",
+          "text": "Six, so it fails the required wrap to zero.",
+          "feedback": "The mask is suitable only under a power-of-two capacity precondition. This task supplies no such precondition."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "advance_cursor",
+        "mnemonic": "bnec",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "debug-not-yet-wrapped",
+      "source": "worked/cursor-eight.asm",
+      "integerInputs": [],
+      "explanation": "Start a fresh Debug session for worked/cursor-eight.asm. It changes only capacity from seven to eight, retaining index six. The next valid position is now seven.",
+      "stops": [
+        {
+          "id": "larger-capacity",
+          "explanation": "Pause before bnec in advance_cursor. Compare the same candidate with the changed capacity.",
+          "anchor": {
+            "label": "advance_cursor",
+            "mnemonic": "bnec",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000006",
+            "$a1": "0x0000000000000008",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The candidate is still inside the ring, so the branch bypasses the zero assignment."
+        },
+        {
+          "id": "unchanged-candidate",
+          "explanation": "Pause at cursor_return before jrc. The helper is about to return the candidate it retained.",
+          "anchor": {
+            "label": "cursor_return",
+            "mnemonic": "jrc",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000006",
+            "$a1": "0x0000000000000008",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The return path preserves seven; wrapping every increment would also be incorrect."
+        },
+        {
+          "id": "ordinary-return",
+          "explanation": "Pause at cursor_done before sw. Compare the return value with the earlier capacity-seven result.",
+          "anchor": {
+            "label": "cursor_done",
+            "mnemonic": "sw",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a0": "0x0000000000000006",
+            "$a1": "0x0000000000000008",
+            "$v0": "0x0000000000000007"
+          },
+          "success": "The same helper responds to the supplied capacity rather than assuming a fixed ring size."
+        }
+      ],
+      "success": "Explain why a whole-record jump needs a bound different from a one-byte advance. Stop Debug before running the complete caller."
+    },
+    {
+      "kind": "run",
+      "id": "run-cursor",
+      "source": "worked/cursor.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/cursor.asm normally. Its caller stores zero to cursor_result and exits silently. The debugger established the returned value; an empty transcript alone does not establish it. worked/cursor.kts separately checks all 528 valid index/capacity pairs and the complete caller.",
+      "success": "The worked caller exited with no console output. Use the written companion to compare the cursor with a bounded whole-record jump.",
+      "anchor": {
+        "label": "cursor_done",
+        "mnemonic": "sw",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "equal-indexes",
+      "explanation": "The independent descriptor keeps head, tail and used separately. Both an empty ring and a full ring can have equal head and tail.",
+      "question": "Which observation distinguishes those two states?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Whether the physical bytes happen to contain zero.",
+          "feedback": "Old bytes can remain after a pop, and zero is an ordinary payload byte."
+        },
+        {
+          "id": "b",
+          "text": "The occupied count: used=0 is empty, used=C is full.",
+          "feedback": "The count describes ownership. It also permits using all C bytes instead of reserving an empty slot."
+        },
+        {
+          "id": "c",
+          "text": "Whether head is physically before tail.",
+          "feedback": "A live circular interval may cross the array boundary. Physical ordering does not describe its logical contents."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "operation_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/ring.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "prefix-ownership",
+      "explanation": "A record occupies one unsigned length byte followed by L payload bytes. L can be zero; binary payloads need no terminator.",
+      "question": "What happens when a zero-length record is pushed into an empty capacity-one ring, then popped into capacity-zero output?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Both operations succeed, each accounting for one prefix byte.",
+          "feedback": "The push returns (0,1); the pop returns (0,1). Neither copies a payload byte, but the record still occupies and releases one byte."
+        },
+        {
+          "id": "b",
+          "text": "The push must fail because an empty payload is not a record.",
+          "feedback": "The contract permits L=0. A length prefix still represents that record."
+        },
+        {
+          "id": "c",
+          "text": "The pop must report an empty queue.",
+          "feedback": "A queued zero-length record differs from used=0. A successful pop consumes its prefix."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "operation_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/ring.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "request-before-space",
+      "explanation": "For push, reject L>=C before checking whether L+1 fits in the current free space. These are different failure conditions.",
+      "question": "A capacity-eight ring is full and the requested payload length is eight. Which result has priority?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "(-1,0): there is no current free space.",
+          "feedback": "That describes an otherwise representable record. This request cannot fit even in an empty ring."
+        },
+        {
+          "id": "b",
+          "text": "(0,8): overwrite the oldest eight bytes.",
+          "feedback": "The interface never discards old records to make room, and the prefix would require another byte."
+        },
+        {
+          "id": "c",
+          "text": "(-2,0): the record itself is too large.",
+          "feedback": "Its encoded size exceeds capacity. Decide that failure before any caller-data store."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "publish",
+        "mnemonic": "sw",
+        "occurrence": 0
+      },
+      "source": "independent/ring.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "failed-pop-is-a-retry",
+      "explanation": "Suppose the oldest record has seven payload bytes and the output capacity is six. Pop returns (-2,7).",
+      "question": "What must a later retry with capacity seven observe?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Only the remaining six bytes, because the prefix was already consumed.",
+          "feedback": "A failed pop consumes nothing. Advancing head early would change the retry."
+        },
+        {
+          "id": "b",
+          "text": "The same complete oldest record, with descriptor, ring and output unchanged by the failed call.",
+          "feedback": "Validate destination capacity before caller-data stores. The required length lets the caller retry."
+        },
+        {
+          "id": "c",
+          "text": "An empty record, because reporting an error clears the old payload.",
+          "feedback": "Neither failure nor success clears ring storage. Queue ownership is described by the descriptor."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "publish",
+        "mnemonic": "sw",
+        "occurrence": 0
+      },
+      "source": "independent/ring.asm"
+    },
+    {
+      "kind": "prediction",
+      "id": "descriptor-pointer",
+      "explanation": "Descriptor offset 16 contains an eight-byte ring address. The descriptor itself is passed in a0. Data can be relocated above 4 GiB.",
+      "question": "Which operation preserves that pointer interface?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Load only the low word because every ring is at most 32 bytes long.",
+          "feedback": "Ring capacity and address width are unrelated. Truncating the pointer changes which allocation is addressed."
+        },
+        {
+          "id": "b",
+          "text": "Replace the pointer with the address of the global ring_a label.",
+          "feedback": "The caller can select ring_b or another valid descriptor. The passed descriptor is authoritative."
+        },
+        {
+          "id": "c",
+          "text": "Load all eight pointer bytes, then use full-width address arithmetic for the index.",
+          "feedback": "ld and full-width pointer additions are the straightforward form; an equivalent full-width implementation is accepted."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "main",
+        "mnemonic": "sd",
+        "occurrence": 0
+      },
+      "source": "independent/ring.asm"
+    },
+    {
+      "kind": "assessment",
+      "id": "check-push",
+      "source": "independent/ring.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/push-00.cases.json",
+        "independent/push-01.cases.json",
+        "independent/push-02.cases.json"
+      ],
+      "explanation": "Implement push_record in independent/ring.asm; pop_record may still contain its deliberate break. Read independent/README.md. These 260 original push trials vary capacity, head, queue contents, payload length, data pointers and the incoming return. They check impossible-size priority, current free space, prefix/payload bytes, exact access bounds and preserved state through normal caller exit.",
+      "success": "push_record passes all 260 public push trials. Explain why the failure decisions precede stores and why the ring cursor accounts for the prefix separately from payload bytes.",
+      "hints": [
+        {
+          "id": "preflight",
+          "text": "Reject L>=C first, then test whether L+1 exceeds C-used. Both failures return before any caller-data store."
+        },
+        {
+          "id": "copy",
+          "text": "Store the prefix at old tail, then copy exactly L payload bytes. Advance and wrap the ring cursor once per stored byte; skip source loads entirely for L=0."
+        },
+        {
+          "id": "return",
+          "text": "Preserve head, capacity and the full ring pointer. Increase used by L+1, return (0,L+1), and restore saved registers, sp and the incoming continuation."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-pop",
+      "source": "independent/ring.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/pop-00.cases.json",
+        "independent/pop-01.cases.json",
+        "independent/pop-02.cases.json"
+      ],
+      "explanation": "Implement pop_record in the same source. The 260 original pop trials call it independently, so they do not require push_record to build the input queue. Check emptiness before a prefix load, validate output capacity before consuming anything, copy only payload bytes and preserve all ring storage.",
+      "success": "pop_record passes all 260 public pop trials. Together the two activities retain every one of the original 520 kernel trials. Explain the failed-pop retry and zero-length success.",
+      "hints": [
+        {
+          "id": "failure",
+          "text": "used=0 returns (-1,0). Otherwise read the unsigned prefix; if L exceeds output capacity, return (-2,L) without caller-data stores."
+        },
+        {
+          "id": "payload",
+          "text": "Advance a working cursor past the prefix, then copy exactly L bytes to output. Do not copy the prefix, append a terminator or clear the ring."
+        },
+        {
+          "id": "release",
+          "text": "On success preserve tail, publish the advanced head, subtract L+1 from used and return (L,L+1). A zero-length record still releases its prefix."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-caller",
+      "source": "independent/ring.asm",
+      "caseProfile": "independent/caller.cases.json",
+      "explanation": "Check the retained caller after both function assessments pass. Twelve prefixes cover zero commands through the full fourteen-command sequence. Execution runs continuously between operation_ready markers; each completed command must publish its descriptor, result words, queue bytes and output without stores belonging to another operation.",
+      "success": "All twelve caller prefixes pass. The full sequence includes wrapped records, a full ring, failed pushes, a failed short-output pop and its successful retry. Inspect those boundaries in the debugger next."
+    },
+    {
+      "kind": "debug",
+      "id": "debug-completed-commands",
+      "source": "independent/ring.asm",
+      "integerInputs": [],
+      "explanation": "After the push, pop and caller checks pass, debug the completed independent source. Put a breakpoint on operation_ready. Right-click it, enable Condition and enter $s3 == 3 before starting. This public loop counter identifies a completed command. Change only the breakpoint condition between the four requested stops; no assembly edit or restart is needed.",
+      "stops": [
+        {
+          "id": "wrapped",
+          "explanation": "Set the breakpoint condition at operation_ready to $s3 == 3, then resume the same session. The fourth completed command has wrapped the new record. Inspect descriptor_a and the first eight ring_a bytes. Head=4, tail=3 and used=7.",
+          "anchor": {
+            "label": "operation_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000003",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004"
+          },
+          "success": "Completed command 3 has the expected public result. Use the descriptor and byte views to explain the ownership change."
+        },
+        {
+          "id": "full",
+          "explanation": "Set the breakpoint condition at operation_ready to $s3 == 8, then resume the same session. The capacity-eight record has filled the ring. Inspect descriptor_a: head and tail are both four, while used is eight.",
+          "anchor": {
+            "label": "operation_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000008",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000008"
+          },
+          "success": "Completed command 8 has the expected public result. Use the descriptor and byte views to explain the ownership change."
+        },
+        {
+          "id": "failure",
+          "explanation": "Set the breakpoint condition at operation_ready to $s3 == 10, then resume the same session. The output capacity is six for a seven-byte payload. Compare descriptor and output with the pre-failure state; the required length is seven and nothing is consumed.",
+          "anchor": {
+            "label": "operation_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x000000000000000a",
+            "$v0": "0xfffffffffffffffe",
+            "$v1": "0x0000000000000007"
+          },
+          "success": "Completed command 10 has the expected public result. Use the descriptor and byte views to explain the ownership change."
+        },
+        {
+          "id": "retry",
+          "explanation": "Set the breakpoint condition at operation_ready to $s3 == 11, then resume the same session. The retry has returned seven payload bytes and consumed eight encoded bytes. Head and tail are still four, while used is zero. Stale ring bytes remain.",
+          "anchor": {
+            "label": "operation_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x000000000000000b",
+            "$v0": "0x0000000000000007",
+            "$v1": "0x0000000000000008"
+          },
+          "success": "Completed command 11 has the expected public result. Use the descriptor and byte views to explain the ownership change."
+        }
+      ],
+      "success": "Explain why full and empty have identical indices, why the failed pop preserves the queue, and why the successful retry leaves old bytes in physical storage. Stop Debug before the final ordinary Run."
+    },
+    {
+      "kind": "prediction",
+      "id": "stale-bytes",
+      "explanation": "After the retry, used is zero even though physical ring bytes still resemble the old record. Pop never writes the ring.",
+      "question": "May another pop interpret those stale bytes as a queued record?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes, until the bytes have been overwritten.",
+          "feedback": "The bytes no longer belong to the queue. used=0 must be checked before reading a prefix."
+        },
+        {
+          "id": "b",
+          "text": "No; the occupied count releases their ownership, so the queue is empty.",
+          "feedback": "A new push may overwrite released storage. Clearing it is unnecessary and would violate the pop write contract."
+        },
+        {
+          "id": "c",
+          "text": "Only if head equals tail.",
+          "feedback": "Head equals tail in the full state too. The occupied count is the deciding state."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "operation_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "source": "independent/ring.asm"
+    },
+    {
+      "kind": "run",
+      "id": "run-records",
+      "source": "independent/ring.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run the completed independent source normally. Its supplied caller executes fourteen commands and exits silently. The preceding assessments and debugger boundaries establish record behavior; the console transcript establishes normal termination rather than queue contents.",
+      "success": "The complete caller exited without console output. Explain a fitting wrapped record, a failure with no caller-data writes, and a zero-length record using the written companion.",
+      "anchor": {
+        "label": "done",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    }
+  ]
+}

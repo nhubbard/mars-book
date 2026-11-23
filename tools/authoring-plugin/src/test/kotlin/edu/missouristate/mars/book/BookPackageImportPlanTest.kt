@@ -677,4 +677,22 @@ class BookPackageImportPlanTest {
             assertThrows<IllegalArgumentException> { bad.validate() }
         }
     }
+
+    @Test
+    fun `Ring native plans bind the retained caller fixture and reject mixed or incomplete routes`() {
+        val ring = plan.copy(archives = listOf(archive.copy(id = "014-ring-records", version = "0.1.0", entry = "worked/cursor.asm")),
+            nativePredictions = true, ringUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/ring.asm", "/tmp/ring.asm", "c".repeat(64))))
+        ring.validate()
+        ring.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(ring.copy(nativePredictions = false), ring.copy(nativeExecution = true),
+            ring.copy(nativeDebug = true), ring.copy(resumeCompleted = true), ring.copy(h263StreamUnit = true),
+            ring.copy(ringUnit = false), ring.copy(activityNavigation = true), ring.copy(prerequisiteControls = true),
+            ring.copy(assessmentFixtures = emptyList()), ring.copy(assessmentFixtures = ring.assessmentFixtures + ring.assessmentFixtures),
+            ring.copy(assessmentFixtures = listOf(ring.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            ring.copy(archives = listOf(ring.archives.single().copy(id = "014-other"))),
+            ring.copy(archives = listOf(ring.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
 }

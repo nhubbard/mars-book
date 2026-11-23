@@ -181,6 +181,10 @@ def build(directory, check=False):
     files = {}
     for batch, start in enumerate(range(0,len(rows),100)):
         files[f'kernels-{batch:02d}.cases.json'] = json.dumps(dict(formatVersion=23,cases=rows[start:start+100]),indent=2)+'\n'
+    for operation in ['push', 'pop']:
+        selected = [row for row in rows if row['calls'][0]['entry'] == operation + '_record']
+        for batch, start in enumerate(range(0,len(selected),100)):
+            files[f'{operation}-{batch:02d}.cases.json'] = json.dumps(dict(formatVersion=23,cases=selected[start:start+100]),indent=2)+'\n'
     caller = caller_profile();cases = console_parse(json.dumps(caller).encode())
     files['caller.cases.json'] = json.dumps(caller,indent=2)+'\n'
     files['caller.kts'] = console_render(cases)

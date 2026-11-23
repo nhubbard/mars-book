@@ -84,6 +84,14 @@ class RingLessonCasesTest(unittest.TestCase):
             data = json.loads(p.read_text())
             self.assertEqual(23,data['formatVersion'])
             self.assertLessEqual(len(data['cases']),100)
+        original = {row['name']:row for p in profiles for row in json.loads(p.read_text())['cases']}
+        grouped = {}
+        for operation in ['push','pop']:
+            rows = [row for p in sorted(root.glob(operation+'-*.cases.json')) for row in json.loads(p.read_text())['cases']]
+            self.assertEqual(260,len(rows))
+            self.assertTrue(all(row['calls'][0]['entry']==operation+'_record' for row in rows))
+            grouped.update({row['name']:row for row in rows})
+        self.assertEqual(original,grouped)
         with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaises(FileNotFoundError):ring.build(temporary,check=True)
 
