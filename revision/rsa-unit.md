@@ -140,12 +140,48 @@ headless execution and import evidence, not an IDE walkthrough or learner review
 The separate authoring plugin still needs an RSA first/resume route and actual
 IDE trials before publication integration.
 
+## Actual IDE and publication integration (23 November 2026)
+
+The separate authoring plugin now drives the complete native RSA package through
+production MARS controls. Two fresh IntelliJ processes exercise inline questions,
+eight Debug activities, staged checks, normal Run and the final complete recheck.
+The first records 53 observations and 58 photographs; resume records 37 observations
+and 38 photographs. All eleven installed JARs match their pinned archives in both
+processes. There are no ERROR or SEVERE entries in either accepted IDE log.
+
+Seventeen quiz attempts, including one deliberate wrong answer, survive unchanged.
+Edits to nine source files stale all nineteen execution checks; the second process
+re-earns them on the saved edited sources. Each assessment's attempt count increases
+once on resume, and source digests agree across the process boundary. Both projects
+save, close and dispose before the scoped authoring helper terminates the owned IDE;
+the resulting runIde child exit 143 is intentional, not a naturally successful
+Gradle completion.
+
+The native companion now connects its reasoning to the eight public worked
+experiments, continuing independent source, inline predictions and final recheck.
+Standalone preparation and CLI checks are explicitly optional. One new light-theme
+photograph shows the first Euclidean remainder, selected frame and visible registers.
+Native LaTeX supplies callouts, crops, alternative text and the explanation of the
+current pause versus next lesson target. The four older arithmetic figures remain.
+The new capture precedes private fixture injection, and six publication-guard tests
+reject changed source, state, layout, geometry and post-injection provenance.
+
+The accepted 219-page lab proof retains embedded Minion Pro, Noto Sans Math and
+JetBrains Mono. Pages 185–196 receive visual review, including the transition into
+WAV; the new figure receives grayscale review. The exact accepted PDF passes
+PDF/UA-2: 1,728 rules, 1,034,219 checks and zero failures. The previous proof/report
+remain paired privately. All 581 public tooling tests and 138 separate authoring
+Jupiter tests pass. Exact plugin API reports retain the expected experimental
+public API uses and no compatibility or internal-API release problem. Evidence is
+private in `native-rsa-ide-01`.
+
 ## Remaining scope
 
 Author, representative learner and assistive-technology reviews remain pending.
-The RSA-specific sequence is now a tested native draft; its actual IDE delivery
-and instructor-policy trials remain incomplete. The shared student instructional system already supports
-progression and instructor policies; RSA still needs its own teaching package. The broader goal remains
+The RSA student sequence now has actual first/resume IDE evidence and native
+publication integration. RSA-specific instructor-policy UI trials are not claimed
+by these default-policy walkthroughs. The shared instructional system retains its
+separately verified progression, hint and policy facilities. The broader goal remains
 active. WAV, PNG and the retained lossless/H.263 video sequence follow. The deferred
 opening explanation of MARS versus hardware has not been added. All forty-one
 pre-existing MARS edits remain preserved. The historical written companion added

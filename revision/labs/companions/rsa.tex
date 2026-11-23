@@ -7,13 +7,23 @@ multiword arithmetic through a small RSA calculation. It revises original projec
 \texttt{027-rsa-arithmetic}; the numerical interfaces also work for composite
 moduli unrelated to an RSA key.
 
-Implement the seven entries in
-\texttt{revision/labs/files/rsa-arithmetic.asm}. The skeleton supplies caller
+Use the native lesson \emph{Extend arithmetic beyond one register}. Implement
+the seven entries in its \texttt{independent/rsa-arithmetic.asm}. The same bare
+starter is retained at \texttt{revision/labs/files/rsa-arithmetic.asm} for
+standalone work. The skeleton supplies caller
 objects and an aligned stack area, with a deliberate \texttt{break} at each
 unfinished function. The original package retains its cumulative guided source
 and public checks. Your completed functions can choose different helpers,
 registers, frames and exponent scans. Start with the scalar cases before extending
 the representation to four limbs.
+
+The native lesson begins with short worked sources in its \texttt{worked}
+directory. Each exposes one operation before asking you to implement a complete
+interface. Answer the inline prediction, inspect the requested Debug boundaries,
+then return to the continuing independent source. Finish the Debug process before
+another launch or source edit. The worked files remain unchanged throughout the
+required observations; there is no need to change your implementation's mode
+word to follow them.
 
 \subsection*{Use the gcd to explain a small exponent pair}
 
@@ -36,7 +46,23 @@ The loop stops when $B$ is zero, returning the current $A$. Thus
 $\gcd(A,0)=A$; our local convention also defines $\gcd(0,0)=0$.
 Check for a zero divisor before computing the remainder.
 
-Work backward through the small example:
+Begin the native observation with \texttt{worked/remainders.asm}. Its first
+pair is 13,11, whose unsigned remainder is two. Before replacing either operand,
+identify which old value each move still needs. The next pair must be 11,2;
+its remainder is one. Figure~\ref{fig:revision-rsa-native-pause} shows that first
+pause. The blue execution row and selected frame describe the current machine
+state. The yellow lesson pointer identifies the next requested stop after the
+lesson has accepted the current observation.
+
+\input{revision/figures/rsa/native-pause}
+
+The final part of this worked source divides the all-one doubleword by 17.
+Unsigned interpretation gives $2^{64}-1$, with remainder zero; signed
+interpretation gives $-1$, with signed remainder $-1$. The register bits alone
+do not choose the operation. Use the interpretation promised by the interface,
+then complete the gcd assessment before moving on to modular powers.
+
+Work backward through the 3120,17 calculation:
 \[
  1=9-8=2\cdot9-17=2\cdot3120-367\cdot17.
 \]
@@ -52,6 +78,7 @@ before moving the gcd status into \texttt{v0}. Inspect the gcd value at that
 first boundary; \texttt{main\_done} is too late to expect it in \texttt{v0}.
 A function returning a high-bit-set gcd must preserve all 64 result bits.
 
+\Needspace{11\baselineskip}
 \subsection*{Reduce a power without constructing the full integer}
 
 Take message integer 65. The small forward operation is
@@ -105,6 +132,13 @@ Exponent zero returns $1\bmod N$, including for a zero base. For modulus one,
 that answer is zero. Modulus zero is an error: return status one without
 accessing the output. Test these cases separately from a large positive exponent.
 
+In \texttt{worked/word-product.asm}, compare \texttt{lw} and \texttt{lwu}
+on the same all-one limb. Then inspect the complete product
+\texttt{fffffffe00000001}. Unsigned reduction modulo \texttt{ffffffff}
+gives zero, while its low word is one and signed reduction gives $-1$. The
+experiment separates three values that can look plausible when printed in
+hexadecimal. Finish the scalar-power checks with the complete unsigned dividend.
+
 \subsection*{Represent a wider number with unsigned limbs}
 
 Let $\beta=2^{32}$. Four \emph{limbs}, each an unsigned word, represent
@@ -147,6 +181,14 @@ a different operation.
 
 \input{revision/figures/rsa/native-product}
 
+The native \texttt{worked/limb-column.asm} adds two maximum limbs and a
+supplied carry of one. Its 33-bit sum is \texttt{1ffffffff}: low limb
+\texttt{ffffffff}, outgoing carry one. This isolates one column. In a full
+multiplication, several limb products can contribute to the same position;
+account for those contributions before declaring that output limb finished.
+The independent full-product checks also require zero high limbs and squaring
+through one shared read-only input object.
+
 \subsection*{Keep the carry that lies beyond the output array}
 
 \texttt{rsa\_addmod128(a0 A,a1 B,a2 N,a3 output)} requires reduced inputs
@@ -180,6 +222,14 @@ implementation can load both current operand limbs before replacing the current
 output limb, provided no later step needs those original limbs. The modulus
 stays disjoint from output. An arbitrary partial overlap has no such guarantee;
 a store could replace a higher source limb before it is read.
+
+Use \texttt{worked/carry-reduction.asm} to inspect the decision with an
+eight-bit model: $N=251$ and $A=B=250$. The full sum is 500, its low eight bits
+are 244, and the outgoing carry is one. Comparing only 244 with 251 would skip
+a necessary subtraction. The result is $500-251=249$. Transfer that reasoning
+to the four-limb representation; the small experiment can display a complete
+intermediate in one register, while your general implementation must retain its
+extra carry explicitly.
 
 \subsection*{Reduce arbitrary inputs before using residue-only helpers}
 
@@ -215,6 +265,19 @@ This computes a modular product without first constructing a 256-bit temporary
 product. Both approaches can be correct, but a full-product approach also needs
 a reduction algorithm that accepts all 256 product bits. Passing only the low
 128 bits to \texttt{rsa\_reduce128} loses information.
+
+Trace \texttt{worked/prefix-reduction.asm} through all four bits of
+\texttt{1101} modulo five. Its returned prefix residues are 1,3,1,3. At the
+third bit, the provisional six is reduced to one; the final bit then gives
+three. The residue invariant explains why each append needs at most one
+subtraction, while the full implementation must also retain the extra carry.
+Resume to reach each new visit to the same source instruction.
+
+In \texttt{worked/modular-product.asm}, multiplier \texttt{11} selects two
+contributions from base 250 modulo 251. The first residue is 250; the doubled
+base residue is 249; their sum reduces to 248. Before using the modular adder
+inside your multiplier, establish its reduced-input precondition. The multiplier
+itself accepts arbitrary inputs. The multiplier's caller has not promised reduced operands.
 
 \subsection*{Shift the whole exponent and preserve the outer calculation}
 
@@ -252,6 +315,14 @@ same input address twice. Modular-product and power outputs remain disjoint from
 their inputs. Only addmod has the additional output-alias permission. Establish
 those relationships before reusing a temporary array for another role.
 
+The native \texttt{worked/exponent-halves.asm} performs one logical shift
+of a supplied 128-bit exponent. Its old high half is
+\texttt{8000000000000001} and its low half is one. After shifting, the new low
+half is \texttt{8000000000000000}; a bit has crossed the doubleword boundary.
+The new high half is \texttt{4000000000000000}. Inspect that transfer before
+choosing a termination test for the complete exponent scan. The experiment also
+reduces one modulo one to zero, making the zero-exponent identity explicit.
+
 \subsection*{Check the modulus before following other pointers}
 
 For every modular multiword entry, first read its four-limb modulus and determine
@@ -277,10 +348,27 @@ An unchanged final value alone does not prove that an illegal write never occurr
 a store of the same byte is still a write. The public checks observe access
 intervals as well as final bytes.
 
+In \texttt{worked/validation.asm}, the modulus is readable but zero, and
+the other pointer arguments contain the invalid address one. The helper reads
+all four modulus limbs and returns status one. Main then finds the separate
+output word unchanged. The independent checks observe caller accesses as well
+as bytes: an unchanged result alone would not prove that no forbidden access
+occurred. Keep caller publication outside the completed callee's ownership
+boundary.
+
 \subsection*{Use a small RSA example as an arithmetic test}
 
-Keep \texttt{mode} at its supplied default zero in the source passed to the
-preparation tool. To observe the scalar power in a fresh source from the book
+The last native assessment groups exercise the actual caller and different
+operations within one simulator. The repeated-power case feeds one result into
+the inverse calculation and then repeats the original request. State left over
+from a previous call must not replace current arguments. After completing all
+entries, run the supplied mode-zero caller to termination, then use the final
+assessment to recheck every interface on the completed source. Later edits can
+invalidate an earlier pass. Choose another input and explain its expected result
+from the arithmetic invariant before testing it.
+
+For optional standalone Debug observations, keep \texttt{mode} at its supplied
+default zero in the source passed to the preparation tool. To observe the scalar power in a fresh source from the book
 checkout, use:
 
 \Needspace{6\baselineskip}
@@ -305,7 +393,7 @@ The full-width power caller uses mode six and reads its four-limb exponent from
 \texttt{exponent} instead of \texttt{right}. The function's argument registers,
 not the fixture labels themselves, determine which values it receives.
 
-Run the nine completed public scripts listed in
+For standalone CLI checking, use the nine original public scripts listed in
 \texttt{packages/027-rsa-arithmetic/package.json}. Their names separate gcd,
 word power, product, addition, reduction, modular product and full-width power,
 plus caller and repeated-call behavior. Use
