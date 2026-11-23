@@ -1369,3 +1369,15 @@ The actual profile parser and combined-assessment checks pass. This foundation
 does not deliver the native lesson yet; bounded worked experiments, inline
 predictions, a student package, actual IDE first/resume and written integration
 remain next. See `revision/lossless-unit.md` and the private qualification receipts.
+
+
+### Lossless-video native student-unit draft, 23 November 2026
+
+The scoped student unit now has six worked experiments, twelve inline predictions,
+eighteen Debug boundaries, one Run and staged/final bounds assessments. It uses
+the actual supplied helpers with relevant static data, plus explicit arithmetic
+models for time and coordinate reasoning. Core probes, exact exported-starter
+qualification, package import and native PSI checks pass. Required work remains
+actual IDE first/resume and directly edited written-lab/capture integration.
+See `revision/lossless-unit.md`; this draft does not replace the accepted PDF
+or close the broader curriculum goal.

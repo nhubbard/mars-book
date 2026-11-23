@@ -1,0 +1,883 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 25 and its written lab alongside six bounded experiments. Use inline predictions and ordinary Debug at named boundaries. Complete each launched process. The complete MLV1 codec is supplied; only the independent changed-pixel bounds function is unfinished.",
+  "conclusion": "Explain XOR history, format validation, committed state, record cost, replay and anchored deadlines. Implement minimal exclusive bounds over original native words, then use the final assessment after edits. Optional full-file playback remains in the written lab; the native deadline experiment is an arithmetic model.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "high-bit-difference",
+      "source": "worked/xor-alias-tail.asm",
+      "anchor": {
+        "label": "lesson_xor_result",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The five-word XOR has differences 80000000, zero, 10, ffffffff and one, in hexadecimal. A word differs when any bit differs.",
+      "question": "How many unequal words should the routine count?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four",
+          "feedback": "Unsigned nonzero tests count the high-bit-only difference as well."
+        },
+        {
+          "id": "b",
+          "text": "Three",
+          "feedback": "A signed positive test would incorrectly exclude high-bit differences."
+        },
+        {
+          "id": "c",
+          "text": "Five",
+          "feedback": "The second pair is identical and has XOR zero."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "exact-alias",
+      "source": "worked/xor-alias-tail.asm",
+      "anchor": {
+        "label": "lesson_xor_result",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The destination is exactly the left input. Each vector group loads both inputs before storing its XOR result.",
+      "question": "What makes this exact alias safe?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The destination is never written",
+          "feedback": "The XOR result must be stored, including its scalar tail."
+        },
+        {
+          "id": "b",
+          "text": "Both input vectors are loaded before the store",
+          "feedback": "Their original values remain available in registers."
+        },
+        {
+          "id": "c",
+          "text": "All aliases are safe automatically",
+          "feedback": "Partial overlaps are a different contract and are not implied by exact aliases."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-xor",
+      "source": "worked/xor-alias-tail.asm",
+      "explanation": "Inspect the actual MSA helper, scalar tail, retained guard and empty call.",
+      "stops": [
+        {
+          "id": "four-counted",
+          "anchor": {
+            "label": "deltaKernel_video_group_counted",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v1": "0x0000000000000003",
+            "$a3": "0x0000000000000005"
+          },
+          "explanation": "Three of the first four words differ. The vector cursor has not advanced.",
+          "success": "Three of the first four words differ. The vector cursor has not advanced.",
+          "vectorRegisters": {
+            "$w2": "0xffffffff000000100000000080000000"
+          }
+        },
+        {
+          "id": "tail-retained",
+          "anchor": {
+            "label": "lesson_xor_result",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000004",
+            "$s0": "0x0000000080000000",
+            "$s1": "0x0000000000000001",
+            "$s2": "0x00000000000000a5"
+          },
+          "explanation": "The fifth word is the scalar tail; the guard remains A5.",
+          "success": "The fifth word is the scalar tail; the guard remains A5."
+        },
+        {
+          "id": "empty-no-access",
+          "anchor": {
+            "label": "lesson_xor_empty",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$a0": "0x0000000000000001",
+            "$a1": "0x0000000000000001",
+            "$a2": "0x0000000000000001",
+            "$a3": "0x0000000000000000"
+          },
+          "explanation": "Zero length succeeds before dereferencing the deliberately unusable pointers.",
+          "success": "Zero length succeeds before dereferencing the deliberately unusable pointers."
+        }
+      ],
+      "success": "Finish this process and explain the observed boundary.",
+      "hints": [
+        {
+          "id": "ordinary-debug",
+          "text": "Use ordinary Debug and breakpoints at the named labels. Inspect state before the anchored instruction. Finish the process before starting the next activity."
+        }
+      ],
+      "integerInputs": []
+    },
+    {
+      "kind": "prediction",
+      "id": "crc-and-structure",
+      "source": "worked/record-publication.asm",
+      "anchor": {
+        "label": "lesson_record_committed",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The second record has the expected sequence and a recomputed CRC, but its final command is zero skip and zero change.",
+      "question": "Does a correct CRC make the command walk valid?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes; CRC checks all format rules",
+          "feedback": "CRC compares bytes with a checksum, not with a format grammar."
+        },
+        {
+          "id": "b",
+          "text": "Only if the image looks unchanged",
+          "feedback": "A picture cannot establish command validity."
+        },
+        {
+          "id": "c",
+          "text": "No; command progress and exact coverage need separate validation",
+          "feedback": "A zero/zero command cannot advance the pixel cursor."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "retained-sequence",
+      "source": "worked/record-publication.asm",
+      "anchor": {
+        "label": "lesson_record_rejected",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The first call commits sequence one and advances the expected sequence to two. A malformed candidate for sequence two follows.",
+      "question": "What expected sequence should remain after rejection?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Two",
+          "feedback": "The failed candidate must not commit its next sequence."
+        },
+        {
+          "id": "b",
+          "text": "Three",
+          "feedback": "That would claim the rejected transition was accepted."
+        },
+        {
+          "id": "c",
+          "text": "Zero",
+          "feedback": "Rejection preserves the previous successful state; it does not reset the decoder."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-record",
+      "source": "worked/record-publication.asm",
+      "explanation": "Compare successful publication with a later structural rejection whose CRC is valid.",
+      "stops": [
+        {
+          "id": "committed",
+          "anchor": {
+            "label": "lesson_record_committed",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000004000",
+            "$s0": "0x00000000000161c2",
+            "$s1": "0x0000000000000002",
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000004000"
+          },
+          "explanation": "The delta changes the first pixel and publishes the next expected sequence.",
+          "success": "The delta changes the first pixel and publishes the next expected sequence."
+        },
+        {
+          "id": "candidate",
+          "anchor": {
+            "label": "lesson_record_before_retry",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a1": "0x000000000000001b",
+            "$s4": "0x0000000000000002",
+            "$s5": "0x0000000000000002",
+            "$s6": "0x0000000000000000"
+          },
+          "explanation": "The candidate sequence matches the context, but its final command makes no progress.",
+          "success": "The candidate sequence matches the context, but its final command makes no progress."
+        },
+        {
+          "id": "rejected",
+          "anchor": {
+            "label": "lesson_record_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$s4": "0x00000000000161c2",
+            "$s5": "0x0000000000000002",
+            "$s6": "0x0000000000004000"
+          },
+          "explanation": "The last successful pixel and context fields remain after structural failure.",
+          "success": "The last successful pixel and context fields remain after structural failure."
+        }
+      ],
+      "success": "Finish this process and explain the observed boundary.",
+      "hints": [
+        {
+          "id": "ordinary-debug",
+          "text": "Use ordinary Debug and breakpoints at the named labels. Inspect state before the anchored instruction. Finish the process before starting the next activity."
+        }
+      ],
+      "integerInputs": []
+    },
+    {
+      "kind": "prediction",
+      "id": "command-cost",
+      "source": "worked/encoding-cost.asm",
+      "anchor": {
+        "label": "lesson_encoded",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Four changed pixels occupy three change runs in the supplied pair: pixel zero, pixels 325 and 326, and pixel 4095. Each command has four header bytes and each changed pixel three bytes.",
+      "question": "What is the complete delta record size?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Twelve bytes",
+          "feedback": "That counts changed RGB bytes but omits every header."
+        },
+        {
+          "id": "b",
+          "text": "Forty bytes",
+          "feedback": "Three command headers plus twelve RGB bytes gives 24 payload bytes; the record header adds sixteen."
+        },
+        {
+          "id": "c",
+          "text": "Twenty-eight bytes",
+          "feedback": "A single command cannot represent these three separated runs without extra pixels."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "unchanged-record",
+      "source": "worked/encoding-cost.asm",
+      "anchor": {
+        "label": "lesson_encoded_reuse",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "A successful encode commits the current image as previous. The caller then encodes that same current image again at a nonperiodic sequence.",
+      "question": "How large is its unchanged delta record?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Zero bytes",
+          "feedback": "The stream still needs a record and an interval for this frame."
+        },
+        {
+          "id": "b",
+          "text": "Forty bytes",
+          "feedback": "The second comparison uses the newly committed previous image."
+        },
+        {
+          "id": "c",
+          "text": "Twenty bytes",
+          "feedback": "One four-byte skip/change command reaches the end; the record adds sixteen bytes."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-encoding",
+      "source": "worked/encoding-cost.asm",
+      "explanation": "Inspect the selected record, successful reuse and a too-small capacity.",
+      "stops": [
+        {
+          "id": "first",
+          "anchor": {
+            "label": "lesson_encoded",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000028",
+            "$s0": "0x0000000000000018",
+            "$s1": "0x0000000000000002",
+            "$s2": "0x0000000000000001"
+          },
+          "explanation": "The selected delta has 24 payload bytes and a sixteen-byte record header.",
+          "success": "The selected delta has 24 payload bytes and a sixteen-byte record header."
+        },
+        {
+          "id": "reused",
+          "anchor": {
+            "label": "lesson_encoded_reuse",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000014",
+            "$s0": "0x0000000000000004",
+            "$s1": "0x0000000000000003",
+            "$s2": "0x0000000000000001"
+          },
+          "explanation": "Reusing the committed image produces an unchanged delta.",
+          "success": "Reusing the committed image produces an unchanged delta."
+        },
+        {
+          "id": "capacity",
+          "anchor": {
+            "label": "lesson_encoding_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000003",
+            "$s1": "0x0000000000000013",
+            "$s2": "0x0000000000000014"
+          },
+          "explanation": "The explicit capacity input is nineteen. Failure preserves the previously committed sequence and published record length.",
+          "success": "The explicit capacity input is nineteen. Failure preserves the previously committed sequence and published record length."
+        }
+      ],
+      "success": "Finish this process and explain the observed boundary.",
+      "hints": [
+        {
+          "id": "ordinary-debug",
+          "text": "Use ordinary Debug and breakpoints at the named labels. Inspect state before the anchored instruction. Finish the process before starting the next activity."
+        }
+      ],
+      "integerInputs": []
+    },
+    {
+      "kind": "prediction",
+      "id": "replay-history",
+      "source": "worked/directory-seek.asm",
+      "anchor": {
+        "label": "lesson_sought",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The embedded moving file has full records at zero and four. Target six is a delta after five.",
+      "question": "Which records reconstruct target six from an unrelated image?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Four, five and six",
+          "feedback": "Begin with the nearest preceding independent full image, then replay its deltas."
+        },
+        {
+          "id": "b",
+          "text": "Six alone",
+          "feedback": "A delta depends on previous reconstructed pixels."
+        },
+        {
+          "id": "c",
+          "text": "Zero and six",
+          "feedback": "Skipping intervening deltas loses their contributions."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "directory-offset",
+      "source": "worked/directory-seek.asm",
+      "anchor": {
+        "label": "lesson_directory_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The directory stores native offsets into one fully validated immutable file. Its first record starts after the 24-byte file header.",
+      "question": "What does a directory entry represent?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "An absolute address valid after any reload",
+          "feedback": "Reloading may place the same bytes at another base."
+        },
+        {
+          "id": "b",
+          "text": "A byte offset relative to the file base",
+          "feedback": "It is neither an absolute host address nor a pixel position."
+        },
+        {
+          "id": "c",
+          "text": "A native pixel-array index",
+          "feedback": "Directory entries locate serialized records."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-seek",
+      "source": "worked/directory-seek.asm",
+      "explanation": "Index the embedded moving file, reconstruct six, then reject an out-of-range target.",
+      "stops": [
+        {
+          "id": "directory",
+          "anchor": {
+            "label": "lesson_directory_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000040",
+            "$s0": "0x0000000000000008",
+            "$s1": "0x0000000000000004",
+            "$s2": "0x0000000000000028"
+          },
+          "explanation": "Eight native directory offsets occupy 64 bytes. Key interval is four and frame interval forty milliseconds.",
+          "success": "Eight native directory offsets occupy 64 bytes. Key interval is four and frame interval forty milliseconds."
+        },
+        {
+          "id": "sought",
+          "anchor": {
+            "label": "lesson_sought",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000004000",
+            "$s0": "0x0000000000000006",
+            "$s1": "0x0000000000000004",
+            "$s2": "0x0000000000000003"
+          },
+          "explanation": "Target six starts at full four and applies three records.",
+          "success": "Target six starts at full four and applies three records."
+        },
+        {
+          "id": "invalid",
+          "anchor": {
+            "label": "lesson_seek_rejected",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$s0": "0x0000000000000006",
+            "$s1": "0x0000000000000004",
+            "$s2": "0x0000000000000003"
+          },
+          "explanation": "Target eight is outside the eight-frame file. Prior successful result fields remain.",
+          "success": "Target eight is outside the eight-frame file. Prior successful result fields remain."
+        }
+      ],
+      "success": "Finish this process and explain the observed boundary.",
+      "hints": [
+        {
+          "id": "ordinary-debug",
+          "text": "Use ordinary Debug and breakpoints at the named labels. Inspect state before the anchored instruction. Finish the process before starting the next activity."
+        }
+      ],
+      "integerInputs": []
+    },
+    {
+      "kind": "prediction",
+      "id": "early-wake",
+      "source": "worked/anchored-deadlines.asm",
+      "anchor": {
+        "label": "lesson_early_wake",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The anchor is 1000 milliseconds and the first deadline 1040. Readings are 1010 then 1035. This source models arithmetic and does not call a host clock.",
+      "question": "What waits remain at those readings?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Thirty and forty milliseconds",
+          "feedback": "The second reading still belongs to the first deadline."
+        },
+        {
+          "id": "b",
+          "text": "Forty and forty milliseconds",
+          "feedback": "Fixed sleeps ignore work already spent in the interval."
+        },
+        {
+          "id": "c",
+          "text": "Thirty and five milliseconds",
+          "feedback": "Recheck the same deadline after an early wake."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "late-anchor",
+      "source": "worked/anchored-deadlines.asm",
+      "anchor": {
+        "label": "lesson_late_reading",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "The first deadline is 1040 and a reading arrives at 1047. The original interval remains forty.",
+      "question": "What lateness and next deadline follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Seven and 1080",
+          "feedback": "Report lateness without shifting the original schedule."
+        },
+        {
+          "id": "b",
+          "text": "Seven and 1087",
+          "feedback": "That would move the anchor forward after the delay."
+        },
+        {
+          "id": "c",
+          "text": "Zero and 1080",
+          "feedback": "The schedule remains anchored, but the lateness is still real."
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-deadlines",
+      "source": "worked/anchored-deadlines.asm",
+      "explanation": "Inspect explicit deadline arithmetic; these values do not measure host presentation.",
+      "stops": [
+        {
+          "id": "early",
+          "anchor": {
+            "label": "lesson_early_wake",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000410",
+            "$s1": "0x000000000000001e",
+            "$s2": "0x0000000000000005"
+          },
+          "explanation": "Both early readings compare with deadline 1040.",
+          "success": "Both early readings compare with deadline 1040."
+        },
+        {
+          "id": "late",
+          "anchor": {
+            "label": "lesson_late_reading",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s3": "0x0000000000000007",
+            "$s4": "0x0000000000000438"
+          },
+          "explanation": "The next deadline stays anchored despite seven milliseconds of lateness.",
+          "success": "The next deadline stays anchored despite seven milliseconds of lateness."
+        },
+        {
+          "id": "final",
+          "anchor": {
+            "label": "lesson_last_deadline",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s5": "0x0000000000000528",
+            "$s6": "0x0000000000000140"
+          },
+          "explanation": "Eight forty-millisecond intervals include the final frame interval.",
+          "success": "Eight forty-millisecond intervals include the final frame interval."
+        }
+      ],
+      "success": "Finish this process and explain the observed boundary.",
+      "hints": [
+        {
+          "id": "ordinary-debug",
+          "text": "Use ordinary Debug and breakpoints at the named labels. Inspect state before the anchored instruction. Finish the process before starting the next activity."
+        }
+      ],
+      "integerInputs": []
+    },
+    {
+      "kind": "prediction",
+      "id": "count-and-area",
+      "source": "worked/exclusive-coordinates.asm",
+      "anchor": {
+        "label": "lesson_coordinates",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "In a two-by-three image, only indices one and four differ: coordinates (1,0) and (0,2).",
+      "question": "What changed count and containing rectangle area follow?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Six changed words and area six",
+          "feedback": "Containing a position does not mean that its word changed."
+        },
+        {
+          "id": "b",
+          "text": "Two changed words and area six",
+          "feedback": "The smallest rectangle contains unchanged positions between the selected ones."
+        },
+        {
+          "id": "c",
+          "text": "Two changed words and area two",
+          "feedback": "The two positions are separated across both columns and the full height."
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "native-dimension",
+      "source": "worked/exclusive-coordinates.asm",
+      "anchor": {
+        "label": "lesson_full_width",
+        "mnemonic": "nop",
+        "occurrence": 0
+      },
+      "explanation": "Settings contain width hexadecimal 0000000100000001. Its low word is one, but the complete unsigned value is 4294967297.",
+      "question": "Does that width satisfy one through 64?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes; its low word is one",
+          "feedback": "The interface is a full 64-bit width."
+        },
+        {
+          "id": "b",
+          "text": "Only in one byte order",
+          "feedback": "Native doubleword declarations retain their numerical meaning under either assembly order."
+        },
+        {
+          "id": "c",
+          "text": "No; validate the complete native doubleword",
+          "feedback": "Narrowing before validation would admit an invalid dimension."
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-coordinates",
+      "source": "worked/exclusive-coordinates.asm",
+      "explanation": "Relate row-major indices to exclusive ends, then inspect full-width validation.",
+      "stops": [
+        {
+          "id": "positions",
+          "anchor": {
+            "label": "lesson_coordinates",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s2": "0x0000000000000001",
+            "$s3": "0x0000000000000000",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000002"
+          },
+          "explanation": "Division by width gives rows; remainders give columns.",
+          "success": "Division by width gives rows; remainders give columns."
+        },
+        {
+          "id": "area",
+          "anchor": {
+            "label": "lesson_rectangle_area",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000000000002",
+            "$s1": "0x0000000000000003",
+            "$s6": "0x0000000000000006",
+            "$s7": "0x0000000000000002"
+          },
+          "explanation": "Exclusive ends are two and three. Area six and changed count two answer different questions.",
+          "success": "Exclusive ends are two and three. Area six and changed count two answer different questions."
+        },
+        {
+          "id": "width",
+          "anchor": {
+            "label": "lesson_full_width",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x0000000100000001",
+            "$s1": "0x0000000000000001",
+            "$s2": "0x0000000000000000"
+          },
+          "explanation": "The complete width fails the unsigned upper-bound test.",
+          "success": "The complete width fails the unsigned upper-bound test."
+        }
+      ],
+      "success": "Finish this process and explain the observed boundary.",
+      "hints": [
+        {
+          "id": "ordinary-debug",
+          "text": "Use ordinary Debug and breakpoints at the named labels. Inspect state before the anchored instruction. Finish the process before starting the next activity."
+        }
+      ],
+      "integerInputs": []
+    },
+    {
+      "kind": "run",
+      "id": "run-embedded-seek",
+      "source": "worked/directory-seek.asm",
+      "explanation": "Run the embedded index/seek experiment normally. It performs no host-file or clock work and terminates silently. Explain why silence alone does not prove its image or failure guarantees.",
+      "stdout": "",
+      "success": "A normal exit is recorded. Use the Debug observations and behavioral checks for state correctness.",
+      "integerInputs": []
+    },
+    {
+      "kind": "assessment",
+      "id": "check-equality",
+      "source": "independent/video-change-bounds.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/pattern-0.json",
+        "independent/aliases.json"
+      ],
+      "explanation": "Begin with unchanged inputs and exact read-only aliases. Clear all four result fields when the changed count is zero.",
+      "success": "Explain the minimal exclusive coordinates, changed count and permitted accesses.",
+      "hints": [
+        {
+          "id": "validate-before-read",
+          "text": "Validate settings alignment before loading its two full native doublewords. Admit dimensions and input/result alignment before image accesses or output stores."
+        },
+        {
+          "id": "separate-quantities",
+          "text": "Track changed count separately from horizontal and vertical extrema. Empty changes publish four zeros; nonempty maximum coordinates become exclusive ends by adding one."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-edges",
+      "source": "independent/video-change-bounds.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/pattern-1.json",
+        "independent/pattern-2.json",
+        "independent/pattern-5.json"
+      ],
+      "explanation": "Extend to first/last changes and row crossings. Linear minimum and maximum indices alone do not give horizontal extrema.",
+      "success": "Explain the minimal exclusive coordinates, changed count and permitted accesses.",
+      "hints": [
+        {
+          "id": "validate-before-read",
+          "text": "Validate settings alignment before loading its two full native doublewords. Admit dimensions and input/result alignment before image accesses or output stores."
+        },
+        {
+          "id": "separate-quantities",
+          "text": "Track changed count separately from horizontal and vertical extrema. Empty changes publish four zeros; nonempty maximum coordinates become exclusive ends by adding one."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-shapes",
+      "source": "independent/video-change-bounds.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/pattern-3.json",
+        "independent/pattern-4.json"
+      ],
+      "explanation": "Check sparse patterns and fully changed images. Count unequal words separately from rectangle area.",
+      "success": "Explain the minimal exclusive coordinates, changed count and permitted accesses.",
+      "hints": [
+        {
+          "id": "validate-before-read",
+          "text": "Validate settings alignment before loading its two full native doublewords. Admit dimensions and input/result alignment before image accesses or output stores."
+        },
+        {
+          "id": "separate-quantities",
+          "text": "Track changed count separately from horizontal and vertical extrema. Empty changes publish four zeros; nonempty maximum coordinates become exclusive ends by adding one."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "check-boundaries",
+      "source": "independent/video-change-bounds.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/boundaries.json"
+      ],
+      "explanation": "Validate dimensions and alignment before corresponding accesses. Retain guards and caller state across repeated calls.",
+      "success": "Explain the minimal exclusive coordinates, changed count and permitted accesses.",
+      "hints": [
+        {
+          "id": "validate-before-read",
+          "text": "Validate settings alignment before loading its two full native doublewords. Admit dimensions and input/result alignment before image accesses or output stores."
+        },
+        {
+          "id": "separate-quantities",
+          "text": "Track changed count separately from horizontal and vertical extrema. Empty changes publish four zeros; nonempty maximum coordinates become exclusive ends by adding one."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-completed-source",
+      "source": "independent/video-change-bounds.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/pattern-0.json",
+        "independent/pattern-1.json",
+        "independent/pattern-2.json",
+        "independent/pattern-3.json",
+        "independent/pattern-4.json",
+        "independent/pattern-5.json",
+        "independent/aliases.json",
+        "independent/boundaries.json"
+      ],
+      "explanation": "Recheck all 182 original cases on this same completed source. Renew earlier execution evidence after edits, then add an input and predict its exact bounds before checking it.",
+      "success": "Explain the minimal exclusive coordinates, changed count and permitted accesses.",
+      "hints": [
+        {
+          "id": "validate-before-read",
+          "text": "Validate settings alignment before loading its two full native doublewords. Admit dimensions and input/result alignment before image accesses or output stores."
+        },
+        {
+          "id": "separate-quantities",
+          "text": "Track changed count separately from horizontal and vertical extrema. Empty changes publish four zeros; nonempty maximum coordinates become exclusive ends by adding one."
+        }
+      ]
+    }
+  ]
+}

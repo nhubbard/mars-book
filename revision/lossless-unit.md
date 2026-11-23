@@ -129,3 +129,56 @@ integration remain to be completed. No new screenshot, PDF build or accessibilit
 validation is claimed by this step. The existing native LaTeX books and historical
 lossless-video evidence remain unchanged. Private native-lossless-foundation-01
 retains exact qualification, comparison and profile-parser receipts.
+
+
+## Native student-unit draft, 23 November 2026
+
+The draft `revision/lessons/034-lossless-video` now contains six worked sources,
+twelve inline predictions, six Debug activities with eighteen boundaries, one
+silent Run and five assessments on a continuing independent source. Four actual
+helper experiments cover vector XOR/alias/tail/empty behavior, successful and
+rejected record publication, encoding cost and committed reuse, and embedded
+index/seek. Two explicitly named arithmetic models explain anchored deadlines
+and selected exclusive coordinates. No required observation reads a host file,
+waits on a host clock or needs a generated external fixture.
+
+The supplied helper bodies and relevant static fixtures are retained exactly.
+Removing unused complete-file examples and data reduces those four worked
+sources from 2,676,699 to 283,188 bytes. This is a source-size comparison, not a
+startup or execution-time measurement. Six core probes verify all eighteen stop
+snapshots and normal silent exits. They also compare every image/guard and
+context byte on late record rejection and invalid seek, and all previous-image,
+record-storage and context bytes on capacity rejection. A correct CRC on the
+malformed candidate is tested independently from its zero/zero command failure.
+
+Stages retain 44 equality/alias, 66 edge/row-crossing, 44 mixed/full-shape and 28
+boundary/reuse cases, followed by the final 182-case recheck. Both byte orders,
+192 final calls and original budgets remain. The independent starter is
+byte-identical to the existing public exercise. Its exact exported form passes
+all 182 cases with three instructor bodies, including wide-address placement;
+the unfinished form fails every case. These 728 qualification outcomes remain
+private and do not add a solution to student material.
+
+Six public unit tests check helper/fixture fidelity, CRC-correct late rejection,
+complete deterministic twenty-one-file export, all profile stages, complete
+vector values, dimension width, count-versus-area distinctions and the distributed
+fixture tools. The full tooling suite passes 609 tests. Two Jupiter tests through
+the actual package importer and native PSI retain all 24 activities, resolve
+all thirty prediction/Debug anchors, and validate the final cases in both byte
+orders. The tests exposed a Python bytecode cache written into the fixture
+folder; the test now loads that script without writing there, and the explicit
+export remains complete. Production plugin code is unchanged and all 41 manual
+edits retain their hashes.
+
+Build the student archive with:
+
+```sh
+python3 tools/native_lesson.py revision/lessons/034-lossless-video \
+  --output build/native-lessons/034-lossless-video-0.1.0-student.zip
+```
+
+Actual first use, unsaved checking, edited-source invalidation, fresh-process
+resume, verified light-theme capture and directly edited LaTeX integration remain
+next. The accepted lab PDF is unchanged by this draft; no new screenshot or
+accessibility validation is claimed. Private native-lossless-unit-01 retains the
+source-bound probes, package tests, exported-starter qualification and diagnostics.
