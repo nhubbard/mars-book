@@ -201,3 +201,12 @@ before the guided mid-read error can be reproduced without the authoring plugin.
 That launch integration, connected inline lesson, first/resume IDE walkthrough
 and LaTeX companion remain the next work. Existing publication figures and proof
 are unchanged; no new IDE capture or human learner review is claimed here.
+
+The full implementation regression passes 242 CLI and 1,258 plugin tests, both
+coverage gates and the plugin build. A further focused seven-test run confirms
+that an injected zero-byte-position error cannot hide reading descriptor three
+instead of the acquired descriptor 19; the file result and returned status alone
+would not catch that fault. This targeted assertion is recorded separately from
+the full run. Paired public API checks pass with 91 MARS / 20 unchanged authoring
+experimental usages. All 41 manual MARS edits remain unchanged. No IDE sandbox
+was launched and no LaTeX proof was regenerated in this backend step.
