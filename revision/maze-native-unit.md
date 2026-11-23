@@ -1,4 +1,4 @@
-# Native maze lesson draft
+# Native maze lesson development edition
 
 `revision/lessons/010-maze-frontier` packages the existing maze companion as a
 native student activity. It follows the sorting unit and retains original
@@ -26,14 +26,26 @@ caller case. Public tooling passes641 tests. Source identities retain the origin
 public helper and unfinished full-search source, with only the north experiment's
 two call arguments changed.
 
-The preceding assessment foundation is MARS19b36d7e and public3ac65bf0. It passes
+The preceding assessment foundation is MARS `19b36d7e` and public `3ac65bf0`. It passes
 304 CLI /1342 plugin tests, full required coverage, 858 positive native search /
-renderer placements, ten rejected faulty profiles and26 generated CLI placements.
+renderer placements, ten rejected faulty profiles and 26 generated CLI placements.
 The actual archive tests are two additional tests after that full regression;
 production code is unchanged. Their scope is not live IDE interaction.
 
-First-use/resume IDE verification, installed-archive comparison, instructor edition
-binding and direct written-lab integration remain to be completed. Existing maze
-figures and original qualification receipts retain their earlier scope. Neither a
-new screenshot nor representative learner, author or accessibility review is
-claimed by this draft milestone. The main and lab book PDFs are unchanged.
+The actual first-use and fresh-process resume walkthroughs now pass. Their
+seventeen / ten observations, 22 / eleven photographs and exact installed
+11-JAR comparisons are retained privately in native-maze-unit-01. Eight quiz
+attempts persist, three edited sources are retained, and all six source-dependent
+execution activities renew. Each process passes thirteen public assessment cases.
+The first renderer attempt fails all five cases before the private verification
+fixture is inserted. These real light-theme photographs are development evidence,
+rather than replacements for the existing book figures.
+
+The instructor archive binds the exact student ZIP. Both equivalent implementations
+pass its 421-case aggregate suite; an extracted shipped alternative passes 421
+again. The written lab introduces the downloaded geometry sources, separate
+renderer/search activities, matching CLI paths and final ordinary Run. Its exact
+publication verification is recorded in the acceptance ledger and private receipts.
+Original figure/capture receipts retain their earlier scope. No new publication
+screenshot or human learner, author or accessibility review is claimed. The
+main-book proof is unchanged.

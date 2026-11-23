@@ -7,14 +7,25 @@ be explored. Taking the oldest waiting cell first lets the search expand outward
 in layers of increasing distance. The result is a shortest route through an
 unweighted maze, together with enough intermediate state to explain that route.
 
-This is original project \texttt{010-maze-explorer}. Its contract is
-\texttt{assignment.md} in that package. The revised work area is
-\texttt{maze-search.asm}, under \texttt{revision/labs/files}. Both public checks
-remain in the original package's \texttt{checks} directory. Implement the search and its
-\texttt{render} function. The starter's \texttt{break} instructions deliberately
-stop execution until those missing bodies are replaced. Organize private functions
-and registers as you choose; the public allocations, observations and renderer
-interface establish what another program can inspect.
+Open the downloaded lab \texttt{010-maze-frontier}, which develops original
+project \texttt{010-maze-explorer}. Its \texttt{worked/neighbor.asm} and
+\texttt{worked/north.asm} are complete coordinate experiments. The independent
+work area is \texttt{independent/maze.asm}; its \texttt{README.md} states the full
+interface. Implement the search and its \texttt{render} function. The starter's
+\texttt{break} instructions deliberately stop execution until those missing bodies
+are replaced. Choose your private functions, registers and neighbor order; the
+public allocations, observations and renderer interface establish what another
+program can inspect.
+
+The inline questions and two Debug experiments come before the search. You can
+check \texttt{render} independently while the search body is unfinished, then check
+every search transition against the eight public mazes. After both assessments
+pass, run your program normally and inspect Bitmap Display. Relate its blue chain
+to your own first-discovery parents and count edges, rather than treating an empty
+console transcript as evidence of a shortest path. The original project's
+handwritten checks and the standalone \texttt{maze-search.asm} work area remain
+available; the downloaded profiles and generated command-line checks use the same
+semantic checker as the interactive assessments.
 
 You will use byte arrays, row-major addresses, loop invariants and calls that
 preserve live state. The new ideas are graph adjacency, discovery-time marking,
@@ -44,7 +55,8 @@ has column eight and must be rejected. Adding one to its ID gives eight, which
 is a valid array index but belongs to the next row. An array bound alone cannot
 establish adjacency.
 
-The complete \texttt{maze-neighbor.asm} experiment isolates this geometry. Its
+The complete \texttt{worked/neighbor.asm} experiment isolates this geometry
+(the standalone copy is \texttt{maze-neighbor.asm}). Its
 \texttt{neighbor\_id} function takes a valid cell ID in \texttt{\$a0} and a
 direction index in \texttt{\$a1}: zero north, one east, two south, three west.
 It returns the neighbor ID in \texttt{\$v0}, or $-1$ when the move leaves the grid.
@@ -244,14 +256,13 @@ and incorrect reconstruction instead of hiding all three behind one final pictur
 Keep the renderer independently callable so its faults can be investigated without
 running a complete search.
 
-Run both package checks against your revised source:
+Use the renderer and search activities in Learn. From the downloaded lab folder,
+you can also run their matching command-line checks against your edited source:
 \begin{verbatim}
-java -jar /path/to/cli.jar grade \
-  packages/010-maze-explorer/checks/public.kts \
-  /path/to/your/maze-search.asm
-java -jar /path/to/cli.jar grade \
-  packages/010-maze-explorer/checks/render.kts \
-  /path/to/your/maze-search.asm
+java -jar /path/to/cli.jar grade independent/maze-search.kts \
+  independent/maze.asm
+java -jar /path/to/cli.jar grade independent/maze-render.kts \
+  independent/maze.asm
 \end{verbatim}
 The checks inspect every published transition and accept your scratch-register
 choices. Renderer checks supply independent arrays and saved registers. Keep a

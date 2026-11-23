@@ -15,7 +15,7 @@ that its contents were rechecked by this audit.
 | Complete smaller programs in the main book | Console, pixel, loop, function and array examples have complete public sources; individual unit notes identify executable checks | Confirm during walkthrough that every partial listing's purpose and complete source are clear |
 | Explicit outcomes and prerequisites | `docs/revised-learning-outcomes.md` maps three assessable outcomes per chapter to activities and expected entry concepts | Human review of the map and the explanations at first use |
 | Connected explanations, worked reasoning and independent transfer | Native chapter/lab pairs and the reviewed first-program, PCM and H.263 pilots; author accepted the direction for expansion | Substantive editing is a separate author-directed goal; no claim of completed learner validation |
-| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for six companions below, then review names, paths and observations across all editions |
+| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for five companions below, then review names, paths and observations across all editions |
 | Contents, glossary and index in each book | New native front matter, shared glossary and separately referenced chapter-oriented subject indexes | Technical navigation checks pass: literal references resolve, changed pages are visually inspected, final PDFs pass automated PDF/UA-2. A topic entry points to the relevant chapter, not a claimed first-use paragraph |
 | Native composition, fonts and highlighting | Directly edited TeX includes; Minion Pro, Noto Sans Math and IntelliJ-derived minted style | Current proofs compile with embedded Minion Pro, Noto Sans Math and JetBrains Mono; native composition checks pass. Preserve direct prose editing in future changes |
 | Actual figures and accessible annotations | Unit receipts bind real light-theme IDE images, source/state and native TeX annotations | Recapture changed demonstrations; renew automated PDF/UA-2 on final bytes; human reading-order and assistive-technology review remain open |
@@ -33,7 +33,7 @@ they are not student answer keys.
 | Inline predictions with editor context | `native-predictions-*`, `native-debug-*` and per-unit IDE evidence | Course-wide review of questions and pointers; retain the actual inline interaction instead of requiring Find Action |
 | Source-bound Run/Debug observations | `native-execution-01`, `native-reopen-01` and per-unit IDE evidence | Confirm every current package against its tested archive and source revision |
 | Resumable progress, edits, retries and invalidation | `native-lesson-runtime-01`, `native-reopen-01`, per-unit fresh-process resume receipts | Audit current-edition distribution bindings and retry semantics |
-| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete six companions; retain interface/state checks instead of reference-source matching |
+| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete five companions; retain interface/state checks instead of reference-source matching |
 | Graduated hints and instructor control | `native-hints-01`, `native-policy-01`, `downloaded-prerequisites-01`, `functions-prerequisites-01`, `native-fir-call-policy-01`, `native-matvec-policy-01` | Verify current package policy bindings and explain permitted direct entry without weakening checks |
 | Versioned local/HTTPS delivery | `lesson-import-01`, `lesson-download-01`, `downloaded-navigation-01` and `downloaded-prerequisites-01` | Final public archive and download guidance audit; no hosted grading or LMS claim |
 | Kotlin, public IntelliJ APIs and meaningful Jupiter coverage | MARS source, test reports and pinned API-verifier receipts in individual implementation steps | Recheck after any new production change; preserve unrelated manual edits |
@@ -45,13 +45,12 @@ commits, archive digests and limitations.
 
 ## Remaining native companion packages
 
-These six subjects already have written labs, public executable starters/checks
+These five subjects already have written labs, public executable starters/checks
 and private qualification evidence. Ordinary Run/Debug availability does not
 complete the promised native guided delivery.
 
 | Original subject | Existing written location | Required integration |
 | --- | --- | --- |
-| 010 Maze | `revision/labs/companions/maze.tex` | Guided state/invariant observations and independent path/search checks |
 | 014 Ring buffer | `revision/labs/companions/ring-buffer.tex` | Wrap/full/empty reasoning and independent state-transition checks |
 | 015 UTF-8 | `revision/labs/companions/utf8.tex` | Streaming boundaries, invalid sequences and independent decoder checks |
 | 016 Clipped blitter | `revision/labs/companions/clipped-sprite.tex` | Clipped address geometry and independent bounded writes |
@@ -128,7 +127,7 @@ lab proof has 242 PDF pages / 229 chapter pages and passes automated PDF/UA-2 wi
 1,728 rules / 1,156,866 checks and zero failures. Human reviews remain open.
 
 There are now thirty exercised downloadable native packages plus the built-in
-first unit. The six companions listed above remain implementation work. Final
+first unit. Six companions remained implementation work at that milestone. Final
 course-wide distribution and evidence acceptance is also still required. Historical
 milestones above describe their then-current scope, rather than current completion.
 
@@ -149,5 +148,37 @@ with equivalent neighbor orders accepted. See revision/maze-native-unit.md.
 
 This draft does not change the thirty exercised downloadable-package count. Its
 first-use/resume IDE interaction, instructor edition and written integration remain
-open, as do the other five companions and final course-wide acceptance. The six
-subjects in the earlier table therefore remain implementation work at this milestone.
+open, as do the other five companions and final course-wide acceptance. Six subjects therefore remained implementation work at that draft milestone.
+
+
+## Maze live delivery and publication milestone
+
+The maze unit now passes first-use/resume IDE interaction, exact installed-archive
+comparison, saved-source/quiz verification, instructor binding and written integration.
+First use records seventeen observations /22 photographs; resume records ten /eleven.
+Eight quiz attempts and all three edited source files persist. All six execution
+activities renew; thirteen assessment cases pass per process. Both IDE logs have
+no ERROR/SEVERE entries. The two test projects close natively before their owned
+IDE processes are terminated; the Gradle wrappers then exit1 as expected.
+
+The bound instructor edition qualifies both equivalent implementations against421
+private search/renderer cases each. The checker and alternative extracted from the
+shipped archive pass all421 again. Five packaging guards pass. The lab proof remains
+242 physical /229 chapter pages, with the maze on printed64–70. Changed/adjacent
+pages and the retained annotated figure are reviewed in color and grayscale. Exact
+final PDF/UA-2 passes1728 rules /1157783 checks with zero failures; the existing
+main-book proof is unchanged. Human reviews remain open.
+
+There are now thirty-one exercised downloadable native packages plus the built-in
+first unit. The five companions in the current table and final course-wide evidence
+and distribution acceptance remain implementation work. The restructuring goal
+remains active; substantive editing is a separate goal.
+
+
+A final checker audit adds explicit four-byte alignment validation for the public
+byte-array bases (MARS `0f56027c`). The complete CLI suite then passes 305 tests and
+the two native archive tests pass again. Both private references and the extracted
+shipped alternative pass 421 cases with the final CLI runtime. The first-use/resume
+and paired API receipts retain their exact earlier binaries; this adjustment
+changes rejection of malformed layouts, without changing the valid shipped sources
+or any IDE mechanism.
