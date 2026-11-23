@@ -83,3 +83,20 @@ companion roles and are not silently required by the codec sequence. The next ma
 chapter develops word operations through ChaCha20. The complete curriculum and
 production instructional-system goal remains active. The deferred opening orientation
 has not been added. No MARS source change was required in this unit.
+
+## Native grading foundation, 23 November 2026
+
+The original 203 sequence cases now have an authored native data equivalent,
+retaining every four-million-instruction allowance, full seeded state, exact
+caller snapshots, permission window and 500,000-notice access history. Actual
+original-grader exports match all fields in the remaining-count, end-address
+and wide-address variants. Two additional cases verify real caller termination
+and repeated calls within one session; they reject deliberate defects that the
+original fresh-call grid accepts. The corpus has 205 cases / 208 calls in 104
+bounded profiles, without a production API change. See
+[the native grading contract](../docs/native-cbor-checks.md).
+
+The native instructional guide, revised written companion and first/resume IDE
+walkthrough remain to be completed. Earlier page/test counts above describe the
+historical CBOR proof; the current complete lab companion has 212 pages after
+the QOI revision. No new CBOR screenshot or PDF is claimed by this foundation.
