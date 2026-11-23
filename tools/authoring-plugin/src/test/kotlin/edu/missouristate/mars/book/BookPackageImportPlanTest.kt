@@ -341,6 +341,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `delta walkthrough isolates its exact source and single private fixture`() {
+        val delta = plan.copy(archives = listOf(archive.copy(id = "023-delta-varint", entry = "delta-codec.asm")),
+            nativePredictions = true, deltaUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/delta-scan.asm", "/tmp/delta.asm", "c".repeat(64))))
+        delta.validate()
+        delta.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(delta.copy(nativePredictions = false), delta.copy(nativeExecution = true),
+            delta.copy(nativeDebug = true), delta.copy(memoryUnit = true), delta.copy(loopUnit = true),
+            delta.copy(functionUnit = true), delta.copy(spriteUnit = true), delta.copy(rasterUnit = true), delta.copy(lifeUnit = true), delta.copy(sortingUnit = true), delta.copy(fixedUnit = true), delta.copy(localityUnit = true), delta.copy(boundedUnit = true), delta.copy(measurementUnit = true), delta.copy(msaUnit = true), delta.copy(pcmUnit = true), delta.copy(firUnit = true), delta.copy(assessmentFixtures = emptyList()),
+            delta.copy(archives = listOf(archive)), delta.copy(resumeCompleted = true), delta.copy(deltaUnit = false),
+            delta.copy(activityNavigation = true), delta.copy(prerequisiteControls = true),
+            delta.copy(assessmentFixtures = delta.assessmentFixtures + delta.assessmentFixtures),
+            delta.copy(assessmentFixtures = listOf(delta.assessmentFixtures.single().copy(source = "independent/plus-one.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()

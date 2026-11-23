@@ -1,0 +1,1141 @@
+{
+  "formatVersion": 8,
+  "introduction": "Derive the exact difference, unsigned mapping and seven-bit wire before observing the implementation. Keep bytes, readings and capacities in distinct units. Follow a complete accepted value, an uncommitted candidate and the boundary at which validation changes caller state.",
+  "conclusion": "Explain your candidate/prefix invariant, reading-range proof, error precedence and per-call predecessor. Keep a rejected-candidate observation with the finite passing checks. The independent scanner may use another schedule and temporary registers; its observable contract stays the same.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "seven-bit-groups",
+      "explanation": "The first reading is 1000 and the initial predecessor is zero. Its difference maps to unsigned 2000. Seven-bit groups are emitted from least to most significant. The first payload is 80 and another payload follows; the last payload is 15.",
+      "question": "Which bytes represent this first reading?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "d0 0f",
+          "feedback": "80 with a continuation bit is 208, hexadecimal d0. The final payload 15 is 0f with no continuation bit."
+        },
+        {
+          "id": "b",
+          "text": "50 8f",
+          "feedback": "This stops at the first payload and incorrectly marks the final payload as continued."
+        },
+        {
+          "id": "c",
+          "text": "0f d0",
+          "feedback": "The group order is least significant first, even though the two bytes may be written left to right in a debugger."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "enc_byte",
+        "mnemonic": "andi",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-default",
+      "source": "delta-codec.asm",
+      "integerInputs": [],
+      "explanation": "Open delta-codec.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at codec_done before publication. v0 is five consumed readings, v1 is eight produced bytes and a3 is success zero. In Memory, stream begins d0 0f 04 01 00 ee a8 02. A repeated reading contributes one 00 byte, not an omitted value. Result words input_used, output_used and status are still −1.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000005",
+            "$v1": "0x0000000000000008"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at results_ready. The caller has published five, eight and zero. The selected li has not yet replaced v0 with the exit service number. Separate the function result from what a later syscall does to the same register.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000005",
+            "$v1": "0x0000000000000008"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The default observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-default",
+      "source": "delta-codec.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run delta-codec.asm normally to silent completion after explaining its observed values. Normal exit complements the paused investigation; no console text alone does not establish correct encoding or memory access.",
+      "success": "The default caller completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "negative-mapping",
+      "explanation": "The mapping alternates nonnegative and negative differences: 0→0, −1→1, 1→2, −2→3. The source computes it using a doubleword left shift and a sign mask from an arithmetic right shift.",
+      "question": "What mapped value and sign mask belong to difference −1?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Mapped value 1 and mask −1",
+          "feedback": "The mask contains sixty-four one bits; XOR with the shifted difference gives unsigned one."
+        },
+        {
+          "id": "b",
+          "text": "Mapped value 1 and mask 1",
+          "feedback": "A one-bit mask is not the arithmetic sign mask used by this expression."
+        },
+        {
+          "id": "c",
+          "text": "Mapped value 2 and mask zero",
+          "feedback": "That describes positive one, not negative one."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "enc_map",
+        "mnemonic": "dsll",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-negative-one",
+      "source": "worked/negative-one.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/negative-one.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at enc_map. t0 is reading −1, predecessor s4 is zero and exact difference t1 is −1. The mapping has not run. Keep the signed difference separate from the unsigned code it will produce.",
+          "anchor": {
+            "label": "enc_map",
+            "mnemonic": "dsll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0xffffffffffffffff",
+            "$t1": "0xffffffffffffffff",
+            "$t2": "0x0000000000000000",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x0000000000000000",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000000",
+            "$s3": "0x00000000000000a0",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at enc_length. t2 and t3 are unsigned one; t4 is the initial candidate length one. The length loop will establish that no additional group is required.",
+          "anchor": {
+            "label": "enc_length",
+            "mnemonic": "dsrl",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0xffffffffffffffff",
+            "$t1": "0xffffffffffffffff",
+            "$t2": "0x0000000000000001",
+            "$t3": "0x0000000000000001",
+            "$t4": "0x0000000000000001",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000000",
+            "$s3": "0x00000000000000a0",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at codec_done. One reading produced one byte 01, with success. Inspect stream rather than treating the negative source initializer as the stored wire value.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The negative-one observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "wide-transition",
+      "explanation": "The source reading type is a signed word, but a difference need not fit that type. The transition from −2147483648 to 2147483647 has exact difference 4294967295, which maps to unsigned 8589934590.",
+      "question": "What must remain wide before the byte loop?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Neither; both input readings fit a signed word",
+          "feedback": "The difference of two valid readings can lie outside the reading range."
+        },
+        {
+          "id": "a",
+          "text": "Both the exact difference and its mapped value",
+          "feedback": "A later wide copy cannot recover bits lost by word subtraction or a word shift. The mapped value needs up to 33 bits."
+        },
+        {
+          "id": "b",
+          "text": "Only the output pointer",
+          "feedback": "Pointers must be full width, but narrowing the numerical state also corrupts this transition."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "enc_map",
+        "mnemonic": "dsll",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-extremes",
+      "source": "worked/extremes.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/extremes.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at enc_length for the first reading, the minimum signed word. Its difference is −2147483648 and mapped unsigned value t2 is 4294967295. Inspect all 64 bits: a signed-word interpretation of the low bits would read −1.",
+          "anchor": {
+            "label": "enc_length",
+            "mnemonic": "dsrl",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0xffffffff80000000",
+            "$t1": "0xffffffff80000000",
+            "$t2": "0x00000000ffffffff",
+            "$t3": "0x00000000ffffffff",
+            "$t4": "0x0000000000000001",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000000",
+            "$s3": "0x00000000000000a0",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. Three readings produced fifteen bytes: ff ff ff ff 0f, fe ff ff ff 1f, fd ff ff ff 1f. The last two transitions require differences outside signed-word range. Derive each mapped value independently; a codec round trip alone could hide a shared format error.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000003",
+            "$v1": "0x000000000000000f"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The extremes observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "reserve-complete-value",
+      "explanation": "With byte capacity seven, the first four readings occupy five bytes. The final reading needs three more bytes, but only two positions remain. Those two positions are offered capacity, not an accepted partial value.",
+      "question": "What may the encoder commit?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Four readings and seven bytes",
+          "feedback": "That would publish part of a value which cannot be decoded as the accepted prefix."
+        },
+        {
+          "id": "c",
+          "text": "Five readings and seven bytes",
+          "feedback": "The complete last spelling needs three bytes; truncating it changes the wire."
+        },
+        {
+          "id": "a",
+          "text": "Four readings and five bytes, leaving both remaining positions unchanged",
+          "feedback": "Establish the complete candidate length before writing any of its bytes. Report capacity status one."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "enc_check_capacity",
+        "mnemonic": "dsubu",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-capacity-seven",
+      "source": "worked/capacity-seven.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/capacity-seven.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at enc_full before setting status. Candidate length t4 is three; capacity s3 is seven and committed bytes s6 are five, so remaining capacity is two. t5 is now the comparison result one, not the remaining byte count. The encoder rejected the candidate before an output write.",
+          "anchor": {
+            "label": "enc_full",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000000004e20",
+            "$t1": "0x0000000000004a37",
+            "$t2": "0x000000000000946e",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x0000000000000003",
+            "$t5": "0x0000000000000001",
+            "$t6": "0x0000000000000000",
+            "$s3": "0x0000000000000007",
+            "$s4": "0x00000000000003e9",
+            "$s5": "0x0000000000000004",
+            "$s6": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. v0=4 readings, v1=5 bytes and a3=1. Memory contains d0 0f 04 01 00 followed by a5 bytes. Offsets five and six remain a5 even though they lie inside the offered capacity.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000004",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at results_ready. The caller publishes four, five and one. These are committed-prefix counters, not the number of source values inspected while estimating a candidate.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000004",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The capacity-seven observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-capacity-seven",
+      "source": "worked/capacity-seven.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/capacity-seven.asm normally to silent completion after explaining its observed values. Normal exit complements the paused investigation; no console text alone does not establish correct encoding or memory access.",
+      "success": "The capacity-seven caller completed normally with no console output."
+    },
+    {
+      "kind": "debug",
+      "id": "trace-decode-default",
+      "source": "worked/decode-default.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/decode-default.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at codec_done. The same eight wire bytes have produced the five original signed readings. v0 now counts eight input bytes; v1 counts five output readings. Inspect all five words, and retain the distinction between decoded values and the byte representation.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000008",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at results_ready. The published counters are eight and five, with status zero. This complete inverse example supports the format derivation; it does not replace checking the exact independently expected wire.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000008",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The decode-default observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-decode-default",
+      "source": "worked/decode-default.asm",
+      "integerInputs": [],
+      "stdout": "",
+      "explanation": "Run worked/decode-default.asm normally to silent completion after explaining its observed values. Normal exit complements the paused investigation; no console text alone does not establish correct encoding or memory access.",
+      "success": "The decode-default caller completed normally with no console output."
+    },
+    {
+      "kind": "prediction",
+      "id": "candidate-versus-prefix",
+      "explanation": "For stream 02 80 00, byte 02 commits reading one. The following two bytes spell unsigned zero redundantly. The decoder has scanned three bytes when it discovers the violation, but only the first byte belongs to the accepted prefix.",
+      "question": "What should the decoder return for consumed input?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "One committed byte",
+          "feedback": "The candidate scan index can move ahead of the committed counter. Rejection retains the earlier predecessor and output prefix."
+        },
+        {
+          "id": "b",
+          "text": "Three bytes because all were loaded",
+          "feedback": "Inspection is not acceptance. Returning three would claim the rejected spelling was consumed."
+        },
+        {
+          "id": "c",
+          "text": "Zero bytes because the complete stream failed",
+          "feedback": "The interface preserves the valid prefix rather than rolling it back."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "dec_bad",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-redundant-zero",
+      "source": "worked/redundant-zero.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/redundant-zero.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at dec_bad before setting status. t0 is candidate scan index three; t1 is unsigned zero and t3 is candidate length two. The predecessor s4, committed byte count s5 and committed reading count s6 are all one. Memory word zero is one; word one still contains 1002.",
+          "anchor": {
+            "label": "dec_bad",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000000000003",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000000000007",
+            "$t3": "0x0000000000000002",
+            "$t4": "0x0000000000000000",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000001",
+            "$s3": "0x0000000000000020",
+            "$s4": "0x0000000000000001",
+            "$s5": "0x0000000000000001",
+            "$s6": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. The public result is one byte, one reading and malformed status two. The epilogue restored s4/s5/s6, so use return registers after this boundary instead of interpreting restored saved registers as live loop state.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000002",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-2",
+          "explanation": "Break at results_ready. The caller has published one, one and two. A rejected later candidate has not erased the accepted first reading or increased either committed counter.",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000002",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The redundant-zero observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "capacity-before-tail",
+      "explanation": "The same stream 02 80 00 is decoded with room for only one output reading. After accepting 02, the output limit is reached. The next candidate is outside the work this invocation is allowed to attempt.",
+      "question": "Which status and input inspection are appropriate?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Success zero because one reading was decoded",
+          "feedback": "Unconsumed input remains when the output limit stops the operation."
+        },
+        {
+          "id": "a",
+          "text": "Capacity status one; do not inspect either tail byte",
+          "feedback": "Check output capacity before reading a new candidate. The malformed tail cannot change this completed result."
+        },
+        {
+          "id": "b",
+          "text": "Malformed status two after scanning 80 00",
+          "feedback": "That inspects data for an output the caller did not authorize."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "dec_next",
+        "mnemonic": "beqc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-capacity-precedence",
+      "source": "worked/capacity-precedence.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/capacity-precedence.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at dec_full before setting status. s3, s4, s5 and s6 are all one. The scan index t0 is also one: the malformed tail was never started. One output slot is complete and no second slot is available.",
+          "anchor": {
+            "label": "dec_full",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000000000001",
+            "$t1": "0x0000000000000002",
+            "$t2": "0x0000000000000000",
+            "$t3": "0x0000000000000001",
+            "$t4": "0x0000000000000002",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000001",
+            "$s3": "0x0000000000000001",
+            "$s4": "0x0000000000000001",
+            "$s5": "0x0000000000000001",
+            "$s6": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. Return one consumed byte, one reading and capacity status one. The second output word remains 1002. Compare this with the preceding source: the bytes are identical, but the output capacity changes which candidate may be inspected.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000001",
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000001"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The capacity-precedence observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "syntax-versus-range",
+      "explanation": "The five bytes ff ff ff ff 1f have a terminal fifth byte, fit the 33-bit mapped domain and use shortest spelling. Their unsigned value is 8589934591, mapping to difference −4294967296. The initial predecessor is zero.",
+      "question": "Why is this candidate rejected?",
+      "choices": [
+        {
+          "id": "b",
+          "text": "Any five-byte value is malformed",
+          "feedback": "Valid endpoint transitions require five groups."
+        },
+        {
+          "id": "c",
+          "text": "The fifth payload is too wide",
+          "feedback": "Payload 31 fits the fifth group. A payload of 32 would violate the width rule."
+        },
+        {
+          "id": "a",
+          "text": "The reconstructed reading is outside signed-word range",
+          "feedback": "The bytes are syntactically valid. Reconstruction must remain wide until the explicit reading-range check, which reports status three."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "dec_range",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-range-failure",
+      "source": "worked/range-failure.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/range-failure.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at dec_range. Candidate unsigned value t1 is 8589934591, reconstructed value t6 is −4294967296 and the committed predecessor and counts remain zero. The wide candidate reached the reading-range check without becoming a signed-word wraparound zero.",
+          "anchor": {
+            "label": "dec_range",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000000000005",
+            "$t1": "0x00000001ffffffff",
+            "$t2": "0x000000000000001c",
+            "$t3": "0x0000000000000005",
+            "$t4": "0x000000000000001f",
+            "$t5": "0xffffffffffffffff",
+            "$t6": "0xffffffff00000000",
+            "$s3": "0x0000000000000020",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. Neither input nor output was committed and a3 is range status three. The original first output word remains 1000. Syntax validity and representable readings are separate conditions.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000003",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The range-failure observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "fifth-group",
+      "explanation": "Four seven-bit payloads cover 28 bits. A 33-bit mapped value leaves five payload bits in the fifth byte, and no sixth byte belongs to this format.",
+      "question": "What must the fifth byte satisfy?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It terminates and its payload is below 32",
+          "feedback": "Check both conditions before accepting the candidate. Continuation and payload width are separate restrictions."
+        },
+        {
+          "id": "b",
+          "text": "Any terminal payload below 128 is valid",
+          "feedback": "That would admit mapped values wider than 33 bits."
+        },
+        {
+          "id": "c",
+          "text": "A continuation bit permits a sixth byte",
+          "feedback": "The format ends after at most five groups, even if padding is mapped."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "dec_accumulate",
+        "mnemonic": "dsllv",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-fifth-width",
+      "source": "worked/fifth-width.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/fifth-width.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at dec_bad. The scan index is five, candidate length is five and fifth payload t5 is 32. That payload is rejected before accumulation. No reading or byte prefix has been committed.",
+          "anchor": {
+            "label": "dec_bad",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000000000005",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x000000000000001c",
+            "$t3": "0x0000000000000005",
+            "$t4": "0x0000000000000020",
+            "$t5": "0x0000000000000020",
+            "$t6": "0x0000000000000000",
+            "$s3": "0x0000000000000020",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. The result is zero bytes, zero readings and malformed status two. The output is unchanged; this was a byte-width failure before reading reconstruction.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000002",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The fifth-width observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "trace-fifth-continued",
+      "source": "worked/fifth-continued.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/fifth-continued.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at dec_bad. The fifth byte t4 is 128 and its payload is zero. The continuation request itself is invalid, independent of the small payload. The function must not fetch a sixth byte.",
+          "anchor": {
+            "label": "dec_bad",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000000000005",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x000000000000001c",
+            "$t3": "0x0000000000000005",
+            "$t4": "0x0000000000000080",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000080",
+            "$s3": "0x0000000000000020",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. Return zero committed bytes, zero readings and malformed status two. Mapped backing storage after the fifth byte does not enlarge the selected input.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000002",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The fifth-continued observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "empty-before-capacity",
+      "explanation": "An encoder with reading count zero and byte capacity zero has no source value to attempt. Its top tests check input completion before output capacity.",
+      "question": "What result belongs to this empty call?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Zero readings, zero bytes and success",
+          "feedback": "There is no pending value to reject. No input or output buffer access is needed."
+        },
+        {
+          "id": "b",
+          "text": "Capacity status one",
+          "feedback": "Capacity matters only when input remains to be attempted."
+        },
+        {
+          "id": "c",
+          "text": "Read one word to decide whether it encodes to zero bytes",
+          "feedback": "Every reading has at least one byte, but no reading was requested here."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "enc_next",
+        "mnemonic": "beqc",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "trace-empty-encode",
+      "source": "worked/empty-encode.asm",
+      "integerInputs": [],
+      "explanation": "Open worked/empty-encode.asm in a fresh Debug session. Use one line breakpoint at a time, before the requested instruction executes. Inspect the selected frame and Memory alongside the written lab. After the last observation, resume to normal exit before changing programs.",
+      "stops": [
+        {
+          "id": "boundary-0",
+          "explanation": "Break at enc_return. The working committed counters s5 and s6 and status a3 are zero. The input-completion branch returned before any selected-buffer access. Saving the private frame is separate from reading caller data.",
+          "anchor": {
+            "label": "enc_return",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000",
+            "$t0": "0x0000000010010188",
+            "$t1": "0x0000000000000000",
+            "$t2": "0x0000000000000000",
+            "$t3": "0x0000000000000000",
+            "$t4": "0x0000000000000000",
+            "$t5": "0x0000000000000000",
+            "$t6": "0x0000000000000000",
+            "$s3": "0x0000000000000000",
+            "$s4": "0x0000000000000000",
+            "$s5": "0x0000000000000000",
+            "$s6": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        },
+        {
+          "id": "boundary-1",
+          "explanation": "Break at codec_done. Both returned counts and status are zero. The source and destination buffers remain unchanged; the caller has not yet published result words.",
+          "anchor": {
+            "label": "codec_done",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$a3": "0x0000000000000000",
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The captured state matches this boundary. Explain which values are candidates, which are committed and what each counter counts."
+        }
+      ],
+      "success": "The empty-encode observations match the current source.",
+      "hints": [
+        {
+          "id": "units",
+          "text": "Encoder returns consumed readings in v0 and produced bytes in v1. Decoder returns consumed bytes in v0 and produced readings in v1. Neither counter includes a rejected candidate."
+        },
+        {
+          "id": "boundary",
+          "text": "Learn highlights the next requested operation; the selected Debug frame shows the actual pause. Saved working registers describe the loop only before the epilogue restores them."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "reset-predecessor",
+      "explanation": "The independent scanner validates bytes without writing decoded readings. Like the worked decoder, each invocation starts with predecessor zero, even after an earlier successful, partial or rejected call.",
+      "question": "Does concatenating two independently encoded blocks preserve their intended readings under one continuing predecessor?",
+      "choices": [
+        {
+          "id": "c",
+          "text": "Only if both blocks use the same byte length",
+          "feedback": "Byte length does not determine the last committed reading or the next block’s intended origin."
+        },
+        {
+          "id": "a",
+          "text": "Not in general; the second block was encoded relative to zero",
+          "feedback": "Use independent calls or explicit framing/reset semantics. The last reading of the first block is not the second block’s initial predecessor."
+        },
+        {
+          "id": "b",
+          "text": "Always; continuation bits reset the reading predecessor",
+          "feedback": "A terminal byte ends a candidate, not the entire delta history."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "dec_unmap",
+        "mnemonic": "andi",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "scan-sequences",
+      "source": "independent/delta-scan.asm",
+      "caseProfiles": [
+        "independent/delta-scan-sequences-00.cases.json",
+        "independent/delta-scan-sequences-01.cases.json",
+        "independent/delta-scan-sequences-02.cases.json",
+        "independent/delta-scan-sequences-03.cases.json",
+        "independent/delta-scan-sequences-04.cases.json",
+        "independent/delta-scan-sequences-05.cases.json",
+        "independent/delta-scan-sequences-06.cases.json",
+        "independent/delta-scan-sequences-07.cases.json",
+        "independent/delta-scan-sequences-08.cases.json",
+        "independent/delta-scan-sequences-09.cases.json",
+        "independent/delta-scan-sequences-10.cases.json",
+        "independent/delta-scan-sequences-11.cases.json",
+        "independent/delta-scan-sequences-12.cases.json",
+        "independent/delta-scan-sequences-13.cases.json",
+        "independent/delta-scan-sequences-14.cases.json",
+        "independent/delta-scan-sequences-15.cases.json",
+        "independent/delta-scan-sequences-16.cases.json",
+        "independent/delta-scan-sequences-17.cases.json",
+        "independent/delta-scan-sequences-18.cases.json",
+        "independent/delta-scan-sequences-19.cases.json",
+        "independent/delta-scan-sequences-20.cases.json",
+        "independent/delta-scan-sequences-21.cases.json",
+        "independent/delta-scan-sequences-22.cases.json",
+        "independent/delta-scan-sequences-23.cases.json",
+        "independent/delta-scan-sequences-24.cases.json",
+        "independent/delta-scan-sequences-25.cases.json",
+        "independent/delta-scan-sequences-26.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current scan_delta for all eight public sequences under every limit zero through 32. Follow independent/README.md. The starter deliberately stops with break. Implement and explain a scalar scanner, inspect the first mismatch and retry.",
+      "success": "All 264 public cases in this group pass for the current source. Explain candidate versus committed state, precedence and access bounds beside these finite results.",
+      "hints": [
+        {
+          "id": "prefix",
+          "text": "Keep a separate candidate cursor and accumulator. Advance committed input and predecessor only after shortest spelling, fifth-byte rules and reconstructed reading range all pass."
+        },
+        {
+          "id": "precedence",
+          "text": "Input completion is checked before the output limit. A reached limit stops before the next candidate is read. Empty input succeeds; nonempty input at limit zero reports capacity without a buffer read."
+        },
+        {
+          "id": "readonly",
+          "text": "The scanner writes no caller bytes, including temporary writes later restored. Each invocation starts from predecessor zero and returns zero as last reading if none was committed."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "scan-rejections",
+      "source": "independent/delta-scan.asm",
+      "caseProfiles": [
+        "independent/delta-scan-rejected-00.cases.json",
+        "independent/delta-scan-rejected-01.cases.json",
+        "independent/delta-scan-rejected-02.cases.json",
+        "independent/delta-scan-rejected-03.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current scan_delta for all eight rejected-tail families under all four public limits. Follow independent/README.md. Use the same current source; a passing group does not establish another group’s boundaries.",
+      "success": "All 32 public cases in this group pass for the current source. Explain candidate versus committed state, precedence and access bounds beside these finite results.",
+      "hints": [
+        {
+          "id": "prefix",
+          "text": "Keep a separate candidate cursor and accumulator. Advance committed input and predecessor only after shortest spelling, fifth-byte rules and reconstructed reading range all pass."
+        },
+        {
+          "id": "precedence",
+          "text": "Input completion is checked before the output limit. A reached limit stops before the next candidate is read. Empty input succeeds; nonempty input at limit zero reports capacity without a buffer read."
+        },
+        {
+          "id": "readonly",
+          "text": "The scanner writes no caller bytes, including temporary writes later restored. Each invocation starts from predecessor zero and returns zero as last reading if none was committed."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "scan-state",
+      "source": "independent/delta-scan.asm",
+      "caseProfiles": [
+        "independent/delta-scan-state-00.cases.json"
+      ],
+      "checkKind": "function",
+      "explanation": "Check your current scan_delta for default caller publication and repeated calls after failure, success, zero-limit and empty work. Follow independent/README.md. Use the same current source; a passing group does not establish another group’s boundaries.",
+      "success": "All 2 public cases in this group pass for the current source. Explain candidate versus committed state, precedence and access bounds beside these finite results.",
+      "hints": [
+        {
+          "id": "prefix",
+          "text": "Keep a separate candidate cursor and accumulator. Advance committed input and predecessor only after shortest spelling, fifth-byte rules and reconstructed reading range all pass."
+        },
+        {
+          "id": "precedence",
+          "text": "Input completion is checked before the output limit. A reached limit stops before the next candidate is read. Empty input succeeds; nonempty input at limit zero reports capacity without a buffer read."
+        },
+        {
+          "id": "readonly",
+          "text": "The scanner writes no caller bytes, including temporary writes later restored. Each invocation starts from predecessor zero and returns zero as last reading if none was committed."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "caller-exit",
+      "source": "independent/delta-scan.asm",
+      "caseProfile": "independent/caller-exit.cases.json",
+      "explanation": "Check the complete default scanner program through its ordinary silent exit after the numerical, rejection and state groups.",
+      "success": "The complete scanner caller exits normally with no console output."
+    }
+  ]
+}

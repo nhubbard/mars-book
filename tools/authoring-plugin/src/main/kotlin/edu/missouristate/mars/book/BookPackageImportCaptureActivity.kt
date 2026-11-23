@@ -66,7 +66,7 @@ internal data class BookAssessmentFixture(val source: String = "", val path: Str
     fun validate() {
         require(source in setOf("independent/plus-one.asm", "independent/wrapped-byte.asm",
             "independent/red-component.asm", "independent/independent-copy.asm", "independent/end-pointer.asm",
-            "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm", "independent/life-changes.asm", "independent/partition-negative.asm", "independent/fixed-interpolate.asm", "independent/matrix-rotate.asm", "independent/bounded-line.asm", "independent/matrix-vector.asm", "independent/rgb555.asm", "independent/pcm-subtract.asm", "independent/fir-decimate.asm"))
+            "independent/reverse-and-invert.asm", "independent/vertical-sprite.asm", "independent/dashed-line.asm", "independent/life-changes.asm", "independent/partition-negative.asm", "independent/fixed-interpolate.asm", "independent/matrix-rotate.asm", "independent/bounded-line.asm", "independent/matrix-vector.asm", "independent/rgb555.asm", "independent/pcm-subtract.asm", "independent/fir-decimate.asm", "independent/delta-scan.asm"))
         require(Path.of(path).isAbsolute && sha256.matches(Regex("[a-f0-9]{64}")))
     }
 }
@@ -98,6 +98,7 @@ internal data class BookPackageImportPlan(
     val msaUnit: Boolean = false,
     val pcmUnit: Boolean = false,
     val firUnit: Boolean = false,
+    val deltaUnit: Boolean = false,
 ) {
     fun validate() {
         require(Path.of(projectRoot).isAbsolute && Path.of(outputDirectory).isAbsolute)
@@ -108,7 +109,7 @@ internal data class BookPackageImportPlan(
         require(!nativeExecution || nativePredictions)
         require(!nativeDebug || nativeExecution)
         if (assessmentFixtures.isNotEmpty()) {
-            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit || lifeUnit || sortingUnit || fixedUnit || localityUnit || boundedUnit || measurementUnit || msaUnit || pcmUnit || firUnit)
+            require(nativeDebug || memoryUnit || loopUnit || functionUnit || spriteUnit || rasterUnit || lifeUnit || sortingUnit || fixedUnit || localityUnit || boundedUnit || measurementUnit || msaUnit || pcmUnit || firUnit || deltaUnit)
             val expected = when {
                 memoryUnit -> setOf("independent/red-component.asm", "independent/independent-copy.asm")
                 loopUnit -> setOf("independent/end-pointer.asm")
@@ -124,13 +125,19 @@ internal data class BookPackageImportPlan(
                 msaUnit -> setOf("independent/rgb555.asm")
                 pcmUnit -> setOf("independent/pcm-subtract.asm")
                 firUnit -> setOf("independent/fir-decimate.asm")
+                deltaUnit -> setOf("independent/delta-scan.asm")
                 else -> setOf("independent/plus-one.asm", "independent/wrapped-byte.asm")
             }
             require(assessmentFixtures.map { it.source }.toSet() == expected)
             require(assessmentFixtures.size == expected.size)
             assessmentFixtures.forEach(BookAssessmentFixture::validate)
         }
-        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit, lifeUnit, sortingUnit, fixedUnit, localityUnit, boundedUnit, measurementUnit, msaUnit, pcmUnit, firUnit).count { it } <= 1)
+        require(listOf(memoryUnit, loopUnit, functionUnit, spriteUnit, rasterUnit, lifeUnit, sortingUnit, fixedUnit, localityUnit, boundedUnit, measurementUnit, msaUnit, pcmUnit, firUnit, deltaUnit).count { it } <= 1)
+        if (deltaUnit) {
+            require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
+            require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
+            require(archives.single().id == "023-delta-varint" && archives.single().entry == "delta-codec.asm")
+        }
         if (firUnit) {
             require(nativePredictions && !nativeExecution && !nativeDebug && !resumeCompleted)
             require(!activityNavigation && !prerequisiteControls && assessmentFixtures.size == 1)
