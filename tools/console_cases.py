@@ -51,6 +51,19 @@ class MarsBotCheck:
 
 
 @dataclass(frozen=True)
+class MazeSearchCheck:
+    walls: str
+    start: int
+    goal: int
+    fixture_index: int
+
+
+@dataclass(frozen=True)
+class MazeRendererCheck:
+    fixture: int
+
+
+@dataclass(frozen=True)
 class ConsoleCase:
     name: str
     input: str
@@ -61,6 +74,7 @@ class ConsoleCase:
     stores: tuple[StoreCheck, ...] = ()
     reads: tuple[ReadCheck, ...] = ()
     mars_bot: MarsBotCheck | None = None
+    maze: MazeSearchCheck | MazeRendererCheck | None = None
 
 
 def _object(pairs):
@@ -85,7 +99,7 @@ def parse(data):
         raise ValueError('Console-case JSON is nested too deeply') from error
     if not isinstance(root, dict) or set(root) != {'formatVersion', 'cases'}:
         raise ValueError('Expected exactly formatVersion and cases')
-    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5):
+    if type(root['formatVersion']) is not int or root['formatVersion'] not in (1, 2, 3, 4, 5, 6):
         raise ValueError('Unsupported console-case format')
     rows = root['cases']
     if not isinstance(rows, list) or not 1 <= len(rows) <= MAX_CASES:
@@ -95,8 +109,10 @@ def parse(data):
         fields = {'name', 'input', 'stdout', 'instructionLimit'}
         version = root['formatVersion']
         allowed = fields | ({'memory'} if version == 2 else {'memory', 'initialMemory', 'stores', 'reads'} if version >= 3 else set())
-        if version == 5:
+        if version >= 5:
             allowed |= {'marsBot'}
+        if version >= 6:
+            allowed |= {'maze'}
         if not isinstance(row, dict) or not fields <= set(row) <= allowed:
             raise ValueError('Unsupported or missing console-case fields')
         name = row['name']
@@ -120,10 +136,34 @@ def parse(data):
         if len(stores) + len(reads) > 64 or sum(len(item.bytes) // 2 for item in stores) > 65536:
             raise ValueError('Declare at most 64 trace checks and 65536 expected store bytes per case')
         bot = parse_mars_bot(row['marsBot']) if 'marsBot' in row else None
-        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads, bot))
+        maze = parse_maze(row['maze']) if 'maze' in row else None
+        cases.append(ConsoleCase(name, row['input'], row['stdout'], limit, memory, initial, stores, reads, bot, maze))
     if sum(case.instruction_limit for case in cases) > MAX_TOTAL_INSTRUCTIONS:
         raise ValueError('Combined case instruction limits exceed 10000000')
     return tuple(cases)
+
+
+def parse_maze(row):
+    if not isinstance(row, dict):
+        raise ValueError('Expected a maze expectation object')
+    kind = row.get('kind')
+    if kind == 'search':
+        if set(row) != {'kind', 'walls', 'start', 'goal', 'fixtureIndex'}:
+            raise ValueError('A maze search needs walls, endpoints and fixture index')
+        walls = row['walls']
+        if not isinstance(walls, str) or re.fullmatch(r'(?:00|01){64}', walls) is None:
+            raise ValueError('A maze needs 64 zero/one wall bytes')
+        for field, maximum in [('start', 63), ('goal', 63), ('fixtureIndex', 65535)]:
+            if type(row[field]) is not int or not 0 <= row[field] <= maximum:
+                raise ValueError('Invalid integral maze field: ' + field)
+        if any(walls[row[field] * 2:row[field] * 2 + 2] != '00' for field in ['start', 'goal']):
+            raise ValueError('Maze endpoints must be open')
+        return MazeSearchCheck(walls, row['start'], row['goal'], row['fixtureIndex'])
+    if kind == 'renderer':
+        if set(row) != {'kind', 'fixture'} or type(row['fixture']) is not int or not 0 <= row['fixture'] <= 4:
+            raise ValueError('A maze renderer needs one fixture index zero through four')
+        return MazeRendererCheck(row['fixture'])
+    raise ValueError('Unknown maze expectation kind')
 
 
 def parse_mars_bot(row):
@@ -268,6 +308,9 @@ def byte_arguments(hex_bytes):
 
 def render(cases):
     lines = [GENERATED, '// Each case runs in a fresh simulator; labels and scratch registers are not checked.\n\n']
+    if any(case.maze is not None for case in cases):
+        lines[1] = '// Each case runs in a fresh simulator. Maze checks use the documented public ABI.\n\n'
+        lines.append('import edu.missouristate.mars.cli.grading.ConsoleMazeCheck\n\n')
     for case in cases:
         lines.append(f'case({kotlin_string(case.name)}, input = {kotlin_string(case.input)}, instructionLimit = {case.instruction_limit}) {{\n')
         if case.mars_bot is not None:
@@ -278,7 +321,13 @@ def render(cases):
             lines.append(f'    val stores{index} = traceMemoryStores(0x{store.address:016x}L, {store.length})\n')
         for index, read in enumerate(case.reads):
             lines.append(f'    val reads{index} = traceMemoryAccesses(0x{read.address:016x}L, {read.length})\n')
-        lines.append('    runToExit()\n')
+        if isinstance(case.maze, MazeSearchCheck):
+            maze = case.maze
+            lines.append(f'    ConsoleMazeCheck.Search({kotlin_string(maze.walls)}, {maze.start}, {maze.goal}, {maze.fixture_index}).verify(this)\n')
+        elif isinstance(case.maze, MazeRendererCheck):
+            lines.append(f'    ConsoleMazeCheck.Renderer({case.maze.fixture}).verify(this)\n')
+        else:
+            lines.append('    runToExit()\n')
         if case.mars_bot is not None:
             bot = case.mars_bot
             lines.append(f'    bot.expectState({bot.x}.0, {bot.y}.0, {bot.heading}, moving = {str(bot.moving).lower()}, penDown = {str(bot.pen_down).lower()})\n')

@@ -171,3 +171,63 @@ include empty and tail ranges, repeated transactions and alternate glyph data.
 Its native lesson archive is still pending; the existing written lab is not yet
 claimed as an interactive unit. Final display pixels alone do not prove its output
 history, and an unchanged exit guard does not prove the absence of a write.
+
+
+## Maze publications (case-profile version 6)
+
+Version 6 retains the earlier optional fields and all version 4–5 work limits.
+It adds an optional `maze` object with either of these exact shapes:
+
+```json
+{"kind":"search","walls":"<64 zero/one bytes as 128 hex digits>",
+ "start":0,"goal":63,"fixtureIndex":0}
+```
+
+```json
+{"kind":"renderer","fixture":0}
+```
+
+For a search, every byte pair must be `00` (open) or `01` (wall). Start and goal
+are integral cell IDs from zero through 63 and must both be open. The fixture
+index is an integer from zero through 65535; it varies the public guard values.
+For a renderer, the fixture is an integer from zero through four, selecting the
+five original renderer inputs. Unknown kinds/fields, missing fields, nonintegral
+numbers, stringified integers and invalid endpoints are rejected. Earlier
+profile versions reject `maze`. No downloaded predicate or executable class name
+is accepted.
+
+This is a task-specific semantic check of the documented 8×8 ABI in
+`revision/labs/files/maze-search.asm` and the maze lab, rather than a general
+replacement for memory or function checks. The program must publish initialization,
+every completed dequeue/expansion, and the terminal result at `maze_ready`.
+The checker validates each publication before executing its first instruction:
+queue history and zero unused suffix, state, first-discovery parents, shortest
+edge distances, path mask, metadata, guards and all 64 rendered pixels. The actual
+submitted enqueue order determines the expected parent tree; any ordering of
+exactly the newly discovered orthogonal neighbors is accepted. A separate host
+breadth-first search verifies shortest distances and reachability. Coordinate
+bounds forbid row wrap and diagonals. The goal is dequeued but not expanded;
+start equal to goal produces a one-cell path of length zero.
+
+The checker poisons output before execution, writes input as bytes independent
+of image byte order, and forbids execution stores to walls, endpoints and guards,
+including writes restored before a snapshot. The frame and its first guard have
+the documented fixed addresses; other public labels may move. The final state
+is checked again after normal exit. Counting executions at `maze_ready` also
+rejects extra terminal publications. Instruction limits remain cumulative over
+all stops; cancellation is checked at every inspected publication. Case cleanup
+owns all observation subscriptions.
+
+The independent renderer check starts at `render`, with a return continuation at
+`done`. It verifies wall/path/state color priority and every output pixel at
+`maze_ready`, then at `done` and after normal exit. All input arrays, metadata and
+guards are read-only. Full-width `s0`–`s7` and the stack pointer must already be
+restored at publication. Exactly one publication is required; helper labels,
+scratch registers and decomposition remain the student's choice.
+
+The eight original public search inputs and five renderer inputs are exported
+as `revision/labs/checks/maze-{search,render}.cases.json`. Their generated `.kts`
+files import `ConsoleMazeCheck` and invoke its public `verify(this)` method, so
+native and generated assessments use the same checker. Original handwritten
+project checks remain retained as historical evidence. This foundation alone
+does not complete a downloadable maze lesson or its live IDE walkthrough.

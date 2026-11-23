@@ -40,7 +40,7 @@ class ConsoleCaseTests(unittest.TestCase):
                    b'{"formatVersion":NaN,"cases":[]}', b'{"formatVersion":1,"cases":[' + b'[' * 1100,
                    self.encode([]), self.encode([self.row(), self.row()])]
         base = json.loads(self.encode())
-        for field, value in [('formatVersion', True), ('formatVersion', 1.0), ('formatVersion', 6), ('cases', {}), ('script', 'run this')]:
+        for field, value in [('formatVersion', True), ('formatVersion', 1.0), ('formatVersion', 7), ('cases', {}), ('script', 'run this')]:
             item = dict(base); item[field] = value; invalid.append(json.dumps(item).encode())
         for name in ['', ' ', 'line\nname', '\x1b[31mred', 'x' * 129, None, 4]:
             row = self.row(); row['name'] = name; invalid.append(self.encode([row]))
