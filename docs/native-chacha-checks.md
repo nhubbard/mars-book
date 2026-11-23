@@ -3,7 +3,9 @@
 The revised Chapter 22 unit retains original project `026-chacha20`. Its four
 completed interfaces are the quarter round, raw scalar block, raw MSA block and
 counted XOR wrapper. `tools/chacha_lesson_cases.py` authors the existing 73 public
-cases as native function format 15. It does not generate book composition or
+cases as native function format 15. `tools/chacha_original_checks.json` binds all six original scripts by SHA-256
+and case count; the tooling tests reject a stale source grid. The author does
+not generate book composition or
 recognize implementation source. Connected native lesson composition and a new
 first/resume desktop walkthrough remain unfinished.
 

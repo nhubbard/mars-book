@@ -1,4 +1,6 @@
+import hashlib
 import json
+from pathlib import Path
 import unittest
 from chacha_lesson_cases import (ARENAS,WORD,block,groups,initial_state,profiles,
     quarter,transform,word_bytes)
@@ -7,6 +9,12 @@ from chacha_lesson_cases import (ARENAS,WORD,block,groups,initial_state,profiles
 class ChachaLessonCasesTest(unittest.TestCase):
     def test_preserves_original_73_case_domains_budgets_and_same_session_calls(self):
         all_groups=groups()
+        manifest=json.loads(Path(__file__).with_name('chacha_original_checks.json').read_text())
+        self.assertEqual(manifest['formatVersion'],1)
+        root=Path(__file__).resolve().parents[1]
+        for source in manifest['sources']:
+            self.assertEqual(hashlib.sha256((root/source['source']).read_bytes()).hexdigest(),source['sha256'])
+            self.assertEqual(len(all_groups[source['group']]),source['cases'])
         self.assertEqual({k:len(v) for k,v in all_groups.items()},dict(quarter=12,scalar=4,msa=4,xor=37,caller=11,reuse=5))
         cases=[c for rows in all_groups.values() for c in rows]
         self.assertEqual(len({c['name'] for c in cases}),73)
