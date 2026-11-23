@@ -97,3 +97,51 @@ PDF/UA-2 evidence is retained privately, including distinct earlier layout recei
 Human author, learner and assistive-technology reviews remain pending. This unit's
 native guided lesson and the broader curriculum/instructional-system goal remain
 unfinished. Screenshot automation stays in the separate authoring plugin.
+
+## Native grading foundation, 22 November 2026
+
+The complete native CRC lesson remains in progress. Its chunk-checker data author,
+`tools/crc_chunk_lesson_cases.py`, now retains all 135 original direct inputs:
+112 payload/type/checksum trials, fifteen rejected counts and eight mismatched
+unsigned lengths. An executable export of the original Kotlin checker agrees
+with the new Python zlib author on every selected-count bit pattern, offset,
+source byte, full table initialization, computed checksum and status. The finite
+input construction is compared directly rather than inferred from matching names.
+
+Sixteen bounded function profiles contain 137 cases / 142 calls: those 135 direct
+cases, the original caller observed before and after publication, and an added
+five-call state sequence. A separate console profile checks normal silent exit.
+The original one-million and 100,000 instruction allowances remain intact. Caller
+memory is watched across the complete original interval, including its unnamed
+padding. Rejected counts permit no source/table access; mismatched lengths permit
+only the four length bytes. Successful and checksum-mismatched chunks permit
+only their selected chunk and prepared table reads. All stores remain forbidden
+in the direct interface checks, including same-value stores.
+
+Function-profile version 12 adds an explicit access-history allowance per policy.
+The old native default is 65,536 events; this corpus retains the original script's
+200,000-event allowance for each watched case or invocation. Older formats reject
+the new field and retain their default. Each case-policy list and invocation-policy
+list has a combined 4,194,304-event bound, matching the previous maximum of 64
+default histories. Overflow fails instead of accepting a truncated trace. Tests
+exercise larger histories, cumulative case limits, fresh per-call histories,
+strict parsing and rejection before simulator creation.
+
+The original and native graders accept table-based, bit-based and wide-address
+implementations. Both reject four historical checksum faults, premature source
+or table reads, same-value source writes and the unfinished starter. A deliberate
+stale-error implementation passes all 136 original fresh-session cases but fails
+the added native retry case: after a successful IEND checksum, a later length
+error leaves v0=0xae426082 instead of zero. This is a test fault demonstrating a
+coverage gap, not a simulator or worked-solution defect. The same-session case
+also separates count rejection, checksum mismatch and successful retry, with
+invocation-specific read permissions.
+
+Seven new host-author tests pass, and the broader book-tool suite passes 529 tests.
+A Jupiter fixture reads all sixteen exact function profiles and the exit profile
+through production readers. Private `native-crc-foundation-01` retains the original
+comparison, equivalent implementations, fault outcomes and source/build receipts.
+The native file-check delivery, guided observations, first/resume IDE walkthrough
+and revised written companion remain unfinished. Existing publication figures and
+LaTeX compositions have not changed in this foundation step. The broader curriculum
+goal remains active.
