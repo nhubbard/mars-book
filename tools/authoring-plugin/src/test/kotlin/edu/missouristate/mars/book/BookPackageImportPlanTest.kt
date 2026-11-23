@@ -500,6 +500,26 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `RSA corpus plans bind one archive and private fixture and retain fresh-process resume`() {
+        val rsa = plan.copy(archives = listOf(archive.copy(id = "027-rsa-arithmetic", version = "0.1.0", entry = "worked/remainders.asm")),
+            nativePredictions = true, rsaUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/rsa-arithmetic.asm", "/tmp/rsa.asm", "c".repeat(64))))
+        rsa.validate()
+        rsa.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(rsa.copy(nativePredictions = false), rsa.copy(nativeExecution = true),
+            rsa.copy(nativeDebug = true), rsa.copy(resumeCompleted = true), rsa.copy(chachaUnit = true),
+            rsa.copy(shaUnit = true), rsa.copy(cborUnit = true), rsa.copy(qoiUnit = true), rsa.copy(crcUnit = true), rsa.copy(memoryUnit = true),
+            rsa.copy(rsaUnit = false), rsa.copy(activityNavigation = true), rsa.copy(prerequisiteControls = true),
+            rsa.copy(assessmentFixtures = emptyList()),
+            rsa.copy(assessmentFixtures = rsa.assessmentFixtures + rsa.assessmentFixtures),
+            rsa.copy(assessmentFixtures = listOf(rsa.assessmentFixtures.single().copy(source = "independent/chacha20.asm"))),
+            rsa.copy(archives = listOf(rsa.archives.single().copy(id = "026-chacha20"))),
+            rsa.copy(archives = listOf(rsa.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `fresh-process captures require every retained source digest and do not inject source`() {
         val resume = plan.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "c".repeat(64)))
         resume.validate()
