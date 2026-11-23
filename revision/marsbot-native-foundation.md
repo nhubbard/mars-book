@@ -1,8 +1,8 @@
 # Native MarsBot assessment foundation
 
-Status: assessment support verified. The native guided draft now passes archive
-import and source-pointer tests; its first-use/resume IDE walkthrough remains.
-See `marsbot-native-unit.md` for that separate content milestone. This note supplements the
+Status: assessment support and native first-use/resume delivery are verified.
+See `marsbot-native-unit.md` for the completed live and written integration.
+This note supplements the
 historical written-unit evidence in `marsbot-unit.md`; it does not relabel those
 older captures or counts.
 

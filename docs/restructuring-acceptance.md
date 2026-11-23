@@ -15,7 +15,7 @@ that its contents were rechecked by this audit.
 | Complete smaller programs in the main book | Console, pixel, loop, function and array examples have complete public sources; individual unit notes identify executable checks | Confirm during walkthrough that every partial listing's purpose and complete source are clear |
 | Explicit outcomes and prerequisites | `docs/revised-learning-outcomes.md` maps three assessable outcomes per chapter to activities and expected entry concepts | Human review of the map and the explanations at first use |
 | Connected explanations, worked reasoning and independent transfer | Native chapter/lab pairs and the reviewed first-program, PCM and H.263 pilots; author accepted the direction for expansion | Substantive editing is a separate author-directed goal; no claim of completed learner validation |
-| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for seven companions below, then review names, paths and observations across all editions |
+| Written lab supplement supports the interactive lab | Each main chapter has a corresponding written supplement; ten companions retain contracts, diagnosis, public checks and independent tasks | Finish native delivery for six companions below, then review names, paths and observations across all editions |
 | Contents, glossary and index in each book | New native front matter, shared glossary and separately referenced chapter-oriented subject indexes | Technical navigation checks pass: literal references resolve, changed pages are visually inspected, final PDFs pass automated PDF/UA-2. A topic entry points to the relevant chapter, not a claimed first-use paragraph |
 | Native composition, fonts and highlighting | Directly edited TeX includes; Minion Pro, Noto Sans Math and IntelliJ-derived minted style | Current proofs compile with embedded Minion Pro, Noto Sans Math and JetBrains Mono; native composition checks pass. Preserve direct prose editing in future changes |
 | Actual figures and accessible annotations | Unit receipts bind real light-theme IDE images, source/state and native TeX annotations | Recapture changed demonstrations; renew automated PDF/UA-2 on final bytes; human reading-order and assistive-technology review remain open |
@@ -33,7 +33,7 @@ they are not student answer keys.
 | Inline predictions with editor context | `native-predictions-*`, `native-debug-*` and per-unit IDE evidence | Course-wide review of questions and pointers; retain the actual inline interaction instead of requiring Find Action |
 | Source-bound Run/Debug observations | `native-execution-01`, `native-reopen-01` and per-unit IDE evidence | Confirm every current package against its tested archive and source revision |
 | Resumable progress, edits, retries and invalidation | `native-lesson-runtime-01`, `native-reopen-01`, per-unit fresh-process resume receipts | Audit current-edition distribution bindings and retry semantics |
-| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete seven companions; retain interface/state checks instead of reference-source matching |
+| Guided and independent entry; equivalent solutions | `native-modes-01`, per-unit references, alternatives and deliberately failing fixtures | Complete six companions; retain interface/state checks instead of reference-source matching |
 | Graduated hints and instructor control | `native-hints-01`, `native-policy-01`, `downloaded-prerequisites-01`, `functions-prerequisites-01`, `native-fir-call-policy-01`, `native-matvec-policy-01` | Verify current package policy bindings and explain permitted direct entry without weakening checks |
 | Versioned local/HTTPS delivery | `lesson-import-01`, `lesson-download-01`, `downloaded-navigation-01` and `downloaded-prerequisites-01` | Final public archive and download guidance audit; no hosted grading or LMS claim |
 | Kotlin, public IntelliJ APIs and meaningful Jupiter coverage | MARS source, test reports and pinned API-verifier receipts in individual implementation steps | Recheck after any new production change; preserve unrelated manual edits |
@@ -45,13 +45,12 @@ commits, archive digests and limitations.
 
 ## Remaining native companion packages
 
-These seven subjects already have written labs, public executable starters/checks
+These six subjects already have written labs, public executable starters/checks
 and private qualification evidence. Ordinary Run/Debug availability does not
 complete the promised native guided delivery.
 
 | Original subject | Existing written location | Required integration |
 | --- | --- | --- |
-| 006 MarsBot | `revision/labs/companions/marsbot.tex` | Device/trail assessment is implemented and qualified; the native draft passes import/PSI tests. Actual first-use/resume IDE interaction, instructor edition binding and written integration remain |
 | 010 Maze | `revision/labs/companions/maze.tex` | Guided state/invariant observations and independent path/search checks |
 | 014 Ring buffer | `revision/labs/companions/ring-buffer.tex` | Wrap/full/empty reasoning and independent state-transition checks |
 | 015 UTF-8 | `revision/labs/companions/utf8.tex` | Streaming boundaries, invalid sequences and independent decoder checks |
@@ -92,10 +91,10 @@ as tests of the corrected archive.
 
 Final automated PDF/UA-2 passes 1,728 rules in each book, with 1,148,311 checks
 for the main book and 1,154,721 for the lab book, with zero failures. These are
-technical publication checks, not the open human reviews above. The seven native
-companions and course-wide distribution/evidence audit remain implementation work.
+technical publication checks, not the open human reviews above. At that milestone, seven native
+companions and the course-wide distribution/evidence audit remained implementation work.
 
-## MarsBot assessment and native draft milestone
+## Earlier MarsBot assessment and native draft milestone
 
 Console-case format 5 now exposes actual MarsBot state and complete ordered
 trails without changing the simulator. Three equivalent private implementations
@@ -108,7 +107,27 @@ additional generated-profile tests pass separately.
 The new `006-marsbot-feedback` draft adds a thirtieth downloadable native package.
 Its seven predictions, two three-stop Debug sequences and two assessments pass
 actual archive/import and all fourteen PSI source-pointer checks (two more plugin
-tests). Public tooling passes 636 tests. The draft is not yet a completed native
+tests). Public tooling passes 636 tests. At that milestone the draft was not yet a completed native
 IDE delivery: first-use/resume interaction, instructor distribution binding and
-written-lab integration remain. MarsBot stays in the unfinished list above until
-those gates pass; the other six companions still need native packages.
+written-lab integration remained. The later milestone below records their completion.
+
+## MarsBot live delivery and publication milestone
+
+The MarsBot companion now passes actual first-use/resume IDE interaction, exact
+installed-archive checks, instructor-distribution binding and direct written
+integration. First use records sixteen observations / 21 photographs; resume
+records nine / ten. Eight quiz attempts and all three source edits are retained;
+all five execution activities renew, with nineteen passing placements per process.
+Both logs contain no ERROR/SEVERE entries. Capture code remains in the separate
+plugin. The grader/fault qualification in the earlier milestone remains separate.
+
+The matching private checker passes 7,623 cases for each of three equivalent
+implementations; one extracted shipped alternative also passes all 7,623. Five
+private packaging tests preserve exact edition and graded-byte bindings. The final
+lab proof has 242 PDF pages / 229 chapter pages and passes automated PDF/UA-2 with
+1,728 rules / 1,156,866 checks and zero failures. Human reviews remain open.
+
+There are now thirty exercised downloadable native packages plus the built-in
+first unit. The six companions listed above remain implementation work. Final
+course-wide distribution and evidence acceptance is also still required. Historical
+milestones above describe their then-current scope, rather than current completion.

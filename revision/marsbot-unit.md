@@ -63,3 +63,10 @@ main chapters and five companion labs. Native lessons beyond the first unit,
 advanced chapters, production delivery/policies and human learner/accessibility
 review remain unfinished. The proposed MARS-versus-hardware opening stays deferred.
 This written-foundation milestone does not complete the curriculum goal.
+
+## Later native delivery
+
+The historical written milestone above is retained. Current native lesson, live
+first-use/resume verification and instructor/publication bindings are documented
+in [marsbot-native-unit.md](marsbot-native-unit.md). Its completion does not relabel
+the older figures or the earlier test/page counts as current evidence.

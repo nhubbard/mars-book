@@ -25,6 +25,26 @@ protocol from your four-leg implementation. You do not need function calls,
 arrays or a command table to complete the square. A later table-driven version
 is an optional way to revisit it after learning those subjects.
 
+For the interactive version, use \textbf{Tools, Import MARS Lab...} to open
+\texttt{006-marsbot-feedback}. Answer the predictions directly in Learn. The
+imported \path{worked/east.asm} is the complete one-leg program used below.
+\path{worked/east-slow.asm} changes only the requested side to two and the
+movement rate to 128. Start a fresh Debug session for each source and compare
+its three command boundaries.
+
+Use the debugger's selected frame to identify where execution is paused; the
+lesson's source pointer can already identify the next requested boundary.
+The native observations compare registers and source locations. Inspect MarsBot's
+movement and pen flags too. The assessment checks the complete device trail
+separately, including when the robot marker obscures a short line.
+
+After the worked experiment, edit the separate unfinished
+\path{independent/square.asm} and use \textbf{Check this program}. Keep its
+supplied data declarations and exit code. The adjacent
+\path{independent/README.md} states the contract. The ordinary files and
+command-line checks below also support work outside the guided lesson.
+
+\Needspace{10\baselineskip}
 \subsection*{Distinguish command registers from feedback}
 
 The source header connects MarsBot and selects 64 completed simulator instructions
@@ -33,6 +53,11 @@ layout its register block begins at \texttt{0x00000000FFFF8000}. The explicit
 leading zeros matter: this is a positive address in the simulated memory map,
 not a negative signed displacement from zero. The supplied experiment loads it
 with \texttt{dli}. Keep a full address in the base register when adding offsets.
+
+MarsBot's \texttt{MMIO base} label displays \texttt{0xffff8010}, the heading
+port. The source defines \texttt{BOT\_BASE} as \texttt{0xffff8000}, so its
+\texttt{0x10} offset reaches that same port. Use the source's base when following
+the table's offsets.
 
 \input{revision/figures/marsbot/ports}
 
@@ -96,12 +121,14 @@ Do not add printing, long calculations or a second busy-wait between the load
 and stop. A different device rate or longer control loop needs a new latency
 argument; equality alone cannot recover an endpoint already skipped.
 
+\begin{samepage}
 The full \texttt{marsbot-east.asm} program then lifts the pen and exits at
 $(side,0)$, still facing east. That is correct for the experiment, but deliberately
 incomplete for the square assignment. Its public
 \texttt{revision/labs/checks/marsbot-east.kts} check verifies the straight stroke,
 its stopped endpoint, protected data and final pen-up state at several lengths
-and rates.
+and rates.\par
+\end{samepage}
 
 \subsection*{Trace the command before and after it takes effect}
 
@@ -110,7 +137,7 @@ feedback and predict whether the branch will return to the load. Run to
 \texttt{east\_stop}: the branch has matched, but the next instruction has not yet
 stopped movement. The endpoint is reached and the pen is down; movement remains
 on. Step once to \texttt{east\_stopped}. Position is unchanged, but movement is
-now off. The pending instruction lifts the pen. At \texttt{leg\_finished}, that
+now off. The pending instruction lifts the pen. At \texttt{done}, which shares its address with \texttt{leg\_finished}, that
 pen command has completed too.
 
 Figure~\ref{fig:revision-marsbot-stop} compares these two movement states for

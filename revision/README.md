@@ -41,7 +41,7 @@ The initial manuscript remains at the original `main.tex` and `includes/` baseli
   reasoning and independent exercises, without reproducing the old lab checkpoints.
 - `lab-book.tex` includes the twenty-seven written lab supplements: predictions,
   observations, fault diagnosis and independent variations. Native interactive coverage includes both H.263 units; individual unit notes
-  record its scope. Seven elective companions still require native guided packages,
+  record its scope. Six elective companions still require native guided packages,
   as recorded in the acceptance ledger. Their existing ordinary Run/Debug files
   and checks remain available.
 
@@ -58,10 +58,10 @@ For restructuring review, open these local build outputs:
 | Reading | PDF |
 | --- | --- |
 | Main book, chapters 1–27 and navigation (201 PDF pages) | [build/native/learning.pdf](../build/native/learning.pdf) |
-| Lab supplements 1–27, companions and navigation (241 PDF pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
+| Lab supplements 1–27, companions and navigation (242 PDF pages) | [build/native/lab-book.pdf](../build/native/lab-book.pdf) |
 | PCM mixing and H.263 reconstruction pilots | [build/native/advanced-pilots.pdf](../build/native/advanced-pilots.pdf) |
 
-The main book retains 189 numbered chapter pages and the lab book 228. The
+The main book retains 189 numbered chapter pages and the lab book 229. The
 remaining pages provide title/usage matter, contents, glossary and subject index.
 The lab index links directly to the ten companions.
 
@@ -342,3 +342,6 @@ actual IDE first/resume, host-file and publication qualification. The current la
 proof has 209 pages; Chapter 18 occupies 128–134. All existing PPM annotations
 remain native LaTeX. Human learner and assistive-technology review remain open.
 CRC state across reads is the next native unit; the broader goal remains active.
+
+The MarsBot native companion now has first-use/resume IDE, private distribution
+and written-integration evidence; see [its unit note](marsbot-native-unit.md).
