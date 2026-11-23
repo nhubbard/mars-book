@@ -1,9 +1,11 @@
 # Reading nested data
 
 Chapter 21 revises original project `032-cbor-telemetry`, following bounded parsers,
-file ownership, checksums and the QOI state machine. Its main treatment occupies
-pages 133–139 of the 139-page proof. The written lab occupies 123–127 of the
-127-page companion. Native LaTeX remains the publication authority.
+file ownership, checksums and the QOI state machine. Its historical main treatment occupies pages 133–139 of the 139-page proof.
+The current lab proof has 214 pages: the revised CBOR core occupies 150–156,
+with the expression and bytecode companions continuing through 170. Native
+LaTeX remains the publication authority. Older test and page counts below are
+retained as historical qualification, not newly rerun claims.
 
 ## Prerequisites and learning outcomes
 
@@ -77,9 +79,10 @@ were inspected in color, with representative code, tables and all screenshot typ
 also inspected in grayscale. Both exact final PDFs pass automated PDF/UA-2 validation.
 Author, learner and assistive-technology reviews remain pending.
 
-This unit currently uses ordinary Run and Debug; its native guided lesson remains
-unimplemented. Original projects 017 and 018 retain their planned expression/bytecode
-companion roles and are not silently required by the codec sequence. The next main
+The earlier unit used ordinary Run and Debug; its native guide is now complete
+as recorded below. Original projects 017 and 018 retain their expression/bytecode
+companion roles. Their written supplements remain included, and their native
+guides remain separate unfinished work. The next main
 chapter develops word operations through ChaCha20. The complete curriculum and
 production instructional-system goal remains active. The deferred opening orientation
 has not been added. No MARS source change was required in this unit.
@@ -96,7 +99,48 @@ original fresh-call grid accepts. The corpus has 205 cases / 208 calls in 104
 bounded profiles, without a production API change. See
 [the native grading contract](../docs/native-cbor-checks.md).
 
-The native instructional guide, revised written companion and first/resume IDE
-walkthrough remain to be completed. Earlier page/test counts above describe the
-historical CBOR proof; the current complete lab companion has 212 pages after
-the QOI revision. No new CBOR screenshot or PDF is claimed by this foundation.
+## Native instructional unit, 23 November 2026
+
+`revision/lessons/032-cbor-telemetry` now supplies a versioned student archive,
+12 inline predictions, 11 Debug activities with 31 ordered boundaries, one
+ordinary Run and seven independent assessment groups. Twelve worked variants
+change only caller/data selections; executable codec instructions remain exact.
+The guide follows head width, full-width accumulation, recursive parent state,
+depth and map identity, complete record acceptance and exact output capacity.
+The independent sequence body remains unfinished. All 104 grading profiles
+appear exactly once; all 205 cases and 208 calls remain available.
+
+Twelve real simulator probe processes verify all 31 boundaries, caller exit,
+complete source/record/output snapshots, untouched tails and zero file I/O.
+The 555 public tooling tests, three focused native import/profile/PSI Jupiter
+tests and 135 authoring-plugin Jupiter tests pass. Production MARS code is
+unchanged from the prior QOI run of 255 CLI and 1277 plugin tests; that full
+regression was not rerun for this content-only unit. The paired packaged API
+verification passes with no internal API dependency.
+
+The separate authoring plugin exercised the actual native first-use flow and
+a second fresh IDE process, each launched through `clean cleanSandbox runIde`.
+They pass 51 and 39 observations respectively. Thirteen quiz attempts (including
+one deliberate incorrect answer), 12 edited source digests and assessment
+attempt counts survive reopening. Source edits invalidate all 19 execution
+checks; actual execution renews them. All 11 installed plugin JARs match their
+pinned archives in both launches. Both IDE logs are free of ERROR/SEVERE entries;
+owned test IDEs were stopped after native project disposal. The private evidence
+retains 56 first-use and 40 resume captures with verified IntelliJ Light metadata.
+These automated walkthroughs do not substitute for learner review.
+
+The directly edited native lab now explains the transitions between these
+observations, including a parent/child continuation table and the distinction
+between record publication and output publication. Its four existing genuine
+light-theme figures retain native LaTeX annotation. The exact 214-page proof
+was inspected across the revised core and companion transitions, with a table
+and screenshot page also inspected in grayscale. Embedded Minion Pro, Noto Sans
+Math and JetBrains Mono are verified. Automated PDF/UA-2 passes 1728 rules and
+1,010,519 checks with no failures. Human and assistive-technology review remain
+pending. A structural audit confirms 27 chapters, all 35 original projects and
+all 10 companion includes; this establishes coverage, not teaching quality.
+
+Private evidence is retained under `verification/restructuring/native-cbor-unit-01`
+and `native-cbor-ide-01` in the instructor repository. The exact student archive
+is also the byte-identical native reader fixture. Chapter 22 word transformations
+and ChaCha20 is next; the full curriculum goal remains active.

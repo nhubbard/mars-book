@@ -1,0 +1,1300 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read Chapter 21 and its written lab. Distinguish a head from one complete item, then a complete telemetry record and its preferred projection. Answer predictions inline and inspect the selected paused Debug frame. The supplied examples fix observation registers; your independent sequence implementation may choose equivalent state and traversal. Finish each launched process before moving to another source.",
+  "conclusion": "Retain a head-width derivation, a parent/child continuation trace, an argument for per-map key identity and a record/output publication argument. For your sequence scanner, explain progress, inherited depth, early errors and why a malformed suffix clears the result. The finite checks support those arguments; independent learner review is separate.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "head-is-not-item",
+      "source": "cbor-telemetry.asm",
+      "explanation": "The selected 52-byte trace begins b8 04. The high three bits of b8 are five, the map major type. Its low field is 24, meaning that one following byte supplies the argument. That byte is 04. A head describes an item but need not contain its payload.",
+      "question": "What does this head establish?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A map with four pairs and a two-byte head",
+          "feedback": "b8 shifts to major five; the extended argument is four. Its pairs follow the two-byte head."
+        },
+        {
+          "id": "b",
+          "text": "A four-byte complete map",
+          "feedback": "Four counts pairs, not encoded bytes. The head does not establish the map\u2019s complete extent."
+        },
+        {
+          "id": "c",
+          "text": "An array with 24 elements",
+          "feedback": "Major five identifies a map; low field 24 selects an argument width rather than the final argument."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_h_prefix",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "read-map-head",
+      "source": "cbor-telemetry.asm",
+      "explanation": "Debug the entry. Stop after_h_type, then head_return. The first boundary has extracted the major type; the return has assembled its argument and head extent. The caller stores observed_major and observed_argument only after the return checkpoint.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "major",
+          "anchor": {
+            "label": "after_h_type",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "t1 is major five. The low argument-form field has not yet been separated from the initial prefix.",
+          "registers": {
+            "$t1": "0x0000000000000005",
+            "$t0": "0x00000000000000b8"
+          },
+          "success": "The high field identifies a map."
+        },
+        {
+          "id": "head-return",
+          "anchor": {
+            "label": "head_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Status is zero, v1 is two head bytes, a2 is major five and a3 is four pairs.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000002",
+            "$a2": "0x0000000000000005",
+            "$a3": "0x0000000000000004"
+          },
+          "success": "The head result distinguishes type, argument and extent."
+        }
+      ],
+      "success": "The successful head does not prove that any map pair fits.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "selected-head-boundary",
+      "source": "worked/head-truncated.asm",
+      "explanation": "This copy still physically contains b8 04, but byte_count selects only b8. The initial byte says that an argument byte is needed. Physical readability does not extend the selected interval.",
+      "question": "What may the head reader return?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Success with argument zero",
+          "feedback": "A missing argument is not an encoded zero; the head is incomplete."
+        },
+        {
+          "id": "b",
+          "text": "Status one and zero result fields",
+          "feedback": "The required argument is outside the selected interval. v1, a2 and a3 must all report failure values."
+        },
+        {
+          "id": "c",
+          "text": "The same successful four-pair head",
+          "feedback": "That would read the unselected byte merely because it exists in the allocation."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_h_form",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "reject-incomplete-head",
+      "source": "worked/head-truncated.asm",
+      "explanation": "Debug the one-byte selection and stop at head_return. Confirm that the failed read does not retain plausible type or argument outputs.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "head-failed",
+          "anchor": {
+            "label": "head_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The selected interval cannot supply the argument. The routine reports status one and clears extent, major and argument.",
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000",
+            "$a2": "0x0000000000000000",
+            "$a3": "0x0000000000000000"
+          },
+          "success": "No partial head result is published."
+        }
+      ],
+      "success": "Keep the selected interval separate from its larger physical source arena.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "full-counter",
+      "source": "worked/counter.asm",
+      "explanation": "This scalar head is 1b followed by 01 02 03 04 05 06 07 08. Its argument needs all eight bytes. Each loop iteration shifts the existing accumulator eight bits left and ORs in one unsigned byte.",
+      "question": "Why does the accumulation use dsll rather than sll?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Every byte must be sign-extended before shifting",
+          "feedback": "lbu supplies unsigned components. Sign extension would introduce bits not present in the argument."
+        },
+        {
+          "id": "b",
+          "text": "dsll reverses the input in memory",
+          "feedback": "The source bytes remain unchanged. The loop constructs a numeric value in a register."
+        },
+        {
+          "id": "c",
+          "text": "The argument is a 64-bit value, and a word shift would discard significant earlier bytes",
+          "feedback": "After four bytes the accumulator is 0x01020304; the fifth produces 0x0102030405. Keeping only a word loses information."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "head_bytes",
+        "mnemonic": "dsll",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "accumulate-counter",
+      "source": "worked/counter.asm",
+      "explanation": "Start a fresh counter example. Observe after_h_width before argument loading, then after_h_bytes and head_return. You can separately single-step the loop to locate the first byte a word-sized accumulator would lose.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "counter-width",
+          "anchor": {
+            "label": "after_h_width",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Eight argument bytes plus the initial byte fit the nine-byte selection. t3 is the remaining argument width and t4 is the complete head extent.",
+          "registers": {
+            "$t3": "0x0000000000000008",
+            "$t4": "0x0000000000000009",
+            "$a1": "0x0000000000000009"
+          },
+          "success": "The full argument width is proved before its loop."
+        },
+        {
+          "id": "counter-bytes",
+          "anchor": {
+            "label": "after_h_bytes",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "All eight bytes have been accumulated into t6 and copied to a3. v1 is nine.",
+          "registers": {
+            "$t6": "0x0102030405060708",
+            "$a3": "0x0102030405060708",
+            "$v1": "0x0000000000000009"
+          },
+          "success": "The upper half of the counter survives accumulation."
+        },
+        {
+          "id": "counter-return",
+          "anchor": {
+            "label": "head_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The major type is unsigned integer zero; the argument remains the complete 64-bit value.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000009",
+            "$a2": "0x0000000000000000",
+            "$a3": "0x0102030405060708"
+          },
+          "success": "The returned head describes a full-width integer."
+        }
+      ],
+      "success": "The register argument is numeric; any later native storage has its own byte order.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "parent-continuation",
+      "source": "worked/nested-item.asm",
+      "explanation": "The ten-byte selection begins with the nine-byte map a2 01 82 42 80 ff 21 00 80 and ends with integer 00. To visit a child, the parent calls cbor_skip recursively. The child has its own cursor and container state.",
+      "question": "What must survive so the parent can continue correctly?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Its cursor, remaining byte budget, outstanding children or pairs, depth and per-map key identity",
+          "feedback": "The saved return address alone finds the instruction but does not reconstruct the parent\u2019s remaining work."
+        },
+        {
+          "id": "b",
+          "text": "Only the return address",
+          "feedback": "The parent would return to code with its cursor, budget and container state overwritten by the child."
+        },
+        {
+          "id": "c",
+          "text": "A global key mask shared by all maps",
+          "feedback": "Different maps may use the same numeric key. Identity belongs to each map frame."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "skip_child",
+        "mnemonic": "move",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "follow-parent-and-child",
+      "source": "worked/nested-item.asm",
+      "explanation": "Debug the nested-item copy. Follow the listed boundaries in one process. after_k_child is intentionally observed three times: twice in the array and then in its parent map. The selected paused frame identifies which invocation is active.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "root-head",
+          "anchor": {
+            "label": "after_k_head",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The root head is a two-pair map. One of the ten selected bytes has been consumed. s2 still holds inherited depth zero, while a2 now means major type five.",
+          "registers": {
+            "$a2": "0x0000000000000005",
+            "$a3": "0x0000000000000002",
+            "$s1": "0x0000000000000009",
+            "$s2": "0x0000000000000000"
+          },
+          "success": "A returned major type does not replace saved inherited depth."
+        },
+        {
+          "id": "root-key",
+          "anchor": {
+            "label": "after_k_key",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Key one is recorded in mask bit one. Both map pairs remain before the first value returns, and child depth is one.",
+          "registers": {
+            "$s5": "0x0000000000000002",
+            "$s4": "0x0000000000000002",
+            "$s2": "0x0000000000000001",
+            "$s6": "0x0000000000000005",
+            "$s1": "0x0000000000000008"
+          },
+          "success": "The parent retains its mask and outstanding pair count."
+        },
+        {
+          "id": "array",
+          "anchor": {
+            "label": "after_k_array",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The array has two children and opens at depth two. Its own saved major is four; it is not the root map frame.",
+          "registers": {
+            "$s4": "0x0000000000000002",
+            "$s6": "0x0000000000000004",
+            "$s2": "0x0000000000000002",
+            "$s1": "0x0000000000000007"
+          },
+          "success": "The child container owns a separate continuation."
+        },
+        {
+          "id": "string",
+          "anchor": {
+            "label": "after_k_string",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The byte string consumed its head and two payload bytes, 80 ff. Those payload bytes were not parsed as values. Four selected bytes remain from this child cursor.",
+          "registers": {
+            "$a2": "0x0000000000000002",
+            "$a3": "0x0000000000000002",
+            "$s2": "0x0000000000000002",
+            "$s1": "0x0000000000000004"
+          },
+          "success": "Byte-string payload is data even when it resembles opcodes."
+        },
+        {
+          "id": "first-array-child",
+          "anchor": {
+            "label": "after_k_child",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The array resumes after its byte-string child. It has one child left and retains depth two.",
+          "registers": {
+            "$s6": "0x0000000000000004",
+            "$s4": "0x0000000000000001",
+            "$s2": "0x0000000000000002",
+            "$s1": "0x0000000000000004"
+          },
+          "success": "The array\u2019s continuation survives the first recursive return."
+        },
+        {
+          "id": "second-array-child",
+          "anchor": {
+            "label": "after_k_child",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The negative integer child has returned. a2 is now major one, while the array\u2019s saved child depth remains two. It has no children left.",
+          "registers": {
+            "$a2": "0x0000000000000001",
+            "$s6": "0x0000000000000004",
+            "$s4": "0x0000000000000000",
+            "$s2": "0x0000000000000002",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "Argument-register reuse does not change saved parent depth."
+        },
+        {
+          "id": "map-resumes",
+          "anchor": {
+            "label": "after_k_child",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The root map resumes after the complete array. One pair remains, mask bit one survives, and the next child depth is one.",
+          "registers": {
+            "$s6": "0x0000000000000005",
+            "$s4": "0x0000000000000001",
+            "$s5": "0x0000000000000002",
+            "$s2": "0x0000000000000001",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "The map still has key zero and its empty-array value to visit."
+        },
+        {
+          "id": "item-return",
+          "anchor": {
+            "label": "skip_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The walker returns nine consumed bytes. The tenth selected byte is a sibling beyond this item.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000009"
+          },
+          "success": "One item\u2019s extent leaves the following item unread."
+        }
+      ],
+      "success": "The independent sequence scanner must continue from the returned extent, not from a head width.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "depth-admission",
+      "source": "worked/depth-eight.asm",
+      "explanation": "Inherited depth counts containers already open outside this value. A new container may open only below depth eight. Empty containers still open a level; primitive integers do not.",
+      "question": "Which set of outcomes follows the local rule?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "All values at eight fail before reading a head",
+          "feedback": "The reader needs to distinguish containers from permitted scalar values at that depth."
+        },
+        {
+          "id": "b",
+          "text": "Empty array at seven succeeds; empty array at eight fails; integer at eight succeeds",
+          "feedback": "The limit governs opening a container. Emptiness does not remove the container, and a scalar opens none."
+        },
+        {
+          "id": "c",
+          "text": "All three succeed because empty values have no children",
+          "feedback": "That ignores the container opened by the empty array."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "after_k_head",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "reject-ninth-container",
+      "source": "worked/depth-eight.asm",
+      "explanation": "Debug the depth-eight empty-array copy. Its head is readable and valid as a head, but opening another container exceeds the inherited limit. The depth-seven and primitive-eight copies are supplied for the two contrasting manual experiments.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "depth-head",
+          "anchor": {
+            "label": "after_k_head",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The head reports major four and zero elements. The saved inherited depth is eight.",
+          "registers": {
+            "$a2": "0x0000000000000004",
+            "$a3": "0x0000000000000000",
+            "$s2": "0x0000000000000008",
+            "$s1": "0x0000000000000000"
+          },
+          "success": "A complete head is separate from permission to open its container."
+        },
+        {
+          "id": "depth-return",
+          "anchor": {
+            "label": "skip_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Opening this empty array fails with status one and zero extent.",
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Even an empty container consumes a nesting level."
+        }
+      ],
+      "success": "Compare the supplied depth-seven and primitive-eight copies before changing the rule.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "numeric-key-identity",
+      "source": "worked/duplicate-key.asm",
+      "explanation": "The map a2 00 00 18 00 00 spells key zero once with one byte and once with an extended head. The profile accepts both individual spellings, but duplicate detection compares their decoded numeric identities.",
+      "question": "Should this map be accepted?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Yes; the key byte strings differ",
+          "feedback": "Byte spelling is not the duplicate-key identity used by this local profile."
+        },
+        {
+          "id": "b",
+          "text": "No; every extended head is forbidden",
+          "feedback": "Nonpreferred heads are admitted here. The defect is the repeated decoded key."
+        },
+        {
+          "id": "c",
+          "text": "No; both key heads identify zero in the same map",
+          "feedback": "Both set the same seen-mask bit even though their byte lengths differ."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "skip_bad",
+        "mnemonic": "li",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "reject-repeated-key",
+      "source": "worked/duplicate-key.asm",
+      "explanation": "Debug the repeated-key copy. Stop at skip_bad before its li constructs the error, then skip_return. The current key\u2019s successful head is not a successful map result.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "key-detected",
+          "anchor": {
+            "label": "skip_bad",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "explanation": "The second key is again unsigned zero. The map mask already has bit zero set, and one pair remains. The highlighted li has not yet replaced the last successful head status.",
+          "registers": {
+            "$a2": "0x0000000000000000",
+            "$a3": "0x0000000000000000",
+            "$s5": "0x0000000000000001",
+            "$s4": "0x0000000000000001",
+            "$s2": "0x0000000000000001",
+            "$v0": "0x0000000000000000"
+          },
+          "success": "Decoded key identity exposes the duplicate."
+        },
+        {
+          "id": "key-return",
+          "anchor": {
+            "label": "skip_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The complete walker reports failure and zero extent rather than retaining the key\u2019s head width.",
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "A failed container publishes no successful extent."
+        }
+      ],
+      "success": "The failure is local to repeated keys in one map.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "debug",
+      "id": "separate-map-masks",
+      "source": "worked/nested-maps.asm",
+      "explanation": "This valid item is a1 00 a1 00 00: outer key zero has an inner map whose own key is zero. Follow after_k_key in the outer and inner frames, then skip_return.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "outer-key",
+          "anchor": {
+            "label": "after_k_key",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The outer map records key zero and supplies child depth one.",
+          "registers": {
+            "$s5": "0x0000000000000001",
+            "$s4": "0x0000000000000001",
+            "$s2": "0x0000000000000001",
+            "$s1": "0x0000000000000003"
+          },
+          "success": "The outer key belongs to the outer map."
+        },
+        {
+          "id": "inner-key",
+          "anchor": {
+            "label": "after_k_key",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The inner map records its own key zero using a fresh mask. Its child depth is two.",
+          "registers": {
+            "$s5": "0x0000000000000001",
+            "$s4": "0x0000000000000001",
+            "$s2": "0x0000000000000002",
+            "$s1": "0x0000000000000001"
+          },
+          "success": "The same key is valid in a separate map."
+        },
+        {
+          "id": "maps-return",
+          "anchor": {
+            "label": "skip_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Both containers finish successfully, consuming five bytes.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000005"
+          },
+          "success": "Per-map state accepts the nested item."
+        }
+      ],
+      "success": "A single global mask would reject a valid nested value.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "record-publication",
+      "source": "worked/decode.asm",
+      "explanation": "The telemetry decoder has staged fields privately while parsing the 52-byte root. It must still require all fields and exact selected extent before writing the caller record. The optional map has syntax that must be validated even though it is not retained.",
+      "question": "When may the caller record be published?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "After the complete root and required-field checks succeed",
+          "feedback": "A convincing identifier or sample prefix does not establish a complete accepted record."
+        },
+        {
+          "id": "b",
+          "text": "As soon as each required field first appears",
+          "feedback": "A later malformed field or missing counter would leave a convincing partial record."
+        },
+        {
+          "id": "c",
+          "text": "Only after encoding the preferred output also succeeds",
+          "feedback": "Decode and encode publish different caller objects and have separate contracts."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_d_finish",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "publish-complete-record",
+      "source": "worked/decode.asm",
+      "explanation": "Debug the complete decode copy. Observe after_d_finish before publication, after_d_payload after active fields have been copied, then decode_return. Inspect the record as native words, identifier bytes and signed halfwords.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "record-ready",
+          "anchor": {
+            "label": "after_d_finish",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The whole selected root is consumed. No pairs remain and the seen mask contains keys zero through three. The required low three mask bits are present; the caller record is still untouched.",
+          "registers": {
+            "$s1": "0x0000000000000000",
+            "$s3": "0x0000000000000000",
+            "$s4": "0x000000000000000f"
+          },
+          "success": "Complete syntax, required fields and exact extent authorize publication."
+        },
+        {
+          "id": "record-published",
+          "anchor": {
+            "label": "after_d_payload",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Active local fields have been published. Status is zero and the returned input extent is 52 bytes.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000034"
+          },
+          "success": "The record is published only after complete acceptance."
+        },
+        {
+          "id": "record-return",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The caller receives success and the complete selected input length. The identifier remains 00 ff 41; the full counter and ten signed readings are native record fields.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000034"
+          },
+          "success": "Binary identifier bytes and numeric native fields retain their distinct representations."
+        }
+      ],
+      "success": "Check unused identifier/sample tails for the original a5 pattern; success does not clear the whole allocation.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "late-record-failure",
+      "source": "worked/late-counter.asm",
+      "explanation": "The selected length is 51 rather than 52. The last counter head lacks its final argument byte. Earlier identifier and reading fields can look correct, but the private candidate is incomplete.",
+      "question": "What belongs in the caller record after this failure?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The fields that happened to be parsed first",
+          "feedback": "Publication order is not a substitute for complete validation."
+        },
+        {
+          "id": "b",
+          "text": "Its original bytes, unchanged throughout the complete record arena",
+          "feedback": "The candidate has not passed complete acceptance, so even an apparently correct prefix stays private."
+        },
+        {
+          "id": "c",
+          "text": "The identifier and readings, with a zero counter",
+          "feedback": "That would invent a record the input did not supply and violate failure preservation."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "decode_return",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "late-record-rejection",
+      "source": "worked/late-counter.asm",
+      "explanation": "Debug the 51-byte selection and stop at decode_return. The final counter is truncated within the selected interval even though its last byte still exists physically in the source arena.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "record-rejected",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The routine reports status one and zero extent. Inspect the caller record\u2019s unchanged a5 bytes; executable probes check the entire arena.",
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "The late failure does not publish a plausible record prefix."
+        }
+      ],
+      "success": "A visible unchanged row locates the record; complete preservation is checked separately.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "preferred-projection",
+      "source": "worked/pipeline.asm",
+      "explanation": "The input trace occupies 52 bytes. The application retains required keys zero, one and two, drops the validated optional field, and uses preferred head widths. Its exact output size is 4 fixed map/key bytes + 9 counter bytes + 1 identifier head + 3 identifier bytes + 1 array head + 19 sample bytes.",
+      "question": "Why is the resulting 37-byte output a projection rather than a byte-for-byte round trip?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It compresses all original fields losslessly into fewer bytes",
+          "feedback": "The optional field is deliberately absent from the output."
+        },
+        {
+          "id": "b",
+          "text": "The input was invalid because its heads were not shortest",
+          "feedback": "The local reader accepts those spellings; the writer chooses preferred widths for its projected record."
+        },
+        {
+          "id": "c",
+          "text": "It intentionally omits optional metadata and shortens admitted wider spellings",
+          "feedback": "The required field meanings are preserved, but the original map representation and optional field are not."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "bound_return",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "bound-and-encode",
+      "source": "worked/pipeline.asm",
+      "explanation": "Debug the complete pipeline copy. Its earlier head, walker and decoder supply the record. Observe bound_return, encode_return and results_ready before the caller stores its final status/count.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "exact-bound",
+          "anchor": {
+            "label": "bound_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The record is valid and its exact preferred output size is 37. This is not the maximum 241-byte bound for every possible local record.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000025"
+          },
+          "success": "The bound measures this record\u2019s actual preferred representation."
+        },
+        {
+          "id": "encoded",
+          "anchor": {
+            "label": "encode_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The encoder has produced 37 bytes. Inspect a3 00 1b at the output start, followed by the full counter, binary identifier and readings.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000025"
+          },
+          "success": "The written output has the derived exact size."
+        },
+        {
+          "id": "pipeline-result",
+          "anchor": {
+            "label": "results_ready",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The caller has not yet stored the final status/count. Decode\u2019s input extent and encode\u2019s output extent are different values in this pipeline.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000025"
+          },
+          "success": "Caller publication follows the final function return."
+        }
+      ],
+      "success": "Compare meanings with the original trace, not equality of its serialized bytes.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "separate-output-boundary",
+      "source": "worked/pipeline-short.asm",
+      "explanation": "This copy gives encoding 36 bytes. Decode still succeeds and publishes its local record before encoding is attempted. The encoder computes a needed size of 37 before writing destination bytes.",
+      "question": "Which objects may have changed when encoding returns capacity failure?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The decoded record may be present; the destination remains unchanged",
+          "feedback": "These stages own separate publication boundaries. Encoding failure does not roll back a previously successful decode."
+        },
+        {
+          "id": "b",
+          "text": "Neither record nor destination may have changed",
+          "feedback": "That would impose whole-pipeline rollback, which is not this caller\u2019s contract."
+        },
+        {
+          "id": "c",
+          "text": "The first 36 destination bytes may contain a prefix",
+          "feedback": "The encoder must establish capacity before publishing any output bytes."
+        }
+      ],
+      "correctChoice": "a",
+      "anchor": {
+        "label": "after_e_bound",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "debug",
+      "id": "capacity-before-output",
+      "source": "worked/pipeline-short.asm",
+      "explanation": "Debug the short-capacity pipeline. Observe decode_return, after_e_bound and encode_return. Keep the successful decoded record separate from the rejected output destination.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "decoded-first",
+          "anchor": {
+            "label": "decode_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Decode has already accepted 52 input bytes and published the local record.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000034"
+          },
+          "success": "The preceding decode remains a successful stage."
+        },
+        {
+          "id": "encode-preflight",
+          "anchor": {
+            "label": "after_e_bound",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "The needed size is 37 while s2 retains capacity 36. The destination is still untouched before the comparison.",
+          "registers": {
+            "$v0": "0x0000000000000000",
+            "$v1": "0x0000000000000025",
+            "$s2": "0x0000000000000024"
+          },
+          "success": "Preflight establishes output permission before any store."
+        },
+        {
+          "id": "encode-rejected",
+          "anchor": {
+            "label": "encode_return",
+            "mnemonic": "nop",
+            "occurrence": 0
+          },
+          "explanation": "Encoding returns capacity status two and zero length. The decoded record remains, while destination bytes retain a5.",
+          "registers": {
+            "$v0": "0x0000000000000002",
+            "$v1": "0x0000000000000000"
+          },
+          "success": "Capacity failure preserves the encoder\u2019s destination."
+        }
+      ],
+      "success": "Use separate preservation arguments for the record and encoded output.",
+      "hints": [
+        {
+          "id": "pause-boundary",
+          "text": "Use one breakpoint at a time and inspect the selected paused frame. A highlighted instruction has not executed yet. Learn can outline the next requested boundary after recognizing a pause. Resume between observations, and finish this process before opening another source."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-head-caller",
+      "source": "cbor-telemetry.asm",
+      "explanation": "Run the head caller to completion. It records the head result and exits silently. Retain the earlier Debug observation to explain major five, argument four and extent two; an empty console alone does not establish an accepted complete telemetry record.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The head caller terminated normally with its result stored.",
+      "anchor": {
+        "label": "results_ready",
+        "mnemonic": "nop",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "sequence-progress",
+      "source": "independent/cbor-sequence.asm",
+      "explanation": "For 00 82 01 02 40, the top-level intervals are integer 00, array 82 01 02, then empty byte string 40. The helper returns an item\u2019s byte extent and may overwrite argument registers, including a2 with a major type.",
+      "question": "What must the sequence loop advance after each successful helper call?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Use the helper\u2019s returned a2 as the next sibling\u2019s depth",
+          "feedback": "That register now holds a major type. Retain inherited depth separately."
+        },
+        {
+          "id": "b",
+          "text": "Advance the cursor by the returned byte extent, add one item, and reuse the original inherited depth",
+          "feedback": "An array\u2019s children belong to that one top-level item. The next sibling starts at the same inherited depth."
+        },
+        {
+          "id": "c",
+          "text": "Add the returned byte extent to the item count",
+          "feedback": "Bytes consumed and top-level items are different quantities."
+        }
+      ],
+      "correctChoice": "b",
+      "anchor": {
+        "label": "cbor_sequence_count",
+        "mnemonic": "break",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "prediction",
+      "id": "sequence-early-order",
+      "source": "independent/cbor-sequence.asm",
+      "explanation": "The independent scanner receives full-width unsigned count and depth arguments. A selected count above 1024 has status two before pointer use. Invalid inherited depth has status one. A valid empty selection succeeds without reading even an unusable pointer.",
+      "question": "What happens when count is 1025 and inherited depth is nine?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Status one because depth nine is invalid",
+          "feedback": "Depth is invalid, but it is checked after the higher-priority excessive count."
+        },
+        {
+          "id": "b",
+          "text": "Read the first head to decide which error applies",
+          "feedback": "Neither early rejection needs a readable source pointer."
+        },
+        {
+          "id": "c",
+          "text": "Status two and count zero, without reading the source",
+          "feedback": "The excessive-count rejection has precedence over the invalid-depth rejection."
+        }
+      ],
+      "correctChoice": "c",
+      "anchor": {
+        "label": "cbor_sequence_count",
+        "mnemonic": "break",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-depth",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-depth-000.cases.json",
+        "independent/cbor-sequence-depth-001.cases.json",
+        "independent/cbor-sequence-depth-002.cases.json",
+        "independent/cbor-sequence-depth-003.cases.json",
+        "independent/cbor-sequence-depth-004.cases.json",
+        "independent/cbor-sequence-depth-005.cases.json",
+        "independent/cbor-sequence-depth-006.cases.json",
+        "independent/cbor-sequence-depth-007.cases.json",
+        "independent/cbor-sequence-depth-008.cases.json",
+        "independent/cbor-sequence-depth-009.cases.json",
+        "independent/cbor-sequence-depth-010.cases.json",
+        "independent/cbor-sequence-depth-011.cases.json",
+        "independent/cbor-sequence-depth-012.cases.json",
+        "independent/cbor-sequence-depth-013.cases.json",
+        "independent/cbor-sequence-depth-014.cases.json",
+        "independent/cbor-sequence-depth-015.cases.json",
+        "independent/cbor-sequence-depth-016.cases.json",
+        "independent/cbor-sequence-depth-017.cases.json",
+        "independent/cbor-sequence-depth-018.cases.json",
+        "independent/cbor-sequence-depth-019.cases.json",
+        "independent/cbor-sequence-depth-020.cases.json",
+        "independent/cbor-sequence-depth-021.cases.json",
+        "independent/cbor-sequence-depth-022.cases.json",
+        "independent/cbor-sequence-depth-023.cases.json",
+        "independent/cbor-sequence-depth-024.cases.json",
+        "independent/cbor-sequence-depth-025.cases.json",
+        "independent/cbor-sequence-depth-026.cases.json",
+        "independent/cbor-sequence-depth-027.cases.json"
+      ],
+      "explanation": "Preserve inherited depth and each map\u2019s identity. Empty containers still open a level, while scalar siblings return to the same inherited depth. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Draw the containers already open before this item. Opening an empty container still adds a level."
+        },
+        {
+          "id": "reason-2",
+          "text": "Keep the original inherited depth in preserved state before calling a helper that overwrites argument registers."
+        },
+        {
+          "id": "reason-3",
+          "text": "Use fresh duplicate-key identity in each map. After one top-level item returns, its sibling starts with the original inherited depth."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-length",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-length-000.cases.json",
+        "independent/cbor-sequence-length-001.cases.json",
+        "independent/cbor-sequence-length-002.cases.json",
+        "independent/cbor-sequence-length-003.cases.json",
+        "independent/cbor-sequence-length-004.cases.json",
+        "independent/cbor-sequence-length-005.cases.json"
+      ],
+      "explanation": "Count complete selected sequences from one through 1024 one-byte items. Keep the byte budget and item count independent. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Track bytes remaining and completed top-level items as separate values."
+        },
+        {
+          "id": "reason-2",
+          "text": "A successful cbor_skip returns a positive byte extent, not a count of items or children."
+        },
+        {
+          "id": "reason-3",
+          "text": "The 1024-byte sequence of one-byte integers requires 1024 items. Stop exactly at the selected end."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-complete",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-complete-000.cases.json",
+        "independent/cbor-sequence-complete-001.cases.json",
+        "independent/cbor-sequence-complete-002.cases.json",
+        "independent/cbor-sequence-complete-003.cases.json"
+      ],
+      "explanation": "Advance by each complete item\u2019s returned byte extent. The item can contain nested children without increasing the top-level count for those children. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Mark the first item\u2019s entire byte interval, including nested children."
+        },
+        {
+          "id": "reason-2",
+          "text": "A head width describes only its type/argument. cbor_skip returns the whole supported item extent."
+        },
+        {
+          "id": "reason-3",
+          "text": "Advance by the helper\u2019s positive returned extent, count one item, and continue with the same inherited depth."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-malformed",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-truncation-000.cases.json",
+        "independent/cbor-sequence-truncation-001.cases.json",
+        "independent/cbor-sequence-truncation-002.cases.json",
+        "independent/cbor-sequence-truncation-003.cases.json",
+        "independent/cbor-sequence-truncation-004.cases.json",
+        "independent/cbor-sequence-truncation-005.cases.json",
+        "independent/cbor-sequence-truncation-006.cases.json",
+        "independent/cbor-sequence-truncation-007.cases.json",
+        "independent/cbor-sequence-truncation-008.cases.json",
+        "independent/cbor-sequence-truncation-009.cases.json",
+        "independent/cbor-sequence-truncation-010.cases.json",
+        "independent/cbor-sequence-truncation-011.cases.json",
+        "independent/cbor-sequence-truncation-012.cases.json",
+        "independent/cbor-sequence-truncation-013.cases.json",
+        "independent/cbor-sequence-truncation-014.cases.json",
+        "independent/cbor-sequence-truncation-015.cases.json",
+        "independent/cbor-sequence-truncation-016.cases.json",
+        "independent/cbor-sequence-truncation-017.cases.json",
+        "independent/cbor-sequence-truncation-018.cases.json",
+        "independent/cbor-sequence-truncation-019.cases.json",
+        "independent/cbor-sequence-truncation-020.cases.json",
+        "independent/cbor-sequence-truncation-021.cases.json",
+        "independent/cbor-sequence-truncation-022.cases.json",
+        "independent/cbor-sequence-truncation-023.cases.json",
+        "independent/cbor-sequence-truncation-024.cases.json",
+        "independent/cbor-sequence-truncation-025.cases.json",
+        "independent/cbor-sequence-truncation-026.cases.json",
+        "independent/cbor-sequence-truncation-027.cases.json",
+        "independent/cbor-sequence-truncation-028.cases.json",
+        "independent/cbor-sequence-truncation-029.cases.json",
+        "independent/cbor-sequence-truncation-030.cases.json",
+        "independent/cbor-sequence-truncation-031.cases.json",
+        "independent/cbor-sequence-truncation-032.cases.json",
+        "independent/cbor-sequence-truncation-033.cases.json",
+        "independent/cbor-sequence-truncation-034.cases.json",
+        "independent/cbor-sequence-truncation-035.cases.json",
+        "independent/cbor-sequence-truncation-036.cases.json",
+        "independent/cbor-sequence-truncation-037.cases.json",
+        "independent/cbor-sequence-truncation-038.cases.json",
+        "independent/cbor-sequence-truncation-039.cases.json",
+        "independent/cbor-sequence-truncation-040.cases.json",
+        "independent/cbor-sequence-truncation-041.cases.json",
+        "independent/cbor-sequence-truncation-042.cases.json",
+        "independent/cbor-sequence-truncation-043.cases.json",
+        "independent/cbor-sequence-truncation-044.cases.json",
+        "independent/cbor-sequence-truncation-045.cases.json",
+        "independent/cbor-sequence-truncation-046.cases.json",
+        "independent/cbor-sequence-truncation-047.cases.json",
+        "independent/cbor-sequence-truncation-048.cases.json",
+        "independent/cbor-sequence-truncation-049.cases.json",
+        "independent/cbor-sequence-malformed-000.cases.json",
+        "independent/cbor-sequence-malformed-001.cases.json",
+        "independent/cbor-sequence-malformed-002.cases.json",
+        "independent/cbor-sequence-malformed-003.cases.json",
+        "independent/cbor-sequence-malformed-004.cases.json",
+        "independent/cbor-sequence-malformed-005.cases.json"
+      ],
+      "explanation": "Reject truncated heads and malformed suffixes. A successful prefix does not become a partial successful sequence count. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Retain the first failing suffix boundary after a valid initial item."
+        },
+        {
+          "id": "reason-2",
+          "text": "Prove each head argument and child lies within the remaining selected bytes. Physical padding does not complete a truncated value."
+        },
+        {
+          "id": "reason-3",
+          "text": "Return status one and zero aggregate count on any malformed suffix. A previously counted prefix is not a successful sequence in this interface."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-early",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-early-000.cases.json",
+        "independent/cbor-sequence-early-001.cases.json",
+        "independent/cbor-sequence-early-002.cases.json",
+        "independent/cbor-sequence-early-003.cases.json",
+        "independent/cbor-sequence-early-004.cases.json",
+        "independent/cbor-sequence-early-005.cases.json",
+        "independent/cbor-sequence-early-006.cases.json",
+        "independent/cbor-sequence-selection-000.cases.json"
+      ],
+      "explanation": "Reject excessive full-width counts before pointer use, then check inherited depth. Honor a smaller selected prefix and a valid empty selection even when other bytes exist physically. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Treat a1 and a2 as unsigned full-width values. A high-bit count is not a small negative count."
+        },
+        {
+          "id": "reason-2",
+          "text": "Reject count above 1024 before depth above eight. Neither rejection needs a readable source."
+        },
+        {
+          "id": "reason-3",
+          "text": "After both admissions, zero selected bytes succeed without a read. A shorter valid selection excludes real source bytes beyond its end."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-caller",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-caller-000.cases.json"
+      ],
+      "explanation": "Run the supplied ordinary caller through actual termination and correct status/count publication after its function return. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Inspect sequence_return before the supplied caller stores status/count."
+        },
+        {
+          "id": "reason-2",
+          "text": "Preserve the return path and incoming stack state across any helper calls."
+        },
+        {
+          "id": "reason-3",
+          "text": "The correct callee result is one item for the supplied trace. Let the ordinary caller publish that result and exit; later stored bytes are checked too."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "sequence-retry",
+      "source": "independent/cbor-sequence.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/cbor-sequence-retry-000.cases.json"
+      ],
+      "explanation": "Keep one session across rejection, success, empty input and inherited-depth failure. Reset result state on every invocation and retain depth across sibling helper calls. Implement only cbor_sequence_count under independent/README.md; its current break is deliberately unfinished.",
+      "success": "This group passes. Retain a concrete boundary or counterexample explaining the result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "An earlier call can leave nonzero result registers and private scratch bytes."
+        },
+        {
+          "id": "reason-2",
+          "text": "Set both success and failure results explicitly for the current invocation, including the empty path."
+        },
+        {
+          "id": "reason-3",
+          "text": "Retain depth for siblings, and clear aggregate count on a later malformed item. Do not reuse a previous invocation\u2019s result."
+        }
+      ]
+    }
+  ]
+}

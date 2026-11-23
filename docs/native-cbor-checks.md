@@ -4,8 +4,9 @@ The revised Chapter 21 independent task implements `cbor_sequence_count` in
 `revision/labs/files/cbor-sequence.asm`. Its original Kotlin checker remains in
 `revision/labs/checks/cbor-sequence.kts`. The new native data author preserves
 all 203 original cases and adds two separately named cases for complete caller
-execution and repeated calls within one session. This is the grading foundation;
-the connected native guide and its desktop walkthrough are still being composed.
+execution and repeated calls within one session. The connected guide is in `revision/lessons/032-cbor-telemetry`; its seven
+assessment groups preserve every profile exactly once. First-use and fresh-process
+resume walkthroughs pass; see [the unit record](../revision/cbor-unit.md).
 
 `tools/cbor_sequence_samples.json` retains every original input, selected count,
 inherited depth, offset, case name and four-million-instruction allowance. Its
@@ -70,5 +71,6 @@ case while the other 204 cases pass. All 203 original inputs, budgets, registers
 full seeded arrays, exact trace spans and permissions were compared with exports
 from the actual original grader in all three address/layout variants. The actual
 profile archive is also loaded through the production native reader in a Jupiter
-test. This is finite behavioral evidence; no learner walkthrough or new publication
-capture is claimed by this grading-only stage.
+test. This is finite behavioral evidence. The completed automated native walkthrough
+and revised native LaTeX companion are recorded separately in the unit record;
+independent learner validation is not claimed.
