@@ -129,7 +129,9 @@ internal fun observeBookBotBoard(component: JComponent, view: BookMarsBotView): 
 
 internal data class BookObservedMarsBot(val rows: List<BookUiRow>, val selectedExecution: String, val board: BookObservedBotBoard)
 
-internal fun observeBookMarsBot(root: JComponent, view: BookMarsBotView, execution: String): BookObservedMarsBot? {
+internal data class BookObservedBotStatus(val rows: List<BookUiRow>, val selectedExecution: String)
+
+internal fun observeBookBotStatus(root: JComponent, view: BookMarsBotView, execution: String): BookObservedBotStatus? {
     val components = captureComponents(root).filter { it.isShowing }.toList()
     val selected = selectBookToolExecution(components, execution) ?: return null
     if (components.filterIsInstance<JButton>().none { it.text == "Disconnect" && it.isEnabled }) return null
@@ -139,11 +141,18 @@ internal fun observeBookMarsBot(root: JComponent, view: BookMarsBotView, executi
     val movement = label(view.movementText) ?: return null
     val ports = label("MMIO base 0xffff8010") ?: return null
     if (ports.toolTipText?.let { listOf("0xffff8010", "0xffff8020", "0xffff8030", "0xffff8040", "0xffff8050").all(it::contains) } != true) return null
-    val boardComponent = components.filterIsInstance<JComponent>().singleOrNull { it.accessibleContext?.accessibleName == "MarsBot board" } ?: return null
-    val board = observeBookBotBoard(boardComponent, view) ?: return null
     fun bounds(c: JComponent) = Rectangle(c.locationOnScreen, c.size)
-    return BookObservedMarsBot(listOf(BookUiRow(view.positionText, bounds(status)), BookUiRow(view.movementText, bounds(movement)),
-        BookUiRow("Instructions per tick: ${view.instructionsPerTick}", bounds(clock)), BookUiRow("MarsBot board", board.bounds)), selected, board)
+    return BookObservedBotStatus(listOf(BookUiRow(view.positionText, bounds(status)), BookUiRow(view.movementText, bounds(movement)),
+        BookUiRow("Instructions per tick: ${view.instructionsPerTick}", bounds(clock))), selected)
+}
+
+internal fun observeBookMarsBot(root: JComponent, view: BookMarsBotView, execution: String): BookObservedMarsBot? {
+    val status = observeBookBotStatus(root, view, execution) ?: return null
+    val boardComponent = captureComponents(root).filterIsInstance<JComponent>().singleOrNull {
+        it.isShowing && it.accessibleContext?.accessibleName == "MarsBot board"
+    } ?: return null
+    val board = observeBookBotBoard(boardComponent, view) ?: return null
+    return BookObservedMarsBot(status.rows + BookUiRow("MarsBot board", board.bounds), status.selectedExecution, board)
 }
 
 internal fun bookBotDiagnostics(root: JComponent): List<String> = listOf("MarsBot diagnostics") + captureComponents(root).filter { it.isShowing }.mapNotNull {

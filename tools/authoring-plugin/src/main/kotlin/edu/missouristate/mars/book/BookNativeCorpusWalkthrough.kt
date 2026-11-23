@@ -24,6 +24,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiRecursiveElementWalkingVisitor
 import edu.missouristate.mars.plugin.language.MipsTypes
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.xdebugger.XDebuggerManager
 import com.intellij.xdebugger.breakpoints.XBreakpointType
@@ -43,8 +44,8 @@ internal suspend fun captureBookNativeCorpus(
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     click: suspend (String, Boolean) -> Unit, focus: suspend (String, String) -> Unit,
 ) {
-    val capturePrefix = when { plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
-    val firstAssessmentId = when { plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
+    val capturePrefix = when { plan.marsBotUnit -> "marsbot"; plan.h263StreamUnit -> "h263-stream"; plan.h263PredictionUnit -> "h263-prediction"; plan.losslessUnit -> "lossless"; plan.pngUnit -> "png"; plan.wavUnit -> "wav"; plan.rsaUnit -> "rsa"; plan.shaUnit -> "sha"; plan.chachaUnit -> "chacha"; plan.cborUnit -> "cbor"; plan.qoiUnit -> "qoi"; plan.crcUnit -> "crc"; plan.ppmUnit -> "ppm"; else -> "base64" }
+    val firstAssessmentId = when { plan.marsBotUnit -> "check-square"; plan.h263StreamUnit -> "check-short-fields"; plan.h263PredictionUnit -> "check-samples"; plan.losslessUnit -> "check-equality"; plan.pngUnit -> "check-none"; plan.wavUnit -> "check-mono"; plan.rsaUnit -> "complete-gcd"; plan.shaUnit -> "complete-schedule"; plan.chachaUnit -> "complete-quarter"; plan.cborUnit -> "sequence-depth"; plan.qoiUnit -> "mirror-geometry"; plan.crcUnit -> "check-short-chunks"; plan.ppmUnit -> "negative-small-width"; else -> "url-short" }
     val archive = plan.archives.single()
     val directory = archive.directory(Path.of(plan.projectRoot))
     // Production MARS has already validated/imported this exact archive and every activity.
@@ -112,7 +113,14 @@ internal suspend fun captureBookNativeCorpus(
                     Files.readAllBytes(directory.resolve("worked/output.ppm"))
                 } else null
                 val expectedOutput = steps.singleOrNull { it.get("kind").asString == "run" && it.get("source")?.asString == relative }?.get("stdout")?.asString ?: ""
-                captureCorpusDebug(project, path, ::record, awaitText, capture, id, stops, expectedOutput)
+                captureCorpusDebug(project, path, ::record, awaitText, capture, id, stops, expectedOutput,
+                    if (plan.marsBotUnit) { stopIndex ->
+                        val short = relative == "worked/east-slow.asm"
+                        val view = BookMarsBotView(if (short) 2 else 16, 0, 90, moving = stopIndex == 0,
+                            penDown = stopIndex < 2, instructionsPerTick = if (short) 128 else 64,
+                            trailVertices = listOf(BookBotPoint(), BookBotPoint(if (short) 2 else 16, 0)))
+                        captureCorpusBotStatus(project, "Book $id Debug", view)
+                    } else null)
                 if (oldOutput != null) {
                     val after = withContext(Dispatchers.IO) { Files.readAllBytes(directory.resolve("worked/output.ppm")) }
                     check(after.contentEquals(oldOutput)) { "Invalid source changed the existing host output" }
@@ -207,6 +215,7 @@ private suspend fun captureCorpusDebug(
     project: Project, entry: Path, record: suspend (String, Map<String, Any>) -> Unit,
     awaitText: suspend (String) -> Unit, capture: suspend (String, String) -> Unit,
     prefix: String, stops: List<CorpusPause>, expectedOutput: String,
+    deviceObservation: (suspend (Int) -> Map<String, Any>)? = null,
 ) {
     var targetLine = corpusBreakpointLine(project, entry, stops.first())
     val file = withContext(Dispatchers.IO) { checkNotNull(LocalFileSystem.getInstance().refreshAndFindFileByNioFile(entry)) }
@@ -232,6 +241,7 @@ private suspend fun captureCorpusDebug(
             awaitText(stop.nextText)
             val facts = mutableMapOf<String, Any>("source" to entry.toString(), "line" to targetLine + 1,
                 "renderedRegisters" to registers, "expectedVectorBits" to stop.vectors, "nativeNextStepObserved" to stop.nextText)
+            deviceObservation?.let { facts["actualMarsBotStatus"] = it(index) }
             record("debug-$prefix-$index", facts)
             capture("debug-$prefix-$index", stop.nextText)
         }
@@ -286,3 +296,20 @@ private suspend fun corpusBreakpointLine(project: Project, entry: Path, stop: Co
 internal fun bookCorpusVectorFocus(registers: Set<String>): String =
     listOf("\$w4", "\$w7", "\$w5", "\$w3", "\$w1").firstOrNull { it in registers }
         ?: registers.firstOrNull() ?: "\$w1"
+
+/** Device flags are read from the actual native tool; short ink hidden by the marker is not a trail proof. */
+private suspend fun captureCorpusBotStatus(project: Project, execution: String, view: BookMarsBotView): Map<String, Any> {
+    while (true) {
+        val result = bookModalUi {
+            val tool = ToolWindowManager.getInstance(project).getToolWindow("MARS Tools") ?: return@bookModalUi null
+            if (!tool.isVisible) { tool.show(); return@bookModalUi null }
+            val content = tool.contentManager.contents.singleOrNull { it.displayName == "MarsBot" } ?: return@bookModalUi null
+            if (tool.contentManager.selectedContent != content) { tool.contentManager.setSelectedContent(content, false); return@bookModalUi null }
+            val status = observeBookBotStatus(content.component, view, execution) ?: return@bookModalUi null
+            mapOf<String, Any>("expected" to view, "selectedExecution" to status.selectedExecution, "rows" to status.rows,
+                "scope" to "Actual native tool labels, movement rate and selected execution; complete trail is checked by the independent grader, not inferred from short screen ink")
+        }
+        if (result != null) return result
+        delay(100)
+    }
+}

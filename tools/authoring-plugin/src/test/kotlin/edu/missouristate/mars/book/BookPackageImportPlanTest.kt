@@ -600,6 +600,24 @@ class BookPackageImportPlanTest {
     }
 
     @Test
+    fun `MarsBot native plans bind the square fixture and reject mixed or incomplete routes`() {
+        val bot = plan.copy(archives = listOf(archive.copy(id = "006-marsbot-feedback", version = "0.1.0", entry = "worked/east.asm")),
+            nativePredictions = true, marsBotUnit = true,
+            assessmentFixtures = listOf(BookAssessmentFixture("independent/square.asm", "/tmp/square.asm", "c".repeat(64))))
+        bot.validate()
+        bot.copy(resume = true, expectedEntryDigests = mapOf(archive.sha256 to "b".repeat(64))).validate()
+        for (bad in listOf(bot.copy(nativePredictions = false), bot.copy(nativeExecution = true),
+            bot.copy(nativeDebug = true), bot.copy(resumeCompleted = true), bot.copy(h263StreamUnit = true),
+            bot.copy(marsBotUnit = false), bot.copy(activityNavigation = true), bot.copy(prerequisiteControls = true),
+            bot.copy(assessmentFixtures = emptyList()), bot.copy(assessmentFixtures = bot.assessmentFixtures + bot.assessmentFixtures),
+            bot.copy(assessmentFixtures = listOf(bot.assessmentFixtures.single().copy(source = "independent/h263-read-bits.asm"))),
+            bot.copy(archives = listOf(bot.archives.single().copy(id = "006-other"))),
+            bot.copy(archives = listOf(bot.archives.single().copy(entry = "other.asm"))))) {
+            assertThrows<IllegalArgumentException> { bad.validate() }
+        }
+    }
+
+    @Test
     fun `H263 stream corpus plans bind one archive and private fixture and retain fresh-process resume`() {
         val h263 = plan.copy(archives = listOf(archive.copy(id = "035-h263-stream", version = "0.1.0", entry = "worked/append-fields.asm")),
             nativePredictions = true, h263StreamUnit = true,

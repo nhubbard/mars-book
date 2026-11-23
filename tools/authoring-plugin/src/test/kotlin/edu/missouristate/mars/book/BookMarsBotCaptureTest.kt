@@ -151,6 +151,19 @@ class BookMarsBotCaptureTest {
             mutation(); assertNull(observeBookMarsBot(root, east, "Book figure: bot"))
             status.text = east.positionText; movement.text = east.movementText; clock.text = "64"; clock.isEnabled = true; button.text = "Disconnect"
         }
+        ports.toolTipText = "Heading 0xffff8010, pen 0xffff8020, X 0xffff8030, Y 0xffff8040, move 0xffff8050"
+        root.components.filter { it.accessibleContext?.accessibleName == "MarsBot board" }.forEach(root::remove)
+        for ((moving, pen) in listOf(true to true, false to true, false to false)) {
+            val short = east.copy(x = 2, moving = moving, penDown = pen, instructionsPerTick = 128,
+                trailVertices = listOf(BookBotPoint(), BookBotPoint(2, 0)))
+            status.text = short.positionText; movement.text = short.movementText; clock.text = "128"
+            val flags = checkNotNull(observeBookBotStatus(root, short, "Book figure: bot"))
+            assertEquals(3, flags.rows.size)
+            assertEquals(short.movementText, flags.rows[1].text)
+            // Correct tool labels do not establish a visible trail when the marker obscures its ink.
+            assertNull(observeBookMarsBot(root, short, "Book figure: bot"))
+            assertNull(observeBookBotStatus(root, short.copy(moving = !moving), "Book figure: bot"))
+        }
     }
 
     @Test
