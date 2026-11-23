@@ -114,11 +114,37 @@ rejected even when a store restores the previous value. This foundation is
 assessment infrastructure, not a completed interactive RSA teaching sequence.
 The private verification directory is `native-rsa-foundation-01`.
 
+## Native guided package draft (23 November 2026)
+
+`revision/lessons/027-rsa-arithmetic` now contains a 40-file native student
+package. Its 35 activities comprise sixteen inline predictions, eight Debug
+activities with 26 stopped observations, nine staged assessment groups, one Run
+and a final complete assessment. The staged groups retain every original case;
+the final group repeats them on the completed independent source. These are 246
+case placements declaring 284 invocations, including caller-dispatch segments.
+
+Eight public worked programs isolate unsigned remainders, product width, one
+addition column, a carry decision, four prefix reductions, two multiplier-bit
+contributions, a cross-half exponent shift and modulus validation. They supply
+no complete `rsa_*` implementation. All required observations use unchanged
+worked sources. Implementation work continues in one independent file, avoiding
+mode edits that would invalidate its checks merely to complete a required Debug
+activity.
+
+Every declared stopped register value and normal termination is checked by actual
+core execution. The validation probe also observes exactly four modulus reads
+before the helper returns, with the output still untouched. The production package
+importer accepts the archive, and Jupiter tests resolve every prediction and Debug
+anchor through native IntelliJ PSI. All 581 public tooling tests pass. This is
+headless execution and import evidence, not an IDE walkthrough or learner review.
+The separate authoring plugin still needs an RSA first/resume route and actual
+IDE trials before publication integration.
+
 ## Remaining scope
 
 Author, representative learner and assistive-technology reviews remain pending.
-The RSA-specific guided sequence and its delivery and instructor-policy trials
-remain incomplete. The shared student instructional system already supports
+The RSA-specific sequence is now a tested native draft; its actual IDE delivery
+and instructor-policy trials remain incomplete. The shared student instructional system already supports
 progression and instructor policies; RSA still needs its own teaching package. The broader goal remains
 active. WAV, PNG and the retained lossless/H.263 video sequence follow. The deferred
 opening explanation of MARS versus hardware has not been added. All forty-one

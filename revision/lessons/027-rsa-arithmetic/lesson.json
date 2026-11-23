@@ -1,0 +1,1213 @@
+{
+  "formatVersion": 11,
+  "introduction": "Read the RSA arithmetic companion in the written lab. The eight worked sources expose individual arithmetic boundaries, then the staged checks build seven reusable interfaces in one independent source. Predictions are inline in MARS Learning. Finish each Debug process before another launch or source edit.",
+  "conclusion": "Explain how limb width, carry and reduced residues fit together. Trace a full-width exponent bit across a limb boundary, distinguish gcd value from status, and defend zero-modulus access precedence. Use the final full recheck after implementation edits and investigate an additional input of your own.",
+  "steps": [
+    {
+      "kind": "prediction",
+      "id": "euclid-step",
+      "source": "worked/remainders.asm",
+      "anchor": {
+        "label": "first_remainder",
+        "mnemonic": "move",
+        "occurrence": 0
+      },
+      "explanation": "The first unsigned division has produced 13 mod 11 = 2. Euclid replaces A,B by B,remainder; both replacements must use the old values.",
+      "question": "Which pair should the next division use?",
+      "choices": [
+        {
+          "text": "11 and 2",
+          "feedback": "The common divisors are unchanged, and the second operand has decreased.",
+          "id": "a"
+        },
+        {
+          "text": "2 and 11",
+          "feedback": "Reversing this pair loses the decreasing second operand.",
+          "id": "b"
+        },
+        {
+          "text": "13 and 2",
+          "feedback": "Keeping the old A does not apply the Euclidean recurrence.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "unsigned-dividend",
+      "source": "worked/remainders.asm",
+      "anchor": {
+        "label": "high_remainder",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The same 64 bits can denote unsigned 18446744073709551615 or signed -1. The gcd interface specifies the unsigned interpretation.",
+      "question": "Which remainder does unsigned division of ffffffffffffffff by 17 produce?",
+      "choices": [
+        {
+          "text": "-1",
+          "feedback": "That is the signed remainder; its all-one bit pattern is not an unsigned residue below 17.",
+          "id": "a"
+        },
+        {
+          "text": "0",
+          "feedback": "2^64-1 is divisible by 17. The signed remainder of -1 is a different operation.",
+          "id": "b"
+        },
+        {
+          "text": "16",
+          "feedback": "That is the least nonnegative residue of signed -1, not of the specified unsigned dividend.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-remainders",
+      "source": "worked/remainders.asm",
+      "explanation": "Inspect two Euclidean updates, then compare signed and unsigned interpretation of the full-width dividend.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "first_remainder",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000000000000d",
+            "$t1": "0x000000000000000b",
+            "$t2": "0x0000000000000002"
+          },
+          "explanation": "The next pair must be 11,2. The remainder is already available; preserve it before replacing either operand.",
+          "success": "The next pair must be 11,2. The remainder is already available; preserve it before replacing either operand."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "second_remainder",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x000000000000000b",
+            "$t1": "0x0000000000000002",
+            "$t2": "0x0000000000000001"
+          },
+          "explanation": "The next remainder is one. A complete gcd continues to a zero second operand and returns the previous nonzero value.",
+          "success": "The next remainder is one. A complete gcd continues to a zero second operand and returns the previous nonzero value."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "high_remainder",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000000000",
+            "$t3": "0xffffffffffffffff"
+          },
+          "explanation": "Unsigned and signed remainder differ on the same all-one dividend. No division by zero is attempted in this experiment.",
+          "success": "Unsigned and signed remainder differ on the same all-one dividend. No division by zero is attempted in this experiment."
+        }
+      ],
+      "success": "Unsigned and signed remainder differ on the same all-one dividend. No division by zero is attempted in this experiment."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-gcd",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-gcd-00.cases.json"
+      ],
+      "explanation": "Implement rsa_gcd64 first. Return the full unsigned gcd in v0 and success zero in v1. Other unfinished entries can remain break.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Handle B=0 before dividing; this also defines the local gcd(0,0)=0 convention."
+        },
+        {
+          "id": "reason-2",
+          "text": "Keep both values at full 64-bit width. Use an unsigned remainder and update the pair without losing the old B."
+        },
+        {
+          "id": "reason-3",
+          "text": "The gcd does not read or write caller objects. Preserve s0\u2013s7, fp, sp and the complete return address."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "limb-load",
+      "source": "worked/word-product.asm",
+      "anchor": {
+        "label": "loaded_limb",
+        "mnemonic": "dmulu",
+        "occurrence": 0
+      },
+      "explanation": "A limb is an unsigned base-2^32 digit. Both loads read the same four bytes, but lw sign-extends while lwu zero-extends into the 64-bit register.",
+      "question": "Which value belongs in arithmetic that treats ffffffff as one unsigned limb?",
+      "choices": [
+        {
+          "text": "ffffffffffffffff",
+          "feedback": "That sign-extended value represents a different unsigned 64-bit integer.",
+          "id": "a"
+        },
+        {
+          "text": "00000000000000ff",
+          "feedback": "A limb contains four bytes, not one.",
+          "id": "b"
+        },
+        {
+          "text": "00000000ffffffff",
+          "feedback": "The zero-extended value is 2^32-1.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "whole-product",
+      "source": "worked/word-product.asm",
+      "anchor": {
+        "label": "full_product",
+        "mnemonic": "dmodu",
+        "occurrence": 0
+      },
+      "explanation": "The complete product of two maximum unsigned words is fffffffe00000001. Its low word alone is one. Its signed doubleword interpretation is negative.",
+      "question": "Which operation reduces the complete product according to the unsigned interface?",
+      "choices": [
+        {
+          "text": "An unsigned doubleword remainder",
+          "feedback": "Retain all 64 product bits until reduction. A 32-bit divisor does not imply a 32-bit dividend.",
+          "id": "a"
+        },
+        {
+          "text": "A remainder of the low word only",
+          "feedback": "Discarding the high product bits changes the dividend.",
+          "id": "b"
+        },
+        {
+          "text": "A signed doubleword remainder",
+          "feedback": "The product has bit 63 set, so signed division interprets those bits as a negative number.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-product-width",
+      "source": "worked/word-product.asm",
+      "explanation": "Inspect load extension and two different ways to lose the unsigned product meaning.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "loaded_limb",
+            "mnemonic": "dmulu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x00000000ffffffff",
+            "$t1": "0xffffffffffffffff"
+          },
+          "explanation": "The loaded bytes agree; the register extensions differ. Subsequent doubleword arithmetic consumes the full register.",
+          "success": "The loaded bytes agree; the register extensions differ. Subsequent doubleword arithmetic consumes the full register."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "full_product",
+            "mnemonic": "dmodu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0xfffffffe00000001"
+          },
+          "explanation": "All 64 product bits are present. A word multiply cannot retain this complete dividend.",
+          "success": "All 64 product bits are present. A word multiply cannot retain this complete dividend."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "product_interpretations",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000000000000",
+            "$t4": "0x0000000000000001",
+            "$t5": "0xffffffffffffffff"
+          },
+          "explanation": "Unsigned reduction gives zero. The low word is one, while signed reduction gives -1. Neither substitutes for the required remainder.",
+          "success": "Unsigned reduction gives zero. The low word is one, while signed reduction gives -1. Neither substitutes for the required remainder."
+        }
+      ],
+      "success": "Unsigned reduction gives zero. The low word is one, while signed reduction gives -1. Neither substitutes for the required remainder."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-word",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-word-00.cases.json"
+      ],
+      "explanation": "Implement rsa_pow32 with zero-extended word arguments and one word of output. Keep each complete product until unsigned reduction.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Validate N before any division. N=0 returns status one without accessing output."
+        },
+        {
+          "id": "reason-2",
+          "text": "Initialize r=1 mod N and x=base mod N. Process exponent bits while maintaining r*x^remaining congruent to the requested power."
+        },
+        {
+          "id": "reason-3",
+          "text": "Preserve 64 product bits, including bit 63, then use an unsigned doubleword remainder. Store only the selected four output bytes."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "column-carry",
+      "source": "worked/limb-column.asm",
+      "anchor": {
+        "label": "column_sum",
+        "mnemonic": "dsll",
+        "occurrence": 0
+      },
+      "explanation": "One addition column contains two unsigned 32-bit limbs and an incoming carry of one. The complete sum is 1ffffffff.",
+      "question": "Which low limb and outgoing carry should be retained?",
+      "choices": [
+        {
+          "text": "ffffffff and 0",
+          "feedback": "Dropping the carry loses the contribution at the next limb position.",
+          "id": "a"
+        },
+        {
+          "text": "ffffffff and 1",
+          "feedback": "The low 32 bits become this column; the remaining bit moves to the next column.",
+          "id": "b"
+        },
+        {
+          "text": "1 and ffffffff",
+          "feedback": "The low limb and high carry occupy different positions in the sum.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "product-size",
+      "source": "worked/limb-column.asm",
+      "anchor": {
+        "label": "column_parts",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Four 32-bit limbs describe one unsigned 128-bit input. A full product must retain its high half even when a later modular operation would discard it.",
+      "question": "How much output can the full product of two such inputs require?",
+      "choices": [
+        {
+          "text": "Four limbs",
+          "feedback": "That would retain only the low half of some products.",
+          "id": "a"
+        },
+        {
+          "text": "Five limbs",
+          "feedback": "One extra carry limb is enough for addition, but not for a full multiplication.",
+          "id": "b"
+        },
+        {
+          "text": "Eight 32-bit limbs",
+          "feedback": "The product is below 2^256 and can need all 256 bits.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-one-column",
+      "source": "worked/limb-column.asm",
+      "explanation": "This experiment performs one addition column only. Derive how a full product must accumulate and propagate its own column contributions.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "column_inputs",
+            "mnemonic": "daddu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x00000000ffffffff",
+            "$t1": "0x00000000ffffffff",
+            "$t2": "0x0000000000000001"
+          },
+          "explanation": "All inputs are zero-extended. Their total fits in 33 bits.",
+          "success": "All inputs are zero-extended. Their total fits in 33 bits."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "column_sum",
+            "mnemonic": "dsll",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000001ffffffff"
+          },
+          "explanation": "Do not truncate before separating the low limb and outgoing carry.",
+          "success": "Do not truncate before separating the low limb and outgoing carry."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "column_parts",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x00000000ffffffff",
+            "$t5": "0x0000000000000001"
+          },
+          "explanation": "The low limb is ffffffff and the carry is one. Multiplication may require several contributions before a column is final.",
+          "success": "The low limb is ffffffff and the carry is one. Multiplication may require several contributions before a column is final."
+        }
+      ],
+      "success": "The low limb is ffffffff and the carry is one. Multiplication may require several contributions before a column is final."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-product",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-product-00.cases.json"
+      ],
+      "explanation": "Implement rsa_mul128. Write all eight output limbs, including zero high limbs when the inputs are small.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Expand A*B as the sum of limb products shifted by their combined limb index."
+        },
+        {
+          "id": "reason-2",
+          "text": "A 32-by-32 product fits in 64 bits, but adding several products can require additional carry handling."
+        },
+        {
+          "id": "reason-3",
+          "text": "Initialize every output limb before accumulation or write each complete result explicitly. Accept the same read-only object as both inputs."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "wrapped-comparison",
+      "source": "worked/carry-reduction.asm",
+      "anchor": {
+        "label": "wrapped_sum",
+        "mnemonic": "dsubu",
+        "occurrence": 0
+      },
+      "explanation": "In this eight-bit model N=251 and A=B=250. The full sum is 500, but its low eight bits are 244 and the outgoing carry is one.",
+      "question": "Does the low value 244 prove that no modular subtraction is needed?",
+      "choices": [
+        {
+          "text": "No; the outgoing carry is part of the sum",
+          "feedback": "The comparison must account for the full 500. Ignoring the carry would return 244 instead of 249.",
+          "id": "a"
+        },
+        {
+          "text": "Yes; 244 is below 251",
+          "feedback": "That compares only the wrapped low part.",
+          "id": "b"
+        },
+        {
+          "text": "No; every modular addition always subtracts",
+          "feedback": "Some sums are already below N. The decision depends on the full sum.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "one-subtraction",
+      "source": "worked/carry-reduction.asm",
+      "anchor": {
+        "label": "reduced_sum",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The addmod128 contract requires both inputs to be below N. This precondition bounds their sum.",
+      "question": "Why is at most one subtraction of N sufficient?",
+      "choices": [
+        {
+          "text": "The inputs occupy four limbs",
+          "feedback": "Width alone does not bound arbitrary inputs by the modulus.",
+          "id": "a"
+        },
+        {
+          "text": "A+B is below 2N",
+          "feedback": "After subtracting once from a sum at least N, the result is below N.",
+          "id": "b"
+        },
+        {
+          "text": "The modulus must be prime",
+          "feedback": "The addition rule applies to every positive modulus, including composite values.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-carry-decision",
+      "source": "worked/carry-reduction.asm",
+      "explanation": "Use the small eight-bit model to keep both the wrapped representation and its extra carry visible.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "full_sum",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000000000001f4"
+          },
+          "explanation": "The complete sum is 500; neither input exceeded the modulus.",
+          "success": "The complete sum is 500; neither input exceeded the modulus."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "wrapped_sum",
+            "mnemonic": "dsubu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x00000000000000f4",
+            "$t5": "0x0000000000000001",
+            "$t6": "0x0000000000000001"
+          },
+          "explanation": "The low part compares below N, yet a carry remains. The low comparison alone would make the wrong decision.",
+          "success": "The low part compares below N, yet a carry remains. The low comparison alone would make the wrong decision."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "reduced_sum",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t7": "0x00000000000000f9"
+          },
+          "explanation": "Subtracting N from the complete sum gives residue 249. A multiword implementation must obtain this result without assuming one extra-wide scalar register.",
+          "success": "Subtracting N from the complete sum gives residue 249. A multiword implementation must obtain this result without assuming one extra-wide scalar register."
+        }
+      ],
+      "success": "Subtracting N from the complete sum gives residue 249. A multiword implementation must obtain this result without assuming one extra-wide scalar register."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-add",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-add-00.cases.json"
+      ],
+      "explanation": "Implement rsa_addmod128 for reduced inputs. Support exact output aliasing with either input, including both when the inputs share one object.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Use the outgoing carry and a full unsigned comparison to decide whether the complete sum is at least N."
+        },
+        {
+          "id": "reason-2",
+          "text": "Each source limb must be consumed before an aliasing output store destroys it."
+        },
+        {
+          "id": "reason-3",
+          "text": "The contract requires A<N and B<N, not a prime modulus. N=1 is valid; N=0 must return before other caller access."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "prefix-direction",
+      "source": "worked/prefix-reduction.asm",
+      "anchor": {
+        "label": "next_bit",
+        "mnemonic": "dsrlv",
+        "occurrence": 0
+      },
+      "explanation": "The experiment reads four bits of 1101 from left to right. Each iteration appends one input bit to the previously reduced prefix.",
+      "question": "Which arithmetic operation appends the next bit to a binary prefix?",
+      "choices": [
+        {
+          "text": "Halve the previous value",
+          "feedback": "That discards a low bit instead of appending an input bit.",
+          "id": "a"
+        },
+        {
+          "text": "Add the bit without doubling",
+          "feedback": "Earlier bits would keep the wrong positional weight.",
+          "id": "b"
+        },
+        {
+          "text": "Double the previous value, then add the bit",
+          "feedback": "Shifting a binary value left makes room for the new low bit.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "prefix-bound",
+      "source": "worked/prefix-reduction.asm",
+      "anchor": {
+        "label": "reduced_prefix",
+        "mnemonic": "move",
+        "occurrence": 0
+      },
+      "explanation": "At the iteration boundary the old residue r satisfies 0<=r<N. The next bit is either zero or one.",
+      "question": "How large can the provisional value 2r+bit be?",
+      "choices": [
+        {
+          "text": "At most 2N-1",
+          "feedback": "This makes one conditional subtraction sufficient, provided the extra carry is retained.",
+          "id": "a"
+        },
+        {
+          "text": "At most N-1",
+          "feedback": "The newly appended bit may put the provisional value above the modulus.",
+          "id": "b"
+        },
+        {
+          "text": "As large as the entire original input",
+          "feedback": "The residue invariant keeps the running value bounded.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-prefixes",
+      "source": "worked/prefix-reduction.asm",
+      "explanation": "Trace all four prefix residues for 1101 modulo five. Resume to reach the next visit to the same instruction.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "reduced_prefix",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000000000003",
+            "$t6": "0x0000000000000001"
+          },
+          "explanation": "Prefix 1 has residue one.",
+          "success": "Prefix 1 has residue one."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "reduced_prefix",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000000000002",
+            "$t6": "0x0000000000000003"
+          },
+          "explanation": "Prefix 11 is three and needs no subtraction.",
+          "success": "Prefix 11 is three and needs no subtraction."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "reduced_prefix",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000000000001",
+            "$t6": "0x0000000000000001"
+          },
+          "explanation": "Prefix 110 is six; subtracting five leaves one.",
+          "success": "Prefix 110 is six; subtracting five leaves one."
+        },
+        {
+          "id": "boundary-4",
+          "anchor": {
+            "label": "reduced_prefix",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x0000000000000000",
+            "$t6": "0x0000000000000003"
+          },
+          "explanation": "Appending the last bit to residue one gives three.",
+          "success": "Appending the last bit to residue one gives three."
+        },
+        {
+          "id": "boundary-5",
+          "anchor": {
+            "label": "prefixes_done",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t2": "0x0000000000000003"
+          },
+          "explanation": "All four bits are consumed. The result agrees with 13 modulo five.",
+          "success": "All four bits are consumed. The result agrees with 13 modulo five."
+        }
+      ],
+      "success": "All four bits are consumed. The result agrees with 13 modulo five."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-reduction",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-reduction-00.cases.json"
+      ],
+      "explanation": "Implement rsa_reduce128 for an arbitrary four-limb unsigned input and every positive modulus.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Choose a bit scan and state a prefix invariant. The worked example consumes the most significant bit first."
+        },
+        {
+          "id": "reason-2",
+          "text": "Retain a carry beyond the four limbs when doubling the running residue."
+        },
+        {
+          "id": "reason-3",
+          "text": "Compare and subtract over the full width. Equality must reduce to zero; do not assume the input is already below N."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "doubling-contribution",
+      "source": "worked/modular-product.asm",
+      "anchor": {
+        "label": "doubled_residue",
+        "mnemonic": "daddu",
+        "occurrence": 0
+      },
+      "explanation": "The first multiplier bit contributed 250. The next bit has twice the positional weight, so the corresponding base residue is 500 mod 251 = 249.",
+      "question": "Which residue represents the second bit contribution?",
+      "choices": [
+        {
+          "text": "250",
+          "feedback": "That repeats the old bit weight.",
+          "id": "a"
+        },
+        {
+          "text": "249",
+          "feedback": "Reduce the doubled base while preserving its modular value.",
+          "id": "b"
+        },
+        {
+          "text": "244",
+          "feedback": "That is the low eight bits of 500, before accounting for the modulus.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "prediction",
+      "id": "arbitrary-inputs",
+      "source": "worked/modular-product.asm",
+      "anchor": {
+        "label": "second_contribution",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The addmod entry assumes reduced inputs. The mulmod entry accepts arbitrary 128-bit inputs, which may be greater than N.",
+      "question": "What must a multiplication strategy do before relying on addmod\u2019s precondition?",
+      "choices": [
+        {
+          "text": "Assume every caller already reduced A and B",
+          "feedback": "The mulmod interface makes no such promise.",
+          "id": "a"
+        },
+        {
+          "text": "Require N to use its highest limb",
+          "feedback": "Small positive moduli remain valid inputs.",
+          "id": "b"
+        },
+        {
+          "text": "Establish reduced operands for each modular addition",
+          "feedback": "Reduce the initial value or otherwise prove each operand supplied to addmod lies below N.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-bit-contributions",
+      "source": "worked/modular-product.asm",
+      "explanation": "Follow two explicit contributions for multiplier binary 11. This small model uses scalar remainder only because its full intermediate values fit.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "first_contribution",
+            "mnemonic": "daddu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x00000000000000fa",
+            "$t3": "0x00000000000000fa"
+          },
+          "explanation": "The low multiplier bit contributes one copy of the base residue.",
+          "success": "The low multiplier bit contributes one copy of the base residue."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "doubled_residue",
+            "mnemonic": "daddu",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x00000000000000f9",
+            "$t3": "0x00000000000000fa"
+          },
+          "explanation": "The next positional weight is represented by doubled residue 249.",
+          "success": "The next positional weight is represented by doubled residue 249."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "second_contribution",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t3": "0x00000000000000f8"
+          },
+          "explanation": "The two contributions sum to 499, whose residue modulo 251 is 248.",
+          "success": "The two contributions sum to 499, whose residue modulo 251 is 248."
+        }
+      ],
+      "success": "The two contributions sum to 499, whose residue modulo 251 is 248."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-modproduct",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-modproduct-00.cases.json"
+      ],
+      "explanation": "Implement rsa_mulmod128 for arbitrary operands. Its result must remain correct when the same read-only object supplies both inputs.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "A bitwise strategy maintains an accumulated residue and a current doubled residue."
+        },
+        {
+          "id": "reason-2",
+          "text": "Reduce before invoking a helper whose contract requires reduced operands."
+        },
+        {
+          "id": "reason-3",
+          "text": "Preserve the original input bytes and use the current arguments on every call. Candidate-owned gaps and workspace remain available."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "cross-half-shift",
+      "source": "worked/exponent-halves.asm",
+      "anchor": {
+        "label": "shifted_exponent",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "The supplied exponent has high half 8000000000000001 and low half 0000000000000001. A logical right shift moves high-half bit zero into low-half bit 63.",
+      "question": "What is the new low half?",
+      "choices": [
+        {
+          "text": "8000000000000000",
+          "feedback": "The old low half shifts to zero, and the cross-half bit becomes its top bit.",
+          "id": "a"
+        },
+        {
+          "text": "0000000000000000",
+          "feedback": "That loses the bit crossing from the high half.",
+          "id": "b"
+        },
+        {
+          "text": "4000000000000000",
+          "feedback": "The cross-half bit must enter position 63, not 62.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "prediction",
+      "id": "modular-identity",
+      "source": "worked/exponent-halves.asm",
+      "anchor": {
+        "label": "unit_identity",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "An exponent of zero performs no selected-bit multiplication. The accumulated result must still be a residue modulo the supplied N.",
+      "question": "What initial result handles N=1 correctly?",
+      "choices": [
+        {
+          "text": "Always the integer one",
+          "feedback": "One is outside the required range for modulus one.",
+          "id": "a"
+        },
+        {
+          "text": "1 mod N, which is zero when N=1",
+          "feedback": "The multiplicative identity is represented in the modulus\u2019s residue range.",
+          "id": "b"
+        },
+        {
+          "text": "Always zero",
+          "feedback": "For a larger modulus this would destroy the zero-exponent identity.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "b"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-exponent-shift",
+      "source": "worked/exponent-halves.asm",
+      "explanation": "Inspect one full-width shift and the identity for modulus one. No modular power is calculated by this worked source.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "exponent_inputs",
+            "mnemonic": "andi",
+            "occurrence": 0
+          },
+          "registers": {
+            "$s0": "0x8000000000000001",
+            "$s1": "0x0000000000000001"
+          },
+          "explanation": "The original exponent has bits in both halves, including the highest supported bit.",
+          "success": "The original exponent has bits in both halves, including the highest supported bit."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "shifted_exponent",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t0": "0x0000000000000001",
+            "$t2": "0x8000000000000000",
+            "$t3": "0x4000000000000000"
+          },
+          "explanation": "The consumed low bit is one. Both new halves preserve the complete logical shift.",
+          "success": "The consumed low bit is one. Both new halves preserve the complete logical shift."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "unit_identity",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t4": "0x0000000000000000"
+          },
+          "explanation": "The initial modular identity for N=1 is zero. This remains the result when the exponent is zero.",
+          "success": "The initial modular identity for N=1 is zero. This remains the result when the exponent is zero."
+        }
+      ],
+      "success": "The initial modular identity for N=1 is zero. This remains the result when the exponent is zero."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-power",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-power-00.cases.json",
+        "independent/rsa-power-01.cases.json",
+        "independent/rsa-power-02.cases.json",
+        "independent/rsa-power-03.cases.json",
+        "independent/rsa-power-04.cases.json"
+      ],
+      "explanation": "Implement rsa_pow128 using every exponent bit. A high-half exponent must not terminate when only the low half becomes zero.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "State an invariant connecting the accumulated residue, current base power and remaining exponent."
+        },
+        {
+          "id": "reason-2",
+          "text": "A right-to-left scan tests whether both halves are zero; another correct scan may use an explicit full-width bit count."
+        },
+        {
+          "id": "reason-3",
+          "text": "Keep multiplication helpers and the complete return address valid across nested calls. Initialize with 1 mod N."
+        }
+      ]
+    },
+    {
+      "kind": "prediction",
+      "id": "zero-modulus-order",
+      "source": "worked/validation.asm",
+      "anchor": {
+        "label": "invalid_modulus",
+        "mnemonic": "li",
+        "occurrence": 0
+      },
+      "explanation": "Only the four modulus limbs are readable. Other supplied pointers contain one, an invalid address. The validation experiment has found a zero modulus.",
+      "question": "What must happen before reading those other inputs or touching output?",
+      "choices": [
+        {
+          "text": "Read all inputs to prepare a frame",
+          "feedback": "Saving registers is private work; reading invalid caller inputs violates this boundary.",
+          "id": "a"
+        },
+        {
+          "text": "Store zero to output",
+          "feedback": "No output access is permitted on a zero-modulus return.",
+          "id": "b"
+        },
+        {
+          "text": "Return status one",
+          "feedback": "The modular interface gives zero-modulus validation precedence over other caller access.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "c"
+    },
+    {
+      "kind": "prediction",
+      "id": "gcd-status",
+      "source": "worked/validation.asm",
+      "anchor": {
+        "label": "validation_return",
+        "mnemonic": "dla",
+        "occurrence": 0
+      },
+      "explanation": "The modulus validator returns status in v0. The completed gcd interface instead returns its numerical gcd in v0 and status in v1.",
+      "question": "Which value should the supplied main caller publish after a successful gcd?",
+      "choices": [
+        {
+          "text": "v1, the zero success status",
+          "feedback": "The caller must inspect or retain the numerical v0 result before publishing the separate status.",
+          "id": "a"
+        },
+        {
+          "text": "v0, regardless of which interface ran",
+          "feedback": "For gcd this would publish the numerical result as a status.",
+          "id": "b"
+        },
+        {
+          "text": "The low word of ra",
+          "feedback": "The return pointer identifies control flow, not an arithmetic status.",
+          "id": "c"
+        }
+      ],
+      "correctChoice": "a"
+    },
+    {
+      "kind": "debug",
+      "id": "observe-validation-boundary",
+      "source": "worked/validation.asm",
+      "explanation": "Read all four modulus limbs and return before any invalid pointer access. The output word is observed only by main after the helper returns.",
+      "integerInputs": [],
+      "stops": [
+        {
+          "id": "boundary-1",
+          "anchor": {
+            "label": "invalid_modulus",
+            "mnemonic": "li",
+            "occurrence": 0
+          },
+          "registers": {
+            "$t5": "0x0000000000000000",
+            "$a0": "0x0000000000000001",
+            "$a1": "0x0000000000000001",
+            "$a3": "0x0000000000000001"
+          },
+          "explanation": "The OR of the four limbs is zero. None of the other caller pointers has been dereferenced.",
+          "success": "The OR of the four limbs is zero. None of the other caller pointers has been dereferenced."
+        },
+        {
+          "id": "boundary-2",
+          "anchor": {
+            "label": "validation_return",
+            "mnemonic": "dla",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001"
+          },
+          "explanation": "The helper returned status one. The caller is about to inspect its separate output word.",
+          "success": "The helper returned status one. The caller is about to inspect its separate output word."
+        },
+        {
+          "id": "boundary-3",
+          "anchor": {
+            "label": "observed_output",
+            "mnemonic": "move",
+            "occurrence": 0
+          },
+          "registers": {
+            "$v0": "0x0000000000000001",
+            "$t1": "0x000000005a5a5a5a"
+          },
+          "explanation": "The output bytes remain 5a. Unchanged bytes alone do not prove absence of an access; the independent checks also observe accesses.",
+          "success": "The output bytes remain 5a. Unchanged bytes alone do not prove absence of an access; the independent checks also observe accesses."
+        }
+      ],
+      "success": "The output bytes remain 5a. Unchanged bytes alone do not prove absence of an access; the independent checks also observe accesses."
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-caller",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-caller-00.cases.json",
+        "independent/rsa-caller-01.cases.json",
+        "independent/rsa-caller-02.cases.json",
+        "independent/rsa-caller-03.cases.json"
+      ],
+      "explanation": "Verify the supplied main dispatch and result publication for all seven entries. The checks call the actual caller and observe the callee boundary separately.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Preserve the public *_call and *_return boundaries in the supplied caller."
+        },
+        {
+          "id": "reason-2",
+          "text": "At gcd64_return the numerical gcd is still in v0. The caller next moves the separate v1 status for publication."
+        },
+        {
+          "id": "reason-3",
+          "text": "On zero modulus, preserve every caller byte and avoid other caller accesses. Status publication belongs to main after the callee observation ends."
+        }
+      ]
+    },
+    {
+      "kind": "assessment",
+      "id": "complete-reuse",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-reuse-00.cases.json",
+        "independent/rsa-reuse-01.cases.json",
+        "independent/rsa-reuse-02.cases.json"
+      ],
+      "explanation": "Exercise different operations and moving argument offsets without starting another simulator. A successful earlier output must survive an unrelated later operation.",
+      "success": "The declared interface cases pass. Explain the invariant or ownership rule that supports another input.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Keep per-call state in arguments or an owned frame, not stale global pointers or accumulated arithmetic state."
+        },
+        {
+          "id": "reason-2",
+          "text": "The repeated-power case passes the first result into the inverse calculation, then repeats the original request in the same session."
+        },
+        {
+          "id": "reason-3",
+          "text": "Run an error followed by a successful call. Cleanup must restore the saved state without making future calls fail."
+        }
+      ]
+    },
+    {
+      "kind": "run",
+      "id": "run-completed-caller",
+      "source": "independent/rsa-arithmetic.asm",
+      "explanation": "Run the completed independent source with its supplied mode zero. The caller computes a gcd and stores its status silently. This Run establishes normal termination; the following assessment rechecks every interface on the current source.",
+      "integerInputs": [],
+      "stdout": "",
+      "success": "The supplied caller terminated normally. Recheck the complete source next.",
+      "anchor": {
+        "label": "main_done",
+        "mnemonic": "dla",
+        "occurrence": 0
+      }
+    },
+    {
+      "kind": "assessment",
+      "id": "recheck-completed-source",
+      "source": "independent/rsa-arithmetic.asm",
+      "checkKind": "function",
+      "caseProfiles": [
+        "independent/rsa-gcd-00.cases.json",
+        "independent/rsa-word-00.cases.json",
+        "independent/rsa-product-00.cases.json",
+        "independent/rsa-add-00.cases.json",
+        "independent/rsa-reduction-00.cases.json",
+        "independent/rsa-modproduct-00.cases.json",
+        "independent/rsa-power-00.cases.json",
+        "independent/rsa-power-01.cases.json",
+        "independent/rsa-power-02.cases.json",
+        "independent/rsa-power-03.cases.json",
+        "independent/rsa-power-04.cases.json",
+        "independent/rsa-caller-00.cases.json",
+        "independent/rsa-caller-01.cases.json",
+        "independent/rsa-caller-02.cases.json",
+        "independent/rsa-caller-03.cases.json",
+        "independent/rsa-reuse-00.cases.json",
+        "independent/rsa-reuse-01.cases.json",
+        "independent/rsa-reuse-02.cases.json"
+      ],
+      "explanation": "Later edits to shared helpers can invalidate earlier results. Re-run all 123 original cases on the completed source, including callers, aliases and same-session reuse.",
+      "success": "All original interface cases pass on this source revision. Keep a new-input test and the reasoning that predicts its result.",
+      "hints": [
+        {
+          "id": "reason-1",
+          "text": "Return to the earliest arithmetic or ownership boundary that disagrees with your invariant. The finite case set supplements that argument."
+        }
+      ]
+    }
+  ]
+}
