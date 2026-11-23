@@ -1457,3 +1457,46 @@ This completes native numerical delivery and written integration. Native
 restricted H.263 stream delivery and course-wide acceptance remain. No renewed
 inverse-accuracy gate, stream conformance run, human learner review or
 assistive-technology review is claimed by this milestone.
+
+
+### H.263 native bounded-reader assessment foundation, 23 November 2026
+
+The native reader model retains all 592 original public cases and 598 calls,
+including every field width zero through 32, every starting phase, both native
+byte orders, full-width invalid metadata, maximum capacity and retained-cursor
+success/failure/empty sequences. Eight format-22 profiles retain the original
+100000-instruction case allowances. Two final checks each select 328 placements;
+their union covers all 592 original cases, with the shared boundary/metadata/reuse
+cases repeated. This fits existing file, assessment and instruction quotas.
+
+A small upstream grading extension initializes native pointers from relocated
+public data labels before a call. It does not require an assembly initialization
+helper or fix a student's data address. The public starter adds only
+`reader_bytes_tail`, a symbol within the unchanged final 64-byte allocation;
+its unfinished function remains unchanged. The full first MiB has an interval
+access policy, while an always-present caller object guards the final tail.
+Together they reject input writes and reads outside the selected field over the
+entire allocation, without increasing grader quotas. Context/caller retention,
+zero-width no-store behavior and cumulative reused-call state remain checked.
+
+The original checker and native model agree on every original before/after input
+window, 48-byte context, status/value object, argument and result for 598 calls in
+each of three implementations. Four native valid variants, including wide data/
+text and a full private stack frame, pass 2368 placements. The starter and all
+eight known faulty readers are rejected across 5328 further placements; the
+stale-result fault is rejected by the two reused-cursor cases. Actual plugin
+parsing retains all eight profiles and combines both bounded final checks.
+
+Upstream implementation commit `6d50e406` passes the full 293 CLI / 1329 plugin
+regression, 100% plugin package line/branch coverage and generated-parser ledger
+gates. Two additional actual-profile parser tests pass in test-only commit
+`34e7db91`. Public tooling passes 622 tests. All 41 unrelated MARS edits are
+preserved. Exact pinned CLI, failed private fixture attempts, original comparisons
+and qualification receipts are retained in private
+`native-h263-reader-foundation-01`.
+
+This is the stream unit's independent grading foundation. The native stream
+experiments, student archive, actual IDE first/resume delivery and written-lab
+integration remain next. No new whole-clip interoperability, inverse-accuracy,
+PDF/accessibility or learner-review result is claimed by this step. Existing
+stream and publication evidence above remains historical and separate.

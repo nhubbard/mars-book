@@ -16,7 +16,8 @@
 .data
 .align 4
 reader_bytes: .byte -70,53
-    .space 1048606
+    .space 1048542
+reader_bytes_tail: .space 64
 .align 3
 reader_context: .dword 0,2,12,3,-6510615555426900571,-6510615555426900571
 reader_status: .dword -1
