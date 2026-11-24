@@ -37,20 +37,20 @@ that they are invalid WAV files in general.
 The parser produces the following little-endian descriptor. It is an internal
 record, separate from the file's header layout.
 \begin{table}[!ht]
-\centering
-\begin{tabular}{rll}
-\toprule
-Byte offset & Width & Meaning \\
-\midrule
-0 & 4 & Frames per second \\
-4 & 4 & Channel count $C$ \\
-8 & 8 & Frame count $N$ \\
-16 & 8 & PCM offset from the file buffer's base \\
-24 & 8 & PCM byte count $D$ \\
-\bottomrule
-\end{tabular}
-\caption{The parser publishes all 32 descriptor bytes together.}
-\label{revision:wav-descriptor-layout}
+  \centering
+  \begin{tabular}{rll}
+    \toprule
+    Byte offset & Width & Meaning                                \\
+    \midrule
+    0           & 4     & Frames per second                      \\
+    4           & 4     & Channel count $C$                      \\
+    8           & 8     & Frame count $N$                        \\
+    16          & 8     & PCM offset from the file buffer's base \\
+    24          & 8     & PCM byte count $D$                     \\
+    \bottomrule
+  \end{tabular}
+  \caption{The parser publishes all 32 descriptor bytes together.}
+  \label{revision:wav-descriptor-layout}
 \end{table}
 
 The first sixteen bytes suffice to describe a separate PCM array. Accordingly,
@@ -71,26 +71,26 @@ After these twelve bytes, each chunk has a four-byte identifier, an unsigned
 four-byte payload length $L$, and $L$ payload bytes. An odd payload length has
 one additional padding byte. The next chunk therefore starts at
 \[
- q'=q+8+L+(L\bmod2),
+  q'=q+8+L+(L\bmod2),
 \]
 where $q$ is the current chunk's header offset. The padding belongs to the
 chunk's storage extent but is excluded from its payload length.
 
 \begin{table}[!ht]
-\centering
-\begin{tabular}{r l r r r}
-\toprule
-Header & Identifier & Payload start & Payload bytes & Next header \\
-\midrule
-12 & \texttt{JUNK} & 20 & 3 & 24 \\
-24 & \texttt{fmt\textvisiblespace} & 32 & 16 & 48 \\
-48 & \texttt{data} & 56 & 16 & 72 \\
-72 & \texttt{note} & 80 & 1 & 82 \\
-\bottomrule
-\end{tabular}
-\caption{Chunk boundaries in the 82-byte trace input. Offset 82 is the end,
-so there is no further header there.}
-\label{revision:wav-chunks}
+  \centering
+  \begin{tabular}{r l r r r}
+    \toprule
+    Header & Identifier                    & Payload start & Payload bytes & Next header \\
+    \midrule
+    12     & \texttt{JUNK}                 & 20            & 3             & 24          \\
+    24     & \texttt{fmt\textvisiblespace} & 32            & 16            & 48          \\
+    48     & \texttt{data}                 & 56            & 16            & 72          \\
+    72     & \texttt{note}                 & 80            & 1             & 82          \\
+    \bottomrule
+  \end{tabular}
+  \caption{Chunk boundaries in the 82-byte trace input. Offset 82 is the end,
+    so there is no further header there.}
+  \label{revision:wav-chunks}
 \end{table}
 
 The \texttt{fmt } identifier ends with an ASCII space. Its payload describes
@@ -166,20 +166,20 @@ at the data chunk.
 \section{Give each channel its own time history}
 The four input frames and their filtered results are:
 \begin{table}[!ht]
-\centering
-\begin{tabular}{r rr rr}
-\toprule
- & \multicolumn{2}{c}{Input codes} & \multicolumn{2}{c}{Filtered codes} \\
-Frame & Left & Right & Left & Right \\
-\midrule
-0 & 12000 & $-12000$ & 1500 & $-1500$ \\
-1 & 0 & 16000 & 1500 & 500 \\
-2 & $-8000$ & 0 & 500 & 500 \\
-3 & 32767 & $-32768$ & 4596 & $-3596$ \\
-\bottomrule
-\end{tabular}
-\caption{An eight-tap average with seven initial zero samples in each channel.}
-\label{revision:wav-filter-trace}
+  \centering
+  \begin{tabular}{r rr rr}
+    \toprule
+          & \multicolumn{2}{c}{Input codes} & \multicolumn{2}{c}{Filtered codes}                  \\
+    Frame & Left                            & Right                              & Left & Right   \\
+    \midrule
+    0     & 12000                           & $-12000$                           & 1500 & $-1500$ \\
+    1     & 0                               & 16000                              & 1500 & 500     \\
+    2     & $-8000$                         & 0                                  & 500  & 500     \\
+    3     & 32767                           & $-32768$                           & 4596 & $-3596$ \\
+    \bottomrule
+  \end{tabular}
+  \caption{An eight-tap average with seven initial zero samples in each channel.}
+  \label{revision:wav-filter-trace}
 \end{table}
 
 Each of the eight coefficients is Q15 code 4096, representing one eighth.
@@ -347,7 +347,7 @@ The lab supplies the full independent contract and public behavioral checks.
 The accepted profile and original six-function checks are in
 \path{packages/031-pcm-wav/}. Microsoft and IBM's
 \href{https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf}{Multimedia
-Programming Interface and Data Specifications} describes the RIFF/WAVE
+  Programming Interface and Data Specifications} describes the RIFF/WAVE
 container and PCM fields. The profile restrictions, descriptor transaction and
 kernel rounding policy in this chapter are local contracts. The written lab
 uses the small trace to test those contracts before assigning frame reversal.

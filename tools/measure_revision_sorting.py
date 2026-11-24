@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Measure completed instructions in the exact revised sorting visualization source."""
+
 import argparse
 import hashlib
 import json
@@ -10,10 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def measure(java, cli, output):
-    source = ROOT / 'revision/labs/files/sorting-costs.asm'
+    source = ROOT / "revision/labs/files/sorting-costs.asm"
     output.mkdir(parents=True, exist_ok=False)
-    checks = output / 'measure.kts'
-    checks.write_text(r'''
+    checks = output / "measure.kts"
+    checks.write_text(r"""
 val inputs=listOf(
     "sorted" to (-4..3).toList(),
     "reversed" to (3 downTo -4).toList(),
@@ -92,30 +93,54 @@ for ((name,input) in inputs) for (method in 0..1) {
         expectOutput("")
     }
 }
-''')
-    command = [str(java), '-jar', str(cli), 'grade', str(checks), str(source)]
+""")
+    command = [str(java), "-jar", str(cli), "grade", str(checks), str(source)]
     result = subprocess.run(command, capture_output=True, text=True, timeout=180)
-    (output / 'stdout.txt').write_text(result.stdout)
-    (output / 'stderr.txt').write_text(result.stderr)
+    (output / "stdout.txt").write_text(result.stdout)
+    (output / "stderr.txt").write_text(result.stderr)
     rows = []
     for line in result.stdout.splitlines():
-        if not line.startswith('MEASURE|'):
+        if not line.startswith("MEASURE|"):
             continue
-        parts = line.split('|')
-        keys = ['method', 'length', 'comparisons', 'exchanges', 'routineInstructions', 'wholeInstructions', 'routineTakenBranches', 'routineNotTakenBranches', 'wholeTakenBranches', 'wholeNotTakenBranches', 'frameWordStores']
+        parts = line.split("|")
+        keys = [
+            "method",
+            "length",
+            "comparisons",
+            "exchanges",
+            "routineInstructions",
+            "wholeInstructions",
+            "routineTakenBranches",
+            "routineNotTakenBranches",
+            "wholeTakenBranches",
+            "wholeNotTakenBranches",
+            "frameWordStores",
+        ]
         rows.append(dict(input=parts[1], **dict(zip(keys, map(int, parts[2:])))))
-    if result.returncode or len(rows) != 14 or sum(line.startswith('PASS ') for line in result.stdout.splitlines()) != 14:
-        raise AssertionError((result.returncode, result.stdout[-5000:], result.stderr[-2000:]))
+    if (
+        result.returncode
+        or len(rows) != 14
+        or sum(line.startswith("PASS ") for line in result.stdout.splitlines()) != 14
+    ):
+        raise AssertionError(
+            (result.returncode, result.stdout[-5000:], result.stderr[-2000:])
+        )
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
-    receipt = dict(sourceSha256=sha(source), cliSha256=sha(cli), toolSha256=sha(Path(__file__)), command=command, rows=rows,
-                   scope='Completed MARS64 instructions in this exact source. Routine PC intervals include prologue/epilogue, comparisons, loop control, argument preparation and calls, but exclude publish_exchange and render bodies. Whole includes caller, metadata, all rendering and exit. Assembly, session setup and host time are excluded. Not hardware cycles or universal algorithm timings.')
-    (output / 'measurements.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    receipt = dict(
+        sourceSha256=sha(source),
+        cliSha256=sha(cli),
+        toolSha256=sha(Path(__file__)),
+        command=command,
+        rows=rows,
+        scope="Completed MARS64 instructions in this exact source. Routine PC intervals include prologue/epilogue, comparisons, loop control, argument preparation and calls, but exclude publish_exchange and render bodies. Whole includes caller, metadata, all rendering and exit. Assembly, session setup and host time are excluded. Not hardware cycles or universal algorithm timings.",
+    )
+    (output / "measurements.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps(rows, indent=2))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('java', 'cli', 'output'):
-        parser.add_argument('--' + name, type=Path, required=True)
+    for name in ("java", "cli", "output"):
+        parser.add_argument("--" + name, type=Path, required=True)
     args = parser.parse_args()
     measure(args.java.resolve(), args.cli.resolve(), args.output.resolve())

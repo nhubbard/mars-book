@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Execute the chapter's literal function composition and equivalent implementations."""
+
 import argparse
 import hashlib
 import json
@@ -8,7 +9,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT/'revision/main/functions-and-stack.tex'
+SOURCE = ROOT / "revision/main/functions-and-stack.tex"
 
 
 def sha(path):
@@ -17,15 +18,19 @@ def sha(path):
 
 def verify(java, cli, output, alternatives):
     raw = SOURCE.read_bytes()
-    blocks = re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}', raw.decode(), re.S)
+    blocks = re.findall(
+        r"\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}", raw.decode(), re.S
+    )
     if len(blocks) != 3:
-        raise ValueError('Expected leaf, pair and driver listings')
-    listing = blocks[2]+'\n'+blocks[1]+'\n'+blocks[0]
-    if listing != (ROOT/'revision/labs/files/reverse-rows.asm').read_text():
-        raise ValueError('Downloadable program differs from the literal chapter composition')
+        raise ValueError("Expected leaf, pair and driver listings")
+    listing = blocks[2] + "\n" + blocks[1] + "\n" + blocks[0]
+    if listing != (ROOT / "revision/labs/files/reverse-rows.asm").read_text():
+        raise ValueError(
+            "Downloadable program differs from the literal chapter composition"
+        )
     output.mkdir(parents=True, exist_ok=False)
-    (output/'chapter-source.tex').write_bytes(raw)
-    assignment = r'''
+    (output / "chapter-source.tex").write_bytes(raw)
+    assignment = r"""
 fun reverse(value: Long): Long = (Integer.reverse(value.toInt() and 255) ushr 24).toLong()
 val kept = (0..7).associate { "s$it" to (0x1122334400000000L + it * 0x01010101L) } +
     mapOf("fp" to 0x0123456789abcdefL, "gp" to 0x023456789abcdef0L)
@@ -92,47 +97,91 @@ for (byte in 0..255) {
         expectOutput("")
     }
 }
-'''
-    checks=output/'checks.kts';checks.write_text(assignment)
-    runs=[]
+"""
+    checks = output / "checks.kts"
+    checks.write_text(assignment)
+    runs = []
 
     def grade(name, program, accepted):
-        path=output/(name+'.asm');path.write_text(program)
-        command=[str(java),'-jar',str(cli),'grade',str(checks),str(path)]
-        result=subprocess.run(command,capture_output=True,text=True,timeout=120)
-        (output/(name+'.stdout')).write_text(result.stdout)
-        (output/(name+'.stderr')).write_text(result.stderr)
-        passed=sum(l.startswith('PASS ') for l in result.stdout.splitlines())
-        failed=sum(l.startswith('FAIL ') for l in result.stdout.splitlines())
-        if passed+failed != 258 or (accepted and (result.returncode or failed)) or (not accepted and (result.returncode==0 or not failed)):
-            raise AssertionError((name,result.returncode,passed,failed,result.stderr[-2000:]))
-        runs.append(dict(name=name,expectedSuccess=accepted,passed=passed,failed=failed,
-                         sourceSha256=sha(path),command=command,exitCode=result.returncode))
-    grade('literal',listing,True)
-    for index,alternative in enumerate(alternatives):
-        grade('alternative-'+str(index+1),alternative.read_text(),True)
-    faults={
-        'missing-link-save':listing.replace('sd $ra, 24($sp)','nop'),
-        'missing-link-restore':listing.replace('ld $ra, 24($sp)','nop'),
-        'missing-result-pointer-restore':listing.replace('ld $s0, 16($sp)','nop'),
-        'first-result-not-retained':listing.replace('move $s1, $v0','nop'),
-        'word-save-truncates-register':listing.replace('sd $s1, 8($sp)','sw $s1, 8($sp)').replace('ld $s1, 8($sp)','lw $s1, 8($sp)'),
-        'wrong-frame-release':listing.replace('daddiu $sp, $sp, 32','daddiu $sp, $sp, 16'),
-        'seven-bit-reversal':listing.replace('li $t1, 8','li $t1, 7'),
+        path = output / (name + ".asm")
+        path.write_text(program)
+        command = [str(java), "-jar", str(cli), "grade", str(checks), str(path)]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=120)
+        (output / (name + ".stdout")).write_text(result.stdout)
+        (output / (name + ".stderr")).write_text(result.stderr)
+        passed = sum(l.startswith("PASS ") for l in result.stdout.splitlines())
+        failed = sum(l.startswith("FAIL ") for l in result.stdout.splitlines())
+        if (
+            passed + failed != 258
+            or (accepted and (result.returncode or failed))
+            or (not accepted and (result.returncode == 0 or not failed))
+        ):
+            raise AssertionError(
+                (name, result.returncode, passed, failed, result.stderr[-2000:])
+            )
+        runs.append(
+            dict(
+                name=name,
+                expectedSuccess=accepted,
+                passed=passed,
+                failed=failed,
+                sourceSha256=sha(path),
+                command=command,
+                exitCode=result.returncode,
+            )
+        )
+
+    grade("literal", listing, True)
+    for index, alternative in enumerate(alternatives):
+        grade("alternative-" + str(index + 1), alternative.read_text(), True)
+    faults = {
+        "missing-link-save": listing.replace("sd $ra, 24($sp)", "nop"),
+        "missing-link-restore": listing.replace("ld $ra, 24($sp)", "nop"),
+        "missing-result-pointer-restore": listing.replace("ld $s0, 16($sp)", "nop"),
+        "first-result-not-retained": listing.replace("move $s1, $v0", "nop"),
+        "word-save-truncates-register": listing.replace(
+            "sd $s1, 8($sp)", "sw $s1, 8($sp)"
+        ).replace("ld $s1, 8($sp)", "lw $s1, 8($sp)"),
+        "wrong-frame-release": listing.replace(
+            "daddiu $sp, $sp, 32", "daddiu $sp, $sp, 16"
+        ),
+        "seven-bit-reversal": listing.replace("li $t1, 8", "li $t1, 7"),
     }
-    for name,program in faults.items():
-        if program==listing:raise ValueError('Mutation was not applied: '+name)
-        grade(name,program,False)
-    receipt=dict(chapterSha256=hashlib.sha256(raw).hexdigest(),listingSha256=hashlib.sha256(listing.encode()).hexdigest(),
-                 verifierSha256=sha(Path(__file__)),cliSha256=sha(cli),runs=runs,
-                 perImplementation=dict(leafInvocations=768,pairInvocations=341,completeDriverCases=256,reportedCases=258),
-                 scope='Literal composition, public function contracts, full-width preservation, observed caller stack/data guards and seven faults. Not a whole-address-space write audit, native IDE observation, or an exact implementation requirement for student work.')
-    (output/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
-    print('Passed literal and',len(alternatives),'alternatives; 768 leaf calls, 341 pair calls and 256 complete-driver cases each; seven faults rejected.')
+    for name, program in faults.items():
+        if program == listing:
+            raise ValueError("Mutation was not applied: " + name)
+        grade(name, program, False)
+    receipt = dict(
+        chapterSha256=hashlib.sha256(raw).hexdigest(),
+        listingSha256=hashlib.sha256(listing.encode()).hexdigest(),
+        verifierSha256=sha(Path(__file__)),
+        cliSha256=sha(cli),
+        runs=runs,
+        perImplementation=dict(
+            leafInvocations=768,
+            pairInvocations=341,
+            completeDriverCases=256,
+            reportedCases=258,
+        ),
+        scope="Literal composition, public function contracts, full-width preservation, observed caller stack/data guards and seven faults. Not a whole-address-space write audit, native IDE observation, or an exact implementation requirement for student work.",
+    )
+    (output / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    print(
+        "Passed literal and",
+        len(alternatives),
+        "alternatives; 768 leaf calls, 341 pair calls and 256 complete-driver cases each; seven faults rejected.",
+    )
 
 
-if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__)
-    for name in ('java','cli','output'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--alternative',type=Path,action='append',default=[])
-    a=p.parse_args();verify(a.java.resolve(),a.cli.resolve(),a.output.resolve(),[p.resolve() for p in a.alternative])
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description=__doc__)
+    for name in ("java", "cli", "output"):
+        p.add_argument("--" + name, type=Path, required=True)
+    p.add_argument("--alternative", type=Path, action="append", default=[])
+    a = p.parse_args()
+    verify(
+        a.java.resolve(),
+        a.cli.resolve(),
+        a.output.resolve(),
+        [p.resolve() for p in a.alternative],
+    )

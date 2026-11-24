@@ -23,11 +23,11 @@ its right neighbour, $C$ the sample below it and $D$ the sample below-right.
 The two phase bits $p_x,p_y$ select integer or half-sample positions. For this
 baseline profile, use
 \[
-\begin{array}{ll}
-P_{0,0}=A,&P_{1,0}=\lfloor(A+B+1)/2\rfloor,\\[3pt]
-P_{0,1}=\lfloor(A+C+1)/2\rfloor,&
-P_{1,1}=\lfloor(A+B+C+D+2)/4\rfloor.
-\end{array}
+  \begin{array}{ll}
+    P_{0,0}=A,                       & P_{1,0}=\lfloor(A+B+1)/2\rfloor, \\[3pt]
+    P_{0,1}=\lfloor(A+C+1)/2\rfloor, &
+    P_{1,1}=\lfloor(A+B+C+D+2)/4\rfloor.
+  \end{array}
 \]
 These are the default rounding rules in H.263 clause 6.1.2, with the profile's
 rounding control equal to zero. Each output pixel applies the same selected
@@ -41,17 +41,17 @@ $\lfloor(1+2)/4\rfloor=0$. Averaging the two rows with upward rounding gives zer
 and one, and averaging those results with upward rounding gives one.
 
 \begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[every node/.style={font=\small},alt={Four reference samples surround a half-sample position: the top-left, top-right and bottom-left samples are zero; the bottom-right sample is one. Summing once and adding two before division by four predicts zero at the centre. Rounding the two rows separately and then averaging would incorrectly predict one.}]
-\draw[gray] (0,0) rectangle (4,2);
-\draw[dashed,gray] (0,1)--(4,1) (2,0)--(2,2);
-\node[fill=white] at (0,2) {$A=0$};
-\node[fill=white] at (4,2) {$B=0$};
-\node[fill=white] at (0,0) {$C=0$};
-\node[fill=white] at (4,0) {$D=1$};
-\node[draw,fill=white,align=center] at (2,1) {half-sample position\\$P=0$};
-\end{tikzpicture}
-\caption{A one-sample difference exposes double rounding in diagonal prediction.}
+  \centering
+  \begin{tikzpicture}[every node/.style={font=\small},alt={Four reference samples surround a half-sample position: the top-left, top-right and bottom-left samples are zero; the bottom-right sample is one. Summing once and adding two before division by four predicts zero at the centre. Rounding the two rows separately and then averaging would incorrectly predict one.}]
+    \draw[gray] (0,0) rectangle (4,2);
+    \draw[dashed,gray] (0,1)--(4,1) (2,0)--(2,2);
+    \node[fill=white] at (0,2) {$A=0$};
+    \node[fill=white] at (4,2) {$B=0$};
+    \node[fill=white] at (0,0) {$C=0$};
+    \node[fill=white] at (4,0) {$D=1$};
+    \node[draw,fill=white,align=center] at (2,1) {half-sample position\\$P=0$};
+  \end{tikzpicture}
+  \caption{A one-sample difference exposes double rounding in diagonal prediction.}
 \end{figure}
 
 The four-neighbour sum is at most 1020; adding its rounding bias gives at most
@@ -82,22 +82,22 @@ search produces only integer or half-sample chroma positions.
 For either signed component $d$, split $d/2$ into an integer origin shift $q$ and
 a phase $p$ with
 \[
-q=\lfloor d/2\rfloor,\qquad p=d-2q.
+  q=\lfloor d/2\rfloor,\qquad p=d-2q.
 \]
 The phase is zero or one, even for negative $d$. Arithmetic right shift by one
 forms $q$ for a full-width signed register; its low bit supplies $p$. Signed
 integer division that truncates toward zero does not give this decomposition
 for a negative odd value.
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{rrrr}
-\textbf{Luma $d$} & \textbf{Chroma $d/2$} & \textbf{Origin $q$} & \textbf{Phase $p$}\\
-$-2$ & $-1$ & $-1$ & 0\\
-$-1$ & $-0.5$ & $-1$ & 1\\
-0 & 0 & 0 & 0\\
-1 & 0.5 & 0 & 1\\
-2 & 1 & 1 & 0
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{rrrr}
+    \textbf{Luma $d$} & \textbf{Chroma $d/2$} & \textbf{Origin $q$} & \textbf{Phase $p$} \\
+    $-2$              & $-1$                  & $-1$                & 0                  \\
+    $-1$              & $-0.5$                & $-1$                & 1                  \\
+    0                 & 0                     & 0                   & 0                  \\
+    1                 & 0.5                   & 0                   & 1                  \\
+    2                 & 1                     & 1                   & 0
+  \end{tabular}
 \end{center}
 At a macroblock whose luma origin is $(16,32)$, the chroma origin is $(8,16)$.
 Luma displacement $(-1,-1)$ selects chroma origin $(7,15)$ with phases $(1,1)$.
@@ -110,16 +110,16 @@ A sixteen-by-sixteen luma macroblock contains four eight-by-eight luma blocks.
 Its two eight-by-eight chroma blocks bring the total to six. Use the following
 order when preparing the later coefficient stage:
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{rll}
-\textbf{Block} & \textbf{Plane} & \textbf{Offset within that plane's macroblock}\\
-0 & Y & $(0,0)$\\
-1 & Y & $(8,0)$\\
-2 & Y & $(0,8)$\\
-3 & Y & $(8,8)$\\
-4 & Cb & $(0,0)$\\
-5 & Cr & $(0,0)$
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{rll}
+    \textbf{Block} & \textbf{Plane} & \textbf{Offset within that plane's macroblock} \\
+    0              & Y              & $(0,0)$                                        \\
+    1              & Y              & $(8,0)$                                        \\
+    2              & Y              & $(0,8)$                                        \\
+    3              & Y              & $(8,8)$                                        \\
+    4              & Cb             & $(0,0)$                                        \\
+    5              & Cr             & $(0,0)$
+  \end{tabular}
 \end{center}
 For the four luma blocks, apply the selected full-pixel displacement and use
 phases zero. Add the block's local offset to both current and reference origins.

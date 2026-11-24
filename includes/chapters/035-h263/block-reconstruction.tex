@@ -10,10 +10,10 @@ Write the current sample as $S_i$, prediction as $P_i$ and inverse output as $D_
 The transform input is $S_i-P_i$ for INTER and $S_i$ for INTRA. The reconstructed
 pixel is
 \[
- X_i=\begin{cases}
- \operatorname{clip}_{[0,255]}(D_i)&\text{INTRA},\\
- \operatorname{clip}_{[0,255]}(P_i+D_i)&\text{INTER}.
- \end{cases}
+  X_i=\begin{cases}
+    \operatorname{clip}_{[0,255]}(D_i)     & \text{INTRA}, \\
+    \operatorname{clip}_{[0,255]}(P_i+D_i) & \text{INTER}.
+  \end{cases}
 \]
 The addition precedes final sample clipping. If prediction is 250 and the signed
 inverse residual is 20, their sum is 270 and the stored sample is 255. A byte
@@ -36,18 +36,18 @@ An accurate inverse produces three at each position, so the final block contains
 transform and arithmetic were implemented correctly.
 
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{lll}
-\textbf{Boundary} & \textbf{First value} & \textbf{Representation}\\
-Current input & 130 & Unsigned sample byte\\
-Prediction & 128 & Unsigned sample byte\\
-Transform input & 2 & Signed residual halfword\\
-Forward DC & 16 & Transform coefficient\\
-Selected DC level & 1 & Ordinary INTER level\\
-Reconstructed DC & 23 & Inverse-transform coefficient\\
-Inverse residual & 3 & Signed spatial halfword\\
-Reconstructed sample & 131 & Clipped unsigned pixel
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{lll}
+    \textbf{Boundary}    & \textbf{First value} & \textbf{Representation}       \\
+    Current input        & 130                  & Unsigned sample byte          \\
+    Prediction           & 128                  & Unsigned sample byte          \\
+    Transform input      & 2                    & Signed residual halfword      \\
+    Forward DC           & 16                   & Transform coefficient         \\
+    Selected DC level    & 1                    & Ordinary INTER level          \\
+    Reconstructed DC     & 23                   & Inverse-transform coefficient \\
+    Inverse residual     & 3                    & Signed spatial halfword       \\
+    Reconstructed sample & 131                  & Clipped unsigned pixel
+  \end{tabular}
 \end{center}
 This named trace is an observation of the tested transform implementations.
 Other accurate transforms need not produce identical results at every rounding
@@ -72,16 +72,16 @@ local reconstruction stage; it does not emit a bitstream. Pass an eight-byte-ali
 64-byte request in \texttt{\$a0} and a sixteen-byte-aligned 448-byte result in
 \texttt{\$a1}. Request fields are unsigned native-endian doublewords:
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{rll}
-\textbf{Offset} & \textbf{Field} & \textbf{Meaning}\\
-0, 8 & Current pointer, stride & Eight active bytes per row\\
-16, 24 & Prediction pointer, stride & INTER only; both zero for INTRA\\
-32 & Quantizer parameter & 1 through 31\\
-40 & Block type & 0 INTER; 1 INTRA\\
-48 & Arithmetic mode & 0 scalar; 1 MSA\\
-56 & Reserved & Zero
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{rll}
+    \textbf{Offset} & \textbf{Field}             & \textbf{Meaning}                \\
+    0, 8            & Current pointer, stride    & Eight active bytes per row      \\
+    16, 24          & Prediction pointer, stride & INTER only; both zero for INTRA \\
+    32              & Quantizer parameter        & 1 through 31                    \\
+    40              & Block type                 & 0 INTER; 1 INTRA                \\
+    48              & Arithmetic mode            & 0 scalar; 1 MSA                 \\
+    56              & Reserved                   & Zero
+  \end{tabular}
 \end{center}
 There are eight rows. Active strides range from eight through 4096 bytes,
 independently; pointers need no alignment beyond byte addressability. The two
@@ -100,14 +100,14 @@ nested calls.
 
 Successful output contains four consecutive arrays:
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{rrl}
-\textbf{Offset} & \textbf{Bytes} & \textbf{Meaning}\\
-0 & 128 & Selected levels, including separate INTRA DC code\\
-128 & 128 & Reconstructed coefficients from those levels\\
-256 & 128 & Signed inverse spatial output\\
-384 & 64 & Reconstructed pixel bytes
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{rrl}
+    \textbf{Offset} & \textbf{Bytes} & \textbf{Meaning}                                  \\
+    0               & 128            & Selected levels, including separate INTRA DC code \\
+    128             & 128            & Reconstructed coefficients from those levels      \\
+    256             & 128            & Signed inverse spatial output                     \\
+    384             & 64             & Reconstructed pixel bytes
+  \end{tabular}
 \end{center}
 Halfwords are native-endian and in natural row-major order. Return status zero
 and the nonzero ordinary-level count from quantization. INTRA DC is excluded

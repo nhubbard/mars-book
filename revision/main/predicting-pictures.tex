@@ -35,17 +35,17 @@ sample density. This arrangement is called planar 4:2:0. It is not an RGB word
 array or an interleaved sequence of three channel bytes.
 
 \begin{table}[!ht]
-\centering
-\begin{tabular}{l r r r r}
-\toprule
-Plane & Byte offset & Width & Height & Row stride\\
-\midrule
-Y & 0 & 176 & 144 & 176\\
-Cb & 25344 & 88 & 72 & 88\\
-Cr & 31680 & 88 & 72 & 88\\
-\bottomrule
-\end{tabular}
-\caption{The tightly packed planes occupy 38016 bytes per raw picture.}
+  \centering
+  \begin{tabular}{l r r r r}
+    \toprule
+    Plane & Byte offset & Width & Height & Row stride \\
+    \midrule
+    Y     & 0           & 176   & 144    & 176        \\
+    Cb    & 25344       & 88    & 72     & 88         \\
+    Cr    & 31680       & 88    & 72     & 88         \\
+    \bottomrule
+  \end{tabular}
+  \caption{The tightly packed planes occupy 38016 bytes per raw picture.}
 \end{table}
 
 Picture $f$ starts at file offset $38016f$. Its Y sample at $(x,y)$ is a further
@@ -74,7 +74,7 @@ another's.
 For current samples $C$ and a candidate reference window $R$, define the sum of
 absolute differences, or SAD:
 \[
- S=\sum_{y=0}^{15}\sum_{x=0}^{15}|C[y,x]-R[y,x]|.
+  S=\sum_{y=0}^{15}\sum_{x=0}^{15}|C[y,x]-R[y,x]|.
 \]
 Each magnitude is at most 255, so the complete score is at most
 $256\cdot255=65280$. A sixteen-by-sixteen window of 130 compared with 128 has
@@ -138,7 +138,7 @@ prediction.
 
 For a signed luma component $d$, split its chroma displacement into
 \[
- q=\lfloor d/2\rfloor,\qquad p=d-2q.
+  q=\lfloor d/2\rfloor,\qquad p=d-2q.
 \]
 The integer origin shift is $q$ and the phase $p$ is zero or one. With $d=-1$,
 we need origin minus one and phase one, giving minus one half. Division that
@@ -149,11 +149,11 @@ luma vector $(-1,-1)$ consequently selects origin $(7,15)$ and both half phases.
 Let $A$ be the integer reference sample, $B$ its right neighbour, $C$ the one
 below, and $D$ the below-right neighbour. The selected baseline rounding gives
 \[
-\begin{array}{ll}
- P_{0,0}=A,&P_{1,0}=\lfloor(A+B+1)/2\rfloor,\\[2pt]
- P_{0,1}=\lfloor(A+C+1)/2\rfloor,&
- P_{1,1}=\lfloor(A+B+C+D+2)/4\rfloor.
-\end{array}
+  \begin{array}{ll}
+    P_{0,0}=A,                       & P_{1,0}=\lfloor(A+B+1)/2\rfloor, \\[2pt]
+    P_{0,1}=\lfloor(A+C+1)/2\rfloor, &
+    P_{1,1}=\lfloor(A+B+C+D+2)/4\rfloor.
+  \end{array}
 \]
 Sum all four diagonal neighbours before rounding. If $A=B=C=0$ and $D=1$,
 the diagonal prediction is zero. Rounding each row average upward and then
@@ -190,12 +190,12 @@ The transform alone has not compressed them.
 Use row-first notation $f[y,x]$ for samples and $F[v,u]$ for coefficients, where
 $v$ is vertical frequency and $u$ horizontal frequency. Define
 \[
- B[k,n]=\gamma_k\cos\!\left(\frac{(2n+1)k\pi}{16}\right),\quad
- \gamma_0=1/\sqrt8,\quad \gamma_k=1/2\ (k>0).
+  B[k,n]=\gamma_k\cos\!\left(\frac{(2n+1)k\pi}{16}\right),\quad
+  \gamma_0=1/\sqrt8,\quad \gamma_k=1/2\ (k>0).
 \]
 The forward transform is
 \[
- F[v,u]=\sum_{y=0}^{7}\sum_{x=0}^{7}B[v,y]f[y,x]B[u,x].
+  F[v,u]=\sum_{y=0}^{7}\sum_{x=0}^{7}B[v,y]f[y,x]B[u,x].
 \]
 One pass combines each row with horizontal patterns; the other combines those
 results vertically. A constant block of value two has DC sixteen and zero AC.
@@ -233,7 +233,7 @@ Quantization maps several possible forward coefficients to one selected integer
 level. The decoder receives the level, so it cannot recover which original
 coefficient produced it. For the worked forward policy and $1\leq Q\leq31$, use
 \[
- m=\min(127,\lfloor |C|/(2Q)\rfloor),\qquad L=\operatorname{sign}(C)m.
+  m=\min(127,\lfloor |C|/(2Q)\rfloor),\qquad L=\operatorname{sign}(C)m.
 \]
 At $Q=8$, magnitudes below sixteen disappear. Coefficients sixteen and minus
 sixteen become levels one and minus one. This zero region reduces what later
@@ -275,7 +275,7 @@ accepted reconstruction on both sides.
 In the actual block path, the selected levels pass through inverse quantization
 and the inverse transform before prediction is added. For INTER output,
 \[
- X[y,x]=\operatorname{clip}_{[0,255]}\big(P[y,x]+D[y,x]\big).
+  X[y,x]=\operatorname{clip}_{[0,255]}\big(P[y,x]+D[y,x]\big).
 \]
 The inverse result $D$ lies in $[-256,255]$, and $P$ lies in $[0,255]$, so their
 sum lies in $[-256,510]$. Signed halfwords accommodate the addition. Clip the
@@ -283,21 +283,21 @@ complete sum, then store bytes. Clipping a negative residual to zero first would
 erase a needed correction. Adding in bytes would wrap before clipping.
 
 \begin{table}[!ht]
-\centering
-\begin{tabular}{l r l}
-\toprule
-Boundary & First value & Meaning\\
-\midrule
-Current / prediction & 130 / 128 & Unsigned samples\\
-Transform input & 2 & Signed residual\\
-Forward DC & 16 & Coefficient\\
-Selected DC level & 1 & Ordinary INTER level\\
-Reconstructed DC & 23 & Inverse-quantized coefficient\\
-Inverse output & 3 & Spatial correction\\
-Reconstruction & 131 & Future prediction sample\\
-\bottomrule
-\end{tabular}
-\caption{The constant-block trace uses the worked transform and $Q=8$.}
+  \centering
+  \begin{tabular}{l r l}
+    \toprule
+    Boundary             & First value & Meaning                       \\
+    \midrule
+    Current / prediction & 130 / 128   & Unsigned samples              \\
+    Transform input      & 2           & Signed residual               \\
+    Forward DC           & 16          & Coefficient                   \\
+    Selected DC level    & 1           & Ordinary INTER level          \\
+    Reconstructed DC     & 23          & Inverse-quantized coefficient \\
+    Inverse output       & 3           & Spatial correction            \\
+    Reconstruction       & 131         & Future prediction sample      \\
+    \bottomrule
+  \end{tabular}
+  \caption{The constant-block trace uses the worked transform and $Q=8$.}
 \end{table}
 
 The ideal DC-only inverse for coefficient 23 is $23/8=2.875$ at each sample.

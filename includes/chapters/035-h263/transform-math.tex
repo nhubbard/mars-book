@@ -9,16 +9,16 @@ Write a spatial sample as $f[y,x]$ and a coefficient as $F[v,u]$. The first
 coefficient index is vertical frequency, the second horizontal frequency.
 Define the orthonormal basis
 \[
- B[k,n]=\gamma_k\cos\!\left(\frac{(2n+1)k\pi}{16}\right),\qquad
- \gamma_0=\frac{1}{\sqrt8},\quad \gamma_k=\frac12\ (k>0).
+  B[k,n]=\gamma_k\cos\!\left(\frac{(2n+1)k\pi}{16}\right),\qquad
+  \gamma_0=\frac{1}{\sqrt8},\quad \gamma_k=\frac12\ (k>0).
 \]
 Then the forward transform is
 \[
- F[v,u]=\sum_{y=0}^{7}\sum_{x=0}^{7}B[v,y]f[y,x]B[u,x].
+  F[v,u]=\sum_{y=0}^{7}\sum_{x=0}^{7}B[v,y]f[y,x]B[u,x].
 \]
 The inverse uses the transposed basis in each matrix pass:
 \[
- f[y,x]=\sum_{v=0}^{7}\sum_{u=0}^{7}B[v,y]F[v,u]B[u,x].
+  f[y,x]=\sum_{v=0}^{7}\sum_{u=0}^{7}B[v,y]F[v,u]B[u,x].
 \]
 The formulas look similar because the basis is orthonormal. The placement of
 indices decides which row or column is used. An asymmetric input is useful for
@@ -49,11 +49,11 @@ $2^{16}$, in a signed word. Store these intermediates transposed, so the column
 needed by the second pass becomes one contiguous row of eight words. For the
 forward direction, write
 \[
- T[u,y]=\sum_{x=0}^{7}f[y,x]A[u,x].
+  T[u,y]=\sum_{x=0}^{7}f[y,x]A[u,x].
 \]
 The second sum is
 \[
- S[v,u]=\sum_{y=0}^{7}T[u,y]A[v,y].
+  S[v,u]=\sum_{y=0}^{7}T[u,y]A[v,y].
 \]
 It carries scale $2^{32}$. Descale once after this sum. Rounding the first pass
 back to sample-sized integers discards information before the other dimension
@@ -63,14 +63,14 @@ The inverse uses the same two-pass structure with $A^T$. Its admitted coefficien
 magnitude reaches 2048, so use that larger input bound when proving storage widths.
 The following conservative bounds also cover the smaller forward input domain:
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{lll}
-\textbf{Value} & \textbf{Magnitude bound} & \textbf{Storage}\\
-Basis constant & 32\,138 & Signed halfword\\
-Input & 2048 & Signed halfword\\
-First-pass sum & $8\times2048\times32\,138=526\,548\,992$ & Signed word\\
-Second-pass sum & Less than $2^{47}$ & Signed doubleword
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{lll}
+    \textbf{Value}  & \textbf{Magnitude bound}                 & \textbf{Storage}  \\
+    Basis constant  & 32\,138                                  & Signed halfword   \\
+    Input           & 2048                                     & Signed halfword   \\
+    First-pass sum  & $8\times2048\times32\,138=526\,548\,992$ & Signed word       \\
+    Second-pass sum & Less than $2^{47}$                       & Signed doubleword
+  \end{tabular}
 \end{center}
 A first-pass signed halfword dot product can therefore widen into words.
 The second pass must widen signed word products into doublewords. A word multiply
@@ -78,17 +78,17 @@ there would discard high product bits even though each input word individually
 fits. Keep the bias addition and final shift in full-width registers too.
 
 \begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,font=\small},node distance=6mm,alt={A transform starts with signed halfword samples or coefficients. The first basis pass produces unrounded signed words scaled by two to the sixteenth and stores them transposed. The second pass accumulates signed doublewords scaled by two to the thirty-second. One final rounding and clipping step produces the output halfwords.}]
-\node (input) {signed halfword input};
-\node[below=of input] (first) {first pass: unrounded words\\store transposed, scale $2^{16}$};
-\node[below=of first] (second) {second pass: doubleword sums\\scale $2^{32}$};
-\node[below=of second] (result) {round once, clip, publish\\signed halfword output};
-\draw[-{Latex}] (input)--(first);
-\draw[-{Latex}] (first)--(second);
-\draw[-{Latex}] (second)--(result);
-\end{tikzpicture}
-\caption{Intermediate widths preserve the two-dimensional transform's scale.}
+  \centering
+  \begin{tikzpicture}[every node/.style={draw,rounded corners,align=center,font=\small},node distance=6mm,alt={A transform starts with signed halfword samples or coefficients. The first basis pass produces unrounded signed words scaled by two to the sixteenth and stores them transposed. The second pass accumulates signed doublewords scaled by two to the thirty-second. One final rounding and clipping step produces the output halfwords.}]
+    \node (input) {signed halfword input};
+    \node[below=of input] (first) {first pass: unrounded words\\store transposed, scale $2^{16}$};
+    \node[below=of first] (second) {second pass: doubleword sums\\scale $2^{32}$};
+    \node[below=of second] (result) {round once, clip, publish\\signed halfword output};
+    \draw[-{Latex}] (input)--(first);
+    \draw[-{Latex}] (first)--(second);
+    \draw[-{Latex}] (second)--(result);
+  \end{tikzpicture}
+  \caption{Intermediate widths preserve the two-dimensional transform's scale.}
 \end{figure}
 
 For eight second-pass products, load two four-word vectors from each contiguous
@@ -109,7 +109,7 @@ do not grant permission to read extra bytes from a padded caller input row.
 \section{Round signed values and clip at the right boundary}
 The reference implementation returns
 \[
- R(S)=\left\lfloor\frac{S+2^{31}}{2^{32}}\right\rfloor.
+  R(S)=\left\lfloor\frac{S+2^{31}}{2^{32}}\right\rfloor.
 \]
 This rounds to nearest with ties toward positive infinity. A full-width
 arithmetic shift by 32 implements the division after adding the positive bias.

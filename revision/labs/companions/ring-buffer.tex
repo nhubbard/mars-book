@@ -40,22 +40,22 @@ Each queue has an eight-byte-aligned, 24-byte descriptor. Offsets are byte
 displacements from the descriptor pointer passed in \texttt{\$a0}.
 
 \begin{center}
-\begin{tabular}{rll}
-\toprule
-Offset & Representation & Meaning\\
-\midrule
-0 & word & head: first byte of the oldest record\\
-4 & word & tail: position for the next appended prefix\\
-8 & word & used: occupied bytes, including prefixes\\
-12 & word & capacity: usable ring bytes\\
-16 & doubleword & full address of the ring allocation\\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{rll}
+    \toprule
+    Offset & Representation & Meaning                                     \\
+    \midrule
+    0      & word           & head: first byte of the oldest record       \\
+    4      & word           & tail: position for the next appended prefix \\
+    8      & word           & used: occupied bytes, including prefixes    \\
+    12     & word           & capacity: usable ring bytes                 \\
+    16     & doubleword     & full address of the ring allocation         \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 A valid descriptor satisfies $0\leq head,tail<C$, $0\leq used\leq C$, and
 \[
- tail=(head+used)\bmod C.
+  tail=(head+used)\bmod C.
 \]
 The occupied circular bytes contain complete valid records. You may assume this
 input invariant; this lab does not ask you to repair corrupted descriptors.
@@ -90,18 +90,18 @@ that successful pop, head becomes two and used becomes three; tail remains five.
 The second record is still queued.
 
 \begin{center}
-\begin{tabular}{lrrrl}
-\toprule
-Completed operation & Head & Tail & Used & $(v_0,v_1)$\\
-\midrule
-Initial empty queue & 5 & 5 & 0 & ---\\
-Push \texttt{ABC} & 5 & 2 & 4 & $(0,4)$\\
-Push \texttt{xy} & 5 & 5 & 7 & $(0,3)$\\
-Pop, capacity 2 & 5 & 5 & 7 & $(-2,3)$\\
-Pop, capacity 3 & 2 & 5 & 3 & $(3,4)$\\
-Pop, capacity 31 & 5 & 5 & 0 & $(2,3)$\\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{lrrrl}
+    \toprule
+    Completed operation & Head & Tail & Used & $(v_0,v_1)$ \\
+    \midrule
+    Initial empty queue & 5    & 5    & 0    & ---         \\
+    Push \texttt{ABC}   & 5    & 2    & 4    & $(0,4)$     \\
+    Push \texttt{xy}    & 5    & 5    & 7    & $(0,3)$     \\
+    Pop, capacity 2     & 5    & 5    & 7    & $(-2,3)$    \\
+    Pop, capacity 3     & 2    & 5    & 3    & $(3,4)$     \\
+    Pop, capacity 31    & 5    & 5    & 0    & $(2,3)$     \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 Figure~\ref{fig:revision-ring-memory} shows those full and empty descriptors in the
@@ -126,8 +126,8 @@ The helper receives the index in \texttt{\$a0}, capacity in \texttt{\$a1}, and
 returns the next index in \texttt{\$v0}.
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{Advance one byte without assuming a power-of-two capacity}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{Advance one byte without assuming a power-of-two capacity}
+  \begin{minted}{mars-idea}
 advance_cursor:
     addiu $v0, $a0, 1
     bnec $v0, $a1, cursor_return
@@ -165,18 +165,18 @@ For pop, \texttt{\$a1} points to output storage and \texttt{\$a2} is that storag
 capacity, also from zero through 31. The two result registers have these meanings:
 
 \begin{center}
-\begin{tabular}{lll}
-\toprule
-Situation & $v_0$ & $v_1$\\
-\midrule
-Push: $L\geq C$ & $-2$ & 0\\
-Push: insufficient free bytes & $-1$ & 0\\
-Push: success & 0 & $L+1$\\
-Pop: empty queue & $-1$ & 0\\
-Pop: destination too small & $-2$ & required $L$\\
-Pop: success & $L$ & $L+1$\\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{lll}
+    \toprule
+    Situation                     & $v_0$ & $v_1$        \\
+    \midrule
+    Push: $L\geq C$               & $-2$  & 0            \\
+    Push: insufficient free bytes & $-1$  & 0            \\
+    Push: success                 & 0     & $L+1$        \\
+    Pop: empty queue              & $-1$  & 0            \\
+    Pop: destination too small    & $-2$  & required $L$ \\
+    Pop: success                  & $L$   & $L+1$        \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 For push, first reject a record that cannot fit even in an empty ring: $L\geq C$.
@@ -265,16 +265,16 @@ or restarting the program: each later observation depends on the earlier command
 having run in the same session.
 
 \begin{center}
-\begin{tabular}{lrrrl}
-\toprule
-Command index & Head & Tail & Used & $(v_0,v_1)$\\
-\midrule
-3: wrapped queue & 4 & 3 & 7 & $(0,4)$\\
-8: full queue & 4 & 4 & 8 & $(0,8)$\\
-10: short destination & 4 & 4 & 8 & $(-2,7)$\\
-11: successful retry & 4 & 4 & 0 & $(7,8)$\\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{lrrrl}
+    \toprule
+    Command index         & Head & Tail & Used & $(v_0,v_1)$ \\
+    \midrule
+    3: wrapped queue      & 4    & 3    & 7    & $(0,4)$     \\
+    8: full queue         & 4    & 4    & 8    & $(0,8)$     \\
+    10: short destination & 4    & 4    & 8    & $(-2,7)$    \\
+    11: successful retry  & 4    & 4    & 0    & $(7,8)$     \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 Compare ring and descriptor across the short-destination failure. After the retry,
@@ -290,7 +290,7 @@ functions and the caller, run these commands from the downloaded unit's director
 using JDK 25:
 
 \noindent\begin{minipage}{\linewidth}
-\begin{verbatim}
+  \begin{verbatim}
 java -jar /path/to/cli.jar grade \
   independent/kernels.kts independent/ring.asm
 java -jar /path/to/cli.jar grade \

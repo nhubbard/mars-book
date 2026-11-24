@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Qualify the revised Life source, snapshot boundaries and padded-board helpers."""
+
+from kotlin_format import format_kotlin
 import argparse
 import hashlib
 import json
@@ -15,19 +17,32 @@ def sha(path):
 
 
 def verify(java, cli, output, alternatives):
-    chapter = ROOT / 'revision/main/state-and-buffers.tex'
-    program = ROOT / 'revision/labs/files/life-buffers.asm'
+    chapter = ROOT / "revision/main/state-and-buffers.tex"
+    program = ROOT / "revision/labs/files/life-buffers.asm"
     source = program.read_text()
-    blocks = re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}', chapter.read_text(), re.S)
+    blocks = re.findall(
+        r"\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}",
+        chapter.read_text(),
+        re.S,
+    )
     if len(blocks) != 4 or not all(source.count(block) == 1 for block in blocks):
-        raise ValueError('Every printed helper/core/driver fragment must occur exactly in the complete program')
+        raise ValueError(
+            "Every printed helper/core/driver fragment must occur exactly in the complete program"
+        )
     output.mkdir(parents=True, exist_ok=False)
-    (output / 'chapter-source.tex').write_bytes(chapter.read_bytes())
-    oracle = (ROOT / 'revision/labs/checks/life-changes.kts').read_text().split('val fixtures=', 1)[0]
-    common = '''import edu.missouristate.mars.cli.grading.MemoryStoreTrace
+    (output / "chapter-source.tex").write_bytes(chapter.read_bytes())
+    oracle = (
+        (ROOT / "revision/labs/checks/life-changes.kts")
+        .read_text()
+        .split("val fixtures=", 1)[0]
+    )
+    common = (
+        """import edu.missouristate.mars.cli.grading.MemoryStoreTrace
 import kotlin.random.Random
 
-''' + oracle + r'''
+"""
+        + oracle
+        + r"""
 val examples=listOf(List(64) { 0 },List(64) { 1 },pattern(2 to 3,3 to 3,4 to 3),
     pattern(3 to 3,4 to 3,3 to 4,4 to 4),pattern(0 to 0,1 to 0,0 to 1),
     pattern(0 to 0,1 to 1,2 to 1,0 to 2,1 to 2))
@@ -36,8 +51,9 @@ fun localPattern(mask: Int): List<Int> = List(64) { cell ->
     val y=cell/8-2
     if (x in 0..2 && y in 0..2) (mask ushr (3*y+x)) and 1 else 0
 }
-'''
-    whole = r'''
+"""
+    )
+    whole = r"""
 for ((caseIndex,fixture) in fixtures.withIndex()) {
     val (initial,steps)=fixture
     case("board $caseIndex generations $steps",instructionLimit=100000) {
@@ -100,8 +116,8 @@ for ((caseIndex,fixture) in fixtures.withIndex()) {
         expectOutput("")
     }
 }
-'''
-    direct = r'''
+"""
+    direct = r"""
 case("update calls preserve full saved state and write every interior once",instructionLimit=1000000) {
     val top=readRegister("sp") and -16L
     setRegister("sp",top)
@@ -175,57 +191,133 @@ case("neighbor helper: all local states and every board position",instructionLim
     }
     expectOutput("")
 }
-'''
-    all_fixtures = r'''
+"""
+    all_fixtures = r"""
 val random=Random(0x4d415253)
 val fixtures=(0 until 512).map { localPattern(it) to 1 } +
     (0 until 64).map { cell -> pattern(cell%8 to cell/8) to 2 } +
     (0 until 64).map { index -> List(64) { if (random.nextInt(64)<(index%8+1)*8) 1 else 0 } to 4 } +
     examples.flatMap { board -> (0..4).map { board to it } }
-'''
-    (output / 'checks.kts').write_text(common + all_fixtures + whole + direct)
-    (output / 'fault-checks.kts').write_text(common + 'val fixtures=examples.flatMap { board -> (0..4).map { board to it } }\n' + whole)
+"""
+    (output / "checks.kts").write_text(
+        format_kotlin(common + all_fixtures + whole + direct)
+    )
+    (output / "fault-checks.kts").write_text(
+        format_kotlin(
+            common
+            + "val fixtures=examples.flatMap { board -> (0..4).map { board to it } }\n"
+            + whole
+        )
+    )
     runs = []
 
     def grade(name, text, accepted):
-        path = output / (name + '.asm')
+        path = output / (name + ".asm")
         path.write_text(text)
-        checks = output / ('checks.kts' if accepted else 'fault-checks.kts')
-        command = [str(java), '-jar', str(cli), 'grade', str(checks), str(path)]
+        checks = output / ("checks.kts" if accepted else "fault-checks.kts")
+        command = [str(java), "-jar", str(cli), "grade", str(checks), str(path)]
         result = subprocess.run(command, capture_output=True, text=True, timeout=300)
-        (output / (name + '.stdout')).write_text(result.stdout)
-        (output / (name + '.stderr')).write_text(result.stderr)
-        passed = sum(line.startswith('PASS ') for line in result.stdout.splitlines())
-        failed = sum(line.startswith('FAIL ') for line in result.stdout.splitlines())
+        (output / (name + ".stdout")).write_text(result.stdout)
+        (output / (name + ".stderr")).write_text(result.stderr)
+        passed = sum(line.startswith("PASS ") for line in result.stdout.splitlines())
+        failed = sum(line.startswith("FAIL ") for line in result.stdout.splitlines())
         total = 672 if accepted else 30
-        if passed+failed != total or (accepted and (result.returncode or failed)) or (not accepted and (result.returncode == 0 or not failed)):
-            raise AssertionError((name, result.returncode, passed, failed, result.stdout[-4000:], result.stderr[-2000:]))
-        runs.append(dict(name=name, accepted=accepted, passed=passed, failed=failed, command=command, sourceSha256=sha(path)))
+        if (
+            passed + failed != total
+            or (accepted and (result.returncode or failed))
+            or (not accepted and (result.returncode == 0 or not failed))
+        ):
+            raise AssertionError(
+                (
+                    name,
+                    result.returncode,
+                    passed,
+                    failed,
+                    result.stdout[-4000:],
+                    result.stderr[-2000:],
+                )
+            )
+        runs.append(
+            dict(
+                name=name,
+                accepted=accepted,
+                passed=passed,
+                failed=failed,
+                command=command,
+                sourceSha256=sha(path),
+            )
+        )
 
-    grade('literal', source, True)
+    grade("literal", source, True)
     for index, path in enumerate(alternatives):
-        grade('alternative-' + str(index + 1), path.read_text(), True)
+        grade("alternative-" + str(index + 1), path.read_text(), True)
     faults = {
-        'in-place': source.replace('    move $a1, $s1\n    balc life_step', '    move $a1, $s0\n    balc life_step'),
-        'missing-swap': source.replace('    move $s0, $s1\n    move $s1, $t0', '    nop\n    nop'),
-        'skipped-dead-store': source.replace('    sb $t1, 0($s1)', '    beqzc $t1, dead_store_skipped\n    nop\n    sb $t1, 0($s1)\ndead_store_skipped:'),
-        'center-counted': source.replace('    lbu $v0, -11($a0)', '    lbu $v0, -11($a0)\n    lbu $t0, 0($a0)\n    addu $v0, $v0, $t0'),
-        'wrong-row-gap': source.replace('daddiu $s0, $s0, 2', 'daddiu $s0, $s0, 1').replace('daddiu $s1, $s1, 2', 'daddiu $s1, $s1, 1'),
-        'stale-black-pixel': source.replace('    sw $t4, 0($t1)', '    beqzc $t4, black_store_skipped\n    nop\n    sw $t4, 0($t1)\nblack_store_skipped:'),
-        'early-publication': source.replace('generation_ready:\n', 'ready_after_render:\n').replace('render_generation:\n', 'render_generation:\ngeneration_ready:\n'),
+        "in-place": source.replace(
+            "    move $a1, $s1\n    balc life_step",
+            "    move $a1, $s0\n    balc life_step",
+        ),
+        "missing-swap": source.replace(
+            "    move $s0, $s1\n    move $s1, $t0", "    nop\n    nop"
+        ),
+        "skipped-dead-store": source.replace(
+            "    sb $t1, 0($s1)",
+            "    beqzc $t1, dead_store_skipped\n    nop\n    sb $t1, 0($s1)\ndead_store_skipped:",
+        ),
+        "center-counted": source.replace(
+            "    lbu $v0, -11($a0)",
+            "    lbu $v0, -11($a0)\n    lbu $t0, 0($a0)\n    addu $v0, $v0, $t0",
+        ),
+        "wrong-row-gap": source.replace(
+            "daddiu $s0, $s0, 2", "daddiu $s0, $s0, 1"
+        ).replace("daddiu $s1, $s1, 2", "daddiu $s1, $s1, 1"),
+        "stale-black-pixel": source.replace(
+            "    sw $t4, 0($t1)",
+            "    beqzc $t4, black_store_skipped\n    nop\n    sw $t4, 0($t1)\nblack_store_skipped:",
+        ),
+        "early-publication": source.replace(
+            "generation_ready:\n", "ready_after_render:\n"
+        ).replace("render_generation:\n", "render_generation:\ngeneration_ready:\n"),
     }
     for name, text in faults.items():
         if text == source:
-            raise ValueError('Mutation did not apply: ' + name)
+            raise ValueError("Mutation did not apply: " + name)
         grade(name, text, False)
-    (output / 'receipt.json').write_text(json.dumps(dict(chapterSha256=sha(chapter), listingSha256=sha(program), checkerSha256=sha(Path(__file__)), cliSha256=sha(cli), runs=runs, perImplementation=dict(generationFixtures=670, directUpdateCalls=22, directNeighborCalls=576, reportedCases=672), scope='All 512 local binary states, finite-edge positions, sampled boards and requested generations 0..4. Temporal source preservation, padding, complete destination and rendering; not all 2^64 boards or a whole-address-space access audit. Direct helper/store-footprint qualification is stricter than the independent student contract.'), indent=2) + '\n')
-    print('Passed literal and', len(alternatives), 'alternatives: 670 generation fixtures, 22 update calls and 576 neighbor calls each; seven faults rejected.')
+    (output / "receipt.json").write_text(
+        json.dumps(
+            dict(
+                chapterSha256=sha(chapter),
+                listingSha256=sha(program),
+                checkerSha256=sha(Path(__file__)),
+                cliSha256=sha(cli),
+                runs=runs,
+                perImplementation=dict(
+                    generationFixtures=670,
+                    directUpdateCalls=22,
+                    directNeighborCalls=576,
+                    reportedCases=672,
+                ),
+                scope="All 512 local binary states, finite-edge positions, sampled boards and requested generations 0..4. Temporal source preservation, padding, complete destination and rendering; not all 2^64 boards or a whole-address-space access audit. Direct helper/store-footprint qualification is stricter than the independent student contract.",
+            ),
+            indent=2,
+        )
+        + "\n"
+    )
+    print(
+        "Passed literal and",
+        len(alternatives),
+        "alternatives: 670 generation fixtures, 22 update calls and 576 neighbor calls each; seven faults rejected.",
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('java', 'cli', 'output'):
-        parser.add_argument('--' + name, type=Path, required=True)
-    parser.add_argument('--alternative', type=Path, action='append', default=[])
+    for name in ("java", "cli", "output"):
+        parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--alternative", type=Path, action="append", default=[])
     args = parser.parse_args()
-    verify(args.java.resolve(), args.cli.resolve(), args.output.resolve(), [path.resolve() for path in args.alternative])
+    verify(
+        args.java.resolve(),
+        args.cli.resolve(),
+        args.output.resolve(),
+        [path.resolve() for path in args.alternative],
+    )

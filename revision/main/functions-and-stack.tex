@@ -58,8 +58,8 @@ after \texttt{balc} waits until the function returns; it does not execute before
 the function starts. The instruction after \texttt{jrc} is not a return delay
 slot either. This differs from the retained delayed call/return forms you may
 find in older MIPS examples.\footnote{The \emph{MIPS64 Instruction Set Reference
-Manual}, revision 6.05, describes \texttt{balc} and its next-instruction link on
-page 66. The worked sources use MARS's Release 6 compact forms throughout.}
+    Manual}, revision 6.05, describes \texttt{balc} and its next-instruction link on
+  page 66. The worked sources use MARS's Release 6 compact forms throughout.}
 
 The call transfers control and supplies a link. It does not copy an argument,
 reserve stack space, or save every register. Preparing \texttt{\$a0} remains the
@@ -90,8 +90,8 @@ low bit into \texttt{\$t2}, and \texttt{or \$v0, \$v0, \$t2} puts that bit
 in the cleared position without changing the other result bits.
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{A leaf routine with one register argument and result}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{A leaf routine with one register argument and result}
+  \begin{minted}{mars-idea}
 reverse_byte:
     andi $t0, $a0, 0xff
     move $v0, $zero
@@ -120,18 +120,18 @@ For \texttt{0x16}, the first four completed iterations have these states. All
 values in the last two columns are hexadecimal.
 
 \begin{center}
-\begin{tabular}{rlll}
-\toprule
-Bits consumed & Bit just copied & Remaining input & Result \\
-\midrule
-0 & --- & \texttt{16} & \texttt{00} \\
-1 & 0 & \texttt{0B} & \texttt{00} \\
-2 & 1 & \texttt{05} & \texttt{01} \\
-3 & 1 & \texttt{02} & \texttt{03} \\
-4 & 0 & \texttt{01} & \texttt{06} \\
-8 & 0 & \texttt{00} & \texttt{68} \\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{rlll}
+    \toprule
+    Bits consumed & Bit just copied & Remaining input & Result      \\
+    \midrule
+    0             & ---             & \texttt{16}     & \texttt{00} \\
+    1             & 0               & \texttt{0B}     & \texttt{00} \\
+    2             & 1               & \texttt{05}     & \texttt{01} \\
+    3             & 1               & \texttt{02}     & \texttt{03} \\
+    4             & 0               & \texttt{01}     & \texttt{06} \\
+    8             & 0               & \texttt{00}     & \texttt{68} \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 After $k$ iterations, the result contains the reversal of the $k$ bits already
@@ -164,18 +164,18 @@ implementation.
 We use this small convention for the book's routines:
 
 \begin{center}
-\begin{tabular}{lp{0.69\linewidth}}
-\toprule
-Register group & Agreement between caller and callee \\
-\midrule
-\texttt{\$a0}--\texttt{\$a3} & Arguments; their values need not survive a call. \\
-\texttt{\$v0}, \texttt{\$v1} & Results; another call can replace them. \\
-\texttt{\$t0}--\texttt{\$t9} & Temporary work; their values need not survive a call. \\
-\texttt{\$s0}--\texttt{\$s7}, \texttt{\$fp}, \texttt{\$gp} & A callee must return them with their incoming values. \\
-\texttt{\$sp} & A callee must restore its incoming stack pointer. Call boundaries use 16-byte alignment here. \\
-\texttt{\$ra} & A call replaces it. Retain an incoming return address if another call would destroy the continuation you still need. \\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{lp{0.69\linewidth}}
+    \toprule
+    Register group                                             & Agreement between caller and callee                                                                                  \\
+    \midrule
+    \texttt{\$a0}--\texttt{\$a3}                               & Arguments; their values need not survive a call.                                                                     \\
+    \texttt{\$v0}, \texttt{\$v1}                               & Results; another call can replace them.                                                                              \\
+    \texttt{\$t0}--\texttt{\$t9}                               & Temporary work; their values need not survive a call.                                                                \\
+    \texttt{\$s0}--\texttt{\$s7}, \texttt{\$fp}, \texttt{\$gp} & A callee must return them with their incoming values.                                                                \\
+    \texttt{\$sp}                                              & A callee must restore its incoming stack pointer. Call boundaries use 16-byte alignment here.                        \\
+    \texttt{\$ra}                                              & A call replaces it. Retain an incoming return address if another call would destroy the continuation you still need. \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 A \emph{caller} makes a call; its \emph{callee} receives that call. The same
@@ -204,17 +204,17 @@ bytes; we reserve 32 to keep a 16-byte-aligned pointer aligned. The unused first
 eight bytes are padding, not another saved register.
 
 \begin{center}
-\begin{tabular}{ll}
-\toprule
-Byte offsets from the new \texttt{\$sp} & Contents while this frame is active \\
-\midrule
-0--7 & Unused padding \\
-8--15 & Incoming \texttt{\$s1} \\
-16--23 & Incoming \texttt{\$s0} \\
-24--31 & Incoming \texttt{\$ra} \\
-32 and above & Outside this frame; belongs to the caller \\
-\bottomrule
-\end{tabular}
+  \begin{tabular}{ll}
+    \toprule
+    Byte offsets from the new \texttt{\$sp} & Contents while this frame is active       \\
+    \midrule
+    0--7                                    & Unused padding                            \\
+    8--15                                   & Incoming \texttt{\$s1}                    \\
+    16--23                                  & Incoming \texttt{\$s0}                    \\
+    24--31                                  & Incoming \texttt{\$ra}                    \\
+    32 and above                            & Outside this frame; belongs to the caller \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 \MARSCodeLabel{A non-leaf routine preserves its caller's state}

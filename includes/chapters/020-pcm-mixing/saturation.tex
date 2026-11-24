@@ -1,12 +1,12 @@
 \section{Clamp the exact sum before storing}\label{pcm-saturation}
 For an exact sum $s$, the output is
 \[
- \operatorname{clip}_{16}(s)=
- \begin{cases}
- -32768 & s<-32768,\\
- s & -32768\leq s\leq32767,\\
- 32767 & s>32767.
- \end{cases}
+  \operatorname{clip}_{16}(s)=
+  \begin{cases}
+    -32768 & s<-32768,              \\
+    s      & -32768\leq s\leq32767, \\
+    32767  & s>32767.
+  \end{cases}
 \]
 The scalar implementation compares against the upper and lower bounds while the
 exact sum is still available. On a clipping path it replaces the value and increments
@@ -14,22 +14,22 @@ the clip counter once. On an in-range path it stores the exact sum without incre
 Both paths then consume one sample.
 
 \begin{table}[htbp]
-\centering
-\caption{Endpoint and overflow examples. Clipped counts strict out-of-range sums, not the number of output samples equal to an endpoint.}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{rrrrr}
-\toprule
-Input A & Input B & Exact sum & Output & Clipped\\
-\midrule
-30000 & 2767 & 32767 & 32767 & 0\\
-32767 & 1 & 32768 & 32767 & 1\\
-30000 & 10000 & 40000 & 32767 & 1\\
--30000 & -2768 & -32768 & -32768 & 0\\
--32768 & -1 & -32769 & -32768 & 1\\
--30000 & -10000 & -40000 & -32768 & 1\\
-32767 & -32768 & -1 & -1 & 0\\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Endpoint and overflow examples. Clipped counts strict out-of-range sums, not the number of output samples equal to an endpoint.}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{rrrrr}
+    \toprule
+    Input A & Input B & Exact sum & Output & Clipped \\
+    \midrule
+    30000   & 2767    & 32767     & 32767  & 0       \\
+    32767   & 1       & 32768     & 32767  & 1       \\
+    30000   & 10000   & 40000     & 32767  & 1       \\
+    -30000  & -2768   & -32768    & -32768 & 0       \\
+    -32768  & -1      & -32769    & -32768 & 1       \\
+    -30000  & -10000  & -40000    & -32768 & 1       \\
+    32767   & -32768  & -1        & -1     & 0       \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 A stored endpoint is ambiguous: it can come from a valid exact sum or a clipped

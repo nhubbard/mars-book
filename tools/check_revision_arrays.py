@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Qualify the literal sprite composition through bounded native execution traces."""
+
 import argparse
 import hashlib
 import json
@@ -7,25 +8,36 @@ from pathlib import Path
 import re
 import subprocess
 
-ROOT=Path(__file__).resolve().parents[1]
-SOURCE=ROOT/'revision/main/arrays-and-images.tex'
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE = ROOT / "revision/main/arrays-and-images.tex"
 
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def verify(java,cli,output,alternatives):
-    raw=SOURCE.read_bytes()
-    blocks=re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}',raw.decode(),re.S)
-    leaf='reverse_byte:\n'+(ROOT/'revision/labs/files/reverse-rows.asm').read_text().split('reverse_byte:\n',1)[1]
-    if len(blocks)!=3:raise ValueError('Expected data, row function and main listings')
-    listing='\n'.join((blocks[0],blocks[2],blocks[1],leaf))
-    if listing!=(ROOT/'revision/labs/files/sprite-rows.asm').read_text():raise ValueError('Download differs from literal composition and previous helper')
-    output.mkdir(parents=True,exist_ok=False)
-    (output/'chapter-source.tex').write_bytes(raw)
-    checks=output/'checks.kts'
-    checks.write_text(r'''
+def verify(java, cli, output, alternatives):
+    raw = SOURCE.read_bytes()
+    blocks = re.findall(
+        r"\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}", raw.decode(), re.S
+    )
+    leaf = (
+        "reverse_byte:\n"
+        + (ROOT / "revision/labs/files/reverse-rows.asm")
+        .read_text()
+        .split("reverse_byte:\n", 1)[1]
+    )
+    if len(blocks) != 3:
+        raise ValueError("Expected data, row function and main listings")
+    listing = "\n".join((blocks[0], blocks[2], blocks[1], leaf))
+    if listing != (ROOT / "revision/labs/files/sprite-rows.asm").read_text():
+        raise ValueError(
+            "Download differs from literal composition and previous helper"
+        )
+    output.mkdir(parents=True, exist_ok=False)
+    (output / "chapter-source.tex").write_bytes(raw)
+    checks = output / "checks.kts"
+    checks.write_text(r"""
 fun reverse(byte: Int): Int = Integer.reverse(byte) ushr 24
 val fixtures=(0..255).map { byte -> List(8) { byte } } +
     (0..255).map { seed -> List(8) { row -> (seed+37*row) and 255 } } +
@@ -94,39 +106,93 @@ case("row helper: all low bytes, upper bits and valid destination offsets",instr
     }
     expectOutput("")
 }
-''')
-    runs=[]
-    def grade(name,program,accepted):
-        path=output/(name+'.asm');path.write_text(program)
-        command=[str(java),'-jar',str(cli),'grade',str(checks),str(path)]
-        result=subprocess.run(command,capture_output=True,text=True,timeout=150)
-        (output/(name+'.stdout')).write_text(result.stdout);(output/(name+'.stderr')).write_text(result.stderr)
-        passed=sum(l.startswith('PASS ') for l in result.stdout.splitlines());failed=sum(l.startswith('FAIL ') for l in result.stdout.splitlines())
-        if passed+failed!=516 or (accepted and (result.returncode or failed)) or (not accepted and (result.returncode==0 or not failed)):
-            raise AssertionError((name,result.returncode,passed,failed,result.stderr[-2000:]))
-        runs.append(dict(name=name,accepted=accepted,passed=passed,failed=failed,command=command,sourceSha256=sha(path)))
-    grade('literal',listing,True)
-    for index,p in enumerate(alternatives):grade('alternative-'+str(index+1),p.read_text(),True)
-    faults={
-        'half-row-stride':listing.replace('daddiu $s2, $s2, 64','daddiu $s2, $s2, 32'),
-        'byte-pixel-stride':listing.replace('daddiu $a1, $a1, 4','daddiu $a1, $a1, 1'),
-        'wrong-right-offset':listing.replace('daddiu $a1, $s2, 32','daddiu $a1, $s2, 8'),
-        'stale-color':listing.replace('move $t3, $zero','nop'),
-        'nine-source-rows':listing.replace('li $s3, 8','li $s3, 9'),
-        'wide-mirrored-store':listing.replace('sb $v0, 0($s1)','sw $v0, 0($s1)'),
-        'unmirrored-right-image':listing.replace('move $a0, $v0','move $a0, $s4'),
-    }
-    for name,program in faults.items():
-        if listing==program:raise ValueError('Mutation did not apply: '+name)
-        grade(name,program,False)
-    (output/'receipt.json').write_text(json.dumps(dict(chapterSha256=hashlib.sha256(raw).hexdigest(),listingSha256=hashlib.sha256(listing.encode()).hexdigest(),
-        inheritedHelperSha256=hashlib.sha256(leaf.encode()).hexdigest(),cliSha256=sha(cli),checkerSha256=sha(Path(__file__)),
-        perImplementation=dict(wholeSprites=515,rowHelperCalls=768,reportedCases=516),runs=runs,
-        scope='Literal/equivalent programs, relevant access histories, final frame/source/mirror/guards, row-helper preservation and seven faults. Author qualification is stricter than the public independent final-state contract; not a whole-address-space audit.'),indent=2)+'\n')
-    print('Passed literal and',len(alternatives),'alternatives: 515 sprite fixtures and 768 row-helper calls each; seven faults rejected.')
+""")
+    runs = []
 
-if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__)
-    for name in ('java','cli','output'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--alternative',type=Path,action='append',default=[])
-    a=p.parse_args();verify(a.java.resolve(),a.cli.resolve(),a.output.resolve(),[p.resolve() for p in a.alternative])
+    def grade(name, program, accepted):
+        path = output / (name + ".asm")
+        path.write_text(program)
+        command = [str(java), "-jar", str(cli), "grade", str(checks), str(path)]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=150)
+        (output / (name + ".stdout")).write_text(result.stdout)
+        (output / (name + ".stderr")).write_text(result.stderr)
+        passed = sum(l.startswith("PASS ") for l in result.stdout.splitlines())
+        failed = sum(l.startswith("FAIL ") for l in result.stdout.splitlines())
+        if (
+            passed + failed != 516
+            or (accepted and (result.returncode or failed))
+            or (not accepted and (result.returncode == 0 or not failed))
+        ):
+            raise AssertionError(
+                (name, result.returncode, passed, failed, result.stderr[-2000:])
+            )
+        runs.append(
+            dict(
+                name=name,
+                accepted=accepted,
+                passed=passed,
+                failed=failed,
+                command=command,
+                sourceSha256=sha(path),
+            )
+        )
+
+    grade("literal", listing, True)
+    for index, p in enumerate(alternatives):
+        grade("alternative-" + str(index + 1), p.read_text(), True)
+    faults = {
+        "half-row-stride": listing.replace(
+            "daddiu $s2, $s2, 64", "daddiu $s2, $s2, 32"
+        ),
+        "byte-pixel-stride": listing.replace(
+            "daddiu $a1, $a1, 4", "daddiu $a1, $a1, 1"
+        ),
+        "wrong-right-offset": listing.replace(
+            "daddiu $a1, $s2, 32", "daddiu $a1, $s2, 8"
+        ),
+        "stale-color": listing.replace("move $t3, $zero", "nop"),
+        "nine-source-rows": listing.replace("li $s3, 8", "li $s3, 9"),
+        "wide-mirrored-store": listing.replace("sb $v0, 0($s1)", "sw $v0, 0($s1)"),
+        "unmirrored-right-image": listing.replace("move $a0, $v0", "move $a0, $s4"),
+    }
+    for name, program in faults.items():
+        if listing == program:
+            raise ValueError("Mutation did not apply: " + name)
+        grade(name, program, False)
+    (output / "receipt.json").write_text(
+        json.dumps(
+            dict(
+                chapterSha256=hashlib.sha256(raw).hexdigest(),
+                listingSha256=hashlib.sha256(listing.encode()).hexdigest(),
+                inheritedHelperSha256=hashlib.sha256(leaf.encode()).hexdigest(),
+                cliSha256=sha(cli),
+                checkerSha256=sha(Path(__file__)),
+                perImplementation=dict(
+                    wholeSprites=515, rowHelperCalls=768, reportedCases=516
+                ),
+                runs=runs,
+                scope="Literal/equivalent programs, relevant access histories, final frame/source/mirror/guards, row-helper preservation and seven faults. Author qualification is stricter than the public independent final-state contract; not a whole-address-space audit.",
+            ),
+            indent=2,
+        )
+        + "\n"
+    )
+    print(
+        "Passed literal and",
+        len(alternatives),
+        "alternatives: 515 sprite fixtures and 768 row-helper calls each; seven faults rejected.",
+    )
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description=__doc__)
+    for name in ("java", "cli", "output"):
+        p.add_argument("--" + name, type=Path, required=True)
+    p.add_argument("--alternative", type=Path, action="append", default=[])
+    a = p.parse_args()
+    verify(
+        a.java.resolve(),
+        a.cli.resolve(),
+        a.output.resolve(),
+        [p.resolve() for p in a.alternative],
+    )

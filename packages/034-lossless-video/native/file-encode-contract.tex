@@ -15,24 +15,24 @@ unaligned. All caller-supplied windows and the private stack are disjoint, excep
 for the deliberate staging alias described below.
 
 \begin{table}[htbp]
-\centering
-\caption{The complete-file encoder's native context.}
-\label{tab:video-file-encode-context}
-\begin{tabular}{r p{1.5in} p{2.8in}}
-\toprule
-Offset & Field & Meaning \\
-\midrule
-0 & Staging capacity & 12\,328 through 7\,344\,152 bytes. \\
-8 & Frame count & One through 256; source bytes equal this count times 16\,384. \\
-16 & Full-frame period & One through 64. \\
-24 & Frame duration & One through 1000 milliseconds. \\
-32, 40 & Previous address, capacity & Four-byte-aligned working image; at least 16\,384 bytes. \\
-48, 56 & XOR address, capacity & Four-byte-aligned scratch; at least 16\,384 bytes. \\
-64 & Produced file bytes & Output on complete success only. \\
-72 & Produced records & Output on complete success only. \\
-80--95 & Retained suffix & Leave unchanged. \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{The complete-file encoder's native context.}
+  \label{tab:video-file-encode-context}
+  \begin{tabular}{r p{1.5in} p{2.8in}}
+    \toprule
+    Offset & Field                      & Meaning                                                       \\
+    \midrule
+    0      & Staging capacity           & 12\,328 through 7\,344\,152 bytes.                            \\
+    8      & Frame count                & One through 256; source bytes equal this count times 16\,384. \\
+    16     & Full-frame period          & One through 64.                                               \\
+    24     & Frame duration             & One through 1000 milliseconds.                                \\
+    32, 40 & Previous address, capacity & Four-byte-aligned working image; at least 16\,384 bytes.      \\
+    48, 56 & XOR address, capacity      & Four-byte-aligned scratch; at least 16\,384 bytes.            \\
+    64     & Produced file bytes        & Output on complete success only.                              \\
+    72     & Produced records           & Output on complete success only.                              \\
+    80--95 & Retained suffix            & Leave unchanged.                                              \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 The capacity ceiling follows the format's maximum admitted record, not this
@@ -54,20 +54,20 @@ replacement attempt. Preserve saved registers and sixteen-byte stack alignment
 across nested record calls.
 
 \begin{table}[htbp]
-\centering
-\caption{Storage roles during complete-file encoding.}
-\label{tab:video-file-encode-storage}
-\begin{tabular}{p{1.5in} p{3.5in}}
-\toprule
-Storage & Lifetime and interpretation \\
-\midrule
-Packed source & Immutable native words; 16\,384 bytes per image. \\
-Staging & Mutable serialized header and records; publish only an exact complete extent. \\
-Previous and XOR & Temporary native words; their active contents may change on failure. \\
-Caller context & Inputs retained; two output fields change only on success. \\
-Private record context & New sequence zero for each file; lives in the current stack frame. \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Storage roles during complete-file encoding.}
+  \label{tab:video-file-encode-storage}
+  \begin{tabular}{p{1.5in} p{3.5in}}
+    \toprule
+    Storage                & Lifetime and interpretation                                                   \\
+    \midrule
+    Packed source          & Immutable native words; 16\,384 bytes per image.                              \\
+    Staging                & Mutable serialized header and records; publish only an exact complete extent. \\
+    Previous and XOR       & Temporary native words; their active contents may change on failure.          \\
+    Caller context         & Inputs retained; two output fields change only on success.                    \\
+    Private record context & New sequence zero for each file; lives in the current stack frame.            \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 From \texttt{packages/034-lossless-video/construction/video-file-encode-construction}, attach your preceding record
@@ -81,7 +81,7 @@ uses the normal memory layout. Smaller cases also check high addresses in both
 byte orders.
 
 Prepare an observation with \texttt{prepare.py s84-1 --source file-work.asm --output
-observe.asm}. The helper changes packed source data, native controls and the output
+  observe.asm}. The helper changes packed source data, native controls and the output
 path, leaving your instructions intact. Existing output files are refused by the
 host preparation tools. This protection concerns authoring files; it does not
 change the truncate-write behavior of the simulated program.

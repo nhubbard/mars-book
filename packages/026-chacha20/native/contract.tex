@@ -8,29 +8,29 @@ Temporary scalar registers may change. The MSA block function may also change
 Do not retain a live floating-point value in that storage across the call.
 
 \begin{description}
-\item[\texttt{chacha\_quarter(a0,a1,a2,a3)}]
-Each argument points to a distinct, word-aligned writable word, in the order
-\(a,b,c,d\). Replace those four words with one quarter-round's result. Their addresses
-need not be adjacent. Return zero; access no other caller bytes.
-\item[\texttt{chacha\_block\_scalar(a0,a1)}]
-Read sixteen word-aligned input words at \texttt{a0}; preserve them. Write exactly
-64 output bytes at the disjoint, word-aligned \texttt{a1}. The input is an already
-constructed state. Apply ten double-rounds, add the original input words, and serialize
-the sums in little-endian order. Return zero.
-\item[\texttt{chacha\_block\_msa(a0,a1)}]
-Use the same input, output and preservation contract as the scalar block, with MSA
-word lanes. Four-byte alignment is sufficient for this project's \texttt{ld.w} and
-\texttt{st.w} accesses; a 16-byte vector does not make every vector access require
-16-byte alignment.
-\item[\texttt{chacha\_xor(a0,a1,a2,a3)}]
-The unchanged state is at \texttt{a0}, the input bytes at \texttt{a1}, output bytes at
-\texttt{a2}, and the unsigned byte count in \texttt{a3}. This local interface accepts
-0 through 4096 bytes. The state is word-aligned; byte buffers may be unaligned. Input
-and output may be identical or disjoint. Other overlap is outside the interface.
-Return zero on success, one for an excessive count, or two if the required counters
-would exceed \texttt{ffffffff}. Reject before writing output. Check the count first;
-a zero count returns without accessing any supplied pointer. For a positive valid
-count the state and buffers must be mapped, and the state is disjoint from both buffers.
+  \item[\texttt{chacha\_quarter(a0,a1,a2,a3)}]
+        Each argument points to a distinct, word-aligned writable word, in the order
+        \(a,b,c,d\). Replace those four words with one quarter-round's result. Their addresses
+        need not be adjacent. Return zero; access no other caller bytes.
+  \item[\texttt{chacha\_block\_scalar(a0,a1)}]
+        Read sixteen word-aligned input words at \texttt{a0}; preserve them. Write exactly
+        64 output bytes at the disjoint, word-aligned \texttt{a1}. The input is an already
+        constructed state. Apply ten double-rounds, add the original input words, and serialize
+        the sums in little-endian order. Return zero.
+  \item[\texttt{chacha\_block\_msa(a0,a1)}]
+        Use the same input, output and preservation contract as the scalar block, with MSA
+        word lanes. Four-byte alignment is sufficient for this project's \texttt{ld.w} and
+        \texttt{st.w} accesses; a 16-byte vector does not make every vector access require
+        16-byte alignment.
+  \item[\texttt{chacha\_xor(a0,a1,a2,a3)}]
+        The unchanged state is at \texttt{a0}, the input bytes at \texttt{a1}, output bytes at
+        \texttt{a2}, and the unsigned byte count in \texttt{a3}. This local interface accepts
+        0 through 4096 bytes. The state is word-aligned; byte buffers may be unaligned. Input
+        and output may be identical or disjoint. Other overlap is outside the interface.
+        Return zero on success, one for an excessive count, or two if the required counters
+        would exceed \texttt{ffffffff}. Reject before writing output. Check the count first;
+        a zero count returns without accessing any supplied pointer. For a positive valid
+        count the state and buffers must be mapped, and the state is disjoint from both buffers.
 \end{description}
 
 The bounded XOR interface makes its whole-request counter check easy to inspect.

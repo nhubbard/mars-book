@@ -25,7 +25,7 @@ below expose the decisions that matter to the comparison.
 For an $M\times K$ matrix $A$ and a $K\times N$ matrix $B$, their product has
 $M$ rows and $N$ columns. Each output uses one row of $A$ and one column of $B$:
 \[
- C[i,j]=\sum_{q=0}^{K-1} A[i,q]B[q,j].
+  C[i,j]=\sum_{q=0}^{K-1} A[i,q]B[q,j].
 \]
 The index $q$ identifies corresponding entries to multiply and add; it does not
 select another output cell. This operation is a \emph{dot product}. It differs
@@ -33,13 +33,13 @@ from multiplying entries at equal array indices or transposing either input.
 
 The default source contains
 \[
- A=\begin{bmatrix}1&2&3\\4&5&6\end{bmatrix},\qquad
- B=\begin{bmatrix}7&8\\9&10\\11&12\end{bmatrix}.
+  A=\begin{bmatrix}1&2&3\\4&5&6\end{bmatrix},\qquad
+  B=\begin{bmatrix}7&8\\9&10\\11&12\end{bmatrix}.
 \]
 The first result is $1\cdot7+2\cdot9+3\cdot11=58$. The next column uses
 $8,10,12$, giving 64. The complete product is
 \[
- C=\begin{bmatrix}58&64\\139&154\end{bmatrix}.
+  C=\begin{bmatrix}58&64\\139&154\end{bmatrix}.
 \]
 Write these four sums before running the program. A returned count of four says
 how many output cells the function reports; it does not prove their values.
@@ -78,7 +78,7 @@ pointer; return $MN$ through \texttt{\$v0} and the supplied continuation.
 The ordinary entry, \texttt{matmul\_naive}, visits output row $i$, column $j$,
 then reduction index $q$. Its input addresses are
 \[
- A+4(iK+q),\qquad B+4(qN+j).
+  A+4(iK+q),\qquad B+4(qN+j).
 \]
 During a dot product, the left pointer advances by four bytes and the right by
 $4N$ bytes. The output address is $C+8(iN+j)$. Mixing those two element sizes can
@@ -90,8 +90,8 @@ fragment, \texttt{\$t4}/\texttt{\$t5} are the input cursors,
 \texttt{\$s1} is $K$:
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{Accumulate one output in a register}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{Accumulate one output in a register}
+  \begin{minted}{mars-idea}
 naive_dot:
     lw $t7, 0($t4)
     lw $t8, 0($t5)
@@ -122,7 +122,7 @@ callee must restore whichever one it receives.
 The blocked entry groups output rows, output columns and reduction terms into
 intervals. At block origins $I,J,L$, their exclusive ends are
 \[
- I_e=\min(M,I+T),\quad J_e=\min(N,J+T),\quad L_e=\min(K,L+T).
+  I_e=\min(M,I+T),\quad J_e=\min(N,J+T),\quad L_e=\min(K,L+T).
 \]
 It visits $I\leq i<I_e$, $J\leq j<J_e$ and $L\leq q<L_e$. Every axis needs its
 own clipped end. A valid output tile can still have a shorter final reduction
@@ -137,7 +137,7 @@ earlier reduction blocks.
 
 For the default product and $T=2$, the first reduction block contributes
 \[
- \begin{bmatrix}25&28\\73&82\end{bmatrix}.
+  \begin{bmatrix}25&28\\73&82\end{bmatrix}.
 \]
 The second contributes $\begin{bmatrix}33&36\\66&72\end{bmatrix}$, giving the
 complete product above. A pause before the second reduction block should show
@@ -196,7 +196,7 @@ Instruction fetches are excluded from this data-cache model.
 
 For the ordinary function, the notice count is
 \[
- A_{ordinary}=40+2MKN+2MN.
+  A_{ordinary}=40+2MKN+2MN.
 \]
 The constant forty contains eighteen word notices for the nine saved doublewords,
 eighteen for their restoration, and four descriptor reads. Every multiplication
@@ -205,7 +205,7 @@ loads two input words; every output store supplies two word notices.
 For the blocked implementation, let $S=\lceil K/T\rceil$, with $S=0$ when $K=0$.
 Its count is
 \[
- A_{blocked}=40+2MKN+2MN+4MNS.
+  A_{blocked}=40+2MKN+2MN+4MNS.
 \]
 The $2MN$ term is its initial zeroing. For each of the $S$ reduction blocks, every
 output receives a doubleword load and store, adding $4MN$ notices. This accounting
@@ -240,8 +240,8 @@ An invented cost model can expose the tradeoff. If each instruction costs one
 unit and every full-placement miss adds $P$ units, four-wide blocking wins the
 largest case when
 \[
- 54984+1068P<37475+5388P,
- \qquad P>\frac{17509}{4320}\approx4.05.
+  54984+1068P<37475+5388P,
+  \qquad P>\frac{17509}{4320}\approx4.05.
 \]
 Those weights are assumptions. MARS supplies no miss latency or hardware-cycle
 prediction here. Actual processor instruction costs, overlap, cache hierarchy and
@@ -262,7 +262,7 @@ a doubleword output array and a pointer to two words $M,K$ in
 \texttt{\$a0} through \texttt{\$a3}. Dimensions are zero through sixteen, inputs
 have the same signed range as above, and output row $i$ is
 \[
- y[i]=\sum_{q=0}^{K-1} A[i,q]x[q].
+  y[i]=\sum_{q=0}^{K-1} A[i,q]x[q].
 \]
 Return $M$. Preserve full saved registers, frame pointer, stack pointer, inputs,
 shape and inactive output. Pointers may select interior disjoint windows and may

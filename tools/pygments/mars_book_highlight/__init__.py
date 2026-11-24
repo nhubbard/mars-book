@@ -1,4 +1,5 @@
 """Render verified IntelliJ spans; do not infer assembly syntax in Python."""
+
 from functools import lru_cache
 import hashlib
 import json
@@ -70,7 +71,9 @@ class MarsIdeaLexer(Lexer):
         sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
         export = records.get(sha)
         if export is None or export["source"] != text:
-            raise ValueError("Assembly source has changed: refresh its IntelliJ highlight export before building")
+            raise ValueError(
+                "Assembly source has changed: refresh its IntelliJ highlight export before building"
+            )
         for run in export["runs"]:
             start, end = run["start"], run["end"]
             yield start, appearance_token(run["appearance"]), text[start:end]

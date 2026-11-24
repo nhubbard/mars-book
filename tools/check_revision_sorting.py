@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Qualify the worked sorting publication states, bounded accesses and call contracts."""
+
+from kotlin_format import format_kotlin
 import argparse
 import hashlib
 import json
@@ -15,29 +17,49 @@ def sha(path):
 
 
 def verify(java, cli, output, alternatives):
-    program = ROOT / 'revision/labs/files/sorting-costs.asm'
-    chapter = ROOT / 'revision/main/algorithms-and-cost.tex'
+    program = ROOT / "revision/labs/files/sorting-costs.asm"
+    chapter = ROOT / "revision/main/algorithms-and-cost.tex"
     source = program.read_text()
-    snippets = re.findall(r'\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}', chapter.read_text(), re.S)
+    snippets = re.findall(
+        r"\\begin\{minted\}\{mars-idea\}\n(.*?)\\end\{minted\}",
+        chapter.read_text(),
+        re.S,
+    )
     if len(snippets) != 2 or not all(source.count(part) == 1 for part in snippets):
-        raise ValueError('Printed sorting fragments differ from the complete public source')
+        raise ValueError(
+            "Printed sorting fragments differ from the complete public source"
+        )
     output.mkdir(parents=True, exist_ok=False)
-    (output / 'chapter-source.tex').write_bytes(chapter.read_bytes())
-    oracle = (ROOT / 'packages/009-sorting-visualizer/checks/public.kts').read_text().split('val fixtures =', 1)[0]
-    whole = (ROOT / 'packages/009-sorting-visualizer/checks/public.kts').read_text().split('for ((fixtureIndex, input) in fixtures.withIndex())', 1)[1]
-    whole = 'for ((fixtureIndex, input) in fixtures.withIndex())' + whole
-    whole = whole.replace('val states = exchanges(input, method)', 'val arrayAccesses=traceMemoryAccesses("values",36)\n        val states = exchanges(input, method)')
-    whole = whole.replace('        protected.forEach { it.expectNone() }', '        arrayAccesses.expectReadsWithin(readDataAddress("values"),4*input.size)\n        protected.forEach { it.expectNone() }')
-    common = 'import kotlin.random.Random\n\n' + oracle + r'''
+    (output / "chapter-source.tex").write_bytes(chapter.read_bytes())
+    oracle = (
+        (ROOT / "packages/009-sorting-visualizer/checks/public.kts")
+        .read_text()
+        .split("val fixtures =", 1)[0]
+    )
+    whole = (
+        (ROOT / "packages/009-sorting-visualizer/checks/public.kts")
+        .read_text()
+        .split("for ((fixtureIndex, input) in fixtures.withIndex())", 1)[1]
+    )
+    whole = "for ((fixtureIndex, input) in fixtures.withIndex())" + whole
+    whole = whole.replace(
+        "val states = exchanges(input, method)",
+        'val arrayAccesses=traceMemoryAccesses("values",36)\n        val states = exchanges(input, method)',
+    )
+    whole = whole.replace(
+        "        protected.forEach { it.expectNone() }",
+        '        arrayAccesses.expectReadsWithin(readDataAddress("values"),4*input.size)\n        protected.forEach { it.expectNone() }',
+    )
+    common = "import kotlin.random.Random\n\n" + oracle + r"""
 val examples=listOf((-4..3).toList(),(3 downTo -4).toList(),listOf(2,-2,3,-4,0,1,-3,-1),
     listOf(0,-1,0,-1),listOf(0,0,-4,3,3,-4,0,0),List(8) { -1 },List(8) { 3 },List(8) { -4 })
 fun words(length: Int): List<List<Int>> = if (length==0) listOf(emptyList()) else words(length-1).flatMap { prefix -> listOf(-4,0,3).map { prefix+it } }
-'''
-    fixtures = r'''
+"""
+    fixtures = r"""
 val random=Random(0x534f5254)
 val fixtures=(0..5).flatMap(::words)+(0 until 64).map { List(8) { random.nextInt(-4,4) } }+examples
-'''
-    direct = r'''
+"""
+    direct = r"""
 case("both sorting functions retain saved state on every valid subspan",instructionLimit=2000000) {
     val initial=listOf(2,-2,3,-4,0,1,-3,-1)
     val top=readRegister("sp") and -16L
@@ -106,62 +128,129 @@ case("renderer handles every subspan and each bar height independently",instruct
     readonly.forEach { it.expectNone() }
     expectOutput("")
 }
-'''
-    (output / 'checks.kts').write_text(common + fixtures + whole + direct)
-    (output / 'fault-checks.kts').write_text(common + 'val fixtures=examples+listOf(emptyList(),listOf(-4))\n' + whole)
+"""
+    (output / "checks.kts").write_text(
+        format_kotlin(common + fixtures + whole + direct)
+    )
+    (output / "fault-checks.kts").write_text(
+        format_kotlin(
+            common + "val fixtures=examples+listOf(emptyList(),listOf(-4))\n" + whole
+        )
+    )
     runs = []
 
     def grade(name, text, accepted):
-        path = output / (name + '.asm')
+        path = output / (name + ".asm")
         path.write_text(text)
-        checks = output / ('checks.kts' if accepted else 'fault-checks.kts')
-        command = [str(java), '-jar', str(cli), 'grade', str(checks), str(path)]
+        checks = output / ("checks.kts" if accepted else "fault-checks.kts")
+        command = [str(java), "-jar", str(cli), "grade", str(checks), str(path)]
         result = subprocess.run(command, capture_output=True, text=True, timeout=300)
-        (output / (name + '.stdout')).write_text(result.stdout)
-        (output / (name + '.stderr')).write_text(result.stderr)
-        passed = sum(line.startswith('PASS ') for line in result.stdout.splitlines())
-        failed = sum(line.startswith('FAIL ') for line in result.stdout.splitlines())
+        (output / (name + ".stdout")).write_text(result.stdout)
+        (output / (name + ".stderr")).write_text(result.stderr)
+        passed = sum(line.startswith("PASS ") for line in result.stdout.splitlines())
+        failed = sum(line.startswith("FAIL ") for line in result.stdout.splitlines())
         total = 874 if accepted else 20
-        if passed+failed != total or (accepted and (result.returncode or failed)) or (not accepted and (result.returncode == 0 or not failed)):
-            raise AssertionError((name, result.returncode, passed, failed, result.stdout[-5000:], result.stderr[-2000:]))
-        runs.append(dict(name=name, accepted=accepted, passed=passed, failed=failed, command=command, sourceSha256=sha(path)))
+        if (
+            passed + failed != total
+            or (accepted and (result.returncode or failed))
+            or (not accepted and (result.returncode == 0 or not failed))
+        ):
+            raise AssertionError(
+                (
+                    name,
+                    result.returncode,
+                    passed,
+                    failed,
+                    result.stdout[-5000:],
+                    result.stderr[-2000:],
+                )
+            )
+        runs.append(
+            dict(
+                name=name,
+                accepted=accepted,
+                passed=passed,
+                failed=failed,
+                command=command,
+                sourceSha256=sha(path),
+            )
+        )
 
-    grade('literal', source, True)
+    grade("literal", source, True)
     for index, path in enumerate(alternatives):
-        grade('alternative-' + str(index + 1), path.read_text(), True)
-    exchange = '''    sw $t1, -4($t0)
+        grade("alternative-" + str(index + 1), path.read_text(), True)
+    exchange = """    sw $t1, -4($t0)
     sw $t2, 0($t0)
 insertion_exchanged:
     move $a0, $s0
     move $a1, $s1
-    balc publish_exchange'''
-    premature = '''    move $a0, $s0
+    balc publish_exchange"""
+    premature = """    move $a0, $s0
     move $a1, $s1
     balc publish_exchange
     sw $t1, -4($t0)
     sw $t2, 0($t0)
-insertion_exchanged:'''
+insertion_exchanged:"""
     faults = {
-        'unsigned-keys': source.replace('bgec $t1, $t2, insertion_next', 'bgeuc $t1, $t2, insertion_next'),
-        'last-equal-minimum': source.replace('bgec $t4, $t2, selection_scan_next', 'bltc $t2, $t4, selection_scan_next'),
-        'lost-exchange-word': source.replace('    sw $t2, 0($t0)', '    nop'),
-        'early-exchange-publication': source.replace(exchange, premature),
-        'renderer-extra-word': source.replace('bgec $t1, $a1, render_store', 'bltc $a1, $t1, render_store'),
-        'skipped-black-pixel': source.replace('    sw $t4, 0($t2)', '    beqzc $t4, black_skipped\n    nop\n    sw $t4, 0($t2)\nblack_skipped:'),
-        'outer-bound-overread': source.replace('bgec $s2, $s1, insertion_return', 'bltc $s1, $s2, insertion_return'),
+        "unsigned-keys": source.replace(
+            "bgec $t1, $t2, insertion_next", "bgeuc $t1, $t2, insertion_next"
+        ),
+        "last-equal-minimum": source.replace(
+            "bgec $t4, $t2, selection_scan_next", "bltc $t2, $t4, selection_scan_next"
+        ),
+        "lost-exchange-word": source.replace("    sw $t2, 0($t0)", "    nop"),
+        "early-exchange-publication": source.replace(exchange, premature),
+        "renderer-extra-word": source.replace(
+            "bgec $t1, $a1, render_store", "bltc $a1, $t1, render_store"
+        ),
+        "skipped-black-pixel": source.replace(
+            "    sw $t4, 0($t2)",
+            "    beqzc $t4, black_skipped\n    nop\n    sw $t4, 0($t2)\nblack_skipped:",
+        ),
+        "outer-bound-overread": source.replace(
+            "bgec $s2, $s1, insertion_return", "bltc $s1, $s2, insertion_return"
+        ),
     }
     for name, text in faults.items():
         if text == source:
-            raise ValueError('Mutation did not apply: ' + name)
+            raise ValueError("Mutation did not apply: " + name)
         grade(name, text, False)
-    (output / 'receipt.json').write_text(json.dumps(dict(chapterSha256=sha(chapter), sourceSha256=sha(program), checkerSha256=sha(Path(__file__)), cliSha256=sha(cli), runs=runs, perImplementation=dict(programFixtures=872, directSortCalls=90, directRenderCalls=450, reportedCases=874), scope='All ternary prefixes through length five, sampled eight-word patterns, exact published exchange states and independent subspans/heights. Not every eight-word input or whole-address-space audit. Source-specific author labels are not required by the independent partition exercise.'), indent=2) + '\n')
-    print('Passed literal and', len(alternatives), 'alternatives: 872 visual runs, 90 direct sort calls and 450 render calls each; seven faults rejected.')
+    (output / "receipt.json").write_text(
+        json.dumps(
+            dict(
+                chapterSha256=sha(chapter),
+                sourceSha256=sha(program),
+                checkerSha256=sha(Path(__file__)),
+                cliSha256=sha(cli),
+                runs=runs,
+                perImplementation=dict(
+                    programFixtures=872,
+                    directSortCalls=90,
+                    directRenderCalls=450,
+                    reportedCases=874,
+                ),
+                scope="All ternary prefixes through length five, sampled eight-word patterns, exact published exchange states and independent subspans/heights. Not every eight-word input or whole-address-space audit. Source-specific author labels are not required by the independent partition exercise.",
+            ),
+            indent=2,
+        )
+        + "\n"
+    )
+    print(
+        "Passed literal and",
+        len(alternatives),
+        "alternatives: 872 visual runs, 90 direct sort calls and 450 render calls each; seven faults rejected.",
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('java', 'cli', 'output'):
-        parser.add_argument('--' + name, type=Path, required=True)
-    parser.add_argument('--alternative', type=Path, action='append', default=[])
+    for name in ("java", "cli", "output"):
+        parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--alternative", type=Path, action="append", default=[])
     args = parser.parse_args()
-    verify(args.java.resolve(), args.cli.resolve(), args.output.resolve(), [path.resolve() for path in args.alternative])
+    verify(
+        args.java.resolve(),
+        args.cli.resolve(),
+        args.output.resolve(),
+        [path.resolve() for path in args.alternative],
+    )

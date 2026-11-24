@@ -56,13 +56,13 @@ Each row below finishes before the next row starts. Every addition is modulo
 $2^{32}$, and $\operatorname{rotl}$ rotates a 32-bit word to the left.
 
 \begin{center}
-\begin{tabular}{lll}
-\textbf{Add} & \textbf{Combine} & \textbf{Rotate} \\
-$a\gets a+b$ & $d\gets d\mathbin{\oplus}a$ & $d\gets\operatorname{rotl}(d,16)$ \\
-$c\gets c+d$ & $b\gets b\mathbin{\oplus}c$ & $b\gets\operatorname{rotl}(b,12)$ \\
-$a\gets a+b$ & $d\gets d\mathbin{\oplus}a$ & $d\gets\operatorname{rotl}(d,8)$ \\
-$c\gets c+d$ & $b\gets b\mathbin{\oplus}c$ & $b\gets\operatorname{rotl}(b,7)$
-\end{tabular}
+  \begin{tabular}{lll}
+    \textbf{Add} & \textbf{Combine}            & \textbf{Rotate}                   \\
+    $a\gets a+b$ & $d\gets d\mathbin{\oplus}a$ & $d\gets\operatorname{rotl}(d,16)$ \\
+    $c\gets c+d$ & $b\gets b\mathbin{\oplus}c$ & $b\gets\operatorname{rotl}(b,12)$ \\
+    $a\gets a+b$ & $d\gets d\mathbin{\oplus}a$ & $d\gets\operatorname{rotl}(d,8)$  \\
+    $c\gets c+d$ & $b\gets b\mathbin{\oplus}c$ & $b\gets\operatorname{rotl}(b,7)$
+  \end{tabular}
 \end{center}
 
 \MARSCodeLabel{The first dependency group, with a word rotation}
@@ -105,12 +105,12 @@ scratch space.
 A block contains sixteen words. Number them in row order:
 
 \begin{center}
-\begin{tabular}{rrrr}
-0 & 1 & 2 & 3 \\
-4 & 5 & 6 & 7 \\
-8 & 9 & 10 & 11 \\
-12 & 13 & 14 & 15
-\end{tabular}
+  \begin{tabular}{rrrr}
+    0  & 1  & 2  & 3  \\
+    4  & 5  & 6  & 7  \\
+    8  & 9  & 10 & 11 \\
+    12 & 13 & 14 & 15
+  \end{tabular}
 \end{center}
 
 These numbers identify positions, not the values currently stored there.
@@ -171,12 +171,12 @@ Across lane one we have $(1,6,11,12)$. This is why a row selection can replace
 four sets of scalar address calculations.
 
 \begin{center}
-\begin{tabular}{lrrr}
-\textbf{Row} & \textbf{Select immediate} & \textbf{Inverse immediate} \\
-\texttt{w1} & 57 & 147 \\
-\texttt{w2} & 78 & 78 \\
-\texttt{w3} & 147 & 57
-\end{tabular}
+  \begin{tabular}{lrrr}
+    \textbf{Row} & \textbf{Select immediate} & \textbf{Inverse immediate} \\
+    \texttt{w1}  & 57                        & 147                        \\
+    \texttt{w2}  & 78                        & 78                         \\
+    \texttt{w3}  & 147                       & 57
+  \end{tabular}
 \end{center}
 
 \MARSCodeLabel{Arrange diagonal inputs without changing row zero}
@@ -218,7 +218,7 @@ counter between required blocks. The caller's state remains unchanged.
 A generated block provides 64 \emph{keystream} bytes. For each selected message
 byte, output is the source byte XOR the corresponding keystream byte. Applying
 the same keystream again recovers the source, because $(x\mathbin{\oplus}k)
-\mathbin{\oplus}k=x$. Encryption and decryption therefore use the same byte
+  \mathbin{\oplus}k=x$. Encryption and decryption therefore use the same byte
 operation and require the same starting stream position.
 
 The byte loop loads both operands before storing the result. This ordering
@@ -249,13 +249,13 @@ comfortably in a 64-bit register. Load $c$ with \texttt{lwu}; a signed word
 load would give the wrong widened value when its top bit is set.
 
 \begin{center}
-\begin{tabular}{lrll}
-\textbf{Initial counter} & \textbf{Bytes} & \textbf{Blocks} & \textbf{Result} \\
-\texttt{ffffffff} & 1 & 1 & success \\
-\texttt{ffffffff} & 64 & 1 & success \\
-\texttt{ffffffff} & 65 & 2 & status two \\
-\texttt{fffffffe} & 65 & 2 & success
-\end{tabular}
+  \begin{tabular}{lrll}
+    \textbf{Initial counter} & \textbf{Bytes} & \textbf{Blocks} & \textbf{Result} \\
+    \texttt{ffffffff}        & 1              & 1               & success         \\
+    \texttt{ffffffff}        & 64             & 1               & success         \\
+    \texttt{ffffffff}        & 65             & 2               & status two      \\
+    \texttt{fffffffe}        & 65             & 2               & success
+  \end{tabular}
 \end{center}
 
 The largest counter is usable. What fails is a request for a later block.

@@ -37,20 +37,20 @@ Treating raw input as the reconstruction can make later pictures disagree even
 when the first picture looks plausible.
 
 \begin{figure}[htbp]
-\centering
-\begin{tikzpicture}[node distance=7mm,>=Stealth,
- every node/.style={draw,align=center,font=\small,text width=96mm},
- alt={Current samples minus prediction produce residuals. The forward transform and quantizer produce selected levels that are coded into the stream. A local path inverse-quantizes those same levels, applies the inverse transform, adds the same prediction and clips to sample range. The resulting reconstructed picture supplies future predictions.}]
-\node (residual) {Current samples minus prediction\\signed residuals};
-\node[below=of residual] (levels) {Forward transform and quantization\\selected levels};
-\node[below=of levels] (inverse) {Inverse quantization and inverse transform\\reconstructed residuals};
-\node[below=of inverse] (pixels) {Add the same prediction and clip\\reconstructed samples};
-\draw[->] (residual)--(levels);
-\draw[->] (levels)--(inverse);
-\draw[->] (inverse)--(pixels);
-\end{tikzpicture}
-\caption{The encoder's local reconstruction consumes the selected levels. Those levels also supply coefficient coding for the output stream.}
-\label{revision:local-reconstruction}
+  \centering
+  \begin{tikzpicture}[node distance=7mm,>=Stealth,
+      every node/.style={draw,align=center,font=\small,text width=96mm},
+      alt={Current samples minus prediction produce residuals. The forward transform and quantizer produce selected levels that are coded into the stream. A local path inverse-quantizes those same levels, applies the inverse transform, adds the same prediction and clips to sample range. The resulting reconstructed picture supplies future predictions.}]
+    \node (residual) {Current samples minus prediction\\signed residuals};
+    \node[below=of residual] (levels) {Forward transform and quantization\\selected levels};
+    \node[below=of levels] (inverse) {Inverse quantization and inverse transform\\reconstructed residuals};
+    \node[below=of inverse] (pixels) {Add the same prediction and clip\\reconstructed samples};
+    \draw[->] (residual)--(levels);
+    \draw[->] (levels)--(inverse);
+    \draw[->] (inverse)--(pixels);
+  \end{tikzpicture}
+  \caption{The encoder's local reconstruction consumes the selected levels. Those levels also supply coefficient coding for the output stream.}
+  \label{revision:local-reconstruction}
 \end{figure}
 
 \section{Follow the values across representation boundaries}
@@ -58,7 +58,7 @@ when the first picture looks plausible.
 For an INTER block, let $S[y,x]$ be an unsigned current sample and $P[y,x]$ its
 motion-compensated prediction. Form the signed residual
 \[
- E[y,x]=S[y,x]-P[y,x].
+  E[y,x]=S[y,x]-P[y,x].
 \]
 Both samples lie in $[0,255]$, so $E$ lies in $[-255,255]$. Subtracting in byte
 lanes would lose that signed range. Widen before subtraction and retain signed
@@ -73,7 +73,7 @@ $D[y,x]$.
 
 The reconstructed sample is
 \[
- X[y,x]=\min(255,\max(0,P[y,x]+D[y,x])).
+  X[y,x]=\min(255,\max(0,P[y,x]+D[y,x])).
 \]
 The addition occurs while $D$ is still signed. For the capstone's inverse boundary,
 $D$ lies in $[-256,255]$, so the sum lies in $[-256,510]$ and fits a signed halfword.
@@ -108,20 +108,20 @@ The one-unit difference is a consequence of this quantized representation; it
 is not by itself evidence that the block pipeline is wrong.
 
 \begin{center}
-\tagpdfsetup{table/header-rows={1}}
-\begin{tabular}{lll}
-\toprule
-Boundary & Value & Meaning\\
-\midrule
-Current and prediction & 130, 128 & Unsigned samples\\
-Transform input & 2 & Signed residual\\
-Forward DC & 16 & Original coefficient\\
-Selected level & 1 & Value represented in the stream\\
-Reconstructed DC & 23 & Inverse-quantized coefficient\\
-Inverse output & 3 & Rounded spatial correction\\
-Reconstruction & 131 & Sample retained for future prediction\\
-\bottomrule
-\end{tabular}
+  \tagpdfsetup{table/header-rows={1}}
+  \begin{tabular}{lll}
+    \toprule
+    Boundary               & Value    & Meaning                               \\
+    \midrule
+    Current and prediction & 130, 128 & Unsigned samples                      \\
+    Transform input        & 2        & Signed residual                       \\
+    Forward DC             & 16       & Original coefficient                  \\
+    Selected level         & 1        & Value represented in the stream       \\
+    Reconstructed DC       & 23       & Inverse-quantized coefficient         \\
+    Inverse output         & 3        & Rounded spatial correction            \\
+    Reconstruction         & 131      & Sample retained for future prediction \\
+    \bottomrule
+  \end{tabular}
 \end{center}
 
 This is a trace for the named transform and quantizer, not a requirement that
@@ -132,18 +132,18 @@ consistent with the bitstream it actually emits.
 
 \Needspace{14\baselineskip}
 \begin{MARSWorkedExample}{The next picture}
-Let the next desired block contain 132 throughout, with zero motion. Prediction
-from the reconstructed 131 gives residual one and forward DC eight. At $Q=8$,
-this falls in the quantizer's zero region: the selected levels are all zero.
-The inverse residual is zero and reconstruction stays at 131. The encoder and
-decoder can agree while both differ from the current raw input.
+  Let the next desired block contain 132 throughout, with zero motion. Prediction
+  from the reconstructed 131 gives residual one and forward DC eight. At $Q=8$,
+  this falls in the quantizer's zero region: the selected levels are all zero.
+  The inverse residual is zero and reconstruction stays at 131. The encoder and
+  decoder can agree while both differ from the current raw input.
 
-Now repeat the calculation using raw 130 as the encoder's reference. It gives
-residual two, selected level one and inverse residual three. The faulty local
-encoder adds three to 130 and obtains 133. The decoder adds three to its actual
-reference 131 and obtains 134. The disagreement is additional to the original
-quantization error. Changing the next raw picture cannot repair the faulty
-ownership of the reference buffer.
+  Now repeat the calculation using raw 130 as the encoder's reference. It gives
+  residual two, selected level one and inverse residual three. The faulty local
+  encoder adds three to 130 and obtains 133. The decoder adds three to its actual
+  reference 131 and obtains 134. The disagreement is additional to the original
+  quantization error. Changing the next raw picture cannot repair the faulty
+  ownership of the reference buffer.
 \end{MARSWorkedExample}
 
 \section{Keep the vector path on the same boundaries}
@@ -211,11 +211,11 @@ The capstone also checks inverse-transform accuracy and its own internal contrac
 one successful external decode is not sufficient evidence for every component.
 
 \begin{MARSExercise}{Separate loss from disagreement}
-Use the two constant-block traces to write down three quantities for each picture:
-the desired raw sample, the encoder's local reconstruction and the decoder's
-reconstruction. Identify which differences can result from quantization and which
-show that the two sides used different state. Then replace the constant block with
-an asymmetric pattern to expose transform orientation errors hidden by DC-only data.
+  Use the two constant-block traces to write down three quantities for each picture:
+  the desired raw sample, the encoder's local reconstruction and the decoder's
+  reconstruction. Identify which differences can result from quantization and which
+  show that the two sides used different state. Then replace the constant block with
+  an asymmetric pattern to expose transform orientation errors hidden by DC-only data.
 \end{MARSExercise}
 
 \section*{Sources and capstone connection}

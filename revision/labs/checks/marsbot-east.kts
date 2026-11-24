@@ -1,15 +1,22 @@
-for(length in listOf(1,2,16,63))for(clock in listOf(8,17,64,128))case("east $length rate$clock",instructionLimit=100000) {
-    val bot=connectMarsBot(clock)
-    setWord("side",length)
-    val input=traceMemoryStores("side",8)
-    val x=traceMemoryStores(0xffff8030L,4)
-    val y=traceMemoryStores(0xffff8040L,4)
-    runUntil("east_stopped")
-    bot.expectState(length.toDouble(),0.0,90,moving=false,penDown=true)
-    bot.expectTrail(0.0 to 0.0,length.toDouble() to 0.0)
-    runToExit()
-    bot.expectState(length.toDouble(),0.0,90,moving=false,penDown=false)
-    bot.expectTrail(0.0 to 0.0,length.toDouble() to 0.0)
-    input.expectNone();x.expectNone();y.expectNone()
-    expectWord("side",length);expectWord("side_guard",0x13579bdf);expectOutput("")
+for (length in listOf(1, 2, 16, 63)) for (clock in listOf(8, 17, 64, 128)) case(
+    "east $length rate$clock",
+    instructionLimit = 100000,
+) {
+  val bot = connectMarsBot(clock)
+  setWord("side", length)
+  val input = traceMemoryStores("side", 8)
+  val x = traceMemoryStores(0xffff8030L, 4)
+  val y = traceMemoryStores(0xffff8040L, 4)
+  runUntil("east_stopped")
+  bot.expectState(length.toDouble(), 0.0, 90, moving = false, penDown = true)
+  bot.expectTrail(0.0 to 0.0, length.toDouble() to 0.0)
+  runToExit()
+  bot.expectState(length.toDouble(), 0.0, 90, moving = false, penDown = false)
+  bot.expectTrail(0.0 to 0.0, length.toDouble() to 0.0)
+  input.expectNone()
+  x.expectNone()
+  y.expectNone()
+  expectWord("side", length)
+  expectWord("side_guard", 0x13579bdf)
+  expectOutput("")
 }

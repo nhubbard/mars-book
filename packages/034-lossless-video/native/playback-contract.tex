@@ -10,24 +10,24 @@ directory, scratch, context and private-stack storage. Keep the accepted file an
 its new directory immutable throughout this call.
 
 \begin{table}[htbp]
-\centering
-\caption{Native playback context, with eight-byte fields.}
-\label{tab:video-playback-context}
-\begin{tabular}{r p{1.5in} p{2.8in}}
-\toprule
-Offset & Field & Meaning \\
-\midrule
-0 & Display capacity & At least 16\,384 bytes. \\
-8, 16 & Directory address, capacity & Native offsets; enough for the admitted frame count. \\
-24, 32 & Scratch address, capacity & Separate working image; at least 16\,384 bytes. \\
-40 & Start frame & Unsigned index below the admitted frame count. \\
-48 & Accepted frames & Final output, number in the played suffix. \\
-56 & Late intervals & Final output, intervals ending after their scheduled deadline. \\
-64 & Maximum lateness & Final output, unsigned milliseconds. \\
-72 & Logical duration & Final output, suffix interval count times duration. \\
-80--95 & Retained suffix & Leave unchanged. \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Native playback context, with eight-byte fields.}
+  \label{tab:video-playback-context}
+  \begin{tabular}{r p{1.5in} p{2.8in}}
+    \toprule
+    Offset & Field                       & Meaning                                                        \\
+    \midrule
+    0      & Display capacity            & At least 16\,384 bytes.                                        \\
+    8, 16  & Directory address, capacity & Native offsets; enough for the admitted frame count.           \\
+    24, 32 & Scratch address, capacity   & Separate working image; at least 16\,384 bytes.                \\
+    40     & Start frame                 & Unsigned index below the admitted frame count.                 \\
+    48     & Accepted frames             & Final output, number in the played suffix.                     \\
+    56     & Late intervals              & Final output, intervals ending after their scheduled deadline. \\
+    64     & Maximum lateness            & Final output, unsigned milliseconds.                           \\
+    72     & Logical duration            & Final output, suffix interval count times duration.            \\
+    80--95 & Retained suffix             & Leave unchanged.                                               \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 Index the whole loaded file before reading the clock or accessing display pixels.
@@ -56,20 +56,20 @@ all admitted differences fit the stated operation's range. Real clock and sleep
 services still provide no guarantee of exact host or UI presentation time.
 
 \begin{table}[htbp]
-\centering
-\caption{One interval anchored at 1000 with duration forty, in milliseconds.}
-\label{tab:video-playback-timelines}
-\begin{tabular}{l p{1.5in} p{2.1in}}
-\toprule
-Observed times after anchor & Requests & Interval result \\
-\midrule
-1040 & None & Exact deadline, zero lateness. \\
-1010, 1040 & Sleep 30 & Remaining time only. \\
-1010, 1035, 1040 & Sleep 30, sleep 5 & Early wakeup checked again. \\
-1030, 1047 & Sleep 10 & Seven milliseconds late. \\
-1010, 1009 & Sleep 30 & Backward observed time: failure. \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{One interval anchored at 1000 with duration forty, in milliseconds.}
+  \label{tab:video-playback-timelines}
+  \begin{tabular}{l p{1.5in} p{2.1in}}
+    \toprule
+    Observed times after anchor & Requests          & Interval result                  \\
+    \midrule
+    1040                        & None              & Exact deadline, zero lateness.   \\
+    1010, 1040                  & Sleep 30          & Remaining time only.             \\
+    1010, 1035, 1040            & Sleep 30, sleep 5 & Early wakeup checked again.      \\
+    1030, 1047                  & Sleep 10          & Seven milliseconds late.         \\
+    1010, 1009                  & Sleep 30          & Backward observed time: failure. \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 Success returns zero and the accepted frame count. Only complete success publishes
@@ -85,11 +85,11 @@ stack alignment across nested calls. The illustrated private frame is 352 bytes,
 including separate index, seek and record contexts; another layout is permitted.
 
 Attach your file-codec working source with \texttt{attach.py --source file-work.asm
---output playback-work.asm} from \texttt{packages/034-lossless-video/construction/video-playback-construction}.
+  --output playback-work.asm} from \texttt{packages/034-lossless-video/construction/video-playback-construction}.
 The earlier instructions remain intact under \texttt{file\_codec\_example\_main}.
 The new caller encodes, checks, seeks, stores and reloads, then invokes the player,
 which validates that reload afresh. Prepare observations with \texttt{prepare.py
-s102-1 --source playback-work.asm --output observe.asm}. Preparation changes input
+  s102-1 --source playback-work.asm --output observe.asm}. Preparation changes input
 data and native controls, retaining your instructions and refusing existing output
 files. The first two regions build the callable \texttt{video\_now} helper; guided
 checks can call it directly before the player reaches its anchor region.

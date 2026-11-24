@@ -29,52 +29,96 @@ import kotlinx.coroutines.withContext
 import org.jdom.Element
 
 /** Lifecycle-owned observations of ordinary native Run/Debug launches, for authoring only. */
-internal class BookProgramCapture(val connection: MessageBusConnection, private val lifetime: Disposable) : AutoCloseable {
-    val started = CompletableDeferred<ProcessHandler>()
-    val exit = CompletableDeferred<Int>()
-    val pauses = Channel<Int>(Channel.UNLIMITED)
-    val stdout = StringBuffer()
-    var session: XDebugSession? = null
-    override fun close() { Disposer.dispose(lifetime); pauses.close() }
+internal class BookProgramCapture(
+    val connection: MessageBusConnection,
+    private val lifetime: Disposable,
+) : AutoCloseable {
+  val started = CompletableDeferred<ProcessHandler>()
+  val exit = CompletableDeferred<Int>()
+  val pauses = Channel<Int>(Channel.UNLIMITED)
+  val stdout = StringBuffer()
+  var session: XDebugSession? = null
+
+  override fun close() {
+    Disposer.dispose(lifetime)
+    pauses.close()
+  }
 }
 
-internal suspend fun launchBookProgram(project: Project, source: Path, debug: Boolean,
+internal suspend fun launchBookProgram(
+    project: Project,
+    source: Path,
+    debug: Boolean,
     name: String = if (debug) "Book imported Debug" else "Book imported Run",
 ): BookProgramCapture {
-    val lifetime = Disposer.newDisposable("MARS book execution capture")
-    Disposer.register(project, lifetime)
-    val launch = BookProgramCapture(project.messageBus.connect(lifetime), lifetime)
-    try {
-        launch.connection.subscribe(ExecutionManager.EXECUTION_TOPIC, object : ExecutionListener {
-            override fun processStarting(executorId: String, env: ExecutionEnvironment, handler: ProcessHandler) {
-                if (env.runProfile.name != name) return
-                val listener = object : ProcessListener {
-                    override fun processTerminated(event: ProcessEvent) { launch.exit.complete(event.exitCode) }
-                    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-                        if (ProcessOutputType.isStdout(outputType)) launch.stdout.append(event.text)
+  val lifetime = Disposer.newDisposable("MARS book execution capture")
+  Disposer.register(project, lifetime)
+  val launch = BookProgramCapture(project.messageBus.connect(lifetime), lifetime)
+  try {
+    launch.connection.subscribe(
+        ExecutionManager.EXECUTION_TOPIC,
+        object : ExecutionListener {
+          override fun processStarting(
+              executorId: String,
+              env: ExecutionEnvironment,
+              handler: ProcessHandler,
+          ) {
+            if (env.runProfile.name != name) return
+            val listener =
+                object : ProcessListener {
+                  override fun processTerminated(event: ProcessEvent) {
+                    launch.exit.complete(event.exitCode)
+                  }
+
+                  override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                    if (ProcessOutputType.isStdout(outputType)) launch.stdout.append(event.text)
+                  }
+                }
+            handler.addProcessListener(listener)
+            Disposer.register(lifetime) { handler.removeProcessListener(listener) }
+            if (debug) {
+              val session =
+                  XDebuggerManager.getInstance(project).debugSessions.single {
+                    it.debugProcess.processHandler === handler
+                  }
+              launch.session = session
+              session.addSessionListener(
+                  object : XDebugSessionListener {
+                    override fun sessionPaused() {
+                      launch.pauses.trySend(checkNotNull(session.topFramePosition).line)
                     }
-                }
-                handler.addProcessListener(listener)
-                Disposer.register(lifetime) { handler.removeProcessListener(listener) }
-                if (debug) {
-                    val session = XDebuggerManager.getInstance(project).debugSessions.single { it.debugProcess.processHandler === handler }
-                    launch.session = session
-                    session.addSessionListener(object : XDebugSessionListener {
-                        override fun sessionPaused() { launch.pauses.trySend(checkNotNull(session.topFramePosition).line) }
-                    }, lifetime)
-                }
-                launch.started.complete(handler)
+                  },
+                  lifetime,
+              )
             }
-        })
-        withContext(Dispatchers.EDT) {
-            val type = ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
-            val settings = RunManager.getInstance(project).createConfiguration(name, type.configurationFactories.single())
-            settings.configuration.readExternal(Element("configuration").setAttribute("marsExecutionDefaults", "1")
-                .addContent(Element("option").setAttribute("name", "sourcePath").setAttribute("value", source.toString())))
-            settings.configuration.checkConfiguration()
-            val executor = if (debug) DefaultDebugExecutor.getDebugExecutorInstance() else DefaultRunExecutor.getRunExecutorInstance()
-            ExecutionEnvironmentBuilder.create(executor, settings).buildAndExecute()
-        }
-        return launch
-    } catch (error: Throwable) { launch.close(); throw error }
+            launch.started.complete(handler)
+          }
+        },
+    )
+    withContext(Dispatchers.EDT) {
+      val type =
+          ConfigurationType.CONFIGURATION_TYPE_EP.extensionList.single { it.id == "MarsMipsRun" }
+      val settings =
+          RunManager.getInstance(project)
+              .createConfiguration(name, type.configurationFactories.single())
+      settings.configuration.readExternal(
+          Element("configuration")
+              .setAttribute("marsExecutionDefaults", "1")
+              .addContent(
+                  Element("option")
+                      .setAttribute("name", "sourcePath")
+                      .setAttribute("value", source.toString()),
+              ),
+      )
+      settings.configuration.checkConfiguration()
+      val executor =
+          if (debug) DefaultDebugExecutor.getDebugExecutorInstance()
+          else DefaultRunExecutor.getRunExecutorInstance()
+      ExecutionEnvironmentBuilder.create(executor, settings).buildAndExecute()
+    }
+    return launch
+  } catch (error: Throwable) {
+    launch.close()
+    throw error
+  }
 }

@@ -2,37 +2,37 @@
 // Each case runs in a fresh simulator; labels and scratch registers are not checked.
 
 case("RGB 0", input = "0\n", instructionLimit = 20000) {
-    runToExit()
-    expectOutput("Enter an RGB integer: ")
-    expectBytes(0x0000000010010000L, 0x00, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
+  runToExit()
+  expectOutput("Enter an RGB integer: ")
+  expectBytes(0x0000000010010000L, 0x00, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
 }
 
 case("RGB 1", input = "1\n", instructionLimit = 20000) {
-    runToExit()
-    expectOutput("Enter an RGB integer: ")
-    expectBytes(0x0000000010010000L, 0x01, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
+  runToExit()
+  expectOutput("Enter an RGB integer: ")
+  expectBytes(0x0000000010010000L, 0x01, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
 }
 
 case("RGB 3368601", input = "3368601\n", instructionLimit = 20000) {
-    runToExit()
-    expectOutput("Enter an RGB integer: ")
-    expectBytes(0x0000000010010000L, 0x99, 0x66, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
+  runToExit()
+  expectOutput("Enter an RGB integer: ")
+  expectBytes(0x0000000010010000L, 0x99, 0x66, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
 }
 
 case("RGB 8388735", input = "8388735\n", instructionLimit = 20000) {
-    runToExit()
-    expectOutput("Enter an RGB integer: ")
-    expectBytes(0x0000000010010000L, 0x7f, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
+  runToExit()
+  expectOutput("Enter an RGB integer: ")
+  expectBytes(0x0000000010010000L, 0x7f, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
 }
 
 case("RGB 16711935", input = "16711935\n", instructionLimit = 20000) {
-    runToExit()
-    expectOutput("Enter an RGB integer: ")
-    expectBytes(0x0000000010010000L, 0xff, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
+  runToExit()
+  expectOutput("Enter an RGB integer: ")
+  expectBytes(0x0000000010010000L, 0xff, 0x00, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
 }
 
 case("RGB 16777215", input = "16777215\n", instructionLimit = 20000) {
-    runToExit()
-    expectOutput("Enter an RGB integer: ")
-    expectBytes(0x0000000010010000L, 0xff, 0xff, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
+  runToExit()
+  expectOutput("Enter an RGB integer: ")
+  expectBytes(0x0000000010010000L, 0xff, 0xff, 0xaa, 0x00, 0xdf, 0x9b, 0x57, 0x13)
 }

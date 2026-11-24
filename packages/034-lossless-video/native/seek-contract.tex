@@ -18,26 +18,26 @@ private-stack windows. Retain the saved registers, frame pointer and stack point
 and keep the stack sixteen-byte aligned across nested calls.
 
 \begin{table}[htbp]
-\centering
-\caption{Seek context. Each field occupies eight native bytes.}
-\label{tab:video-seek-context}
-\begin{tabular}{r p{1.4in} p{2.9in}}
-\toprule
-Offset & Field & Meaning \\
-\midrule
-0 & File bytes & Input, admitted complete-file count. \\
-8 & Directory & Input pointer to aligned native offsets. \\
-16 & Frame count & Input, one through 256. \\
-24 & Full-frame period & Input, one through 64. \\
-32 & Image capacity & Input, at least 16\,384 bytes. \\
-40 & Scratch address & Input pointer, four-byte aligned. \\
-48 & Scratch capacity & Input, at least 16\,384 bytes. \\
-56 & Target & Output, requested frame index. \\
-64 & Replay start & Output, latest full frame at or before target. \\
-72 & Records replayed & Output, target minus start plus one. \\
-80--95 & Retained suffix & Leave unchanged. \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Seek context. Each field occupies eight native bytes.}
+  \label{tab:video-seek-context}
+  \begin{tabular}{r p{1.4in} p{2.9in}}
+    \toprule
+    Offset & Field             & Meaning                                        \\
+    \midrule
+    0      & File bytes        & Input, admitted complete-file count.           \\
+    8      & Directory         & Input pointer to aligned native offsets.       \\
+    16     & Frame count       & Input, one through 256.                        \\
+    24     & Full-frame period & Input, one through 64.                         \\
+    32     & Image capacity    & Input, at least 16\,384 bytes.                 \\
+    40     & Scratch address   & Input pointer, four-byte aligned.              \\
+    48     & Scratch capacity  & Input, at least 16\,384 bytes.                 \\
+    56     & Target            & Output, requested frame index.                 \\
+    64     & Replay start      & Output, latest full frame at or before target. \\
+    72     & Records replayed  & Output, target minus start plus one.           \\
+    80--95 & Retained suffix   & Leave unchanged.                               \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 Success returns zero in \texttt{\$v0} and 16\,384 in \texttt{\$v1}. Only
@@ -62,23 +62,23 @@ extra-full data starts at five. In either case, a successful seek produces the
 same frame-six words. It publishes different replay starts and counts:
 
 \begin{table}[htbp]
-\centering
-\caption{Two permitted encodings of the same requested pixels.}
-\begin{tabular}{l r r l}
-\toprule
-Input & Target & Start & Applied record indices \\
-\midrule
-Moving & 6 & 4 & 4, 5, 6 \\
-Extra full & 6 & 5 & 5, 6 \\
-Moving & 3 & 0 & 0, 1, 2, 3 \\
-Moving & 0 & 0 & 0 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Two permitted encodings of the same requested pixels.}
+  \begin{tabular}{l r r l}
+    \toprule
+    Input      & Target & Start & Applied record indices \\
+    \midrule
+    Moving     & 6      & 4     & 4, 5, 6                \\
+    Extra full & 6      & 5     & 5, 6                   \\
+    Moving     & 3      & 0     & 0, 1, 2, 3             \\
+    Moving     & 0      & 0     & 0                      \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 Attach this stage to the completed reader with
 \texttt{python3 packages/034-lossless-video/construction/video-seek-construction/attach.py --source reader-work.asm
---output seek-work.asm}. It retains all earlier instructions and names the previous
+  --output seek-work.asm}. It retains all earlier instructions and names the previous
 entry \texttt{reader\_example\_main}. The new caller loads \texttt{animation.mlv},
 indexes it, then seeks. Generate the moving file with the earlier fixture command.
 Use the seek preparation helper to choose a target or capacity without changing

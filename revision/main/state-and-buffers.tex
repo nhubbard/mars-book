@@ -25,9 +25,9 @@ A cell is either dead, represented by byte zero, or alive, represented by byte o
 Its neighbors are the eight surrounding cells, including diagonals but excluding
 itself. A dead cell becomes alive when exactly three neighbors are alive. A live
 cell remains alive with two or three; all other next states are dead.\footnote{These
-are Conway's Life rules as introduced in Martin Gardner's October 1970
-\emph{Scientific American} column, pp.~120--123. A scan is available at
-\url{https://web.stanford.edu/class/sts145/Library/life.pdf}.}
+  are Conway's Life rules as introduced in Martin Gardner's October 1970
+  \emph{Scientific American} column, pp.~120--123. A scan is available at
+  \url{https://web.stanford.edu/class/sts145/Library/life.pdf}.}
 
 Our board is finite. Positions outside its eight-by-eight interior remain dead
 and do not wrap to the opposite edge. This boundary condition is part of the
@@ -82,7 +82,7 @@ interior and a one-cell border. This surrounding border is called a \emph{halo}.
 All 36 halo bytes start at zero and receive no program stores. An interior logical
 cell $(x,y)$ is at
 \[
- board+10(y+1)+(x+1),\qquad 0\leq x,y<8.
+  board+10(y+1)+(x+1),\qquad 0\leq x,y<8.
 \]
 The first interior byte is at offset 11 and the last at offset 88. Consecutive
 interior cells differ by one byte; cells in the same column of successive rows
@@ -91,11 +91,11 @@ differ by ten. Neither stride is the framebuffer's four-byte pixel step or
 
 For an interior cell at address $p$, the neighbor addresses have these displacements:
 \[
-\begin{array}{rrr}
- -11 & -10 & -9\\
- -1 & \text{center} & +1\\
- +9 & +10 & +11
-\end{array}
+  \begin{array}{rrr}
+    -11 & -10           & -9  \\
+    -1  & \text{center} & +1  \\
+    +9  & +10           & +11
+  \end{array}
 \]
 The smallest neighbor address is $board+11-11=board$. The largest is
 $board+88+11=board+99$. Every neighbor load therefore lies within the 100-byte
@@ -110,8 +110,8 @@ result is from zero through eight. There is no load at displacement zero, becaus
 the center is not its own neighbor.
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{Count eight bytes from the source snapshot}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{Count eight bytes from the source snapshot}
+  \begin{minted}{mars-idea}
 count_neighbors:
     lbu $v0, -11($a0)
     lbu $t0, -10($a0)
@@ -154,8 +154,8 @@ the passed cell address. It obtains the old center from its saved source cursor
 when the two-neighbor case needs it.
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{Decide one next cell from the unchanged source}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{Decide one next cell from the unchanged source}
+  \begin{minted}{mars-idea}
 step_row:
     li $s3, 8
 step_cell:
@@ -180,8 +180,8 @@ including the path for a dead result. Skipping zero stores would allow an old
 destination cell to survive incorrectly.
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{Store the result and advance interior cursors}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{Store the result and advance interior cursors}
+  \begin{minted}{mars-idea}
 store_cell:
     sb $t1, 0($s1)
     addu $s4, $s4, $t1
@@ -225,8 +225,8 @@ It writes dead pixels too, so the image cannot retain a cell that died. Renderin
 does not change either board.
 
 \noindent\begin{minipage}{\linewidth}
-\MARSCodeLabel{Observe a complete snapshot, then prepare its successor}
-\begin{minted}{mars-idea}
+  \MARSCodeLabel{Observe a complete snapshot, then prepare its successor}
+  \begin{minted}{mars-idea}
 render_generation:
     move $a0, $s0
     la $a1, frame

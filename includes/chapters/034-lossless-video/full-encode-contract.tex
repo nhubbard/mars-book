@@ -16,23 +16,23 @@ the stack sixteen-byte aligned. The illustrated private frame is 96 bytes; an
 equivalent implementation may use another layout.
 
 \begin{table}[htbp]
-\centering
-\caption{Full-record encoder context. All fields occupy eight native bytes.}
-\label{tab:video-full-encode-context}
-\begin{tabular}{r p{1.6in} p{2.7in}}
-\toprule
-Offset & Field & Meaning \\
-\midrule
-0 & Destination capacity & Input, at least 12\,304 bytes. \\
-8 & Next sequence & Input zero through 255; increment only on success. \\
-16 & Full-frame period & Input one through 64; retain it. \\
-24 & Previous-image address & Input pointer to four-byte-aligned storage. \\
-32 & Previous-image capacity & Input, at least 16\,384 bytes. \\
-40 & Last kind & Output zero for this full record. \\
-48 & Encoded byte count & Output 12\,304. \\
-56 & Retained suffix & Leave unchanged. \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full-record encoder context. All fields occupy eight native bytes.}
+  \label{tab:video-full-encode-context}
+  \begin{tabular}{r p{1.6in} p{2.7in}}
+    \toprule
+    Offset & Field                   & Meaning                                            \\
+    \midrule
+    0      & Destination capacity    & Input, at least 12\,304 bytes.                     \\
+    8      & Next sequence           & Input zero through 255; increment only on success. \\
+    16     & Full-frame period       & Input one through 64; retain it.                   \\
+    24     & Previous-image address  & Input pointer to four-byte-aligned storage.        \\
+    32     & Previous-image capacity & Input, at least 16\,384 bytes.                     \\
+    40     & Last kind               & Output zero for this full record.                  \\
+    48     & Encoded byte count      & Output 12\,304.                                    \\
+    56     & Retained suffix         & Leave unchanged.                                   \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 Success returns zero in \texttt{\$v0} and 12\,304 in \texttt{\$v1}. It writes
@@ -52,17 +52,17 @@ output pass without an extra payload buffer. The previous image changes only
 after the complete record, including its checksum, has been written.
 
 \begin{table}[htbp]
-\centering
-\caption{One numeric pixel has different memory bytes but the same RGB output.}
-\begin{tabular}{l l l}
-\toprule
-Representation & Bytes for \texttt{0x00123456} & Interpretation \\
-\midrule
-Native little endian & \texttt{56 34 12 00} & Four-byte source word \\
-Native big endian & \texttt{00 12 34 56} & The same numeric source word \\
-MLV1 payload & \texttt{12 34 56} & Red, green, blue \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{One numeric pixel has different memory bytes but the same RGB output.}
+  \begin{tabular}{l l l}
+    \toprule
+    Representation       & Bytes for \texttt{0x00123456} & Interpretation               \\
+    \midrule
+    Native little endian & \texttt{56 34 12 00}          & Four-byte source word        \\
+    Native big endian    & \texttt{00 12 34 56}          & The same numeric source word \\
+    MLV1 payload         & \texttt{12 34 56}             & Red, green, blue             \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 Load a native word numerically, extract channels with shifts, and store individual
@@ -80,7 +80,7 @@ for checksum purposes. Stored checksum bytes twelve through fifteen are excluded
 
 Attach this stage with
 \texttt{python3 drafts/video-full-encode-construction/attach.py --source
-seek-work.asm --output encoder-work.asm}. Earlier instructions remain intact under
+  seek-work.asm --output encoder-work.asm}. Earlier instructions remain intact under
 the retained seek example entry. The new caller uses generated native pixels,
 encodes a full record, then calls the existing record decoder on those bytes.
 It needs no host video file. Preparation changes input words and context controls
