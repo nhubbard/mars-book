@@ -120,7 +120,13 @@ def format_kotlin(source, *, script=True, preserve_imports=False):
         if status != "OK":
             raise ValueError("KTFMT rejected Kotlin source: " + output)
         cache.parent.mkdir(parents=True, exist_ok=True)
-        cache.write_text(output, encoding="utf-8")
+        # Other formatter processes may request the same source concurrently.
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=cache.parent, delete=False
+        ) as temporary:
+            temporary.write(output)
+            pending = Path(temporary.name)
+        pending.replace(cache)
         return output
 
 

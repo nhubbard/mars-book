@@ -16,12 +16,8 @@ from kotlin_format import format_kotlin
 
 ROOT = Path(__file__).resolve().parents[1]
 # These files are composed with generated cases before Kotlin resolves their imports.
-KOTLIN_FRAGMENTS = {
-    "tools/cbor-feedback/model.kts",
-    "tools/png-feedback/common.kts",
-    "tools/video-feedback/common.kts",
-    "tools/wav-feedback/model.kts",
-}
+KOTLIN_FRAGMENT_NAMES = {"model.kts", "common.kts", "guided-model.kts"}
+
 EXTENSIONS = {
     "kotlin": {".kt", ".kts"},
     "python": {".py"},
@@ -113,8 +109,7 @@ def main(argv=None):
                 formatted = format_kotlin(
                     original,
                     script=path.suffix == ".kts",
-                    preserve_imports=path.relative_to(root).as_posix()
-                    in KOTLIN_FRAGMENTS,
+                    preserve_imports=path.name in KOTLIN_FRAGMENT_NAMES,
                 )
             elif args.language == "python":
                 formatted = format_python(original)
