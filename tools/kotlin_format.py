@@ -78,7 +78,7 @@ def _start():
 
 
 @lru_cache(maxsize=32)
-def format_kotlin(source, *, script=True):
+def format_kotlin(source, *, script=True, preserve_imports=False):
     """Format a complete Kotlin file; string literals retain their program contents."""
     with _LOCK:
         server_hash = hashlib.sha256(
@@ -86,14 +86,27 @@ def format_kotlin(source, *, script=True):
         ).hexdigest()
         key = hashlib.sha256(
             (
-                "ktfmt-0.65-meta:" + server_hash + ":" + str(script) + ":" + source
+                "ktfmt-0.65-meta:"
+                + server_hash
+                + ":"
+                + str(script)
+                + ":"
+                + str(preserve_imports)
+                + ":"
+                + source
             ).encode()
         ).hexdigest()
         cache = TOOLS / "build/formatted-cache" / (key + ".txt")
         if cache.exists():
             return cache.read_text(encoding="utf-8")
         process = _start()
-        kind = "SCRIPT" if script else "REGULAR"
+        if preserve_imports and not script:
+            raise ValueError(
+                "Import preservation is reserved for script composition fragments"
+            )
+        kind = (
+            "SCRIPT_IMPORTS" if preserve_imports else "SCRIPT" if script else "REGULAR"
+        )
         process.stdin.write(
             kind + " " + base64.b64encode(source.encode()).decode("ascii") + "\n"
         )

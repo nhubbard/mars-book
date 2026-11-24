@@ -1,6 +1,7 @@
 import edu.missouristate.mars.cli.grading.AssemblyCase
 import edu.missouristate.mars.cli.grading.TimingCheck.Event
 import edu.missouristate.mars.cli.grading.TimingCheck.Operation
+import java.nio.ByteOrder
 import java.util.zip.CRC32
 
 fun octets(s: String) = s.chunked(2).map { it.toInt(16) }.toIntArray()

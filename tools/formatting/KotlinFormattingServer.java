@@ -13,13 +13,19 @@ class KotlinFormattingServer {
     for (String request; (request = input.readLine()) != null; ) {
       try {
         int separator = request.indexOf(' ');
-        FileType type = FileType.valueOf(request.substring(0, separator));
+        String mode = request.substring(0, separator);
+        boolean preserveImports = mode.equals("SCRIPT_IMPORTS");
+        FileType type = preserveImports ? FileType.SCRIPT : FileType.valueOf(mode);
         String source =
             new String(
                 Base64.getDecoder().decode(request.substring(separator + 1)),
                 StandardCharsets.UTF_8);
         String formatted =
-            Formatter.format(Formatter.META_FORMAT, KotlinCode.Companion.from(source, type));
+            Formatter.format(
+                preserveImports
+                    ? Formatter.META_FORMAT.toBuilder().removeUnusedImports(false).build()
+                    : Formatter.META_FORMAT,
+                KotlinCode.Companion.from(source, type));
         System.out.println(
             "OK " + Base64.getEncoder().encodeToString(formatted.getBytes(StandardCharsets.UTF_8)));
       } catch (Exception failure) {

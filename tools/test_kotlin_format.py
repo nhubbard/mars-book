@@ -19,6 +19,15 @@ class KotlinFormatTest(unittest.TestCase):
         self.assertIn("\n\nfun second(x: Int): Int {\n", actual)
         self.assertEqual(actual, format_kotlin(actual, script=False))
 
+    def test_composition_fragments_keep_imports_used_by_later_cases(self):
+        fragment = "import java.nio.ByteOrder\nfun example()=1\n"
+        preserved = format_kotlin(fragment, preserve_imports=True)
+        self.assertIn("import java.nio.ByteOrder", preserved)
+        self.assertNotIn("import java.nio.ByteOrder", format_kotlin(fragment))
+        composed = format_kotlin(preserved + "val order=ByteOrder.BIG_ENDIAN\n")
+        self.assertIn("import java.nio.ByteOrder", composed)
+        self.assertEqual(composed, format_kotlin(composed))
+
     def test_rejected_source_does_not_corrupt_the_next_request(self):
         with self.assertRaisesRegex(ValueError, "KTFMT rejected"):
             format_kotlin("fun bad( {")

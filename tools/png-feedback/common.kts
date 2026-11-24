@@ -1,5 +1,6 @@
 import edu.missouristate.mars.cli.grading.AssemblyCase
 import edu.missouristate.mars.cli.grading.FileAccess.Operation
+import java.nio.ByteOrder
 
 fun octets(s: String) = s.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
 

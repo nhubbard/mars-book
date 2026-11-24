@@ -15,6 +15,13 @@ import tempfile
 from kotlin_format import format_kotlin
 
 ROOT = Path(__file__).resolve().parents[1]
+# These files are composed with generated cases before Kotlin resolves their imports.
+KOTLIN_FRAGMENTS = {
+    "tools/cbor-feedback/model.kts",
+    "tools/png-feedback/common.kts",
+    "tools/video-feedback/common.kts",
+    "tools/wav-feedback/model.kts",
+}
 EXTENSIONS = {
     "kotlin": {".kt", ".kts"},
     "python": {".py"},
@@ -103,7 +110,12 @@ def main(argv=None):
         original = path.read_text(encoding="utf-8")
         try:
             if args.language == "kotlin":
-                formatted = format_kotlin(original, script=path.suffix == ".kts")
+                formatted = format_kotlin(
+                    original,
+                    script=path.suffix == ".kts",
+                    preserve_imports=path.relative_to(root).as_posix()
+                    in KOTLIN_FRAGMENTS,
+                )
             elif args.language == "python":
                 formatted = format_python(original)
             else:

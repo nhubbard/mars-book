@@ -29,6 +29,12 @@ In MARS itself, run `./gradlew spotlessApply spotlessCheck` from `mars5`.
 The separate authoring plugin also runs Spotless through its Gradle `check` task.
 Its normal test/build command still requires the packaged MARS dependency.
 
+The four partial `.kts` templates under `tools/{cbor,png,video,wav}-feedback/`
+retain imports until their generated cases are appended. Those imports may appear
+unused in the fragment while being required by the complete script. The source-audit
+tool names these four fragments explicitly; complete source files use normal KTFMT
+import cleanup.
+
 Grading generators format their output before writing it. Their reproducibility
 tests compare the complete generated files, while structural tests allow formatter
 whitespace and retain their exact numbers, names, budgets and rejection checks.
