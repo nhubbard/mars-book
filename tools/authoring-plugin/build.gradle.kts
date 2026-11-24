@@ -149,7 +149,7 @@ tasks.runIde {
 spotless {
   kotlin {
     target("**/*.kt", "**/*.kts")
-    targetExclude("**/build/**", "**/.gradle/**", "**/.intellijPlatform/**")
+    targetExclude("build/**", ".gradle/**", ".intellijPlatform/**")
     ktfmt("0.65")
   }
 }
